@@ -270,6 +270,11 @@ const WABOT_RR_ANUAL_SENA = 'Con el plan anual arrancás con una seña de {sena}
 const WABOT_RR_PAGO_UNICO = 'Con el pago único, la web queda abonada en su totalidad: son {precio_unico}. Incluye el hosting y el dominio el primer año; el mantenimiento no está incluido y se contrata aparte.';
 /* El plan con cambios dejó de existir el 26-sep a la noche: sus montos,
    $25.000 y $35.000, pasaron a ser el plan mensual. */
+/* Los links al detalle de cada modalidad (2-oct, Pablo: que el bot no los
+ * mande en el turno del precio, sino si el cliente pregunta, y que estén en
+ * las respuestas rápidas). Los marcadores los completa
+ * wabot_respuestas_rapidas_montos() con las páginas de pago/ del tipo de la charla. */
+const WABOT_RR_DETALLE_MODALIDADES = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
 const WABOT_RR_CAMBIOS_PLAN = 'El plan mensual y el anual incluyen un cambio por mes en la web. Con el pago único, un cambio que pidas después de entregada la web se cotiza aparte.';
 
 /** Las recomendaciones de fábrica anteriores, por tipo de web. */
@@ -755,6 +760,9 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
         $montos['{mantenimiento_mes}'] = $porMes(wabot_respuestas_rapidas_monto_por_tipo($cfg, 'mantenimiento'));
     }
     $montos['{carga_producto}'] = trim((string)($cfg['carga_producto'] ?? '')) ?: '$500';
+    foreach (['mensual', 'anual', 'unico'] as $modalidad) {
+        $montos['{link_' . $modalidad . '}'] = wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg);
+    }
     foreach ($montos as $marcador => $monto) {
         if ($monto === '') $montos[$marcador] = 'EDITAR IMPORTE';
     }
@@ -795,16 +803,50 @@ function wabot_respuestas_rapidas_precios_1oct($categorias) {
     return $categorias;
 }
 
+/**
+ * La página de pago/ de una modalidad ('mensual', 'anual', 'unico'): la del
+ * tipo de la charla, o una por grupo de tipos si todavía no tiene tipo.
+ */
+function wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg) {
+    $paginas = wabot_planes_paginas();
+    $link = static fn($t) => isset($paginas[$t][$modalidad]) ? 'gokywebs.com/pago/' . $paginas[$t][$modalidad]['pagina'] : '';
+    if ($tipo !== '' && isset($paginas[$tipo])) return $link($tipo);
+    $nombres = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda', 'elearning' => 'cursos', 'inmobiliaria' => 'inmobiliaria'];
+    $porLink = [];
+    foreach ($nombres as $t => $nombre) {
+        $l = $link($t);
+        if ($l !== '') $porLink[$l][] = $nombre;
+    }
+    if (count($porLink) <= 1) return (string)(array_key_first($porLink) ?? '');
+    $partes = [];
+    foreach ($porLink as $l => $grupo) $partes[] = $l . ' (' . wabot_lista_o($grupo) . ')';
+    return wabot_lista_o($partes);
+}
+
+/** Suma el detalle de las modalidades al final de "Precios", si no está en ninguna categoría. */
+function wabot_respuestas_rapidas_detalle_2oct($categorias) {
+    foreach ($categorias as $categoria) {
+        if (in_array(WABOT_RR_DETALLE_MODALIDADES, (array)($categoria['items'] ?? []), true)) return $categorias;
+    }
+    foreach ($categorias as &$categoria) {
+        if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'precios') continue;
+        $categoria['items'][] = WABOT_RR_DETALLE_MODALIDADES;
+        break;
+    }
+    unset($categoria);
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     // El orden del 26-sep corre una sola vez: después, lo que Pablo borre o
     // vuelva a mostrar desde la pestaña Respuestas queda como lo dejó.
     $marca = WABOT_DATA . '/migrated/respuestas-rapidas-chats-26sep';
-    if (!is_file($ruta)) return wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default()));
+    if (!is_file($ruta)) return wabot_respuestas_rapidas_detalle_2oct(wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default())));
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
-    if ($normalizado === null) return wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default()));
+    if ($normalizado === null) return wabot_respuestas_rapidas_detalle_2oct(wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default())));
     $migrado = wabot_respuestas_rapidas_precios_26sep_noche(wabot_respuestas_rapidas_plan_landing_30k_26sep(wabot_respuestas_rapidas_plan_otros_40k_26sep(wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
         wabot_respuestas_rapidas_planes_19sep(
             wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
@@ -813,12 +855,17 @@ function wabot_respuestas_rapidas_load() {
     $ordenar = !is_file($marca);
     if ($ordenar) $migrado = wabot_respuestas_rapidas_chats_26sep($migrado);
     $migrado = wabot_respuestas_rapidas_precios_1oct($migrado);
+    // El detalle de las modalidades se suma una vez: si Pablo lo borra, no vuelve.
+    $marcaDetalle = WABOT_DATA . '/migrated/respuestas-rapidas-detalle-2oct';
+    $detalle = !is_file($marcaDetalle);
+    if ($detalle) $migrado = wabot_respuestas_rapidas_detalle_2oct($migrado);
     $guardado = true;
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $guardado = is_string($json) && wabot_json_guardar_atomico($ruta, $json);
     }
     if ($ordenar && $guardado) @file_put_contents($marca, date('c') . "\n");
+    if ($detalle && $guardado) @file_put_contents($marcaDetalle, date('c') . "\n");
     return $migrado;
 }
 

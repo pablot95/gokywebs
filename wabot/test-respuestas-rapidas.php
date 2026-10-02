@@ -413,6 +413,33 @@ caso('si la lista del pago único sube, a la tienda ya cotizada le sale el suyo'
     && mb_strpos($visible($tiendaCongelada, 'Dudas de planes')[1] ?? '', 'Pago único: ' . $T['ecommerce']['precio_unico'] . ' una sola vez') !== false,
     wabot_respuestas_rapidas_montos(WABOT_RR_PAGO_UNICO, $tiendaCongelada, $cfgSubeUnico));
 
+/* 2-oct (Pablo): el detalle de cada modalidad sale si el cliente pregunta y
+ * queda en las respuestas rápidas, con las páginas del tipo de la charla. */
+$detalleDe = static fn($m, $a, $u) => "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a\nPago único: gokywebs.com/pago/$u";
+caso('detalle de las modalidades: el sitio profesional, con sus 3 páginas',
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual19000', 'anual149', 'unico190'));
+caso('detalle de las modalidades: la inmobiliaria, con las de la tienda',
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual29000', 'anual190', 'unico290'));
+$sinTipo = wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, null, $cfgNoche);
+caso('detalle de las modalidades sin tipo: una página por grupo',
+    str_contains($sinTipo, 'gokywebs.com/pago/mensual19000 (sitio profesional) o gokywebs.com/pago/mensual29000 (tienda, cursos o inmobiliaria)')
+    && !str_contains($sinTipo, '{link_'), $sinTipo);
+$conPrecios = [['titulo' => 'Muestra gratis', 'items' => ['a']], ['titulo' => 'Precios', 'items' => ['b']]];
+$sumado = wabot_respuestas_rapidas_detalle_2oct($conPrecios);
+caso('el detalle se suma al final de Precios, una sola vez',
+    $sumado[1]['items'] === ['b', WABOT_RR_DETALLE_MODALIDADES] && wabot_respuestas_rapidas_detalle_2oct($sumado) === $sumado);
+caso('sin categoría Precios no se inventa una', wabot_respuestas_rapidas_detalle_2oct([['titulo' => 'Otra', 'items' => ['a']]]) === [['titulo' => 'Otra', 'items' => ['a']]]);
+$marcaDetalle = WABOT_DATA . '/migrated/respuestas-rapidas-detalle-2oct';
+$marcaDetalleRespaldo = is_file($marcaDetalle) ? file_get_contents($marcaDetalle) : null;
+@unlink($marcaDetalle);
+file_put_contents($ruta, json_encode([['ico' => '💰', 'titulo' => 'Precios', 'items' => ['Un bloque']]], JSON_UNESCAPED_UNICODE));
+$cargado = wabot_respuestas_rapidas_load();
+caso('al cargar el panel guardado, el detalle aparece en Precios y queda la marca',
+    in_array(WABOT_RR_DETALLE_MODALIDADES, $cargado[0]['items'], true) && is_file($marcaDetalle));
+file_put_contents($ruta, json_encode([['ico' => '💰', 'titulo' => 'Precios', 'items' => ['Un bloque']]], JSON_UNESCAPED_UNICODE));
+caso('si Pablo lo borra, no vuelve', !in_array(WABOT_RR_DETALLE_MODALIDADES, wabot_respuestas_rapidas_load()[0]['items'], true));
+if ($marcaDetalleRespaldo === null) @unlink($marcaDetalle); else file_put_contents($marcaDetalle, $marcaDetalleRespaldo);
+
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 if ($marcaRespaldo === null) @unlink($marca); else file_put_contents($marca, $marcaRespaldo);
 todo_ok();

@@ -217,6 +217,23 @@ foreach (['landing' => ['anual149', 'unico190'], 'ecommerce' => ['anual190', 'un
             && str_contains(implode(' ', $r), $nombre));
     }
 }
+// 2-oct (Pablo): los links al detalle de cada modalidad ya no van en el turno
+// del precio; salen cuando el cliente los pide.
+caso('detalle_modalidades está en el catálogo que ve el clasificador', isset(wabot_postprecio_catalogo()['detalle_modalidades']));
+foreach (['landing' => ['mensual19000', 'anual149', 'unico190'], 'ecommerce' => ['mensual29000', 'anual190', 'unico290']] as $tipo => $paginas) {
+    $c = pp_conv($tipo);
+    pp_api(pp_decision(['detalle_modalidades']));
+    $r = turno('Tenés más info de cada plan? Dónde veo qué incluye cada uno?', $c, $cfg);
+    $todo = implode(' ', $r);
+    caso("$tipo: si pide el detalle, manda los links de sus 3 páginas", count($r) === 1 && $r[0] === links_de_precio($tipo)
+        && !array_filter($paginas, static fn($p) => !str_contains($todo, 'gokywebs.com/pago/' . $p)) && empty($c['control_manual']), $todo);
+}
+$c = pp_conv('ecommerce');
+$c['mensualidad_cotizada'] = '$15.000';
+pp_api(pp_decision(['detalle_modalidades']));
+$r = turno('Pasame el detalle de cada modalidad', $c, $cfg);
+caso('con un precio especial más bajo que las páginas, el detalle lo ve Pablo', pp_silencio($c, $r));
+
 $c = pp_conv('ecommerce', ['presentado_ts' => time()]);
 pp_api(pp_decision(['modelo', 'postergar'], ['modelo' => '1']));
 $r = turno('Me gustó el primer diseño, estoy resolviendo en familia si mensual o anual', $c, $cfg);

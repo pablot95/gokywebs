@@ -9,6 +9,7 @@ function wabot_postprecio_catalogo() {
         'recomendar_plan' => 'Comparar las modalidades según inversión inicial y mantenimiento.',
         'pago' => 'Cuándo se abona, seña, saldo y medios de pago estándar.',
         'pago_link' => 'Pedir el enlace para avanzar, con una modalidad confirmada.',
+        'detalle_modalidades' => 'Pide ver el detalle de cada modalidad, más información de los planes o una página donde ver qué incluye cada una.',
         'mantenimiento' => 'Qué cubre el mantenimiento técnico y el cambio mensual.',
         'carga' => 'Panel, productos, fotos, precios, stock; carga inicial y adicional.',
         'hosting' => 'Hosting y dominio incluidos según modalidad; dominio que ya posee.',
@@ -271,6 +272,11 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
             $conv['postprecio_pregunta'] = '';
             $pagina = wabot_planes_paginas()[$tipo][$clave]['pagina'];
             return 'Acá tenés el detalle y cómo abonar el ' . ($clave === 'unico' ? 'pago único' : 'plan ' . $clave) . ': https://gokywebs.com/pago/' . $pagina . '/';
+        case 'detalle_modalidades':
+            // Las páginas de las 3 modalidades (2-oct: solo si las pide). Si no
+            // cobran los montos de esta charla, lo ve Pablo.
+            $links = wabot_planes_links_texto($tipo, $conv, $cfg);
+            return $links === '' ? null : $links;
         case 'plataformas': return (string)$cfg['plataformas'];
         case 'plan_servicio': return 'El mensual es un servicio: incluye la web, hosting, dominio, mantenimiento y soporte mientras el plan esté activo. No son cuotas del desarrollo.';
         case 'envios': return 'La tienda puede ofrecer retiro en el local, costo fijo por zona o envíos con Correo Argentino o Andreani. Las opciones y sus costos se muestran antes de pagar.';

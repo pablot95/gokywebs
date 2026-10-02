@@ -85,19 +85,20 @@ caso('indumentaria: "Para tu local de indumentaria femenina, te podemos armar un
 caso('turnos por WhatsApp, Instagram y calificaciones se nombran en la propuesta',
     mb_stripos($r[0] ?? '', 'Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el acceso a tu Instagram y una sección de reseñas de tus clientes.') !== false,
     $r[0] ?? '');
-caso('y siguen los links de las páginas del sitio profesional y la oferta', ($r[1] ?? '') === links_de_precio('landing') && mb_stripos($r[2] ?? '', 'primer diseño') !== false);
+caso('y sigue la oferta, sin los links de las páginas del sitio profesional (2-oct)', !in_array(links_de_precio('landing'), $r, true) && mb_stripos($r[1] ?? '', 'primer diseño') !== false);
 
 [$c, $r] = charla([['Vendo sahumerios y quiero tener seguidores, subir la venta y demás', ['rubro_comercio'], []]], '549110000SAHUTEST', $cfg);
 caso('sahumerios: primero que la publicidad no la hacemos, y cómo ayuda la tienda',
     str_starts_with($r[0] ?? '', 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link'),
     $r[0] ?? '');
-caso('y después la propuesta con los links de las páginas de la tienda', mb_stripos($r[0] ?? '', 'te podemos armar una tienda online') !== false && ($r[1] ?? '') === links_de_precio('ecommerce'));
+caso('y después la propuesta de la tienda, sin los links de sus páginas (2-oct)', mb_stripos($r[0] ?? '', 'te podemos armar una tienda online') !== false && !in_array(links_de_precio('ecommerce'), $r, true)
+    && mb_stripos($r[1] ?? '', 'primer diseño') !== false);
 caso('la aclaración sale una sola vez', ($c['fuera_avisado'] ?? []) === ['publicidad']);
 
 [$c, $r] = charla([['Tenemos un restaurant con hospedaje en las sierras', ['rubro_landing'], []]], '549110000HOSPTEST', $cfg);
-caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con los links del sitio profesional',
+caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, en el sitio profesional (sin los links, 2-oct)',
     mb_stripos($r[0] ?? '', 'un sitio profesional completo, con las habitaciones, el restaurante y las reservas online') !== false
-    && ($r[1] ?? '') === links_de_precio('landing'), $r[0] ?? '');
+    && salio_precio($r, 'landing'), $r[0] ?? '');
 
 echo "— 4. Si vende algo es tienda (24-sep), salvo que diga con todas las letras que no quiere vender por la web (26-sep) —\n";
 
@@ -105,11 +106,11 @@ echo "— 4. Si vende algo es tienda (24-sep), salvo que diga con todas las letr
 caso('"solo mostrar y que me consulten por WhatsApp" cotiza el sitio profesional con catálogo',
     ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo'])
     && mb_stripos($r[0] ?? '', 'un sitio profesional completo, con el catálogo de tus productos') !== false
-    && ($r[1] ?? '') === links_de_precio('landing'), $r[0] ?? '');
+    && salio_precio($r, 'landing'), $r[0] ?? '');
 [$c, $r] = charla([['Me gustaría que permita vender por la web, pero también que funcione como catálogo para mostrar productos, precios y stock', ['rubro_comercio'], ['ficha' => ['necesidad' => 'catalogo']]]], '549110000PANALTEST', $cfg);
 caso('"vender por la web, pero también como catálogo" es la tienda: la venta dicha gana (la pañalera, 24-sep)',
     ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']) && wabot_ficha($c)['necesidad'] === 'tienda'
-    && ($r[1] ?? '') === links_de_precio('ecommerce'), $r[0] ?? '');
+    && salio_precio($r, 'ecommerce'), $r[0] ?? '');
 [$c, $r] = charla([['Vendo ropa de mujer', ['rubro_comercio'], []]], '549110000TIENDATEST', $cfg);
 caso('sin decirlo, lo que vende productos sigue siendo tienda (29-ago)', ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']));
 

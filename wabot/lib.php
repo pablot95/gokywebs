@@ -3810,8 +3810,9 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 }
 
 /**
- * Las páginas de detalle de cada modalidad (29-sep, Pablo): el segundo mensaje
- * del turno del precio pasa sus links, en lugar de la imagen. Viven en pago/
+ * Las páginas de detalle de cada modalidad (29-sep, Pablo): sus links salen
+ * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
+ * en las respuestas rápidas. Viven en pago/
  * (mensual19000, anual149, unico190 y, para tienda, cursos e inmobiliaria,
  * mensual29000, anual190, unico290); cada una tiene arriba las pestañas para pasar
  * a las otras dos del mismo tipo de web.

@@ -25,11 +25,12 @@
  *   único, al pagar el segundo año del plan anual o a los 18 meses del
  *   mensual. Antes de eso es de Gokywebs. Lo dicen info.titularidad,
  *   info.entrega_codigo, info.licencias y info.baja_del_plan.
- * - El turno del precio son tres mensajes (29-sep, Pablo: "la imagen puede ser
- *   confusa"): la propuesta con las 3 modalidades y su monto (`precio_modalidades`),
- *   los links al detalle de cada una (`planes_links`: las páginas gokywebs.com/pago/…,
- *   solo si cobran los montos de la charla) y la oferta del primer diseño. La
- *   imagen ya no sale sola; `dos_formas`, la versión larga, queda para cuando
+ * - El turno del precio son dos mensajes: la propuesta con las 3 modalidades y
+ *   su monto (`precio_modalidades`) y la oferta del primer diseño. Los links al
+ *   detalle de cada una (`planes_links`: las páginas gokywebs.com/pago/…, solo si
+ *   cobran los montos de la charla) iban en el medio del 29-sep al 2-oct; desde
+ *   ahí salen solo si el cliente los pide (regla `detalle_modalidades` de
+ *   postprecio.php) y están en las respuestas rápidas. La imagen ya no sale sola; `dos_formas`, la versión larga, queda para cuando
  *   el cliente vuelve a pedir el precio.
  * - Web propia: el que la quiere a su nombre recibe el pago único; si la
  *   quiere en su propio hosting desde el arranque, lo contrata él
@@ -118,8 +119,8 @@ function wabot_textos_default() {
     'dos_formas_web_propia' => 'Y si la querés a tu nombre, está el pago único: {precio_unico}. El código queda tuyo cuando abonás el total, y si querés le sumás el mantenimiento por {mantenimiento_mes}.',
     /* El turno del precio (29-sep, Pablo): en el mismo mensaje que la propuesta,
      * las 3 modalidades con su monto —"Podés elegir 1 de estas 3 modalidades:
-     * mensual, anual, pago único"— y, en el siguiente, los links al detalle de
-     * cada una. La imagen del 25-sep quedó afuera ("puede ser confusa"). El "1",
+     * mensual, anual, pago único". Los links al detalle de cada una
+     * (`planes_links`) salen solo si el cliente los pide (2-oct). La imagen del 25-sep quedó afuera ("puede ser confusa"). El "1",
      * "2" o "3" que contesta el cliente es el de esta lista. Los usan
      * wabot_servicio_texto() y wabot_planes_links_texto() en engine.php; las
      * páginas y sus montos, wabot_planes_paginas() en lib.php. */

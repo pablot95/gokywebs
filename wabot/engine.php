@@ -6329,8 +6329,9 @@ function wabot_oferta_diseno_form_texto(&$conv, $cfg) {
 
 /**
  * Cómo termina el turno del precio (Pablo, 18-sep): la propuesta con las
- * modalidades y su monto, aparte los links al detalle de cada una (29-sep, en
- * lugar de la imagen) y, dos segundos después, la oferta del primer diseño. El
+ * modalidades y su monto y, dos segundos después, la oferta del primer diseño
+ * (los links al detalle de cada modalidad iban en el medio del 29-sep al 2-oct;
+ * ahora salen solo si los pide: regla detalle_modalidades de postprecio.php). El
  * bot NO se apaga todavía: espera UNA respuesta, que contesta el borde común
  * (wabot_oferta_diseno_responder, redactor.php). También al que pidió la demo
  * al escribir (el anuncio viejo): recién ahora vio el precio, y el formulario
@@ -6355,18 +6356,11 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     if ($fuera !== '') $propuesta = $fuera . "\n\n" . $propuesta;
     wabot_oferta_diseno_abrir($conv);
 
-    $salida = [$propuesta];
-    /* Los links al detalle de cada modalidad (29-sep, en lugar de la imagen del
-     * 25-sep, que "puede ser confusa"): solo cuando wabot_servicio_texto() de
-     * verdad las ofreció y las páginas cobran los montos de ESTA charla
-     * (wabot_planes_paginas_corresponde). Sin eso, las modalidades ya fueron
-     * en el mensaje de arriba. */
-    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '') {
-        $links = wabot_planes_links_texto($tipo, $conv, $cfg);
-        if ($links !== '') $salida[] = $links;
-    }
-    $salida[] = wabot_tres_pasos_texto($conv, $cfg);
-    return $salida;
+    /* Los links al detalle de cada modalidad ya no van en el turno del precio
+     * (Pablo, 2-oct: "se podría evitar enviar? que se envíe si el cliente
+     * pregunta"): los manda la regla `detalle_modalidades` de postprecio.php
+     * y están en las respuestas rápidas. */
+    return [$propuesta, wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -6564,8 +6558,8 @@ function wabot_oferta_diseno_abrir(&$conv) {
  * propuesta (29-sep, Pablo: "en ese mismo mensaje volvemos a sumar lo de los
  * precios"): "Podés elegir 1 de estas 3 modalidades: 1. Mensual… 2. Anual…
  * 3. Pago único…", con los montos de ESTA charla y en cualquier canal. Los
- * links al detalle de cada una salen en el mensaje siguiente
- * (wabot_planes_links_texto). Solo decide SI corresponde ofrecerlas —los
+ * links al detalle de cada una (wabot_planes_links_texto) salen solo si el
+ * cliente los pide. Solo decide SI corresponde ofrecerlas —los
  * mismos dos montos que exigía la lista de antes— y, si pidió la web propia,
  * le suma el pago único debajo.
  */
@@ -6585,8 +6579,8 @@ function wabot_servicio_texto($tipo, $conv, $cfg) {
 }
 
 /**
- * El segundo mensaje del turno del precio (29-sep, Pablo): los links al detalle
- * de cada modalidad —qué incluye y cómo se paga—, las páginas de pago/ del tipo
+ * Los links al detalle de cada modalidad (29-sep; desde el 2-oct solo cuando el
+ * cliente los pide, regla detalle_modalidades de postprecio.php) —qué incluye y cómo se paga—, las páginas de pago/ del tipo
  * cotizado, que se cruzan con pestañas. '' si alguna no existe en el deploy o
  * cobra un monto distinto del de la charla (wabot_planes_paginas_corresponde):
  * ahí las modalidades ya fueron en el mensaje de arriba y no se manda otro

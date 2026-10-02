@@ -20,7 +20,7 @@ Una cotización previa toma la lista actual si es más baja; si conserva una ofe
 ## Control y límites
 
 - Ajustes permite activar/desactivar esta etapa. Valores por defecto: OpenAI, `gpt-6-sol`, etapa habilitada. La configuración guardada del servidor conserva las preferencias explícitas del panel.
-- Consultas conocidas: alternativas, pago estándar, servicio mensual, mantenimiento, panel/carga, hosting/dominio, titularidad estándar, plataforma, alcance, envíos aprobados, cupones, estadísticas, Google, material, identidad, demo/formulario/modelo/cambios, plazos generales y otras condiciones enumeradas en el catálogo.
+- Consultas conocidas: detalle de cada modalidad (los links a las páginas de pago/, que desde el 2-oct ya no van en el turno del precio), alternativas, pago estándar, servicio mensual, mantenimiento, panel/carga, hosting/dominio, titularidad estándar, plataforma, alcance, envíos aprobados, cupones, estadísticas, Google, material, identidad, demo/formulario/modelo/cambios, plazos generales y otras condiciones enumeradas en el catálogo.
 - Cualquier consulta sin cobertura completa, cotización especial, condición nueva, pago avisado, comprobante, reclamo, negociación, pedido de llamada o intervención humana deja `control_manual`, `bot_off`, `handoff_pendiente` y `seguimiento_bloqueado` activos. No envía un aviso al cliente.
 - Fallas de OpenAI o decisiones inválidas también derivan en silencio. No se usa una respuesta comercial improvisada de respaldo.
 - El panel muestra el motivo. Un sí posterior y el paso del tiempo no reactivan una derivación. Solo la acción manual de encender el bot lo devuelve a la atención automática. Las conversaciones antiguas apagadas conservan el silencio.
