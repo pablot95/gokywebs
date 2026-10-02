@@ -21,9 +21,9 @@
     --gv-fondo: #ebe8e2;                  /* alrededor de la web */
     --gv-pantalla: 100vh;
     --gv-encima: 47px;                     /* alto de la barra de filtros */
-    /* La web baja hasta 70px antes del final de la pantalla (la tira se
-       apoya encima) y toma el ancho que pide una pantalla de compu. */
-    --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 34px);
+    /* La web baja hasta 5px del final de la pantalla (la tira va encima)
+       y toma el ancho que pide una pantalla de compu. */
+    --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 11px);   /* 6px arriba, 5px abajo */
     --gv-ancho: min(calc(100% - 12px), calc(var(--gv-alto) * 2.4));
 }
 @supports (height: 100svh) { .gv, .gv-toolbar { --gv-pantalla: 100svh; } }
@@ -143,7 +143,7 @@
 .gv-nav:active { transform: scale(0.94); }
 .gv-rail {
     position: relative; flex: 1; min-width: 0;
-    display: flex; align-items: flex-end; gap: clamp(18px, 2vw, 30px); padding: 26px 14px 4px;
+    display: flex; align-items: flex-end; gap: clamp(18px, 2vw, 30px); padding: 34px 14px 4px;
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     overscroll-behavior-x: contain; cursor: grab; user-select: none; -webkit-user-select: none;
 }
@@ -151,18 +151,19 @@
 .gv-rail.arrastrando .gv-thumb { pointer-events: none; }
 .gv-rail::-webkit-scrollbar { display: none; }
 .gv-thumb {
-    flex: none; width: clamp(130px, 9vw, 190px); aspect-ratio: 16 / 10;
+    flex: none; width: clamp(169px, 11.7vw, 247px); aspect-ratio: 16 / 10;
     transform-origin: 50% 100%;
-    padding: 0; border: 2px solid #fff; border-radius: 8px; overflow: hidden;
+    padding: 0; border: 0; border-radius: 4px; overflow: hidden;
     background: #ddd; cursor: pointer; -webkit-tap-highlight-color: transparent;
     box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.45);
     transition: transform 0.25s var(--gv-ease), border-color 0.2s ease, box-shadow 0.25s ease;
 }
 @media (hover: hover) {
-    .gv-thumb:hover { transform: translateY(-4px) scale(1.16); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
+    .gv-thumb:hover { transform: translateY(-8px) scale(1.16); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
 }
 .gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.gv-thumb.activo { border-color: var(--gv-gold); box-shadow: 0 0 0 2px var(--gv-gold), 0 8px 22px -8px rgba(0, 0, 0, 0.45); }
+/* La elegida se distingue porque queda levantada, sin borde de color. */
+.gv-thumb.activo { transform: translateY(-8px); box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.6); }
 .gv-visitar {
     flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px;
     border-radius: 999px; background: #1a1816; color: #fff; text-decoration: none;
@@ -184,7 +185,7 @@
 
 /* ── Celular ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
-    .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 12px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 40px); }
+    .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 12px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 11px); }
     .gv-stage { margin-top: 6px; border-radius: 8px; }
     .gv-toolbar { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
     .gv-toolbar::-webkit-scrollbar { display: none; }
@@ -195,8 +196,8 @@
     .gv-search:focus-within, .gv-search.lleno { width: 170px; }
     .gv-strip { padding: 0 10px 10px; gap: 8px; }
     .gv-nav { display: none; }
-    .gv-rail { gap: 14px; padding: 10px 10px 4px; }
-    .gv-thumb { width: 112px; }
+    .gv-rail { gap: 14px; padding: 14px 10px 4px; }
+    .gv-thumb { width: 146px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
