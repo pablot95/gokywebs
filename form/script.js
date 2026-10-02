@@ -88,8 +88,13 @@ const btnEnviar = document.getElementById('btnEnviar');
 const mfFiltro = { tipo: 'all', rubro: 'all' };
 const FLECHA = '<svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 const mfQuieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// En el celular arranca mostrando la versión celular del modelo.
+// En el celular se ve siempre la versión celular del modelo (el botón
+// Computadora/Celular se oculta); si se agranda la ventana, vuelve a elegirse.
+const mfCelular = window.matchMedia('(max-width: 640px)');
 const mfVer = { id: '', vista: window.matchMedia('(max-width: 700px)').matches ? 'celular' : 'pc' };
+mfCelular.addEventListener?.('change', () => {
+    if (mfCelular.matches && mfVer.vista !== 'celular') { mfVer.vista = 'celular'; pintarEscena(); }
+});
 
 /* El botón de la barra dice cuántos faltan ("Elegí 1 más") y pasa a Enviar
  * con los 2 elegidos (24-sep, como el diseño que mandó Pablo). */
@@ -109,8 +114,9 @@ function pintarElegidos(mensaje) {
     mfAviso.classList.remove('error');
     mfAviso.textContent = mensaje || '';
     // Solo si cambió: reescribir el mismo texto lo vuelve a leer el lector de pantalla.
+    // En el celular se ve solo "0 de 2": la palabra se oculta por CSS.
     const cuenta = `${n} de ${MODELOS_A_ELEGIR} seleccionados`;
-    if (mfContador.textContent !== cuenta) mfContador.textContent = cuenta;
+    if (mfContador.textContent !== cuenta) mfContador.innerHTML = `${n} de ${MODELOS_A_ELEGIR}<span class="mf-cont-txt"> seleccionados</span>`;
     mfContador.classList.toggle('completo', n === MODELOS_A_ELEGIR);
     // Mientras se envía, el botón dice "Enviando…".
     if (!btnEnviar.disabled) pintarBotonEnviar();
