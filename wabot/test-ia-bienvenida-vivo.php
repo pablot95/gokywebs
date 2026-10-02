@@ -44,6 +44,11 @@ $casos = [
     ['otra cosa', 'responder', null],
     ['la última', 'responder', null],
     ['algo diferente, soy martillero y quiero publicar mis propiedades', 'cotizar', ['inmobiliaria']],
+    // 2-oct (Pablo): "si VENDE, se asume tienda", sin preguntar vender o mostrar.
+    ['Vendo ropa', 'cotizar', ['tienda_online']],
+    ['tengo una ferretería', 'cotizar', ['tienda_online']],
+    ['vendo cosmética natural', 'cotizar', ['tienda_online']],
+    ['Vendo suplementos, solo quiero mostrarlos y que me escriban, sin vender por la web', 'cotizar', ['catalogo_sin_venta']],
 ];
 
 $ok = 0; $costo = 0.0;
