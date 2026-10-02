@@ -2,9 +2,9 @@
    portfolio/visor.css — visor del portfolio (/portfolio/ y el inicio).
    Todo cuelga de .gv para no chocar con los estilos de cada página.
 
-   La web elegida ocupa toda la pantalla (100vh) y se recorre con scroll,
-   sin velo ni textos encima. Los filtros flotan arriba y las miniaturas
-   (solo la imagen) flotan abajo, en dos cápsulas oscuras chicas.
+   Arriba los filtros (pegados al borde), abajo de ellos la web elegida en
+   un recuadro del 80% de ancho y alto —entera, sin nada encima, se recorre
+   con scroll— y debajo la tira de miniaturas a todo el ancho, sin fondo.
    ============================================================ */
 .gv, .gv-toolbar {
     --gv-bg: #0b0a09;
@@ -14,15 +14,17 @@
     --gv-line: rgba(255, 255, 255, 0.14);
     --gv-line-2: rgba(255, 255, 255, 0.3);
     --gv-gold: #e5b46e;
-    --gv-glass: rgba(14, 13, 11, 0.78);
     --gv-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --gv-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --gv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --gv-alto: 100vh;
-    --gv-arriba: 14px;     /* dónde flotan los filtros (la home lo baja por su header) */
+    --gv-alto: 80vh;
+    --gv-ancho: 80vw;
 }
-@supports (height: 100svh) { .gv { --gv-alto: 100svh; } }
-.gv { position: relative; color: var(--gv-text); font-family: var(--gv-sans); background: var(--gv-bg); }
+@supports (height: 100svh) { .gv { --gv-alto: 80svh; } }
+.gv {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    color: var(--gv-text); font-family: var(--gv-sans); background: var(--gv-bg);
+}
 .gv *, .gv-toolbar * { box-sizing: border-box; }
 .gv-oculto {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -31,7 +33,10 @@
 .gv svg, .gv-toolbar svg { width: 16px; height: 16px; flex: none; }
 
 /* ── La web ──────────────────────────────────────────────── */
-.gv-stage { position: relative; height: var(--gv-alto); min-height: 420px; overflow: hidden; background: #141210; }
+.gv-stage {
+    position: relative; width: var(--gv-ancho); height: var(--gv-alto); min-height: 380px; margin-top: 10px;
+    overflow: hidden; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #141210;
+}
 .gv-stage[hidden] { display: none; }
 .gv-view {
     position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
@@ -50,13 +55,10 @@
 
 /* ── Filtros ─────────────────────────────────────────────── */
 .gv-toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; font-family: var(--gv-sans); }
-/* En la home los filtros van dentro del visor, flotando arriba de la web. */
+/* En la home los filtros van dentro del visor, en una barra pegada arriba. */
 .gv--con-filtros > .gv-toolbar {
-    position: absolute; z-index: 5; top: var(--gv-arriba); left: 50%; transform: translateX(-50%);
-    max-width: calc(100% - 28px); padding: 6px; border-radius: 999px;
-    background: var(--gv-glass); border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+    align-self: stretch; padding: 8px 14px;
+    background: #0e0d0b; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .gv-chips { display: flex; flex-wrap: nowrap; gap: 4px; }
 .gv-chip {
@@ -114,32 +116,28 @@
     outline: 2px solid var(--gv-gold); outline-offset: 2px;
 }
 
-/* ── Miniaturas, flotando abajo ──────────────────────────── */
+/* ── Miniaturas, a todo el ancho y sin fondo ─────────────── */
 .gv-strip {
-    position: absolute; z-index: 5; left: 50%; bottom: 14px; transform: translateX(-50%);
-    width: max-content; max-width: calc(100% - 28px);
-    display: flex; align-items: center; gap: 8px; padding: 7px;
-    border-radius: 14px; background: var(--gv-glass); border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 14px 40px -14px rgba(0, 0, 0, 0.6);
+    align-self: stretch; display: flex; align-items: center; gap: 12px;
+    padding: 10px clamp(12px, 2vw, 28px) 12px;
 }
 .gv-strip[hidden] { display: none; }
 .gv-nav {
-    flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+    flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
     border: 1px solid var(--gv-line-2); background: transparent; color: var(--gv-text); cursor: pointer;
     transition: background 0.2s ease, transform 0.15s ease;
 }
 .gv-nav:hover { background: rgba(255, 255, 255, 0.12); }
 .gv-nav:active { transform: scale(0.94); }
 .gv-rail {
-    position: relative; flex: 1; min-width: 0; max-width: min(1080px, calc(100vw - 260px));
-    display: flex; gap: 6px; padding: 2px;
+    position: relative; flex: 1; min-width: 0;
+    display: flex; gap: 10px; padding: 3px;
     overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none;
     overscroll-behavior-x: contain;
 }
 .gv-rail::-webkit-scrollbar { display: none; }
 .gv-thumb {
-    flex: none; width: 104px; aspect-ratio: 16 / 10; scroll-snap-align: center;
+    flex: none; width: clamp(130px, 9vw, 190px); aspect-ratio: 16 / 10; scroll-snap-align: center;
     padding: 0; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px; overflow: hidden;
     background: #1a1816; cursor: pointer; -webkit-tap-highlight-color: transparent;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -149,14 +147,14 @@
 .gv-thumb.activo { border-color: var(--gv-gold); box-shadow: 0 0 0 1px var(--gv-gold); }
 .gv-thumb.activo img { opacity: 1; }
 .gv-visitar {
-    flex: none; display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 13px;
+    flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px;
     border-radius: 999px; background: #fff; color: #111; text-decoration: none;
-    font: 600 0.74rem/1 var(--gv-sans); white-space: nowrap;
+    font: 600 0.82rem/1 var(--gv-sans); white-space: nowrap;
 }
 .gv-visitar svg { width: 13px; height: 13px; }
 
 /* ── Sin resultados ──────────────────────────────────────── */
-.gv-vacio { padding: 120px 20px 80px; text-align: center; color: var(--gv-soft); }
+.gv-vacio { padding: 80px 20px; text-align: center; color: var(--gv-soft); }
 .gv-vacio[hidden] { display: none; }
 .gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--gv-text); }
 .gv-vacio p { margin: 0 0 22px; }
@@ -168,20 +166,18 @@
 
 /* ── Celular ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
-    .gv--con-filtros > .gv-toolbar {
-        left: 10px; right: 10px; transform: none; max-width: none; border-radius: 14px;
-    }
+    .gv { --gv-ancho: calc(100vw - 20px); --gv-alto: 66svh; }
+    .gv-stage { margin-top: 10px; border-radius: 8px; }
     .gv-toolbar { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
     .gv-toolbar::-webkit-scrollbar { display: none; }
+    .gv--con-filtros > .gv-toolbar { padding: 8px 10px; }
     /* Dentro de una fila que scrollea, el buscador se abre en el lugar. */
     .gv-search-wrap { width: auto; }
     .gv-search { position: relative; }
     .gv-search:focus-within, .gv-search.lleno { width: 170px; }
-    .gv-strip { left: 10px; right: 10px; bottom: 10px; transform: none; width: auto; max-width: none; padding: 6px; gap: 6px; }
+    .gv-strip { padding: 12px 10px 14px; gap: 8px; }
     .gv-nav { display: none; }
-    .gv-rail { max-width: none; }
-    .gv-thumb { width: 72px; }
-    .gv-visitar { padding: 0 11px; }
+    .gv-thumb { width: 112px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

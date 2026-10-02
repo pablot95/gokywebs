@@ -18,15 +18,11 @@ a { color: inherit; }
 }
 .skip-link:focus { top: 12px; }
 
-/* ── Encabezado: una cápsula oscura que flota sobre la web ── */
-.pv-shell { position: relative; }
+/* ── Encabezado: barra pegada arriba, sin margen; la web va debajo ── */
 .pv-header {
-    position: absolute; z-index: 10; top: 12px; left: 12px; right: 12px;
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 18px;
-    padding: 6px 6px 6px 18px; border-radius: 999px;
-    background: rgba(14, 13, 11, 0.78); border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+    padding: 8px 14px 8px 20px;
+    background: #0e0d0b; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .pv-brand { display: inline-flex; align-items: baseline; gap: 9px; text-decoration: none; white-space: nowrap; }
 .pv-brand-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; letter-spacing: -0.01em; color: #f5f1e8; }
@@ -49,11 +45,11 @@ a { color: inherit; }
 
 /* Si los filtros no entran en una fila con la marca y el botón, bajan. */
 @media (max-width: 1080px) {
-    .pv-header { grid-template-columns: auto auto; border-radius: 18px; padding: 8px 8px 8px 16px; }
+    .pv-header { grid-template-columns: auto auto; padding: 8px 10px 8px 16px; }
     .pv-toolbar { grid-column: 1 / -1; grid-row: 2; }
     .pv-toolbar .gv-toolbar { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
 }
 @media (max-width: 760px) {
-    .pv-header { top: 10px; left: 10px; right: 10px; padding: 8px 8px 8px 14px; gap: 6px; }
+    .pv-header { padding: 8px 10px 8px 14px; gap: 6px; }
     .pv-brand-name { font-size: 1.05rem; }
 }
