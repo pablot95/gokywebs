@@ -353,6 +353,9 @@ function erroresResumen() {
     const { docs, resueltos, ocultos, pings } = erroresDatos;
     const porWeb = new Map();
     const sinDominio = [];
+    // Esta misma web (1-oct): no es de un cliente pero se monitorea igual, y figura desde el
+    // primer día aunque todavía nadie la haya abierto. Sus páginas llevan la misma línea de err.js.
+    porWeb.set("gokywebs.com", { id: "gokywebs.com", nombre: "Gokywebs", persona: "", tieneEmpresa: true, dominio: "gokywebs.com", esCliente: false, propia: true, senal: null, grupos: new Map() });
     for (const c of [...clients, ...completados, ...mantenimiento]) {
         const { nombre, persona, tieneEmpresa } = erroresNombreCliente(c);
         const dom = erroresDominio(c.dominio || c.web || c.url);
@@ -457,7 +460,9 @@ function erroresHtmlWeb(w) {
             (g.url ? " · " + escapeHtml(g.url) : "") + (g.pend === 0 ? " · resuelto" : "") +
           '</div></li>'
     )).join("");
-    const vacio = sinSenal
+    const vacio = sinSenal && w.propia
+        ? '<p class="muted">Todavía nadie abrió las páginas de gokywebs.com con el monitoreo puesto (inicio, formulario, presupuestos, pagos y planes). Aparece apenas entre alguien.</p>'
+        : sinSenal
         ? '<p class="muted">Esta web todavía no avisó nunca. Pegá <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code> en su &lt;head&gt; y entrá una vez a la web; los sitios de prueba (vercel.app, localhost) no cuentan, tiene que estar en su dominio.</p>'
         : '<p class="muted">Ningún error registrado en ' + escapeHtml(erroresMesNombre(erroresMes)) + '.</p>';
     const copiarOff = w.altosPend > 0 || sinSenal;
@@ -473,7 +478,7 @@ function erroresHtmlWeb(w) {
         '<div class="err-acciones">' +
           (w.oculto ? '<button type="button" class="btn-ghost" data-err-mostrar>Volver a mostrar</button>' : "") +
           (!w.oculto && w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
-          (!w.oculto ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
+          (!w.oculto && !w.propia ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
           (!w.oculto ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista">Ocultar</button>' : "") +
         '</div>' +
       '</div>' +
