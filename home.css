@@ -270,8 +270,8 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Portfolio: plano y tipográfico (a lo Trionn) ---------- */
 .portfolio { background: var(--bg-alt); }
-/* El visor (portfolio/visor.css) va de borde a borde y ocupa una pantalla entera. */
-.portfolio .gv--seccion { margin-top: clamp(8px, 1.5vw, 16px); }
+/* El visor (portfolio/visor.css) va de borde a borde y ocupa justo una pantalla. */
+.portfolio .gv--seccion { margin-top: clamp(8px, 1.5vw, 16px); height: 100vh; height: 100svh; }
 .pf-todos { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: clamp(28px, 4vw, 44px); }
 
 /* ---------- Proceso ---------- */

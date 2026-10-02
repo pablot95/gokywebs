@@ -18,6 +18,12 @@ a { color: inherit; }
 }
 .skip-link:focus { top: 12px; }
 
+/* ── Todo en una pantalla: la página no scrollea, solo la web de adentro ── */
+html, body { height: 100%; overflow: hidden; }
+.pv-shell { display: flex; flex-direction: column; height: 100vh; height: 100svh; }
+.pv-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.gv--pagina { flex: 1; min-height: 0; }
+
 /* ── Encabezado: barra pegada arriba, sin margen; la web va debajo ── */
 .pv-header {
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 18px;
@@ -39,17 +45,16 @@ a { color: inherit; }
 
 .pv-noscript { padding: 120px 20px 60px; text-align: center; color: #d9d3c8; }
 
-.pv-footer { padding: 22px 20px 28px; text-align: center; font-size: 0.8rem; color: #9e988e; }
-.pv-footer a { color: #d9d3c8; text-decoration: none; }
-.pv-footer a:hover { color: #fff; }
 
 /* Si los filtros no entran en una fila con la marca y el botón, bajan. */
 @media (max-width: 1080px) {
     .pv-header { grid-template-columns: auto auto; padding: 8px 10px 8px 16px; }
     .pv-toolbar { grid-column: 1 / -1; grid-row: 2; }
+    .gv--pagina { --gv-encima: 92px; }
     .pv-toolbar .gv-toolbar { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
 }
 @media (max-width: 760px) {
     .pv-header { padding: 8px 10px 8px 14px; gap: 6px; }
+    .gv--pagina { --gv-encima: 84px; }
     .pv-brand-name { font-size: 1.05rem; }
 }

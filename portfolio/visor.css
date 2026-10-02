@@ -2,9 +2,10 @@
    portfolio/visor.css — visor del portfolio (/portfolio/ y el inicio).
    Todo cuelga de .gv para no chocar con los estilos de cada página.
 
-   Arriba los filtros (pegados al borde), abajo de ellos la web elegida en
-   un recuadro del 80% de ancho y alto —entera, sin nada encima, se recorre
-   con scroll— y debajo la tira de miniaturas a todo el ancho, sin fondo.
+   Todo entra en una pantalla, sin scroll de página: arriba los filtros
+   (pegados al borde), debajo la web elegida en un recuadro grande sobre un
+   fondo claro —se recorre con scroll adentro— y la tira de miniaturas a todo
+   el ancho, sin fondo, apoyada sobre el borde de abajo de la web.
    ============================================================ */
 .gv, .gv-toolbar {
     --gv-bg: #0b0a09;
@@ -17,13 +18,18 @@
     --gv-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --gv-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --gv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --gv-alto: 80vh;
-    --gv-ancho: 80vw;
+    --gv-fondo: #ebe8e2;                  /* alrededor de la web */
+    --gv-pantalla: 100vh;
+    --gv-encima: 47px;                     /* alto de la barra de filtros */
+    /* La web baja hasta 70px antes del final de la pantalla (la tira se
+       apoya encima) y toma el ancho que pide una pantalla de compu. */
+    --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 80px);
+    --gv-ancho: min(94vw, calc(var(--gv-alto) * 1.8));
 }
-@supports (height: 100svh) { .gv { --gv-alto: 80svh; } }
+@supports (height: 100svh) { .gv, .gv-toolbar { --gv-pantalla: 100svh; } }
 .gv {
-    position: relative; display: flex; flex-direction: column; align-items: center;
-    color: var(--gv-text); font-family: var(--gv-sans); background: var(--gv-bg);
+    position: relative; display: flex; flex-direction: column; align-items: center; overflow: hidden;
+    color: var(--gv-text); font-family: var(--gv-sans); background: var(--gv-fondo);
 }
 .gv *, .gv-toolbar * { box-sizing: border-box; }
 .gv-oculto {
@@ -34,8 +40,9 @@
 
 /* ── La web ──────────────────────────────────────────────── */
 .gv-stage {
-    position: relative; width: var(--gv-ancho); height: var(--gv-alto); min-height: 380px; margin-top: 10px;
-    overflow: hidden; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #141210;
+    position: relative; flex: none; width: var(--gv-ancho); height: var(--gv-alto); min-height: 320px; margin-top: 10px;
+    overflow: hidden; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08); background: #fff;
+    box-shadow: 0 18px 50px -24px rgba(40, 32, 20, 0.35);
 }
 .gv-stage[hidden] { display: none; }
 .gv-view {
@@ -116,18 +123,20 @@
     outline: 2px solid var(--gv-gold); outline-offset: 2px;
 }
 
-/* ── Miniaturas, a todo el ancho y sin fondo ─────────────── */
+/* ── Miniaturas, a todo el ancho y sin fondo, sobre el borde de la web ── */
 .gv-strip {
-    align-self: stretch; display: flex; align-items: center; gap: 12px;
-    padding: 10px clamp(12px, 2vw, 28px) 12px;
+    position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 clamp(12px, 2vw, 28px) 12px;
 }
 .gv-strip[hidden] { display: none; }
 .gv-nav {
     flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
-    border: 1px solid var(--gv-line-2); background: transparent; color: var(--gv-text); cursor: pointer;
+    border: 0; background: #1a1816; color: #fff; cursor: pointer;
+    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
     transition: background 0.2s ease, transform 0.15s ease;
 }
-.gv-nav:hover { background: rgba(255, 255, 255, 0.12); }
+.gv-nav:hover { background: #000; }
 .gv-nav:active { transform: scale(0.94); }
 .gv-rail {
     position: relative; flex: 1; min-width: 0;
@@ -138,35 +147,35 @@
 .gv-rail::-webkit-scrollbar { display: none; }
 .gv-thumb {
     flex: none; width: clamp(130px, 9vw, 190px); aspect-ratio: 16 / 10; scroll-snap-align: center;
-    padding: 0; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px; overflow: hidden;
-    background: #1a1816; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    padding: 0; border: 2px solid #fff; border-radius: 8px; overflow: hidden;
+    background: #ddd; cursor: pointer; -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.45);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0.65; transition: opacity 0.2s ease; }
-.gv-thumb:hover img { opacity: 1; }
-.gv-thumb.activo { border-color: var(--gv-gold); box-shadow: 0 0 0 1px var(--gv-gold); }
-.gv-thumb.activo img { opacity: 1; }
+.gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.gv-thumb.activo { border-color: var(--gv-gold); box-shadow: 0 0 0 2px var(--gv-gold), 0 8px 22px -8px rgba(0, 0, 0, 0.45); }
 .gv-visitar {
     flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px;
-    border-radius: 999px; background: #fff; color: #111; text-decoration: none;
+    border-radius: 999px; background: #1a1816; color: #fff; text-decoration: none;
     font: 600 0.82rem/1 var(--gv-sans); white-space: nowrap;
+    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
 }
 .gv-visitar svg { width: 13px; height: 13px; }
 
 /* ── Sin resultados ──────────────────────────────────────── */
-.gv-vacio { padding: 80px 20px; text-align: center; color: var(--gv-soft); }
+.gv-vacio { padding: 80px 20px; text-align: center; color: #5d574e; }
 .gv-vacio[hidden] { display: none; }
-.gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--gv-text); }
+.gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: #1a1816; }
 .gv-vacio p { margin: 0 0 22px; }
 .gv-btn {
     display: inline-flex; align-items: center; height: 44px; padding: 0 22px; border-radius: 999px;
-    border: 1px solid var(--gv-line-2); background: transparent; color: var(--gv-text);
+    border: 0; background: #1a1816; color: #fff;
     font: 600 0.88rem/1 var(--gv-sans); cursor: pointer;
 }
 
 /* ── Celular ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
-    .gv { --gv-ancho: calc(100vw - 20px); --gv-alto: 66svh; }
+    .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 20px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 76px); }
     .gv-stage { margin-top: 10px; border-radius: 8px; }
     .gv-toolbar { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
     .gv-toolbar::-webkit-scrollbar { display: none; }
@@ -175,7 +184,7 @@
     .gv-search-wrap { width: auto; }
     .gv-search { position: relative; }
     .gv-search:focus-within, .gv-search.lleno { width: 170px; }
-    .gv-strip { padding: 12px 10px 14px; gap: 8px; }
+    .gv-strip { padding: 0 10px 10px; gap: 8px; }
     .gv-nav { display: none; }
     .gv-thumb { width: 112px; }
 }
