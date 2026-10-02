@@ -270,11 +270,8 @@ img { max-width: 100%; display: block; }
 
 /* ---------- Portfolio: plano y tipográfico (a lo Trionn) ---------- */
 .portfolio { background: var(--bg-alt); }
-/* El visor (portfolio/visor.css) va de borde a borde: filtros + la web
-   elegida a pantalla completa + miniaturas ocupan justo una pantalla. */
-.portfolio .gv--seccion { --gv-alto: max(460px, calc(100svh - 64px - 296px)); margin-top: clamp(8px, 1.5vw, 16px); border-block: 1px solid var(--line); }
-.gv--seccion > .gv-toolbar { padding: 14px 16px; background: #0b0a09; border-bottom: 1px solid rgba(255,255,255,0.07); }
-.gv--seccion .gv-title { font-size: clamp(2.3rem, 4.4vw, 4.8rem); }
+/* El visor (portfolio/visor.css) va de borde a borde y ocupa una pantalla entera. */
+.portfolio .gv--seccion { margin-top: clamp(8px, 1.5vw, 16px); }
 .pf-todos { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: clamp(28px, 4vw, 44px); }
 
 /* ---------- Proceso ---------- */

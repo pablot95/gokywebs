@@ -18,69 +18,42 @@ a { color: inherit; }
 }
 .skip-link:focus { top: 12px; }
 
-/* ── Encabezado ── */
+/* ── Encabezado: una cápsula oscura que flota sobre la web ── */
+.pv-shell { position: relative; }
 .pv-header {
-    position: relative; z-index: 5;
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px 28px;
-    min-height: 86px; padding: 14px clamp(16px, 3vw, 48px);
-    background: linear-gradient(180deg, rgba(11, 10, 9, 0.98), rgba(11, 10, 9, 0.88));
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: absolute; z-index: 10; top: 12px; left: 12px; right: 12px;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 18px;
+    padding: 6px 6px 6px 18px; border-radius: 999px;
+    background: rgba(14, 13, 11, 0.78); border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
 }
-.pv-brand { display: inline-flex; align-items: baseline; gap: 14px; text-decoration: none; white-space: nowrap; }
-.pv-brand-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.7rem; letter-spacing: -0.01em; color: #f5f1e8; }
-.pv-brand-sub { font-size: 1.05rem; color: #9e988e; }
-.pv-brand:focus-visible, .pv-hablemos:focus-visible { outline: 2px solid #e5b46e; outline-offset: 4px; border-radius: 6px; }
+.pv-brand { display: inline-flex; align-items: baseline; gap: 9px; text-decoration: none; white-space: nowrap; }
+.pv-brand-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; letter-spacing: -0.01em; color: #f5f1e8; }
+.pv-brand-sub { font-size: 0.8rem; color: #9e988e; }
+.pv-brand:focus-visible, .pv-hablemos:focus-visible { outline: 2px solid #e5b46e; outline-offset: 3px; border-radius: 6px; }
 
 .pv-toolbar { min-width: 0; }
-.pv-end { display: flex; align-items: center; gap: 18px; justify-self: end; }
-.pv-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #d9d3c8; white-space: nowrap; }
-.pv-tag i { width: 6px; height: 6px; border-radius: 50%; background: #e5b46e; }
+.pv-end { display: flex; align-items: center; justify-self: end; }
 .pv-hablemos {
-    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px; border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.45); text-decoration: none; font-weight: 600; font-size: 0.85rem; white-space: nowrap;
-    transition: background 0.25s ease, color 0.25s ease;
+    display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 14px; border-radius: 999px;
+    background: #fff; color: #111; text-decoration: none; font-weight: 600; font-size: 0.74rem; white-space: nowrap;
 }
-.pv-hablemos svg { width: 16px; height: 16px; }
-.pv-hablemos:hover { background: #fff; color: #111; }
+.pv-hablemos svg { width: 13px; height: 13px; }
 
-/* ── Visor a pantalla completa ──
-   Encabezado + escenario + tira ocupan justo la pantalla: el escenario se
-   queda con lo que sobra, sea cual sea el alto del encabezado. */
-@media (min-width: 961px) {
-    .pv-shell { position: relative; display: flex; flex-direction: column; height: 100svh; min-height: 620px; }
-    .pv-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .gv--pagina { flex: 1; min-height: 0; display: flex; flex-direction: column; --gv-arriba: 86px; }
-    .gv--pagina .gv-stage { flex: 1; height: auto; min-height: 0; }
-    /* El encabezado flota sobre la captura, como en el diseño: la web
-       elegida llega hasta arriba de todo. */
-    .pv-header {
-        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-        background: linear-gradient(180deg, rgba(10, 9, 8, 0.82) 0%, rgba(10, 9, 8, 0.5) 60%, rgba(10, 9, 8, 0) 100%);
-        border-bottom: 0;
-    }
-}
+.pv-noscript { padding: 120px 20px 60px; text-align: center; color: #d9d3c8; }
 
-.pv-noscript { padding: 60px 20px; text-align: center; color: #d9d3c8; }
-
-.pv-footer { padding: 26px 20px 34px; text-align: center; font-size: 0.82rem; color: #9e988e; }
+.pv-footer { padding: 22px 20px 28px; text-align: center; font-size: 0.8rem; color: #9e988e; }
 .pv-footer a { color: #d9d3c8; text-decoration: none; }
 .pv-footer a:hover { color: #fff; }
 
-/* Los filtros no entran en una fila con la marca y el botón: bajan a la segunda. */
-.pv-toolbar .gv-toolbar { flex-wrap: nowrap; gap: 8px; }
-.pv-toolbar .gv-chips { flex-wrap: nowrap; }
-@media (max-width: 1660px) {
-    .pv-tag { display: none; }
-}
-@media (max-width: 1400px) {
-    .pv-header { grid-template-columns: auto auto; }
+/* Si los filtros no entran en una fila con la marca y el botón, bajan. */
+@media (max-width: 1080px) {
+    .pv-header { grid-template-columns: auto auto; border-radius: 18px; padding: 8px 8px 8px 16px; }
     .pv-toolbar { grid-column: 1 / -1; grid-row: 2; }
-    .gv--pagina { --gv-arriba: 132px; }
+    .pv-toolbar .gv-toolbar { justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
 }
-@media (max-width: 960px) {
-    .pv-toolbar .gv-toolbar { flex-wrap: wrap; }
-    .pv-header { padding: 12px 16px 14px; gap: 12px; min-height: 0; }
-    .pv-brand-name { font-size: 1.4rem; }
-    .pv-brand-sub { font-size: 0.95rem; }
-    .pv-hablemos { height: 38px; padding: 0 16px; font-size: 0.85rem; }
+@media (max-width: 760px) {
+    .pv-header { top: 10px; left: 10px; right: 10px; padding: 8px 8px 8px 14px; gap: 6px; }
+    .pv-brand-name { font-size: 1.05rem; }
 }

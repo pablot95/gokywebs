@@ -1,16 +1,14 @@
 /* ============================================================
    portfolio/visor.js — visor del portfolio.
 
-   Lo usan la página /portfolio/ y la sección Portfolio del inicio:
-   arriba los filtros, en el medio la captura del trabajo elegido en
-   grande (se recorre con scroll adentro del marco) y abajo la tira de
-   miniaturas para cambiar de trabajo.
+   Lo usan la página /portfolio/ y la sección Portfolio del inicio: la
+   web elegida ocupa toda la pantalla (se recorre con scroll), sin nada
+   encima; los filtros flotan arriba y la tira de miniaturas abajo.
 
    Se monta en el primer [data-visor] de la página:
      data-base="/portfolio/"   carpeta donde están previews/ y previews/mini/
      data-url                  lee y escribe los filtros en la URL (solo /portfolio/)
      data-toolbar="#selector"  dónde van los filtros (si no, arriba del visor)
-     data-nivel="3"            nivel del título del trabajo (h2 por defecto)
 
    Deep-links (los usa el bot de WhatsApp y las campañas):
      /portfolio/?tipo=ecommerce
@@ -22,8 +20,9 @@
    ("tiendas", "cursos", "propiedades") para que ningún link caiga mal.
 
    Datos: GW_TRABAJOS / GW_TIPOS / GW_RUBROS de portfolio/data.js.
-   Miniaturas: previews/mini/<id>.webp (560×350, la parte de arriba de
-   la captura). Si falta la mini, la tira usa la captura entera.
+   Capturas: previews/hd/<id>.webp (1920 px, compu; capturar-hd.py),
+   previews/<id>.webp (960 px, celular y respaldo) y previews/mini/<id>.webp
+   (560×350, la tira; hacer-minis.py). Si falta una, se usa la siguiente.
    ============================================================ */
 (function () {
     'use strict';
@@ -33,8 +32,6 @@
 
     var BASE = root.getAttribute('data-base') || '/portfolio/';
     var SYNC = root.hasAttribute('data-url');
-    var NIVEL = root.getAttribute('data-nivel') === '3' ? 'h3' : 'h2';
-    var WA = '5491140688675';
     var quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var tipos = typeof GW_TIPOS !== 'undefined' ? GW_TIPOS : [];
@@ -45,16 +42,6 @@
 
     /* En los chips "Plataforma de cursos" ocupa el doble que el resto. */
     var CHIP_TIPO = { elearning: 'Cursos online' };
-
-    /* Lo que se dice de cada trabajo sale del tipo de web, no del cliente:
-       no prometer nada que esa web en particular no tenga. */
-    var RASGO_TIPO = {
-        ecommerce:    ['Tienda online', 'con catálogo de productos'],
-        landing:      ['Sitio profesional', 'pensado para consultas'],
-        inmobiliaria: ['Inmobiliaria', 'con listado de propiedades'],
-        elearning:    ['Plataforma', 'de cursos online'],
-        noticias:     ['Portal', 'de noticias']
-    };
 
     /* ── Alias de deep-link ── */
     var ALIAS_TIPO = {
@@ -98,7 +85,7 @@
         return String(s || '')
             .toLowerCase()
             .normalize('NFD')
-            .replace(/[̀-ͯ]/g, '')
+            .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9ñ ]+/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
@@ -111,13 +98,16 @@
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
-    function dos(n) { return n < 10 ? '0' + n : String(n); }
     function tieneClave(tabla, clave) {
         /* hasOwnProperty: si no, un ?tipo=constructor devuelve algo truthy del
            prototipo y el filtro queda comparando contra una función. */
         return Object.prototype.hasOwnProperty.call(tabla, clave);
     }
+    /* En la compu la captura va a pantalla completa: se usa la de 1920 px
+       (previews/hd/). En el celular alcanza la de 960 y pesa mucho menos. */
+    var grande = window.matchMedia('(min-width: 961px)');
     function srcCaptura(t) { return BASE + 'previews/' + t.id + '.webp'; }
+    function srcPantalla(t) { return grande.matches ? BASE + 'previews/hd/' + t.id + '.webp' : srcCaptura(t); }
     function srcMini(t) { return BASE + 'previews/mini/' + t.id + '.webp'; }
 
     /* Una web puede ser de dos tipos a la vez (Kare vende productos y además
@@ -141,10 +131,6 @@
         return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
     }
     var ICO = {
-        tipo: ico('<path d="M4 7h16l-1.2 12.1a2 2 0 0 1-2 1.9H7.2a2 2 0 0 1-2-1.9L4 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>'),
-        celu: ico('<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/>'),
-        web: ico('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'),
-        flecha: ico('<path d="M5 12h14M13 6l6 6-6 6"/>'),
         afuera: ico('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
         izq: ico('<path d="M15 6l-6 6 6 6"/>'),
         der: ico('<path d="M9 6l6 6-6 6"/>'),
@@ -174,58 +160,44 @@
             '</div>' +
         '</div>';
 
+    /* La web elegida ocupa toda la pantalla y no lleva nada encima: los
+       filtros flotan arriba y las miniaturas abajo, chicas y sin textos. */
     root.innerHTML =
         '<div class="gv-stage">' +
-            '<div class="gv-ambient" aria-hidden="true"><img alt="" decoding="async"></div>' +
-            '<div class="gv-info" aria-live="polite"></div>' +
-            '<figure class="gv-screen">' +
-                '<div class="gv-bar">' +
-                    '<span class="gv-dots" aria-hidden="true"><i></i><i></i><i></i></span>' +
-                    '<a class="gv-url" target="_blank" rel="noopener noreferrer"></a>' +
-                    '<span class="gv-progreso" aria-hidden="true"><i></i></span>' +
-                '</div>' +
-                '<div class="gv-view" tabindex="0" data-lenis-prevent>' +
-                    '<img class="gv-shot" alt="" decoding="async">' +
-                '</div>' +
-                '<span class="gv-hint" aria-hidden="true">' +
-                    (window.matchMedia('(pointer: coarse)').matches ? 'Deslizá para recorrer la web' : 'Scrolleá para recorrer la web') + ' ↓</span>' +
-            '</figure>' +
-            /* En compu la captura ocupa todo el escenario y el texto va encima:
-               el velo oscurece la izquierda y abajo para que se lea. */
-            '<div class="gv-scrim" aria-hidden="true"></div>' +
-            '<ol class="gv-index" aria-label="Ir al trabajo"></ol>' +
-            '<a class="gv-card" target="_blank" rel="noopener noreferrer"></a>' +
+            '<div class="gv-view" tabindex="0" data-lenis-prevent>' +
+                '<img class="gv-shot" alt="" decoding="async">' +
+            '</div>' +
+            '<span class="gv-progreso" aria-hidden="true"><i></i></span>' +
+            '<p class="gv-oculto" aria-live="polite"></p>' +
         '</div>' +
         '<div class="gv-vacio" hidden>' +
             '<p class="gv-vacio-t">No encontramos trabajos con eso.</p>' +
             '<p>Probá con el rubro (“estética”, “abogado”, “muebles”) o mirá todos los trabajos.</p>' +
-            '<button class="gv-btn gv-btn-ghost" type="button" data-gv-reset>Ver todos los trabajos</button>' +
+            '<button class="gv-btn" type="button" data-gv-reset>Ver todos los trabajos</button>' +
         '</div>' +
         '<div class="gv-strip">' +
             '<button class="gv-nav gv-prev" type="button" aria-label="Trabajo anterior">' + ICO.izq + '</button>' +
             '<div class="gv-rail" role="list" aria-label="Trabajos"></div>' +
             '<button class="gv-nav gv-next" type="button" aria-label="Trabajo siguiente">' + ICO.der + '</button>' +
+            '<a class="gv-visitar" target="_blank" rel="noopener noreferrer">Visitar sitio ' + ICO.afuera + '</a>' +
         '</div>';
 
     var slot = root.getAttribute('data-toolbar') && document.querySelector(root.getAttribute('data-toolbar'));
     if (slot) slot.innerHTML = toolbarHTML;
     else root.insertAdjacentHTML('afterbegin', toolbarHTML);
+    if (!slot) root.classList.add('gv--con-filtros');
     var $tb = slot || root;
 
     var $chips = $tb.querySelector('.gv-chips');
     var $rubro = $tb.querySelector('.gv-rubro');
     var $q = $tb.querySelector('.gv-q');
     var $stage = root.querySelector('.gv-stage');
-    var $ambient = root.querySelector('.gv-ambient img');
-    var $info = root.querySelector('.gv-info');
-    var $url = root.querySelector('.gv-url');
+    var $info = root.querySelector('.gv-stage [aria-live]');
     var $view = root.querySelector('.gv-view');
     var $shot = root.querySelector('.gv-shot');
-    var $hint = root.querySelector('.gv-hint');
     var $prog = root.querySelector('.gv-progreso i');
     var $vacio = root.querySelector('.gv-vacio');
-    var $index = root.querySelector('.gv-index');
-    var $card = root.querySelector('.gv-card');
+    var $visitar = root.querySelector('.gv-visitar');
     var $strip = root.querySelector('.gv-strip');
     var $rail = root.querySelector('.gv-rail');
 
@@ -296,9 +268,9 @@
         b.dataset.id = t.id;
         b.setAttribute('role', 'listitem');
         b.innerHTML =
-            '<span class="gv-thumb-img"><img src="' + esc(srcMini(t)) + '" alt="" loading="lazy" decoding="async" width="560" height="350"></span>' +
-            '<span class="gv-thumb-name">' + esc(t.nombre) + '</span>' +
-            '<span class="gv-thumb-tipo">' + esc(LABEL_RUBRO[t.rubro] || CHIP_TIPO[t._tipos[0]] || LABEL_TIPO[t._tipos[0]]) + '</span>';
+            '<img src="' + esc(srcMini(t)) + '" alt="" loading="lazy" decoding="async" width="560" height="350">';
+        b.title = t.nombre;
+        b.setAttribute('aria-label', t.nombre + ' — ' + (LABEL_RUBRO[t.rubro] || t.rubro));
         var img = b.querySelector('img');
         img.addEventListener('error', function fallo() {
             img.removeEventListener('error', fallo);
@@ -329,60 +301,7 @@
     }
 
     /* ── Escenario ── */
-    function tituloHTML(nombre) {
-        /* La última palabra va en itálica dorada, como en el diseño. */
-        var partes = String(nombre).trim().split(/\s+/);
-        var ultima = partes.pop();
-        return (partes.length ? esc(partes.join(' ')) + ' ' : '') + '<em>' + esc(ultima) + '</em>';
-    }
-
-    function infoHTML(t) {
-        var pos = lista.indexOf(t) + 1;
-        var tiposTxt = t._tipos.map(function (id) { return LABEL_TIPO[id] || id; }).join(' + ');
-        var rasgo = RASGO_TIPO[t._tipos[0]] || ['Sitio web', 'a medida'];
-        var wa = 'https://wa.me/' + WA + '?text=' + encodeURIComponent(
-            'Hola! Vi la web de ' + t.nombre + ' en el portfolio y quiero una así para mi negocio.');
-        return '' +
-            '<p class="gv-eyebrow"><i aria-hidden="true"></i>' + esc(tiposTxt) +
-                ' · ' + esc(LABEL_RUBRO[t.rubro] || t.rubro) + '</p>' +
-            '<' + NIVEL + ' class="gv-title">' + tituloHTML(t.nombre) + '</' + NIVEL + '>' +
-            '<p class="gv-que">' + esc(t.que) + (t.zona ? '<span class="gv-zona"> · ' + esc(t.zona) + '</span>' : '') + '</p>' +
-            '<div class="gv-actions">' +
-                '<a class="gv-btn gv-btn-main" href="' + esc(t.url) + '" target="_blank" rel="noopener noreferrer">Visitar sitio ' + ICO.afuera + '</a>' +
-                '<a class="gv-btn gv-btn-ghost" href="' + esc(wa) + '" target="_blank" rel="noopener">Quiero una así ' + ICO.flecha + '</a>' +
-            '</div>' +
-            '<ul class="gv-feats">' +
-                '<li>' + ICO.tipo + '<span><b>' + esc(rasgo[0]) + '</b>' + esc(rasgo[1]) + '</span></li>' +
-                '<li>' + ICO.celu + '<span><b>Diseño</b>adaptado al celular</span></li>' +
-                '<li>' + ICO.web + '<span><b>Online</b>' + esc(dominio(t.url)) + '</span></li>' +
-            '</ul>' +
-            '<p class="gv-count"><b>' + dos(pos) + '</b><i aria-hidden="true"></i><span>' + dos(lista.length) + '</span>' +
-                '<span class="gv-oculto"> trabajos</span></p>';
-    }
-
-    /* Números verticales a la derecha (01 activo, los 4 que siguen), como en
-       el diseño. Con más de 5 trabajos la ventana acompaña al actual. */
-    function indiceHTML(t) {
-        var i = lista.indexOf(t);
-        var desde = Math.max(0, Math.min(i, lista.length - 5));
-        var html = '';
-        for (var k = desde; k < Math.min(lista.length, desde + 5); k++) {
-            var on = k === i;
-            html += '<li><button type="button" data-gv-ir="' + esc(lista[k].id) + '"' +
-                (on ? ' aria-current="true"' : '') + ' aria-label="' + esc(lista[k].nombre) + '">' +
-                dos(k + 1) + '</button></li>';
-        }
-        return html;
-    }
-
-    function tarjetaHTML(t) {
-        return '<span class="gv-card-txt"><span class="gv-card-eb">' + esc(LABEL_RUBRO[t.rubro] || t.rubro) + '</span>' +
-            '<span class="gv-card-name">' + esc(t.nombre) + '</span></span>' +
-            '<span class="gv-card-go" aria-hidden="true">' + ICO.flecha + '</span>';
-    }
-
     var turno = 0;
-    var hintVisto = false;
 
     function mostrar(t, opciones) {
         opciones = opciones || {};
@@ -397,43 +316,37 @@
             if (on) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current');
         });
         centrarMiniatura(!opciones.instantaneo);
-        if (mismo && !opciones.forzar) { $info.innerHTML = infoHTML(t); $index.innerHTML = indiceHTML(t); return; }
+        if (mismo && !opciones.forzar) return;
 
-        $url.href = t.url;
-        $url.textContent = dominio(t.url);
-        $view.setAttribute('aria-label', 'Captura de la web de ' + t.nombre + '. Se recorre con scroll.');
+        $view.setAttribute('aria-label', 'Web de ' + t.nombre + ' (' + dominio(t.url) + '). Se recorre con scroll.');
         $shot.alt = 'Web de ' + t.nombre + ' (' + dominio(t.url) + '), página completa';
-
-        $index.innerHTML = indiceHTML(t);
-        $card.href = t.url;
-        $card.setAttribute('aria-label', 'Visitar la web de ' + t.nombre);
-        var cambiar = function () {
-            if (mio !== turno) return;
-            $info.innerHTML = infoHTML(t);
-            $card.innerHTML = tarjetaHTML(t);
-            $info.classList.remove('saliendo');
-        };
-        if (quieto || opciones.instantaneo) cambiar();
-        else { $info.classList.add('saliendo'); setTimeout(cambiar, 180); }
+        $info.textContent = t.nombre + ': ' + t.que + (t.zona ? ', ' + t.zona : '') + '.';
+        $visitar.href = t.url;
+        $visitar.setAttribute('aria-label', 'Visitar la web de ' + t.nombre + ' (se abre en otra pestaña)');
 
         /* La captura nueva se carga aparte y entra cuando está lista: nunca se
            ve el marco vacío ni la captura vieja a mitad de scroll. */
         $stage.classList.add('cargando');
         var pre = new Image();
         pre.decoding = 'async';
-        pre.onload = pre.onerror = function () {
+        pre.onerror = function () {
+            /* Sin la versión en alta todavía: la de 960 sirve igual. */
+            if (mio !== turno) return;
+            if (pre.src.indexOf('/hd/') !== -1) { pre.src = srcCaptura(t); return; }
+            pre.onload();
+        };
+        pre.onload = function () {
             if (mio !== turno) return;
             $shot.src = pre.src;
             $view.scrollTop = 0;
             $prog.style.transform = 'scaleX(0)';
             $stage.classList.remove('cargando');
         };
-        pre.src = srcCaptura(t);
-        $ambient.src = srcMini(t);
+        pre.src = srcPantalla(t);
 
         /* Precarga la siguiente para que el "siguiente" sea instantáneo. */
         var sig = lista[(lista.indexOf(t) + 1) % lista.length];
-        if (sig && sig !== t) { var p2 = new Image(); p2.src = srcCaptura(sig); }
+        if (sig && sig !== t) { var p2 = new Image(); p2.src = srcPantalla(sig); }
 
         if (!opciones.sinURL) sincronizarURL();
     }
@@ -515,8 +428,6 @@
     root.addEventListener('click', function (e) {
         var th = e.target.closest('.gv-thumb');
         if (th) { mostrar(porId[th.dataset.id]); return; }
-        var ir = e.target.closest('[data-gv-ir]');
-        if (ir) { mostrar(porId[ir.getAttribute('data-gv-ir')]); return; }
         if (e.target.closest('.gv-prev')) { mover(-1); return; }
         if (e.target.closest('.gv-next')) { mover(1); return; }
         if (e.target.closest('[data-gv-reset]')) {
@@ -540,10 +451,6 @@
     $view.addEventListener('scroll', function () {
         var max = $view.scrollHeight - $view.clientHeight;
         $prog.style.transform = 'scaleX(' + (max > 0 ? $view.scrollTop / max : 0) + ')';
-        if (!hintVisto && $view.scrollTop > 40) {
-            hintVisto = true;
-            $hint.classList.add('oculto');
-        }
     }, { passive: true });
 
     /* ── API para routing.js (deep-links viejos del inicio: /#moda, /?p=…) ── */
