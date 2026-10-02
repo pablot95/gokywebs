@@ -9,6 +9,26 @@ document.addEventListener('keydown', e => {
   }
 });
 
+function initModelBarScroll() {
+  const bar = document.querySelector('.gw-modelos');
+  if (!bar) return;
+  let showTimer = 0;
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    if (window.scrollY <= 8) {
+      bar.classList.remove('gw-modelos--scrolling');
+      return;
+    }
+    bar.classList.add('gw-modelos--scrolling');
+    clearTimeout(showTimer);
+    showTimer = setTimeout(() => bar.classList.remove('gw-modelos--scrolling'), 120);
+  };
+  window.addEventListener('scroll', () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  }, { passive: true });
+}
+
 const WSP = '5491171044151';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -38,6 +58,15 @@ const ITEMS = [
     desc: 'Escribir un informe es de las tareas más desafiantes del trabajo clínico: cómo integrar entrevistas, pruebas y observaciones, qué es ético escribir y cómo concluir con solidez. Este taller lo enseña paso a paso, con estructuras claras, ejemplos reales y un método simple.',
     incluye: ['7 módulos: del motivo de consulta a las recomendaciones', 'Plantillas editables', 'Ejemplos reales de informes'],
     para: ['Psicólogos/as clínicos', 'Psicopedagogos/as', 'Acompañantes terapéuticos', 'Neuropsicólogos/as', 'Estudiantes avanzados'],
+    modulos: [
+      ['01', 'Motivo de consulta', 'Cómo presentarlo con claridad.'],
+      ['02', 'Observación clínica', 'Qué registrar de la entrevista y la evaluación.'],
+      ['03', 'Funcionamiento cognitivo', 'Cómo integrar pruebas y observaciones.'],
+      ['04', 'Aspectos emocionales', 'Cómo describirlos sin sonar técnico ni confuso.'],
+      ['05', 'Integración', 'Unir entrevistas, pruebas y observaciones.'],
+      ['06', 'Conclusión', 'Cómo cerrar de forma sólida.'],
+      ['07', 'Recomendaciones', 'Qué es legal, ético y profesional escribir.']
+    ],
     rel: 'guia-clinica-informes', relPor: 'La guía suma cien frases clínicas listas para los apartados que ves en el taller.'
   },
   {
@@ -47,6 +76,16 @@ const ITEMS = [
     desc: '¿Estás dando tus primeros pasos en clínica? Aprendé a crear tu propia historia clínica, qué datos incluir, cómo registrar la primera entrevista y las notas de sesión, y cómo cuidar la información del paciente desde el primer encuentro.',
     incluye: ['Introducción, 7 módulos y un anexo', 'Plantillas modelo para usar hoy', 'Bonus: historia clínica para niños, adolescentes y adultos'],
     para: ['Psicólogos/as recién recibidos', 'Estudiantes avanzados', 'Acompañantes terapéuticos', 'Profesionales que quieren ordenar su consultorio'],
+    modulos: [
+      ['00', 'Introducción', 'Para qué sirve una buena historia clínica.'],
+      ['01', 'Comenzar a trabajar en clínica', 'El puente entre la teoría y la práctica real.'],
+      ['02', 'Anatomía de una historia clínica profesional', 'Qué datos incluir y cómo ordenarlos.'],
+      ['03', 'Cómo registrar la primera entrevista', 'Qué sí o sí tiene que quedar asentado.'],
+      ['04', 'Notas de sesión', 'Qué registrar y cómo.'],
+      ['05', 'Organización del consultorio', 'Cómo proteger la información del paciente.'],
+      ['06', 'Historia clínica para niños, adolescentes y adultos', 'Módulo bonus.'],
+      ['07', 'Recomendaciones finales', 'Y un anexo con plantillas modelo.']
+    ],
     rel: 'primera-entrevista-plan', relPor: 'Sigue donde termina el taller: de la entrevista a las hipótesis y el plan de tratamiento.'
   },
   {
@@ -56,6 +95,14 @@ const ITEMS = [
     desc: 'Un programa autodidáctico para recorrer un camino progresivo de escritura, reflexión e introspección, desde una mirada psicológica y creativa. No necesitás conocimientos previos: solo ganas de escucharte y expresarte.',
     incluye: ['12 cuadernillos terapéuticos en PDF', 'Escritura guiada, disparadores creativos y espacios de cierre', 'Recursos de autorregulación emocional', 'Uso personal ilimitado'],
     para: ['Personas que quieren conocerse más', 'Quienes atraviesan ansiedad, estrés, duelos o cambios vitales', 'Terapeutas, coaches y docentes que quieren sumar la escritura'],
+    modulos: [
+      ['01', 'Escritura guiada', 'Propuestas y ejercicios prácticos.'],
+      ['02', 'Introspección emocional', 'Actividades para mirar hacia adentro.'],
+      ['03', 'Disparadores creativos', 'Para empezar cuando la hoja está en blanco.'],
+      ['04', 'Autorregulación', 'Recursos para ansiedad, estrés y cambios vitales.'],
+      ['05', 'Autoestima y claridad', 'Ejercicios para fortalecer el bienestar emocional.'],
+      ['06', 'Reflexión y cierre', 'Espacios para integrar lo escrito.']
+    ],
     rel: 'pack-escritura', relPor: 'El pack trae dos recorridos cortos para seguir escribiendo después del taller.'
   },
   {
@@ -294,13 +341,14 @@ function precioHTML(item) {
   return `<p class="card-price"><b>${formatearPrecio(item.precio)}</b>${d ? `<s>${formatearPrecio(item.antes)}</s>` : ''}</p>`;
 }
 
-function cardHTML(item, variante, i) {
+function cardHTML(item, variante, animar = true) {
   const d = descuento(item);
   const quien = item.publico.map(p => PUBLICO[p]).join(' · ');
-  return `<article class="card card--${variante} is-${item.type}" data-id="${item.id}" data-animate style="opacity:0;transform:translateY(22px);transition-delay:${Math.min(i * 0.06, 0.36)}s">
+  const entrada = animar ? ' data-animate="subir" style="opacity:0;transform:translateY(40px)"' : '';
+  return `<article class="card card--${variante} is-${item.type}" data-id="${item.id}"${entrada}>
     <div class="card-media fold">
       <img src="${item.img}" width="1000" height="1250" alt="Portada de ${esc(item.nombre)}">
-      <span class="card-type">${ICON[item.type]}${item.type === 'course' ? 'Taller' : '<span class="ct-word">Material </span>PDF'}</span>
+      <span class="card-type">${ICON[item.type]}${item.type === 'course' ? 'Taller<span class="ct-word"> asincrónico</span>' : '<span class="ct-word">Material </span>PDF'}</span>
       ${d ? `<span class="card-off">-${d}%</span>` : item.badge ? `<span class="card-off card-off--new">${esc(item.badge)}</span>` : ''}
     </div>
     <div class="card-body">
@@ -317,16 +365,39 @@ function cardHTML(item, variante, i) {
 }
 
 let revealsListos = false;
-let revealIO = null;
 
-const DESTACADOS = ['taller-informes', 'primeros-pasos', 'taller-escritura', 'pack-coleccion', 'cuadernillo-ansiedad', 'guia-clinica-informes'];
+const kTab = { tipo: 'course' };
+const enTab = (item, t) => (t === 'course' ? item.type === 'course' : t === 'pack' ? item.pack : item.type === 'product' && !item.pack);
 
-function initDestacados() {
-  $('#destGrid').innerHTML = DESTACADOS.map((id, i) => cardHTML(getItem(id), 'dest', i)).join('');
+function renderCursos() {
+  const grid = $('#cursosGrid');
+  if (!grid) return;
+  grid.dataset.tab = kTab.tipo;
+  const relleno = kTab.tipo === 'pack' ? `<article class="card card--cta" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+      <p class="eyebrow">¿Por dónde empiezo?</p>
+      <h3>Encontrá el material a tu medida en tres respuestas</h3>
+      <p>Te sugerimos el recurso que mejor encaja con lo que querés trabajar, y dos que lo complementan.</p>
+      <a class="btn btn-ghost" href="#empezar">Responder las tres preguntas</a>
+    </article>` : '';
+  grid.innerHTML = ITEMS.filter(i => enTab(i, kTab.tipo)).map(item => cardHTML(item, 'dest')).join('') + relleno;
+  $$('[data-tab-k]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tabK === kTab.tipo)));
+  syncBotones();
+  revelarNuevos(grid);
+}
+
+function initCursos() {
+  if (!$('#cursosGrid')) return;
+  $$('[data-k-count]').forEach(el => { el.textContent = ITEMS.filter(i => enTab(i, el.dataset.kCount)).length; });
+  renderCursos();
+  $$('[data-tab-k]').forEach(b => b.addEventListener('click', () => {
+    if (kTab.tipo === b.dataset.tabK) return;
+    kTab.tipo = b.dataset.tabK;
+    renderCursos();
+  }));
 }
 
 const cat = { tipo: 'todo', q: '', publico: null, tema: null, formato: null, precio: null, orden: 'recomendados', page: 1 };
-const PAGE = 12;
+const PAGE = 16;
 
 function filtrar() {
   const palabras = normalizar(cat.q).split(/\s+/).filter(Boolean);
@@ -346,11 +417,8 @@ function filtrar() {
   });
   if (cat.orden === 'menor') lista.sort((a, b) => a.precio - b.precio);
   if (cat.orden === 'mayor') lista.sort((a, b) => b.precio - a.precio);
-  if (cat.orden === 'recomendados') {
-    // Con búsqueda, primero lo que la nombra; sin búsqueda, el catálogo no abre repitiendo los destacados (van al final).
-    const peso = palabras.length
-      ? i => Number(!palabras.every(w => normalizar(i.nombre).includes(w)))
-      : i => Number(DESTACADOS.includes(i.id));
+  if (cat.orden === 'recomendados' && palabras.length) {
+    const peso = i => Number(!palabras.every(w => normalizar(i.nombre).includes(w)));
     lista.sort((a, b) => peso(a) - peso(b));
   }
   return lista;
@@ -381,11 +449,11 @@ function renderActivos() {
   $('#activeFilters').innerHTML = chips.map(([k, l]) => `<button type="button" class="af-chip" data-quitar="${k}" aria-label="Quitar filtro ${esc(l)}">${esc(l)}${ICON.x}</button>`).join('');
 }
 
-function renderCatalogo() {
+function renderCatalogo(yaVistos = 0) {
   const lista = filtrar();
   const visibles = lista.slice(0, cat.page * PAGE);
   const grid = $('#catalogo');
-  grid.innerHTML = visibles.map((item, i) => cardHTML(item, 'cat', i % PAGE)).join('');
+  grid.innerHTML = visibles.map((item, i) => cardHTML(item, 'cat', i >= yaVistos)).join('');
   $('#catEmpty').hidden = lista.length > 0;
   $('#verMas').hidden = visibles.length >= lista.length;
   $$('[data-result-count]').forEach(el => { el.textContent = lista.length; });
@@ -398,9 +466,40 @@ function aplicar() { cat.page = 1; renderFiltros(); renderCatalogo(); }
 
 function limpiar() { Object.assign(cat, { q: '', publico: null, tema: null, formato: null, precio: null }); aplicar(); }
 
-function irACatalogo() { $('#materiales').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); }
+function irARecursos() {
+  setTimeout(() => $('#recursos')?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }), 0);
+}
+
+function irA(tipo) {
+  if ($('#cursosGrid')) {
+    if (tipo !== 'todo' && kTab.tipo !== tipo) { kTab.tipo = tipo; renderCursos(); }
+  } else if ($('#catalogo')) {
+    Object.assign(cat, { tipo: tipo === 'course' ? 'course' : tipo === 'todo' ? 'todo' : 'product', q: '', publico: null, tema: null, formato: tipo === 'pack' ? 'pack' : null, precio: null });
+    aplicar();
+  }
+  irARecursos();
+}
+
+function initIr() {
+  document.addEventListener('click', e => {
+    const a = e.target.closest('[data-ir]');
+    if (!a) return;
+    e.preventDefault();
+    irA(a.dataset.ir);
+  });
+}
+
+function initAcciones() {
+  $$('[data-ingresar]').forEach(b => b.addEventListener('click', () => showToast('El ingreso a los talleres se activa al pasar la web a producción: ahí cada persona encuentra lo que compró.')));
+  $$('[data-video]').forEach(b => b.addEventListener('click', () => showToast('Acá va tu video de presentación: lo subís desde el panel cuando la web pase a producción.')));
+  $('#headerSearch')?.addEventListener('click', () => {
+    irARecursos();
+    setTimeout(() => $('#buscar')?.focus({ preventScroll: true }), reduceMotion ? 60 : 600);
+  });
+}
 
 function initCatalogo() {
+  if (!$('#catalogo')) return;
   $$('[data-tipo-count]').forEach(el => { const t = el.dataset.tipoCount; el.textContent = t === 'todo' ? ITEMS.length : ITEMS.filter(i => i.type === t).length; });
   $$('[data-door-count]').forEach(el => { el.textContent = ITEMS.filter(i => i.publico.includes(el.dataset.doorCount)).length; });
   renderFiltros();
@@ -422,7 +521,7 @@ function initCatalogo() {
   $('#orden').addEventListener('change', e => { cat.orden = e.target.value; aplicar(); });
   $('#filtersClear').addEventListener('click', limpiar);
   $('#emptyClear').addEventListener('click', limpiar);
-  $('#verMas').addEventListener('click', () => { cat.page += 1; renderCatalogo(); });
+  $('#verMas').addEventListener('click', () => { const yaVistos = cat.page * PAGE; cat.page += 1; renderCatalogo(yaVistos); });
   $('#activeFilters').addEventListener('click', e => {
     const b = e.target.closest('[data-quitar]'); if (!b) return;
     const k = b.dataset.quitar;
@@ -431,16 +530,12 @@ function initCatalogo() {
   });
   $$('.door').forEach(d => d.addEventListener('click', () => {
     Object.assign(cat, { tipo: 'todo', q: '', tema: null, formato: null, precio: null, publico: d.dataset.door });
-    aplicar(); irACatalogo();
-  }));
-  $$('[data-footer-publico], [data-footer-tipo]').forEach(a => a.addEventListener('click', e => {
-    e.preventDefault();
-    Object.assign(cat, { tipo: a.dataset.footerTipo || 'todo', q: '', tema: null, formato: null, precio: null, publico: a.dataset.footerPublico || null });
-    aplicar(); irACatalogo();
+    aplicar(); irARecursos();
   }));
 
   const abrir = $('#filtersOpen');
   const openF = () => {
+    $$('[data-animate]:not(.in)', panel).forEach(el => el.classList.add('in'));
     panel.classList.add('open'); abrir.setAttribute('aria-expanded', 'true');
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
     $('#overlay').classList.add('open'); document.body.classList.add('no-scroll');
@@ -452,7 +547,7 @@ function initCatalogo() {
     panel.removeAttribute('role'); panel.removeAttribute('aria-modal');
     if (!$('#cartDrawer').classList.contains('open')) { $('#overlay').classList.remove('open'); document.body.classList.remove('no-scroll'); }
     abrir.focus({ preventScroll: true });
-    $('#materiales').scrollIntoView({ behavior: 'auto', block: 'start' });
+    $('#recursos').scrollIntoView({ behavior: 'auto', block: 'start' });
   };
   cerrarFiltrosRef = closeF;
   abrir.addEventListener('click', openF);
@@ -608,7 +703,8 @@ function openQuickView(id, opener) {
         <div><h3>${item.type === 'course' ? 'Qué trae el taller' : 'Qué incluye'}</h3><ul class="modal-list">${item.incluye.map(t => `<li>${ICON.check}<span>${esc(t)}</span></li>`).join('')}</ul></div>
         <div><h3>Para quién es</h3><ul class="modal-list modal-list--dot">${item.para.map(t => `<li><span>${esc(t)}</span></li>`).join('')}</ul></div>
       </div>
-      <p class="modal-entrega">Se entrega en PDF para descargar${item.pack ? '. Los packs no entran en el 3x2.' : '. Entra en el 3x2 con otros dos sueltos.'}</p>
+      ${item.modulos ? `<div class="modal-mods"><h3>Módulos</h3><ol class="mods-list">${item.modulos.map(([n, t, s]) => `<li><span class="mod-num">${n}</span><div><b>${esc(t)}</b><small>${esc(s)}</small></div></li>`).join('')}</ol></div>` : ''}
+      <p class="modal-entrega">${item.type === 'course' ? 'Acceso asincrónico: los módulos quedan en tu cuenta para hacerlos a tu ritmo' : 'Se entrega en PDF para descargar'}${item.pack ? '. Los packs no entran en el 3x2.' : '. Entra en el 3x2 con otros dos sueltos.'}</p>
       ${cuidado}
       <div class="modal-actions">
         <button type="button" class="btn btn-cta" data-add="${item.id}" data-qv-add>${item.type === 'course' ? 'Sumar el taller al carrito' : 'Agregar al carrito'}</button>
@@ -705,7 +801,7 @@ function renderCarrito() {
   $('#cartPromo').textContent = '-' + formatearPrecio(r.promo);
   $('#cartTotal').textContent = formatearPrecio(r.total);
   const faltan = r.elegibles % 3 === 0 ? 0 : 3 - (r.elegibles % 3);
-  $('#cartNote').textContent = r.elegibles && faltan ? `Todo es digital: descargás los PDF. Con ${faltan} ${faltan === 1 ? 'recurso suelto más' : 'recursos sueltos más'}, el de menor precio va sin cargo.` : 'Todo es digital: descargás los PDF, no hay envío.';
+  $('#cartNote').textContent = r.elegibles && faltan ? `Todo es digital, sin envío. Con ${faltan} ${faltan === 1 ? 'recurso suelto más' : 'recursos sueltos más'}, el de menor precio va sin cargo.` : 'Todo es digital: los talleres quedan en tu cuenta y los materiales se descargan en PDF.';
 }
 
 function initCarrito() {
@@ -729,7 +825,7 @@ function initCarrito() {
   });
   $('#overlay').addEventListener('click', () => { closeCartDrawer(); cerrarFiltrosRef?.(); });
   document.addEventListener('cart:updated', () => { if (drawer.classList.contains('open')) renderCarrito(); });
-  $('#checkout').addEventListener('click', () => showToast('El pago y la descarga automática de los PDF se activan al pasar la web a producción.'));
+  $('#checkout').addEventListener('click', () => showToast('El pago y el acceso a los talleres y los PDF se activan al pasar la web a producción.'));
 }
 
 function initFloats() {
@@ -771,7 +867,7 @@ function initNav() {
   toggle.addEventListener('click', () => (nav.classList.contains('open') ? close() : open()));
   closeBtn?.addEventListener('click', () => { close(); toggle.focus(); });
   bd.addEventListener('click', close);
-  nav.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+  nav.querySelectorAll('a, [data-ingresar]').forEach(a => a.addEventListener('click', close));
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.classList.contains('open')) { close(); toggle.focus(); } });
   const syncInert = () => {
     if (desktopMq.matches) nav.removeAttribute('inert');
@@ -785,31 +881,33 @@ function initReveals() {
   revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.08, 0.48)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
-  revealIO = io;
   items.forEach(el => io.observe(el));
 
   let queued = false;
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -818,22 +916,27 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
 }
 
 function revelarNuevos(cont) {
-  if (!revealsListos) return;
-  cont.querySelectorAll('[data-animate]:not(.in)').forEach(el => {
-    const r = el.getBoundingClientRect();
-    if (reduceMotion || (r.bottom > 0 && r.top < window.innerHeight)) el.classList.add('in');
-    else if (revealIO) revealIO.observe(el);
-    else el.classList.add('in');
-  });
+  if (!revealsListos || !cont) return;
+  const nuevos = [...cont.querySelectorAll('[data-animate]:not(.in)')];
+  if (!nuevos.length) return;
+  if (reduceMotion) { nuevos.forEach(el => el.classList.add('in')); return; }
+  requestAnimationFrame(() => requestAnimationFrame(() => nuevos.forEach((el, i) => {
+    const d = Math.min(i * 0.06, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  })));
 }
 
-initDestacados();
+initModelBarScroll();
+initCursos();
 initCatalogo();
 initQuiz();
 initTabs();
@@ -843,4 +946,6 @@ initReveals();
 initNav();
 initFloats();
 initWspLinks();
+initIr();
+initAcciones();
 syncBotones();

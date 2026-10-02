@@ -6,13 +6,13 @@
 <title>PsicoEnlace — Talleres asincrónicos y cuadernillos de psicología</title>
 <meta name="description" content="Talleres de psicología con acceso asincrónico, para hacer a tu ritmo, y cuadernillos y guías clínicas en PDF para usar en sesión o para tu bienestar.">
 <meta name="theme-color" content="#C400C4">
-<link rel="canonical" href="https://gokywebs.com/demo/psicoenlace/">
+<link rel="canonical" href="https://gokywebs.com/demo/psicoenlace/modelo-2.html">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_AR">
 <meta property="og:site_name" content="PsicoEnlace">
 <meta property="og:title" content="PsicoEnlace — Talleres asincrónicos y cuadernillos de psicología">
 <meta property="og:description" content="Talleres por módulos que hacés a tu ritmo y recursos terapéuticos en PDF para usar en sesión o en casa.">
-<meta property="og:url" content="https://gokywebs.com/demo/psicoenlace/">
+<meta property="og:url" content="https://gokywebs.com/demo/psicoenlace/modelo-2.html">
 <meta property="og:image" content="https://gokywebs.com/demo/psicoenlace/images/escritura-con-te.webp">
 <meta property="og:image:width" content="1400">
 <meta property="og:image:height" content="1400">
@@ -60,14 +60,17 @@
 }
 </script>
 </head>
-<body class="m1">
+<body class="m2">
 <nav class="gw-modelos" aria-label="Modelos de la web">
-  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
-  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+  <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
 </nav>
 
-<header class="site-header site-header--k">
+<header class="site-header site-header--q">
   <div class="container header-bar">
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
     <a class="brand" href="#inicio" aria-label="PsicoEnlace, volver al inicio">
       <img src="images/logo-psicoenlace.png" width="230" height="230" alt="PsicoEnlace · Recursos psi">
     </a>
@@ -75,22 +78,23 @@
       <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
-      <a href="#recursos" data-ir="course">Talleres</a>
       <a href="#recursos" data-ir="product">Materiales</a>
+      <a href="#recursos" data-ir="course">Talleres</a>
       <a href="#empezar">Por dónde empezar</a>
       <a href="#quien">Quién escribe</a>
       <a href="#preguntas">Preguntas</a>
       <button type="button" class="nav-ingresar" data-ingresar>Ingresar a mis talleres</button>
     </nav>
     <div class="header-actions">
-      <button type="button" class="btn btn-ghost header-login" data-ingresar>Ingresar</button>
-      <a class="btn btn-cta header-cta" href="#recursos" data-ir="course">Ver los talleres</a>
+      <button type="button" class="icon-btn header-search" id="headerSearch" aria-label="Buscar materiales y talleres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <button type="button" class="icon-btn header-cuenta" data-ingresar aria-label="Ingresar a mis talleres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      </button>
       <button type="button" class="icon-btn cart-btn" id="headerCart" aria-label="Abrir el carrito">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
         <span class="cart-badge" data-cart-count hidden>0</span>
-      </button>
-      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
     </div>
   </div>
@@ -98,15 +102,14 @@
 
 <main id="contenido">
 
-<section class="hero hero--k paper" id="inicio" aria-labelledby="hero-title">
-  <div class="container hero-grid">
+<section class="hero hero--q paper" id="inicio" aria-labelledby="hero-title">
+  <div class="container hero-q-grid">
     <div class="hero-copy">
       <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)">Talleres asincrónicos · Recursos psi en PDF</p>
       <h1 id="hero-title" data-animate="subir" style="opacity:0;transform:translateY(32px)">Talleres a tu ritmo y cuadernillos en PDF para usar en sesión o en casa</h1>
       <p class="hero-lead" data-animate="subir" style="opacity:0;transform:translateY(24px)">Talleres por módulos que hacés cuando quieras, sin clases en vivo, y cuadernillos para imprimir o usar en pantalla. Todo escrito por una psicóloga.</p>
       <div class="hero-ctas" data-animate="subir" style="opacity:0;transform:translateY(24px)">
         <a class="btn btn-cta" href="#recursos" data-ir="todo">Ver talleres y materiales</a>
-        <a class="btn btn-ghost" href="#empezar">¿Por dónde empiezo?</a>
       </div>
       <ul class="hero-cifras" aria-label="PsicoEnlace en números" data-animate="subir" style="opacity:0;transform:translateY(24px)">
         <li><b>20</b><span>recursos en PDF</span></li>
@@ -114,36 +117,104 @@
         <li class="cifra-promo"><b>3x2</b><span>en materiales sueltos</span></li>
       </ul>
     </div>
-    <figure class="hero-video">
-      <div class="hero-video__frame" data-animate="zoom" style="transform:scale(1.08)">
-        <img src="images/escritura-con-te.webp" width="1400" height="1400" alt="Manos escribiendo en un cuaderno junto a una taza de té" fetchpriority="high">
-      </div>
-      <div class="hero-video__ui" data-animate="subir" style="opacity:0;transform:translateY(24px)">
-        <button type="button" class="hero-play" data-video aria-label="Ver el video de presentación">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
-        </button>
-      </div>
-      <figcaption class="hero-video__cap" data-animate="subir" style="opacity:0;transform:translateY(24px)">Video de presentación</figcaption>
-    </figure>
+    <div class="doors-panel" role="group" aria-labelledby="doors-title">
+      <p class="doors-title" id="doors-title" data-animate="subir" style="opacity:0;transform:translateY(24px)">¿Para quién es?</p>
+      <button type="button" class="door" data-door="prof" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <img src="images/uso-en-sesion.webp" width="960" height="1200" alt="">
+        <span><b>Para tu práctica profesional</b><small><span data-door-count="prof">17</span> recursos para usar en sesión</small></span>
+        <svg class="door-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <button type="button" class="door" data-door="personal" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <img src="images/uso-personal.webp" width="960" height="1200" alt="">
+        <span><b>Para vos</b><small><span data-door-count="personal">8</span> recursos para trabajar por tu cuenta</small></span>
+        <svg class="door-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
   </div>
 </section>
 
-<section class="recursos tono-blanco" id="recursos" aria-labelledby="rec-title">
+<section class="catalogo tono-blanco" id="recursos" aria-labelledby="cat-title">
   <svg class="wave wave--top" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden="true"><path d="M0,40 C240,72 480,6 720,26 C960,46 1200,70 1440,30 L1440,0 L0,0 Z"/></svg>
   <div class="container">
-    <div class="recursos-head">
-      <header class="section-head" data-animate="subir" style="opacity:0;transform:translateY(32px)">
-        <p class="eyebrow">Talleres y materiales</p>
-        <h2 id="rec-title">Talleres a tu ritmo y materiales para descargar</h2>
-        <p>Los talleres son asincrónicos: entrás a los módulos cuando quieras, sin horarios. Los materiales se descargan en PDF.</p>
-      </header>
-      <div class="seg seg--k" role="group" aria-label="Tipo de recurso" data-animate="subir" style="opacity:0;transform:translateY(24px)">
-        <button type="button" class="seg-btn" data-tab-k="course" aria-pressed="true">Talleres <small data-k-count="course">3</small></button>
-        <button type="button" class="seg-btn" data-tab-k="product" aria-pressed="false">Materiales <small data-k-count="product">12</small></button>
-        <button type="button" class="seg-btn" data-tab-k="pack" aria-pressed="false">Packs <small data-k-count="pack">5</small></button>
+    <header class="section-head" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+      <p class="eyebrow">Talleres y materiales</p>
+      <h2 id="cat-title">Talleres a tu ritmo y materiales para descargar</h2>
+      <p>Buscá por tema o filtrá por para quién es. Los talleres son asincrónicos y los materiales se descargan en PDF.</p>
+    </header>
+
+    <div class="cat-top" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <div class="seg" role="group" aria-label="Tipo de recurso">
+        <button type="button" class="seg-btn" data-tipo="todo" aria-pressed="true">Todo <small data-tipo-count="todo">20</small></button>
+        <button type="button" class="seg-btn" data-tipo="course" aria-pressed="false">Talleres <small data-tipo-count="course">3</small></button>
+        <button type="button" class="seg-btn" data-tipo="product" aria-pressed="false">Materiales<span class="seg-extra"> PDF</span> <small data-tipo-count="product">17</small></button>
+      </div>
+      <label class="search-field">
+        <span class="sr-only">Buscar materiales y talleres</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="buscar" placeholder="Buscá ansiedad, duelo, informes…" autocomplete="off">
+      </label>
+    </div>
+
+    <div class="shop">
+      <section class="filters-panel" id="filtersPanel" aria-label="Filtros del catálogo">
+        <div class="filters-head">
+          <h3>Filtrar</h3>
+          <button type="button" class="close-btn" id="filtersClose" aria-label="Cerrar filtros">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="fgroup" role="group" aria-labelledby="f-pub" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="fgroup-title" id="f-pub">Para quién</p>
+          <div class="chips" id="fPublico"></div>
+        </div>
+        <div class="fgroup" role="group" aria-labelledby="f-tema" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="fgroup-title" id="f-tema">Tema</p>
+          <div class="chips" id="fTema"></div>
+        </div>
+        <div class="fgroup" role="group" aria-labelledby="f-formato" id="fFormatoGroup" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="fgroup-title" id="f-formato">Formato</p>
+          <div class="chips" id="fFormato"></div>
+        </div>
+        <div class="fgroup" role="group" aria-labelledby="f-precio" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="fgroup-title" id="f-precio">Precio</p>
+          <div class="chips">
+            <button type="button" class="chip" data-precio="b1" aria-pressed="false">Hasta $7.000</button>
+            <button type="button" class="chip" data-precio="b2" aria-pressed="false">$7.000 a $10.000</button>
+            <button type="button" class="chip" data-precio="b3" aria-pressed="false">Más de $10.000</button>
+          </div>
+        </div>
+        <button type="button" class="filters-clear" id="filtersClear">Limpiar filtros</button>
+        <div class="filters-foot">
+          <button type="button" class="btn btn-cta btn-block" id="filtersApply">Ver <span data-result-count>20</span> resultados</button>
+        </div>
+      </section>
+
+      <div class="shop-main">
+        <div class="toolbar" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="toolbar-count" aria-live="polite"><b data-result-count>20</b> resultados</p>
+          <div class="toolbar-right">
+            <button type="button" class="btn btn-ghost filters-open" id="filtersOpen" aria-controls="filtersPanel" aria-expanded="false">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtrar
+            </button>
+            <label class="sort"><span>Ordenar</span>
+              <select id="orden">
+                <option value="recomendados">Recomendados</option>
+                <option value="menor">Menor precio</option>
+                <option value="mayor">Mayor precio</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="active-filters" id="activeFilters"></div>
+        <div class="cat-grid" id="catalogo"></div>
+        <div class="cat-empty" id="catEmpty" hidden>
+          <h3>No encontramos un recurso con eso</h3>
+          <p>Probá con otra palabra o escribinos: te contamos qué material se acerca más a lo que buscás.</p>
+          <button type="button" class="btn btn-ghost" id="emptyClear">Limpiar filtros</button>
+        </div>
+        <div class="cat-more"><button type="button" class="btn btn-ghost" id="verMas" hidden>Ver más recursos</button></div>
       </div>
     </div>
-    <div class="cursos-grid" id="cursosGrid" data-tab="course"></div>
   </div>
 </section>
 
@@ -182,146 +253,30 @@
   </div>
 </section>
 
-<section class="temario tono-blanco" id="temario" aria-labelledby="tem-title">
+<section class="insta tono-blanco" id="quien" aria-labelledby="quien-title">
+  <svg class="wave wave--top" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden="true"><path d="M0,30 C300,70 560,0 840,24 C1080,44 1260,64 1440,36 L1440,0 L0,0 Z"/></svg>
   <div class="container">
-    <header class="section-head" data-animate="subir" style="opacity:0;transform:translateY(32px)">
-      <p class="eyebrow">Talleres asincrónicos</p>
-      <h2 id="tem-title">Qué trae cada taller, módulo por módulo</h2>
-      <p>Entrás a los módulos desde tu cuenta cuando quieras, sin horarios ni clases en vivo, y avanzás a tu ritmo.</p>
-    </header>
-    <div class="tabs" role="tablist" aria-label="Talleres" data-animate="subir" style="opacity:0;transform:translateY(24px)">
-      <button type="button" role="tab" id="tab-informes" aria-controls="panel-informes" aria-selected="true" tabindex="0">Informes psicológicos</button>
-      <button type="button" role="tab" id="tab-primeros" aria-controls="panel-primeros" aria-selected="false" tabindex="-1">Primeros pasos en la clínica</button>
-      <button type="button" role="tab" id="tab-escritura" aria-controls="panel-escritura" aria-selected="false" tabindex="-1">Escritura terapéutica</button>
-    </div>
-
-    <div class="tab-panels" data-animate="subir" style="opacity:0;transform:translateY(40px)">
-      <div class="tab-panel" role="tabpanel" id="panel-informes" aria-labelledby="tab-informes" tabindex="0">
-        <div class="temario-grid">
-          <div class="temario-main">
-            <h3>Taller de Informes Psicológicos</h3>
-            <p class="temario-lead">Paso a paso para redactar informes de niños, adolescentes y adultos, con estructuras claras, ejemplos reales, plantillas editables y un método simple para escribir con seguridad.</p>
-            <ol class="modulos">
-              <li><span class="mod-num">01</span><div><b>Motivo de consulta</b><small>Cómo presentarlo con claridad.</small></div></li>
-              <li><span class="mod-num">02</span><div><b>Observación clínica</b><small>Qué registrar de la entrevista y la evaluación.</small></div></li>
-              <li><span class="mod-num">03</span><div><b>Funcionamiento cognitivo</b><small>Cómo integrar pruebas y observaciones.</small></div></li>
-              <li><span class="mod-num">04</span><div><b>Aspectos emocionales</b><small>Cómo describirlos sin sonar técnico ni confuso.</small></div></li>
-              <li><span class="mod-num">05</span><div><b>Integración</b><small>Unir entrevistas, pruebas y observaciones.</small></div></li>
-              <li><span class="mod-num">06</span><div><b>Conclusión</b><small>Cómo cerrar de forma sólida.</small></div></li>
-              <li><span class="mod-num">07</span><div><b>Recomendaciones</b><small>Qué es legal, ético y profesional escribir.</small></div></li>
-            </ol>
-          </div>
-          <aside class="inscripcion fold" data-curso="taller-informes" aria-label="Inscripción al Taller de Informes Psicológicos">
-            <p class="insc-tag">Taller · 7 módulos en PDF</p>
-            <p class="insc-price"><b data-price="taller-informes">$9.000</b><s data-antes="taller-informes">$15.000</s></p>
-            <ul class="insc-list">
-              <li>Acceso asincrónico, a tu ritmo</li>
-              <li>Plantillas editables y ejemplos reales de informes</li>
-              <li>Para psicólogos, psicopedagogos, acompañantes terapéuticos y estudiantes avanzados</li>
-            </ul>
-            <button type="button" class="btn btn-cta btn-block" data-add="taller-informes">Sumar el taller al carrito</button>
-            <button type="button" class="btn btn-ghost btn-block" data-open="taller-informes">Ver el detalle</button>
-          </aside>
-        </div>
-      </div>
-
-      <div class="tab-panel" role="tabpanel" id="panel-primeros" aria-labelledby="tab-primeros" tabindex="0" hidden>
-        <div class="temario-grid">
-          <div class="temario-main">
-            <h3>Primeros pasos en la clínica</h3>
-            <p class="temario-lead">El método práctico para armar tu historia clínica, registrar procesos con claridad y ordenar el consultorio desde el primer paciente.</p>
-            <ol class="modulos">
-              <li><span class="mod-num">00</span><div><b>Introducción</b><small>Para qué sirve una buena historia clínica.</small></div></li>
-              <li><span class="mod-num">01</span><div><b>Comenzar a trabajar en clínica</b><small>El puente entre la teoría y la práctica real.</small></div></li>
-              <li><span class="mod-num">02</span><div><b>Anatomía de una historia clínica profesional</b><small>Qué datos incluir y cómo ordenarlos.</small></div></li>
-              <li><span class="mod-num">03</span><div><b>Cómo registrar la primera entrevista</b><small>Qué sí o sí tiene que quedar asentado.</small></div></li>
-              <li><span class="mod-num">04</span><div><b>Notas de sesión</b><small>Qué registrar y cómo.</small></div></li>
-              <li><span class="mod-num">05</span><div><b>Organización del consultorio</b><small>Cómo proteger la información del paciente.</small></div></li>
-              <li><span class="mod-num">06</span><div><b>Historia clínica para niños, adolescentes y adultos</b><small>Módulo bonus.</small></div></li>
-              <li><span class="mod-num">07</span><div><b>Recomendaciones finales</b><small>Y un anexo con plantillas modelo.</small></div></li>
-            </ol>
-          </div>
-          <aside class="inscripcion fold" data-curso="primeros-pasos" aria-label="Inscripción a Primeros pasos en la clínica">
-            <p class="insc-tag">Taller · 7 módulos + anexo</p>
-            <p class="insc-price"><b data-price="primeros-pasos">$8.500</b></p>
-            <ul class="insc-list">
-              <li>Acceso asincrónico, a tu ritmo</li>
-              <li>Plantillas modelo para usar hoy, sin tecnicismos innecesarios</li>
-              <li>Para recién recibidos, estudiantes avanzados y acompañantes terapéuticos</li>
-            </ul>
-            <button type="button" class="btn btn-cta btn-block" data-add="primeros-pasos">Sumar el taller al carrito</button>
-            <button type="button" class="btn btn-ghost btn-block" data-open="primeros-pasos">Ver el detalle</button>
-          </aside>
-        </div>
-      </div>
-
-      <div class="tab-panel" role="tabpanel" id="panel-escritura" aria-labelledby="tab-escritura" tabindex="0" hidden>
-        <div class="temario-grid">
-          <div class="temario-main">
-            <h3>Taller autodidáctico de Escritura Terapéutica</h3>
-            <p class="temario-lead">Doce cuadernillos en PDF para un camino progresivo de escritura, reflexión y regulación emocional. No hace falta experiencia previa: solo ganas de escucharte.</p>
-            <ol class="modulos">
-              <li><span class="mod-num">01</span><div><b>Escritura guiada</b><small>Propuestas y ejercicios prácticos.</small></div></li>
-              <li><span class="mod-num">02</span><div><b>Introspección emocional</b><small>Actividades para mirar hacia adentro.</small></div></li>
-              <li><span class="mod-num">03</span><div><b>Disparadores creativos</b><small>Para empezar cuando la hoja está en blanco.</small></div></li>
-              <li><span class="mod-num">04</span><div><b>Autorregulación</b><small>Recursos para ansiedad, estrés y cambios vitales.</small></div></li>
-              <li><span class="mod-num">05</span><div><b>Autoestima y claridad</b><small>Ejercicios para fortalecer el bienestar emocional.</small></div></li>
-              <li><span class="mod-num">06</span><div><b>Reflexión y cierre</b><small>Espacios para integrar lo escrito.</small></div></li>
-            </ol>
-          </div>
-          <aside class="inscripcion fold" data-curso="taller-escritura" aria-label="Inscripción al Taller de Escritura Terapéutica">
-            <p class="insc-tag">Taller · 12 cuadernillos en PDF</p>
-            <p class="insc-price"><b data-price="taller-escritura">$6.500</b><s data-antes="taller-escritura">$9.000</s></p>
-            <ul class="insc-list">
-              <li>Acceso asincrónico, a tu ritmo</li>
-              <li>Para vos o para proponer en sesión</li>
-              <li>Terapeutas, coaches y docentes también lo usan con grupos</li>
-            </ul>
-            <button type="button" class="btn btn-cta btn-block" data-add="taller-escritura">Sumar el taller al carrito</button>
-            <button type="button" class="btn btn-ghost btn-block" data-open="taller-escritura">Ver el detalle</button>
-          </aside>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="como paper" id="como" aria-labelledby="como-title">
-  <svg class="wave wave--top wave--blanco" viewBox="0 0 1440 70" preserveAspectRatio="none" aria-hidden="true"><path d="M0,30 C300,70 560,0 840,24 C1080,44 1260,64 1440,36 L1440,0 L0,0 Z"/></svg>
-  <div class="container">
-    <header class="section-head" data-animate="subir" style="opacity:0;transform:translateY(32px)">
-      <p class="eyebrow">Cómo se aprende</p>
-      <h2 id="como-title">Del carrito a la sesión, a tu ritmo</h2>
-    </header>
-    <ol class="pasos">
-      <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="paso-num">1</span><h3>Elegís y pagás online</h3><p>Un taller o un material, en pesos y desde la web. Con tres sueltos, el de menor precio va sin cargo.</p></li>
-      <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="paso-num">2</span><h3>Entrás cuando quieras</h3><p>Los talleres quedan en tu cuenta para hacerlos a tu ritmo, sin horarios ni clases en vivo. Los materiales se descargan en PDF.</p></li>
-      <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="paso-num">3</span><h3>Lo aplicás</h3><p>Impreso o en pantalla: en sesión, en el aula o para vos.</p></li>
-    </ol>
-    <p class="aviso fold" data-animate="subir" style="opacity:0;transform:translateY(24px)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z"/></svg>
-      <span>Los materiales son psicoeducativos: acompañan un proceso y ayudan en sesión, pero no reemplazan un espacio de terapia. Si estás pasando un momento difícil, buscá la ayuda de un profesional.</span>
-    </p>
-  </div>
-</section>
-
-<section class="quien tono-blanco" id="quien" aria-labelledby="quien-title">
-  <div class="container quien-grid">
-    <div class="quien-seal" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
-      <img src="images/logo-psicoenlace.png" width="230" height="230" alt="PsicoEnlace · Recursos psi">
-    </div>
-    <div class="quien-copy">
+    <div class="insta-head">
       <div class="quien-head" data-animate="subir" style="opacity:0;transform:translateY(32px)">
         <p class="eyebrow">Quién escribe</p>
         <h2 id="quien-title">Materiales escritos desde el consultorio</h2>
       </div>
       <p class="quien-texto" data-animate="subir" style="opacity:0;transform:translateY(24px)">Detrás de PsicoEnlace está <b>Lía Gamarra, psicóloga</b>. Cada cuadernillo junta un marco teórico breve, una guía práctica y actividades originales, pensadas para usar en sesión con adolescentes, adultos y en la infancia, y también para quien quiere trabajar por su cuenta.</p>
-      <ul class="quien-datos">
-        <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><b>Enfoques con respaldo</b><span>TCC, ACT, terapia breve y neuropsicología, según el material.</span></li>
-        <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><b>Listos para usar</b><span>Formatos editables, para imprimir o trabajar en pantalla.</span></li>
-        <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><b>Para colegas y pacientes</b><span>Guías clínicas para profesionales y cuadernillos para uso personal.</span></li>
-      </ul>
+      <div class="insta-cta" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <a class="insta-handle" href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          Seguí a @PsicoEnlace_ en Instagram
+        </a>
+      </div>
     </div>
+    <ul class="insta-grid">
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/escritura-con-te.webp" width="1400" height="1400" alt="Manos escribiendo en un cuaderno junto a una taza de té"></a></li>
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/cuadernillo-ansiedad.webp" width="1000" height="1250" alt="Portada del Cuadernillo de Ansiedad"></a></li>
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/uso-en-sesion.webp" width="960" height="1200" alt="Sesión de terapia con anotaciones en un cuaderno"></a></li>
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/taller-escritura-terapeutica.webp" width="1000" height="1250" alt="Portada del Taller autodidáctico de Escritura Terapéutica"></a></li>
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/uso-personal.webp" width="960" height="1200" alt="Mujer escribiendo en un cuaderno sentada en el sillón"></a></li>
+      <li data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><a href="https://instagram.com/PsicoEnlace_" target="_blank" rel="noopener noreferrer"><img src="images/tarjetas-emociones.webp" width="1000" height="1250" alt="Portada de las Tarjetas de emociones con dinámicas"></a></li>
+    </ul>
   </div>
 </section>
 
