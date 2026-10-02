@@ -268,7 +268,7 @@
         b.dataset.id = t.id;
         b.setAttribute('role', 'listitem');
         b.innerHTML =
-            '<img src="' + esc(srcMini(t)) + '" alt="" loading="lazy" decoding="async" width="560" height="350">';
+            '<img src="' + esc(srcMini(t)) + '" alt="" loading="lazy" decoding="async" width="560" height="350" draggable="false">';
         b.title = t.nombre;
         b.setAttribute('aria-label', t.nombre + ' — ' + (LABEL_RUBRO[t.rubro] || t.rubro));
         var img = b.querySelector('img');
@@ -294,6 +294,7 @@
     /* scrollIntoView movería también la página (y en el inicio pelea con
        Lenis): se centra la miniatura moviendo solo la tira. */
     function centrarMiniatura(suave) {
+        frenarInercia();
         var el = actual && miniaturas[actual.id];
         if (!el || !el.parentNode) return;
         var x = el.offsetLeft - ($rail.clientWidth - el.offsetWidth) / 2;
@@ -447,6 +448,62 @@
         var activo = actual && miniaturas[actual.id];
         if (activo && e.target.classList.contains('gv-thumb')) activo.focus({ preventScroll: true });
     });
+
+    /* Clic en la web → la web real, en otra pestaña. La rueda y el dedo
+       siguen recorriendo la captura; un clic sobre la barra de scroll no
+       cuenta. Con el teclado, Enter sobre la captura hace lo mismo. */
+    function abrirReal() {
+        if (actual) window.open(actual.url, '_blank', 'noopener');
+    }
+    $view.addEventListener('click', function (e) {
+        if (e.offsetX > $view.clientWidth) return;
+        abrirReal();
+    });
+    $view.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') abrirReal();
+    });
+
+    /* La tira se arrastra con el mouse como un carrusel (en el celular ya
+       se desliza con el dedo). Si hubo arrastre, el clic que viene después
+       no elige miniatura; al soltar sigue un poco por inercia. */
+    var arrastre = null, arrastro = false, inerciaRaf = 0;
+    function frenarInercia() { if (inerciaRaf) cancelAnimationFrame(inerciaRaf); inerciaRaf = 0; }
+    $rail.addEventListener('pointerdown', function (e) {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        frenarInercia();
+        arrastre = { x: e.clientX, left: $rail.scrollLeft, ultX: e.clientX, ultT: performance.now(), v: 0 };
+        arrastro = false;
+    });
+    window.addEventListener('pointermove', function (e) {
+        if (!arrastre) return;
+        var dx = e.clientX - arrastre.x;
+        if (!arrastro && Math.abs(dx) > 5) { arrastro = true; $rail.classList.add('arrastrando'); }
+        if (!arrastro) return;
+        $rail.scrollLeft = arrastre.left - dx;
+        var ahora = performance.now();
+        arrastre.v = (e.clientX - arrastre.ultX) / Math.max(1, ahora - arrastre.ultT);
+        arrastre.ultX = e.clientX;
+        arrastre.ultT = ahora;
+    });
+    window.addEventListener('pointerup', function () {
+        if (!arrastre) return;
+        var v = -arrastre.v * 16;          // px por cuadro
+        arrastre = null;
+        $rail.classList.remove('arrastrando');
+        if (!arrastro || quieto || Math.abs(v) < 1) return;
+        inerciaRaf = requestAnimationFrame(function paso() {
+            $rail.scrollLeft += v;
+            v *= 0.94;
+            inerciaRaf = Math.abs(v) > 0.5 ? requestAnimationFrame(paso) : 0;
+        });
+    });
+    $rail.addEventListener('click', function (e) {
+        if (!arrastro) return;
+        arrastro = false;
+        e.preventDefault();
+        e.stopPropagation();
+    }, true);
+    $rail.addEventListener('wheel', frenarInercia, { passive: true });
 
     $view.addEventListener('scroll', function () {
         var max = $view.scrollHeight - $view.clientHeight;

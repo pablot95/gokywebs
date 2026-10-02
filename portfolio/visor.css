@@ -23,8 +23,8 @@
     --gv-encima: 47px;                     /* alto de la barra de filtros */
     /* La web baja hasta 70px antes del final de la pantalla (la tira se
        apoya encima) y toma el ancho que pide una pantalla de compu. */
-    --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 80px);
-    --gv-ancho: min(calc(100% - 24px), calc(var(--gv-alto) * 2.16));   /* 20% más ancha (2-oct) */
+    --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 34px);
+    --gv-ancho: min(calc(100% - 12px), calc(var(--gv-alto) * 2.4));
 }
 @supports (height: 100svh) { .gv, .gv-toolbar { --gv-pantalla: 100svh; } }
 .gv {
@@ -40,7 +40,7 @@
 
 /* ── La web ──────────────────────────────────────────────── */
 .gv-stage {
-    position: relative; flex: none; width: var(--gv-ancho); height: var(--gv-alto); min-height: 320px; margin-top: 10px;
+    position: relative; flex: none; width: var(--gv-ancho); height: var(--gv-alto); min-height: 320px; margin-top: 6px; cursor: pointer;
     overflow: hidden; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08); background: #fff;
     box-shadow: 0 18px 50px -24px rgba(40, 32, 20, 0.35);
 }
@@ -123,12 +123,15 @@
     outline: 2px solid var(--gv-gold); outline-offset: 2px;
 }
 
-/* ── Miniaturas, a todo el ancho y sin fondo, sobre el borde de la web ── */
+/* ── Miniaturas, a todo el ancho y sin fondo, sobre el borde de la web ──
+   La franja en sí no atrapa el mouse (pointer-events: none): entre
+   miniatura y miniatura se sigue scrolleando y clickeando la web. */
 .gv-strip {
     position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
-    display: flex; align-items: center; gap: 12px;
-    padding: 0 clamp(12px, 2vw, 28px) 12px;
+    display: flex; align-items: flex-end; gap: 12px;
+    padding: 0 clamp(12px, 2vw, 28px) 12px; pointer-events: none;
 }
+.gv-strip > * { pointer-events: auto; }
 .gv-strip[hidden] { display: none; }
 .gv-nav {
     flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
@@ -140,17 +143,23 @@
 .gv-nav:active { transform: scale(0.94); }
 .gv-rail {
     position: relative; flex: 1; min-width: 0;
-    display: flex; gap: 10px; padding: 3px;
-    overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; scrollbar-width: none;
-    overscroll-behavior-x: contain;
+    display: flex; align-items: flex-end; gap: clamp(18px, 2vw, 30px); padding: 26px 14px 4px;
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    overscroll-behavior-x: contain; cursor: grab; user-select: none; -webkit-user-select: none;
 }
+.gv-rail.arrastrando { cursor: grabbing; }
+.gv-rail.arrastrando .gv-thumb { pointer-events: none; }
 .gv-rail::-webkit-scrollbar { display: none; }
 .gv-thumb {
-    flex: none; width: clamp(130px, 9vw, 190px); aspect-ratio: 16 / 10; scroll-snap-align: center;
+    flex: none; width: clamp(130px, 9vw, 190px); aspect-ratio: 16 / 10;
+    transform-origin: 50% 100%;
     padding: 0; border: 2px solid #fff; border-radius: 8px; overflow: hidden;
     background: #ddd; cursor: pointer; -webkit-tap-highlight-color: transparent;
     box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.45);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.25s var(--gv-ease), border-color 0.2s ease, box-shadow 0.25s ease;
+}
+@media (hover: hover) {
+    .gv-thumb:hover { transform: translateY(-4px) scale(1.16); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
 }
 .gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .gv-thumb.activo { border-color: var(--gv-gold); box-shadow: 0 0 0 2px var(--gv-gold), 0 8px 22px -8px rgba(0, 0, 0, 0.45); }
@@ -175,8 +184,8 @@
 
 /* ── Celular ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
-    .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 20px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 76px); }
-    .gv-stage { margin-top: 10px; border-radius: 8px; }
+    .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 12px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 40px); }
+    .gv-stage { margin-top: 6px; border-radius: 8px; }
     .gv-toolbar { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
     .gv-toolbar::-webkit-scrollbar { display: none; }
     .gv--con-filtros > .gv-toolbar { padding: 8px 10px; }
@@ -186,6 +195,7 @@
     .gv-search:focus-within, .gv-search.lleno { width: 170px; }
     .gv-strip { padding: 0 10px 10px; gap: 8px; }
     .gv-nav { display: none; }
+    .gv-rail { gap: 14px; padding: 10px 10px 4px; }
     .gv-thumb { width: 112px; }
 }
 
