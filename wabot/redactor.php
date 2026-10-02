@@ -235,6 +235,17 @@ function wabot_responder($texto, &$conv, $cfg) {
     // formulario y cualquier otra cosa queda para Pablo (18-sep). Va antes que
     // todo lo demás: ni una pregunta de pago ni un pedido de llamada tienen
     // respuesta automática en este punto.
+    /* Atención posterior al precio apagada (2-oct): una charla que había
+     * quedado en esa etapa vuelve al corte de siempre. Si todavía no tiene el
+     * formulario, se reabre la espera del sí: el sí a la demo se lleva el
+     * formulario y cualquier otra cosa queda para Pablo. */
+    if (!empty($conv['postprecio_auto']) && !wabot_postprecio_encendido($cfg)) {
+        $conv['postprecio_auto'] = false;
+        if (!empty($conv['precio_dado']) && empty($conv['oferta_diseno_ts']) && empty($conv['presentado_ts'])
+            && empty($conv['link_form_enviado']) && empty($conv['lead_creado']) && (int)($conv['form_completado_ts'] ?? 0) <= 0) {
+            $conv['oferta_diseno_ts'] = time();
+        }
+    }
     $trasElPrecio = wabot_oferta_diseno_responder($texto, $conv, $cfg);
     if ($trasElPrecio !== null) return $trasElPrecio;
     // Conversaciones que ya habían recibido el precio con la versión anterior

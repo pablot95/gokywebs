@@ -142,7 +142,7 @@ function wabot_textos_default() {
      * mande él mismo (21-sep). El link con el código de la charla va abajo. */
     'form_link_panel' => 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:',
     'reconocimiento_activo' => false,
-    'reconocimiento' => 'Buscás vender por la web, o solo mostrar {lo_tuyo}?',
+    'reconocimiento' => 'Te consulto, buscás vender por la web o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
     'desempate_cursos_2' => 'Te lo simplifico: querés vender los cursos desde la web con los videos y acceso para cada alumno (respondé "vender"), o solo mostrarlos y que te escriban (respondé "mostrar")?',
     'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar tus trabajos y que te consulten por WhatsApp, o para vender tus productos y cobrar online?',
@@ -263,8 +263,14 @@ function wabot_textos_default() {
         'web_propia' => "Con el pago único{precio_web_propia}, pagás la web una sola vez: arrancás con una seña, el resto se paga al entregar y, cuando abonás el total, el código queda tuyo. Incluye el hosting y el dominio el primer año; si la querés en tu propio hosting desde el arranque, lo contratás vos.\nEl mantenimiento no va incluido: si querés, lo sumás por {mantenimiento_mes}, con las actualizaciones, el arreglo de errores y el soporte.",
     ],
     'leer_imagenes' => true,
-    // Precios y atención posterior al precio aprobados el 1-oct-2026.
-    'postprecio_activo' => true,
+    /* Atención automática posterior al precio (postprecio.php, 1-oct): APAGADA
+     * desde el 2-oct (Pablo: "el bot no contesta muy bien las preguntas,
+     * volvemos a que solo da el precio, ofrece la demo y se calla. Únicamente
+     * si el cliente afirma la demo, manda el form, nada más"). Con false
+     * contesta wabot_oferta_diseno_responder() (redactor.php): el sí se lleva
+     * el formulario y cualquier otra cosa queda para Pablo. Se puede volver a
+     * prender desde Ajustes del panel. */
+    'postprecio_activo' => false,
     'ia_proveedor' => 'openai',
     'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
@@ -290,11 +296,12 @@ function wabot_textos_default() {
      * cliente, eso es gravísimo"). Se pregunta una vez, según el tipo que ya
      * eligió; con la respuesta se cotiza. Ver wabot_negocio_conocido(). */
     'pide_negocio' => [
-        'ecommerce'    => 'Dale. Qué productos vendés?',
-        'landing'      => 'Dale. Contame a qué te dedicás o qué servicios ofrecés.',
-        'elearning'    => 'Dale. De qué son tus cursos, y los das online o presenciales?',
-        'inmobiliaria' => 'Dale. Contame un poco de tu inmobiliaria: qué propiedades publicás?',
-        'dos'          => 'Dale. Contame a qué te dedicás y qué vendés, así te paso el valor de las dos webs.',
+        // Sin preguntas secas (Pablo, 2-oct: "'Qué productos vendés?' es muy agresiva, tiene que ser 'Te consulto, qué productos vendés?'").
+        'ecommerce'    => 'Te consulto, qué productos vendés?',
+        'landing'      => 'Te consulto, a qué te dedicás o qué servicios ofrecés?',
+        'elearning'    => 'Te consulto, de qué son tus cursos? Los das online o presenciales?',
+        'inmobiliaria' => 'Te consulto, qué tipo de propiedades publicás?',
+        'dos'          => 'Te consulto, a qué te dedicás y qué vendés? Así te paso el valor de las dos webs.',
     ],
     /* Dos webs (Pablo, 28-sep): "cuando un cliente pide 2 webs, ofrecemos 20%
      * de descuento en ambas". Se cotizan las dos juntas y cada una sola. */

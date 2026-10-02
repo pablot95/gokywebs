@@ -5,6 +5,7 @@ require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
 $cfg = wabot_config_load();
 $cfg['postprecio_activo'] = true;
+$GLOBALS['WABOT_TEST_POSTPRECIO_ACTIVO'] = true;
 $cfg['form_activo'] = true;
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
 $GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-real';

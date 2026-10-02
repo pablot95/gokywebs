@@ -3278,18 +3278,32 @@ function wabot_conv_tomar_control(&$cv) {
     $cv['oferta_diseno_ts'] = 0;
 }
 
+/**
+ * ¿Está prendida la atención automática posterior al precio (postprecio.php)?
+ * Apagada por defecto desde el 2-oct: después del precio el bot solo espera
+ * el sí a la demo. Una charla marcada `postprecio_auto` mientras estuvo
+ * prendida no sigue en esa etapa si ahora está apagada.
+ */
+function wabot_postprecio_encendido($cfg = null) {
+    // Los tests de postprecio.php la prueban prendida sin tocar la config.
+    if (isset($GLOBALS['WABOT_TEST_POSTPRECIO_ACTIVO'])) return (bool)$GLOBALS['WABOT_TEST_POSTPRECIO_ACTIVO'];
+    if ($cfg === null) $cfg = wabot_config_load();
+    return !empty($cfg['postprecio_activo']);
+}
+
 /** Única forma de devolverle una conversación al bot: una acción manual. */
 function wabot_conv_encender_manual(&$cv) {
     $cv['control_manual'] = false;
     unset($cv['postprecio_derivacion']);
-    $cv['postprecio_auto'] = !empty($cv['precio_dado']);
+    $cv['postprecio_auto'] = !empty($cv['precio_dado']) && wabot_postprecio_encendido();
     $cv['bot_off'] = false;
     $cv['pausado_hasta'] = 0;
 }
 
 /** Presentar cambia de etapa, pero no le devuelve el control al bot. */
 function wabot_conv_preparar_postdemo(&$cv) {
-    $automatico = !empty($cv['postprecio_auto']) && empty($cv['control_manual']) && empty($cv['bot_off']);
+    $automatico = !empty($cv['postprecio_auto']) && empty($cv['control_manual']) && empty($cv['bot_off'])
+        && wabot_postprecio_encendido();
     if (!$automatico) wabot_conv_tomar_control($cv);
     $cv['seguimiento_bloqueado'] = $automatico || !empty($cv['postprecio_derivacion']);
     $cv['contestado_ts'] = 0;
@@ -4577,7 +4591,7 @@ REGLA DE ORO DEL "SÍ" PELADO
 Si el cliente contesta solo "si", "dale", "ok", "listo", "bueno", "de una", "joya" o parecido, está contestando LA ÚLTIMA PREGUNTA QUE HIZO EL BOT. Mirá el último mensaje del bot antes de etiquetar:
 - Si el bot ofreció el prediseño o la demo gratis → quiere_prediseno.
 - Si el bot preguntó por los cursos → cursos_vender o cursos_mostrar, según cuál de las dos opciones esté aceptando.
-- Si el bot preguntó "Buscás vender por la web, o solo mostrar..." → hibrido_vender si elige vender, hibrido_trabajos si elige mostrar.
+- Si el bot preguntó "Te consulto, buscás vender por la web o solo mostrar..." → hibrido_vender si elige vender, hibrido_trabajos si elige mostrar.
 Nunca lo etiquetes como quiere_avanzar: un "dale" no es pedir el CBU, es decir que sí a lo que le acabás de preguntar.
 - pide_humano: pide hablar con una persona.
 - cambia_tipo: ya tiene un precio dado y ahora cuenta algo que corresponde a OTRO tipo de web.
@@ -5680,7 +5694,8 @@ function wabot_form_lead_procesar($payload, $cfg) {
         // (una sola vez por charla: wabot_capi_evento lo recuerda).
         wabot_capi_evento($conv, 'Lead', $cfg);
     }
-    if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])) {
+    if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])
+        && wabot_postprecio_encendido($cfg)) {
         $conv['fase'] = 'prediseno';
         $conv['seguimiento_bloqueado'] = true;
     } else {
