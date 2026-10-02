@@ -3022,6 +3022,34 @@ async function registrarCobroAnual(id) {
     const c = clients.find(x => x.id === id);
     const r = c ? renovacionAnualDe(c) : null;
     if (!r || !r.proximo || r.legado) return;
+    /* Con saldo pendiente, el primer año todavía no se terminó de pagar: lo que
+       se cobra ahora es ese saldo, no la renovación. Contarlo como renovación
+       corría el próximo cobro un año de más y dejaba el saldo debiendo (2-oct,
+       Sancor salud: $120.000 de una vez con la seña en $40.000 → 2028). */
+    const { saldo } = pagoUnicoDe(c);
+    if (saldo > 0) {
+        const nombre = c.nombre || c.proyecto || "Cliente";
+        if (confirm(
+            `"${nombre}" todavía debe el saldo de ${fmtMoney(saldo)} del primer año.\n\n` +
+            `Aceptar: registrar el saldo como cobrado (el próximo cobro sigue el ${mantLongDate(r.proximo)}).\n` +
+            `Cancelar: seguir y registrarlo como cobro anual.`
+        )) {
+            const montoSaldo = prompt(`¿Cuánto cobraste del saldo? Debe ${fmtMoney(saldo)}.`, String(saldo));
+            if (montoSaldo === null) return;
+            const cobradoAhora = Number(String(montoSaldo).replace(/\D/g, "")) || 0;
+            if (!cobradoAhora) { alert("Escribí el monto que cobraste."); return; }
+            try {
+                await updateDoc(doc(db, "clientes", id), {
+                    abono: _num(c.abono) + cobradoAhora,
+                    updatedAt: serverTimestamp()
+                });
+            } catch (err) {
+                console.error(err);
+                alert("Error al registrar el saldo: " + err.message);
+            }
+            return;
+        }
+    }
     const siguiente = _sumarAnios(r.proximo, 1);
     const montoInput = prompt(
         `Cobro anual de "${c.nombre || c.proyecto || "Cliente"}", que vence el ${mantLongDate(r.proximo)}.\n\n` +
