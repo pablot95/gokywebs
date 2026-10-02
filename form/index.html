@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20261002-modelos-ancho">
+    <link rel="stylesheet" href="styles.css?v=20261002-visor">
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -217,34 +217,53 @@
                         </div>
                     </div>
 
-                    <div class="form-section">
-
-                        <div class="step-header mf-header">
-                            <span class="step-header-badge">Paso 3 de 3</span>
-                            <h2 class="step-header-title" tabindex="-1">Elegí 2 modelos</h2>
-                            <span class="mf-contador" id="mfContador" aria-live="polite">0 de 2 seleccionados</span>
-                            <p class="step-header-desc">Después los adaptamos con tus fotos, textos y colores.</p>
+                    <!-- Visor de modelos (2-oct, el mismo formato que el portfolio): ocupa
+                         toda la pantalla mientras se elige. Arriba la barra con el título,
+                         los filtros, Volver y Enviar; en el medio el modelo grande, que se
+                         recorre con scroll; abajo, sobre su borde, el botón para elegirlo
+                         y la tira de miniaturas, que se arrastra como un carrusel. -->
+                    <div class="mf-visor" id="mfVisor">
+                        <div class="mf-top">
+                            <div class="mf-top-tit">
+                                <span class="mf-paso">Paso 3 de 3</span>
+                                <h2 class="step-header-title" tabindex="-1">Elegí 2 modelos</h2>
+                                <span class="mf-contador" id="mfContador" aria-live="polite">0 de 2 seleccionados</span>
+                            </div>
+                            <div class="mf-top-filtros">
+                                <div class="mf-filtros" id="mfTipos" role="group" aria-label="Filtrar por tipo de web"></div>
+                                <label class="mf-rubro">
+                                    <span class="mf-oculto">Rubro</span>
+                                    <select id="mfRubro"><option value="all">Rubro</option></select>
+                                </label>
+                            </div>
+                            <!-- El texto de #btnEnviar lo pone script.js: cuántos faltan, o Enviar. -->
+                            <div class="mf-top-acciones">
+                                <button type="button" class="mf-volver" id="btnVolver3"><svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span>Volver</span></button>
+                                <button type="button" id="btnEnviar" class="btn-submit">Elegí 2 modelos</button>
+                            </div>
                         </div>
 
-                        <div class="mf-filtros" id="mfTipos" role="group" aria-label="Filtrar por tipo de web"></div>
-                        <label class="mf-rubro">
-                            <span>Rubro</span>
-                            <select id="mfRubro" class="field-input"><option value="all">Todos los rubros</option></select>
-                        </label>
-
-                        <div class="mf-grid" id="modelosGroup" aria-live="off"></div>
+                        <div class="mf-escena" id="mfEscena">
+                            <div class="mf-pantalla" id="mfPantalla" tabindex="0" aria-label="Modelo elegido. Se recorre con scroll."></div>
+                        </div>
                         <p class="mf-vacio" id="mfVacio" hidden>No hay modelos con ese filtro. Probá con otro rubro.</p>
 
-                    </div>
-
-                    <!-- El texto de #btnEnviar lo pone script.js: cuántos faltan, o Enviar. -->
-                    <div class="mf-barra" id="mfBarra">
-                        <p class="mf-elegidos" id="modelosAviso" aria-live="polite"></p>
-                        <div class="step-nav step-nav-submit">
-                            <button type="button" class="btn-step btn-step-prev" id="btnVolver3"><svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Volver</button>
-                            <button type="button" id="btnEnviar" class="btn-submit">Elegí 2 modelos</button>
+                        <div class="mf-abajo">
+                            <div class="mf-accion">
+                                <p class="mf-actual" id="mfActual"></p>
+                                <div class="mf-seg" id="mfSeg" role="group" aria-label="Cómo verlo">
+                                    <button type="button" data-vista="pc" aria-pressed="true">Computadora</button>
+                                    <button type="button" data-vista="celular" aria-pressed="false">Celular</button>
+                                </div>
+                                <button type="button" class="mf-marcar" id="mfMarcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Seleccionar este modelo</span></button>
+                            </div>
+                            <p class="mf-elegidos" id="modelosAviso" aria-live="polite"></p>
+                            <div class="mf-tira">
+                                <button type="button" class="mf-nav mf-prev" aria-label="Modelo anterior"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+                                <div class="mf-rail" id="modelosGroup" role="list" aria-label="Modelos"></div>
+                                <button type="button" class="mf-nav mf-next" aria-label="Modelo siguiente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+                            </div>
                         </div>
-                        <p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>
                     </div>
                 </div>
 
@@ -271,24 +290,6 @@
             </div>
         </div>
     </div>
-    <!-- Vista grande de un modelo, sin salir del formulario -->
-    <div class="mf-overlay" id="mfOverlay" hidden>
-        <div class="mf-modal" role="dialog" aria-modal="true" aria-labelledby="mfTitulo">
-            <div class="mf-modal-top">
-                <h2 class="mf-modal-titulo" id="mfTitulo"></h2>
-                <div class="mf-seg" role="group" aria-label="Cómo verlo">
-                    <button type="button" data-vista="pc" aria-pressed="true">Computadora</button>
-                    <button type="button" data-vista="celular" aria-pressed="false">Celular</button>
-                </div>
-                <button type="button" class="mf-cerrar" id="mfCerrar" aria-label="Cerrar">✕</button>
-            </div>
-            <div class="mf-escenario" id="mfEscenario"></div>
-            <div class="mf-modal-pie">
-                <button type="button" class="btn-submit mf-elegir" id="mfElegir">Seleccionar este modelo</button>
-            </div>
-        </div>
-    </div>
-
     <script src="/modelos/modelos.js?v=2"></script>
     <script src="/modelos/nuevos.js?v=3"></script>
     <script src="/modelos/wire.js?v=5"></script>
@@ -316,6 +317,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261002-modelos-ancho"></script>
+    <script type="module" src="script.js?v=20261002-visor"></script>
 </body>
 </html>
