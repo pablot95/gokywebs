@@ -610,42 +610,7 @@
     document.querySelectorAll('[data-animate]').forEach(function (el) { el.style.opacity = 1; el.style.transform = 'none'; });
   }
 
-  /* ---------- Portfolio: render desde GW_PORTFOLIO + filtros (compatibles con routing.js) ---------- */
-  var CAT_LABELS = {
-    ecommerce: 'Ecommerce',
-    comercios: 'Comercios & Tiendas',
-    profesionales: 'Servicios Profesionales',
-    moda: 'Moda & Indumentaria',
-    gastronomia: 'Gastronomía & Eventos',
-    tecnologia: 'Tecnología & Electrónica',
-    inmobiliaria: 'Inmobiliaria'
-  };
-
-  (function () {
-    var grid = document.getElementById('pfGrid');
-    if (!grid || typeof GW_PORTFOLIO === 'undefined') return;
-    grid.innerHTML = GW_PORTFOLIO.map(function (p) {
-      return '<a href="' + p.url + '" target="_blank" rel="noopener" class="pf-card" data-cat="' + p.cat + '">' +
-        '<div class="pf-visuals">' +
-        '<div class="pf-web"><img src="' + previewSrc(p, compactPreviews ? 'web_mobile' : 'web') + '" alt="' + p.name + '" width="800" height="500" loading="lazy" decoding="async"></div>' +
-        '</div>' +
-        '<div class="pf-info"><div><h4>' + p.name + '</h4><span class="pf-meta">' + (CAT_LABELS[p.cat] || '') + '</span></div>' +
-        '<span class="pf-cta">Ver sitio →</span></div></a>';
-    }).join('');
-
-    document.querySelectorAll('.pf-cat').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.pf-cat').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        var cat = btn.getAttribute('data-cat');
-        grid.querySelectorAll('.pf-card').forEach(function (card) {
-          var show = cat === 'all' || card.getAttribute('data-cat') === cat;
-          card.classList.toggle('pf-hidden', !show);
-        });
-        if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-      });
-    });
-  })();
+  /* El portfolio de la home lo arma portfolio/visor.js (el mismo de /portfolio/). */
 
   /* ---------- Menú mobile ---------- */
   (function () {

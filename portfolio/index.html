@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Portfolio | Webs que entregamos — GokyWebs</title>
-<meta name="description" content="Todos los trabajos de GokyWebs en un solo lugar: tiendas online, landings, webs con catálogo, inmobiliarias y plataformas de cursos. Buscá por rubro, profesión o tipo de web y entrá a cada sitio.">
+<meta name="description" content="Todos los trabajos de GokyWebs en un solo lugar: tiendas online, landings, webs con catálogo, inmobiliarias y plataformas de cursos. Filtrá por tipo de web o rubro y recorré cada sitio en grande.">
 <meta name="robots" content="index, follow">
-<meta name="theme-color" content="#f8fafc">
+<meta name="theme-color" content="#0b0a09">
 <link rel="canonical" href="https://www.gokywebs.com/portfolio/">
 
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.gokywebs.com/portfolio/">
 <meta property="og:title" content="Portfolio GokyWebs | Webs reales de clientes reales">
-<meta property="og:description" content="Buscá por rubro, profesión o tipo de web y recorré cada sitio que entregamos.">
+<meta property="og:description" content="Filtrá por tipo de web o rubro y recorré cada sitio que entregamos.">
 <meta property="og:image" content="https://www.gokywebs.com/logo.png">
 <meta property="og:locale" content="es_AR">
 <meta property="og:site_name" content="GokyWebs">
@@ -22,78 +22,51 @@
 <link rel="icon" type="image/png" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="visor.css?v=1">
+<link rel="stylesheet" href="pagina.css?v=1">
 <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
 
-<a class="skip-link" href="#buscador">Saltar al buscador</a>
+<a class="skip-link" href="#visor">Saltar a los trabajos</a>
 
-<header class="pf-header">
-    <a class="brand" href="/" aria-label="GokyWebs, inicio">
-        <img src="/logo.png" alt="" aria-hidden="true">
-        <span>GokyWebs</span>
+<div class="pv-shell">
+<header class="pv-header">
+    <a class="pv-brand" href="/" aria-label="GokyWebs, volver al inicio">
+        <span class="pv-brand-name">Gokywebs</span>
+        <span class="pv-brand-sub">Portfolio</span>
     </a>
-    <div class="pf-header-actions">
-        <a class="btn-back" href="/">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            <span>Volver al inicio</span>
+    <div class="pv-toolbar" id="pvToolbar"></div>
+    <div class="pv-end">
+        <span class="pv-tag">Diseño web que impulsa negocios <i aria-hidden="true"></i></span>
+        <a class="pv-hablemos" href="https://wa.me/5491140688675?text=Hola%21%20Vi%20el%20portfolio%20y%20quiero%20pedir%20presupuesto%20para%20mi%20web." target="_blank" rel="noopener">
+            Hablemos
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
     </div>
 </header>
 
-<main class="pf-main">
-
-    <!-- El encabezado va oculto: la página arranca directo en el buscador,
+<main class="pv-main">
+    <!-- El encabezado va oculto: la página arranca directo en el visor,
          pero el H1 tiene que existir para Google y el lector de pantalla. -->
-    <h1 class="oculto-visual">Portfolio de GokyWebs: webs de clientes online</h1>
+    <h1 class="gv-oculto">Portfolio de GokyWebs: webs de clientes online</h1>
 
-    <div class="pf-tools">
-        <div class="pf-search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <label class="oculto-visual" for="buscador">Buscar trabajos</label>
-            <input id="buscador" type="search" autocomplete="off"
-                   placeholder="Buscá: abogado, panadería, inmobiliaria, Córdoba…"
-                   aria-describedby="pfResumen">
-            <button class="pf-search-clear" id="limpiarBusqueda" type="button" aria-label="Borrar la búsqueda">&times;</button>
-        </div>
+    <div class="gv gv--pagina" id="visor" data-visor data-base="/portfolio/" data-url data-toolbar="#pvToolbar"></div>
 
-        <div class="pf-filtros">
-            <div class="pf-filtros-fila" id="filtrosTipo" role="group" aria-label="Filtrar por tipo de web">
-                <span class="pf-filtros-et">Tipo de web</span>
-            </div>
-            <div class="pf-filtros-fila">
-                <button class="pf-mas-filtros" id="verRubros" type="button" aria-expanded="false" aria-controls="filtrosRubro">Filtrar por rubro +</button>
-            </div>
-            <div class="pf-filtros-fila pf-rubros" id="filtrosRubro" role="group" aria-label="Filtrar por rubro" hidden>
-                <span class="pf-filtros-et">Rubro</span>
-            </div>
-        </div>
-    </div>
-
-    <p class="pf-resumen" id="pfResumen" role="status" aria-live="polite">
-        <span id="pfConteo"></span>
-        <button class="btn-reset" id="pfReset" type="button" hidden>Limpiar filtros</button>
-    </p>
-
-    <div class="works-grid" id="pfGrid"></div>
-
-    <div class="pf-vacio" id="pfVacio" hidden>
-        <h2>No encontramos trabajos con eso.</h2>
-        <p>Probá con el rubro (“estética”, “abogado”, “muebles”) o mirá todos los trabajos.</p>
-        <button class="btn-reset" type="button" data-reset>Ver todos los trabajos</button>
-    </div>
-
-    <button class="btn-mas" id="pfMas" type="button" hidden>Ver más trabajos</button>
-
+    <noscript>
+        <p class="pv-noscript">Para recorrer el portfolio hace falta JavaScript. Escribinos por
+            <a href="https://wa.me/5491140688675">WhatsApp</a> y te pasamos los trabajos.</p>
+    </noscript>
 </main>
+</div>
 
-<footer class="pf-footer">
-    <p>© <span id="anio"></span> GokyWebs · Argentina · <a href="/">gokywebs.com</a></p>
+<footer class="pv-footer">
+    <p>© <span id="anio"></span> GokyWebs · Argentina · <a href="/">gokywebs.com</a> · <a href="/modelos/">Modelos de web</a></p>
 </footer>
 
-<script src="data.js?v=4"></script>
-<script src="app.js?v=3"></script>
+<script src="data.js?v=5"></script>
+<script src="visor.js?v=1"></script>
+<script>document.getElementById('anio').textContent = new Date().getFullYear();</script>
 </body>
 </html>

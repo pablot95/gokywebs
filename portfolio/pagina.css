@@ -1,0 +1,79 @@
+/* ============================================================
+   portfolio/pagina.css — la página /portfolio/: encabezado con los
+   filtros al medio y el visor ocupando la pantalla. El visor en sí
+   está en visor.css (lo comparte con el inicio).
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
+body {
+    min-height: 100svh; background: #0b0a09; color: #f5f1e8;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+}
+a { color: inherit; }
+
+.skip-link {
+    position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 18px; border-radius: 999px;
+    background: #fff; color: #111; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: top 0.2s ease;
+}
+.skip-link:focus { top: 12px; }
+
+/* ── Encabezado ── */
+.pv-header {
+    position: relative; z-index: 5;
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px 28px;
+    min-height: 86px; padding: 14px clamp(16px, 3vw, 48px);
+    background: linear-gradient(180deg, rgba(11, 10, 9, 0.98), rgba(11, 10, 9, 0.88));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.pv-brand { display: inline-flex; align-items: baseline; gap: 14px; text-decoration: none; white-space: nowrap; }
+.pv-brand-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.7rem; letter-spacing: -0.01em; color: #f5f1e8; }
+.pv-brand-sub { font-size: 1.05rem; color: #9e988e; }
+.pv-brand:focus-visible, .pv-hablemos:focus-visible { outline: 2px solid #e5b46e; outline-offset: 4px; border-radius: 6px; }
+
+.pv-toolbar { min-width: 0; }
+.pv-end { display: flex; align-items: center; gap: 18px; justify-self: end; }
+.pv-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #d9d3c8; white-space: nowrap; }
+.pv-tag i { width: 6px; height: 6px; border-radius: 50%; background: #e5b46e; }
+.pv-hablemos {
+    display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.45); text-decoration: none; font-weight: 600; font-size: 0.9rem; white-space: nowrap;
+    transition: background 0.25s ease, color 0.25s ease;
+}
+.pv-hablemos svg { width: 16px; height: 16px; }
+.pv-hablemos:hover { background: #fff; color: #111; }
+
+/* ── Visor a pantalla completa ──
+   Encabezado + escenario + tira ocupan justo la pantalla: el escenario se
+   queda con lo que sobra, sea cual sea el alto del encabezado. */
+@media (min-width: 961px) {
+    .pv-shell { display: flex; flex-direction: column; height: 100svh; min-height: 640px; }
+    .pv-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .gv--pagina { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .gv--pagina .gv-stage { flex: 1; height: auto; min-height: 0; }
+}
+.gv--pagina .gv-stage { padding-inline: clamp(20px, 5vw, 112px); }
+
+.pv-noscript { padding: 60px 20px; text-align: center; color: #d9d3c8; }
+
+.pv-footer { padding: 26px 20px 34px; text-align: center; font-size: 0.82rem; color: #9e988e; }
+.pv-footer a { color: #d9d3c8; text-decoration: none; }
+.pv-footer a:hover { color: #fff; }
+
+/* Los filtros no entran en una fila con la marca y el botón: bajan a la segunda. */
+.pv-toolbar .gv-toolbar { flex-wrap: nowrap; gap: 8px; }
+.pv-toolbar .gv-chips { flex-wrap: nowrap; }
+@media (max-width: 1840px) {
+    .pv-tag { display: none; }
+}
+@media (max-width: 1500px) {
+    .pv-header { grid-template-columns: auto auto; }
+    .pv-toolbar { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 960px) {
+    .pv-toolbar .gv-toolbar { flex-wrap: wrap; }
+    .pv-header { padding: 12px 16px 14px; gap: 12px; min-height: 0; }
+    .pv-brand-name { font-size: 1.4rem; }
+    .pv-brand-sub { font-size: 0.95rem; }
+    .pv-hablemos { height: 38px; padding: 0 16px; font-size: 0.85rem; }
+}

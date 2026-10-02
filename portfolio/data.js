@@ -18,6 +18,9 @@
 
    Para agregar un trabajo: sumá el objeto acá y dejá el preview
    en previews/<id>.webp (captura de página completa, 960px de ancho).
+   Después corré `python portfolio/hacer-minis.py` para la miniatura de
+   la tira (previews/mini/<id>.webp) y subí el ?v= de data.js en
+   portfolio/index.html y en el index.html de la home (los dos lo cargan).
    ============================================================ */
 
 const GW_TIPOS = [

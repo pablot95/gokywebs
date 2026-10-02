@@ -40,9 +40,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="home.css?v=24">
+    <link rel="stylesheet" href="home.css?v=25">
+    <link rel="stylesheet" href="portfolio/visor.css?v=1">
 
     <noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
 
@@ -180,17 +181,7 @@
                     <p class="eyebrow">Portfolio</p>
                     <h2 class="section-title" data-animate style="opacity:0;transform:translateY(28px)">Webs reales, de negocios reales.</h2>
                 </div>
-                <div class="pf-filters" aria-label="Filtrar portfolio">
-                    <button class="pf-cat active" data-cat="all">Todos</button>
-                    <button class="pf-cat" data-cat="ecommerce">Ecommerce</button>
-                    <button class="pf-cat" data-cat="comercios">Comercios &amp; Tiendas</button>
-                    <button class="pf-cat" data-cat="profesionales">Servicios Profesionales</button>
-                    <button class="pf-cat" data-cat="moda">Moda &amp; Indumentaria</button>
-                    <button class="pf-cat" data-cat="gastronomia">Gastronomía &amp; Eventos</button>
-                    <button class="pf-cat" data-cat="tecnologia">Tecnología &amp; Electrónica</button>
-                    <button class="pf-cat" data-cat="inmobiliaria">Inmobiliaria</button>
-                </div>
-                <div class="pf-grid" id="pfGrid"></div>
+                <div class="gv gv--seccion" data-visor data-base="/portfolio/" data-nivel="3"></div>
                 <p class="pf-todos">
                     <a class="btn btn-ghost" href="/portfolio/">Ver el portfolio completo <span aria-hidden="true">→</span></a>
                     <a class="btn btn-ghost" href="/modelos/">Elegir un modelo de web <span aria-hidden="true">→</span></a>
@@ -271,7 +262,9 @@
     <script src="https://unpkg.com/gsap@3.13.0/dist/SplitText.min.js"></script>
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
     <script src="portfolio-data.js?v=5"></script>
-    <script src="home.js?v=25"></script>
-    <script src="routing.js"></script>
+    <script src="home.js?v=26"></script>
+    <script src="portfolio/data.js?v=5"></script>
+    <script src="portfolio/visor.js?v=1"></script>
+    <script src="routing.js?v=2"></script>
 </body>
 </html>

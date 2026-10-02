@@ -7,23 +7,28 @@
    ============================================ */
 (function () {
 
-    // Mapa slug → data-cat del botón
+    // Mapa slug → filtro del visor del portfolio (portfolio/visor.js).
+    // Los slugs son las categorías viejas de la home: siguen andando los
+    // links que ya circulan (/#moda, /serviciosprofesionales, ?cat=…).
     const SLUG_MAP = {
-        'comercios':              'comercios',
-        'comerciosytiendas':      'comercios',
-        'tiendas':                'comercios',
-        'profesionales':          'profesionales',
-        'serviciosprofesionales': 'profesionales',
-        'servicios':              'profesionales',
-        'moda':                   'moda',
-        'indumentaria':           'moda',
-        'modaeindumentaria':      'moda',
-        'gastronomia':            'gastronomia',
-        'gastronomiaoeventos':    'gastronomia',
-        'tecnologia':             'tecnologia',
-        'electronica':            'tecnologia',
-        'tecnologiaelectronica':  'tecnologia',
-        'inmobiliaria':           'inmobiliaria'
+        'ecommerce':              { tipo: 'ecommerce' },
+        'tiendaonline':           { tipo: 'ecommerce' },
+        'comercios':              { rubro: 'comercios' },
+        'comerciosytiendas':      { rubro: 'comercios' },
+        'tiendas':                { rubro: 'comercios' },
+        'profesionales':          { tipo: 'landing' },
+        'serviciosprofesionales': { tipo: 'landing' },
+        'servicios':              { tipo: 'landing' },
+        'moda':                   { rubro: 'moda' },
+        'indumentaria':           { rubro: 'moda' },
+        'modaeindumentaria':      { rubro: 'moda' },
+        'gastronomia':            { rubro: 'gastronomia' },
+        'gastronomiaoeventos':    { rubro: 'gastronomia' },
+        'tecnologia':             { rubro: 'tecnologia' },
+        'electronica':            { rubro: 'tecnologia' },
+        'tecnologiaelectronica':  { rubro: 'tecnologia' },
+        'inmobiliaria':           { tipo: 'inmobiliaria' },
+        'cursos':                 { tipo: 'elearning' }
     };
 
     function normalize(str) {
@@ -39,15 +44,15 @@
         var params = new URLSearchParams(window.location.search);
         var raw = params.get('cat') || params.get('p') || '';
         if (raw) {
-            var cat = SLUG_MAP[normalize(raw)];
-            if (cat) return cat;
+            var slug = normalize(raw);
+            if (Object.prototype.hasOwnProperty.call(SLUG_MAP, slug)) return slug;
         }
 
         // 2. Hash: #profesionales
         var hash = window.location.hash.replace('#', '');
         if (hash) {
-            var catH = SLUG_MAP[normalize(hash)];
-            if (catH) return catH;
+            var slugH = normalize(hash);
+            if (Object.prototype.hasOwnProperty.call(SLUG_MAP, slugH)) return slugH;
         }
 
         return null;
@@ -55,13 +60,20 @@
 
     function activate(cat) {
         var portfolioSection = document.getElementById('portafolio');
-        var btn = document.querySelector('.pf-cat[data-cat="' + cat + '"]');
-
-        if (btn) btn.click();
+        if (window.GWVisor) window.GWVisor.filtrar(SLUG_MAP[cat]);
 
         if (portfolioSection) {
+            /* Con Lenis activo, el scrollIntoView nativo queda a mitad de
+               camino (Lenis lo pisa en el frame siguiente): se baja con Lenis. */
             setTimeout(function () {
-                portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+                    window.lenis.scrollTo(portfolioSection, { offset: -20, duration: 1.4 });
+                } else {
+                    /* Sin Lenis (celular) el scroll suave nativo se cortaba
+                       antes de arrancar: se salta directo a la sección. */
+                    var y = portfolioSection.getBoundingClientRect().top + window.pageYOffset - 10;
+                    window.scrollTo(0, Math.max(0, y));
+                }
             }, 80);
         }
 
