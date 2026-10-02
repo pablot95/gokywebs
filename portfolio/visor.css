@@ -24,7 +24,7 @@
     /* La web baja hasta 70px antes del final de la pantalla (la tira se
        apoya encima) y toma el ancho que pide una pantalla de compu. */
     --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 80px);
-    --gv-ancho: min(94vw, calc(var(--gv-alto) * 1.8));
+    --gv-ancho: min(calc(100% - 24px), calc(var(--gv-alto) * 2.16));   /* 20% más ancha (2-oct) */
 }
 @supports (height: 100svh) { .gv, .gv-toolbar { --gv-pantalla: 100svh; } }
 .gv {
