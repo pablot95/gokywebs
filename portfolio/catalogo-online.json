@@ -318,15 +318,6 @@
     "tags": "cursos online holístico runas tameana campus alumnos"
   },
   {
-    "id": "espaciocreativo",
-    "nombre": "Espacio Creativo",
-    "url": "https://espacio-creativo.com.ar/",
-    "tipo": "elearning",
-    "rubro": "educacion",
-    "que": "Membresía de proyectos de artesanías",
-    "tags": "artesanías manualidades membresía cursos moldes"
-  },
-  {
     "id": "valuhcatyarte",
     "nombre": "VALUHCATY ARTE",
     "url": "https://valuhcatyarte.com.ar/",
@@ -570,15 +561,6 @@
     "tags": "tarot lectura cartas espiritual consulta turnos"
   },
   {
-    "id": "segeym",
-    "nombre": "Segeym",
-    "url": "https://www.segeym.com/",
-    "tipo": "landing",
-    "rubro": "servicios",
-    "que": "Electricista industrial y domiciliario",
-    "tags": "electricista electricidad instalaciones tableros"
-  },
-  {
     "id": "servitechba",
     "nombre": "Servitech BA",
     "url": "https://www.servitechba.com/",
@@ -757,15 +739,6 @@
     "rubro": "legales",
     "que": "Amparos de salud contra obras sociales y prepagas",
     "tags": "abogado amparo salud obra social prepaga discapacidad"
-  },
-  {
-    "id": "italianosdelmundo",
-    "nombre": "Italianos del Mundo",
-    "url": "https://italianosdelmundo.com.ar/",
-    "tipo": "landing",
-    "rubro": "legales",
-    "que": "Ciudadanía italiana y pasaporte europeo",
-    "tags": "ciudadanía italiana pasaporte trámites jure sanguinis"
   },
   {
     "id": "axiotek",

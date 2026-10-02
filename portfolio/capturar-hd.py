@@ -39,7 +39,7 @@ TOPE_ALTO = 5200          # px CSS; Chrome falla arriba de ~16k px reales
 CALIDAD = 82
 # Webs que hoy no muestran lo que entregamos (en mantenimiento, etc.): se
 # quedan con la captura de 960 que ya está en previews/. Revisar cada tanto.
-SIN_HD = {'segeym', 'italianosdelmundo', 'espaciocreativo'}   # 2-oct-2026: segeym en mantenimiento; las otras salen con secciones encimadas o en blanco
+SIN_HD = set()   # p. ej. {'segeym'} si una web está en mantenimiento
 
 FORZAR = """
 (() => {

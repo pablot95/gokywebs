@@ -130,8 +130,6 @@ const GW_TRABAJOS = [
     /* ── Plataformas de cursos ───────────────────────────────── */
     { id: 'academiaalquimiadelser', nombre: 'Academia Alquimia del Ser', url: 'https://www.academiaalquimiadelser.com.ar/', tipo: 'elearning', rubro: 'educacion',
       que: 'Cursos de runas y Tameana', zona: '', tags: 'cursos online holístico runas tameana campus alumnos', estado: 'online' },
-    { id: 'espaciocreativo', nombre: 'Espacio Creativo', url: 'https://espacio-creativo.com.ar/', tipo: 'elearning', rubro: 'educacion',
-      que: 'Membresía de proyectos de artesanías', zona: '', tags: 'artesanías manualidades membresía cursos moldes', estado: 'online' },
     { id: 'valuhcatyarte', nombre: 'VALUHCATY ARTE', url: 'https://valuhcatyarte.com.ar/', tipo: 'elearning', rubro: 'educacion',
       que: 'Cursos de dibujo y pintura online', zona: '', tags: 'dibujo pintura arte clases online alumnos', estado: 'online' },
     { id: 'danielsaire', nombre: "Daniel's Aire", url: 'https://www.danielsaire.com.ar/', tipo: 'elearning', rubro: 'educacion',
@@ -196,8 +194,6 @@ const GW_TRABAJOS = [
       que: 'Lecturas de tarot', zona: 'Zona Norte, Buenos Aires', tags: 'tarot lectura cartas espiritual consulta turnos', estado: 'online' },
 
     /* ── Landings de servicios y profesionales ───────────────── */
-    { id: 'segeym', nombre: 'Segeym', url: 'https://www.segeym.com/', tipo: 'landing', rubro: 'servicios',
-      que: 'Electricista industrial y domiciliario', zona: 'Neuquén y Vaca Muerta', tags: 'electricista electricidad instalaciones tableros', estado: 'online' },
     { id: 'servitechba', nombre: 'Servitech BA', url: 'https://www.servitechba.com/', tipo: 'landing', rubro: 'servicios',
       que: 'Servicio técnico de electrodomésticos a domicilio', zona: 'Buenos Aires', tags: 'service reparación heladeras lavarropas electrodomésticos', estado: 'online' },
     { id: 'jnservicios', nombre: 'JN Servicios Integrales', url: 'https://jnservicios.com.ar/', tipo: 'landing', rubro: 'industria',
@@ -240,8 +236,6 @@ const GW_TRABAJOS = [
       que: 'Gestoría integral y estudio jurídico', zona: 'Comodoro Rivadavia, Chubut', tags: 'abogado gestoría trámites automotor sucesiones', estado: 'online' },
     { id: 'viaamparo', nombre: 'Vía Amparo', url: 'https://www.viaamparo.com.ar/', tipo: 'landing', rubro: 'legales',
       que: 'Amparos de salud contra obras sociales y prepagas', zona: '', tags: 'abogado amparo salud obra social prepaga discapacidad', estado: 'online' },
-    { id: 'italianosdelmundo', nombre: 'Italianos del Mundo', url: 'https://italianosdelmundo.com.ar/', tipo: 'landing', rubro: 'legales',
-      que: 'Ciudadanía italiana y pasaporte europeo', zona: '', tags: 'ciudadanía italiana pasaporte trámites jure sanguinis', estado: 'online' },
     { id: 'axiotek', nombre: 'AXIOTEK', url: 'https://www.axiotek.com.ar/', tipo: 'landing', rubro: 'legales',
       que: 'Habilitaciones comerciales, seguridad e higiene y peritajes', zona: 'CABA', tags: 'habilitaciones seguridad e higiene peritaje ingeniería trámites', estado: 'online' },
     { id: 'infinitytrader', nombre: 'Infinity Trader', url: 'https://infinitytrader.com.ar/', tipo: 'landing', rubro: 'finanzas',
