@@ -2,6 +2,10 @@
    portfolio/visor.css — visor del portfolio (/portfolio/ y el inicio).
    Todo cuelga de .gv para no chocar con los estilos de cada página.
    Fuentes: Playfair Display (títulos) + Inter, las carga cada página.
+
+   En compu la web elegida ocupa todo el escenario (se recorre con scroll)
+   y el texto va encima, a la izquierda, sobre un velo oscuro. En el
+   celular se apila: info → miniaturas → captura.
    ============================================================ */
 .gv, .gv-toolbar {
     --gv-bg: #0b0a09;
@@ -14,9 +18,12 @@
     --gv-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --gv-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --gv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --gv-alto: min(74vh, 760px);
+    --gv-alto: 78vh;
+    --gv-lado: clamp(20px, 6vw, 112px);   /* margen izquierdo del texto */
+    --gv-borde: clamp(20px, 3vw, 56px);   /* margen de los números y la tarjeta */
+    --gv-arriba: 0px;                      /* lo que tapa un encabezado encima */
 }
-.gv { position: relative; color: var(--gv-text); font-family: var(--gv-sans); }
+.gv { position: relative; color: var(--gv-text); font-family: var(--gv-sans); background: var(--gv-bg); }
 .gv *, .gv-toolbar * { box-sizing: border-box; }
 .gv-oculto {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -27,15 +34,14 @@
 /* ── Filtros ─────────────────────────────────────────────── */
 .gv-toolbar {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-    gap: 12px 20px; font-family: var(--gv-sans);
+    gap: 10px 16px; font-family: var(--gv-sans);
 }
-.gv > .gv-toolbar { margin-bottom: clamp(18px, 2.4vw, 28px); }
-.gv-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.gv-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .gv-chip {
-    display: inline-flex; align-items: center; gap: 7px;
-    height: 42px; padding: 0 18px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 34px; padding: 0 14px; border-radius: 999px;
     border: 1px solid var(--gv-line-2); background: rgba(255, 255, 255, 0.02);
-    color: var(--gv-text); font: 500 0.92rem/1 var(--gv-sans); cursor: pointer;
+    color: var(--gv-text); font: 500 0.78rem/1 var(--gv-sans); cursor: pointer; white-space: nowrap;
     transition: background 0.25s var(--gv-ease), color 0.25s var(--gv-ease), border-color 0.25s var(--gv-ease), transform 0.15s ease;
     -webkit-tap-highlight-color: transparent;
 }
@@ -43,167 +49,189 @@
 .gv-chip:hover { border-color: rgba(255, 255, 255, 0.6); }
 .gv-chip:active { transform: scale(0.97); }
 .gv-chip[aria-pressed="true"] { background: #fff; color: #111; border-color: #fff; }
-.gv-chip-n { font-size: 0.72rem; color: var(--gv-muted); font-variant-numeric: tabular-nums; }
+.gv-chip-n { font-size: 0.66rem; color: var(--gv-muted); font-variant-numeric: tabular-nums; }
 .gv-chip-n:empty { display: none; }
 .gv-chip[aria-pressed="true"] .gv-chip-n { color: #6b665f; }
 
-.gv-tools { display: flex; flex-wrap: nowrap; justify-content: center; gap: 8px; }
+.gv-tools { display: flex; flex-wrap: nowrap; justify-content: center; gap: 6px; }
 .gv-select, .gv-search {
     position: relative; display: inline-flex; align-items: center;
-    height: 42px; border-radius: 999px; border: 1px solid var(--gv-line);
+    height: 34px; border-radius: 999px; border: 1px solid var(--gv-line);
     background: rgba(255, 255, 255, 0.03); color: var(--gv-soft);
     transition: border-color 0.25s var(--gv-ease);
 }
 .gv-select:hover, .gv-search:hover, .gv-select:focus-within, .gv-search:focus-within { border-color: var(--gv-line-2); }
 .gv-select.activo { border-color: var(--gv-gold); color: var(--gv-text); }
 .gv-select::after {
-    content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+    content: ""; position: absolute; right: 14px; top: 50%; width: 6px; height: 6px; margin-top: -4px;
     border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
     transform: rotate(45deg); pointer-events: none;
 }
 .gv-select select {
-    appearance: none; -webkit-appearance: none; height: 100%; padding: 0 40px 0 18px;
+    appearance: none; -webkit-appearance: none; height: 100%; padding: 0 34px 0 14px;
     border: 0; border-radius: 999px; background: transparent; color: inherit;
-    font: 500 0.88rem/1 var(--gv-sans); cursor: pointer; width: 150px;
+    font: 500 0.78rem/1 var(--gv-sans); cursor: pointer; width: 132px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .gv-select select option { background: #1a1816; color: #f5f1e8; }
 /* El buscador es un botón redondo con la lupa: al tocarlo se abre hacia la
    izquierda por encima de los chips, así los filtros entran en una fila. */
-.gv-search-wrap { position: relative; display: inline-block; width: 42px; height: 42px; flex: none; }
+.gv-search-wrap { position: relative; display: inline-block; width: 34px; height: 34px; flex: none; }
 .gv-search {
-    position: absolute; right: 0; top: 0; z-index: 3; width: 42px; overflow: hidden;
-    padding-left: 12px; background: #151311; cursor: text;
+    position: absolute; right: 0; top: 0; z-index: 3; width: 34px; overflow: hidden;
+    padding-left: 9px; background: #151311; cursor: text;
     transition: width 0.35s var(--gv-ease), border-color 0.25s var(--gv-ease);
 }
-.gv-search:focus-within, .gv-search.lleno { width: 270px; }
-.gv-search svg { width: 16px; height: 16px; color: var(--gv-soft); }
+.gv-search:focus-within, .gv-search.lleno { width: 250px; }
+.gv-search svg { width: 14px; height: 14px; color: var(--gv-soft); }
 .gv-search input {
-    flex: 1; min-width: 0; height: 100%; padding: 0 16px 0 10px; border: 0; background: transparent;
-    color: var(--gv-text); font: 400 0.88rem/1 var(--gv-sans); outline: none;
+    flex: 1; min-width: 0; height: 100%; padding: 0 14px 0 9px; border: 0; background: transparent;
+    color: var(--gv-text); font: 400 0.8rem/1 var(--gv-sans); outline: none;
 }
 .gv-search input::placeholder { color: var(--gv-muted); }
 .gv-search input::-webkit-search-cancel-button { filter: invert(1) opacity(0.6); }
 .gv-chip:focus-visible, .gv-select:focus-within, .gv-search:focus-within,
-.gv-btn:focus-visible, .gv-thumb:focus-visible, .gv-nav:focus-visible, .gv-view:focus-visible, .gv-url:focus-visible {
+.gv-btn:focus-visible, .gv-thumb:focus-visible, .gv-nav:focus-visible, .gv-view:focus-visible,
+.gv-card:focus-visible, .gv-index button:focus-visible {
     outline: 2px solid var(--gv-gold); outline-offset: 3px;
 }
+.gv-view:focus-visible { outline-offset: -3px; }
 
 /* ── Escenario ───────────────────────────────────────────── */
 .gv-stage {
-    position: relative; isolation: isolate;
-    display: grid; grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.5fr);
-    align-items: center; gap: clamp(28px, 4vw, 72px);
-    height: var(--gv-alto); min-height: 520px;
-    padding: clamp(24px, 3vw, 44px) clamp(20px, 4vw, 64px);
+    position: relative; isolation: isolate; overflow: hidden;
+    height: var(--gv-alto); min-height: 500px; background: #141210;
 }
 .gv-stage[hidden] { display: none; }
 
-/* Fondo: la captura del trabajo, desenfocada y oscurecida, como luz ambiente. */
-.gv-ambient { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--gv-bg); pointer-events: none; }
-.gv-ambient img {
-    width: 100%; height: 100%; object-fit: cover; object-position: top;
-    filter: blur(48px) saturate(1.25); transform: scale(1.25); opacity: 0.42;
-    transition: opacity 0.6s var(--gv-ease);
+/* La captura: ocupa todo el escenario y se recorre con scroll. */
+.gv-screen { position: absolute; inset: 0; margin: 0; }
+.gv-view {
+    position: absolute; inset: 0;
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+    background: #141210;
 }
-.gv-ambient::after {
-    content: ""; position: absolute; inset: 0;
-    background:
-        linear-gradient(90deg, rgba(11, 10, 9, 0.96) 0%, rgba(11, 10, 9, 0.78) 34%, rgba(11, 10, 9, 0.35) 70%, rgba(11, 10, 9, 0.55) 100%),
-        linear-gradient(0deg, rgba(11, 10, 9, 0.9) 0%, rgba(11, 10, 9, 0) 30%);
-}
-.gv-stage.cargando .gv-ambient img { opacity: 0.2; }
+.gv-view::-webkit-scrollbar { width: 8px; }
+.gv-view::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.3); border-radius: 8px; }
+.gv-shot { display: block; width: 100%; height: auto; transition: opacity 0.4s var(--gv-ease), transform 0.6s var(--gv-ease); }
+.gv-stage.cargando .gv-shot { opacity: 0; transform: scale(1.015); }
 
-/* Info del trabajo */
-.gv-info { position: relative; min-width: 0; transition: opacity 0.18s ease, transform 0.18s ease; }
+/* La barra de navegador solo queda en el celular; en compu queda la línea
+   dorada de progreso abajo de todo. */
+.gv-bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; height: 2px; pointer-events: none; }
+.gv-dots, .gv-url { display: none; }
+.gv-progreso { position: absolute; inset: 0; }
+.gv-progreso i {
+    display: block; height: 100%; background: var(--gv-gold);
+    transform: scaleX(0); transform-origin: left; transition: transform 0.08s linear;
+}
+
+.gv-scrim {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+        linear-gradient(90deg, rgba(10, 9, 8, 0.93) 0%, rgba(10, 9, 8, 0.82) 26%, rgba(10, 9, 8, 0.45) 48%, rgba(10, 9, 8, 0) 68%),
+        linear-gradient(0deg, rgba(10, 9, 8, 0.75) 0%, rgba(10, 9, 8, 0) 28%),
+        linear-gradient(270deg, rgba(10, 9, 8, 0.72) 0%, rgba(10, 9, 8, 0.3) 9%, rgba(10, 9, 8, 0) 16%),
+        linear-gradient(180deg, rgba(10, 9, 8, 0.6) 0%, rgba(10, 9, 8, 0) calc(var(--gv-arriba) + 90px));
+}
+.gv-ambient { display: none; }
+
+/* Info del trabajo, encima de la captura. El scroll de la rueda pasa de
+   largo (pointer-events: none) y mueve la captura; los botones sí se tocan. */
+.gv-info {
+    position: absolute; z-index: 2; top: var(--gv-arriba); bottom: 0; left: var(--gv-lado);
+    width: min(620px, 44vw);
+    display: flex; flex-direction: column; justify-content: center;
+    padding-bottom: 40px; pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.gv-info a, .gv-info button { pointer-events: auto; }
 .gv-info.saliendo { opacity: 0; transform: translateY(8px); }
 .gv-eyebrow {
-    display: flex; align-items: center; gap: 12px; margin: 0 0 clamp(16px, 2vw, 24px);
+    display: flex; align-items: center; gap: 12px; margin: 0 0 clamp(16px, 2vw, 26px);
     font: 500 0.7rem/1.4 var(--gv-sans); letter-spacing: 0.3em; text-transform: uppercase; color: var(--gv-soft);
 }
 .gv-eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--gv-gold); flex: none; }
 .gv-title {
     margin: 0; font-family: var(--gv-serif); font-weight: 400;
-    font-size: clamp(2.3rem, 4.1vw, 4.4rem); line-height: 1.02; letter-spacing: -0.012em;
+    font-size: clamp(2.6rem, 5vw, 5.6rem); line-height: 1; letter-spacing: -0.014em;
     color: var(--gv-text); overflow-wrap: anywhere; text-wrap: balance;
+    text-shadow: 0 4px 40px rgba(0, 0, 0, 0.45);
 }
 .gv-title em { font-style: italic; color: var(--gv-gold); }
 .gv-que {
-    margin: clamp(14px, 1.6vw, 22px) 0 0; max-width: 36ch;
-    font-size: clamp(1rem, 1.1vw, 1.12rem); line-height: 1.55; color: var(--gv-soft);
+    margin: clamp(16px, 1.8vw, 26px) 0 0; max-width: 38ch;
+    font-size: clamp(1rem, 1.15vw, 1.2rem); line-height: 1.55; color: var(--gv-soft);
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
 }
 .gv-zona { color: var(--gv-muted); }
 
-.gv-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: clamp(22px, 2.6vw, 34px); }
+.gv-actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: clamp(24px, 2.8vw, 38px); }
 .gv-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-    height: 52px; padding: 0 26px; border-radius: 999px; cursor: pointer;
-    font: 600 0.95rem/1 var(--gv-sans); text-decoration: none; white-space: nowrap;
+    height: 54px; padding: 0 30px; border-radius: 999px; cursor: pointer;
+    font: 600 0.98rem/1 var(--gv-sans); text-decoration: none; white-space: nowrap;
     transition: transform 0.2s var(--gv-ease), background 0.25s var(--gv-ease), border-color 0.25s var(--gv-ease), box-shadow 0.25s var(--gv-ease);
 }
 .gv-btn svg { width: 17px; height: 17px; transition: transform 0.25s var(--gv-ease); }
 .gv-btn:active { transform: scale(0.97); }
 .gv-btn-main { background: #fff; color: #111; border: 1px solid #fff; box-shadow: 0 10px 30px -12px rgba(255, 255, 255, 0.45); }
 .gv-btn-main:hover svg { transform: translate(2px, -2px); }
-.gv-btn-ghost { background: rgba(255, 255, 255, 0.03); color: var(--gv-text); border: 1px solid var(--gv-line-2); }
-.gv-btn-ghost:hover { border-color: rgba(255, 255, 255, 0.65); }
+.gv-btn-ghost { background: rgba(10, 9, 8, 0.35); color: var(--gv-text); border: 1px solid rgba(255, 255, 255, 0.45); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.gv-btn-ghost:hover { border-color: #fff; }
 .gv-btn-ghost:hover svg { transform: translateX(3px); }
 
 .gv-feats {
-    display: flex; flex-wrap: wrap; gap: 14px 28px; margin: clamp(26px, 3vw, 40px) 0 0; padding: 0; list-style: none;
+    display: flex; flex-wrap: wrap; gap: 14px 34px; margin: clamp(30px, 3.4vw, 48px) 0 0; padding: 0; list-style: none;
 }
-.gv-feats li { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.gv-feats li { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .gv-feats svg { width: 24px; height: 24px; color: var(--gv-soft); }
 .gv-feats span { display: flex; flex-direction: column; font-size: 0.8rem; line-height: 1.35; color: var(--gv-muted); }
 .gv-feats b { font-weight: 500; font-size: 0.86rem; color: var(--gv-text); }
 
-.gv-count {
-    display: flex; align-items: center; gap: 14px; margin: clamp(24px, 3vw, 40px) 0 0;
-    font-family: var(--gv-sans); font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--gv-muted);
-}
-.gv-count b { font-weight: 500; color: var(--gv-text); }
-.gv-count i { width: 44px; height: 1px; background: var(--gv-line-2); }
+/* En compu el número va en la columna de la derecha; este es el del celular. */
+.gv-count { display: none; }
 
-/* Marco de navegador con la captura completa */
-.gv-screen {
-    position: relative; margin: 0; height: 100%; min-width: 0;
-    display: flex; flex-direction: column;
-    border-radius: 14px; overflow: hidden;
-    background: #141210; border: 1px solid var(--gv-line);
-    box-shadow: 0 40px 90px -30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(0, 0, 0, 0.4);
+/* Números verticales a la derecha */
+.gv-index {
+    position: absolute; z-index: 2; right: var(--gv-borde);
+    top: calc(var(--gv-arriba) + (100% - var(--gv-arriba)) / 2); transform: translateY(-60%);
+    display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none;
 }
-.gv-bar {
-    position: relative; flex: none; display: flex; align-items: center; gap: 14px;
-    height: 40px; padding: 0 14px; background: #1b1916; border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+.gv-index button {
+    position: relative; display: block; padding: 8px 0 8px 18px; border: 0; background: none; cursor: pointer;
+    font: 400 0.95rem/1 var(--gv-sans); font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.55);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6); transition: color 0.2s ease;
 }
-.gv-dots { display: flex; gap: 6px; }
-.gv-dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
-.gv-url {
-    flex: 1; min-width: 0; max-width: 360px; margin: 0 auto; height: 26px; padding: 0 14px;
-    display: flex; align-items: center; justify-content: center; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06); color: var(--gv-soft); text-decoration: none;
-    font: 400 0.78rem/1 var(--gv-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    transition: background 0.2s ease, color 0.2s ease;
+.gv-index button:hover { color: #fff; }
+.gv-index button[aria-current="true"] { color: #fff; font-weight: 500; padding-bottom: 22px; }
+.gv-index button[aria-current="true"]::after {
+    content: ""; position: absolute; right: 0; bottom: 6px; width: 44px; height: 1px; background: #fff;
 }
-.gv-url:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
-.gv-bar::after { content: ""; width: 42px; flex: none; }
-.gv-progreso { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; }
-.gv-progreso i {
-    display: block; height: 100%; background: var(--gv-gold);
-    transform: scaleX(0); transform-origin: left; transition: transform 0.08s linear;
+
+/* Tarjeta abajo a la derecha */
+.gv-card {
+    position: absolute; z-index: 2; right: var(--gv-borde); bottom: clamp(22px, 3vw, 40px);
+    display: flex; align-items: center; justify-content: space-between; gap: 36px;
+    min-width: min(400px, 30vw); padding: 22px 24px 22px 30px; border-radius: 6px;
+    background: rgba(14, 13, 11, 0.74); border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    color: var(--gv-text); text-decoration: none;
+    transition: border-color 0.25s var(--gv-ease), background 0.25s var(--gv-ease);
 }
-.gv-view {
-    position: relative; flex: 1; min-height: 0;
-    overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
-    background: #f4f4f4;
+.gv-card:hover { border-color: rgba(255, 255, 255, 0.35); background: rgba(14, 13, 11, 0.86); }
+.gv-card-txt { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.gv-card-eb { font-size: 0.64rem; letter-spacing: 0.36em; text-transform: uppercase; color: var(--gv-muted); }
+.gv-card-name { font-family: var(--gv-serif); font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gv-card-go {
+    flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.45); transition: background 0.25s var(--gv-ease), color 0.25s var(--gv-ease);
 }
-.gv-view::-webkit-scrollbar { width: 8px; }
-.gv-view::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.28); border-radius: 8px; }
-.gv-shot { display: block; width: 100%; height: auto; transition: opacity 0.35s var(--gv-ease), transform 0.5s var(--gv-ease); }
-.gv-stage.cargando .gv-shot { opacity: 0; transform: scale(0.985); }
+.gv-card:hover .gv-card-go { background: #fff; color: #111; }
+
 .gv-hint {
-    position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+    position: absolute; z-index: 2; left: 50%; bottom: 26px; transform: translateX(-50%);
     padding: 9px 16px; border-radius: 999px; pointer-events: none;
     background: rgba(17, 16, 14, 0.82); color: #fff; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     font: 500 0.78rem/1 var(--gv-sans); white-space: nowrap;
@@ -219,7 +247,7 @@
     position: relative; display: flex; align-items: center; gap: clamp(10px, 1.4vw, 22px);
     padding: clamp(14px, 1.6vw, 22px) clamp(12px, 2vw, 32px) clamp(12px, 1.4vw, 18px);
     border-top: 1px solid rgba(255, 255, 255, 0.07);
-    background: linear-gradient(180deg, rgba(20, 18, 16, 0.92), var(--gv-bg));
+    background: var(--gv-bg);
 }
 .gv-strip[hidden] { display: none; }
 .gv-nav {
@@ -264,33 +292,67 @@
 .gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: var(--gv-text); }
 .gv-vacio p { margin: 0 0 22px; }
 
+/* Notebooks con poco alto: la info tiene que entrar en el escenario.
+   Primero se van los rasgos, después se achica. */
+@media (min-width: 961px) and (max-height: 880px) {
+    .gv-feats { display: none; }
+    .gv-title { font-size: clamp(2.4rem, 4.2vw, 4.4rem); }
+    .gv-eyebrow { margin-bottom: 14px; }
+    .gv-actions { margin-top: 24px; }
+}
+@media (min-width: 961px) and (max-width: 1280px) {
+    .gv-card { min-width: 0; gap: 22px; padding: 16px 18px 16px 22px; }
+    .gv-info { width: min(560px, 50vw); }
+}
+
 /* ── Celular y tablet ────────────────────────────────────── */
 @media (max-width: 960px) {
-    /* En el celular el orden es info → miniaturas → captura: así se cambia de
-       trabajo sin tener que pasar por encima de la captura entera. */
+    /* Orden: info → miniaturas → captura, así se cambia de trabajo sin tener
+       que pasar por encima de la captura entera. La captura va de borde a borde. */
     .gv { display: flex; flex-direction: column; isolation: isolate; overflow: hidden; }
     .gv > .gv-toolbar { order: 0; }
     .gv-stage { display: contents; }
-    .gv-ambient { z-index: -1; }
-    .gv-info { order: 1; padding: 26px 16px 4px; }
-    .gv-strip { order: 2; }
-    .gv-screen { order: 3; margin: 4px 16px 24px; }
-    .gv-vacio { order: 4; }
+    .gv-ambient { display: block; position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+    .gv-ambient img {
+        width: 100%; height: 100%; object-fit: cover; object-position: top;
+        filter: blur(48px) saturate(1.25); transform: scale(1.25); opacity: 0.4;
+    }
     .gv-ambient::after {
+        content: ""; position: absolute; inset: 0;
         background: linear-gradient(180deg, rgba(11, 10, 9, 0.9) 0%, rgba(11, 10, 9, 0.72) 40%, rgba(11, 10, 9, 0.94) 100%);
     }
-    .gv-title { font-size: clamp(2.1rem, 8.6vw, 3rem); }
-    .gv-que { max-width: none; }
+    .gv-scrim, .gv-index, .gv-card { display: none; }
+    .gv-info {
+        order: 1; position: relative; inset: auto; width: auto; padding: 26px 16px 4px;
+        pointer-events: auto; display: block;
+    }
+    .gv-strip { order: 2; padding: 18px 0 14px; border-top: 0; background: none; }
+    .gv-screen { order: 3; position: relative; inset: auto; height: min(72svh, 660px); margin-top: 4px; background: #141210; }
+    .gv-vacio { order: 4; }
+    .gv-bar { position: absolute; top: 0; bottom: auto; height: 34px; display: flex; align-items: center; gap: 12px; padding: 0 12px; background: #1b1916; border-bottom: 1px solid rgba(255, 255, 255, 0.07); pointer-events: auto; }
+    .gv-dots { display: flex; gap: 5px; }
+    .gv-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.16); }
+    .gv-url {
+        display: flex; flex: 1; min-width: 0; justify-content: center; align-items: center; height: 22px; margin-right: 32px;
+        border-radius: 999px; background: rgba(255, 255, 255, 0.06); color: var(--gv-soft); text-decoration: none;
+        font: 400 0.74rem/1 var(--gv-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .gv-progreso { top: auto; bottom: -1px; height: 2px; }
+    .gv-view { top: 34px; overscroll-behavior-y: auto; }
+    .gv-title { font-size: clamp(2.1rem, 8.6vw, 3rem); text-shadow: none; }
+    .gv-que { max-width: none; text-shadow: none; }
     .gv-feats { display: none; }
-    .gv-count { position: absolute; top: 26px; right: 16px; margin: 0; gap: 8px; }
-    .gv-count i { width: 18px; }
+    .gv-count {
+        display: flex; align-items: center; gap: 8px; position: absolute; top: 26px; right: 16px; margin: 0;
+        font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--gv-muted);
+    }
+    .gv-count b { font-weight: 500; color: var(--gv-text); }
+    .gv-count i { width: 18px; height: 1px; background: var(--gv-line-2); }
     .gv-eyebrow { padding-right: 76px; letter-spacing: 0.2em; }
     .gv-actions { margin-top: 20px; gap: 10px; flex-wrap: nowrap; }
     .gv-btn { height: 48px; padding: 0 14px; flex: 1 1 0; min-width: 0; font-size: 0.9rem; gap: 8px; }
-    .gv-screen { height: min(62svh, 600px); border-radius: 12px; }
-    .gv-view { overscroll-behavior-y: auto; }
+    .gv-hint { bottom: 18px; }
     .gv-nav { display: none; }
-    .gv-strip { padding: 18px 0 14px; border-top: 0; background: none; }
     .gv-rail { padding: 6px 16px 4px; scroll-padding-inline: 16px; }
     .gv-thumb { width: 150px; scroll-snap-align: start; }
     .gv-thumb-name { font-size: 0.86rem; }
@@ -298,26 +360,12 @@
     .gv-toolbar { justify-content: flex-start; }
     .gv-chips { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; max-width: 100%; padding: 2px; }
     .gv-chips::-webkit-scrollbar { display: none; }
-    .gv-chip { flex: none; height: 40px; padding: 0 16px; font-size: 0.88rem; }
-    .gv-tools { width: 100%; flex-wrap: nowrap; }
+    .gv-chip { flex: none; }
+    .gv-tools { width: 100%; }
     .gv-select { flex: 1 1 50%; min-width: 0; }
-    .gv-select select { width: 100%; max-width: none; }
+    .gv-select select { width: 100%; }
     .gv-search-wrap { flex: 1 1 50%; min-width: 0; width: auto; }
     .gv-search, .gv-search:focus-within, .gv-search.lleno { position: relative; width: 100%; }
-}
-
-/* Notebooks con poco alto: la info tiene que entrar en el escenario sin
-   meterse abajo de la tira. Primero se van los rasgos, después se achica. */
-@media (min-width: 961px) and (max-height: 880px) {
-    .gv-feats { display: none; }
-    .gv-title { font-size: clamp(2.1rem, 3.4vw, 3.6rem); }
-    .gv-eyebrow { margin-bottom: 14px; }
-    .gv-actions { margin-top: 22px; }
-    .gv-count { margin-top: 22px; }
-}
-@media (min-width: 961px) and (max-height: 720px) {
-    .gv-count { display: none; }
-    .gv-btn { height: 46px; padding: 0 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

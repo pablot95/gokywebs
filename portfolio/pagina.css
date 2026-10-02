@@ -36,8 +36,8 @@ a { color: inherit; }
 .pv-tag { display: inline-flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #d9d3c8; white-space: nowrap; }
 .pv-tag i { width: 6px; height: 6px; border-radius: 50%; background: #e5b46e; }
 .pv-hablemos {
-    display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.45); text-decoration: none; font-weight: 600; font-size: 0.9rem; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 18px; border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.45); text-decoration: none; font-weight: 600; font-size: 0.85rem; white-space: nowrap;
     transition: background 0.25s ease, color 0.25s ease;
 }
 .pv-hablemos svg { width: 16px; height: 16px; }
@@ -47,12 +47,18 @@ a { color: inherit; }
    Encabezado + escenario + tira ocupan justo la pantalla: el escenario se
    queda con lo que sobra, sea cual sea el alto del encabezado. */
 @media (min-width: 961px) {
-    .pv-shell { display: flex; flex-direction: column; height: 100svh; min-height: 640px; }
+    .pv-shell { position: relative; display: flex; flex-direction: column; height: 100svh; min-height: 620px; }
     .pv-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-    .gv--pagina { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .gv--pagina { flex: 1; min-height: 0; display: flex; flex-direction: column; --gv-arriba: 86px; }
     .gv--pagina .gv-stage { flex: 1; height: auto; min-height: 0; }
+    /* El encabezado flota sobre la captura, como en el diseño: la web
+       elegida llega hasta arriba de todo. */
+    .pv-header {
+        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+        background: linear-gradient(180deg, rgba(10, 9, 8, 0.82) 0%, rgba(10, 9, 8, 0.5) 60%, rgba(10, 9, 8, 0) 100%);
+        border-bottom: 0;
+    }
 }
-.gv--pagina .gv-stage { padding-inline: clamp(20px, 5vw, 112px); }
 
 .pv-noscript { padding: 60px 20px; text-align: center; color: #d9d3c8; }
 
@@ -63,12 +69,13 @@ a { color: inherit; }
 /* Los filtros no entran en una fila con la marca y el botón: bajan a la segunda. */
 .pv-toolbar .gv-toolbar { flex-wrap: nowrap; gap: 8px; }
 .pv-toolbar .gv-chips { flex-wrap: nowrap; }
-@media (max-width: 1840px) {
+@media (max-width: 1660px) {
     .pv-tag { display: none; }
 }
-@media (max-width: 1500px) {
+@media (max-width: 1400px) {
     .pv-header { grid-template-columns: auto auto; }
     .pv-toolbar { grid-column: 1 / -1; grid-row: 2; }
+    .gv--pagina { --gv-arriba: 132px; }
 }
 @media (max-width: 960px) {
     .pv-toolbar .gv-toolbar { flex-wrap: wrap; }

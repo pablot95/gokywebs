@@ -190,6 +190,11 @@
                 '<span class="gv-hint" aria-hidden="true">' +
                     (window.matchMedia('(pointer: coarse)').matches ? 'Deslizá para recorrer la web' : 'Scrolleá para recorrer la web') + ' ↓</span>' +
             '</figure>' +
+            /* En compu la captura ocupa todo el escenario y el texto va encima:
+               el velo oscurece la izquierda y abajo para que se lea. */
+            '<div class="gv-scrim" aria-hidden="true"></div>' +
+            '<ol class="gv-index" aria-label="Ir al trabajo"></ol>' +
+            '<a class="gv-card" target="_blank" rel="noopener noreferrer"></a>' +
         '</div>' +
         '<div class="gv-vacio" hidden>' +
             '<p class="gv-vacio-t">No encontramos trabajos con eso.</p>' +
@@ -219,6 +224,8 @@
     var $hint = root.querySelector('.gv-hint');
     var $prog = root.querySelector('.gv-progreso i');
     var $vacio = root.querySelector('.gv-vacio');
+    var $index = root.querySelector('.gv-index');
+    var $card = root.querySelector('.gv-card');
     var $strip = root.querySelector('.gv-strip');
     var $rail = root.querySelector('.gv-rail');
 
@@ -353,6 +360,27 @@
                 '<span class="gv-oculto"> trabajos</span></p>';
     }
 
+    /* Números verticales a la derecha (01 activo, los 4 que siguen), como en
+       el diseño. Con más de 5 trabajos la ventana acompaña al actual. */
+    function indiceHTML(t) {
+        var i = lista.indexOf(t);
+        var desde = Math.max(0, Math.min(i, lista.length - 5));
+        var html = '';
+        for (var k = desde; k < Math.min(lista.length, desde + 5); k++) {
+            var on = k === i;
+            html += '<li><button type="button" data-gv-ir="' + esc(lista[k].id) + '"' +
+                (on ? ' aria-current="true"' : '') + ' aria-label="' + esc(lista[k].nombre) + '">' +
+                dos(k + 1) + '</button></li>';
+        }
+        return html;
+    }
+
+    function tarjetaHTML(t) {
+        return '<span class="gv-card-txt"><span class="gv-card-eb">' + esc(LABEL_RUBRO[t.rubro] || t.rubro) + '</span>' +
+            '<span class="gv-card-name">' + esc(t.nombre) + '</span></span>' +
+            '<span class="gv-card-go" aria-hidden="true">' + ICO.flecha + '</span>';
+    }
+
     var turno = 0;
     var hintVisto = false;
 
@@ -369,16 +397,20 @@
             if (on) el.setAttribute('aria-current', 'true'); else el.removeAttribute('aria-current');
         });
         centrarMiniatura(!opciones.instantaneo);
-        if (mismo && !opciones.forzar) { $info.innerHTML = infoHTML(t); return; }
+        if (mismo && !opciones.forzar) { $info.innerHTML = infoHTML(t); $index.innerHTML = indiceHTML(t); return; }
 
         $url.href = t.url;
         $url.textContent = dominio(t.url);
         $view.setAttribute('aria-label', 'Captura de la web de ' + t.nombre + '. Se recorre con scroll.');
         $shot.alt = 'Web de ' + t.nombre + ' (' + dominio(t.url) + '), página completa';
 
+        $index.innerHTML = indiceHTML(t);
+        $card.href = t.url;
+        $card.setAttribute('aria-label', 'Visitar la web de ' + t.nombre);
         var cambiar = function () {
             if (mio !== turno) return;
             $info.innerHTML = infoHTML(t);
+            $card.innerHTML = tarjetaHTML(t);
             $info.classList.remove('saliendo');
         };
         if (quieto || opciones.instantaneo) cambiar();
@@ -483,6 +515,8 @@
     root.addEventListener('click', function (e) {
         var th = e.target.closest('.gv-thumb');
         if (th) { mostrar(porId[th.dataset.id]); return; }
+        var ir = e.target.closest('[data-gv-ir]');
+        if (ir) { mostrar(porId[ir.getAttribute('data-gv-ir')]); return; }
         if (e.target.closest('.gv-prev')) { mover(-1); return; }
         if (e.target.closest('.gv-next')) { mover(1); return; }
         if (e.target.closest('[data-gv-reset]')) {
