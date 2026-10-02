@@ -119,31 +119,35 @@
 .gv-search input::placeholder { color: var(--gv-muted); }
 .gv-search input::-webkit-search-cancel-button { filter: invert(1) opacity(0.6); }
 .gv-chip:focus-visible, .gv-select:focus-within, .gv-search:focus-within,
-.gv-thumb:focus-visible, .gv-nav:focus-visible, .gv-visitar:focus-visible, .gv-btn:focus-visible {
+.gv-thumb:focus-visible, .gv-nav:focus-visible, .gv-btn:focus-visible {
     outline: 2px solid var(--gv-gold); outline-offset: 2px;
 }
 
-/* ── Miniaturas, a todo el ancho y sin fondo, sobre el borde de la web ──
+/* ── Miniaturas, de borde a borde y sin fondo, sobre la parte de abajo ──
    La franja en sí no atrapa el mouse (pointer-events: none): entre
-   miniatura y miniatura se sigue scrolleando y clickeando la web. */
+   miniatura y miniatura se sigue scrolleando y clickeando la web. Las
+   flechas flotan sobre los extremos de la tira. */
 .gv-strip {
     position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
-    display: flex; align-items: flex-end; gap: 12px;
-    padding: 0 clamp(12px, 2vw, 28px) 12px; pointer-events: none;
+    display: flex; align-items: flex-end;
+    padding: 0 0 12px; pointer-events: none;
 }
 .gv-strip > * { pointer-events: auto; }
 .gv-strip[hidden] { display: none; }
 .gv-nav {
-    flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+    position: absolute; z-index: 2; bottom: calc(12px + 4px + (clamp(169px, 11.7vw, 247px) * 0.625 - 40px) / 2);
+    display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
     border: 0; background: #1a1816; color: #fff; cursor: pointer;
     box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
     transition: background 0.2s ease, transform 0.15s ease;
 }
 .gv-nav:hover { background: #000; }
+.gv-prev { left: 12px; }
+.gv-next { right: 12px; }
 .gv-nav:active { transform: scale(0.94); }
 .gv-rail {
     position: relative; flex: 1; min-width: 0;
-    display: flex; align-items: flex-end; gap: clamp(18px, 2vw, 30px); padding: 34px 14px 4px;
+    display: flex; align-items: flex-end; gap: clamp(18px, 2vw, 30px); padding: 34px 16px 4px;
     overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
     overscroll-behavior-x: contain; cursor: grab; user-select: none; -webkit-user-select: none;
 }
@@ -164,13 +168,6 @@
 .gv-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 /* La elegida se distingue porque queda levantada, sin borde de color. */
 .gv-thumb.activo { transform: translateY(-8px); box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.6); }
-.gv-visitar {
-    flex: none; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px;
-    border-radius: 999px; background: #1a1816; color: #fff; text-decoration: none;
-    font: 600 0.82rem/1 var(--gv-sans); white-space: nowrap;
-    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
-}
-.gv-visitar svg { width: 13px; height: 13px; }
 
 /* ── Sin resultados ──────────────────────────────────────── */
 .gv-vacio { padding: 80px 20px; text-align: center; color: #5d574e; }

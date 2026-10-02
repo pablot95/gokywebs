@@ -131,7 +131,6 @@
         return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
     }
     var ICO = {
-        afuera: ico('<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'),
         izq: ico('<path d="M15 6l-6 6 6 6"/>'),
         der: ico('<path d="M9 6l6 6-6 6"/>'),
         lupa: ico('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')
@@ -179,7 +178,6 @@
             '<button class="gv-nav gv-prev" type="button" aria-label="Trabajo anterior">' + ICO.izq + '</button>' +
             '<div class="gv-rail" role="list" aria-label="Trabajos"></div>' +
             '<button class="gv-nav gv-next" type="button" aria-label="Trabajo siguiente">' + ICO.der + '</button>' +
-            '<a class="gv-visitar" target="_blank" rel="noopener noreferrer">Visitar sitio ' + ICO.afuera + '</a>' +
         '</div>';
 
     var slot = root.getAttribute('data-toolbar') && document.querySelector(root.getAttribute('data-toolbar'));
@@ -197,7 +195,6 @@
     var $shot = root.querySelector('.gv-shot');
     var $prog = root.querySelector('.gv-progreso i');
     var $vacio = root.querySelector('.gv-vacio');
-    var $visitar = root.querySelector('.gv-visitar');
     var $strip = root.querySelector('.gv-strip');
     var $rail = root.querySelector('.gv-rail');
 
@@ -322,8 +319,6 @@
         $view.setAttribute('aria-label', 'Web de ' + t.nombre + ' (' + dominio(t.url) + '). Se recorre con scroll.');
         $shot.alt = 'Web de ' + t.nombre + ' (' + dominio(t.url) + '), página completa';
         $info.textContent = t.nombre + ': ' + t.que + (t.zona ? ', ' + t.zona : '') + '.';
-        $visitar.href = t.url;
-        $visitar.setAttribute('aria-label', 'Visitar la web de ' + t.nombre + ' (se abre en otra pestaña)');
 
         /* La captura nueva se carga aparte y entra cuando está lista: nunca se
            ve el marco vacío ni la captura vieja a mitad de scroll. */
