@@ -29,6 +29,12 @@ RewriteRule ^pago/mensual29900(/.*)?$ /pago/mensual29000/ [R=301,L]
 RewriteRule ^planmensual/19900(/.*)?$ /planmensual/19000/ [R=301,L]
 RewriteRule ^planmensual/29900(/.*)?$ /planmensual/29000/ [R=301,L]
 
+# El anual de tienda/cursos/inmobiliaria y los pagos únicos bajaron el mismo día
+# ($199.000 → $190.000, $299.000 → $290.000; el anual del sitio sigue en $149.000).
+RewriteRule ^pago/anual199(/.*)?$ /pago/anual190/ [R=301,L]
+RewriteRule ^pago/unico199(/.*)?$ /pago/unico190/ [R=301,L]
+RewriteRule ^pago/unico299(/.*)?$ /pago/unico290/ [R=301,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ case-router.php [L,QSA]

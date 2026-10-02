@@ -34,11 +34,11 @@ caso('una consulta sin regla asociada deriva toda la tanda', pp_silencio($c, $r)
 $c = pp_conv('landing');
 $c['precio_cotizado'] = '$180.000'; $c['mensualidad_cotizada'] = '$25.000'; $c['precio_unico_cotizado'] = '$240.000';
 $p = wabot_precio_vigente($c, $cfg);
-caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$149.000' && $p['mensualidad'] === '$19.000' && $p['precio_unico'] === '$199.000');
+caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$149.000' && $p['mensualidad'] === '$19.000' && $p['precio_unico'] === '$190.000');
 $c2 = pp_conv('ecommerce');
-$c2['precio_cotizado'] = '$199.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$299.000';
+$c2['precio_cotizado'] = '$190.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$290.000';
 $p2 = wabot_precio_vigente($c2, $cfg);
-caso('cotización del 1-oct con $29.900 toma el mensual de $29.000 (2-oct)', $p2['mensualidad'] === '$29.000' && $p2['precio'] === '$199.000' && $p2['precio_unico'] === '$299.000');
+caso('cotización del 1-oct con $29.900 toma el mensual de $29.000 (2-oct)', $p2['mensualidad'] === '$29.000' && $p2['precio'] === '$190.000' && $p2['precio_unico'] === '$290.000');
 $c['precio_cotizado'] = '$120.000'; $c['presentado_ts'] = time(); $c['modalidad_elegida'] = 'anual';
 pp_api(pp_decision(['pago_link']));
 $r = turno('Mandame el link del anual', $c, $cfg);
@@ -115,10 +115,10 @@ function pp_silencio($c, $r) {
         && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']);
 }
 
-foreach (['landing' => ['$19.000', '$149.000', '$199.000', '$89.000', '$139.000'],
-    'ecommerce' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000'],
-    'elearning' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000'],
-    'inmobiliaria' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000']]
+foreach (['landing' => ['$19.000', '$149.000', '$190.000', '$89.000', '$130.000'],
+    'ecommerce' => ['$29.000', '$190.000', '$290.000', '$130.000', '$230.000'],
+    'elearning' => ['$29.000', '$190.000', '$290.000', '$130.000', '$230.000'],
+    'inmobiliaria' => ['$29.000', '$190.000', '$290.000', '$130.000', '$230.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -208,7 +208,7 @@ foreach (['Gracias', '👍', 'Gracias por comunicarte, nuestro horario de atenci
     $r = turno($texto, $c, $cfg);
     caso('acuse o respuesta automática no inventa avance: ' . $texto, $r === [] && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
-foreach (['landing' => ['anual149', 'unico199'], 'ecommerce' => ['anual199', 'unico299']] as $tipo => [$anual, $propia]) {
+foreach (['landing' => ['anual149', 'unico190'], 'ecommerce' => ['anual190', 'unico290']] as $tipo => [$anual, $propia]) {
     foreach (['El plan anual' => [$anual, 'plan anual'], 'El pago único' => [$propia, 'pago único']] as $texto => [$pagina, $nombre]) {
         $c = pp_conv($tipo, ['presentado_ts' => time()]);
         pp_api(pp_decision(['pago_link']));

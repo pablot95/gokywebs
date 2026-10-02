@@ -2507,17 +2507,17 @@ function burbujaCita(t, chat) {
                         <button type="button" class="sec" id="btnPlan35"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $29.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual149 y pago/anual199). */ ?>
+                               datos para la transferencia (pago/anual149 y pago/anual190). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
                             title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $149.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $199.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/unico199 y pago/unico299). */ ?>
+                               datos para la transferencia (pago/unico190 y pago/unico290). */ ?>
                         <button type="button" class="sec" id="btnUnico240"
-                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $199.000</button>
+                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $190.000</button>
                         <button type="button" class="sec" id="btnUnico360"
-                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $299.000</button>
+                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $290.000</button>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -3313,16 +3313,16 @@ function burbujaCita(t, chat) {
             rrInsertar('Te paso el plan anual del sitio profesional ($149.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($89.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual149');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($199.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($139.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual199');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
          * seña y el resto. */
         document.getElementById('btnUnico240')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único del sitio profesional ($199.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($139.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico199');
+            rrInsertar('Te paso el pago único del sitio profesional ($190.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico190');
         });
         document.getElementById('btnUnico360')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($299.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($239.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico299');
+            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($290.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($230.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico290');
         });
 
         function rrElegir(indice) {

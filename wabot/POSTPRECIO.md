@@ -6,14 +6,14 @@
 
 | Tipo | Mensual | Anual | Pago único |
 |---|---:|---:|---:|
-| Sitio profesional | $19.000 | $149.000 | $199.000 |
-| Tienda, cursos e inmobiliaria | $29.000 | $199.000 | $299.000 |
+| Sitio profesional | $19.000 | $149.000 | $190.000 |
+| Tienda, cursos e inmobiliaria | $29.000 | $190.000 | $290.000 |
 
-Seña del anual y del pago único: $60.000. Saldos: $89.000/$139.000 para sitio profesional y $139.000/$239.000 para el resto. El mantenimiento aparte del pago único conserva su importe: $10.000/$15.000.
+Seña del anual y del pago único: $60.000. Saldos: $89.000/$130.000 para sitio profesional y $130.000/$230.000 para el resto. El mantenimiento aparte del pago único conserva su importe: $10.000/$15.000.
 
 Mensual profesional: `https://mpago.la/2nEoNGN`. Mensual resto: `https://mpago.la/2CQLnCv`. Los enlaces se incorporaron tal como fueron proporcionados; Mercado Pago bloqueó la consulta automatizada con HTTP 403, por lo que no se verificó allí el importe contratado.
 
-Los precios comerciales salen de `textos.php`; las páginas nuevas están en `/pago/mensual19000`, `/pago/mensual29000`, `/pago/anual149`, `/pago/anual199`, `/pago/unico199` y `/pago/unico299`. Se conservan las páginas anteriores para los planes existentes. El administrador conserva los montos guardados de cada cliente.
+Los precios comerciales salen de `textos.php`; las páginas nuevas están en `/pago/mensual19000`, `/pago/mensual29000`, `/pago/anual149`, `/pago/anual190`, `/pago/unico190` y `/pago/unico290`. Se conservan las páginas anteriores para los planes existentes. El administrador conserva los montos guardados de cada cliente.
 
 Una cotización previa toma la lista actual si es más baja; si conserva una oferta especial menor, el bot no puede mandarle una página que cobre más. Las imágenes anteriores permanecen para visualizar el historial y no se ofrecen botones para enviarlas en las conversaciones.
 

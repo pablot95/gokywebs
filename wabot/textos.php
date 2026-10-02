@@ -12,9 +12,9 @@
  * 1 mensual, 2 anual y 3 pago único. Las imágenes anteriores son históricas.
  * - Mensual (2-oct, antes $19.900 / $29.900): $19.000 sitio profesional; $29.000 resto. Mercado Pago:
  *   mpago.la/2nEoNGN y mpago.la/2CQLnCv. Sin pago inicial adicional.
- * - Anual: $149.000 sitio profesional; $199.000 resto. Seña de $60.000,
+ * - Anual: $149.000 sitio profesional; $190.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
- * - Pago único: $199.000 sitio profesional; $299.000 resto. Misma seña,
+ * - Pago único: $190.000 sitio profesional; $290.000 resto. Misma seña,
  *   saldo al entregar; hosting y dominio incluidos el primer año.
  * - Mensual/anual incluyen mantenimiento y un cambio al mes. El mantenimiento
  *   del pago único se contrata aparte por tipos[].mantenimiento.
@@ -443,7 +443,7 @@ function wabot_textos_default() {
         'landing' => [
             'label' => 'Sitio profesional',
             'precio' => '$149.000',
-            'precio_unico' => '$199.000',
+            'precio_unico' => '$190.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
             'reconocimiento_que' => 'tus servicios',
@@ -457,8 +457,8 @@ function wabot_textos_default() {
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$199.000',
-            'precio_unico' => '$299.000',
+            'precio' => '$190.000',
+            'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
             'reconocimiento_que' => 'tus productos',
@@ -472,8 +472,8 @@ function wabot_textos_default() {
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$199.000',
-            'precio_unico' => '$299.000',
+            'precio' => '$190.000',
+            'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos completa',
             'reconocimiento_que' => 'tus cursos',
@@ -487,8 +487,8 @@ function wabot_textos_default() {
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$199.000',
-            'precio_unico' => '$299.000',
+            'precio' => '$190.000',
+            'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',
             'reconocimiento_que' => 'tus propiedades',
