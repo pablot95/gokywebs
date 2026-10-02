@@ -3812,8 +3812,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 /**
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): el segundo mensaje
  * del turno del precio pasa sus links, en lugar de la imagen. Viven en pago/
- * (mensual19900, anual149, unico199 y, para tienda, cursos e inmobiliaria,
- * mensual29900, anual199, unico299); cada una tiene arriba las pestañas para pasar
+ * (mensual19000, anual149, unico199 y, para tienda, cursos e inmobiliaria,
+ * mensual29000, anual199, unico299); cada una tiene arriba las pestañas para pasar
  * a las otras dos del mismo tipo de web.
  *
  * `monto` es lo que cobra la página, escrito en su HTML: si cambian los montos
@@ -3823,13 +3823,13 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  */
 function wabot_planes_paginas() {
     $tienda = [
-        'mensual' => ['pagina' => 'mensual29900', 'monto' => '$29.900'],
+        'mensual' => ['pagina' => 'mensual29000', 'monto' => '$29.000'],
         'anual'   => ['pagina' => 'anual199',  'monto' => '$199.000'],
         'unico'   => ['pagina' => 'unico299',  'monto' => '$299.000'],
     ];
     return [
         'landing'      => [
-            'mensual' => ['pagina' => 'mensual19900', 'monto' => '$19.900'],
+            'mensual' => ['pagina' => 'mensual19000', 'monto' => '$19.000'],
             'anual'   => ['pagina' => 'anual149',  'monto' => '$149.000'],
             'unico'   => ['pagina' => 'unico199',  'monto' => '$199.000'],
         ],

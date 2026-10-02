@@ -468,7 +468,7 @@ openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'sitio_profesion
 $r = turno('Son dos, uno es agencia de viajes y otro pañales y articulos de bebe que quiero vender por la web', $c, $cfg);
 $dos = implode("\n", $r);
 caso('dos negocios → las dos webs con el 20% y cada una sola',
-    strpos($dos, '$39.840 por mes por las dos (en vez de $49.800)') !== false && strpos($dos, 'el sitio profesional sale $19.900 por mes') !== false
+    strpos($dos, '$38.400 por mes por las dos (en vez de $48.000)') !== false && strpos($dos, 'el sitio profesional sale $19.000 por mes') !== false
     && ($c['dos_webs'] ?? null) === ['landing', 'ecommerce'] && !empty($c['oferta_diseno_ts']), $dos);
 caso('el esquema tiene la segunda web', in_array('segunda_web', (array)(pedidos()[0]['text']['format']['schema']['required'] ?? []), true));
 caso('las instrucciones explican las dos webs y que el descuento lo pone el sistema',

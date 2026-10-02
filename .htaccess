@@ -21,6 +21,14 @@ RewriteRule ^mantenimiento/index\.html$ /planmensual/ [R=301,L]
 RewriteRule ^mantenimientomensual(/.*)?$ /planmensual/sitioprofesional/ [R=301,L]
 RewriteRule ^mantenimientoweb(/.*)?$ /planmensual/tienda/ [R=301,L]
 
+# El plan mensual bajó de $19.900 / $29.900 a $19.000 / $29.000 (Pablo, 2-oct-2026,
+# mismos links de Mercado Pago): las páginas se renombraron y los links que el bot
+# ya mandó con el monto viejo llevan a las nuevas.
+RewriteRule ^pago/mensual19900(/.*)?$ /pago/mensual19000/ [R=301,L]
+RewriteRule ^pago/mensual29900(/.*)?$ /pago/mensual29000/ [R=301,L]
+RewriteRule ^planmensual/19900(/.*)?$ /planmensual/19000/ [R=301,L]
+RewriteRule ^planmensual/29900(/.*)?$ /planmensual/29000/ [R=301,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ case-router.php [L,QSA]

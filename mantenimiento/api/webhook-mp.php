@@ -156,6 +156,8 @@ if ($status !== 'authorized' && !isset($MP_AVISOS[$status])) {
 //      entrar por su preapproval_plan_id.
 //    - 35.000 → mensual, plan con cambios de tienda / cursos / inmobiliaria.
 //    - 20.000 / 7.000 → landing y 30.000 → mensual: planes anteriores.
+//    - 19.000 → landing y 29.000 → mensual: planes de hoy (2-oct-2026). Son los
+//      mismos links que 19.900 / 29.900 (Pablo les bajó el monto en MP).
 $planId = (string)($pre['preapproval_plan_id'] ?? '');
 $MP_MONTOS = [
     10000 => ['plan' => 'landing', 'label' => 'Plan $10.000'],
@@ -165,6 +167,8 @@ $MP_MONTOS = [
     25000 => ['plan' => 'mensual', 'label' => 'Plan $25.000'],
     19900 => ['plan' => 'landing', 'label' => 'Plan $19.900'],
     29900 => ['plan' => 'mensual', 'label' => 'Plan $29.900'],
+    19000 => ['plan' => 'landing', 'label' => 'Plan $19.000'],
+    29000 => ['plan' => 'mensual', 'label' => 'Plan $29.000'],
     30000 => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
     35000 => ['plan' => 'mensual', 'label' => 'Plan $35.000'],
 ];

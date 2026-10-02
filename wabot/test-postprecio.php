@@ -34,7 +34,11 @@ caso('una consulta sin regla asociada deriva toda la tanda', pp_silencio($c, $r)
 $c = pp_conv('landing');
 $c['precio_cotizado'] = '$180.000'; $c['mensualidad_cotizada'] = '$25.000'; $c['precio_unico_cotizado'] = '$240.000';
 $p = wabot_precio_vigente($c, $cfg);
-caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$149.000' && $p['mensualidad'] === '$19.900' && $p['precio_unico'] === '$199.000');
+caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$149.000' && $p['mensualidad'] === '$19.000' && $p['precio_unico'] === '$199.000');
+$c2 = pp_conv('ecommerce');
+$c2['precio_cotizado'] = '$199.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$299.000';
+$p2 = wabot_precio_vigente($c2, $cfg);
+caso('cotización del 1-oct con $29.900 toma el mensual de $29.000 (2-oct)', $p2['mensualidad'] === '$29.000' && $p2['precio'] === '$199.000' && $p2['precio_unico'] === '$299.000');
 $c['precio_cotizado'] = '$120.000'; $c['presentado_ts'] = time(); $c['modalidad_elegida'] = 'anual';
 pp_api(pp_decision(['pago_link']));
 $r = turno('Mandame el link del anual', $c, $cfg);
@@ -111,10 +115,10 @@ function pp_silencio($c, $r) {
         && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']);
 }
 
-foreach (['landing' => ['$19.900', '$149.000', '$199.000', '$89.000', '$139.000'],
-    'ecommerce' => ['$29.900', '$199.000', '$299.000', '$139.000', '$239.000'],
-    'elearning' => ['$29.900', '$199.000', '$299.000', '$139.000', '$239.000'],
-    'inmobiliaria' => ['$29.900', '$199.000', '$299.000', '$139.000', '$239.000']]
+foreach (['landing' => ['$19.000', '$149.000', '$199.000', '$89.000', '$139.000'],
+    'ecommerce' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000'],
+    'elearning' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000'],
+    'inmobiliaria' => ['$29.000', '$199.000', '$299.000', '$139.000', '$239.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -128,7 +132,7 @@ foreach (['landing' => ['$19.900', '$149.000', '$199.000', '$89.000', '$139.000'
     $c = pp_conv($tipo, ['presentado_ts' => time(), 'modalidad_elegida' => 'mensual']);
     pp_api(pp_decision(['pago_link']));
     $r = turno('Pasame el link para pagar el mensual', $c, $cfg);
-    $pagina = $tipo === 'landing' ? 'mensual19900' : 'mensual29900';
+    $pagina = $tipo === 'landing' ? 'mensual19000' : 'mensual29000';
     caso("$tipo: enlace mensual correcto", str_contains(implode(' ', $r), '/pago/' . $pagina . '/'));
 }
 $c = pp_conv();
@@ -286,9 +290,11 @@ $GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-real';
 
 $rr = wabot_respuestas_rapidas_precios_1oct([['titulo' => 'Pago', 'items' => [
     'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25',
+    'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29900',
     'Mi respuesta personalizada con $25.000']]]);
-caso('respuestas rápidas migran el enlace estándar y conservan texto personalizado', str_contains($rr[0]['items'][0], 'mensual19900') && str_contains($rr[0]['items'][0], '$19.900')
-    && $rr[0]['items'][1] === 'Mi respuesta personalizada con $25.000');
+caso('respuestas rápidas migran el enlace estándar y conservan texto personalizado', str_contains($rr[0]['items'][0], 'mensual19000') && str_contains($rr[0]['items'][0], '$19.000')
+    && $rr[0]['items'][2] === 'Mi respuesta personalizada con $25.000');
+caso('respuestas rápidas guardadas con $29.900 pasan a $29.000 y a pago/mensual29000', str_contains($rr[0]['items'][1], '($29.000 por mes)') && str_ends_with($rr[0]['items'][1], 'pago/mensual29000'));
 caso('curso de marketing no se confunde con contratar publicidad', !in_array('publicidad', wabot_ficha_fuera_de('Vendo cursos de marketing digital online'), true));
 caso('pedido real de publicidad se sigue reconociendo', in_array('publicidad', wabot_ficha_fuera_de('Quiero que hagan publicidad y manejen mis redes'), true));
 

@@ -41,8 +41,8 @@ function wabot_respuestas_rapidas_default() {
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19900',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29900',
+            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19000',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29000',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -781,8 +781,11 @@ function wabot_respuestas_rapidas_precios_1oct($categorias) {
     foreach ($categorias as &$categoria) {
         foreach ($categoria['items'] as &$texto) {
             if (str_starts_with($texto, 'Te mando el link de Mercado Pago para activar el plan mensual ')) {
-                $texto = str_replace(['($25.000 por mes)', 'pago/mensual25', '($35.000 por mes)', 'pago/mensual35'],
-                    ['($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900'], $texto);
+                // 2-oct: los planes de MP bajaron a $19.000 / $29.000 (mismos links).
+                $texto = str_replace(['($25.000 por mes)', 'pago/mensual25', '($35.000 por mes)', 'pago/mensual35',
+                        '($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900'],
+                    ['($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000',
+                        '($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000'], $texto);
             }
         }
         unset($texto);

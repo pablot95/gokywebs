@@ -10,7 +10,7 @@
  *
  * Condiciones vigentes (Pablo, 1-oct-2026): tres modalidades en texto,
  * 1 mensual, 2 anual y 3 pago único. Las imágenes anteriores son históricas.
- * - Mensual: $19.900 sitio profesional; $29.900 resto. Mercado Pago:
+ * - Mensual (2-oct, antes $19.900 / $29.900): $19.000 sitio profesional; $29.000 resto. Mercado Pago:
  *   mpago.la/2nEoNGN y mpago.la/2CQLnCv. Sin pago inicial adicional.
  * - Anual: $149.000 sitio profesional; $199.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
@@ -268,11 +268,11 @@ function wabot_textos_default() {
     'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
         'landing' => [
-            'precio' => '$19.900',
+            'precio' => '$19.000',
             'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
-            'precio' => '$29.900',
+            'precio' => '$29.000',
             'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
@@ -451,7 +451,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
-            'mensualidad' => '$19.900',
+            'mensualidad' => '$19.000',
             'mantenimiento' => '$10.000',
             'sena' => '$60.000',
         ],
@@ -466,7 +466,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
-            'mensualidad' => '$29.900',
+            'mensualidad' => '$29.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
@@ -481,7 +481,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
-            'mensualidad' => '$29.900',
+            'mensualidad' => '$29.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
@@ -496,7 +496,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
-            'mensualidad' => '$29.900',
+            'mensualidad' => '$29.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
