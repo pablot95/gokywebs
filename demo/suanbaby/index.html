@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suan Baby — Pañalera y juguetería con envíos y retiro</title>
+<meta name="description" content="Pañales por talle, toallitas, higiene, ropa de bebé, maternidad y juguetes por edad. Comprá online con envío por zona o a todo el país, o retiralo en el local.">
+<link rel="canonical" href="https://gokywebs.com/demo/suanbaby/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Suan Baby — Pañalera y juguetería con envíos y retiro">
+<meta property="og:description" content="Pañales, cuidado, ropa y juguetes para cada etapa. Envíos por zona y a todo el país, o retiro en el local.">
+<meta property="og:url" content="https://gokywebs.com/demo/suanbaby/">
+<meta property="og:image" content="https://gokywebs.com/demo/suanbaby/images/02_panales_banner.webp">
+<meta property="og:locale" content="es_AR">
+<meta name="theme-color" content="#FFFBF6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23FFE3BA'/%3E%3Ctext x='16' y='22.5' text-anchor='middle' font-family='Georgia,serif' font-size='19' fill='%231C2B2D'%3ES%3C/text%3E%3Ccircle cx='24.5' cy='8' r='3' fill='%2322DDE0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Nunito:wght@400;600;700;800;900&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+<link rel="stylesheet" href="styles.css?v=20261002222424">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+</head>
+<body class="m1">
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-buscar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.6-3.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-carrito" viewBox="0 0 24 24"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-wsp" viewBox="0 0 32 32"><path fill="currentColor" d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></symbol>
+  <symbol id="i-insta" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-envio" viewBox="0 0 24 24"><path d="M3 6.5h11v9.5H3zM14 10h3.8l3.2 3.3V16h-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7" cy="17.6" r="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="17.2" cy="17.6" r="1.8" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-local" viewBox="0 0 24 24"><path d="M4 10v10h16V10M3 10l1.6-5h14.8L21 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 20v-5.5h5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+  <symbol id="i-filtros" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-stock" viewBox="0 0 24 24"><path d="M12 3 4 7v10l8 4 8-4V7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m4 7 8 4 8-4M12 11v10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-etiqueta" viewBox="0 0 24 24"><path d="M3 12V4h8l9 9-8 8z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-tarjeta" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M7 15h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-charla" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+</svg>
+
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+
+<div class="aviso">
+  <div class="container container--ancho aviso__in">
+    <a class="aviso__item" href="#envios"><svg class="ic" aria-hidden="true"><use href="#i-envio"/></svg><span class="aviso__largo">Envíos por zona y a todo el país · retiro en Trujui, Moreno</span><span class="aviso__corto">Envíos y retiro en el local</span></a>
+    <a class="aviso__item aviso__item--promo" href="#suscripcion"><b>10% OFF</b> en tu primera compra</a>
+    <div class="aviso__rapidos">
+      <a href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="WhatsApp 11 2469-2743"><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg><span>11 2469-2743</span></a>
+      <a href="https://www.instagram.com/suanbaby.ok/" target="_blank" rel="noopener" aria-label="Instagram de Suan Baby"><svg class="ic" aria-hidden="true"><use href="#i-insta"/></svg><span>@suanbaby.ok</span></a>
+      <a href="#retiro" aria-label="Ubicación del local"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>Ubicación</span></a>
+    </div>
+  </div>
+</div>
+
+<header class="site-header hdr-b">
+  <div class="container container--ancho hdr-b__top">
+    <a class="brand" href="#top" aria-label="Suan Baby, pañalera y juguetería, inicio"><span class="brand__n"><span class="brand__a">SUAN</span><span class="brand__b">BABY</span></span><span class="brand__s">Pañalera &amp; Juguetería</span></a>
+    <form class="busca" id="busca-form" role="search">
+      <label class="sr-only" for="q">Buscar en la tienda</label>
+      <input type="search" id="q" placeholder="Buscá pañales Pampers G, mamadera, peluche…" autocomplete="off">
+      <button type="submit" class="busca__btn" aria-label="Buscar"><svg class="ic" aria-hidden="true"><use href="#i-buscar"/></svg><span>Buscar</span></button>
+    </form>
+    <div class="hdr-acts">
+      <button type="button" class="hdr-cart" id="cart-header" aria-label="Abrir el carrito">
+        <svg class="ic" aria-hidden="true"><use href="#i-carrito"/></svg><span class="hdr-cart__t">Carrito</span>
+        <span class="icon-badge" data-cart-count hidden>0</span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir el menú" aria-expanded="false" aria-controls="mainNav">
+        <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="hdr-b__cats">
+    <nav class="container container--ancho main-nav" id="mainNav" aria-label="Categorías" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg class="ic" aria-hidden="true"><use href="#i-cerrar"/></svg>
+      </button>
+      <a class="nav-oferta" href="#tienda" data-oferta="1">Ofertas</a>
+      <a href="#tienda" data-cat="panales">Pañales</a>
+      <a href="#tienda" data-cat="ropa">Ropa</a>
+      <a href="#tienda" data-cat="maternidad">Maternidad</a>
+      <a href="#tienda" data-cat="juguetes">Juguetes</a>
+      <a href="#tienda" data-cat="combos">Combos</a>
+      <a class="nav-dest" href="#envios">Envíos y retiro</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <section class="hero hero-b" id="top" aria-labelledby="h1">
+    <div class="container container--ancho hero-b__in">
+      <div class="hero-b__txt">
+        <nav class="migas hero-eyebrow" aria-label="Migas de pan"><ol><li>Inicio</li><li aria-current="page">Tienda</li></ol></nav>
+        <h1 id="h1">Pañales, cuidado y juguetes <em>para cada etapa</em></h1>
+        <p class="hero-lead">Todo para tu bebé en un solo lugar: pañales por talle, ropa, maternidad y juguetes por edad. Pagá con Mercado Pago, tarjeta o transferencia, y recibilo en casa o retiralo en el local.</p>
+        <div class="hero-ctas">
+          <a class="btn btn--cta" href="#tienda" data-oferta="1">Ver ofertas</a>
+          <a class="btn btn--line" href="#envios">Calcular mi envío</a>
+        </div>
+      </div>
+      <aside class="temporada sello-host" aria-label="Fecha de temporada">
+        <div class="temporada__foto recorte" data-temp-foto></div>
+        <div class="temporada__txt">
+          <p class="temporada__k" data-temp-fecha>Domingo 18 de octubre</p>
+          <p class="temporada__t" data-temp-nombre>Día de la Madre</p>
+          <p class="temporada__falta"><span data-temp-falta>Faltan 16 días</span></p>
+          <p class="temporada__d" data-temp-txt>Regalos para mamá y para el bebé.</p>
+          <a class="temporada__cta" href="#tienda" data-temp-cta>Ver regalos<svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        </div>
+      </aside>
+      <div class="cats cats--hero" id="cats" role="group" aria-label="Categorías de la tienda"></div>
+    </div>
+    <div class="sello sello--hero" aria-hidden="true">
+      <span class="sello__n"><span class="brand__a">SUAN</span><span class="brand__b">BABY</span></span>
+      <span class="sello__s">Pañalera &amp; Juguetería</span>
+    </div>
+  </section>
+
+  <section class="sec sec--tienda" id="tienda" aria-labelledby="t-tienda">
+    <div class="container container--ancho">
+      <div class="tienda-head">
+        <div class="tienda-head__t">
+          <span class="pespunte" data-animate="linea" style="transform:scaleX(0)"></span>
+          <h2 id="t-tienda" data-animate="subir" style="opacity:0;transform:translateY(44px)">Todos los productos</h2>
+          <p class="tienda-count" id="cat-count" aria-live="polite" data-animate="subir" style="opacity:0;transform:translateY(24px)">28 productos</p>
+        </div>
+        <div class="tienda-tools" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <button type="button" class="btn btn--line btn--sm filtros-toggle" id="filtrosToggle" aria-expanded="false" aria-controls="filtros">
+            <svg class="ic" aria-hidden="true"><use href="#i-filtros"/></svg>Filtrar
+          </button>
+          <label class="orden"><span>Ordenar</span>
+            <select id="orden">
+              <option value="vendidos">Más vendidos</option>
+              <option value="menor">Menor precio</option>
+              <option value="mayor">Mayor precio</option>
+              <option value="descuento">Mayor descuento</option>
+              <option value="nuevos">Novedades</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="pills" id="pills" hidden></div>
+      <div class="tienda-body">
+        <aside class="filtros" id="filtros" aria-label="Filtros de la tienda">
+          <div class="filtros-head">
+            <p class="filtros-t">Filtrar</p>
+            <button type="button" class="filtros-close" id="filtrosClose" aria-label="Cerrar filtros">
+              <svg class="ic" aria-hidden="true"><use href="#i-cerrar"/></svg>
+            </button>
+          </div>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Categoría</legend>
+            <div class="f-lista" id="f-cats"></div>
+          </fieldset>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Talle de pañal</legend>
+            <div class="f-chips" id="f-talles"></div>
+          </fieldset>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Edad</legend>
+            <div class="f-chips" id="f-edades"></div>
+          </fieldset>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Marca</legend>
+            <div class="f-lista" id="f-marcas"></div>
+          </fieldset>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Precio</legend>
+            <div class="f-lista" id="f-precios"></div>
+          </fieldset>
+          <fieldset class="f-grupo" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <legend>Mostrar</legend>
+            <label class="f-check"><input type="checkbox" id="f-oferta">Solo ofertas</label>
+            <label class="f-check"><input type="checkbox" id="f-stock">Solo con stock</label>
+          </fieldset>
+          <button type="button" class="btn btn--line btn--sm f-clear" id="f-clear">Limpiar filtros</button>
+          <button type="button" class="btn btn--cta btn--block filtros-ver" id="filtrosVer">Ver los resultados</button>
+        </aside>
+        <div class="tienda-main">
+          <div class="grid catalogo-grid" id="grid"></div>
+          <div class="vacio" id="vacio" hidden>
+            <p>No encontramos nada con esa combinación. Probá con otra palabra o sacá un filtro.</p>
+            <button type="button" class="btn btn--line btn--sm" id="vacio-reset">Ver todos los productos</button>
+          </div>
+          <div class="mas" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <button type="button" class="btn btn--line" id="ver-mas">Ver más productos</button>
+            <p class="mas__n" id="mas-n"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec--envios" id="envios" aria-labelledby="t-envios">
+    <div class="container">
+      <div class="sec-head">
+        <span class="pespunte" data-animate="linea" style="transform:scaleX(0)"></span>
+        <h2 id="t-envios" data-animate="subir" style="opacity:0;transform:translateY(44px)">¿Cómo te <em>llega</em>?</h2>
+        <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Poné tu código postal y mirá el costo antes de pagar, o pasá a retirarlo.</p>
+      </div>
+      <div class="envio" id="envio-app" data-animate="subir" style="opacity:0;transform:translateY(44px)">
+        <div class="envio__modos" role="radiogroup" aria-label="Cómo querés recibir tu compra">
+          <label class="envio__modo"><input type="radio" name="envio-modo" value="domicilio" checked><span><svg class="ic" aria-hidden="true"><use href="#i-envio"/></svg>Envío a domicilio</span></label>
+          <label class="envio__modo"><input type="radio" name="envio-modo" value="retiro"><span><svg class="ic" aria-hidden="true"><use href="#i-local"/></svg>Retiro en el local</span></label>
+          <label class="envio__modo"><input type="radio" name="envio-modo" value="coordinar"><span><svg class="ic" aria-hidden="true"><use href="#i-charla"/></svg>A coordinar</span></label>
+        </div>
+        <div class="envio__cuerpo">
+          <div class="envio__panel" data-modo="domicilio">
+            <label class="cp">
+              <span class="cp__k">Tu código postal</span>
+              <input type="text" id="cp" inputmode="numeric" maxlength="4" placeholder="1736" autocomplete="postal-code">
+            </label>
+            <div class="zonas" id="zonas" role="group" aria-label="O elegí tu zona"></div>
+            <p class="envio__ayuda" id="cp-ayuda">Con los 4 números del código postal alcanza.</p>
+          </div>
+          <div class="envio__panel" data-modo="retiro" id="retiro" hidden>
+            <div class="mapa" id="mapa" role="img" aria-label="Mapa de Trujui, Moreno, donde está el local de Suan Baby"></div>
+            <p class="mapa__dir">Trujui, Moreno (zona oeste). Te pasamos la dirección exacta por WhatsApp cuando el pedido está listo.</p>
+            <a class="mapa__ir" id="mapa-ir" href="https://www.google.com/maps/search/?api=1&amp;query=Trujui%2C%20Moreno%2C%20Buenos%20Aires" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Ver la zona en Google Maps</a>
+          </div>
+          <div class="envio__panel" data-modo="coordinar" hidden>
+            <p class="envio__coordinar">¿Necesitás que te lo llevemos a un horario puntual, o a otra dirección? Lo arreglamos por WhatsApp con tu pedido a la vista.</p>
+          </div>
+          <div class="ticket" id="envio-ticket" aria-live="polite">
+            <p class="ticket__k" id="tk-zona">Envío a domicilio</p>
+            <p class="ticket__v" id="tk-costo">Poné tu código postal</p>
+            <p class="ticket__d" id="tk-plazo">Te mostramos el costo y el plazo de tu zona.</p>
+            <dl class="ticket__filas">
+              <div><dt>Tu carrito</dt><dd id="tk-sub">$0</dd></div>
+              <div><dt>Envío</dt><dd id="tk-envio">—</dd></div>
+              <div class="ticket__total"><dt>Total</dt><dd id="tk-total">$0</dd></div>
+            </dl>
+            <button type="button" class="btn btn--cta btn--block" id="envio-usar" disabled>Usar este envío</button>
+            <a class="btn btn--line btn--block" id="envio-wsp" href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Quiero%20coordinar%20un%20env%C3%ADo." target="_blank" rel="noopener" hidden><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg>Coordinar por WhatsApp</a>
+          </div>
+        </div>
+        <div class="pagos">
+          <p class="pagos__k">Pagás con</p>
+          <ul class="pagos__lista" id="pagos">
+            <li data-pago="mp">Mercado Pago</li>
+            <li data-pago="tarjeta">Tarjeta de crédito o débito</li>
+            <li data-pago="transferencia">Transferencia</li>
+            <li data-pago="efectivo">Efectivo al retirar</li>
+            <li data-pago="contraentrega" class="is-pronto">Efectivo contra entrega <small>pronto</small></li>
+          </ul>
+        </div>
+        <p class="envio__nota">Costos y plazos de ejemplo: Suan Baby los define por zona desde su panel.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec--mundos" id="mundos" aria-labelledby="t-mundos">
+    <div class="mundos" id="mundos-cont">
+      <div class="mundos__escena">
+        <div class="container mundos__head">
+          <h2 id="t-mundos">Del primer pañal <em>al primer juguete</em></h2>
+        </div>
+        <div class="mundos__stage" id="mundos-stage">
+          <div class="mundo mundo--a" data-mundo="panalera">
+            <div class="container mundo__in">
+              <div class="mundo__copy">
+                <p class="mundo__k">Pañalera · talles RN a XXG</p>
+                <h3 class="mundo__t">Cambiadito y <em>perfumado</em></h3>
+                <p class="mundo__d">Pañales por talle, toallitas, cremas, colonias, ropa y todo para la maternidad.</p>
+                <div class="mundo__prod" data-mundo-prod></div>
+                <a class="btn btn--cta" href="#tienda" data-mundo-ver="panalera">Ver la pañalera</a>
+              </div>
+              <figure class="mundo__foto"><img src="images/02_panales_banner.webp" width="1086" height="467" alt="Paquetes de pañales Huggies, Pampers y Babysec con toallitas y productos Johnson's Baby"></figure>
+            </div>
+          </div>
+          <div class="mundo mundo--b" data-mundo="jugueteria">
+            <div class="container mundo__in">
+              <div class="mundo__copy">
+                <p class="mundo__k">Juguetería · de 0 a 3 años</p>
+                <h3 class="mundo__t">Ahora sí, <em>a jugar</em></h3>
+                <p class="mundo__d">Peluches, encastres, torres, cubos y pelotas elegidos por edad.</p>
+                <div class="mundo__prod" data-mundo-prod></div>
+                <a class="btn btn--cta" href="#tienda" data-mundo-ver="jugueteria">Ver la juguetería</a>
+              </div>
+              <figure class="mundo__foto"><img src="images/01_bebe_vertical.webp" width="440" height="1024" alt="Bebé sonriente gateando sobre una alfombra con una pelota de tela, un autito de madera y una torre de aros"></figure>
+            </div>
+          </div>
+          <div class="mundos__linea" id="mundos-linea" aria-hidden="true">
+            <span class="mundos__tag"><b id="mundos-n">21</b> <span id="mundos-que">productos de pañalera</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec sec--benef" id="beneficios" aria-labelledby="t-benef">
+    <div class="container">
+      <div class="sec-head">
+        <span class="pespunte" data-animate="linea" style="transform:scaleX(0)"></span>
+        <h2 id="t-benef" data-animate="subir" style="opacity:0;transform:translateY(44px)">Elegís, pagás <em>y listo</em></h2>
+      </div>
+      <ul class="benef">
+        <li data-animate="subir" style="opacity:0;transform:translateY(44px)">
+          <span class="benef__ic"><svg class="ic" aria-hidden="true"><use href="#i-stock"/></svg></span>
+          <h3>Stock al día</h3>
+          <p>Cada talle muestra cuántas unidades quedan antes de que lo sumes.</p>
+        </li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(44px)">
+          <span class="benef__ic"><svg class="ic" aria-hidden="true"><use href="#i-etiqueta"/></svg></span>
+          <h3>Ofertas y combos</h3>
+          <p>Precios tachados, combos y productos de temporada, marcados en cada tarjeta.</p>
+        </li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(44px)">
+          <span class="benef__ic"><svg class="ic" aria-hidden="true"><use href="#i-tarjeta"/></svg></span>
+          <h3>Pagás como prefieras</h3>
+          <p>Mercado Pago, tarjetas, transferencia o efectivo al retirar.</p>
+        </li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(44px)">
+          <span class="benef__ic"><svg class="ic" aria-hidden="true"><use href="#i-charla"/></svg></span>
+          <h3>Te asesoramos</h3>
+          <p>Talles, stock y regalos: escribinos por WhatsApp al <a href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">11 2469-2743</a>.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="susc" id="suscripcion">
+      <div class="susc__txt" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <p class="susc__k">Suscripción</p>
+        <h2 class="susc__t">10% OFF en tu <em>primera compra</em></h2>
+        <p class="susc__d">Dejanos tu mail y te mandamos el código. También te avisamos de ofertas y productos de temporada.</p>
+      </div>
+      <form class="susc__form" id="susc-form" novalidate data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <label class="susc__campo">
+          <span class="sr-only">Tu mail</span>
+          <input type="email" id="susc-mail" placeholder="tumail@ejemplo.com" autocomplete="email" required>
+        </label>
+        <button type="submit" class="btn btn--cta">Quiero mi 10%</button>
+        <p class="susc__msg" id="susc-msg" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+  <div class="container footer-top">
+    <div class="footer-brand" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="pie-marca"><span class="brand__a">SUAN</span><span class="brand__b">BABY</span></p>
+      <p class="footer-lema">Pañalera &amp; Juguetería en Trujui, Moreno. Todo para tu bebé en un solo lugar, del primer pañal al primer juguete.</p>
+    </div>
+    <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(44px)">
+      <p class="footer-t">Dónde estamos</p>
+      <p>Trujui, Moreno (zona oeste).</p>
+      <p>Retiro en el local y envíos por zona y a todo el país.</p>
+    </div>
+    <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(44px)">
+      <p class="footer-t">Medios de pago</p>
+      <p>Mercado Pago, tarjetas de crédito y débito, transferencia y efectivo al retirar.</p>
+    </div>
+    <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(44px)">
+      <p class="footer-t">Contacto</p>
+      <a class="footer-wsp" href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg>+54 9 11 2469-2743</a>
+      <a href="https://www.instagram.com/suanbaby.ok/" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-insta"/></svg>@suanbaby.ok</a>
+    </div>
+  </div>
+  <div class="container footer-bottom" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <p>© <span data-anio>2026</span> Suan Baby · Pañalera y juguetería</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-t" hidden>
+  <div class="drawer-head">
+    <h2 id="drawer-t">Tu carrito</h2>
+    <button type="button" class="icon-btn" id="drawer-close" aria-label="Cerrar el carrito"><svg class="ic" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot" id="drawer-foot" hidden>
+    <form class="cupon" id="cupon-form" novalidate>
+      <label class="cupon__campo"><span class="sr-only">Código de descuento</span><input type="text" id="cupon" placeholder="¿Tenés un cupón?" autocomplete="off"></label>
+      <button type="submit" class="btn btn--line btn--sm">Aplicar</button>
+    </form>
+    <dl class="drawer-tot">
+      <div><dt>Subtotal</dt><dd id="dr-sub">$0</dd></div>
+      <div id="dr-desc-fila" hidden><dt id="dr-desc-k">Cupón</dt><dd id="dr-desc">−$0</dd></div>
+      <div><dt>Envío</dt><dd id="dr-envio"><a href="#envios" data-cerrar-drawer-a>Calcular</a></dd></div>
+      <div class="drawer-tot__total"><dt>Total</dt><dd id="dr-total">$0</dd></div>
+    </dl>
+    <p class="drawer-nota">Pagás con Mercado Pago, tarjeta, transferencia o efectivo al retirar.</p>
+    <button type="button" class="btn btn--cta btn--block" id="checkout">Finalizar compra</button>
+    <a class="btn btn--line btn--block" id="drawer-wsp" href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Quiero%20hacer%20un%20pedido." target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg>Enviar el pedido por WhatsApp</a>
+  </div>
+</aside>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Vista rápida del producto" hidden>
+  <div class="modal-back" data-close-modal></div>
+  <div class="modal-box">
+    <button type="button" class="icon-btn modal-close" id="modal-close" aria-label="Cerrar"><svg class="ic" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+    <div class="modal-content" id="modal-content"></div>
+  </div>
+</div>
+
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5491124692743?text=Hola%20Suan%20Baby%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Store","@id":"https://gokywebs.com/demo/suanbaby/#tienda","name":"Suan Baby","description":"Pañalera y juguetería: pañales, toallitas, higiene y perfumería, ropa de bebé, maternidad y lactancia, juguetes por edad y combos. Envíos por zona y a todo el país, y retiro en el local.","url":"https://gokywebs.com/demo/suanbaby/","telephone":"+5491124692743","address":{"@type":"PostalAddress","addressLocality":"Trujui, Moreno","addressRegion":"Buenos Aires","addressCountry":"AR"},"image":"https://gokywebs.com/demo/suanbaby/images/02_panales_banner.webp","sameAs":["https://www.instagram.com/suanbaby.ok/"],"currenciesAccepted":"ARS","paymentAccepted":"Mercado Pago, tarjeta de crédito, tarjeta de débito, transferencia, efectivo"}
+</script>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+<script src="script.js?v=20261002222424"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
