@@ -32,6 +32,7 @@
 require_once __DIR__ . '/arca.php';
 require_once __DIR__ . '/receptor.php';
 require_once __DIR__ . '/registro.php';
+require_once __DIR__ . '/archivo.php';
 
 // Lo que escribió Pablo en la primera mensualidad que facturó a mano (26-sep).
 const SUS_DESCRIPCION = 'Suscripción mensual servicio web';
@@ -401,6 +402,7 @@ function sus_facturar_cobro($arca, array $config, array $cobro, array $receptor,
         if ($recuperada) {
             $registro[$clave] = sus_factura_del_cobro($recuperada, $cobro, $intento['receptor'] ?? $receptor, $config, $intento['origen'] ?? $origen);
             registro_guardar($config, $registro);
+            archivo_guardar($config, $registro[$clave]);
             unset($estado['intentos'][$clave]);
             sus_estado_guardar($config, $estado);
             return ['resultado' => 'recuperada', 'factura' => $registro[$clave]];
@@ -442,6 +444,7 @@ function sus_facturar_cobro($arca, array $config, array $cobro, array $receptor,
 
     $registro[$clave] = sus_factura_del_cobro($emitida, $cobro, $receptor, $config, $origen);
     registro_guardar($config, $registro);
+    archivo_guardar($config, $registro[$clave]);
     unset($estado['intentos'][$clave]);
     sus_estado_guardar($config, $estado);
     return ['resultado' => 'emitida', 'factura' => $registro[$clave]];

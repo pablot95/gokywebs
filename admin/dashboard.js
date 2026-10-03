@@ -6895,7 +6895,10 @@ function renderMantenimiento() {
     _renderMantSuscripciones(tbody, filas, sinSusc, term);
     // Facturación consulta Mercado Pago: se carga al entrar la primera vez (o con "Actualizar"), no con cada cambio de Firestore.
     if (mantPlan === "facturacion" && !factAuto && !factAutoCargando && !factAutoError) cargarFactAuto();
-    else renderFactAuto();
+    else {
+        renderFactAuto();
+        renderFactArchivo();
+    }
 }
 
 /* ── Mantenimiento → Facturación (26-sep-2026) ──
@@ -6912,6 +6915,7 @@ async function cargarFactAuto() {
     factAutoError = "";
     renderFactAuto();
     try {
+        cargarFactArchivo();
         factAuto = await llamarFacturacion("estado", null, {}, "facturacion-automatica.php");
     } catch (err) {
         console.error(err);
@@ -6921,6 +6925,137 @@ async function cargarFactAuto() {
         renderFactAuto();
     }
 }
+
+/* ── Facturas emitidas (3-oct-2026) ──
+   Todo el registro de facturas (automáticas y a mano). Cada PDF queda guardado
+   en el server al emitirse (config/arca/archivo.php); admin/api/facturas.php
+   las lista y las baja de a una o todas juntas en un .zip (las de antes de
+   esto se arman y se guardan la primera vez que se piden). */
+let factArchivo = null;          // { facturas, meses } de facturas.php?accion=lista
+let factArchivoError = "";
+let factArchivoBajando = false;
+
+async function cargarFactArchivo() {
+    factArchivoError = "";
+    try {
+        factArchivo = await llamarFacturacion("lista", null, {}, "facturas.php");
+    } catch (err) {
+        console.error(err);
+        factArchivoError = "No se pudo cargar la lista de facturas: " + err.message;
+    }
+    renderFactArchivo();
+}
+
+function _factArchivoMesTexto(mes) {
+    const [a, m] = String(mes).split("-").map(Number);
+    if (!a || !m) return mes;
+    const texto = new Date(a, m - 1, 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function renderFactArchivo() {
+    const tbody = document.getElementById("faArchivoTbody");
+    const select = document.getElementById("faArchivoMes");
+    const zipBtn = document.getElementById("faArchivoZipBtn");
+    const resumen = document.getElementById("faArchivoResumen");
+    if (!tbody || !select) return;
+
+    if (factArchivoError) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">${escapeHtml(factArchivoError)}</td></tr>`;
+        zipBtn.disabled = true;
+        resumen.textContent = "";
+        return;
+    }
+    if (!factArchivo) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Cargando…</td></tr>`;
+        zipBtn.disabled = true;
+        return;
+    }
+
+    const elegido = select.value;
+    select.innerHTML = `<option value="">Todas</option>` + factArchivo.meses
+        .map(m => `<option value="${escapeHtml(m)}">${escapeHtml(_factArchivoMesTexto(m))}</option>`).join("");
+    select.value = factArchivo.meses.includes(elegido) ? elegido : "";
+
+    const term = (searchMantInput?.value || "").trim().toLowerCase();
+    const delMes = factArchivo.facturas.filter(f => !select.value || f.mes === select.value);
+    const visibles = delMes.filter(f => !term || [f.cliente, f.receptor?.nombre, f.receptor?.numeroDocumento, numeroComprobante(f.puntoVenta, f.numero)]
+        .some(v => String(v || "").toLowerCase().includes(term)));
+
+    const total = delMes.reduce((suma, f) => suma + Number(f.total || 0), 0);
+    resumen.textContent = delMes.length
+        ? `${delMes.length} ${delMes.length === 1 ? "factura" : "facturas"} · ${fmtMoney(total)}${select.value ? ` en ${_factArchivoMesTexto(select.value).toLowerCase()}` : " en total"}. Cada PDF queda guardado en el servidor cuando se emite.`
+        : "";
+    zipBtn.disabled = factArchivoBajando || !delMes.length;
+    zipBtn.textContent = factArchivoBajando ? "Armando el .zip…" : (select.value ? `Descargar las de ${_factArchivoMesTexto(select.value).toLowerCase()} (.zip)` : "Descargar todas (.zip)");
+
+    if (!visibles.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">${factArchivo.facturas.length ? "No hay facturas con ese filtro." : "Todavía no hay facturas emitidas."}</td></tr>`;
+        return;
+    }
+    const origenes = { automatica: "Automática", lista: "Desde Facturación", modal: "A mano" };
+    tbody.innerHTML = visibles.map(f => `<tr>
+        <td>${escapeHtml(numeroComprobante(f.puntoVenta, f.numero))}</td>
+        <td>${_factAutoFecha(f.fecha)}</td>
+        <td>${escapeHtml(f.cliente || "—")}<div class="muted" style="font-size:11px">${escapeHtml(_factAutoReceptorTexto(f.receptor))}</div></td>
+        <td>${fmtMoney(f.total)}</td>
+        <td>${escapeHtml(origenes[f.origen] || "A mano")}</td>
+        <td class="actions-col"><button type="button" class="icon-btn" data-fa-archivo-pdf="${escapeHtml(f.clave)}" title="Descargar el PDF">⬇</button></td>
+    </tr>`).join("");
+}
+
+async function _factArchivoBajar(params) {
+    const token = currentUser ? await currentUser.getIdToken() : "";
+    const res = await fetch("/admin/api/facturas.php?" + new URLSearchParams(params), {
+        headers: { "Authorization": "Bearer " + token }
+    });
+    if (!res.ok) {
+        const cuerpo = await res.text();
+        let detalle = cuerpo;
+        try { detalle = JSON.parse(cuerpo).error || cuerpo; } catch (e) {}
+        throw new Error(detalle || `HTTP ${res.status}`);
+    }
+    const nombre = decodeURIComponent(res.headers.get("X-Nombre-Archivo") || "") || "facturas";
+    const url = URL.createObjectURL(await res.blob());
+    const enlace = document.createElement("a");
+    enlace.href = url;
+    enlace.download = nombre;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+document.getElementById("faArchivoMes")?.addEventListener("change", renderFactArchivo);
+document.getElementById("faArchivoZipBtn")?.addEventListener("click", async () => {
+    const mes = document.getElementById("faArchivoMes").value;
+    factArchivoBajando = true;
+    renderFactArchivo();
+    try {
+        await _factArchivoBajar(mes ? { accion: "zip", mes } : { accion: "zip" });
+        // Las que no estaban guardadas quedaron guardadas al armar el .zip.
+        await cargarFactArchivo();
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo descargar el .zip: " + err.message);
+    } finally {
+        factArchivoBajando = false;
+        renderFactArchivo();
+    }
+});
+document.getElementById("faArchivoTbody")?.addEventListener("click", async e => {
+    const btn = e.target.closest("[data-fa-archivo-pdf]");
+    if (!btn) return;
+    btn.disabled = true;
+    try {
+        await _factArchivoBajar({ accion: "pdf", clave: btn.dataset.faArchivoPdf });
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo descargar la factura: " + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+});
 
 // "AAAAMMDD" (ARCA) o ISO (Mercado Pago) → dd/mm/aaaa.
 function _factAutoFecha(valor) {

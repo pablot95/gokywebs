@@ -13,6 +13,7 @@ config/arca/ticket-*.json
 # automática de las suscripciones (ajustes, estado, log) y sus locks.
 config/arca/emitidas-*.json*
 config/arca/facturacion-automatica*
+config/arca/facturas-*/
 config/arca/condiciones-iva-*.json
 wabot/bot-config.json
 service-account.json

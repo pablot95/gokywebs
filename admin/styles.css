@@ -2751,6 +2751,11 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 #mantFacturacion .table-wrapper { margin-bottom: 22px; }
 #mantFacturacion .clients-table { min-width: 880px; }
 #mantFacturacion .actions-col .btn-ghost { white-space: nowrap; }
+/* Facturas emitidas (3-oct): el archivo de todas, con descarga en .zip. */
+.fa-archivo-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0 6px; }
+.fa-archivo-cab .mant-subtitulo { margin: 0; }
+.fa-archivo-cab .fa-acciones { align-items: center; }
+.fa-archivo-cab .fa-acciones > * { width: auto; margin: 0; }
 
 /* ── Pestaña Errores: un renglón por web, cerrado; rojo solo si hay algo importante ── */
 .pill-count--alerta { background: var(--danger); color: #fff; }

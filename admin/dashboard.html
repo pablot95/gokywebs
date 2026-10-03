@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260930-seguimientos-compacto">
+    <link rel="stylesheet" href="styles.css?v=20261003-facturas">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -440,6 +440,34 @@
                         </thead>
                         <tbody id="faCobrosTbody">
                             <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Facturas emitidas (3-oct-2026): todo el registro, automáticas y a mano.
+                     Cada PDF queda guardado en el server al emitirse (config/arca/archivo.php);
+                     admin/api/facturas.php las lista y las baja de a una o todas en un .zip. -->
+                <div class="fa-archivo-cab">
+                    <p class="mant-subtitulo">Facturas emitidas</p>
+                    <div class="fa-acciones">
+                        <select id="faArchivoMes" class="mes-select" aria-label="Mes de las facturas"><option value="">Todas</option></select>
+                        <button type="button" class="btn-primary" id="faArchivoZipBtn" disabled>Descargar todas (.zip)</button>
+                    </div>
+                </div>
+                <p class="muted fa-texto" id="faArchivoResumen"></p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Factura</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Total</th>
+                                <th>Cómo se hizo</th>
+                                <th class="actions-col">PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faArchivoTbody">
+                            <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1177,6 +1205,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261003-precios"></script>
+    <script type="module" src="dashboard.js?v=20261003-facturas"></script>
 </body>
 </html>

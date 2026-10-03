@@ -181,6 +181,16 @@ Desde el 26-sep-2026 cada mensualidad que cobra Mercado Pago se puede facturar s
 - Archivos del server que no van al repo: `config/arca/facturacion-automatica.json` (lo que se decide en el admin) y `facturacion-automatica-estado-<entorno>.json` (intentos, errores y última corrida).
 - Probar sin emitir: `php mantenimiento/api/facturar-cobros.php --simular` (qué facturaría con la activación actual) o `--simular --desde=AAAA-MM-DD`. `--diagnostico` chequea en el server PHP, Mercado Pago, el registro y ARCA (solo el último número). Contra producción, correrlo solo en el server: pedirle un ticket a ARCA desde otra máquina deja al server sin ticket hasta que venza (12 h).
 
+## Facturas emitidas (archivo y descarga en .zip)
+
+Desde el 3-oct-2026 cada factura que se emite (la automática de las suscripciones y la del modal de un cliente) queda guardada como PDF en el server, tal cual salió: `config/arca/facturas-<entorno>/Factura C 00010-000001xx.pdf` (no se sirve por HTTP y no va al repo). Lógica en `config/arca/archivo.php`, pruebas en `php config/arca/test-archivo.php`.
+
+- **Dónde se ven:** Mantenimiento → Facturación → **Facturas emitidas**: todo el registro, la más nueva primero, con ⬇ para bajar cada una.
+- **Todas con un clic:** **Descargar todas (.zip)**, o elegir un mes en el selector y baja solo las de ese mes. Dentro del .zip cada archivo lleva el número y el cliente (`Factura C 00010-00000121 - Naty Gómez.pdf`).
+- **Las de antes del 3-oct** no tenían PDF guardado: se arman con los datos del registro y quedan guardadas la primera vez que se piden (o al bajar el .zip).
+- Si guardar el PDF falla al emitir, la emisión no se frena (ya tiene CAE): se arma cuando se pida.
+- Endpoint: `admin/api/facturas.php` (`accion=lista`, `accion=pdf&clave=`, `accion=zip[&mes=AAAA-MM]`). El .zip se arma a mano con zlib, sin depender de la extensión zip del server.
+
 ## Uso
 
 1. Abrí `admin/index.html` (servido vía HTTP, no `file://`).

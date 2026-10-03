@@ -4,6 +4,7 @@ require __DIR__ . '/auth-admin.php';
 require __DIR__ . '/../../config/arca/arca.php';
 require __DIR__ . '/../../config/arca/receptor.php';
 require __DIR__ . '/../../config/arca/registro.php';
+require __DIR__ . '/../../config/arca/archivo.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -177,5 +178,8 @@ try {
     // Ya tiene CAE: se devuelve igual para que se pueda descargar.
     responder(['ok' => true, 'factura' => $factura, 'advertencia' => $e->getMessage()]);
 }
+
+// El PDF queda guardado tal cual salió (si falla, se arma la primera vez que se pida).
+archivo_guardar($config, $factura);
 
 responder(['ok' => true, 'factura' => $factura]);
