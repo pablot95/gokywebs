@@ -1,4 +1,8 @@
-"""Capturas en alta del portfolio: previews/hd/<id>.webp (1920 px de ancho).
+"""Capturas en alta del portfolio, de las webs reales.
+
+  previews/hd/<id>.webp   compu: 1920 px de ancho (ventana de 1440 × 1.333)
+  previews/cel/<id>.webp  celular (--cel): 780 px (pantalla de 390 × 2, con
+                          user agent y toque de celular: sale la versión mobile)
 
 El visor muestra la web elegida a pantalla completa en la compu: las
 capturas de previews/ (960 px) quedan para el celular y se agrandaban
@@ -8,6 +12,7 @@ de escritorio) y densidad 1.333, o sea 1920 px reales.
     python portfolio/capturar-hd.py              # solo las que faltan
     python portfolio/capturar-hd.py sparrow kare # esas, aunque existan
     python portfolio/capturar-hd.py --lento x    # más espera (animaciones pesadas)
+    python portfolio/capturar-hd.py --cel        # las de celular que faltan
 
 Receta: reveals acelerados, un barrido rápido para disparar lazy y
 observers, y después una foto por pantalla pegadas en orden (el header y
@@ -30,12 +35,19 @@ import websocket
 from PIL import Image
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-SALIDA = os.path.join(AQUI, 'previews', 'hd')
+CEL = '--cel' in sys.argv
+SALIDA = os.path.join(AQUI, 'previews', 'cel' if CEL else 'hd')
 CHROME = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-PUERTO = 9377
-ANCHO, ALTO_VENTANA, DPR = 1440, 900, 4 / 3
+PUERTO = 9378 if CEL else 9377
+if CEL:
+    ANCHO, ALTO_VENTANA, DPR, ANCHO_FINAL = 390, 844, 2, 780
+    TOPE_ALTO = 5000      # px CSS (10000 px reales): más alto pesa demasiado en el teléfono
+else:
+    ANCHO, ALTO_VENTANA, DPR, ANCHO_FINAL = 1440, 900, 4 / 3, 1920
+    TOPE_ALTO = 5200      # px CSS; Chrome falla arriba de ~16k px reales
+UA_CEL = ('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/129.0.0.0 Mobile Safari/537.36')
 LENTO = '--lento' in sys.argv     # webs con animaciones pesadas: más espera por pantalla
-TOPE_ALTO = 5200          # px CSS; Chrome falla arriba de ~16k px reales
 CALIDAD = 82
 # Webs que hoy no muestran lo que entregamos (en mantenimiento, etc.): se
 # quedan con la captura de 960 que ya está en previews/. Revisar cada tanto.
@@ -107,7 +119,10 @@ def capturar(cdp, url):
     """Recorre la web como una persona: una foto por pantalla, pegadas una
     abajo de la otra. La captura larga de Chrome (captureBeyondViewport)
     dejaba en blanco las escenas animadas y sticky; así sale lo que se ve."""
-    cdp('Emulation.setDeviceMetricsOverride', width=ANCHO, height=ALTO_VENTANA, deviceScaleFactor=DPR, mobile=False)
+    cdp('Emulation.setDeviceMetricsOverride', width=ANCHO, height=ALTO_VENTANA, deviceScaleFactor=DPR, mobile=CEL)
+    if CEL:
+        cdp('Emulation.setUserAgentOverride', userAgent=UA_CEL, platform='Android')
+        cdp('Emulation.setTouchEmulationEnabled', enabled=True, maxTouchPoints=5)
     cdp('Page.navigate', url=url)
     time.sleep(9 if LENTO else 5)
     cdp.js("document.documentElement.style.scrollBehavior='auto'")
@@ -140,8 +155,8 @@ def capturar(cdp, url):
             break
         y += ALTO_VENTANA
     img = lienzo
-    if img.width != 1920:
-        img = img.resize((1920, round(img.height * 1920 / img.width)), Image.LANCZOS)
+    if img.width != ANCHO_FINAL:
+        img = img.resize((ANCHO_FINAL, round(img.height * ANCHO_FINAL / img.width)), Image.LANCZOS)
     return img
 
 

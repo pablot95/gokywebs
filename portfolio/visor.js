@@ -21,8 +21,9 @@
 
    Datos: GW_TRABAJOS / GW_TIPOS / GW_RUBROS de portfolio/data.js.
    Capturas: previews/hd/<id>.webp (1920 px, compu; capturar-hd.py),
-   previews/<id>.webp (960 px, celular y respaldo) y previews/mini/<id>.webp
-   (560×350, la tira; hacer-minis.py). Si falta una, se usa la siguiente.
+   previews/cel/<id>.webp (780 px, versión celular; capturar-hd.py --cel),
+   previews/<id>.webp (960 px, tablet y respaldo) y previews/mini/<id>.webp
+   (560×350, la tira; hacer-minis.py). Si falta la hd o la cel, va la de 960.
    ============================================================ */
 (function () {
     'use strict';
@@ -106,8 +107,15 @@
     /* En la compu la captura va a pantalla completa: se usa la de 1920 px
        (previews/hd/). En el celular alcanza la de 960 y pesa mucho menos. */
     var grande = window.matchMedia('(min-width: 961px)');
+    /* En el celular, la web en su versión celular (previews/cel/, 780 px):
+       la de escritorio achicada a 375 px no se lee. */
+    var celular = window.matchMedia('(max-width: 760px)');
     function srcCaptura(t) { return BASE + 'previews/' + t.id + '.webp'; }
-    function srcPantalla(t) { return grande.matches ? BASE + 'previews/hd/' + t.id + '.webp' : srcCaptura(t); }
+    function srcPantalla(t) {
+        if (grande.matches) return BASE + 'previews/hd/' + t.id + '.webp';
+        if (celular.matches) return BASE + 'previews/cel/' + t.id + '.webp';
+        return srcCaptura(t);
+    }
     function srcMini(t) { return BASE + 'previews/mini/' + t.id + '.webp'; }
 
     /* Una web puede ser de dos tipos a la vez (Kare vende productos y además
@@ -326,7 +334,7 @@
         pre.onerror = function () {
             /* Sin la versión en alta todavía: la de 960 sirve igual. */
             if (mio !== turno) return;
-            if (pre.src.indexOf('/hd/') !== -1) { pre.src = srcCaptura(t); return; }
+            if (/\/(hd|cel)\//.test(pre.src)) { pre.src = srcCaptura(t); return; }
             pre.onload();
         };
         pre.onload = function () {
