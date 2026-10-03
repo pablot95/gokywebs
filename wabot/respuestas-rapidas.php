@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/respuestas-rapidas-03oct.php';
 /**
  * Respuestas manuales del panel. Se guardan fuera del código para poder
  * administrarlas desde Wabot sin publicar archivos de nuevo.
@@ -760,6 +761,12 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
         $montos['{mantenimiento_mes}'] = $porMes(wabot_respuestas_rapidas_monto_por_tipo($cfg, 'mantenimiento'));
     }
     $montos['{carga_producto}'] = trim((string)($cfg['carga_producto'] ?? '')) ?: '$500';
+    // Tarifas indicadas por Pablo el 3-oct, también para chats cotizados antes.
+    foreach (wabot_rr_03oct_montos() as $tipoLista => $plan) {
+        $montos['{' . $tipoLista . '_anual}'] = $plan['anual'];
+        $montos['{' . $tipoLista . '_mensual}'] = $plan['mensual'];
+        $montos['{' . $tipoLista . '_unico}'] = $plan['unico'];
+    }
     foreach (['mensual', 'anual', 'unico'] as $modalidad) {
         $montos['{link_' . $modalidad . '}'] = wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg);
     }
@@ -774,6 +781,8 @@ function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
     $salida = [];
     foreach ((array)$categorias as $categoria) {
         if (!empty($categoria['oculta'])) continue;
+        if (($categoria['titulo'] ?? '') === 'Propiedad absoluta del código'
+            && !wabot_rr_03oct_pidio_codigo($conv)) continue;
         $items = [];
         foreach ((array)($categoria['items'] ?? []) as $texto) {
             $items[] = wabot_respuestas_rapidas_montos($texto, $conv, $cfg);
@@ -782,6 +791,18 @@ function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
         $salida[] = ['ico' => (string)($categoria['ico'] ?? '💬'), 'titulo' => (string)($categoria['titulo'] ?? ''), 'items' => $items];
     }
     return $salida;
+}
+
+/** El atajo de pago único aparece solo en un chat donde el cliente lo pidió explícitamente. */
+function wabot_rr_03oct_pidio_codigo($conv) {
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        $texto = (string)($fila['t'] ?? '');
+        if (!preg_match('/c[oó]digo|source code|repositorio/iu', $texto)) continue;
+        if (preg_match('/\bno (quiero|necesito|busco|pido)\b.{0,65}\b(propiedad|c[oó]digo)\b/iu', $texto)) continue;
+        if (preg_match('/propiedad (absoluta|total)|100\s*%|completamente m[ií]o|ser dueñ[oa]|quede a mi nombre/iu', $texto)) return true;
+    }
+    return false;
 }
 
 /** Migra solamente textos estándar; conserva las respuestas personalizadas. */
@@ -840,6 +861,21 @@ function wabot_respuestas_rapidas_detalle_2oct($categorias) {
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
+    $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
+    $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
+    $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
+    if (is_file($marcaNueva) && $actual !== null) return $actual;
+    $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
+    $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($crudo !== '') {
+        $respaldo = WABOT_DATA . '/migrated/respuestas-rapidas-antes-03oct.json';
+        if (!is_file($respaldo) && @file_put_contents($respaldo, $crudo, LOCK_EX) === false) return $actual ?? $nuevas;
+    }
+    if (is_string($jsonNuevo) && wabot_json_guardar_atomico($ruta, $jsonNuevo)) {
+        @file_put_contents($marcaNueva, date('c') . "\n");
+        return $nuevas;
+    }
+    return $actual ?? $nuevas;
     // El orden del 26-sep corre una sola vez: después, lo que Pablo borre o
     // vuelva a mostrar desde la pestaña Respuestas queda como lo dejó.
     $marca = WABOT_DATA . '/migrated/respuestas-rapidas-chats-26sep';

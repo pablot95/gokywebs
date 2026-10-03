@@ -1374,6 +1374,10 @@ body.conv-full .conv-head { padding-bottom:8px; margin-bottom:8px; }
 body.conv-full #responder { margin-top:8px; }
 body.conv-full #respTexto { min-height:44px; }
 body.conv-full #respEstado { margin-top:4px; }
+#respTexto { resize:none; }
+.resp-resize { position:absolute; top:-8px; left:8px; z-index:2; width:38px; height:14px; min-height:0; padding:0; border:1px solid var(--line-fuerte); border-radius:6px; background:var(--card-2); color:var(--dim); font:700 12px/12px system-ui,sans-serif; text-align:center; cursor:ns-resize; touch-action:none; }
+.resp-resize:hover, .resp-resize:focus-visible { border-color:var(--ac); color:var(--ac); }
+
 
 .conv-list { background:var(--card); border:1px solid var(--line); border-radius:12px; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .conv-list-head { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--dim); letter-spacing:.02em; flex-shrink:0; }
@@ -1442,21 +1446,14 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
 .conv-main .chat { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
 
-/* Respuestas rápidas: columna de pestañas flotante sobre el borde derecho de
-   la ventana. position:fixed (no depende de .conv-main) para no quedar
-   atrapada por el overflow del chat; se esconde en pantallas angostas, donde
-   no hay hover de verdad y la tapa tapa la única columna disponible. */
+/* Respuestas rápidas: columna de botones que se abren con clic. */
 .rr-panel { position:fixed; right:10px; top:50%; transform:translateY(-50%); z-index:40; display:flex; flex-direction:column; gap:5px; }
 .rr-tab { position:relative; }
-.rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:default; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
+.rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
 .rr-tab-ico { font-size:14px; line-height:1; }
-.rr-tab:hover .rr-tab-btn, .rr-tab.rr-abierto .rr-tab-btn { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
+.rr-tab.rr-abierto .rr-tab-btn, .rr-tab-btn:focus-visible { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
 .rr-flyout { position:absolute; right:100%; top:calc(50% + var(--rr-ajuste-y, 0px)); transform:translateY(-50%) translateX(6px); margin-right:2px; width:360px; max-width:calc(100vw - 230px); max-height:min(calc(100vh - 24px), 700px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:8px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
-/* Un margen invisible entre la pestaña y el flyout: sin esto, el pequeño hueco
-   entre los dos (right:100%) hace que el mouse "salga" del :hover a mitad de
-   camino y el panel se cierra antes de llegar a un ítem. */
-.rr-tab::before { content:''; position:absolute; right:100%; top:0; bottom:0; width:14px; }
-.rr-tab:hover .rr-flyout, .rr-tab.rr-abierto .rr-flyout { visibility:visible; opacity:1; pointer-events:auto; }
+.rr-tab.rr-abierto .rr-flyout { visibility:visible; opacity:1; pointer-events:auto; }
 .rr-flyout-tit { position:sticky; top:-8px; z-index:1; margin:0 0 7px; padding:9px 10px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
 .rr-item { display:block; width:100%; margin:0 0 7px; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13.5px; line-height:1.48; cursor:pointer; }
 .rr-item:last-child { margin-bottom:0; }
@@ -2499,6 +2496,7 @@ function burbujaCita(t, chat) {
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
                             title="Copia el link del formulario con el código de esta conversación, para mandárselo vos">Copiar form</button>
+                        <?php if (wabot_rr_03oct_botones_pago_listos($cfg)): ?>
                         <?php /* Los dos links de pago del plan mensual, listos para mandar (25-sep;
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
@@ -2514,12 +2512,15 @@ function burbujaCita(t, chat) {
                             title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $149.000</button>
                         <button type="button" class="sec" id="btnAnual250"
                             title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
+                        <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
                                datos para la transferencia (pago/unico190 y pago/unico290). */ ?>
                         <button type="button" class="sec" id="btnUnico240"
                             title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $190.000</button>
                         <button type="button" class="sec" id="btnUnico360"
                             title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $290.000</button>
+                        <?php endif; ?>
+                        <?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -2580,6 +2581,7 @@ function burbujaCita(t, chat) {
                         </div>
                         <div class="rr-resultados" id="rrResultados" role="listbox"></div>
                     </div>
+                    <button type="button" id="respResize" class="resp-resize" aria-label="Arrastrá hacia arriba para agrandar el área de escritura" title="Arrastrá hacia arriba para agrandar; hacia abajo para achicar">↕</button>
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
@@ -2596,13 +2598,8 @@ function burbujaCita(t, chat) {
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
                 </div>
 
-                <!-- Respuestas rápidas: pestañitas a la derecha del chat, una
-                     por categoría. Con el mouse encima se
-                     despliega la lista de esa categoría; un clic en un mensaje lo
-                     escribe en #respTexto para revisarlo antes de enviarlo.
-                     Solo en pantalla grande (con hover de verdad): en el celular
-                     no hay dónde "pasar el mouse", así que ahí queda oculto y se
-                     sigue escribiendo a mano. -->
+                <!-- Respuestas rápidas: un clic abre la categoría y otro clic
+                     copia el mensaje al editor para revisarlo antes de enviarlo. -->
                 <nav class="rr-panel" id="rrPanel" aria-label="Respuestas rápidas"></nav>
             <?php else: ?>
                 <div class="conv-nada">
@@ -3252,9 +3249,58 @@ function burbujaCita(t, chat) {
         let ventana = <?= (int)$restante ?>;
         const chat = document.getElementById('chat');
         const txt  = document.getElementById('respTexto');
+        const resizeGrip = document.getElementById('respResize');
         const btn  = document.getElementById('respEnviar');
         const est  = document.getElementById('respEstado');
         let ultimoRender = '';
+
+        // Crece con el contenido al escribir, pegar o elegir una respuesta rápida.
+        // El límite es 80vh, sin tapar del todo el historial del chat.
+        if (resizeGrip && txt) {
+            let altoManual = 0;
+            const ajustarAlto = () => {
+                if (txt.value === '') altoManual = 0;
+                const minimo = parseFloat(getComputedStyle(txt).minHeight) || 44;
+                const contenedor = txt.closest('.conv-main');
+                const cabecera = contenedor?.querySelector('.conv-head')?.offsetHeight || 0;
+                const minimoChat = window.innerWidth <= 720 ? window.innerHeight * .42 : 80;
+                const disponible = contenedor ? contenedor.clientHeight - cabecera - minimoChat - 70 : window.innerHeight;
+                const maximo = Math.max(minimo, Math.min(window.innerHeight * .8, disponible));
+                txt.style.height = 'auto';
+                const contenido = txt.scrollHeight;
+                txt.style.height = Math.min(maximo, Math.max(minimo, contenido, altoManual)) + 'px';
+                txt.style.overflowY = contenido > maximo ? 'auto' : 'hidden';
+            };
+            txt.addEventListener('input', ajustarAlto);
+            window.addEventListener('resize', ajustarAlto);
+            ajustarAlto();
+            resizeGrip.addEventListener('pointerdown', ev => {
+                if (ev.button !== 0) return;
+                ev.preventDefault();
+                const inicioY = ev.clientY;
+                const inicioAlto = txt.getBoundingClientRect().height;
+                resizeGrip.setPointerCapture(ev.pointerId);
+                const mover = evento => {
+                    altoManual = Math.max(0, inicioAlto + inicioY - evento.clientY);
+                    ajustarAlto();
+                };
+                const terminar = () => {
+                    resizeGrip.removeEventListener('pointermove', mover);
+                    resizeGrip.removeEventListener('pointerup', terminar);
+                    resizeGrip.removeEventListener('pointercancel', terminar);
+                };
+                resizeGrip.addEventListener('pointermove', mover);
+                resizeGrip.addEventListener('pointerup', terminar);
+                resizeGrip.addEventListener('pointercancel', terminar);
+            });
+            resizeGrip.addEventListener('keydown', ev => {
+                if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
+                ev.preventDefault();
+                altoManual = Math.max(0, txt.getBoundingClientRect().height + (ev.key === 'ArrowUp' ? 20 : -20));
+                ajustarAlto();
+            });
+        }
+
 
         /* Respuestas rápidas. Un clic solo las copia al editor: siempre se
          * revisan y se mandan con el botón Enviar. Para sumar una, agregá un
@@ -3461,11 +3507,8 @@ function burbujaCita(t, chat) {
                     flyout.style.setProperty('--rr-ajuste-y', ajuste + 'px');
                 });
             };
-            panel.querySelectorAll('.rr-tab').forEach(tab => {
-                tab.addEventListener('mouseenter', () => acomodarFlyout(tab));
-            });
             window.addEventListener('resize', () => {
-                const visible = panel.querySelector('.rr-tab:hover, .rr-tab.rr-abierto');
+                const visible = panel.querySelector('.rr-tab.rr-abierto');
                 if (visible) acomodarFlyout(visible);
             });
 
@@ -3480,8 +3523,7 @@ function burbujaCita(t, chat) {
                 });
             });
 
-            // Táctil (tablet sin mouse real): un toque abre/cierra el flyout en
-            // vez de depender del :hover, que ahí no existe.
+            // Todas las categorías se abren y se cierran solo con clic.
             panel.querySelectorAll('.rr-tab-btn').forEach(b => {
                 b.addEventListener('click', ev => {
                     ev.stopPropagation();
@@ -3689,6 +3731,7 @@ function burbujaCita(t, chat) {
                 const j = await r.json();
                 if (j.ok) {
                     txt.value = '';
+                    txt.dispatchEvent(new Event('input', { bubbles:true }));
                     document.getElementById('handoffPill')?.remove();
                     await refrescar(); await refrescarLista();
                     est.textContent = 'Enviado. El bot queda en silencio en este chat.';
