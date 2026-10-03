@@ -15,7 +15,9 @@ require_once __DIR__ . '/redactor.php';
  *   - incluir    → $conv['incluir']
  *   - objetivos  → $conv['objetivos'] (27-sep): las casillas de "Qué querés
  *                  lograr con tu web" en un texto ("Generar más ventas,
- *                  Otra: …"), con lo que escribió en objetivo_otro.
+ *                  Otra: …"), con lo que escribió en objetivo_otro. El
+ *                  formulario ya no lo pregunta (2-oct): queda para los que
+ *                  estén en caché.
  * Además queda una línea "[Formulario web, paso 2] ..." en el transcript, para
  * verlo en el panel. */
 

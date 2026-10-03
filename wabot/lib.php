@@ -5586,7 +5586,10 @@ function wabot_form_lead_validar($payload, &$motivo = null) {
     $nombreNegocio = trim((string)($payload['nombre_negocio'] ?? ''));
     $resumen = trim((string)($payload['resumen'] ?? ''));
     $colores = trim((string)($payload['colores'] ?? ''));
-    foreach (['nombre' => $nombre, 'nombre_negocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] as $campo => $valor) {
+    /* El nombre de la persona y los colores pueden venir vacíos (2-oct): el
+     * formulario ya no pregunta el nombre y solo manda los colores que se
+     * cambiaron. Ver wabot_form_lead_procesar(). */
+    foreach (['nombre_negocio' => $nombreNegocio, 'resumen' => $resumen] as $campo => $valor) {
         if ($valor === '') { $motivo = ['motivo' => 'vacio', 'campo' => $campo]; return null; }
     }
     foreach (['nombre' => [$nombre, 80], 'nombre_negocio' => [$nombreNegocio, 80], 'resumen' => [$resumen, 600], 'colores' => [$colores, 200]] as $campo => [$valor, $max]) {
@@ -5630,6 +5633,10 @@ function wabot_form_lead_procesar($payload, $cfg) {
     ['clave' => $clave, 'telWsp' => $telWsp, 'nombre' => $nombre,
      'nombreNegocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] = $datos;
     $conCodigo = !empty($datos['conCodigo']);
+    // Lo que se anota en el transcript. Sin nombre ni colores (2-oct) no
+    // quedan un "Nombre: ·" o un "Colores:" vacíos.
+    $lineaDatos = ($nombre !== '' ? "Nombre: {$nombre} · " : '')
+        . "Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: " . ($colores !== '' ? $colores : 'no eligió');
 
     $clave = preg_replace('/[^0-9A-Za-z]/', '', $clave);
     $lock = null;
@@ -5668,7 +5675,7 @@ function wabot_form_lead_procesar($payload, $cfg) {
      * Con el código del link, la charla es la suya y se actualiza como siempre. */
     if (!$conCodigo && $huboChatReal && !empty($conv['form_completado_ts'])) {
         wabot_conv_transcript($conv, 'sistema',
-            "[Formulario web sin código — NO aplicado, la ficha ya tenía formulario] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}"
+            "[Formulario web sin código — NO aplicado, la ficha ya tenía formulario] {$lineaDatos}"
             . ($telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : ''));
         wabot_log('form_lead_sin_codigo_ignorado', ['tel' => $clave]);
         wabot_conv_save($conv);
@@ -5686,7 +5693,13 @@ function wabot_form_lead_procesar($payload, $cfg) {
         $conv['nombre_negocio'] = $negocioLimpio;
     }
     if (!$soloCompletar || trim((string)($conv['descripcion'] ?? '')) === '') $conv['descripcion'] = $resumen;
-    if (!$soloCompletar || trim((string)($conv['colores'] ?? '')) === '') $conv['colores'] = $colores;
+    /* Sin colores elegidos (2-oct) no se pisan los que ya dijo por chat; si no
+     * hay ninguno, quedan a nuestra elección, como cuando lo dice por chat. */
+    if ($colores !== '') {
+        if (!$soloCompletar || trim((string)($conv['colores'] ?? '')) === '') $conv['colores'] = $colores;
+    } elseif (trim((string)($conv['colores'] ?? '')) === '') {
+        $conv['colores'] = 'A elección del diseñador';
+    }
 
     /* El número corregido va en la línea del transcript porque en una charla
      * de WhatsApp el panel muestra el del chat, no el telefono_wsp: sin esto
@@ -5696,7 +5709,7 @@ function wabot_form_lead_procesar($payload, $cfg) {
      * de Psicoenlace llegó sin dejar ni una línea. El reintento por "charla
      * ocupada" trae lo mismo y no se anota dos veces. */
     $lineaWsp = $telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : '';
-    $lineaForm = "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}{$lineaWsp}";
+    $lineaForm = "[Formulario web] {$lineaDatos}{$lineaWsp}";
     $yaAnotada = false;
     foreach (array_slice((array)($conv['transcript'] ?? []), -15) as $fila) {
         if (($fila['q'] ?? '') === 'sistema' && ($fila['t'] ?? '') === $lineaForm) { $yaAnotada = true; break; }

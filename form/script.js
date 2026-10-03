@@ -399,7 +399,6 @@ track('enter');
     function trackMilestones() {
         const phoneDigits = value('telefono').replace(/\D/g, '');
         const milestones = [
-            ['field_nombre', value('nombre') !== ''],
             ['field_negocio', value('nombre_negocio') !== ''],
             ['field_rubro', value('resumen') !== ''],
             ['field_telefono', phoneDigits.length >= 10 && phoneDigits.length <= 15],
@@ -608,7 +607,6 @@ function validarPaso1() {
     let firstError = null;
 
     [
-        { id: 'nombre', msg: 'Contanos tu nombre.' },
         { id: 'nombre_negocio', msg: 'Contanos el nombre de tu negocio o marca.' },
         { id: 'resumen', msg: 'Contanos brevemente qué ofrecés.' },
     ].forEach(({ id, msg }) => {
@@ -646,21 +644,6 @@ function validarPaso1() {
 
 function validarPaso2() {
     let firstError = null;
-
-    // Qué quiere lograr: al menos una casilla, y si marcó "Otra", cuál.
-    if (objetivosGrid && !objetivosMarcados().length) {
-        markError(objetivosGrid, 'Elegí al menos una opción.');
-        firstError = objetivosGrid;
-    } else if (objetivoOtra?.checked && objetivoOtroInput) {
-        const otro = objetivoOtroInput.value.trim();
-        if (!otro) {
-            markError(objetivoOtroInput, 'Contanos qué querés lograr.');
-            firstError = objetivoOtroInput;
-        } else if (otro.length > LIMITES.objetivo_otro) {
-            markError(objetivoOtroInput, `Demasiado largo: máximo ${LIMITES.objetivo_otro} caracteres.`);
-            firstError = objetivoOtroInput;
-        }
-    }
 
     const modalidad = document.getElementById('modalidad');
     if (!modalidad.value) {
@@ -706,18 +689,17 @@ function clearErrors() {
 function buildPayload() {
     const get = id => (document.getElementById(id)?.value ?? '').trim();
 
-    // Los color pickers (type="color") siempre traen un valor, no hace falta
-    // validarlos: se combinan en un solo texto para el mismo campo "colores"
-    // que ya espera el bot.
-    const colores = [
-        `Color principal: ${get('color_principal')}`,
-        `Color secundario: ${get('color_secundario')}`,
-        `Fondos: ${get('color_fondos')}`,
-    ].join(' · ');
+    // Los color pickers (type="color") siempre traen un valor: el que sigue en
+    // el que viene puesto no es un color de marca y no viaja (2-oct). Los que
+    // cambiaron van en un solo texto, el campo "colores" que ya espera el bot;
+    // sin ninguno va vacío y el servidor anota "A elección del diseñador".
+    const colores = [['color_principal', 'Color principal'], ['color_secundario', 'Color secundario']]
+        .filter(([id]) => colorElegido(id))
+        .map(([id, nombre]) => `${nombre}: ${get(id)}`)
+        .join(' · ');
 
     const payload = {
         t: get('telefono'),
-        nombre: get('nombre'),
         nombre_negocio: get('nombre_negocio'),
         resumen: get('resumen'),
         // Opcional (28-sep): el servidor lo deja como usuario, sin @ ni link.
@@ -725,9 +707,6 @@ function buildPayload() {
         colores,
         // Paso 2 (10-sep). Van siempre, aunque estén vacíos: así el servidor
         // sabe que el formulario ya preguntó la referencia y no la pide por chat.
-        // Qué quiere lograr (27-sep): las casillas marcadas y, con "Otra", cuál.
-        objetivos: objetivosMarcados(),
-        objetivo_otro: objetivoOtra?.checked ? get('objetivo_otro') : '',
         referencia: get('referencia'),
         incluir: get('incluir'),
         modalidad: get('modalidad'),
@@ -765,9 +744,9 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre: 80, nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, objetivo_otro: 120, referencia: 300, incluir: 600 };
-const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
-    objetivo_otro: 'qué querés lograr', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
+const LIMITES = { nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, referencia: 300, incluir: 600 };
+const NOMBRES_CAMPO = { nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
+    referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
  * campo, no se tira un "ocurrió un error" genérico. Si el campo está en el otro
@@ -914,41 +893,13 @@ function _contador(idCampo, idContador) {
 }
 const _pintarContadores = [_contador('resumen', 'resumenContador'), _contador('incluir', 'incluirContador')];
 
-/* Qué quiere lograr con la web (27-sep): casillas, se puede marcar más de
- * una. "Otra" habilita el campo de al lado, obligatorio mientras esté marcada. */
-const objetivosGrid = document.getElementById('objetivos');
-const objetivoOtra = document.getElementById('objetivoOtra');
-const objetivoOtroCampo = document.getElementById('objetivoOtroCampo');
-const objetivoOtroInput = document.getElementById('objetivo_otro');
-
-function objetivosMarcados() {
-    return objetivosGrid ? [...objetivosGrid.querySelectorAll('input[type="checkbox"]:checked')].map(i => i.value) : [];
+/* ¿Eligió este color o sigue el que viene puesto en el HTML? (2-oct). Compara
+ * contra el value del HTML, así un borrador guardado con el color de fábrica
+ * tampoco cuenta como elegido. */
+function colorElegido(id) {
+    const el = document.getElementById(id);
+    return !!el && el.value.toLowerCase() !== el.defaultValue.toLowerCase();
 }
-
-/* El aviso de error de un campo se va apenas se corrige, sin esperar a Siguiente. */
-function quitarError(el) {
-    el.classList.remove('error');
-    el.parentNode.querySelectorAll(':scope > .error-msg').forEach(m => m.remove());
-}
-
-function pintarObjetivoOtro({ enfocar = false } = {}) {
-    if (!objetivoOtra || !objetivoOtroInput) return;
-    objetivoOtroInput.disabled = !objetivoOtra.checked;
-    // Sin "Otra" el campo no cuenta, y su aviso tampoco.
-    if (!objetivoOtra.checked) quitarError(objetivoOtroInput);
-    if (objetivoOtra.checked && enfocar) objetivoOtroInput.focus();
-}
-
-objetivosGrid?.addEventListener('change', e => {
-    // Con una marcada la pregunta ya está contestada.
-    if (objetivosGrid.classList.contains('error') && objetivosMarcados().length) quitarError(objetivosGrid);
-    if (e.target === objetivoOtra) pintarObjetivoOtro({ enfocar: true });
-});
-// Tocar el campo apagado es elegir "Otra": se marca y queda listo para escribir.
-objetivoOtroCampo?.addEventListener('click', () => {
-    if (objetivoOtra && !objetivoOtra.checked) objetivoOtra.click();
-});
-objetivoOtroInput?.addEventListener('input', () => quitarError(objetivoOtroInput));
 
 // Instagram (28-sep): abajo del campo, el link que queda con lo que escriben.
 // Si pegan el link entero o ponen un @, se muestra ya limpio (igual que el servidor).
@@ -979,14 +930,12 @@ pintarPlan();
 
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
-const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'instagram', 'resumen', 'telefono',
-    'color_principal', 'color_secundario', 'color_fondos',
-    'objetivo_otro', 'referencia', 'incluir', 'modalidad'];
+const DRAFT_FIELDS = ['nombre_negocio', 'instagram', 'resumen', 'telefono',
+    'color_principal', 'color_secundario', 'referencia', 'incluir', 'modalidad'];
 
 function saveDraft() {
     try {
-        // Las casillas de qué quiere lograr van aparte: no son un valor por id.
-        const d = { fields: {}, objetivos: objetivosMarcados() };
+        const d = { fields: {} };
         DRAFT_FIELDS.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value.trim()) d.fields[id] = el.value;
@@ -1008,10 +957,6 @@ function restoreDraft() {
         el.value = v;
         if (el.classList.contains('autosize')) autoGrow(el);
     });
-
-    if (objetivosGrid && Array.isArray(d.objetivos) && !objetivosMarcados().length) {
-        objetivosGrid.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = d.objetivos.includes(i.value); });
-    }
 }
 
 function clearDraft() {
@@ -1023,9 +968,8 @@ _formEl.addEventListener('input', saveDraft);
 _formEl.addEventListener('change', saveDraft);
 
 restoreDraft();
-// Lo restaurado no dispara 'input': se repintan a mano los contadores, el
-// campo de "Otra" (habilitado o no) y el link de Instagram.
+// Lo restaurado no dispara 'input': se repintan a mano los contadores y el
+// link de Instagram.
 _pintarContadores.forEach(pintar => pintar());
-pintarObjetivoOtro();
 pintarInstagram();
 pintarPlan();

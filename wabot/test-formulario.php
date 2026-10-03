@@ -619,11 +619,24 @@ caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($clave
 echo "— 16. Qué quiere lograr con la web y formulario sin elección de estilo —\n";
 
 // formlead_extras() y compañía ya están cargadas desde la sección 12.
-preg_match_all('/<input type="checkbox" name="objetivos" value="([^"]+)"/u', $htmlPrincipal, $mObj);
-caso('las casillas del formulario son las que acepta el servidor, en el mismo orden',
-    $mObj[1] === formlead_objetivos(), json_encode($mObj[1], JSON_UNESCAPED_UNICODE));
-caso('el campo de "Otra" va a su derecha, en la misma grilla, y arranca apagado',
-    preg_match('/value="Otra"[^>]*>.*?<\/label>\s*<div class="objetivo-otro"[^>]*>\s*<input [^>]*id="objetivo_otro"[^>]*\bdisabled>/us', $htmlPrincipal) === 1);
+// El formulario ya no pregunta qué quiere lograr (2-oct); el servidor lo sigue
+// aceptando para los formularios que estén en caché.
+caso('el formulario ya no tiene las casillas de qué quiere lograr',
+    strpos($htmlPrincipal, 'name="objetivos"') === false && strpos($htmlPrincipal, 'id="objetivo_otro"') === false);
+caso('ni el nombre de la persona ni el color de fondos',
+    strpos($htmlPrincipal, 'id="nombre"') === false && strpos($htmlPrincipal, 'id="color_fondos"') === false);
+
+// Sin nombre y sin colores (2-oct): se acepta, y los colores quedan a nuestra elección.
+$rSin = wabot_form_lead_procesar(['t' => '5493810009101', 'nombre_negocio' => 'Vivero Sur',
+    'resumen' => 'Vivero con plantas de interior', 'colores' => ''], $cfg);
+$convSin = wabot_conv_load('5493810009101');
+caso('sin nombre ni colores el envío se acepta', !empty($rSin['ok']), json_encode($rSin));
+caso('los colores quedan "A elección del diseñador"', ($convSin['colores'] ?? '') === 'A elección del diseñador');
+$lineaSin = '';
+foreach ((array)($convSin['transcript'] ?? []) as $fila) if (strpos((string)($fila['t'] ?? ''), '[Formulario web]') === 0) $lineaSin = $fila['t'];
+caso('el transcript no anota un "Nombre:" vacío y dice que no eligió colores',
+    strpos($lineaSin, 'Nombre:') === false && strpos($lineaSin, 'Colores: no eligió') !== false, $lineaSin);
+@unlink(WABOT_DATA . '/conv/5493810009101.json');
 
 $eObj = formlead_extras(['objetivos' => ['Tener una web visualmente atractiva', 'Generar más ventas', 'Generar más ventas', 'Algo inventado', 'Otra'],
     'objetivo_otro' => "  Que me   escriban\nempresas  "]);

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20261002-visor5">
+    <link rel="stylesheet" href="styles.css?v=20261002-campos">
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -58,13 +58,8 @@
                             <p class="step-header-desc">Primero lo básico: lleva menos de un minuto.</p>
                         </div>
 
-                        <div class="field-group">
-                            <label class="field-label" for="nombre">
-                                Tu nombre <span class="req">*</span>
-                            </label>
-                            <input type="text" id="nombre" name="nombre" class="field-input" placeholder="" required>
-                        </div>
-
+                        <!-- El nombre de la persona se sacó el 2-oct: no cambia la web y el
+                             chat ya lo tiene. wabot/lib.php lo acepta vacío. -->
                         <div class="field-group">
                             <label class="field-label" for="nombre_negocio">
                                 Nombre de tu negocio o marca <span class="req">*</span>
@@ -114,29 +109,10 @@
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Qué buscás lograr, cómo te gustaría pagar y tus colores.</p>
+                            <p class="step-header-desc">Cómo te gustaría pagar y tus colores.</p>
                         </div>
 
-                        <!-- Qué quiere lograr con la web (27-sep, las opciones de Pablo): se puede
-                             marcar más de una. "Otra" es la quinta y su campo va a la derecha, en
-                             la celda que queda libre: se habilita al marcarla. Los valores tienen
-                             que coincidir con formlead_objetivos() de wabot/form-lead.php. -->
-                        <fieldset class="field-group objetivos-campo">
-                            <legend class="field-label">
-                                ¿Qué querés lograr con tu web? <span class="req">*</span>
-                                <span class="field-hint">Podés elegir más de una.</span>
-                            </legend>
-                            <div class="objetivos-grid" id="objetivos">
-                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Generar más ventas"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Generar más ventas</span></label>
-                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Conseguir más clientes"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Conseguir más clientes</span></label>
-                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Recibir reservas o turnos"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Recibir reservas o turnos</span></label>
-                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Tener una web visualmente atractiva"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Tener una web visualmente atractiva</span></label>
-                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Otra" id="objetivoOtra" aria-controls="objetivo_otro"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Otra</span></label>
-                                <div class="objetivo-otro" id="objetivoOtroCampo">
-                                    <input type="text" id="objetivo_otro" name="objetivo_otro" class="field-input" placeholder="¿Cuál?" aria-label="Otra: ¿cuál?" maxlength="120" disabled>
-                                </div>
-                            </div>
-                        </fieldset>
+                        <!-- "¿Qué querés lograr con tu web?" se sacó el 2-oct: no cambiaba la web. -->
 
                         <div class="field-group">
                             <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
@@ -153,10 +129,13 @@
                             <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan mensual, plan anual o pago único.</p>
                         </div>
 
+                        <!-- Dos colores (2-oct, sin el de fondos). El que no se toca no viaja:
+                             script.js solo manda los que cambiaron, y si no cambió ninguno la
+                             ficha queda "A elección del diseñador" (wabot/lib.php). -->
                         <div class="field-group">
                             <label class="field-label">
-                                Colores de identidad <span class="req">*</span>
-                                <span class="field-hint">Tenés colores de marca?</span>
+                                Colores de identidad <span class="optional">(opcional)</span>
+                                <span class="field-hint">¿Tenés colores de marca? Si no, dejalos como están y los elegimos nosotros.</span>
                             </label>
                             <div class="color-fields-grid">
                                 <div class="field-group color-field-group">
@@ -166,10 +145,6 @@
                                 <div class="field-group color-field-group">
                                     <label class="field-label small-label" for="color_secundario">Color secundario</label>
                                     <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
-                                </div>
-                                <div class="field-group color-field-group">
-                                    <label class="field-label small-label" for="color_fondos">Color de fondos</label>
-                                    <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
                                 </div>
                             </div>
                         </div>
@@ -317,6 +292,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261002-visor4"></script>
+    <script type="module" src="script.js?v=20261002-campos"></script>
 </body>
 </html>
