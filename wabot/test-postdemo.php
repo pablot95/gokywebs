@@ -17,6 +17,9 @@
 require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
+// Prueba el corte de siempre (sin la etapa automática posterior al precio, que desde el 2-oct viene prendida).
+$cfg['postprecio_activo'] = false;
+$GLOBALS['WABOT_TEST_POSTPRECIO_ACTIVO'] = false;
 $AVISO = (string)$cfg['postdemo_derivar'];
 
 /** Una conversación con la demo recién presentada. */

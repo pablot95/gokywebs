@@ -8,10 +8,13 @@
  */
 require_once __DIR__ . '/test-lib.php';
 $cfg = wabot_config_load();
+// Desde el 2-oct a la tarde viene prendida: acá se prueba apagada desde el panel.
+$cfg['postprecio_activo'] = false;
+$GLOBALS['WABOT_TEST_POSTPRECIO_ACTIVO'] = false;
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
 $GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-real';
 
-caso('la atención posterior al precio viene apagada', empty(wabot_textos_default()['postprecio_activo']) && !wabot_postprecio_encendido($cfg));
+caso('la atención posterior al precio viene prendida (2-oct a la tarde) y se puede apagar', !empty(wabot_textos_default()['postprecio_activo']) && !wabot_postprecio_encendido($cfg));
 
 /** Una charla a la que se le acaba de pasar el precio con la oferta de la demo. */
 function apagado_conv($tipo = 'ecommerce', $extra = []) {

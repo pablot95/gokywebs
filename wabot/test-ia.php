@@ -110,7 +110,8 @@ caso('le avisa que todavía no le escribimos', strpos($ctx, 'Todavía no le escr
 
 echo "— 3. Responder —\n";
 
-caso('sale la pregunta del modelo', $r === ['Buscás vender por la web, o solo mostrar tus productos?'], json_encode($r, JSON_UNESCAPED_UNICODE));
+// El cliente arrancó con "hola": desde el 2-oct se le devuelve el saludo.
+caso('sale la pregunta del modelo', $r === ['Hola! Buscás vender por la web, o solo mostrar tus productos?'], json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la ficha guarda lo que entendió', wabot_ficha($c)['rubro'] === 'tu pañalera' && wabot_ficha($c)['que_vende'] === 'pañales y juguetes', json_encode(wabot_ficha($c), JSON_UNESCAPED_UNICODE));
 caso('y la etapa', ($c['etapa_comercial'] ?? '') === 'ENTENDIENDO_NECESIDAD' && wabot_ia_etapa($c) === 'ENTENDIENDO_NECESIDAD');
 caso('sin precio todavía', empty($c['precio_dado']));
@@ -512,7 +513,7 @@ caso('las instrucciones dicen que ante "qué me recomendás" se decide y se coti
 // La respuesta oficial y el modelo diciendo lo mismo con otras palabras (28-sep, charlas reales).
 $c = conv_ia('5491100000140TEST');
 openai_responde([decision(['info_claves' => ['precio_sin_rubro'],
-    'mensajes' => ['Hola, te paso el valor exacto. Primero contame a qué te dedicás o para qué sería la web, porque depende de lo que necesites.']])]);
+    'mensajes' => ['Hola! Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.']])]);
 $r = turno('Hola! Quiero pedir presupuesto para mi web, cuanto sale?', $c, $cfg);
 caso('pide la respuesta oficial del precio y repite lo mismo → sale una sola vez', count($r) === 1, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('lo que el modelo agrega de nuevo se queda y lo repetido se va',
@@ -533,6 +534,27 @@ caso('OpenAI caído: el motor pregunta qué vende y con la respuesta cotiza la t
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 // Limpieza.
+echo "— Devolver el saludo (2-oct: \"no saluda bien, es muy seco\") —\n";
+$c = conv_ia('5491100000301TEST', ['nombre_confirmado' => true]);
+openai_responde([decision(['info_claves' => ['precio_sin_rubro']])]);
+$r = turno('Hola buenas tardes, quería pedir un presupuesto', $c, $cfg);
+caso('si saluda, la respuesta oficial arranca devolviéndole el saludo con su nombre',
+    str_starts_with($r[0] ?? '', 'Hola Marta, buenas tardes! Con gusto te paso los valores'), json_encode($r, JSON_UNESCAPED_UNICODE));
+openai_responde([decision(['info_claves' => ['hosting']])]);
+$r2 = turno('Hola, y el hosting está incluido?', $c, $cfg);
+caso('una vez por charla: no vuelve a saludar en el medio', !str_starts_with($r2[0] ?? '', 'Hola'), json_encode($r2, JSON_UNESCAPED_UNICODE));
+$c = conv_ia('5491100000302TEST');
+openai_responde([decision(['mensajes' => ['Hola Marta, buen día! Te consulto, a qué te dedicás?']])]);
+$r = turno('Buen día, me pasás info?', $c, $cfg);
+caso('si el modelo ya saludó, no se duplica', ($r[0] ?? '') === 'Hola Marta, buen día! Te consulto, a qué te dedicás?', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('"Hola !! Bien vos ?" se contesta antes de seguir',
+    wabot_saludo_eco('Hola !! Bien vos ? Estoy haciendo comida para perros', ['nombre' => 'Marta', 'nombre_confirmado' => true]) === 'Hola Marta! Muy bien, gracias.');
+caso('con un nombre de perfil sin confirmar no lo usa', wabot_saludo_eco('hola', ['nombre' => 'negro brian']) === 'Hola!');
+caso('sin nombre saluda igual', wabot_saludo_eco('buenas noches', []) === 'Hola, buenas noches!');
+caso('si no saluda, no se agrega nada', wabot_saludo_eco('Vendo ropa', ['nombre' => 'Marta']) === '');
+caso('la pregunta de los cursos también arranca con "Te consulto,"',
+    strpos((string)file_get_contents(__DIR__ . '/ia.php'), "'De qué son tus cursos, y los das online o presenciales?'") === false);
+
 foreach (glob(WABOT_DATA . '/conv/54911000000*TEST.json') ?: [] as $f) @unlink($f);
 foreach (['uso', 'sombra'] as $d) { foreach (glob("$tmp/$d/*") ?: [] as $f) @unlink($f); @rmdir("$tmp/$d"); }
 @rmdir($tmp);

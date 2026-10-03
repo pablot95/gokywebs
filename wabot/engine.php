@@ -3272,15 +3272,16 @@ function wabot_info_lineas($keys, $conv, $cfg) {
  */
 function wabot_info_unir(array $lineas) {
     $lineas = array_values(array_unique(array_filter(array_map(function ($l) { return trim((string)$l); }, $lineas), 'strlen')));
-    $pide = function ($l) { return (bool)preg_match('/\bcontame (a que te dedicas|que negocio tenes)\b/u', wabot_normalizar_frase($l)); };
+    // "Te consulto, a qué te dedicás" desde el 2-oct (preguntas sin sequedad).
+    $pide = function ($l) { return (bool)preg_match('/\b(contame|te consulto) (a que te dedicas|que negocio tenes)\b/u', wabot_normalizar_frase($l)); };
     if (count(array_filter($lineas, $pide)) > 1) {
-        $otras = array_values(array_filter($lineas, function ($l) { return !preg_match('/^te paso el valor exacto\b/u', wabot_normalizar_frase($l)); }));
+        $otras = array_values(array_filter($lineas, function ($l) { return !preg_match('/^(te paso el valor exacto|con gusto te paso los valores)\b/u', wabot_normalizar_frase($l)); }));
         if (count(array_filter($otras, $pide)) >= 1) $lineas = $otras;
         $ultima = null;
         foreach ($lineas as $i => $l) if ($pide($l)) $ultima = $i;
         foreach ($lineas as $i => $l) {
             if ($i === $ultima || !$pide($l)) continue;
-            $lineas[$i] = trim(preg_replace('/\s*(El valor depende del tipo de web:\s*)?[Cc]ontame (a qué te dedicás|qué negocio tenés)[^.?!\n]*[.?!]?\s*$/u', '', $l));
+            $lineas[$i] = trim(preg_replace('/\s*(El valor depende del tipo de web:\s*)?([Cc]ontame|[Tt]e consulto,?) (a qué te dedicás|qué negocio tenés)[^.?!\n]*[.?!]?\s*$/u', '', $l));
         }
         $lineas = array_values(array_filter($lineas, 'strlen'));
     }
@@ -8216,7 +8217,9 @@ function wabot_acepta_demo($texto, $permitirPregunta = false) {
     if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|charl\w*|hablarlo|despues|luego|te aviso|te escribo|te confirmo|a ver|lo veo|caro|no puedo|no me alcanza|pero)\b/u', $t)) return false;
 
     $pedirla = 'arm(a|e)(la|nla|mela|nmela)|haganla|haganmela|hac(e|a)(la|mela)|prepar(a|e)(la|nla|mela|nmela)'
-             . '|mand(a|e)(la|nla|mela|melo|me|nme)|pasa(la|mela|melo|me)|el formulario|el link|el enlace|la demo|la muestra'
+             // "pasame/mandame" a secas no: "pasame el detalle de cada modalidad" no es un sí (2-oct).
+             . '|mand(a|e)(la|nla|mela|melo)|pasa(la|mela|melo)|(mand(a|e)(me|nme|nos)|pasa(me|nos)) (el formulario|el form|el link|el enlace|la demo|la muestra|el diseno|el primer diseno)'
+             . '|el formulario|el link|el enlace|la demo|la muestra'
              . '|avancemos|arranquemos|empecemos|adelante|vamos|quiero verla|me interesa|me encanta|me encantaria|me gustaria|me sirve';
     $siguen = 'dale|ok|oka|okey|okay|bueno|perfecto|genial|de una|obvio|claro|buenisimo|buenisima|joya|barbaro|excelente|listo';
 

@@ -140,7 +140,8 @@ function wabot_textos_default() {
      * preguntar; si vende cursos, talleres o capacitaciones, plataforma de cursos. */
     /* Lo que copia el botón "Copiar form" del panel, para que Pablo se lo
      * mande él mismo (21-sep). El link con el código de la charla va abajo. */
-    'form_link_panel' => 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:',
+    // El mensaje del botón "Copiar form" del panel, con el {link} en el medio (Pablo, 2-oct).
+    'form_link_panel' => "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     'reconocimiento_activo' => false,
     'reconocimiento' => 'Te consulto, buscás vender por la web o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
@@ -183,18 +184,18 @@ function wabot_textos_default() {
         'pago' => 'Hay 3 modalidades: mensual de {mensualidad} por mes, por Mercado Pago y sin permanencia; anual de {precio}, o pago único de {precio_unico}. El anual y el pago único arrancan con una seña y el resto va al entregar.',
         'plazos' => "La web queda lista en unos 7 días desde que arrancamos con el plan y nos pasás el contenido.",
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros. Con el pago único, el primer año.',
-        'mantenimiento' => 'El mensual y el anual incluyen el mantenimiento: actualizaciones, arreglos, soporte y un cambio por mes. Con el pago único se contrata aparte, por {mantenimiento_mes}.',
-        'carga' => 'Sí, lo manejás vos desde tu panel: cargás y editás todo cuando quieras, sin costo extra.',
-        'logo' => 'No hacemos logos; si tenés uno se usa, y si no, se trabaja tu nombre bien tipografiado.',
-        'marketing' => 'No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.',
-        'reuniones' => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
-        'tecnologia' => 'Trabajamos con servidor Hostinger, base Firebase y código a medida en HTML, CSS, JS y PHP. No usamos WordPress ni trabajamos sobre webs ya hechas.',
+        'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el mensual y el anual; con el pago único se contrata aparte, por {mantenimiento_mes}.',
+        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Los primeros productos los cargamos nosotros y, cuando esté lista, te mostramos cómo se usa.',
+        'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
+        'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',
+        'reuniones' => 'Sí, claro. Las llamadas las coordinamos con el desarrollador cuando avanzamos con la web, en el horario que te quede cómodo.',
+        'tecnologia' => 'Trabajamos con código propio, a medida, y hosting en Hostinger. No usamos WordPress ni plantillas.',
         // Marca interna de "no sé": desde el 19-sep NO se manda (Pablo: "cuando
         // el bot no entienda, no conteste nada"). wabot_salida_sin_comodin() la
         // saca de la salida y el chat le queda pendiente a Pablo.
         'otra' => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
         'pago_generico' => 'Hay 3 modalidades: mensual, anual o pago único. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
-        'precio_sin_rubro' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
+        'precio_sin_rubro' => 'Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
         /* La propiedad del código, con sus plazos (Pablo, 20-sep). El 19-sep
          * el bot se callaba con estas preguntas y era peor: cortaba la venta. */
@@ -203,9 +204,9 @@ function wabot_textos_default() {
         'emails' => 'No incluye casillas de correo con tu dominio. Se pueden sumar aparte, contratadas a tu nombre.',
         'entrega_codigo' => 'Sí: con el pago único es tuyo al abonar el total, con el anual al pagar el segundo año y con el mensual a los 18 meses.',
         'licencias' => 'Las licencias de plugins y librerías son de terceros y no quedan a tu nombre. El código de tu web sí, cuando se cumple el plazo de tu plan.',
-        'manual' => 'No hay manual: el panel es simple de usar. Y con el mensual o el anual tenés un cambio por mes si preferís que lo hagamos nosotros.',
+        'manual' => 'No hace falta manual: el panel es muy simple, y cuando la web esté lista te mostramos cómo se usa.',
         'bilingue' => 'Sí, está incluido: la web se puede traducir hasta a 3 idiomas, sin costo aparte.',
-        'ejemplos' => 'Sí, en gokywebs.com/portfolio podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
+        'ejemplos' => 'Claro, en gokywebs.com/portfolio tenés webs que ya entregamos y están funcionando. Y si querés ver cómo quedaría la tuya, te armamos sin cargo un primer diseño.',
         'migracion' => 'Sí, pasamos nosotros los textos y las fotos de tu página actual a la nueva. Pasame el link y la reviso.',
         'formularios' => 'Sí, se pueden incluir formularios y ya vienen en el precio. Las respuestas te llegan por mail.',
         'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',
@@ -221,7 +222,7 @@ function wabot_textos_default() {
         'google' => 'La web queda preparada para que Google la encuentre. El puesto en que aparece depende del rubro y del tiempo, no se puede garantizar.',
         'maps' => 'Sí, si tenés local podemos sumar el mapa con tu ubicación y el acceso directo a Google Maps para que te lleguen con el GPS.',
         'ampliar_despues' => 'Sí, podés arrancar con lo que necesitás hoy y sumar funciones más adelante, sin rehacer la web.',
-        'que_necesitan' => 'Poco: el nombre del negocio, qué ofrecés, colores que te gusten y tus datos de contacto. Si tenés logo y fotos, mejor.',
+        'que_necesitan' => 'Muy poco: completás un formulario cortito (nombre, qué ofrecés, colores y contacto) y con eso armamos la muestra. Si tenés logo y fotos, mejor, pero no hacen falta.',
         'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         /* "Su nombre?", "con quién hablo?" (26-sep): se contesta primero y
          * después sigue la pregunta comercial pendiente, en el mismo turno. */
@@ -238,7 +239,7 @@ function wabot_textos_default() {
         'contacto_desarrollador' => 'No tenés que hacer nada: te escribe él directamente por WhatsApp, desde nuestro número de proyectos. Si preferís escribirle vos primero, decímelo y le paso tu mensaje.',
         'sin_whatsapp' => 'No hay problema, el WhatsApp no es obligatorio: podemos poner un formulario de contacto o tu mail.',
         'comisiones' => 'No cobramos comisión por venta. Solo se descuenta la del medio de pago (Mercado Pago o la tarjeta).',
-        'envios' => 'Sí, la tienda calcula el envío con el código postal, antes de pagar. También podés ofrecer retiro en el local o un costo fijo por zona.',
+        'envios' => 'Sí, la tienda calcula el envío con el código postal, antes de pagar, y también podés ofrecer retiro o un costo fijo por zona. Los internacionales los coordinás vos con la empresa que elijas.',
         'como_funciona_tienda' => 'Sí, así: el cliente arma el carrito y paga desde la web, y el pedido te llega al panel.',
         'que_incluye' => 'Con el mensual o el anual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para cargar los productos. Con el pago único, el hosting y el dominio van el primer año y el mantenimiento es aparte.',
         'emprendimientos' => 'Sí, trabajamos con emprendimientos y negocios chicos, no hay tamaño mínimo. Podés ver trabajos en gokywebs.com/portfolio',
@@ -246,7 +247,7 @@ function wabot_textos_default() {
         'internet' => 'Sí, la web funciona online. Si se corta el wifi, la podés usar desde el celular con datos.',
         'pixel' => 'Sí, se puede conectar el pixel de Meta y Google Analytics.',
         'confianza' => 'Te entiendo. En gokywebs.com/portfolio podés ver webs que entregamos a negocios reales, y la muestra la ves antes de pagar nada.',
-        'rangos' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
+        'rangos' => 'Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.',
         'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
         'que_incluye_sin_productos' => 'Con el mensual o el anual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para editarla. Con el pago único, el hosting y el dominio van el primer año y el mantenimiento es aparte.',
         'cupones' => 'Sí, desde tu panel creás cupones de descuento, para toda la tienda o para productos puntuales.',
@@ -261,16 +262,26 @@ function wabot_textos_default() {
         'plan_es_servicio' => 'Entonces te conviene el anual: lo pagás una vez por año{precio_un_solo_pago} e incluye lo mismo que el mensual.',
         'un_solo_pago' => 'Sí: con el plan anual pagás una vez por año{precio_un_solo_pago}, y sale menos que doce meses del plan mensual. Incluye lo mismo: hosting, dominio, mantenimiento y soporte.',
         'web_propia' => 'Con el pago único{precio_web_propia}, pagás la web una sola vez y el código queda tuyo al abonar el total. Incluye hosting y dominio el primer año; el mantenimiento es aparte, por {mantenimiento_mes}.',
+        // Las que faltaban según las charlas del 11-sep al 2-oct (2-oct).
+        'mensual' => 'Sí, el mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas. El valor se actualiza una vez al año.',
+        'cuotas' => 'Sí, se puede pagar con tarjeta. El pago único se puede hacer en cuotas con intereses, y el mensual se paga por Mercado Pago con cualquier tarjeta.',
+        'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: lo registrás vos o te lo pasamos cuando la web esté lista (un .com.ar se transfiere por TAD y sale $8.500).',
+        'que_es_dominio' => 'El dominio es la dirección de tu web, por ejemplo www.tunegocio.com.ar. Va incluido y el nombre lo elegís vos.',
+        'demo_gratis' => 'No tiene costo ni compromiso: es un primer diseño para que veas cómo quedaría tu web antes de decidir.',
+        'alternativas' => 'Son alternativas, elegís una sola: no se suman. El mensual y el anual incluyen el mantenimiento; con el pago único la web es tuya y el mantenimiento va aparte.',
+        'plataformas' => 'No usamos Tiendanube, Shopify ni WordPress: te hacemos tu propia web a medida, con funciones parecidas (panel, carrito, Mercado Pago), y la armamos nosotros.',
+        'recomendar_plan' => 'Si querés arrancar con poca inversión, el mensual; si preferís pagar una vez por año, el anual, que sale menos que doce meses; y si querés que la web sea tuya, el pago único.',
     ],
     'leer_imagenes' => true,
-    /* Atención automática posterior al precio (postprecio.php, 1-oct): APAGADA
-     * desde el 2-oct (Pablo: "el bot no contesta muy bien las preguntas,
-     * volvemos a que solo da el precio, ofrece la demo y se calla. Únicamente
-     * si el cliente afirma la demo, manda el form, nada más"). Con false
-     * contesta wabot_oferta_diseno_responder() (redactor.php): el sí se lleva
-     * el formulario y cualquier otra cosa queda para Pablo. Se puede volver a
-     * prender desde Ajustes del panel. */
-    'postprecio_activo' => false,
+    /* Atención automática posterior al precio (postprecio.php, 1-oct). El 2-oct
+     * a la mañana se apagó ("el bot no contesta muy bien las preguntas": las
+     * respuestas eran largas) y a la tarde Pablo pidió que conteste las
+     * preguntas más comunes antes y después del precio: vuelve prendida, con
+     * las respuestas cortas de `info` y ejemplos reales de cada consulta
+     * (consultas-ejemplos.php). Lo que no es común queda para Pablo y el sí a la
+     * demo manda el formulario. Con false contesta wabot_oferta_diseno_responder()
+     * (redactor.php): solo el sí a la demo. Se apaga desde Ajustes del panel. */
+    'postprecio_activo' => true,
     'ia_proveedor' => 'openai',
     'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
@@ -413,9 +424,9 @@ function wabot_textos_default() {
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
-    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
+    'prediseno_link' => "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     'prediseno_link_variantes' => [
-        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
+        "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     ],
     'prediseno_referencia' => 'Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.',
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',

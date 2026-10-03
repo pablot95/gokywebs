@@ -129,7 +129,11 @@ foreach (['landing' => ['$19.000', '$149.000', '$190.000', '$89.000', '$130.000'
     caso("$tipo: imagen histórica no se envía con tarifas nuevas", !wabot_precio_imagen_corresponde($tipo, $c, $cfg));
     pp_api(pp_decision(['pago']));
     $r = turno('Cómo se abona la seña y el saldo?', $c, $cfg);
-    caso("$tipo: respuesta de pago no inventa importes", str_contains(implode(' ', $r), $saldo));
+    // Corta desde el 2-oct: el primer mes y la seña de ESTA cotización, sin otros importes.
+    $todoPago = implode(' ', $r);
+    preg_match_all('/\$\d{1,3}(?:\.\d{3})+/u', $todoPago, $importes);
+    caso("$tipo: respuesta de pago no inventa importes", str_contains($todoPago, $mes) && str_contains($todoPago, '$60.000')
+        && !array_diff($importes[0], [$mes, '$60.000']), $todoPago);
     $c = pp_conv($tipo, ['presentado_ts' => time(), 'modalidad_elegida' => 'mensual']);
     pp_api(pp_decision(['pago_link']));
     $r = turno('Pasame el link para pagar el mensual', $c, $cfg);
@@ -263,7 +267,7 @@ foreach (['si, armalo', 'Sí dale', 'si', 'Dale', 'mandame el formulario'] as $s
     caso("dos webs: \"$si\" a la oferta manda el formulario", tiene_form($r) && !empty($c['link_form_enviado']) && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
 $c = pp_conv('landing', ['dos_webs' => ['landing', 'ecommerce']]); pp_api(pp_decision(['precio']));
-$r = turno('ok', $c, $cfg);
+$r = turno('gracias', $c, $cfg);
 caso('dos webs: un acuse es silencio sin apagar el bot', $r === [] && empty($c['control_manual']) && empty($c['bot_off']) && $GLOBALS['PP_PEDIDOS'] === []);
 $r = turno('como se paga?', $c, $cfg);
 caso('dos webs: una pregunta sigue yendo a Pablo sin consultar al modelo (las reglas cotizan un solo tipo)', pp_silencio($c, $r) && $GLOBALS['PP_PEDIDOS'] === []);
@@ -281,7 +285,8 @@ foreach (['Si te paso el logo', 'Sisi es sin compromiso si', 'Si si me interesa'
     $r = turno($si, $c, $cfg);
     caso("\"$si\" manda el formulario sin consultar al modelo", tiene_form($r) && !empty($c['link_form_enviado']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
-foreach (['si yo ya tengo pagina', 'si pero cuanto sale el dominio?', 'Si podrian por favor?', 'Si si me interesa y puedo pagar por mes', 'si, lo veo con mi socio y te aviso'] as $dudoso) {
+// "Si si me interesa y puedo pagar por mes" salió de esta lista el 2-oct: en las charlas es un sí (test-aceptacion-demo.php).
+foreach (['si yo ya tengo pagina', 'si pero cuanto sale el dominio?', 'Si podrian por favor?', 'si, lo veo con mi socio y te aviso'] as $dudoso) {
     $c = pp_conv(); pp_api(pp_decision(['postergar']));
     $r = turno($dudoso, $c, $cfg);
     caso("\"$dudoso\" no es un sí automático: lo decide el modelo", empty($c['link_form_enviado']) && $GLOBALS['PP_PEDIDOS'] !== []);

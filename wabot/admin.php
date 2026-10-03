@@ -569,7 +569,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // textos.php (editable desde Ajustes → Textos) y abajo el link.
         $intro = trim((string)($cfg['form_link_panel'] ?? ''));
         if ($intro === '') $intro = 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:';
-        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $intro . "\n" . $link]);
+        // Con {link} el link va donde lo puso el texto (2-oct); si no, abajo.
+        $mensaje = strpos($intro, '{link}') !== false ? str_replace('{link}', $link, $intro) : $intro . "\n" . $link;
+        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $mensaje]);
         exit;
     }
     if ($a === 'responder' && !empty($_POST['tel'])) {

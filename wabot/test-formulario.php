@@ -204,11 +204,11 @@ echo "— 6. El texto del formulario —\n";
 $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
-caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño 18-sep, 24 hs y sin la coletilla de las dudas, 21-sep)',
-    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nUna vez que lo completes, va a estar listo en menos de 24 hs\.$/u', $form) === 1, $form);
+caso('el texto auxiliar del formulario es el de Pablo (2-oct: primera entrega gratuita, 2 minutos, menos de 24 hs)',
+    preg_match('/^Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: https:\/\/gokywebs\.com\/form\/\S+\nLa entregamos en menos de 24 hs\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
-caso('ni promete un minuto', mb_stripos($form, 'minuto') === false);
+caso('dice que el formulario toma 2 minutos, como lo escribió Pablo', mb_stripos($form, 'toma 2 minutos') !== false);
 caso('el texto contiene un único enlace al formulario', substr_count($form, 'gokywebs.com/form/') === 1);
 $cierre = 'Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar. Con eso te la dejo lista mañana.';
 caso('el cierre del prediseño tampoco se lleva la coletilla', wabot_demo_siempre_gratis([$cierre], $cfg) === [$cierre]);
@@ -551,9 +551,11 @@ caso('el boton esta en el live y tambien en la ficha de la conversacion',
     && strpos($adminForm, "ev.target.closest('.form-copiar')") !== false);
 // Y copia el mensaje entero, no el link pelado (Pablo, 21-sep).
 caso('copia el mensaje completo, con el texto arriba del link',
-    strpos($adminForm, '\'mensaje\' => $intro') !== false
+    strpos($adminForm, '\'mensaje\' => $mensaje') !== false && strpos($adminForm, "str_replace('{link}', \$link, \$intro)") !== false
     && substr_count($adminForm, 'j.mensaje || j.link') === 3
-    && strpos((string)wabot_textos_default()['form_link_panel'], 'primera muestra gratis') !== false);
+    // 2-oct (Pablo): "Para hacer la primera entrega gratuita de la web… toma 2 minutos: {link} La entregamos en menos de 24 hs".
+    && strpos((string)wabot_textos_default()['form_link_panel'], 'primera entrega gratuita') !== false
+    && strpos((string)wabot_textos_default()['form_link_panel'], '{link}') !== false);
 caso('y arma el link igual que el bot, con &ig=1 en Instagram',
     strpos($adminForm, "'https://gokywebs.com/form/?c=' . \$codigo") !== false
     && strpos($adminForm, "\$link .= '&ig=1'") !== false);

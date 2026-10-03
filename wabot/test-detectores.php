@@ -930,7 +930,7 @@ foreach ([['precio_sin_rubro', 'proceso'], ['que_hacemos', 'precio_sin_rubro'], 
     @unlink(WABOT_DATA . '/conv/999INF1.json');
     $todo = implode(' ', $r);
     caso(implode(' + ', $keys) . ': el rubro se pide una sola vez',
-        preg_match_all('/contame (a qué te dedicás|qué negocio tenés)/iu', $todo) === 1, $todo);
+        preg_match_all('/(contame|te consulto,?) (a qué te dedicás|qué negocio tenés)/iu', $todo) === 1, $todo);
 }
 caso('una sola respuesta que pide el rubro queda igual',
     wabot_info_unir(['Una.', 'Te paso el valor exacto, pero primero contame a qué te dedicás.']) === "- Una.\n- Te paso el valor exacto, pero primero contame a qué te dedicás.");

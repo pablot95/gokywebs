@@ -246,7 +246,7 @@ foreach (['Cuánto sale una web?', 'Cuánto sale una web para mostrar mis servic
     $c = conv_nueva('QATESTREGLOGICA15'); wabot_conv_transcript($c, 'cliente', $m); $c['ultimo_cliente_ts'] = time();
     clasifica(['pregunta_info'], ['info_keys' => ['precio_sin_rubro']]);
     $txt = implode("\n", wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? []);
-    caso('sin actividad no inventa precio: ' . $m, empty($c['precio_dado']) && strpos($txt, '$') === false && strpos($txt, 'primero contame') !== false, $txt);
+    caso('sin actividad no inventa precio: ' . $m, empty($c['precio_dado']) && strpos($txt, '$') === false && strpos($txt, 'Te consulto, a qué te dedicás') !== false, $txt);
 }
 
 echo "— 2b. Con otros montos y por Instagram (29-sep) —\n";

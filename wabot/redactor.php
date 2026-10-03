@@ -33,7 +33,8 @@ function wabot_oferta_diseno_pregunta($texto) {
         wabot_normalizar_frase($crudo));
     return (bool)(
         preg_match('/\b(como|cuanto|cuanta|cuantos|cuantas|cuando|donde|cual|cuales|quien|por que)\b/u', $t)
-        || preg_match('/\bque\s+(precio|valor|costo|incluye|incluyen|necesito|necesitas|necesitan|tengo que|hay que|datos|pasa)\b/u', $t)
+        // "Que diferencia hay entre el anual y el pago único" y la "q" abreviada (2-oct).
+        || preg_match('/\b(que|q)\s+(precio|valor|costo|incluye|incluyen|necesito|necesitas|necesitan|tengo que|hay que|datos|pasa|diferencia|diferencias)\b/u', $t)
         || preg_match('/\b(se puede|se pueden|puedo|podes|podria|podrian|hay forma|es posible|me decis|me podes decir'
             . '|queria saber|quisiera saber|necesito saber|una consulta|una pregunta|una duda|tengo dudas)\b/u', $t)
     );
@@ -45,14 +46,137 @@ function wabot_oferta_diseno_pregunta($texto) {
  * mensual") también es avanzar. Lo dudoso NO es un sí: va a Pablo, que es
  * quien cierra; mandarle el formulario a alguien que no lo pidió es peor que
  * hacerlo esperar unos minutos.
+ *
+ * 2-oct, charlas del 11-sep al 2-oct: de 90 síes reales, 31 se quedaban sin el
+ * formulario ("Sería bueno", "Si porfavor", "Diseño y construcción // Dale",
+ * "Si te paso el logo", "Mi tienda se llama… // Dale!"). Ninguna respuesta que
+ * no era un sí pasaba, y eso se mantiene: lo que se suma son formas de decir
+ * que sí, nunca un "no", un "lo pienso" o una pregunta de verdad.
  */
 function wabot_oferta_diseno_aceptada($texto) {
-    $crudo = trim((string)$texto);
+    if (trim((string)$texto) === '') return false;
+    $crudo = wabot_oferta_diseno_limpiar($texto);
+    if ($crudo === '') return false;   // solo un adjunto sin texto
+    if (wabot_oferta_diseno_aceptada_frase($crudo)) return true;
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '' || wabot_oferta_diseno_frena($t)) return false;
+    if (wabot_handoff_causa_explicita($crudo) === 'pide_humano' || wabot_pide_llamada($crudo)) return false;
+    // "Ok // Gracias" en dos mensajes sigue siendo agradecer, no aceptar.
+    if (preg_match('/\bgracias\b/u', $t)
+        && !preg_match('/\b(si+|dale|quiero|queremos|arm\w+|avancemos|me interesa|de una|obvio|por ?favor|porfa)\b/u', $t)) return false;
+    /* Lo que sigue no tiene ningún "no", "lo pienso", "mañana" ni pedido de
+     * una persona en todo el texto (2-oct, charlas del 11-sep al 2-oct). */
+    // Un sí que arranca la frase y después cuenta el plan: "Si por ahora mensual, la idea es…".
+    if (mb_strlen($t) > 160) return preg_match('/^(si+|dale)\b/u', $t) && !wabot_oferta_diseno_pregunta_real($crudo);
+    // "Que necesitás para hacerlo", "si porfavor // que datos necesitas te paso": el formulario lo contesta.
+    if (wabot_oferta_diseno_pide_requisitos($crudo)) return true;
+    if (wabot_oferta_diseno_pregunta_real($crudo)) return false;
+    if (wabot_oferta_diseno_si_corto($t)) return true;
+    // Renglón por renglón: el rubro o el nombre en uno y el sí en otro ("Diseño y construcción // Dale").
+    $renglones = array_values(array_filter(preg_split('/\R/u', $crudo), fn($r) => wabot_normalizar_frase($r) !== ''));
+    if (count($renglones) > 1) {
+        foreach ($renglones as $r) {
+            if (wabot_oferta_diseno_aceptada_frase($r) || wabot_oferta_diseno_si_corto(wabot_normalizar_frase($r))) return true;
+        }
+    }
+    // Termina en un sí pelado: "Gracias por la atención ❤️ si", "[sticker] 👍🏻 si". "Y si", "depende si" no.
+    return mb_strlen($t) <= 60 && (bool)preg_match('/(^|\s)(si+|dale)$/u', $t)
+        && !preg_match('/\b(y|o|ver|depende|solo|sino|que|q|como|igual|capaz|quizas)\s+si+$/u', $t);
+}
+
+/**
+ * El texto listo para leer el sí (2-oct, charlas del 11-sep al 2-oct). Saca lo
+ * que parece pregunta o freno y no lo es: el "?" de un link de Instagram, las
+ * marcas de adjunto, "si no es molestia", "sí, cómo no", "y puedo pagar por
+ * mes", "podría ser…", "mi tienda se llama…" (que el freno de "llamada"
+ * leía como pedir que lo llamen) y "para ver cómo sería".
+ */
+function wabot_oferta_diseno_limpiar($texto) {
+    $x = trim((string)$texto);
+    $x = preg_replace('~https?://\S+|www\.\S+~iu', ' ', $x);
+    $x = preg_replace('/\[(audio|video|imagen|foto|sticker|documento|archivo)\]|\[adjunto:[^\]]*\]/iu', ' ', $x);
+    $x = preg_replace('/\bs[ií] no es (mucha )?molestia\b/iu', ' ', $x);
+    $x = preg_replace('/\bc[oó]mo no\b(?=\s*([!.,…]|$))/imu', 'claro', $x);
+    $x = preg_replace('/\by puedo pagar\b/iu', 'y pago', $x);
+    $x = preg_replace('/\bpodr[ií]a ser\b(?=\s*([!.,…]|$))/imu', ' ', $x);
+    $x = preg_replace('/\b(se llama|se llaman|me llamo|nos llamamos)\b/iu', 'es', $x);
+    return trim(preg_replace('/[ \t]+/u', ' ', $x));
+}
+
+/**
+ * ¿Pregunta de verdad? "Así veo cómo queda" no pregunta nada (28-sep,
+ * simulación: el corralón que pidió "armame el diseño así veo cómo queda" se
+ * quedó sin el link); "para ver cómo sería" tampoco (2-oct).
+ */
+function wabot_oferta_diseno_pregunta_real($crudo) {
+    return wabot_oferta_diseno_pregunta(preg_replace('/\b(ver|veo|vea|verlo|verla|mirar|miro)\s+(c[oó]mo)\s+(queda|quedaria|quedar[ií]a|quedan'
+        . '|quedarian|quedar[ií]an|sale|saldria|saldr[ií]a|seria|ser[ií]a|es)\b/iu', ' ', (string)$crudo));
+}
+
+/**
+ * ¿Posterga, pone un pero o pide una persona? Vale para todo el texto: con
+ * cualquiera de estas en algún renglón, el sí no es limpio y va a Pablo. Se
+ * suman (2-oct, charlas del 11-sep al 2-oct) los "lo converso con mi equipo",
+ * "déjame analizar", "ahora veo y me comunico", "cuando junte el dinero", "lo
+ * decidimos con mi esposa".
+ */
+function wabot_oferta_diseno_frena($t) {
+    return (bool)(
+        preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego'
+            . '|te aviso|le aviso|les aviso|te confirmo|te digo|lo veo|ahora veo|dejame ver|a ver|caro|pero|aunque|primero'
+            . '|convers\w*|analiz\w*|hablo|hablamos|charlo|charlamos|cuando (tenga|tengamos|pueda|podamos|cobre|junte)|una vez que'
+            . '|socio|socia|socios|esposa|esposo|pareja|mi equipo|mi gente|me contacto|los contacto|te vuelvo|vuelvo a)\b/u', $t)
+        // "Dale, te vuelvo a escribir más tarde / mañana" posterga, no acepta (28-sep, Ale).
+        || preg_match('/\b(mas tarde|manana|pasado manana|otro dia|otro momento|la semana que viene|el finde|vuelvo a escribir|te escribo|les escribo'
+            . '|me vuelvo a comunicar|me comunico|te hablo|les hablo|te contacto|vuelvo a contactar)\b/u', $t)
+        // Pedir una persona o una llamada no es aceptar el diseño. "Se llama" ya lo sacó wabot_oferta_diseno_limpiar().
+        || preg_match('/\b(hablar|charlar|llam(?!a\b|an\b)\w+|persona|humano|asesor)\b/u', $t)
+    );
+}
+
+/**
+ * Lo único que pregunta es qué hace falta para el diseño (2-oct, charlas del
+ * 11-sep al 2-oct): "Que necesitas para realizar el diseño de prueba", "Sii //
+ * Q necesitan". El formulario es justamente esa respuesta. Si además pregunta
+ * otra cosa (el precio, la diferencia entre planes) o lo que necesita es para
+ * pagar o contratar, no: va a Pablo.
+ */
+function wabot_oferta_diseno_pide_requisitos($crudo) {
+    $patron = '/\b(que|q)\s+((datos|info\w*|informacion|requisitos|material|cosas)\s+)?(necesit\w+|tengo que (pasar|mandar|enviar)\w*'
+        . '|tendria que (pasar|mandar|enviar)\w*|hay que (pasar|mandar|enviar))\b[^?\n]*\??/iu';
+    if (!preg_match_all($patron, $crudo, $m)) return false;
+    foreach ($m[0] as $pedido) {
+        if (preg_match('/\b(pag\w*|precio|cost\w*|sale|cuota\w*|plan|abon\w*|contrat\w*|factur\w*)\b/u', wabot_normalizar_frase($pedido))) return false;
+    }
+    $resto = preg_replace($patron, ' ', $crudo);
+    if (wabot_normalizar_frase($resto) === '') return true;
+    if (wabot_oferta_diseno_pregunta_real($resto)) return false;
+    foreach (preg_split('/\R/u', $resto) as $r) {
+        $tr = wabot_normalizar_frase($r);
+        if ($tr !== '' && (wabot_oferta_diseno_aceptada_frase($r) || wabot_oferta_diseno_si_corto($tr))) return true;
+    }
+    return false;
+}
+
+/** Formas cortas del sí que el resto no tomaba (2-oct, charlas del 11-sep al 2-oct). Recibe la frase normalizada. */
+function wabot_oferta_diseno_si_corto($t) {
+    return (bool)preg_match(
+        '/^(si+ )*(por ?favor|porfa|por fa)$'                       // "Por favor .", "Si porfavor"
+        . '|^si+$|^sip$|^(si+ )?claro$'                              // "Siiii"
+        . '|^(si+ )?seria (bueno|genial|ideal|buenisimo|excelente)$' // "Si sería bueno"
+        . '|\bme parece (perfecto|genial|excelente|buenisimo|bien)\b|^si+ me parece\b'
+        . '|^(si+ )?(te|les) (paso|mando|envio) (el logo|los datos|fotos|las fotos|info|la info|el ig)\b'
+        . '|\bsin (cargo|compromiso) si+$'                          // "Sisi es sin compromiso si"
+        . '|^(si+ )?(seria|va a ser|prefiero|elijo) (el |un |con )?(plan )?(anual|mensual|pago unico)$'
+        . '|\bme (gustaria|guataria) ver (de )?(que|q) se trata\b'
+        . '|^(si+ |dale |ok )*mostrame( x favor| por favor| porfa)?$/u', $t);
+}
+
+/** El sí de una frase ya limpia: el detector de siempre (18 al 28-sep). */
+function wabot_oferta_diseno_aceptada_frase($crudo) {
+    $crudo = trim((string)$crudo);
     if ($crudo === '') return false;
-    /* "Así veo cómo queda" no pregunta nada (28-sep, simulación: el corralón
-     * que pidió "armame el diseño así veo cómo queda" se quedó sin el link). */
-    $sinVerComo = preg_replace('/\b(ver|veo|vea|verlo|verla|mirar|miro)\s+(c[oó]mo)\s+(queda|quedaria|quedar[ií]a|quedan|quedarian|quedar[ií]an|sale|saldria|saldr[ií]a)\b/iu', ' ', $crudo);
-    if (wabot_oferta_diseno_pregunta($sinVerComo)) return false;
+    if (wabot_oferta_diseno_pregunta_real($crudo)) return false;
     $t = wabot_normalizar_frase($crudo);
     // Sin letras: un 👍 o un 👌 solos son un sí; cualquier otro emoji, no.
     if ($t === '') return wabot_acepta_demo($crudo);
@@ -68,17 +192,12 @@ function wabot_oferta_diseno_aceptada($texto) {
     if (preg_match('/^(si+|dale|si dale|si me interesa|me interesa)\b/u', $t)
         && preg_match('/\b(cobro|cobre|cobrar|me pagan|me depositan|sueldo|plata|pagar|pago|pague|abonar|abono)\b/u', $t)
         && !preg_match('/\b(no|nop|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|caro|aunque)\b/u', $t)) return true;
-    if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego'
-        . '|te aviso|te confirmo|lo veo|a ver|caro|pero|aunque|primero)\b/u', $t)) return false;
-    // "Dale, te vuelvo a escribir más tarde / mañana" posterga, no acepta (28-sep, Ale).
-    if (preg_match('/\b(mas tarde|manana|pasado manana|otro dia|otro momento|la semana que viene|el finde|vuelvo a escribir|te escribo|les escribo'
-        . '|me vuelvo a comunicar|me comunico|te hablo|les hablo|te contacto|vuelvo a contactar)\b/u', $t)) return false;
+    // Un no, un "lo pienso", un "mañana" o pedir una persona: va a Pablo.
+    if (wabot_oferta_diseno_frena($t)) return false;
     // Agradecer no es aceptar: "ok gracias", "perfecto, gracias".
     if (preg_match('/\bgracias\b/u', $t)
         && !preg_match('/\b(si+|dale|quiero|queremos|arm\w+|avancemos|me interesa|de una|obvio|por favor|porfa)\b/u', $t)) return false;
-    // Pedir una persona o una llamada no es aceptar el diseño.
-    if (wabot_handoff_causa_explicita($crudo) === 'pide_humano' || wabot_pide_llamada($crudo)
-        || preg_match('/\b(hablar|charlar|llam\w+|persona|humano|asesor)\b/u', $t)) return false;
+    if (wabot_handoff_causa_explicita($crudo) === 'pide_humano' || wabot_pide_llamada($crudo)) return false;
     if (wabot_modalidad_elegida_en($crudo, true) !== null && wabot_texto_rechaza_una_forma($crudo) === null) return true;
     if (wabot_acepta_demo($crudo)) return true;
     return (bool)preg_match('/^(si+ )?(dale )?(quiero|queremos)( (eso|el diseno|el primer diseno|verlo|verla|avanzar|arrancar|empezar))?$'
@@ -175,6 +294,10 @@ function wabot_oferta_diseno_responder($texto, &$conv, $cfg) {
 
 function wabot_prospecto_acepta($texto, $conv) {
     if (empty($conv['precio_dado']) || !empty($conv['presentado_ts']) || !empty($conv['form_completado_ts'])) return false;
+    /* La misma limpieza que la oferta del primer diseño (2-oct, charlas del
+     * 11-sep al 2-oct): el "?" de un link, "si no es molestia" o "se llama"
+     * no son preguntas ni frenos. Los frenos de acá siguen siendo los suyos. */
+    $texto = wabot_oferta_diseno_limpiar($texto);
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '' || mb_strlen($t) > 240) return false;
     if (preg_match('/\b(no|todavia no|lo voy a pensar|lo tengo que pensar|no me cierra|es caro|mas adelante)\b/u', $t)) return false;
@@ -182,7 +305,9 @@ function wabot_prospecto_acepta($texto, $conv) {
     if (strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false) return false;
     if (preg_match('/\b(me cierra|me sirve|estoy conforme|me parece bien|me interesa avanzar|quiero avanzar|queremos avanzar|quiero (hacerlo|arrancar|empezar)|quiero (la )?(demo|muestra)|quiero verla|armemos la (web|pagina|demo|muestra)|armala|armalo|hagamoslo|hagamosla|vamos a (hacerla|hacerlo|arrancar|empezar)|vamos adelante|arranquemos|empecemos|pasame el formulario|mandame el formulario|pasa el form)\b/u', $t)) return true;
     return !empty($conv['precio_cta_pendiente']) && (int)($conv['precio_turnos_desde'] ?? 0) === 1
-        && (bool)preg_match('/^(si|si dale|dale|ok|okay|bueno|de una|perfecto|listo|vamos)$/u', $t);
+        // El sí pelado solo en el turno que sigue al precio; "Siiii", "Si porfavor", "Sería bueno" (2-oct).
+        && (bool)preg_match('/^(si+|si+ si+|sip|si+ dale|dale|ok|okay|bueno|de una|perfecto|listo|vamos|si+ claro|claro'
+            . '|(si+ )?(por ?favor|porfa)|(si+ )?seria (bueno|genial|ideal|buenisimo))$/u', $t);
 }
 
 function wabot_upgrade_aplicar(&$conv, $pendiente) {

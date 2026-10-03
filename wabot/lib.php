@@ -1792,6 +1792,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     // limpiaba nunca.
     $conv['paraguas_preguntado'] = false;
     $conv['logo_avisado'] = false;
+    $conv['saludo_devuelto'] = false;   // el saludo se devuelve una vez por charla (2-oct)
     $conv['precio_dado'] = false;
     $conv['objecion_dicha'] = [];
     $conv['referencia_preguntada'] = false;

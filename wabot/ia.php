@@ -443,6 +443,27 @@ function wabot_ia_turno_elegible($conv) {
         ['nuevo', 'menu', 'algo_diferente', 'reconocimiento', 'desempate_hibrido', 'desempate_cursos'], true);
 }
 
+/**
+ * Cómo preguntan los clientes cada tema (consultas-ejemplos.php, 2-oct): las
+ * formas reales de las charlas, para que el modelo reconozca la consulta
+ * aunque venga con otras palabras. Como mucho $max por clave.
+ */
+function wabot_consultas_ejemplos($clave = null, $max = 6) {
+    static $todos = null;
+    if ($todos === null) {
+        $todos = is_file(__DIR__ . '/consultas-ejemplos.php') ? (array)(require __DIR__ . '/consultas-ejemplos.php') : [];
+    }
+    if ($clave === null) return $todos;
+    return array_slice(array_values(array_filter((array)($todos[$clave] ?? []), 'is_string')), 0, $max);
+}
+
+/** " (lo preguntan así: «a» / «b»)", o '' si la clave no tiene ejemplos. */
+function wabot_consultas_ejemplos_texto($clave, $max = 6) {
+    $ej = wabot_consultas_ejemplos($clave, $max);
+    if (!$ej) return '';
+    return ' (lo preguntan así: «' . implode('» / «', array_map(static fn($e) => trim(preg_replace('/\s+/u', ' ', $e)), $ej)) . '»)';
+}
+
 /** Las claves de respuestas oficiales que puede pedir el modelo (sin el comodín). */
 function wabot_ia_info_claves($cfg) {
     return array_values(array_filter(array_keys((array)($cfg['info'] ?? [])), function ($k) {
@@ -473,7 +494,7 @@ function wabot_ia_info_comercial($cfg) {
     $lineas[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema). Pedilas en info_claves; nunca las copies ni las parafrasees:";
     foreach ((array)($cfg['info'] ?? []) as $k => $t) {
         if ($k === 'otra') continue;
-        $lineas[] = "- $k: " . mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t)), 0, 260);
+        $lineas[] = "- $k: " . mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t)), 0, 260) . wabot_consultas_ejemplos_texto($k);
     }
     return implode("\n", $lineas);
 }
@@ -615,9 +636,14 @@ function wabot_ia_mensaje_problema($m) {
     return null;
 }
 
-/** Saca la muletilla del arranque ("¡Perfecto! Te cuento…" → "Te cuento…"). */
+/**
+ * Saca la muletilla de manual del arranque ("¡Perfecto! Te cuento…" → "Te cuento…").
+ * "Dale", "Claro" y "Buenísimo" quedan (2-oct, Pablo: "es muy seco y directo,
+ * tiene que ser un poco más cordial"); "Perfecto", "Genial" y "Excelente" en
+ * cada mensaje suenan a robot.
+ */
 function wabot_ia_sin_muletilla($m) {
-    $limpio = preg_replace('/^\s*[¡!]?\s*(claro|perfecto|genial|excelente|buen[ií]simo|dale|b[aá]rbaro)\s*[!.,]+\s*/iu', '', (string)$m, 1);
+    $limpio = preg_replace('/^\s*[¡!]?\s*(perfecto|genial|excelente)\s*[!.,]+\s*/iu', '', (string)$m, 1);
     $limpio = trim((string)$limpio);
     if ($limpio === '') return trim((string)$m);
     return mb_strtoupper(mb_substr($limpio, 0, 1)) . mb_substr($limpio, 1);
@@ -895,8 +921,45 @@ function wabot_ia_turno($texto, &$conv, $cfg) {
     $r['decision'] = wabot_ia_redes($r['decision'], $texto, $conv, $cfg);
     $salida = wabot_ia_aplicar($r['decision'], $texto, $conv, $cfg);
     if ($salida === null) return null;
+    $salida = wabot_saludo_devolver($texto, $salida, $conv);
     // Si llega otro mensaje antes de mandar esto, el webhook lo descarta y vuelve a pensar con todo.
     $conv['_ia_recalculable'] = true;
+    return $salida;
+}
+
+/**
+ * Devolver el saludo (2-oct, Pablo: "el bot no saluda bien, no se refiere bien
+ * a las personas, es muy seco y directo"). En las charlas del 11-sep al 2-oct,
+ * de 61 clientes que saludaron, a unos 50 no se les devolvió el saludo: la
+ * respuesta oficial o el precio salían primero y el modelo no podía saludar
+ * antes. Si el cliente saluda ("hola", "buenas tardes", "bien y vos?") y el
+ * primer mensaje no saluda, arranca devolviéndolo, con su nombre si lo sabemos.
+ * Una vez por sesión.
+ */
+function wabot_saludo_eco($texto, $conv) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return '';
+    $saludo = '';
+    if (preg_match('/^(hola+\s+)?(muy\s+)?buenas tardes\b/u', $t)) $saludo = 'buenas tardes';
+    elseif (preg_match('/^(hola+\s+)?(muy\s+)?buenas noches\b/u', $t)) $saludo = 'buenas noches';
+    elseif (preg_match('/^(hola+\s+)?(muy\s+)?(buen dia|buenos dias)\b/u', $t)) $saludo = 'buen día';
+    elseif (preg_match('/^(hola+\s+)?buenas\b/u', $t)) $saludo = 'buenas';
+    elseif (!preg_match('/^(hola+|holis|hello|hi)\b/u', $t)) return '';
+    $nombre = wabot_primer_nombre($conv);
+    $eco = 'Hola' . ($nombre !== '' ? ' ' . $nombre : '') . ($saludo !== '' ? ', ' . $saludo : '') . '!';
+    // "Bien vos?", "cómo estás?": se contesta antes de seguir.
+    if (preg_match('/\b(bien (y )?vos|como (estas|andas|va|te va|estan)|todo bien)\b/u', $t)) $eco .= ' Muy bien, gracias.';
+    return $eco;
+}
+
+function wabot_saludo_devolver($texto, $salida, &$conv) {
+    if (!is_array($salida) || !$salida || !empty($conv['saludo_devuelto'])) return $salida;
+    $eco = wabot_saludo_eco($texto, $conv);
+    if ($eco === '') return $salida;
+    $primero = (string)$salida[0];
+    $conv['saludo_devuelto'] = true;
+    if (preg_match('/^\s*[¡!]?\s*(hola|buen d[ií]a|buenas|muy bien)\b/iu', $primero)) return $salida;
+    $salida[0] = $eco . ' ' . ltrim($primero);
     return $salida;
 }
 
@@ -919,7 +982,7 @@ function wabot_ia_redes($d, $texto, &$conv, $cfg) {
         && preg_match('/\b(cursos?|clases?|talleres?)\b/u', $normalizado)
         && !preg_match('/\b(online|presenciales?|virtuales?|grabados?|videos?)\b/u', $contextoCliente)) {
         $d['accion'] = 'responder';
-        $d['mensajes'] = ['De qué son tus cursos, y los das online o presenciales?'];
+        $d['mensajes'] = ['Te consulto, de qué son tus cursos? Los das online o presenciales?'];
         $d['tipo_web'] = 'sin_definir';
         return $d;
     }
