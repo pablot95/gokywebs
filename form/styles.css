@@ -1910,7 +1910,7 @@ body {
         padding-inline: 16px;
     }
 }
-/* ─── Paso 3: modelos (16-sep; tarjetas horizontales del diseño de Pablo, 24-sep) ───
+/* ─── Paso 3: modelos (16-sep; vuelta a las tarjetas del 19-sep el 3-oct) ───
    Las vistas usan .wf de /modelos/wire.css; .md-alto y .md-lienzo repiten
    lo mínimo de /modelos/style.css para achicar el lienzo de 1440px. */
 .page-wrapper { transition: max-width 0.3s ease; }
@@ -1919,266 +1919,109 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .md-alto { position: relative; overflow: hidden; }
 .md-lienzo { position: absolute; left: 0; top: 0; width: 1440px; transform-origin: 0 0; }
 
-.form-step[data-step="3"] {
-    --mf-tinta: #0F172A;
-    --mf-gris: #64748B;
-    --mf-linea: #E2E8F0;
-    --mf-marino: #0C1832;
-}
-
-/* ─── Visor de modelos (2-oct, el mismo formato que el portfolio) ───
-   Mientras se eligen los modelos, el paso 3 ocupa toda la pantalla y la
-   página no scrollea: arriba una barra con el título, los filtros, Volver y
-   Enviar; en el medio el modelo grande (se recorre con scroll); abajo, sobre
-   su borde, el botón para elegirlo y la tira de miniaturas arrastrable. */
-body.paso-modelos { overflow: hidden; }
-.mf-oculto {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-}
-.mf-visor {
-    --mf-barra: 56px;
-    --mf-alto: calc(100vh - var(--mf-barra) - 11px);
-    display: none;
-}
-body.paso-modelos .mf-visor {
-    position: fixed; inset: 0; z-index: 900;
-    display: flex; flex-direction: column; align-items: center; overflow: hidden;
-    background: #EBE8E2; font-family: var(--font);
-}
-@supports (height: 100svh) { .mf-visor { --mf-alto: calc(100svh - var(--mf-barra) - 11px); } }
-
-/* Barra de arriba */
-.mf-top {
-    align-self: stretch; flex: none; min-height: var(--mf-barra);
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 18px;
-    padding: 8px 14px; background: var(--mf-marino); color: #fff;
-}
-.mf-top-tit { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mf-paso { font: 600 0.72rem var(--font); color: #94A3B8; white-space: nowrap; }
-.mf-top .step-header-title { margin: 0; font: 700 1rem/1.2 var(--font); color: #fff; letter-spacing: -0.01em; white-space: nowrap; outline: none; }
-.mf-contador {
-    white-space: nowrap; padding: 5px 11px; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12); color: #fff; font: 600 0.74rem var(--font);
-    transition: background-color 0.2s, color 0.2s;
-}
-.mf-contador.completo { background: #22C55E; color: #052e16; }
-.mf-top-filtros { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
-.mf-filtros { display: flex; flex-wrap: nowrap; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.mf-filtros::-webkit-scrollbar { display: none; }
+.mf-filtros { display: flex; flex-wrap: wrap; gap: 6px; }
 .mf-chip {
-    flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 999px;
-    background: transparent; color: #CBD5E1; cursor: pointer; white-space: nowrap;
-    font: 500 0.76rem var(--font); transition: background-color 0.2s, color 0.2s;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+    font: 600 0.76rem var(--font); transition: var(--transition);
 }
-.mf-chip[aria-pressed="true"] { background: #fff; color: var(--mf-marino); font-weight: 600; }
-.mf-rubro { position: relative; flex: none; display: inline-flex; }
-.mf-rubro select {
-    -webkit-appearance: none; appearance: none; cursor: pointer;
-    height: 30px; width: 140px; padding: 0 28px 0 12px; border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: #E2E8F0;
-    font: 500 0.76rem var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.mf-rubro select option { background: #fff; color: #0F172A; }
-.mf-rubro::after {
-    content: ""; position: absolute; right: 12px; top: 50%; width: 5px; height: 5px; margin-top: -4px;
-    border-right: 1.5px solid #E2E8F0; border-bottom: 1.5px solid #E2E8F0; transform: rotate(45deg); pointer-events: none;
-}
-.mf-rubro.activo select { border-color: #93C5FD; color: #fff; }
-.mf-top-acciones { display: flex; align-items: center; gap: 8px; justify-self: end; }
-.mf-volver {
-    display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px;
-    border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; background: transparent; color: #E2E8F0;
-    cursor: pointer; font: 600 0.8rem var(--font);
-}
-.mf-volver .mf-flecha { width: 16px; height: 16px; }
-.mf-top .btn-submit {
-    width: auto; min-height: 0; height: 36px; margin: 0; padding: 0 16px;
-    display: inline-flex; align-items: center; gap: 8px; border-radius: 999px;
-    font: 700 0.84rem var(--font); letter-spacing: 0; white-space: nowrap;
-    background: #334155; box-shadow: none;
-}
-.mf-top .btn-submit.listo { background: var(--blue); box-shadow: 0 8px 20px -8px rgba(37, 99, 235, 0.8); }
-.mf-top .btn-submit .mf-flecha { width: 16px; height: 16px; }
-.mf-flecha { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.mf-chip:focus-visible, .mf-rubro select:focus-visible, .mf-volver:focus-visible, .mf-top .btn-submit:focus-visible,
-.mf-mini:focus-visible, .mf-nav:focus-visible, .mf-marcar:focus-visible, .mf-seg button:focus-visible {
-    outline: 2px solid #93C5FD; outline-offset: 2px;
-}
+.mf-chip:hover { border-color: var(--blue); color: var(--blue-dark); }
+.mf-chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
 
-/* El modelo grande */
-.mf-escena {
-    position: relative; flex: none; margin-top: 6px;
-    width: calc(100% - 12px); height: var(--mf-alto); min-height: 320px;
-    border-radius: 10px; overflow: hidden; background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 18px 50px -24px rgba(40, 32, 20, 0.35);
+.mf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.mf-card {
+    position: relative; display: flex; flex-direction: column; min-width: 0;
+    /* 3-oct: el borde un poco más marcado y una sombra suave, para que se
+       note dónde termina cada modelo sobre el fondo blanco. */
+    background: var(--surface); border: 1.5px solid #CBD5E1; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+    overflow: hidden; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
 }
-.mf-visor.sin-modelos .mf-escena, .mf-visor.sin-modelos .mf-abajo { display: none; }
-.mf-pantalla { position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-.mf-pantalla:focus-visible { outline: 2px solid var(--blue); outline-offset: -3px; }
-.mf-caja { width: 100%; }
-/* Versión celular: el modelo en un teléfono centrado sobre el fondo claro. */
-.mf-pantalla.es-cel { background: #EBE8E2; padding: 18px 0 200px; }
-.mf-pantalla.es-cel .mf-cel { width: 390px; max-width: calc(100% - 24px); margin: 0 auto; border-radius: 22px; overflow: hidden; border: 10px solid #0f172a; background: #fff; }
-.mf-vacio { margin: 60px 20px; padding: 24px; border: 1px dashed #CBD5E1; border-radius: 12px; text-align: center; color: #475569; font-size: 0.95rem; background: #fff; }
-.mf-visor > .mf-vacio[hidden] { display: none; }
-
-/* Abajo, sobre el borde del modelo: el botón para elegirlo y la tira.
-   La franja no atrapa el mouse: entre una cosa y otra se scrollea el modelo. */
-.mf-abajo {
-    position: absolute; z-index: 5; left: 0; right: 0; bottom: 0;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    padding-bottom: 12px; pointer-events: none;
-}
-.mf-abajo > * { pointer-events: auto; }
-.mf-accion {
-    display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px);
-    padding: 6px 6px 6px 16px; border-radius: 999px;
-    background: rgba(12, 24, 50, 0.92); color: #fff;
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5);
-}
-.mf-actual { min-width: 0; font: 400 0.84rem var(--font); color: #CBD5E1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mf-actual b { font-weight: 700; color: #fff; }
-.mf-seg { flex: none; display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); }
-.mf-seg button { border: 0; background: none; padding: 6px 12px; border-radius: 999px; cursor: pointer; font: 600 0.74rem var(--font); color: #CBD5E1; }
-.mf-seg button[aria-pressed="true"] { background: #fff; color: var(--mf-marino); }
-.mf-marcar {
-    flex: none; display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 18px;
-    border: 0; border-radius: 999px; background: var(--blue); color: #fff; cursor: pointer;
-    font: 700 0.86rem var(--font); white-space: nowrap; transition: background-color 0.2s;
-}
-.mf-marcar.elegido { background: #16A34A; }
-.mf-check { display: none; place-items: center; flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
-.mf-check::after { content: ""; width: 7px; height: 4px; border: solid #16A34A; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
-.mf-marcar.elegido .mf-check { display: grid; }
-.mf-elegidos {
-    max-width: calc(100% - 24px); padding: 7px 14px; border-radius: 10px;
-    background: #fff; color: #0F172A; font: 600 0.82rem var(--font); text-align: center;
-    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.35);
-}
-.mf-elegidos:empty { display: none; }
-.mf-elegidos.error { background: #FEF2F2; color: #B91C1C; }
-
-.mf-tira { position: relative; align-self: stretch; display: flex; }
-.mf-rail {
-    position: relative; flex: 1; min-width: 0;
-    display: flex; align-items: flex-end; justify-content: space-between; gap: clamp(18px, 2vw, 30px); padding: 30px 16px 4px;
-    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
-    overscroll-behavior-x: contain; cursor: grab; user-select: none; -webkit-user-select: none;
-}
-.mf-rail::-webkit-scrollbar { display: none; }
-.mf-rail.arrastrando { cursor: grabbing; }
-.mf-rail.arrastrando .mf-mini { pointer-events: none; }
-.mf-mini {
-    /* Con pocos modelos (un filtro) crecen hasta llenar el ancho; con muchos
-       no bajan de su tamaño y la tira se arrastra. */
-    position: relative; flex: 1 0 clamp(150px, 10.5vw, 220px); max-width: 320px; aspect-ratio: 16 / 10;
-    padding: 0; border: 0; border-radius: 4px; overflow: hidden; background: #fff; cursor: pointer;
-    box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.45); transform-origin: 50% 100%;
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
-    -webkit-tap-highlight-color: transparent;
-}
-.mf-mini[hidden] { display: none; }
-.mf-mini-vista { position: absolute; inset: 0; display: block; overflow: hidden; pointer-events: none; }
-/* El que se está mirando queda levantado. */
-.mf-mini.activo { transform: translateY(-8px); box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.6); }
-@media (hover: hover) {
-    .mf-mini:hover { transform: translateY(-8px) scale(1.16); box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.55); }
-    .mf-chip:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
-    .mf-chip[aria-pressed="true"]:hover { background: #fff; color: var(--mf-marino); }
-    .mf-volver:hover { border-color: #fff; color: #fff; }
-    .mf-marcar:hover { background: var(--blue-dark); }
-    .mf-marcar.elegido:hover { background: #15803D; }
-    .mf-nav:hover { background: #000; }
+.mf-card[hidden] { display: none; }
+.mf-card:hover { border-color: #93c5fd; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1); }
+.mf-card.elegido { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22); }
+.mf-vista {
+    aspect-ratio: 16 / 11; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+    scrollbar-width: thin; scrollbar-gutter: stable;
+    background: linear-gradient(145deg, #f1f5f9, #fff); border-bottom: 1px solid #CBD5E1;
 }
 .mf-letra {
-    position: absolute; left: 6px; top: 6px; z-index: 2; pointer-events: none;
-    min-width: 24px; height: 24px; padding: 0 6px; border-radius: 4px;
-    display: grid; place-items: center; background: var(--mf-marino); color: #fff;
-    font: 700 0.78rem var(--font);
+    position: absolute; left: 10px; top: 10px; z-index: 2; pointer-events: none;
+    min-width: 34px; height: 34px; padding: 0 7px; border-radius: 9px;
+    display: grid; place-items: center; background: var(--text); color: #fff;
+    font: 800 1rem var(--font-display);
 }
-/* Los elegidos: tilde verde con el número de orden (1 y 2). */
-.mf-num {
-    position: absolute; right: 6px; top: 6px; z-index: 2; pointer-events: none;
-    display: none; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-    background: #16A34A; color: #fff; font: 700 0.76rem var(--font);
-    box-shadow: 0 0 0 2px #fff;
+.mf-card.elegido .mf-letra { background: var(--blue); }
+.mf-info { display: flex; flex-direction: column; padding: 7px 10px; flex: 1; }
+.mf-acciones { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: auto; }
+.mf-marcar {
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer;
+    border: 1.5px solid var(--blue); background: var(--surface); color: var(--blue-dark);
+    font: 700 0.78rem var(--font-display); transition: var(--transition);
 }
-.mf-mini.elegido .mf-num { display: grid; }
-.mf-nav {
-    position: absolute; z-index: 2; bottom: calc(4px + (clamp(150px, 10.5vw, 220px) * 0.625 - 40px) / 2);
-    display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
-    border: 0; background: #1a1816; color: #fff; cursor: pointer;
-    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
+.mf-check { width: 14px; height: 14px; border-radius: 4px; border: 2px solid currentColor; display: grid; place-items: center; }
+.mf-card.elegido .mf-marcar { background: var(--blue); color: #fff; }
+.mf-card.elegido .mf-check::after { content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.mf-ver {
+    padding: 6px 8px; border: 0; background: none; cursor: pointer;
+    color: var(--text-muted); font: 600 0.78rem var(--font); text-decoration: underline; text-underline-offset: 3px;
 }
-.mf-nav svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.mf-prev { left: 12px; }
-.mf-next { right: 12px; }
+.mf-ver:hover { color: var(--blue-dark); }
+.mf-vacio { padding: 24px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
-/* Intro del paso 3: mientras se ve, el visor queda oculto. */
+/* Intro del paso 3: mientras se ve, los modelos y la barra quedan ocultos. */
 .mf-intro { display: none; }
 .form-step.con-intro > .mf-intro { display: block; }
-.form-step.con-intro > .mf-visor { display: none !important; }
+.form-step.con-intro > .form-section, .form-step.con-intro > .mf-barra { display: none; }
 .mf-intro-texto { margin-top: 6px; font-size: 1.02rem; line-height: 1.6; color: var(--text-muted); }
 
-/* Si la barra no entra en una fila, los filtros bajan a la segunda. */
-@media (max-width: 1100px) {
-    .mf-visor { --mf-barra: 96px; }
-    .mf-top { grid-template-columns: minmax(0, 1fr) auto; }
-    .mf-top-filtros { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
+/* La barra con lo elegido y Enviar queda pegada abajo mientras se recorren los modelos. */
+.mf-barra {
+    position: sticky; bottom: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding: 14px 32px 18px; background: rgba(255, 255, 255, 0.97);
+    border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
 }
-/* Celular (2-oct, "queda horrible"): nada flota encima del modelo. Arriba
-   un renglón con Volver, el contador y Enviar, y otro con los filtros; el
-   modelo en su versión celular, de borde a borde y sin marco de teléfono;
-   abajo un panel fijo con el botón para elegirlo y las miniaturas. */
-@media (max-width: 640px) {
-    .mf-top {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        grid-template-areas: "volver tit enviar" "filtros filtros filtros";
-        padding: 8px 10px; gap: 8px;
-    }
-    .mf-top-acciones { display: contents; }
-    .mf-volver { grid-area: volver; width: 36px; padding: 0; justify-content: center; }
-    .mf-volver span { display: none; }
-    .mf-top .btn-submit { grid-area: enviar; padding: 0 14px; font-size: 0.8rem; }
-    .mf-top-tit { grid-area: tit; min-width: 0; }
-    .mf-paso { display: none; }
-    /* El título queda para el lector de pantalla: el contador y el botón ya lo dicen. */
-    .mf-top .step-header-title {
-        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-    }
-    .mf-contador { padding: 5px 10px; font-size: 0.74rem; }
-    .mf-cont-txt { display: none; }
-    .mf-top-filtros { grid-area: filtros; min-width: 0; justify-content: flex-start; }
-    .mf-top-filtros .mf-filtros { flex: 1 1 auto; }
-    .mf-rubro select { width: 112px; }
+.mf-barra .step-nav.step-nav-submit { max-width: 560px; padding: 0; }
+.mf-elegidos { font-size: 0.88rem; font-weight: 600; color: var(--text); text-align: center; }
+.mf-elegidos.error { color: var(--error); }
 
-    .mf-escena {
-        flex: 1 1 auto; width: 100%; height: auto; min-height: 0; margin: 0;
-        border: 0; border-radius: 0; box-shadow: none;
-    }
-    .mf-pantalla.es-cel { padding: 0; background: #fff; }
-    .mf-pantalla.es-cel .mf-cel { width: 100%; max-width: none; margin: 0; border: 0; border-radius: 0; }
-
-    .mf-abajo {
-        position: static; flex: none; align-self: stretch; gap: 6px;
-        padding: 10px 0 calc(8px + env(safe-area-inset-bottom, 0px));
-        background: var(--mf-marino); pointer-events: auto;
-        box-shadow: 0 -8px 20px -10px rgba(0, 0, 0, 0.4);
-    }
-    .mf-accion { width: calc(100% - 20px); max-width: none; padding: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .mf-actual, .mf-seg { display: none; }
-    .mf-marcar { flex: 1; justify-content: center; height: 44px; font-size: 0.9rem; }
-    .mf-elegidos { margin: 0 10px; font-size: 0.78rem; }
-    .mf-nav { display: none; }
-    .mf-rail { gap: 10px; padding: 10px 10px 2px; }
-    .mf-mini { flex: none; width: 92px; max-width: none; box-shadow: none; }
-    .mf-mini.activo { transform: translateY(-6px); box-shadow: 0 0 0 2px #fff; }
-    .mf-letra { left: 4px; top: 4px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 0.66rem; }
-    .mf-num { right: 4px; top: 4px; width: 18px; height: 18px; font-size: 0.66rem; }
+/* Vista grande */
+.mf-overlay {
+    position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+    padding: 20px; background: rgba(7, 12, 24, 0.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
-@media (prefers-reduced-motion: reduce) {
-    .mf-mini, .mf-chip, .mf-marcar { transition: none; }
+.mf-overlay[hidden] { display: none; }
+.mf-modal {
+    width: min(1180px, 100%); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px);
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg); border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.mf-modal-top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.mf-modal-titulo { margin-right: auto; min-width: 0; font: 700 1rem var(--font-display); color: var(--text); }
+.mf-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: rgba(15, 23, 42, 0.06); }
+.mf-seg button { border: 0; background: none; padding: 7px 14px; border-radius: 999px; cursor: pointer; font: 600 0.8rem var(--font); color: var(--text-muted); }
+.mf-seg button[aria-pressed="true"] { background: #fff; color: var(--text); box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12); }
+.mf-cerrar { width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(15, 23, 42, 0.06); color: var(--text); cursor: pointer; font-size: 1rem; }
+.mf-cerrar:hover { background: rgba(15, 23, 42, 0.12); }
+.mf-escenario { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px; display: flex; justify-content: center; align-items: flex-start; }
+.mf-pc { width: 100%; max-width: 1442px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #fff; }
+.mf-cel { width: 390px; max-width: 100%; border-radius: 22px; overflow: hidden; border: 10px solid #0f172a; background: #fff; }
+.mf-modal-pie { display: flex; justify-content: center; padding: 12px 16px; background: var(--surface); border-top: 1px solid var(--border); }
+.mf-elegir.elegido { background: #16a34a; box-shadow: none; }
+
+@media (max-width: 860px) {
+    .mf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .mf-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .mf-barra { padding: 12px 18px 14px; }
+    .mf-barra .submit-note { display: none; }
+    .mf-overlay { padding: 0; }
+    .mf-modal { max-height: 100vh; max-height: 100dvh; height: 100%; border-radius: 0; }
+    .mf-modal-top { flex-wrap: wrap; }
+    .mf-seg { order: 3; }
+    .mf-escenario { padding: 10px; }
+    .mf-cel { border: 1px solid var(--border); border-radius: 12px; }
 }

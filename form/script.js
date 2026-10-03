@@ -54,18 +54,12 @@ const _origen = (() => {
 const _paramsInicial = new URLSearchParams(window.location.search);
 /* ─── Paso 3: modelos ───
  * Los mismos modelos de /modelos/, dibujados acá (modelos.js, nuevos.js y
- * wire.js se cargan como scripts clásicos antes que este módulo).
- *
- * Visor (2-oct, el mismo formato que el portfolio): el modelo que se está
- * mirando va grande y se recorre con scroll; abajo, la tira de miniaturas
- * (se arrastra como un carrusel) cambia el modelo a la vista, y el botón
- * "Seleccionar este modelo" lo marca. Se eligen 2.
- *
- * /formb comparte este archivo con el HTML viejo del paso 3 y ya no se usa:
- * si falta #mfVisor, el paso de modelos no se arma pero el resto anda. */
+ * wire.js se cargan como scripts clásicos antes que este módulo). El cliente
+ * marca 2 tocando la tarjeta y los puede ver grandes en un modal, sin salir
+ * del formulario. */
 const MODELOS = (typeof GW_MODELOS !== 'undefined') ? GW_MODELOS : [];
 const MODELO_TIPOS = (typeof GW_MODELO_TIPOS !== 'undefined') ? GW_MODELO_TIPOS : [];
-const MODELO_RUBROS = (typeof GW_MODELO_RUBROS !== 'undefined') ? GW_MODELO_RUBROS : [];
+// Hasta 2; con 1 ya se puede enviar (3-oct).
 const MODELOS_A_ELEGIR = 2;
 const modeloPorId = id => MODELOS.find(m => m.id === id);
 const nombreModelo = m => `Modelo ${m.letra} · ${m.nombre}`;
@@ -75,67 +69,25 @@ const modelosParametro = (_paramsInicial.get('modelos') || '').split(',').filter
 try { modelosSeleccionados = modelosParametro.length ? modelosParametro : JSON.parse(sessionStorage.getItem('gw-modelos') || '[]'); } catch (_) {}
 modelosSeleccionados = [...new Set(modelosSeleccionados)].filter(modeloPorId).slice(0, MODELOS_A_ELEGIR);
 
-const mfVisor = document.getElementById('mfVisor');
-const mfRail = document.getElementById('modelosGroup');
+const mfGrid = document.getElementById('modelosGroup');
 const mfTipos = document.getElementById('mfTipos');
-const mfRubro = document.getElementById('mfRubro');
 const mfAviso = document.getElementById('modelosAviso');
-const mfContador = document.getElementById('mfContador');
-const mfPantalla = document.getElementById('mfPantalla');
-const mfActual = document.getElementById('mfActual');
-const mfMarcar = document.getElementById('mfMarcar');
-const btnEnviar = document.getElementById('btnEnviar');
-const mfFiltro = { tipo: 'all', rubro: 'all' };
-const FLECHA = '<svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
-const mfQuieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// En el celular se ve siempre la versión celular del modelo (el botón
-// Computadora/Celular se oculta); si se agranda la ventana, vuelve a elegirse.
-const mfCelular = window.matchMedia('(max-width: 640px)');
-const mfVer = { id: '', vista: window.matchMedia('(max-width: 700px)').matches ? 'celular' : 'pc' };
-mfCelular.addEventListener?.('change', () => {
-    if (mfCelular.matches && mfVer.vista !== 'celular') { mfVer.vista = 'celular'; pintarEscena(); }
-});
+const mfFiltro = { tipo: 'all' };
 
-/* El botón de la barra dice cuántos faltan ("Elegí 1 más") y pasa a Enviar
- * con los 2 elegidos (24-sep, como el diseño que mandó Pablo). */
-function pintarBotonEnviar() {
-    const faltan = MODELOS_A_ELEGIR - modelosSeleccionados.length;
-    const texto = faltan <= 0 ? 'Enviar'
-        : faltan === MODELOS_A_ELEGIR ? `Elegí ${MODELOS_A_ELEGIR} modelos` : `Elegí ${faltan} más`;
-    btnEnviar.innerHTML = `<span>${texto}</span>${FLECHA}`;
-    btnEnviar.classList.toggle('listo', faltan <= 0);
-}
-
-/* El contador lleva la cuenta; mfAviso queda solo para avisos. Las
- * miniaturas elegidas llevan una tilde con su número (1 y 2). */
 function pintarElegidos(mensaje) {
-    if (!mfVisor) return;
-    const n = modelosSeleccionados.length;
     mfAviso.classList.remove('error');
-    mfAviso.textContent = mensaje || '';
-    // Solo si cambió: reescribir el mismo texto lo vuelve a leer el lector de pantalla.
-    // En el celular se ve solo "0 de 2": la palabra se oculta por CSS.
-    const cuenta = `${n} de ${MODELOS_A_ELEGIR} seleccionados`;
-    if (mfContador.textContent !== cuenta) mfContador.innerHTML = `${n} de ${MODELOS_A_ELEGIR}<span class="mf-cont-txt"> seleccionados</span>`;
-    mfContador.classList.toggle('completo', n === MODELOS_A_ELEGIR);
-    // Mientras se envía, el botón dice "Enviando…".
-    if (!btnEnviar.disabled) pintarBotonEnviar();
-    mfRail.querySelectorAll('.mf-mini').forEach(b => {
-        const i = modelosSeleccionados.indexOf(b.dataset.id);
-        b.classList.toggle('elegido', i !== -1);
-        b.querySelector('.mf-num').textContent = i === -1 ? '' : String(i + 1);
+    if (mensaje) { mfAviso.textContent = mensaje; return; }
+    const n = modelosSeleccionados.length;
+    const nombres = modelosSeleccionados.map(id => nombreModelo(modeloPorId(id))).join(' + ');
+    mfAviso.textContent = !n ? 'Elegí 1 o 2 modelos.'
+        : n < MODELOS_A_ELEGIR ? `Elegiste ${nombres}. Si querés, sumá otro.`
+        : `Elegiste ${nombres}.`;
+    mfGrid.querySelectorAll('.mf-card').forEach(card => {
+        const on = modelosSeleccionados.includes(card.dataset.id);
+        card.classList.toggle('elegido', on);
+        card.querySelector('.mf-marcar').setAttribute('aria-pressed', on ? 'true' : 'false');
+        card.querySelector('.mf-marcar-txt').textContent = on ? 'Elegido' : 'Elegir';
     });
-    pintarMarcar();
-}
-
-function pintarMarcar() {
-    const m = modeloPorId(mfVer.id);
-    if (!m) return;
-    const on = modelosSeleccionados.includes(m.id);
-    mfMarcar.classList.toggle('elegido', on);
-    mfMarcar.setAttribute('aria-pressed', on ? 'true' : 'false');
-    mfMarcar.querySelector('.mf-marcar-txt').textContent = on ? 'Seleccionado' : 'Seleccionar este modelo';
-    mfMarcar.setAttribute('aria-label', on ? `${nombreModelo(m)}: seleccionado. Tocá para sacarlo.` : `Seleccionar el ${nombreModelo(m)}`);
 }
 
 /* Devuelve false si no se pudo marcar (ya había 2). */
@@ -143,7 +95,7 @@ function alternarModelo(id) {
     if (modelosSeleccionados.includes(id)) {
         modelosSeleccionados = modelosSeleccionados.filter(x => x !== id);
     } else if (modelosSeleccionados.length >= MODELOS_A_ELEGIR) {
-        pintarElegidos(`Ya elegiste ${MODELOS_A_ELEGIR}. Abrí uno de los que tienen tilde y sacalo para cambiarlo.`);
+        pintarElegidos(`Ya elegiste ${MODELOS_A_ELEGIR}. Tocá uno de los elegidos para sacarlo y cambiarlo.`);
         mfAviso.classList.add('error');
         return false;
     } else {
@@ -154,126 +106,26 @@ function alternarModelo(id) {
     return true;
 }
 
-/* ── El modelo grande ── */
-function pintarEscena() {
-    const m = modeloPorId(mfVer.id);
-    if (!m) return;
-    const wire = GW_WIRE.render(m);
-    // Cada vez una caja nueva: encajar() deja un ResizeObserver sobre la que recibe.
-    if (mfVer.vista === 'pc') {
-        mfPantalla.innerHTML = `<div class="mf-caja"><div class="md-alto"><div class="md-lienzo">${wire}</div></div></div>`;
-        GW_WIRE.encajar(mfPantalla.querySelector('.mf-caja'), mfPantalla.querySelector('.md-lienzo'), 1440);
-    } else {
-        mfPantalla.innerHTML = `<div class="mf-cel">${wire}</div>`;
-    }
-    mfPantalla.classList.toggle('es-cel', mfVer.vista === 'celular');
-    mfPantalla.scrollTop = 0;
-    mfActual.innerHTML = `<b>Modelo ${m.letra}</b> <span></span>`;
-    mfActual.querySelector('span').textContent = m.nombre;
-    mfPantalla.setAttribute('aria-label', `${nombreModelo(m)}. Se recorre con scroll.`);
-    document.querySelectorAll('#mfSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === mfVer.vista ? 'true' : 'false'));
-    pintarMarcar();
-}
-
-function mostrarModelo(id, { suave = true } = {}) {
-    if (!modeloPorId(id)) return;
-    const cambia = mfVer.id !== id;
-    mfVer.id = id;
-    mfRail.querySelectorAll('.mf-mini').forEach(b => {
-        const on = b.dataset.id === id;
-        b.classList.toggle('activo', on);
-        if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
-    });
-    centrarMini(suave);
-    if (cambia || !mfPantalla.firstChild) pintarEscena();
-}
-
-/* ── Miniaturas ── */
-// Se dibujan cuando entran en la tira (son 45 y cada una es un modelo entero).
-const mfObservador = window.IntersectionObserver && mfRail ? new IntersectionObserver(entradas => {
+// Las vistas se dibujan cuando la tarjeta se acerca a la pantalla: son 45.
+const mfObservador = window.IntersectionObserver ? new IntersectionObserver(entradas => {
     entradas.forEach(e => {
         if (!e.isIntersecting) return;
         mfObservador.unobserve(e.target);
-        dibujarMini(e.target);
+        dibujarVista(e.target);
     });
-}, { root: mfRail, rootMargin: '0px 600px' }) : null;
+}, { rootMargin: '400px' }) : null;
 
-function dibujarMini(b) {
-    if (b.dataset.dibujada) return;
-    b.dataset.dibujada = '1';
-    const caja = b.querySelector('.mf-mini-vista');
-    caja.innerHTML = `<div class="md-alto"><div class="md-lienzo">${GW_WIRE.render(modeloPorId(b.dataset.id))}</div></div>`;
-    GW_WIRE.encajar(caja, caja.querySelector('.md-lienzo'), 1440);
-}
-
-function minisVisibles() {
-    return [...mfRail.querySelectorAll('.mf-mini:not([hidden])')];
-}
-
-/* scrollIntoView movería también la página: se centra moviendo solo la tira. */
-function centrarMini(suave) {
-    frenarInercia();
-    const el = mfRail.querySelector('.mf-mini.activo');
-    if (!el || el.hidden) return;
-    const x = el.offsetLeft - (mfRail.clientWidth - el.offsetWidth) / 2;
-    mfRail.scrollTo({ left: Math.max(0, x), behavior: suave && !mfQuieto ? 'smooth' : 'auto' });
-}
-
-function moverModelo(paso) {
-    const vis = minisVisibles();
-    if (!vis.length) return;
-    const i = vis.findIndex(b => b.dataset.id === mfVer.id);
-    mostrarModelo(vis[(i + paso + vis.length) % vis.length].dataset.id);
-}
-
-/* La tira se arrastra con el mouse como un carrusel (en el celular ya se
- * desliza con el dedo). Si hubo arrastre, el clic que viene después no
- * cambia de modelo; al soltar sigue un poco por inercia. */
-let mfArrastre = null, mfArrastro = false, mfInercia = 0;
-function frenarInercia() { if (mfInercia) cancelAnimationFrame(mfInercia); mfInercia = 0; }
-function activarArrastre() {
-    mfRail.addEventListener('pointerdown', e => {
-        if (e.pointerType !== 'mouse' || e.button !== 0) return;
-        frenarInercia();
-        mfArrastre = { x: e.clientX, left: mfRail.scrollLeft, ultX: e.clientX, ultT: performance.now(), v: 0 };
-        mfArrastro = false;
-    });
-    window.addEventListener('pointermove', e => {
-        if (!mfArrastre) return;
-        const dx = e.clientX - mfArrastre.x;
-        if (!mfArrastro && Math.abs(dx) > 5) { mfArrastro = true; mfRail.classList.add('arrastrando'); }
-        if (!mfArrastro) return;
-        mfRail.scrollLeft = mfArrastre.left - dx;
-        const ahora = performance.now();
-        mfArrastre.v = (e.clientX - mfArrastre.ultX) / Math.max(1, ahora - mfArrastre.ultT);
-        mfArrastre.ultX = e.clientX;
-        mfArrastre.ultT = ahora;
-    });
-    window.addEventListener('pointerup', () => {
-        if (!mfArrastre) return;
-        let v = -mfArrastre.v * 16;
-        mfArrastre = null;
-        mfRail.classList.remove('arrastrando');
-        if (!mfArrastro || mfQuieto || Math.abs(v) < 1) return;
-        mfInercia = requestAnimationFrame(function paso() {
-            mfRail.scrollLeft += v;
-            v *= 0.94;
-            mfInercia = Math.abs(v) > 0.5 ? requestAnimationFrame(paso) : 0;
-        });
-    });
-    mfRail.addEventListener('click', e => {
-        if (!mfArrastro) return;
-        mfArrastro = false;
-        e.preventDefault();
-        e.stopPropagation();
-    }, true);
-    mfRail.addEventListener('wheel', frenarInercia, { passive: true });
+function dibujarVista(card) {
+    if (card.dataset.dibujada) return;
+    card.dataset.dibujada = '1';
+    const lienzo = card.querySelector('.md-lienzo');
+    lienzo.innerHTML = GW_WIRE.render(modeloPorId(card.dataset.id));
+    GW_WIRE.encajar(card.querySelector('.mf-vista'), lienzo, 1440);
 }
 
 function armarModelos() {
-    if (!mfVisor) return;
     if (!MODELOS.length || typeof GW_WIRE === 'undefined') {
-        mfPantalla.innerHTML = '<p class="mf-vacio">No pudimos cargar los modelos. Recargá la página y volvé a intentar.</p>';
+        mfGrid.innerHTML = '<p class="mf-vacio">No pudimos cargar los modelos. Recargá la página y volvé a intentar.</p>';
         return;
     }
     [{ id: 'all', label: 'Todos' }, ...MODELO_TIPOS].forEach(t => {
@@ -285,39 +137,37 @@ function armarModelos() {
         b.textContent = t.label;
         mfTipos.append(b);
     });
-    MODELO_RUBROS.forEach(r => mfRubro.append(new Option(r.label, r.id)));
 
     const frag = document.createDocumentFragment();
     MODELOS.forEach(m => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'mf-mini';
-        b.setAttribute('role', 'listitem');
-        b.dataset.id = m.id;
-        b.dataset.tipo = m.tipo;
-        b.dataset.rubros = (m.rubros || []).join(' ');
-        b.title = nombreModelo(m);
-        b.setAttribute('aria-label', `Ver el ${nombreModelo(m)}`);
-        b.innerHTML = '<span class="mf-mini-vista" aria-hidden="true"></span><span class="mf-letra" aria-hidden="true"></span><span class="mf-num" aria-hidden="true"></span>';
-        b.querySelector('.mf-letra').textContent = m.letra;
-        frag.append(b);
-        if (mfObservador) mfObservador.observe(b);
+        const card = document.createElement('article');
+        card.className = 'mf-card';
+        card.dataset.id = m.id;
+        card.dataset.tipo = m.tipo;
+        card.innerHTML = `
+            <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
+            <span class="mf-letra" aria-hidden="true"></span>
+            <div class="mf-info">
+                <div class="mf-acciones">
+                    <button type="button" class="mf-marcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Elegir</span></button>
+                    <button type="button" class="mf-ver">Ver grande</button>
+                </div>
+            </div>`;
+        card.querySelector('.mf-letra').textContent = m.letra;
+        card.querySelector('.mf-marcar').setAttribute('aria-label', `Elegir el ${nombreModelo(m)}`);
+        card.querySelector('.mf-ver').setAttribute('aria-label', `Ver grande el ${nombreModelo(m)}`);
+        frag.append(card);
+        if (mfObservador) mfObservador.observe(card);
     });
-    mfRail.append(frag);
-    if (!mfObservador) mfRail.querySelectorAll('.mf-mini').forEach(dibujarMini);
+    mfGrid.append(frag);
+    if (!mfObservador) mfGrid.querySelectorAll('.mf-card').forEach(dibujarVista);
 
-    mfRail.addEventListener('click', e => {
-        const b = e.target.closest('.mf-mini');
-        if (b) mostrarModelo(b.dataset.id);
-    });
-    mfVisor.querySelector('.mf-prev').addEventListener('click', () => moverModelo(-1));
-    mfVisor.querySelector('.mf-next').addEventListener('click', () => moverModelo(1));
-    mfMarcar.addEventListener('click', () => alternarModelo(mfVer.id));
-    document.getElementById('mfSeg').addEventListener('click', e => {
-        const b = e.target.closest('button');
-        if (!b || b.dataset.vista === mfVer.vista) return;
-        mfVer.vista = b.dataset.vista;
-        pintarEscena();
+    mfGrid.addEventListener('click', e => {
+        const card = e.target.closest('.mf-card');
+        if (!card) return;
+        if (e.target.closest('.mf-ver')) { abrirModelo(card.dataset.id, e.target.closest('.mf-ver')); return; }
+        // Tocar la vista o el botón marca; el scroll de la vista no.
+        alternarModelo(card.dataset.id);
     });
     mfTipos.addEventListener('click', e => {
         const chip = e.target.closest('.mf-chip');
@@ -325,43 +175,90 @@ function armarModelos() {
         mfFiltro.tipo = chip.dataset.valor;
         filtrarModelos();
     });
-    // Un rubro tiene modelos de varios tipos: elegirlo vuelve el tipo a "Todos".
-    mfRubro.addEventListener('change', () => {
-        mfFiltro.rubro = mfRubro.value;
-        mfFiltro.tipo = 'all';
-        filtrarModelos();
-    });
-    // Flechas ← → cambian de modelo (no mientras se elige rubro).
-    mfVisor.addEventListener('keydown', e => {
-        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-        if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
-        e.preventDefault();
-        moverModelo(e.key === 'ArrowLeft' ? -1 : 1);
-    });
-    activarArrastre();
 
     filtrarModelos();
     pintarElegidos();
 }
 
 function filtrarModelos() {
-    let primero = null;
-    mfRail.querySelectorAll('.mf-mini').forEach(b => {
-        b.hidden = (mfFiltro.tipo !== 'all' && b.dataset.tipo !== mfFiltro.tipo) ||
-            (mfFiltro.rubro !== 'all' && !b.dataset.rubros.split(' ').includes(mfFiltro.rubro));
-        if (!b.hidden && !primero) primero = b;
+    let visibles = 0;
+    mfGrid.querySelectorAll('.mf-card').forEach(card => {
+        card.hidden = mfFiltro.tipo !== 'all' && card.dataset.tipo !== mfFiltro.tipo;
+        if (!card.hidden) visibles++;
     });
     mfTipos.querySelectorAll('.mf-chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.valor === mfFiltro.tipo ? 'true' : 'false'));
-    mfRubro.value = mfFiltro.rubro;
-    mfRubro.parentNode.classList.toggle('activo', mfFiltro.rubro !== 'all');
-    mfVisor.classList.toggle('sin-modelos', !primero);
-    document.getElementById('mfVacio').hidden = !!primero;
-    mfRail.scrollLeft = 0;
-    if (!primero) return;
-    // Si el que se estaba mirando quedó afuera del filtro, se muestra el primero.
-    const actual = mfRail.querySelector(`.mf-mini[data-id="${mfVer.id}"]`);
-    mostrarModelo(actual && !actual.hidden ? mfVer.id : primero.dataset.id, { suave: false });
+    document.getElementById('mfVacio').hidden = visibles !== 0;
 }
+
+/* ─── Vista grande ─── */
+const mfOverlay = document.getElementById('mfOverlay');
+const mfEscenario = document.getElementById('mfEscenario');
+const mfElegir = document.getElementById('mfElegir');
+const mfVer = { id: '', vista: 'pc', volverA: null };
+
+function pintarModal() {
+    const m = modeloPorId(mfVer.id);
+    document.getElementById('mfTitulo').textContent = nombreModelo(m);
+    const wire = GW_WIRE.render(m);
+    if (mfVer.vista === 'pc') {
+        mfEscenario.innerHTML = `<div class="mf-pc"><div class="md-alto"><div class="md-lienzo">${wire}</div></div></div>`;
+        GW_WIRE.encajar(mfEscenario.querySelector('.mf-pc'), mfEscenario.querySelector('.md-lienzo'), 1440);
+    } else {
+        mfEscenario.innerHTML = `<div class="mf-cel">${wire}</div>`;
+    }
+    mfEscenario.scrollTop = 0;
+    mfOverlay.querySelectorAll('.mf-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === mfVer.vista ? 'true' : 'false'));
+    const elegido = modelosSeleccionados.includes(m.id);
+    mfElegir.textContent = elegido ? '✓ Elegido · tocá para sacarlo' : 'Elegir este modelo';
+    mfElegir.classList.toggle('elegido', elegido);
+}
+
+function abrirModelo(id, desde) {
+    mfVer.id = id;
+    mfVer.volverA = desde || null;
+    mfVer.vista = window.innerWidth < 700 ? 'celular' : 'pc';
+    mfOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    pintarModal();
+    document.getElementById('mfCerrar').focus();
+}
+
+function cerrarModelo() {
+    if (mfOverlay.hidden) return;
+    mfOverlay.hidden = true;
+    mfEscenario.innerHTML = '';
+    document.body.style.overflow = '';
+    mfVer.volverA?.focus();
+}
+
+mfOverlay.querySelector('.mf-seg').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || b.dataset.vista === mfVer.vista) return;
+    mfVer.vista = b.dataset.vista;
+    pintarModal();
+});
+document.getElementById('mfCerrar').addEventListener('click', cerrarModelo);
+mfOverlay.addEventListener('click', e => { if (e.target === mfOverlay) cerrarModelo(); });
+document.addEventListener('keydown', e => {
+    if (mfOverlay.hidden) return;
+    if (e.key === 'Escape') { cerrarModelo(); return; }
+    // Foco atrapado adentro del modal mientras está abierto.
+    if (e.key === 'Tab') {
+        const focos = [...mfOverlay.querySelectorAll('button')];
+        const primero = focos[0], ultimo = focos[focos.length - 1];
+        if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+        else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    }
+});
+mfElegir.addEventListener('click', () => {
+    const yaEstaba = modelosSeleccionados.includes(mfVer.id);
+    if (!alternarModelo(mfVer.id)) {
+        mfElegir.textContent = `Ya elegiste ${MODELOS_A_ELEGIR}: sacá uno primero`;
+        return;
+    }
+    if (yaEstaba) { pintarModal(); return; }
+    cerrarModelo();
+});
 
 armarModelos();
 
@@ -534,12 +431,9 @@ function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     paso?.querySelectorAll('textarea.autosize').forEach(autoGrow);
     if (scroll) document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     // En el paso 3 hay dos títulos: el de la intro y el de los modelos (hijo directo).
-    // Los modelos se eligen en un visor a pantalla completa (2-oct). Va antes
-    // del foco: con el visor oculto, el título no puede recibirlo.
+    if (enfocar) paso?.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
+    // El paso de modelos necesita más ancho que los campos.
     document.body.classList.toggle('paso-modelos', n === 3 && !conIntro);
-    if (enfocar) paso?.querySelector(n === 3 && !conIntro ? '.mf-visor .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
-    // Mientras estuvo oculto, el visor no pudo medir el modelo ni centrar la tira.
-    if (n === 3 && !conIntro && mfVisor) { pintarEscena(); centrarMini(false); }
     if (n === 2) track('step2');
 }
 
@@ -580,6 +474,7 @@ document.getElementById('btnVerModelos').addEventListener('click', () => {
     irAPaso(3);
 });
 
+const btnEnviar = document.getElementById('btnEnviar');
 btnEnviar.addEventListener('click', () => {
     if (btnEnviar.disabled) return;
     clearErrors();
@@ -663,12 +558,8 @@ function validarPaso2() {
 }
 
 function validarPaso3() {
-    if (modelosSeleccionados.length === MODELOS_A_ELEGIR) return true;
-    const faltan = MODELOS_A_ELEGIR - modelosSeleccionados.length;
-    // El botón ya dice "Elegí 2 modelos": el aviso explica cómo se eligen.
-    pintarElegidos(faltan === MODELOS_A_ELEGIR
-        ? `Tocá Seleccionar en los ${MODELOS_A_ELEGIR} modelos que más te gusten.`
-        : `Te falta elegir ${faltan} modelo más para poder enviar.`);
+    if (modelosSeleccionados.length >= 1) return true;
+    pintarElegidos('Elegí al menos 1 modelo para poder enviar.');
     mfAviso.classList.add('error');
     return false;
 }
@@ -721,12 +612,6 @@ function buildPayload() {
 /* Aviso de error del envío, en la propia tarjeta y no en un alert: dice qué
  * pasó y qué hacer. Se reemplaza en cada intento. */
 function mostrarErrorEnvio(msg) {
-    // En el visor de modelos (pantalla completa) el aviso va arriba de la tira.
-    if (mfVisor && document.body.classList.contains('paso-modelos')) {
-        mfAviso.textContent = msg;
-        mfAviso.classList.add('error');
-        return;
-    }
     let box = document.getElementById('formEnvioError');
     if (!box) {
         box = document.createElement('p');
@@ -770,7 +655,7 @@ function mostrarErrorServidor(json) {
     if (json.motivo === 'modelos') {
         introModelosVista = true;
         irAPaso(3, { enfocar: false });
-        pintarElegidos('Volvé a elegir tus 2 modelos: no pudimos leer los que marcaste.');
+        pintarElegidos('Volvé a elegir tus modelos: no pudimos leer los que marcaste.');
         mfAviso.classList.add('error');
         return true;
     }
@@ -787,7 +672,7 @@ function mostrarErrorServidor(json) {
 function restaurarBoton() {
     btnEnviar.disabled = false;
     btnEnviar.classList.remove('loading');
-    pintarBotonEnviar();
+    btnEnviar.textContent = 'Enviar →';
 }
 
 async function enviarFormulario() {
