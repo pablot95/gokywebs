@@ -29,11 +29,11 @@ caso('al conocer el rubro manda exactamente dos mensajes: propuesta con las moda
 caso('la propuesta arranca "Para lo que me contás, te podemos armar", nunca "Lo mejor para"',
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te podemos armar una tienda online completa, para vender directo desde la web')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
-caso('termina con las 3 modalidades y su monto; lo incluido de cada una queda para las páginas de detalle (22-sep, 29-sep)',
-    str_ends_with($r[0] ?? '', modalidades_de_precio('$29.000', '$190.000', '$290.000'))
-    && strpos($r[0] ?? '', 'Las 3 incluyen la web completa:') === false
+caso('termina con las 2 modalidades y su monto; lo incluido de cada una queda para las páginas de detalle (22-sep, 29-sep; 3-oct)',
+    str_ends_with($r[0] ?? '', modalidades_de_precio('$30.000', '$220.000'))
+    && strpos($r[0] ?? '', 'Las 2 incluyen la web completa:') === false && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
-caso('los links al detalle de las tres modalidades de la tienda (pago/mensual29000, anual190 y unico290) no van en el turno del precio (2-oct)',
+caso('los links al detalle de las modalidades de la tienda (pago/mensual30000 y anual220) no van en el turno del precio (2-oct)',
     !in_array(links_de_precio('ecommerce'), $r, true) && strpos($todo, 'gokywebs.com/pago/') === false, $todo);
 caso('el segundo mensaje ofrece el primer diseño sin cargo, atado a la tienda (26-sep), y pregunta, sin formulario',
     ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?'
@@ -206,38 +206,38 @@ caso('precio y oferta, sin los links ni el formulario pegado al monto (2-oct)',
 clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
-// Tienda, cursos e inmobiliaria cuestan lo mismo y comparten las páginas de detalle (pago/mensual29000, anual190, unico290).
+// Tienda, cursos e inmobiliaria cuestan lo mismo y comparten las páginas de detalle (pago/mensual30000, anual220; 3-oct).
 $esperados = [
-    'landing' => ['un sitio profesional completo', ['$19.000', '$149.000', '$190.000']],
-    'inmobiliaria' => ['una web inmobiliaria completa', ['$29.000', '$190.000', '$290.000']],
-    'elearning' => ['una plataforma de cursos completa', ['$29.000', '$190.000', '$290.000']],
+    'landing' => ['un sitio profesional completo', ['$20.000', '$140.000']],
+    'inmobiliaria' => ['una web inmobiliaria completa', ['$30.000', '$220.000']],
+    'elearning' => ['una plataforma de cursos completa', ['$30.000', '$220.000']],
 ];
 foreach ($esperados as $tipo => [$frase, $montos]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
     $salida = wabot_pitch($tipo, $ct, $cfg);
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
-    caso("$tipo también usa su texto fijo y las 3 modalidades con su monto, sin los links de sus páginas (2-oct), y espera la respuesta",
+    caso("$tipo también usa su texto fijo y las 2 modalidades con su monto, sin los links de sus páginas (2-oct; 3-oct), y espera la respuesta",
         str_starts_with($primero, 'Para lo que me contás, te podemos armar ' . $frase)
         && str_ends_with($primero, modalidades_de_precio(...$montos))
         && !in_array(links_de_precio($tipo), $salida, true)
         && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
 
-/* Por Instagram sale igual que por WhatsApp (29-sep): la propuesta con las 3
- * modalidades y su monto y la oferta aparte (los links al detalle ya no van
- * desde el 2-oct). Hasta el 28-sep, sin imagen, la propuesta llevaba la
- * versión larga de las 3. */
+/* Por Instagram sale igual que por WhatsApp (29-sep): la propuesta con las
+ * modalidades (2 desde el 3-oct) y su monto y la oferta aparte (los links al
+ * detalle ya no van desde el 2-oct). Hasta el 28-sep, sin imagen, la propuesta
+ * llevaba la versión larga de las 3. */
 $cIg = conv_nueva('ig549110000FINALTEST', ['fase' => 'menu', 'canal' => 'instagram']);
 clasifica(['rubro_comercio']);
 $rIg = turno('Vendo ropa', $cIg, $cfg);
 $tIg = $cfg['tipos']['ecommerce'];
-caso('por Instagram son dos mensajes, como por WhatsApp: la propuesta con las 3 modalidades y la oferta, sin los links (2-oct)',
+caso('por Instagram son dos mensajes, como por WhatsApp: la propuesta con las 2 modalidades y la oferta, sin los links (2-oct; 3-oct)',
     count($rIg) === 2 && !in_array(links_de_precio('ecommerce'), $rIg, true)
     && mb_stripos($rIg[1] ?? '', 'primer diseño') !== false && !tiene_form($rIg), json_encode($rIg, JSON_UNESCAPED_UNICODE));
-caso('en el orden mensual, anual, pago único y con los montos de la lista',
+caso('en el orden mensual, anual y con los montos de la lista, sin el pago único (3-oct)',
     mb_strpos($rIg[0] ?? '', "1. Mensual: {$tIg['mensualidad']} por mes") !== false
     && mb_strpos($rIg[0] ?? '', "2. Anual: {$tIg['precio']} por año") !== false
-    && mb_strpos($rIg[0] ?? '', "3. Pago único: {$tIg['precio_unico']} una vez") !== false, $rIg[0] ?? '');
+    && mb_stripos($rIg[0] ?? '', 'Pago único') === false && strpos($rIg[0] ?? '', $tIg['precio_unico']) === false, $rIg[0] ?? '');
 clasifica(['otro']);
 $rIgUno = turno('1', $cIg, $cfg);
 caso('y su "1" también es el plan mensual, con el formulario',
@@ -279,8 +279,11 @@ caso('el turno del precio de Instagram ya entra sin cortar: dos mensajes de meno
     count($salidaIg) === 2 && max(array_map('strlen', $salidaIg)) <= 1000, json_encode(array_map('strlen', $salidaIg)));
 /* Ningún texto suelto del bot pasa hoy los 1000 bytes, pero las respuestas que
  * se juntan en un mismo mensaje sí (wabot_derivar_contestando las une con una
- * línea en blanco): acá, el resumen del precio y la respuesta de pago. */
-$largoIg = wabot_precio_resumen($ig, $cfg) . "\n\n" . $cfg['info']['pago'];
+ * línea en blanco): acá, el resumen del precio, la respuesta de pago, lo que
+ * incluye y el mantenimiento (desde el 3-oct, con 2 modalidades, el resumen y
+ * el pago solos ya no llegan a los 1000 bytes). */
+$largoIg = wabot_precio_resumen($ig, $cfg) . "\n\n" . $cfg['info']['pago'] . "\n\n" . $cfg['info']['que_incluye']
+    . "\n\n" . $cfg['info']['mantenimiento'];
 $esperadoIg = wabot_variar_muletilla(wabot_personalizar($largoIg, $ig), $ig);
 caso('varias respuestas juntas en Instagram pasan los 1000 bytes: por eso hace falta cortarlas', strlen($esperadoIg) > 1000, (string)strlen($esperadoIg));
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];

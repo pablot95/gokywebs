@@ -175,7 +175,7 @@ function wabot_gemini_modelo($cfg = null) {
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
-    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo',
+    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida',
             'demora_segundos', 'demora_primer_mensaje', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
@@ -3864,9 +3864,10 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): sus links salen
  * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
  * en las respuestas rápidas. Viven en pago/
- * (mensual19000, anual149, unico190 y, para tienda, cursos e inmobiliaria,
- * mensual29000, anual190, unico290); cada una tiene arriba las pestañas para pasar
- * a las otras dos del mismo tipo de web.
+ * (mensual20000, anual140, unico220 y, para tienda, cursos e inmobiliaria,
+ * mensual30000, anual220, unico330; 3-oct). El mensual y el anual tienen arriba
+ * las pestañas para pasar de uno al otro; el pago único ya no se ofrece y su
+ * página solo la manda Pablo al que pide el código propio.
  *
  * `monto` es lo que cobra la página, escrito en su HTML: si cambian los montos
  * de textos.php, cambian las páginas y esta lista. Mientras no coincidan con
@@ -3875,15 +3876,15 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  */
 function wabot_planes_paginas() {
     $tienda = [
-        'mensual' => ['pagina' => 'mensual29000', 'monto' => '$29.000'],
-        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
-        'unico'   => ['pagina' => 'unico290',  'monto' => '$290.000'],
+        'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
+        'anual'   => ['pagina' => 'anual220',  'monto' => '$220.000'],
+        'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [
         'landing'      => [
-            'mensual' => ['pagina' => 'mensual19000', 'monto' => '$19.000'],
-            'anual'   => ['pagina' => 'anual149',  'monto' => '$149.000'],
-            'unico'   => ['pagina' => 'unico190',  'monto' => '$190.000'],
+            'mensual' => ['pagina' => 'mensual20000', 'monto' => '$20.000'],
+            'anual'   => ['pagina' => 'anual140',  'monto' => '$140.000'],
+            'unico'   => ['pagina' => 'unico220',  'monto' => '$220.000'],
         ],
         'ecommerce'    => $tienda,
         'elearning'    => $tienda,
@@ -3896,11 +3897,13 @@ function wabot_planes_paginas() {
  * tres páginas existen en el deploy y cobran los montos de ESTA charla
  * (mensualidad, plan anual y pago único, ya congelados o de lista).
  */
-function wabot_planes_paginas_corresponde($tipo, $conv, $cfg) {
+function wabot_planes_paginas_corresponde($tipo, $conv, $cfg, $modalidades = ['mensual', 'anual']) {
     $paginas = wabot_planes_paginas()[(string)$tipo] ?? null;
     if ($paginas === null || !function_exists('wabot_precio_vigente')) return false;
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
-    foreach (['mensual' => 'mensualidad', 'anual' => 'precio', 'unico' => 'precio_unico'] as $modalidad => $campo) {
+    // Desde el 3-oct el detalle lista mensual y anual; el pago único se mira solo cuando es el elegido.
+    $campos = array_intersect_key(['mensual' => 'mensualidad', 'anual' => 'precio', 'unico' => 'precio_unico'], array_flip((array)$modalidades));
+    foreach ($campos as $modalidad => $campo) {
         if (!is_file(__DIR__ . '/../pago/' . $paginas[$modalidad]['pagina'] . '/index.html')) return false;
         if (wabot_monto_a_numero($v[$campo] ?? '') !== wabot_monto_a_numero($paginas[$modalidad]['monto'])) return false;
     }

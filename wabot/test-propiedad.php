@@ -59,9 +59,9 @@ foreach (['landing' => '$10.000', 'ecommerce' => '$15.000', 'elearning' => '$15.
     caso("$tipo: el código queda suyo al abonar el total", mb_stripos($wp, 'el código queda tuyo') !== false);
     caso("$tipo: el mantenimiento no va incluido y se suma por $mant por mes",
         mb_stripos($wp, 'el mantenimiento es aparte, por ' . $mant . ' por mes') !== false, $wp);
-    // El bloque de las 3 modalidades ya trae el pago único: no se repite abajo.
-    caso("$tipo: debajo del bloque no se suma el renglón de la web propia",
-        wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg)) === '');
+    // Desde el 3-oct el bloque trae solo mensual y anual: al que pide la web propia se le suma el pago único abajo.
+    caso("$tipo: debajo del bloque se suma el renglón de la web propia con el pago único",
+        mb_strpos(wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg)), $unico) !== false);
     // Con un bloque sin el pago único, el renglón sí va, con sus montos y sin marcadores.
     $cfgSinUnico = $cfg;
     $cfgSinUnico['dos_formas'] = "1. Plan mensual: {mensualidad} por mes\n2. Plan anual: {precio} por año";

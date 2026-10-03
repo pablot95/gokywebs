@@ -429,6 +429,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // OpenAI (27-sep). La key NO se carga desde acá: vive en config/wabot-config.php.
         if (in_array($_POST['ia_proveedor'] ?? '', ['gemini', 'openai', 'shadow'], true)) $cfg['ia_proveedor'] = (string)$_POST['ia_proveedor'];
         if (isset($_POST['postprecio_config_presente'])) $cfg['postprecio_activo'] = !empty($_POST['postprecio_activo']);
+        if (isset($_POST['postprecio_config_presente'])) $cfg['solo_bienvenida'] = !empty($_POST['solo_bienvenida']);
         $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
         if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
         if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
@@ -1378,7 +1379,6 @@ body.conv-full #respEstado { margin-top:4px; }
 .resp-resize { position:absolute; top:-8px; left:8px; z-index:2; width:38px; height:14px; min-height:0; padding:0; border:1px solid var(--line-fuerte); border-radius:6px; background:var(--card-2); color:var(--dim); font:700 12px/12px system-ui,sans-serif; text-align:center; cursor:ns-resize; touch-action:none; }
 .resp-resize:hover, .resp-resize:focus-visible { border-color:var(--ac); color:var(--ac); }
 
-
 .conv-list { background:var(--card); border:1px solid var(--line); border-radius:12px; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .conv-list-head { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--dim); letter-spacing:.02em; flex-shrink:0; }
 .conv-filtros { padding:7px 9px; border-bottom:1px solid var(--line); flex-shrink:0; }
@@ -2236,6 +2236,8 @@ function burbujaCita(t, chat) {
                 <?php endforeach; ?>
             </div>
             <input type="hidden" name="postprecio_config_presente" value="1">
+            <label style="margin-top:12px"><input type="checkbox" name="solo_bienvenida" value="1" <?= !empty($cfg['solo_bienvenida']) ? 'checked' : '' ?> style="width:auto"> Solo dar la bienvenida (el resto de la charla la contesta Pablo)</label>
+            <p class="meta">El bot saluda al que escribe por primera vez y después no contesta más. Formularios, demos, plantillas y avisos automáticos siguen igual. Destildado vuelve a conversar como antes.</p>
             <label style="margin-top:12px"><input type="checkbox" name="postprecio_activo" value="1" <?= !empty($cfg['postprecio_activo']) ? 'checked' : '' ?> style="width:auto"> Responder consultas aprobadas después del precio y de la demo</label>
             <p class="meta">Los pagos recibidos, las excepciones y los temas nuevos pasan a Pablo sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
             <p class="meta" style="margin-top:10px">Key de OpenAI:
@@ -2501,24 +2503,25 @@ function burbujaCita(t, chat) {
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
-                        <?php /* Desde el 2-oct: $19.000 y $29.000 (pago/mensual19000 y pago/mensual29000; antes $19.900 y $29.900, mismos links de MP). */ ?>
+                        <?php /* Desde el 3-oct: $20.000 y $30.000 (pago/mensual20000 y pago/mensual30000; antes $19.000 y $29.000, mismos links de MP). */ ?>
                         <button type="button" class="sec" id="btnPlan25"
-                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $19.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $20.000</button>
                         <button type="button" class="sec" id="btnPlan35"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $29.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual149 y pago/anual190). */ ?>
+                               datos para la transferencia (pago/anual140 y pago/anual220). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $149.000</button>
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $140.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $220.000</button>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/unico190 y pago/unico290). */ ?>
+                               datos para la transferencia (pago/unico220 y pago/unico330). Desde el
+                               3-oct no se ofrecen: solo para el que pide el código propio. */ ?>
                         <button type="button" class="sec" id="btnUnico240"
-                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $190.000</button>
+                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $220.000</button>
                         <button type="button" class="sec" id="btnUnico360"
-                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $290.000</button>
+                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $330.000</button>
                         <?php endif; ?>
                         <?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
@@ -3301,7 +3304,6 @@ function burbujaCita(t, chat) {
             });
         }
 
-
         /* Respuestas rápidas. Un clic solo las copia al editor: siempre se
          * revisan y se mandan con el botón Enviar. Para sumar una, agregá un
          * string al array de la categoría; el buscador con / la incorpora solo.
@@ -3346,31 +3348,31 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $19.000" / "Plan $29.000" del encabezado:
+        /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. */
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($149.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($89.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual149');
+            rrInsertar('Te paso el plan anual del sitio profesional ($140.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($220.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual220');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
          * seña y el resto. */
         document.getElementById('btnUnico240')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único del sitio profesional ($190.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico190');
+            rrInsertar('Te paso el pago único del sitio profesional ($220.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico220');
         });
         document.getElementById('btnUnico360')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($290.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($230.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico290');
+            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($330.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($270.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330');
         });
 
         function rrElegir(indice) {

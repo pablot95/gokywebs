@@ -4,7 +4,7 @@
 function wabot_postprecio_catalogo() {
     return [
         'precio' => 'Recordar los precios de la cotización del cliente.',
-        'alternativas' => 'Mensual, anual y pago único son alternativas, no se suman.',
+        'alternativas' => 'Mensual y anual son alternativas, no se suman.',
         'plan_servicio' => 'El mensual es un servicio, no cuotas del desarrollo. Pasar de plan y descontar pagos requiere humano.',
         'recomendar_plan' => 'Comparar las modalidades según inversión inicial y mantenimiento.',
         'pago' => 'Cuándo se abona, seña, saldo y medios de pago estándar.',
@@ -275,23 +275,25 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
         case 'pago':
             // Corto (2-oct, Pablo: "tiene que ser mucho más simple todo").
             $p = wabot_precio_vigente($conv, $cfg, $tipo);
-            return 'Con el mensual pagás el primer mes de ' . $p['mensualidad'] . ' por Mercado Pago y arrancamos. Con el anual o el pago único dejás una seña de '
+            // Desde el 3-oct el pago único no se ofrece: se nombra solo si es el que eligió.
+            return 'Con el mensual pagás el primer mes de ' . $p['mensualidad'] . ' por Mercado Pago y arrancamos. Con el anual'
+                . (($conv['modalidad_elegida'] ?? '') === 'propia' ? ' o el pago único' : '') . ' dejás una seña de '
                 . $p['sena'] . ' y el resto cuando la web está lista.';
         case 'pago_link':
             if (empty($conv['presentado_ts'])) return 'Antes de contratar podés ver una primera muestra sin cargo. Si querés, te paso el formulario para prepararla.';
             $modalidad = (string)($conv['modalidad_elegida'] ?? '');
             if ($modalidad === '') {
                 $conv['postprecio_pregunta'] = 'modalidad';
-                return 'Qué modalidad preferís para avanzar: mensual, anual o pago único?';
+                return 'Qué modalidad preferís para avanzar: mensual o anual?';
             }
             // El formulario y el selector conservan 'unico' para el anual y 'propia' para el pago único.
             $clave = ['mensual' => 'mensual', 'anual' => 'anual', 'unico' => 'anual', 'propia' => 'unico'][$modalidad] ?? null;
-            if ($clave === null || !wabot_planes_paginas_corresponde($tipo, $conv, $cfg)) return null;
+            if ($clave === null || !wabot_planes_paginas_corresponde($tipo, $conv, $cfg, [$clave])) return null;
             $conv['postprecio_pregunta'] = '';
             $pagina = wabot_planes_paginas()[$tipo][$clave]['pagina'];
             return 'Acá tenés el detalle y cómo abonar el ' . ($clave === 'unico' ? 'pago único' : 'plan ' . $clave) . ': https://gokywebs.com/pago/' . $pagina . '/';
         case 'detalle_modalidades':
-            // Las páginas de las 3 modalidades (2-oct: solo si las pide). Si no
+            // Las páginas del mensual y el anual (2-oct: solo si las pide; 3-oct: sin el pago único). Si no
             // cobran los montos de esta charla, lo ve Pablo.
             $links = wabot_planes_links_texto($tipo, $conv, $cfg);
             return $links === '' ? null : $links;

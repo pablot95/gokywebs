@@ -327,6 +327,54 @@ function wabot_upgrade_aplicar(&$conv, $pendiente) {
 }
 
 /** Devuelve la respuesta final para el cliente (lista de mensajes). */
+/** ¿El bot está en modo "solo bienvenida" (3-oct)? Se cambia en el panel. */
+function wabot_solo_bienvenida($cfg) {
+    if (isset($GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'])) return (bool)$GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'];
+    return !empty($cfg['solo_bienvenida']);
+}
+
+/**
+ * Solo bienvenida (Pablo, 3-oct): en la charla el bot solo saluda al que
+ * escribe por primera vez, con el texto de Pablo; todo lo demás lo contesta
+ * él. Los formularios, las demos, las plantillas y los avisos automáticos
+ * siguen como siempre (no pasan por acá). Lo que el cliente cuenta se sigue
+ * anotando en la ficha.
+ */
+function wabot_solo_bienvenida_turno($texto, &$conv, $cfg) {
+    wabot_turno_preparar($conv, $cfg, time());
+    if (trim((string)$texto) !== '') {
+        wabot_ficha_actualizar($conv, $texto);
+        wabot_web_propia_anotar($conv, $texto, $cfg);
+    }
+    if (!empty($conv['bot_off'])) return [];
+    // Con cualquier mensaje nuestro en la charla (del bot o de Pablo), ya no es nuevo.
+    $hablamos = false;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true)) { $hablamos = true; break; }
+    }
+    // Un audio o una foto que no se pudo leer llega vacío: se saluda igual.
+    if (!$hablamos && empty($conv['bienvenida_ts']) && trim((string)$texto) !== '') {
+        // Ni al proveedor con su promo ni al que no viene a comprar (conocido, laboral, cliente).
+        if (wabot_texto_es_proveedor($texto)) return wabot_cerrar_proveedor($conv);
+        $contexto = wabot_contexto_consulta($texto, $conv);
+        if ($contexto !== null) {
+            $conv['contexto_consulta'] = $contexto;
+            $conv['seguimiento_bloqueado'] = true;
+            $hablamos = true;
+        }
+    }
+    if ($hablamos || !empty($conv['bienvenida_ts'])) {
+        $conv['handoff_pendiente'] = true;
+        $conv['ultimo_ts'] = time();
+        return [];
+    }
+    $conv['bienvenida_ts'] = time();
+    $conv['fase'] = 'menu';
+    $conv['ultimo_ts'] = time();
+    wabot_evento_sesion($conv, 'bienvenida');
+    return [trim((string)$cfg['bienvenida'])];
+}
+
 function wabot_responder($texto, &$conv, $cfg) {
     /* Lo primero de todo: si este cliente ya venía hablando por el otro canal,
      * se trae lo que dejó allá ANTES de que nadie lea el estado. Si no, el
@@ -337,6 +385,7 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     // Una intervención humana nunca vence por reloj ni por un mensaje nuevo.
     if (!empty($conv['control_manual'])) return [];
+    if (wabot_solo_bienvenida($cfg)) return wabot_solo_bienvenida_turno($texto, $conv, $cfg);
     $postprecio = wabot_postprecio_turno($texto, $conv, $cfg);
     if ($postprecio !== null) {
         $conv['ultimo_ts'] = time();

@@ -238,7 +238,9 @@ main {
 
 .plan-tabs {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    /* Tantas columnas como pestañas: 2 en mensual y anual, 3 en el pago único (3-oct-2026). */
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     gap: .25rem;
     margin-bottom: .9rem;
     padding: .3rem;

@@ -42,8 +42,8 @@ function wabot_respuestas_rapidas_default() {
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19000',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29000',
+            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -259,11 +259,11 @@ function wabot_respuestas_rapidas_normalizar($valor) {
 }
 
 /** Arranque del bloque de planes, el mismo que manda el bot. */
-const WABOT_RR_BLOQUE_PLANES = 'Podés elegir una de estas 3 modalidades de pago:';
+const WABOT_RR_BLOQUE_PLANES = 'Podés elegir una de estas 2 modalidades de pago:';
 /* Los arranques que tuvo antes, para reconocer los bloques guardados y
    pasarlos al texto de hoy: "dos planes" hasta el 21-sep, "tres opciones"
-   hasta el 24-sep. */
-const WABOT_RR_BLOQUES_PLANES_ANTERIORES = ['Podés elegir entre tres opciones:', 'Podés elegir entre dos planes:'];
+   hasta el 24-sep, "3 modalidades" (con el pago único) hasta el 3-oct. */
+const WABOT_RR_BLOQUES_PLANES_ANTERIORES = ['Podés elegir una de estas 3 modalidades de pago:', 'Podés elegir entre tres opciones:', 'Podés elegir entre dos planes:'];
 
 /* Sin montos escritos a mano (26-sep a la noche): {sena} y {precio_unico} los
    completa wabot_respuestas_rapidas_montos() con los de cada charla. */
@@ -275,7 +275,9 @@ const WABOT_RR_PAGO_UNICO = 'Con el pago único, la web queda abonada en su tota
  * mande en el turno del precio, sino si el cliente pregunta, y que estén en
  * las respuestas rápidas). Los marcadores los completa
  * wabot_respuestas_rapidas_montos() con las páginas de pago/ del tipo de la charla. */
-const WABOT_RR_DETALLE_MODALIDADES = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
+const WABOT_RR_DETALLE_MODALIDADES = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}";
+// Hasta el 3-oct traía también el pago único, que dejó de ofrecerse.
+const WABOT_RR_DETALLE_MODALIDADES_ANTES = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
 const WABOT_RR_CAMBIOS_PLAN = 'El plan mensual y el anual incluyen un cambio por mes en la web. Con el pago único, un cambio que pidas después de entregada la web se cotiza aparte.';
 
 /** Las recomendaciones de fábrica anteriores, por tipo de web. */
@@ -810,12 +812,16 @@ function wabot_respuestas_rapidas_precios_1oct($categorias) {
     foreach ($categorias as &$categoria) {
         foreach ($categoria['items'] as &$texto) {
             if (str_starts_with($texto, 'Te mando el link de Mercado Pago para activar el plan mensual ')) {
-                // 2-oct: los planes de MP bajaron a $19.000 / $29.000 (mismos links).
+                // 2-oct: los planes de MP bajaron a $19.000 / $29.000 (mismos links); 3-oct: $20.000 / $30.000.
                 $texto = str_replace(['($25.000 por mes)', 'pago/mensual25', '($35.000 por mes)', 'pago/mensual35',
-                        '($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900'],
-                    ['($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000',
-                        '($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000'], $texto);
+                        '($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900',
+                        '($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000'],
+                    ['($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000',
+                        '($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000',
+                        '($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000'], $texto);
             }
+            // 3-oct: el detalle de las modalidades ya no trae el pago único.
+            if ($texto === WABOT_RR_DETALLE_MODALIDADES_ANTES) $texto = WABOT_RR_DETALLE_MODALIDADES;
         }
         unset($texto);
         $categoria['items'] = array_values(array_unique($categoria['items']));

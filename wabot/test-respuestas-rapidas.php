@@ -4,7 +4,9 @@
  * del panel a los dos planes (Pablo, 19-sep): plan anual con seña o plan
  * mensual, y el pago único solo para la web propia (solo CLI). Desde el 26-sep
  * a la noche son 3 modalidades (plan mensual, plan anual y pago único), con el
- * plan mensual a $25.000 / $35.000 y sin el plan con cambios (sección 7).
+ * plan mensual a $25.000 / $35.000 y sin el plan con cambios (sección 7). Desde
+ * el 3-oct el bloque vuelve a 2 modalidades (mensual $20.000 / $30.000 y anual):
+ * el pago único queda solo para el que pide el código propio.
  *
  * Las respuestas viven en data/respuestas-rapidas.json del server y se editan
  * desde el panel; la migración corre al cargarlas. Tiene que cambiar las que
@@ -29,17 +31,17 @@ file_put_contents($marca, 'test');
 /** Los montos de hoy: desde el 26-sep las respuestas de precio los toman de textos.php. */
 require_once __DIR__ . '/textos.php';
 $T = wabot_textos_default()['tipos'];
-/** Las tres líneas del bloque de hoy, en el orden de la imagen del precio (26-sep a la noche). */
+/** Las dos líneas del bloque de hoy (3-oct: mensual y anual, sin el pago único), y lo que sigue debajo. */
 $lineasHoy = static fn($tipo) => '1. Plan mensual: ' . $T[$tipo]['mensualidad'] . " por mes, incluye mantenimiento\n2. Plan anual: "
-    . $T[$tipo]['precio'] . " por año, incluye mantenimiento\n3. Pago único: " . $T[$tipo]['precio_unico'] . ' una vez, NO incluye mantenimiento*';
+    . $T[$tipo]['precio'] . " por año, incluye mantenimiento\n\nLas 2 incluyen la web completa:";
 /** Los links de Pagos para activar el plan mensual, con su monto y su página. */
 $linkSitio = static fn($precio, $pagina) => 'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional (' . $precio
     . ' por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/' . $pagina;
 $linkTienda = static fn($precio, $pagina) => 'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ('
     . $precio . ' por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/' . $pagina;
-// Los de hoy (26-sep a la noche): los planes de Mercado Pago de $25.000 y $35.000.
-$linkSitioHoy = $linkSitio('$19.000', 'mensual19000');
-$linkTiendaHoy = $linkTienda('$29.000', 'mensual29000');
+// Los de hoy (3-oct): los planes de Mercado Pago de $20.000 y $30.000.
+$linkSitioHoy = $linkSitio('$20.000', 'mensual20000');
+$linkTiendaHoy = $linkTienda('$30.000', 'mensual30000');
 
 /** Las cuatro de precio del 15/16-sep, tal cual venían de fábrica. */
 $preciosViejos = require __DIR__ . '/test-respuestas-rapidas-viejas.php';
@@ -85,13 +87,14 @@ $planes = rr_items($r, 'Presupuesto y planes');
 caso('ya no quedan "Son alternativas", "Lo mejor para" ni el primer año del pago único',
     mb_strpos($todo, 'Son alternativas') === false && mb_strpos($todo, 'Lo mejor para') === false && mb_strpos($todo, 'durante el primer año') === false);
 /* Desde el 26-sep a la noche, en el orden de la imagen del precio: 1 plan
- * mensual, 2 plan anual, 3 pago único. */
-caso('las cuatro de precio con las 3 modalidades y lo que incluyen',
+ * mensual, 2 plan anual (y hasta el 3-oct, 3 pago único). */
+caso('las cuatro de precio con las 2 modalidades y lo que incluyen (3-oct)',
     mb_strpos($planes[0], $lineasHoy('landing')) !== false && mb_strpos($planes[1], $lineasHoy('ecommerce')) !== false
     && mb_strpos($planes[2], $lineasHoy('inmobiliaria')) !== false && mb_strpos($planes[3], 'cursos') !== false
     && mb_strpos($planes[3], $lineasHoy('elearning')) !== false
-    && mb_strpos($planes[0], 'Las 3 incluyen la web completa:') !== false
-    && str_ends_with($planes[0], '*Con el pago único el mantenimiento se puede contratar por separado, y requiere la renovación del hosting y el dominio. Se puede pagar en cuotas con intereses.'), $planes[0]);
+    && mb_strpos($planes[0], 'Podés elegir una de estas 2 modalidades de pago:') !== false
+    && mb_stripos($planes[0], 'pago único') === false
+    && str_ends_with($planes[0], "Y también el mantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico\n✓ Copia de seguridad\n✓ Un cambio por mes"), $planes[0]);
 // 26-sep: con el test de precios, el anual y el mensual del panel se habían quedado en $120.000 / $20.000.
 caso('los cuatro bloques son el que manda el bot para su tipo, con los montos de textos.php (26-sep)',
     count(array_filter(['landing', 'ecommerce', 'inmobiliaria', 'elearning'], fn($tipo, $i) =>
@@ -99,7 +102,7 @@ caso('los cuatro bloques son el que manda el bot para su tipo, con los montos de
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
     count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4
-    && mb_strpos($planes[1], "El plan mensual y el anual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
+    && mb_strpos($planes[1], "Y también el mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
 // Sin montos escritos a mano (26-sep a la noche): {sena} y {precio_unico} los completa cada charla.
 caso('se suman la seña del plan anual y la explicación del pago único, con marcadores',
     count(array_filter($planes, fn($t) => $t === WABOT_RR_ANUAL_SENA)) === 1 && count(array_filter($planes, fn($t) => $t === WABOT_RR_PAGO_UNICO)) === 1
@@ -110,8 +113,9 @@ $pagos = rr_items($r, 'Pagos');
 caso('sus datos para la seña quedan', $pagos[0] === 'Te paso los datos para la seña. Alias: gokywebs.mp');
 /* El link único del 19-sep se separó en uno por plan (25-sep), el test de
  * precios del 26-sep los movió a $30.000 / $40.000 y a la noche quedaron en
- * $25.000 / $35.000, con los planes de Mercado Pago que ya existían. */
-caso('los links de Mercado Pago son los del plan mensual de cada tipo, $25.000 (mensual25) y $35.000 (mensual35)',
+ * $25.000 / $35.000, con los planes de Mercado Pago que ya existían; el 2-oct,
+ * $19.000 / $29.000, y el 3-oct, $20.000 / $30.000. */
+caso('los links de Mercado Pago son los del plan mensual de cada tipo, $20.000 (mensual20000) y $30.000 (mensual30000)',
     $pagos[1] === $linkSitioHoy && $pagos[2] === $linkTiendaHoy, $pagos[1] . "\n" . $pagos[2]);
 caso('se suma el aviso de la renovación del plan anual', mb_strpos(end($pagos), 'toca renovar el plan anual') !== false);
 caso('funciones: incluido con los dos planes, y la web propia sin hosting ni mantenimiento',
@@ -139,7 +143,7 @@ caso('una categoría de precios reescrita a mano no se vuelve a completar',
 echo "— 3. Sin archivo, y la primera versión de la organización —\n";
 
 @unlink($ruta);
-caso('sin archivo salen las de fábrica, ya con las 3 modalidades',
+caso('sin archivo salen las de fábrica, ya con las 2 modalidades (3-oct)',
     count(array_filter(array_merge(...array_column(wabot_respuestas_rapidas_load(), 'items')), fn($t) => mb_strpos($t, $lineasHoy('landing')) !== false)) === 1);
 $primera = rr_archivo_viejo($preciosViejos);
 foreach ($primera as &$cat) if ($cat['titulo'] === 'Presupuesto y planes') $cat['items'] = [$preciosViejos[1]];
@@ -188,9 +192,11 @@ caso('los cuatro bloques quedan con los precios de hoy',
     && mb_strpos($planes21[2], $lineasHoy('inmobiliaria')) !== false
     && mb_strpos($planes21[3], $lineasHoy('elearning')) !== false, $planes21[0]);
 // Desde el 26-sep a la noche el bloque vuelve a decir "por año" y "por mes", pero numerado.
+// 3-oct: $140.000 vuelve a ser el anual del sitio profesional: solo puede quedar en su bloque, el primero.
 caso('no queda ningún monto viejo ni las viñetas del 19-sep',
-    count(array_filter($planes21, fn($t) => mb_strpos($t, '$140.000') !== false || mb_strpos($t, '$230.000') !== false
-        || mb_strpos($t, '• Plan') !== false || mb_strpos($t, 'Hosting y dominio .com.ar') !== false)) === 0, implode("\n", $planes21));
+    count(array_filter($planes21, fn($t) => mb_strpos($t, '$230.000') !== false
+        || mb_strpos($t, '• Plan') !== false || mb_strpos($t, 'Hosting y dominio .com.ar') !== false)) === 0
+    && count(array_filter(array_slice($planes21, 1), fn($t) => mb_strpos($t, '$140.000') !== false)) === 0, implode("\n", $planes21));
 caso('las recomendaciones de fábrica viejas pasan a las cortas de ahora',
     mb_strpos($planes21[0], 'Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio') === 0
     && mb_strpos($planes21[2], 'Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros') === 0, $planes21[2]);
@@ -223,10 +229,20 @@ $suyo24 = 'Para tu estudio te armamos una web con tus áreas de práctica.';
 $viejo24 = $suyo24 . "\n\nPodés elegir entre tres opciones:\n\n1. Plan anual: \$120.000 incluye mantenimiento\n2. Plan mensual: \$20.000 incluye mantenimiento\n3. Pago único: \$200.000 NO incluye mantenimiento*";
 $al24 = wabot_respuestas_rapidas_precios_al_dia([['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [$viejo24]]]);
 $item24 = (string)($al24[0]['items'][0] ?? '');
-caso('un bloque guardado con "tres opciones" pasa a las 3 modalidades de pago',
-    mb_strpos($item24, 'Podés elegir una de estas 3 modalidades de pago:') !== false
-    && mb_strpos($item24, 'Podés elegir entre tres opciones') === false, $item24);
+// 3-oct: el arranque de hoy es "Podés elegir una de estas 2 modalidades de pago:", sin el pago único.
+caso('un bloque guardado con "tres opciones" pasa a las modalidades de hoy (2 desde el 3-oct)',
+    mb_strpos($item24, 'Podés elegir una de estas 2 modalidades de pago:') !== false
+    && mb_strpos($item24, 'Podés elegir entre tres opciones') === false && mb_stripos($item24, 'pago único') === false, $item24);
 caso('y la recomendación de Pablo queda arriba, igual', mb_strpos($item24, $suyo24) === 0, $item24);
+/* 3-oct: un bloque guardado con "3 modalidades" (mensual, anual y pago único,
+ * del 24-sep al 3-oct) pasa a las 2 de hoy, sin tocar la recomendación. */
+$suyo3oct = 'Para tu consultorio te armamos un sitio profesional con tus especialidades.';
+$viejo3oct = $suyo3oct . "\n\nPodés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: \$19.000 por mes, incluye mantenimiento\n"
+    . "2. Plan anual: \$149.000 por año, incluye mantenimiento\n3. Pago único: \$190.000 una vez, NO incluye mantenimiento*";
+$item3oct = (string)(wabot_respuestas_rapidas_precios_al_dia([['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [$viejo3oct]]])[0]['items'][0] ?? '');
+caso('un bloque guardado con las 3 modalidades pasa a las 2 de hoy, con los montos de la lista y sin el pago único (3-oct)',
+    mb_strpos($item3oct, $suyo3oct) === 0 && mb_strpos($item3oct, $lineasHoy('landing')) !== false
+    && mb_stripos($item3oct, 'pago único') === false && mb_strpos($item3oct, '3 modalidades') === false, $item3oct);
 
 echo "— 5. 26-sep: las respuestas de los chats, y las de antes ocultas salvo los precios —\n";
 
@@ -261,7 +277,7 @@ caso('lo que Pablo había escrito a mano sigue entre las ocultas',
  * quedan con los planes mensuales de hoy y sin el plan con cambios, también
  * entre las ocultas (wabot_respuestas_rapidas_precios_26sep_noche). */
 $pagos26 = rr_items($r26, 'Pagos');
-caso('sus links del plan mensual pasan a mensual25 y mensual35 (26-sep a la noche)',
+caso('sus links del plan mensual pasan a los de hoy, mensual20000 y mensual30000 (26-sep a la noche; 3-oct)',
     in_array($linkSitioHoy, $pagos26, true) && in_array($linkTiendaHoy, $pagos26, true)
     && !preg_match('/pago\/mensual(20|30|40)\b/u', implode("\n", $pagos26)), implode("\n", $pagos26));
 caso('su plan mensual sin permanencia queda con los montos de hoy',
@@ -320,7 +336,7 @@ caso('sitio profesional: la seña y el saldo del plan anual de lista',
 $congelada = ['tipo' => 'ecommerce', 'precio_cotizado' => '$190.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$30.000', 'precio_modelo' => 'anual'];
 $sinApuro = $visible($congelada, 'Sin apuro')[0];
 caso('tienda cotizada antes del test de precios: le sale su mensualidad y su plan anual',
-    mb_strpos($sinApuro, 'con el plan mensual son $29.000 por mes') !== false
+    mb_strpos($sinApuro, 'con el plan mensual son $30.000 por mes') !== false
     && mb_strpos($visible($congelada, 'Dudas de planes')[6], 'el anual es de $190.000') !== false, $sinApuro);
 $doble = ['tipo' => 'ecommerce', 'precio_cotizado' => '$290.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$25.000', 'precio_modelo' => 'doble'];
 caso('cotizada con el pago único del 15 al 18-sep: el plan anual sale de lista, no de aquel pago único',
@@ -363,7 +379,7 @@ $antesNoche = [
 ];
 $noche = wabot_respuestas_rapidas_precios_26sep_noche($antesNoche);
 $pagosNoche = rr_items(wabot_respuestas_rapidas_precios_1oct($noche), 'Pagos');
-caso('los links del test de precios pasan a mensual25 y mensual35, con sus montos',
+caso('los links del test de precios pasan a los de hoy (mensual20000 y mensual30000), con sus montos',
     ($pagosNoche[0] ?? '') === $linkSitioHoy && ($pagosNoche[1] ?? '') === $linkTiendaHoy, implode("\n", $pagosNoche));
 caso('un link que Pablo reescribió no se toca', in_array($linkEditado, $pagosNoche, true));
 caso('el mensual sin permanencia, con los montos del 19-sep o del test de precios, queda una sola vez con los de hoy',
@@ -382,12 +398,12 @@ caso('no queda el plan con cambios ni un link de antes',
 
 // Los de fábrica ya traen lo de esa noche, y los links llevan a páginas que existen, con su monto.
 $fabricaNoche = wabot_respuestas_rapidas_default();
-caso('los de fábrica traen los links de $25.000 y $35.000 y los textos con marcadores',
+caso('los de fábrica traen los links de $20.000 y $30.000 y los textos con marcadores',
     in_array($linkSitioHoy, rr_items($fabricaNoche, 'Pagos'), true) && in_array($linkTiendaHoy, rr_items($fabricaNoche, 'Pagos'), true)
     && in_array(WABOT_RR_ANUAL_SENA, rr_items($fabricaNoche, 'Presupuesto y planes'), true)
     && in_array(WABOT_RR_PAGO_UNICO, rr_items($fabricaNoche, 'Presupuesto y planes'), true)
     && wabot_respuestas_rapidas_precios_26sep_noche($fabricaNoche) === $fabricaNoche);
-foreach (['mensual19000' => $T['landing']['mensualidad'], 'mensual29000' => $T['ecommerce']['mensualidad']] as $pagina => $monto) {
+foreach (['mensual20000' => $T['landing']['mensualidad'], 'mensual30000' => $T['ecommerce']['mensualidad']] as $pagina => $monto) {
     $html = (string)@file_get_contents(__DIR__ . '/../pago/' . $pagina . '/index.html');
     caso("la página gokywebs.com/pago/$pagina existe y cobra $monto por mes, lo mismo que la lista",
         $html !== '' && mb_strpos($html, $monto . ' por mes') !== false);
@@ -414,16 +430,22 @@ caso('si la lista del pago único sube, a la tienda ya cotizada le sale el suyo'
     wabot_respuestas_rapidas_montos(WABOT_RR_PAGO_UNICO, $tiendaCongelada, $cfgSubeUnico));
 
 /* 2-oct (Pablo): el detalle de cada modalidad sale si el cliente pregunta y
- * queda en las respuestas rápidas, con las páginas del tipo de la charla. */
-$detalleDe = static fn($m, $a, $u) => "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a\nPago único: gokywebs.com/pago/$u";
-caso('detalle de las modalidades: el sitio profesional, con sus 3 páginas',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual19000', 'anual149', 'unico190'));
+ * queda en las respuestas rápidas, con las páginas del tipo de la charla.
+ * Desde el 3-oct, solo el mensual y el anual. */
+$detalleDe = static fn($m, $a) => "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a";
+caso('detalle de las modalidades: el sitio profesional, con sus 2 páginas (3-oct)',
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual140'));
 caso('detalle de las modalidades: la inmobiliaria, con las de la tienda',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual29000', 'anual190', 'unico290'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual220'));
 $sinTipo = wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, null, $cfgNoche);
-caso('detalle de las modalidades sin tipo: una página por grupo',
-    str_contains($sinTipo, 'gokywebs.com/pago/mensual19000 (sitio profesional) o gokywebs.com/pago/mensual29000 (tienda, cursos o inmobiliaria)')
-    && !str_contains($sinTipo, '{link_'), $sinTipo);
+caso('detalle de las modalidades sin tipo: una página por grupo, sin el pago único',
+    str_contains($sinTipo, 'gokywebs.com/pago/mensual20000 (sitio profesional) o gokywebs.com/pago/mensual30000 (tienda, cursos o inmobiliaria)')
+    && str_contains($sinTipo, 'gokywebs.com/pago/anual140 (sitio profesional) o gokywebs.com/pago/anual220 (tienda, cursos o inmobiliaria)')
+    && !str_contains($sinTipo, '{link_') && !str_contains($sinTipo, 'Pago único'), $sinTipo);
+// 3-oct: el detalle guardado con las 3 (con el pago único) pasa al de 2.
+$detalleViejo = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
+caso('el detalle guardado con el pago único pasa al de 2 modalidades (3-oct)',
+    rr_items(wabot_respuestas_rapidas_precios_1oct([['titulo' => 'Precios', 'items' => ['b', $detalleViejo]]]), 'Precios') === ['b', WABOT_RR_DETALLE_MODALIDADES]);
 $conPrecios = [['titulo' => 'Muestra gratis', 'items' => ['a']], ['titulo' => 'Precios', 'items' => ['b']]];
 $sumado = wabot_respuestas_rapidas_detalle_2oct($conPrecios);
 caso('el detalle se suma al final de Precios, una sola vez',

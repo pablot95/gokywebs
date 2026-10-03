@@ -20,6 +20,8 @@
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 error_reporting(E_ALL & ~E_DEPRECATED);
+// Las charlas completas, no el modo "solo bienvenida" del 3-oct.
+$GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = false;
 require_once __DIR__ . '/redactor.php';
 
 $escenariosPath = $argv[1] ?? (__DIR__ . '/test-charlas.json');

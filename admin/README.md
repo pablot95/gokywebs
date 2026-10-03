@@ -43,7 +43,7 @@ por el alert() del panel.
 
 ## Modelo de datos (`clientes`)
 
-> **1-oct-2026: 3 modalidades,** en el orden de las imágenes del bot: plan mensual (`mensual`: $19.000 el sitio profesional, $29.000 el resto), plan anual (`unico`: $149.000 / $190.000 por año, seña de $60.000, el resto al entregar y el cobro cada año) y pago único (`propia`: $190.000 / $290.000, seña de $60.000 y el resto al entregar, con el primer año de hosting y dominio; el mantenimiento va aparte). Pasar a Cliente pregunta 1, 2 o 3 en ese orden. Los montos están en `PLANES` (dashboard.js) y en el bot (wabot/textos.php). Lo de abajo describe los modelos anteriores, que el panel sigue leyendo en los docs viejos.
+> **1-oct-2026: 3 modalidades** (montos del 3-oct-2026), en el orden de las imágenes del bot: plan mensual (`mensual`: $20.000 el sitio profesional, $30.000 el resto), plan anual (`unico`: $140.000 / $220.000 por año, seña de $60.000, el resto al entregar y el cobro cada año) y pago único (`propia`: $220.000 / $330.000, seña de $60.000 y el resto al entregar, con el primer año de hosting y dominio; el mantenimiento va aparte). Desde el 3-oct-2026 el pago único ya no se ofrece al público (presupuestos y /pago/ muestran solo mensual y anual): es para quien pide la titularidad del código y lo maneja Pablo a mano. Pasar a Cliente pregunta 1, 2 o 3 en ese orden. Los montos están en `PLANES` (dashboard.js) y en el bot (wabot/textos.php). Lo de abajo describe los modelos anteriores, que el panel sigue leyendo en los docs viejos.
 
 Desde el 15-sep-2026 la misma web se contrata de **dos maneras**, y cada cliente guarda cuál eligió en `modalidad`:
 

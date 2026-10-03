@@ -87,7 +87,8 @@ caso('pregunta de info en el primer mensaje → responde con los dos pares y pre
  * y se dice desde el primer mensaje, con el plan mensual al lado. */
 caso('sin tipo cotizado no da montos: explica la suscripción y pregunta a qué se dedica (Pablo, 14-sep)',
     strpos(implode("\n", (array)$r), '$') === false && mb_stripos(implode("\n", (array)$r), 'contame a qué te dedicás') !== false);
-caso('nombra las 3 modalidades, sin montos (19-sep; 3 desde el 26-sep)', stripos($r[0], 'Hay 3 modalidades') !== false, $r[0]);
+caso('nombra las 2 modalidades, sin montos (19-sep; 3 desde el 26-sep; 2 desde el 3-oct)', stripos($r[0], 'Hay 2 modalidades') !== false
+    && mb_stripos($r[0], 'pago único') === false, $r[0]);
 
 echo "— La bienvenida y sus tres opciones (28-sep) —\n";
 
@@ -930,8 +931,8 @@ caso('NO dice ningún monto', strpos($r[0], '$') === false);
 // La pregunta por la plata es otra: ahí sí van los montos, y nunca la seña.
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('como se paga?', $c, $cfg);
-caso('preguntar cómo se paga explica las 3 modalidades, sin montos antes de cotizar (19-sep; 26-sep)',
-    stripos($r[0], 'Hay 3 modalidades') !== false && strpos($r[0], '$') === false, $r[0]);
+caso('preguntar cómo se paga explica las 2 modalidades, sin montos antes de cotizar (19-sep; 26-sep; 3-oct)',
+    stripos($r[0], 'Hay 2 modalidades') !== false && strpos($r[0], '$') === false && mb_stripos($r[0], 'pago único') === false, $r[0]);
 caso('pero sí cómo se paga', stripos($r[0], 'Mercado Pago') !== false);
 
 // Y si pregunta las dos cosas, van las dos.
@@ -3558,7 +3559,8 @@ $mantSinTipo = wabot_texto_mantenimiento(['tipo' => null], $cfg);
 caso('sin tipo dice las mensualidades de la lista, por tipo (15-sep)',
     strpos($mantSinTipo, '$25.000 por mes en sitio profesional') !== false && strpos($mantSinTipo, '$35.000 en tienda online, plataforma de cursos o inmobiliaria') !== false,
     $mantSinTipo);
-caso('y presenta los dos planes', mb_stripos($mantSinTipo, 'el anual') !== false && mb_stripos($mantSinTipo, 'el mensual') !== false);
+// 3-oct: "Va incluido en el plan mensual y en el anual".
+caso('y presenta los dos planes', mb_stripos($mantSinTipo, 'el anual') !== false && mb_stripos($mantSinTipo, 'plan mensual') !== false, $mantSinTipo);
 /* 10-sep: antes de la demo no se manda a nadie a la página de la suscripción:
  * el plan arranca a los 7 días del primer pago. */
 caso('y no manda a suscribirse antes de tiempo: sin el link de ninguno de los planes',

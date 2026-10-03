@@ -16,6 +16,8 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 $GLOBALS['WABOT_TEST_FALLAS'] = 0;
 $GLOBALS['WABOT_TEST_TOTAL']  = 0;
+// Las suites prueban la charla completa: el modo "solo bienvenida" (3-oct) se prueba en test-solo-bienvenida.php.
+if (!isset($GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'])) $GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = false;
 
 require_once __DIR__ . '/redactor.php';
 
@@ -82,16 +84,16 @@ function tiene_form($r) { return strpos(implode(' ', (array)$r), 'gokywebs.com/f
  * Los textos se escriben acá a mano, no se sacan del código que prueban.
  */
 
-/** Las 3 modalidades como cierran la propuesta. */
-function modalidades_de_precio($mensual, $anual, $unico) {
-    return "Podés elegir 1 de estas 3 modalidades:\n\n1. Mensual: $mensual por mes, incluye mantenimiento\n"
-         . "2. Anual: $anual por año, incluye mantenimiento\n3. Pago único: $unico una vez, NO incluye mantenimiento";
+/** Las modalidades como cierran la propuesta: desde el 3-oct, mensual y anual ($unico ya no sale). */
+function modalidades_de_precio($mensual, $anual, $unico = '') {
+    return "Podés elegir 1 de estas 2 modalidades:\n\n1. Mensual: $mensual por mes, incluye mantenimiento\n"
+         . "2. Anual: $anual por año, incluye mantenimiento";
 }
 
 /** Los links de las páginas del tipo (ya no van en el turno del precio desde el 2-oct; solo si el cliente pregunta) — sitio profesional; tienda, cursos e inmobiliaria comparten. */
 function links_de_precio($tipo) {
-    [$m, $a, $u] = $tipo === 'landing' ? ['mensual19000', 'anual149', 'unico190'] : ['mensual29000', 'anual190', 'unico290'];
-    return "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a\nPago único: gokywebs.com/pago/$u";
+    [$m, $a] = $tipo === 'landing' ? ['mensual20000', 'anual140'] : ['mensual30000', 'anual220'];
+    return "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a";
 }
 
 /** ¿Salió el turno del precio de ese tipo? La propuesta que nombra lo que se arma, sin los links al detalle (2-oct). */

@@ -5894,7 +5894,7 @@ function wabot_texto_pago_generico($cfg) {
     // Sin tipo cotizado no se dan montos (14-sep): cómo se paga y la pregunta.
     $texto = trim((string)($cfg['info']['pago_generico'] ?? ''));
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
-        $texto = 'Hay 3 modalidades: el plan mensual, por Mercado Pago y sin permanencia; el plan anual, que arranca con una seña y después se renueva una vez por año, y el pago único, con una seña para arrancar y el resto al entregar. Las 3 incluyen el desarrollo completo de la web, y el mensual y el anual, además, el hosting, el dominio, el mantenimiento y el soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
+        $texto = 'Hay 2 modalidades: el plan mensual, por Mercado Pago y sin permanencia, o el plan anual, que arranca con una seña y después se renueva una vez por año. Las 2 incluyen el desarrollo completo de la web, el hosting, el dominio, el mantenimiento y el soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
     }
     return $texto;
 }
@@ -5952,7 +5952,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'Hay 3 modalidades: el plan mensual, por Mercado Pago y sin permanencia; el plan anual, que arranca con una seña y después se renueva una vez por año, y el pago único, con una seña para arrancar y el resto al entregar. Las 3 incluyen el desarrollo completo de la web, y el mensual y el anual, además, el hosting, el dominio, el mantenimiento y el soporte.';
+        return 'Hay 2 modalidades: el plan mensual, por Mercado Pago y sin permanencia, o el plan anual, que arranca con una seña y después se renueva una vez por año. Las 2 incluyen el desarrollo completo de la web, el hosting, el dominio, el mantenimiento y el soporte.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
@@ -6133,15 +6133,13 @@ function wabot_modalidades_anual_primero($conv) {
     return ($ts > 0 && $ts < 1790353244) || ($ts >= 1790478900 && $ts < 1790533800);
 }
 
-/** "plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
+/** "plan mensual de $20.000 o plan anual de $140.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if ($v['mensualidad'] === '') return $v['precio'];
     if (($v['modelo'] ?? '') === 'doble') return $v['precio'] . ' en un pago único o ' . $v['mensualidad'] . ' por mes';
-    // Las 3 modalidades, en el orden de la imagen del precio (27-sep).
-    $unico = trim((string)($v['precio_unico'] ?? ''));
-    if ($unico === '') return 'plan mensual de ' . $v['mensualidad'] . ' o plan anual de ' . $v['precio'];
-    return 'plan mensual de ' . $v['mensualidad'] . ', plan anual de ' . $v['precio'] . ' o pago único de ' . $unico;
+    // Desde el 3-oct se ofrecen el mensual y el anual; el pago único, solo al que pide el código propio.
+    return 'plan mensual de ' . $v['mensualidad'] . ' o plan anual de ' . $v['precio'];
 }
 /** El nombre de cada tipo como se dice en la tabla de precios. */
 function wabot_tipo_nombre_precio($tipo, $d) {
@@ -6409,7 +6407,8 @@ function wabot_precio_dos($tipo1, $tipo2, &$conv, $cfg) {
         'inmobiliaria' => 'dos webs inmobiliarias completas, cada una con su panel para administrarla',
     ];
     $corta = ['landing' => 'el sitio profesional', 'ecommerce' => 'la tienda online', 'elearning' => 'la plataforma de cursos', 'inmobiliaria' => 'la web inmobiliaria'];
-    $precios = function ($m, $a, $u) { return wabot_moneda($m) . ' por mes, ' . wabot_moneda($a) . ' por año o ' . wabot_moneda($u) . ' en un pago único'; };
+    // Desde el 3-oct, sin el pago único ($u queda por la firma).
+    $precios = function ($m, $a, $u) { return wabot_moneda($m) . ' por mes o ' . wabot_moneda($a) . ' por año'; };
     if ($tipo1 === $tipo2) {
         $webs = $iguales[$tipo1];
         $unaSola = 'cada una sale ' . $precios($n['m1'], $n['a1'], $n['u1']);
