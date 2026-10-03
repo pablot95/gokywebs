@@ -11,7 +11,7 @@
 
 Seña del anual y del pago único: $60.000. Saldos: $80.000/$160.000 para sitio profesional y $160.000/$270.000 para el resto. El mantenimiento aparte del pago único conserva su importe: $10.000/$15.000.
 
-Mensual profesional: `https://mpago.la/2nEoNGN`. Mensual resto: `https://mpago.la/2CQLnCv`. Los enlaces se incorporaron tal como fueron proporcionados; Mercado Pago bloqueó la consulta automatizada con HTTP 403, por lo que no se verificó allí el importe contratado.
+Mensual profesional: `https://mpago.la/1pfejMG`. Mensual resto: `https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b`. Los enlaces se incorporaron tal como fueron proporcionados; Mercado Pago bloqueó la consulta automatizada con HTTP 403, por lo que no se verificó allí el importe contratado.
 
 Los precios comerciales salen de `textos.php`; las páginas nuevas están en `/pago/mensual20000`, `/pago/mensual30000`, `/pago/anual140`, `/pago/anual220`, `/pago/unico220` y `/pago/unico330` (3-oct: el bot ofrece solo mensual y anual; el pago único queda para el que pide el código propio). Se conservan las páginas anteriores para los planes existentes. El administrador conserva los montos guardados de cada cliente.
 

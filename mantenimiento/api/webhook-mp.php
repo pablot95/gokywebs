@@ -159,7 +159,7 @@ if ($status !== 'authorized' && !isset($MP_AVISOS[$status])) {
 //    - 19.000 → landing y 29.000 → mensual: planes del 2-oct-2026 (mismos links
 //      que 19.900 / 29.900; Pablo les bajó el monto en MP).
 //    - 20.000 → landing y 30.000 → mensual: planes de hoy (3-oct-2026), otra vez
-//      los mismos links (mpago.la/2nEoNGN y 2CQLnCv) con el monto subido en MP.
+//      los planes viejos de MP mpago.la/1pfejMG y 36a67a7e… (Pablo, 3-oct).
 //      Ya estaban en el mapa por los planes anteriores, con el mismo plan.
 $planId = (string)($pre['preapproval_plan_id'] ?? '');
 $MP_MONTOS = [

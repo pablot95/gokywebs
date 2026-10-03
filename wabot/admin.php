@@ -1461,10 +1461,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-item-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); font-size:11.5px; margin-top:2px; }
 /* En escritorio las pestañas tienen una franja propia: el chat termina antes
    y ningún botón queda apoyado encima de los mensajes o del scroll. */
-@media (min-width: 1181px) and (hover: hover) {
+@media (min-width: 1181px) {
   body.conv-full .conv-main { margin-right:190px; }
 }
-@media (max-width: 1180px), (hover: none) {
+@media (max-width: 1180px) {
   .rr-panel { display:none; }
 }
 .rr-buscador { position:absolute; left:0; right:0; bottom:calc(100% + 8px); z-index:80;

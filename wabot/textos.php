@@ -13,7 +13,7 @@
  * propiedad absoluta del código (info.web_propia, titularidad…); no se ofrece
  * en el precio. Hoy el bot está en "solo bienvenida" y el precio lo pasa Pablo.
  * - Mensual (3-oct, antes $19.000 / $29.000): $20.000 sitio profesional; $30.000 resto. Mercado Pago:
- *   mpago.la/2nEoNGN y mpago.la/2CQLnCv. Sin pago inicial adicional.
+ *   mpago.la/1pfejMG (sitio) y el plan 36a67a7e… de MP (resto; 3-oct, planes nuevos). Sin pago inicial adicional.
  * - Anual (antes $149.000 / $190.000): $140.000 sitio profesional; $220.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
  * - Pago único (antes $190.000 / $290.000): $220.000 sitio profesional; $330.000 resto. Misma seña,
