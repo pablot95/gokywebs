@@ -1209,7 +1209,7 @@ if (document.readyState === 'loading') {
             msg += 'Nombre: ' + name + '\n';
             msg += 'Negocio: ' + business + '\n';
             
-            window.open('https://wa.me/5491125068578?text=' + encodeURIComponent(msg), '_blank');
+            window.open('https://wa.me/5491140688675?text=' + encodeURIComponent(msg), '_blank');
             bocetoForm.reset();
         });
     }

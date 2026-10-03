@@ -19,7 +19,7 @@
    página para el aviso de pago rechazado (ver checkFailedPayment más abajo);
    reusar esa clave para el monto lo pisaría. */
 
-const WHATSAPP_NUMBER = '5491125068578'; // número real de Gokywebs (mismo que el resto del sitio)
+const WHATSAPP_NUMBER = '5491140688675'; // número real de Gokywebs (mismo que el resto del sitio)
 const ALIAS = 'pablotravis';
 
 function getMontoFromQuery() {

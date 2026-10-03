@@ -424,7 +424,7 @@ const QUE_ES_DATA = {
     }
 };
 
-const WSP_NUM = '5491125068578';
+const WSP_NUM = '5491140688675';
 const wspLink = msg => `https://wa.me/${WSP_NUM}?text=${encodeURIComponent(msg)}`;
 
 const state = {
