@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/respuestas-rapidas-03oct.php';
+require_once __DIR__ . '/respuestas-rapidas-sugeridas.php';
 /**
  * Respuestas manuales del panel. Se guardan fuera del código para poder
  * administrarlas desde Wabot sin publicar archivos de nuevo.

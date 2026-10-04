@@ -176,7 +176,7 @@ function wabot_gemini_modelo($cfg = null) {
  */
 function wabot_ajustes_claves() {
     return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida',
-            'demora_segundos', 'demora_primer_mensaje', 'demora_entre_mensajes',
+            'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
@@ -1666,6 +1666,9 @@ function wabot_conv_load($clave) {
         'capi_eventos'                => [],
         'form_link_enviado'           => false,
         'form_link_ts'                => 0,
+        // Cuándo le llegó el link del formulario, lo haya mandado el bot o Pablo
+        // (panel o celular). Solo lo usa la lista del panel (4-oct).
+        'form_link_mandado_ts'        => 0,
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         // Pablo le contestó por fuera del sistema (su otro WhatsApp, un mail,
@@ -1875,6 +1878,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['oferta_diseno_ts'] = 0;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
+    $conv['form_link_mandado_ts'] = 0;
     $conv['turnos_sin_avance'] = 0;
     $conv['repeticiones_seguidas'] = 0;
     $conv['tandas_bot'] = [];
@@ -2069,7 +2073,31 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
         $conv['archivado'] = false;
         $conv['desarchivado_ts'] = $fila['ts'];
     }
+    if (($quien === 'bot' || $quien === 'humano') && empty($conv['form_link_mandado_ts'])
+        && wabot_texto_tiene_link_form($texto)) {
+        $conv['form_link_mandado_ts'] = $fila['ts'];
+    }
     $conv['transcript'][] = $fila;
+}
+
+/** ¿El texto lleva el link del formulario (gokywebs.com/form, con o sin código)? */
+function wabot_texto_tiene_link_form($texto) {
+    return preg_match('~gokywebs\.com/form(?![a-z0-9])~i', (string)$texto) === 1;
+}
+
+/**
+ * ¿Ya le llegó el link del formulario? Separa en el panel a los que recién
+ * llegan y averiguan de los que ya lo recibieron (Pablo, 4-oct). Mira la marca
+ * nueva, las del bot y, para los chats de antes de la marca, el transcript.
+ */
+function wabot_conv_form_recibido($cv) {
+    if (!empty($cv['form_link_mandado_ts']) || !empty($cv['link_form_enviado'])
+        || (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])) return true;
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        $q = $fila['q'] ?? '';
+        if (($q === 'bot' || $q === 'humano') && wabot_texto_tiene_link_form($fila['t'] ?? '')) return true;
+    }
+    return false;
 }
 
 /**
@@ -2997,6 +3025,8 @@ function wabot_lista_items() {
             'contestado' => wabot_conv_contestada($cv),
             'favorito' => !empty($cv['favorito']),
             'demo_url' => wabot_demo_url($cv),
+            'form_recibido' => wabot_conv_form_recibido($cv),
+            'form_completado' => (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado']),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });

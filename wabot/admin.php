@@ -416,6 +416,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 
         if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
         if (isset($_POST['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = max(0, min(60, (int)$_POST['demora_primer_mensaje']));
+        if (isset($_POST['demora_bienvenida']))     $cfg['demora_bienvenida']     = max(0, min(90, (int)$_POST['demora_bienvenida']));
         if (isset($_POST['demora_segundos']))       $cfg['demora_segundos']       = max(0, min(60, (int)$_POST['demora_segundos']));
         if (isset($_POST['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = max(0, min(15, (int)$_POST['demora_entre_mensajes']));
         if (isset($_POST['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = max(5, min(200, (int)$_POST['tipeo_por_segundo']));
@@ -811,6 +812,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
             'handoff_pendiente' => !empty($conv['handoff_pendiente']),
         ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    /* Las 1 o 2 respuestas rápidas que OpenAI sugiere para lo último que escribió
+       el cliente (4-oct). Ver respuestas-rapidas-sugeridas.php. */
+    if ($a === 'rr_sugerir' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        // OpenAI tarda unos segundos: sin soltar la sesión, el refresco del chat
+        // de cada 5 s quedaría esperando a que termine.
+        session_write_close();
+        $conv = wabot_conv_load($_POST['tel']);
+        echo json_encode(wabot_rr_sugeridas($conv, $respuestasRapidas, $cfg), JSON_UNESCAPED_UNICODE);
         exit;
     }
     /**
@@ -1446,26 +1458,40 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
 .conv-main .chat { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
 
-/* Respuestas rápidas: columna de botones que se abren con clic. */
-.rr-panel { position:fixed; right:10px; top:50%; transform:translateY(-50%); z-index:40; display:flex; flex-direction:column; gap:5px; }
-.rr-tab { position:relative; }
-.rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
-.rr-tab-ico { font-size:14px; line-height:1; }
-.rr-tab.rr-abierto .rr-tab-btn, .rr-tab-btn:focus-visible { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
-.rr-flyout { position:absolute; right:100%; top:calc(50% + var(--rr-ajuste-y, 0px)); transform:translateY(-50%) translateX(6px); margin-right:2px; width:360px; max-width:calc(100vw - 230px); max-height:min(calc(100vh - 24px), 700px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:8px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
-.rr-tab.rr-abierto .rr-flyout { visibility:visible; opacity:1; pointer-events:auto; }
-.rr-flyout-tit { position:sticky; top:-8px; z-index:1; margin:0 0 7px; padding:9px 10px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
-.rr-item { display:block; width:100%; margin:0 0 7px; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13.5px; line-height:1.48; cursor:pointer; }
-.rr-item:last-child { margin-bottom:0; }
+/* Respuestas rápidas en horizontal (4-oct): arriba del editor, una fila con
+   las 1 o 2 que sugiere la IA para lo último del cliente y otra con las
+   categorías. Un clic en una categoría abre su lista encima del chat. */
+.rr-barra { position:relative; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.rr-sugeridas { display:flex; align-items:stretch; gap:6px; min-width:0; }
+.rr-sugeridas[hidden] { display:none; }
+.rr-sug-tit { flex:none; align-self:center; color:var(--ac); font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+.rr-sug-pensando { align-self:center; color:var(--dim); font-size:12px; }
+.rr-sug { flex:1 1 0; min-width:0; display:block; padding:6px 10px; border:1px solid var(--ac); border-radius:9px; background:var(--ac-tenue); color:var(--tx); font:inherit; font-size:12.5px; line-height:1.4; text-align:left; cursor:pointer; }
+.rr-sug:hover, .rr-sug:focus-visible { background:var(--card-2); outline:0; }
+.rr-sug-cat { display:block; color:var(--ac); font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.rr-sug-txt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.rr-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--line-fuerte) transparent; padding-bottom:3px; }
+.rr-cats::-webkit-scrollbar { height:6px; }
+.rr-cats::-webkit-scrollbar-thumb { background:var(--line-fuerte); border-radius:3px; }
+.rr-cat { flex:none; display:flex; align-items:center; gap:5px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer; }
+.rr-cat:hover, .rr-cat:focus-visible, .rr-cat[aria-expanded="true"] { color:var(--tx); border-color:var(--ac); background:var(--card-2); outline:0; }
+.rr-cat-ico { font-size:14px; line-height:1; }
+.rr-pop { position:absolute; left:0; right:0; bottom:calc(100% + 6px); z-index:40; max-height:min(55vh, 460px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:0 8px 8px; }
+.rr-pop[hidden] { display:none; }
+.rr-pop-cab { position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 7px; padding:9px 2px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
+.rr-pop-cerrar { padding:2px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--dim); font:inherit; font-size:12px; cursor:pointer; }
+.rr-pop-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap:7px; }
+.rr-item { display:block; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
 .rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
-.rr-item-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); font-size:11.5px; margin-top:2px; }
-/* En escritorio las pestañas tienen una franja propia: el chat termina antes
-   y ningún botón queda apoyado encima de los mensajes o del scroll. */
-@media (min-width: 1181px) {
+.rr-item.rr-item-sugerida { border-color:var(--ac); }
+/* La franja derecha del escritorio ahora es solo de la navegación (.tabs-nav). */
+@media (min-width: 1181px) and (hover: hover) {
   body.conv-full .conv-main { margin-right:190px; }
 }
-@media (max-width: 1180px) {
-  .rr-panel { display:none; }
+@media (max-width: 720px) {
+  .rr-sugeridas { flex-wrap:wrap; }
+  .rr-sug { flex-basis:100%; }
+  .rr-sug-tit { flex-basis:100%; }
 }
 .rr-buscador { position:absolute; left:0; right:0; bottom:calc(100% + 8px); z-index:80;
     padding:8px; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:11px;
@@ -2052,7 +2078,8 @@ function burbujaCita(t, chat) {
         $usd = function ($v) { return 'US$ ' . number_format((float)$v, (float)$v < 1 ? 4 : 2, ',', '.'); };
         $num = function ($v) { return number_format((int)$v, 0, ',', '.'); };
         $nombresTarea = ['conversacion' => 'Conversación antes del precio', 'clasificador' => 'Clasificar mensajes',
-                         'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex'];
+                         'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex',
+                         'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel'];
         $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
     ?>
         <style>
@@ -2186,6 +2213,7 @@ function burbujaCita(t, chat) {
         <div class="card">
             <h2 style="margin-top:0">Tiempos</h2>
             <div class="fila">
+                <div><label>Segundos antes de la bienvenida (modo solo bienvenida)</label><input type="number" name="demora_bienvenida" min="0" max="90" value="<?= (int)($cfg['demora_bienvenida'] ?? 30) ?>" style="width:100px"></div>
                 <div><label>Segundos antes de contestar (primer mensaje del cliente)</label><input type="number" name="demora_primer_mensaje" min="0" max="60" value="<?= (int)($cfg['demora_primer_mensaje'] ?? 20) ?>" style="width:100px"></div>
                 <div><label>Segundos antes de contestar (resto de la charla)</label><input type="number" name="demora_segundos" min="0" max="60" value="<?= (int)($cfg['demora_segundos'] ?? 10) ?>" style="width:100px"></div>
                 <div><label>Segundos entre mensajes (si no va por longitud)</label><input type="number" name="demora_entre_mensajes" min="0" max="15" value="<?= (int)($cfg['demora_entre_mensajes'] ?? 2) ?>" style="width:100px"></div>
@@ -2425,18 +2453,16 @@ function burbujaCita(t, chat) {
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
-                    <!-- Siete vistas operativas y excluyentes: bot, derivado que aún
-                         espera al cliente, sin leer, leído sin contestar, todos los
-                         humanos, demos presentadas y ventana por vencer. Los filtros
+                    <!-- Vistas por etapa (4-oct): el bot solo da la bienvenida, así
+                         que ya no hay vista "Bot". Nuevos = recién llegan y averiguan;
+                         Con form = ya les llegó el link del formulario. Los filtros
                          históricos quedan en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="bot_hablando" title="Conversaciones que todavía está llevando y contestando el bot.">Bot</button>
-                        <button type="button" class="conv-chip" data-grupo="esperando_cliente" title="El bot mandó el último mensaje y derivó el chat, pero el cliente todavía no respondió. Completar el formulario no cuenta como respuesta.">Espera cliente</button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
-                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats humanos, excepto los que esperan al cliente y las demos ya presentadas.">Todos</button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario.">Nuevos <span class="conv-chip-n" id="cuentaNuevos">0</span></button>
+                        <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada.">Con form <span class="conv-chip-n" id="cuentaConForm">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
-                        <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
+                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats, menos los archivados.">Todos</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -2576,6 +2602,16 @@ function burbujaCita(t, chat) {
 
                 <div class="chat" id="chat"></div>
 
+                <!-- Respuestas rápidas: arriba, las 1 o 2 que sugiere la IA para lo
+                     último del cliente; abajo, las categorías. Un clic abre la
+                     categoría y otro copia el mensaje al editor para revisarlo
+                     antes de enviarlo: nunca se manda solo. -->
+                <div class="rr-barra" id="rrBarra">
+                    <div class="rr-pop" id="rrPop" role="menu" hidden></div>
+                    <div class="rr-sugeridas" id="rrSugeridas" aria-live="polite" hidden></div>
+                    <nav class="rr-cats" id="rrPanel" aria-label="Respuestas rápidas"></nav>
+                </div>
+
                 <div id="responder" style="margin-top:12px;position:relative">
                     <div class="rr-buscador" id="rrBuscador" hidden>
                         <div class="rr-buscador-cab">
@@ -2601,9 +2637,6 @@ function burbujaCita(t, chat) {
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
                 </div>
 
-                <!-- Respuestas rápidas: un clic abre la categoría y otro clic
-                     copia el mensaje al editor para revisarlo antes de enviarlo. -->
-                <nav class="rr-panel" id="rrPanel" aria-label="Respuestas rápidas"></nav>
             <?php else: ?>
                 <div class="conv-nada">
                     <?= $items ? 'Elegí una conversación de la izquierda para leerla y responder.' : 'Todavía no hay conversaciones. Cuando alguien le escriba al bot, va a aparecer acá.' ?>
@@ -2616,10 +2649,9 @@ function burbujaCita(t, chat) {
         const SEL = <?= json_encode($ver) ?>;
 
         /* ── Lista de la izquierda ── */
-        // Las siete vistas principales son excluyentes. Para separar "espera al
-        // cliente" de "espera a Pablo" se comparan los timestamps reales del
-        // último cliente y de la última salida. Las líneas `sistema` que agrega
-        // el formulario no participan, así completarlo no simula una respuesta.
+        // "Sin leer" compara los timestamps reales del último cliente y de la
+        // última salida. Las líneas `sistema` que agrega el formulario no
+        // participan, así completarlo no simula una respuesta.
         const GRUPOS_VALIDOS = new Set(['pago', 'prospecto', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
         // Solo para agrupar los encabezados dentro de la vista "No leídos".
         const GRUPOS_SIN_LEER = ['pago', 'prospecto', 'presentados', 'presentadas_48', 'muestra'];
@@ -2631,14 +2663,20 @@ function burbujaCita(t, chat) {
         function necesitaRespuesta(it) {
             return esChatHumano(it) && clienteRespondioDespues(it) && !it.contestado;
         }
-        function esperaAlCliente(it) {
-            return esChatHumano(it) && !!it.handoff_pendiente && !clienteRespondioDespues(it);
-        }
         function esDemoPresentada(it) {
             return it.grupo === 'presentados' || it.grupo === 'presentadas_48';
         }
         function esNoLeido(it) { return necesitaRespuesta(it) && !!it.no_leido; }
-        function esNoContestado(it) { return necesitaRespuesta(it) && !it.no_leido; }
+        /* Nuevos y Con form (4-oct): se separan por si ya les llegó el link del
+         * formulario (form_recibido, wabot_conv_form_recibido). Los que pagaron
+         * y las demos presentadas tienen su propia vista. */
+        function enEmbudo(it) { return it.grupo !== 'archivado' && it.grupo !== 'pago' && !esDemoPresentada(it); }
+        function esNuevo(it) { return enEmbudo(it) && !it.form_recibido; }
+        function esConForm(it) { return enEmbudo(it) && !!it.form_recibido; }
+        const SUBGRUPOS_CON_FORM = [
+            { clave: true,  titulo: 'Completaron el formulario' },
+            { clave: false, titulo: 'Todavía no lo completaron' },
+        ];
         const SUBGRUPOS_NO_LEIDOS = [
             { clave: 'derivado',    titulo: 'Te derivó la consulta' },
             { clave: 'pago',        titulo: 'Pagaron' },
@@ -2790,12 +2828,10 @@ function burbujaCita(t, chat) {
 
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
-            if (filtro === 'no_contestados') return esNoContestado(it);
-            if (filtro === 'bot_hablando') return it.grupo !== 'archivado' && botLlevaLaCharla(it);
-            if (filtro === 'esperando_cliente') return esperaAlCliente(it);
-            if (filtro === 'todos_humano') return esChatHumano(it) && !esperaAlCliente(it) && !esDemoPresentada(it);
+            if (filtro === 'nuevos') return esNuevo(it);
+            if (filtro === 'con_form') return esConForm(it);
+            if (filtro === 'todos_humano') return it.grupo !== 'archivado';
             if (filtro === 'demos_presentadas') return esDemoPresentada(it);
-            if (filtro === 'por_vencer') return esChatHumano(it) && it.canal !== 'instagram' && Number(it.ventana || 0) > 0;
             if (filtro === 'favorito') return !!it.favorito;
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
@@ -2806,16 +2842,6 @@ function burbujaCita(t, chat) {
         function entraEnGrupoActivo(it) {
             const filtro = [...filtrosActivos][0] || 'todos_humano';
             return cumpleFiltro(it, filtro);
-        }
-
-        function tiempoParaVencer(segundos) {
-            const s = Math.max(0, Number(segundos || 0));
-            if (s < 60) return 'vence en menos de 1 min';
-            const totalMinutos = Math.ceil(s / 60);
-            if (totalMinutos < 60) return 'vence en ' + totalMinutos + ' min';
-            const horas = Math.floor(totalMinutos / 60);
-            const minutos = totalMinutos % 60;
-            return 'vence en ' + horas + ' h' + (minutos ? ' ' + minutos + ' min' : '');
         }
 
         function renderFechasChats() {
@@ -2894,17 +2920,16 @@ function burbujaCita(t, chat) {
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, favorito: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, nuevos: 0, con_form: 0, favorito: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
-            const itemsOrdenados = filtrosActivos.has('por_vencer')
-                ? [...items].sort((a, b) => Number(a.ventana || 0) - Number(b.ventana || 0))
-                : items;
-            for (const it of itemsOrdenados) {
+            for (const it of items) {
                 const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
+                if (esNuevo(it)) cuentas.nuevos++;
+                if (esConForm(it)) cuentas.con_form++;
                 if (it.favorito) cuentas.favorito++;
                 if (esRTA(it)) cuentas.rta++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
@@ -2989,26 +3014,25 @@ function burbujaCita(t, chat) {
                 ult.textContent = (it.quien === 'cliente' ? '' : (it.quien === 'humano' ? 'Vos: ' : 'Bot: ')) + (it.ult || '—');
 
                 // Las filas quedan limpias: el filtro activo ya explica por qué
-                // está cada chat. Solo se conserva la cuenta regresiva cuando se
-                // usa expresamente la vista de conversaciones por vencer.
-                let pills = null;
-                if (filtrosActivos.has('por_vencer')) {
-                    pills = document.createElement('div');
-                    pills.className = 'conv-item-pills';
-                    const vence = document.createElement('span');
-                    vence.className = 'pill pausa';
-                    vence.textContent = tiempoParaVencer(it.ventana);
-                    pills.appendChild(vence);
-                }
-
+                // está cada chat.
                 body.appendChild(top); body.appendChild(ult);
-                if (pills) body.appendChild(pills);
                 a.appendChild(body);
                 renderizados.push({ it, el: a });
             }
 
             const soloSinLeer = filtrosActivos.size === 1 && filtrosActivos.has('no_leidos');
-            if (soloSinLeer && !buscandoGeneral) {
+            const soloConForm = filtrosActivos.size === 1 && filtrosActivos.has('con_form');
+            if (soloConForm && !buscandoGeneral) {
+                for (const sub of SUBGRUPOS_CON_FORM) {
+                    const deEsteGrupo = renderizados.filter(r => !!r.it.form_completado === sub.clave);
+                    if (!deEsteGrupo.length) continue;
+                    const encabezado = document.createElement('div');
+                    encabezado.className = 'conv-sub-header';
+                    encabezado.textContent = sub.titulo + ' (' + deEsteGrupo.length + ')';
+                    listaEl.appendChild(encabezado);
+                    for (const r of deEsteGrupo) listaEl.appendChild(r.el);
+                }
+            } else if (soloSinLeer && !buscandoGeneral) {
                 // Presentadas / Demos / Chats normales, en ese orden, cada una con
                 // su encabezado — solo si tiene algo, para no listar títulos vacíos.
                 for (const sub of SUBGRUPOS_NO_LEIDOS) {
@@ -3030,6 +3054,10 @@ function burbujaCita(t, chat) {
             if (elRta) elRta.textContent = cuentas.rta ?? 0;
             const elFavoritos = document.getElementById('cuentaFavoritos');
             if (elFavoritos) elFavoritos.textContent = cuentas.favorito ?? 0;
+            const elNuevos = document.getElementById('cuentaNuevos');
+            if (elNuevos) elNuevos.textContent = cuentas.nuevos;
+            const elConForm = document.getElementById('cuentaConForm');
+            if (elConForm) elConForm.textContent = cuentas.con_form;
             for (const b of navBtns) {
                 if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
                 if (b.dataset.grupo === 'favorito') b.classList.toggle('tiene', (cuentas.favorito ?? 0) > 0);
@@ -3460,100 +3488,132 @@ function burbujaCita(t, chat) {
 
         (function armarRespuestasRapidas() {
             const panel = document.getElementById('rrPanel');
-            if (!panel) return;
+            const pop = document.getElementById('rrPop');
+            if (!panel || !pop) return;
+            const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
             panel.innerHTML = RESPUESTAS_RAPIDAS.map((cat, i) => `
-                <div class="rr-tab" data-cat="${i}">
-                    <button type="button" class="rr-tab-btn" aria-haspopup="true" aria-expanded="false">
-                        <span class="rr-tab-ico" aria-hidden="true">${cat.ico}</span>${cat.tit}
-                    </button>
-                    <div class="rr-flyout" role="menu">
-                        <p class="rr-flyout-tit">${cat.tit}</p>
-                        ${cat.items.map(msg => `<button type="button" class="rr-item" role="menuitem">${
-                            msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-                        }</button>`).join('')}
-                    </div>
-                </div>`).join('');
+                <button type="button" class="rr-cat" data-cat="${i}" aria-haspopup="true" aria-expanded="false">
+                    <span class="rr-cat-ico" aria-hidden="true">${esc(cat.ico)}</span>${esc(cat.tit)}
+                </button>`).join('');
 
-            /* Las pestañas del panel viven arriba en la misma franja derecha
-             * (position:fixed). Con la pestaña IA (27-sep) la columna creció y
-             * los botones, centrados en la pantalla, le quedaban encima: si se
-             * tocan, los botones bajan a 10 px debajo de la última pestaña. */
-            const separarDeLasPestanas = () => {
-                panel.style.top = '';
-                panel.style.transform = '';
-                const nav = document.querySelector('.tabs-nav');
-                if (!nav || getComputedStyle(nav).position !== 'fixed') return;
-                const finPestanas = nav.getBoundingClientRect().bottom;
-                if (panel.getBoundingClientRect().top < finPestanas + 10) {
-                    panel.style.top = (finPestanas + 10) + 'px';
-                    panel.style.transform = 'none';
-                }
+            let abierta = -1;
+            const cerrar = () => {
+                abierta = -1;
+                pop.hidden = true;
+                pop.textContent = '';
+                panel.querySelectorAll('.rr-cat').forEach(b => b.setAttribute('aria-expanded', 'false'));
             };
-            separarDeLasPestanas();
-            window.addEventListener('resize', separarDeLasPestanas);
-
-            // El menú nace centrado respecto de su pestaña, pero las primeras y
-            // últimas categorías pueden quedar cortadas por el borde de la
-            // pantalla. Se desplaza solo lo necesario para conservar 12 px de
-            // margen arriba y abajo, sin cambiar de lugar la pestaña.
-            const acomodarFlyout = tab => {
-                const flyout = tab?.querySelector('.rr-flyout');
-                if (!flyout) return;
-                flyout.style.setProperty('--rr-ajuste-y', '0px');
-                requestAnimationFrame(() => {
-                    const rect = flyout.getBoundingClientRect();
-                    const margen = 12;
-                    let ajuste = 0;
-                    if (rect.top < margen) ajuste = margen - rect.top;
-                    else if (rect.bottom > window.innerHeight - margen) ajuste = window.innerHeight - margen - rect.bottom;
-                    flyout.style.setProperty('--rr-ajuste-y', ajuste + 'px');
-                });
+            const abrir = i => {
+                const cat = RESPUESTAS_RAPIDAS[i];
+                if (!cat) return;
+                abierta = i;
+                const sugeridas = window.rrSugeridasIds || [];
+                pop.innerHTML = `
+                    <div class="rr-pop-cab"><span>${esc(cat.ico)} ${esc(cat.tit)}</span>
+                        <button type="button" class="rr-pop-cerrar" aria-label="Cerrar">Esc</button></div>
+                    <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item${
+                        sugeridas.includes(i + '.' + j) ? ' rr-item-sugerida' : ''}" role="menuitem" data-id="${i}.${j}">${esc(msg)}</button>`).join('')}</div>`;
+                pop.hidden = false;
+                pop.scrollTop = 0;
+                panel.querySelectorAll('.rr-cat').forEach(b => b.setAttribute('aria-expanded', Number(b.dataset.cat) === i ? 'true' : 'false'));
             };
-            window.addEventListener('resize', () => {
-                const visible = panel.querySelector('.rr-tab.rr-abierto');
-                if (visible) acomodarFlyout(visible);
-            });
 
-            // Clic en un mensaje: solo lo copia al editor. Nunca lo envía.
             panel.addEventListener('click', ev => {
+                const b = ev.target.closest('.rr-cat');
+                if (!b) return;
+                ev.stopPropagation();
+                const i = Number(b.dataset.cat);
+                if (abierta === i) cerrar(); else abrir(i);
+            });
+            // Clic en un mensaje: solo lo copia al editor. Nunca lo envía.
+            pop.addEventListener('click', ev => {
+                ev.stopPropagation();
+                if (ev.target.closest('.rr-pop-cerrar')) { cerrar(); return; }
                 const item = ev.target.closest('.rr-item');
                 if (!item) return;
-                rrInsertar(item.textContent);
-                panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
-                    t.classList.remove('rr-abierto');
-                    t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
-                });
+                const [c, j] = item.dataset.id.split('.').map(Number);
+                rrInsertar(RESPUESTAS_RAPIDAS[c].items[j]);
+                cerrar();
             });
-
-            // Todas las categorías se abren y se cierran solo con clic.
-            panel.querySelectorAll('.rr-tab-btn').forEach(b => {
-                b.addEventListener('click', ev => {
-                    ev.stopPropagation();
-                    const tab = b.closest('.rr-tab');
-                    const yaAbierto = tab.classList.contains('rr-abierto');
-                    panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
-                        t.classList.remove('rr-abierto');
-                        t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
-                    });
-                    if (!yaAbierto) {
-                        tab.classList.add('rr-abierto');
-                        b.setAttribute('aria-expanded', 'true');
-                        acomodarFlyout(tab);
-                    }
-                });
-            });
-            document.addEventListener('click', () => {
-                panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
-                    t.classList.remove('rr-abierto');
-                    t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
-                });
-            });
+            document.addEventListener('click', () => { if (abierta >= 0) cerrar(); });
+            document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && abierta >= 0) cerrar(); });
         })();
+
+        /* Sugeridas (4-oct): cuando lo último de la charla es del cliente, se
+         * le pide al panel las 1 o 2 respuestas rápidas que mejor le contestan
+         * (las elige OpenAI de esta misma lista, ver respuestas-rapidas-sugeridas.php).
+         * Se vuelve a pedir solo cuando cambia lo que escribió el cliente. */
+        const rrSug = document.getElementById('rrSugeridas');
+        let rrSugFirma = '';
+        let rrSugPedido = 0;
+        window.rrSugeridasIds = [];
+        function rrSugPintar(ids, pensando) {
+            window.rrSugeridasIds = ids;
+            rrSug.textContent = '';
+            const items = ids.map(id => {
+                const [c, j] = id.split('.').map(Number);
+                const cat = RESPUESTAS_RAPIDAS[c];
+                return cat && typeof cat.items[j] === 'string' ? { cat, texto: cat.items[j] } : null;
+            }).filter(Boolean);
+            if (!pensando && !items.length) { rrSug.hidden = true; return; }
+            const tit = document.createElement('span');
+            tit.className = 'rr-sug-tit';
+            tit.textContent = '✨ Sugeridas';
+            rrSug.appendChild(tit);
+            if (pensando) {
+                const p = document.createElement('span');
+                p.className = 'rr-sug-pensando';
+                p.textContent = 'Buscando la mejor respuesta…';
+                rrSug.appendChild(p);
+            }
+            items.forEach(({ cat, texto }) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'rr-sug';
+                b.title = texto;
+                const c = document.createElement('span');
+                c.className = 'rr-sug-cat';
+                c.textContent = cat.ico + ' ' + cat.tit;
+                const t = document.createElement('span');
+                t.className = 'rr-sug-txt';
+                t.textContent = texto;
+                b.append(c, t);
+                b.addEventListener('click', () => rrInsertar(texto));
+                rrSug.appendChild(b);
+            });
+            rrSug.hidden = false;
+        }
+        async function rrSugActualizar(lineas) {
+            if (!rrSug) return;
+            // Los mensajes del cliente desde lo último que dijo el bot o Pablo.
+            const pendientes = [];
+            for (let i = lineas.length - 1; i >= 0; i--) {
+                const q = lineas[i].q;
+                if (q === 'sistema') continue;
+                if (q !== 'cliente') break;
+                pendientes.unshift((lineas[i].ts || '') + '|' + (lineas[i].t || ''));
+            }
+            const firma = pendientes.join('\n');
+            if (firma === rrSugFirma) return;
+            rrSugFirma = firma;
+            const pedido = ++rrSugPedido;
+            if (!pendientes.length) { rrSugPintar([], false); return; }
+            rrSugPintar([], true);
+            try {
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ accion: 'rr_sugerir', tel: TEL }) });
+                const j = await r.json();
+                if (pedido === rrSugPedido) rrSugPintar(Array.isArray(j.ids) ? j.ids : [], false);
+            } catch (e) {
+                if (pedido === rrSugPedido) rrSugPintar([], false);
+            }
+        }
 
         function pintar(lineas) {
             const firma = JSON.stringify(lineas);
             if (firma === ultimoRender) return;
             ultimoRender = firma;
+            rrSugActualizar(lineas);
             const abajo = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
             chat.innerHTML = '';
             lineas.forEach((t, i) => { t.__idx = i; });

@@ -230,8 +230,11 @@ function wabot_procesar_entrante($ev, $cfg) {
     $sombras = [];     // modo shadow: lo que OpenAI piensa después de contestar
     try {
         do {
+            // Con el bot en "solo bienvenida", el primer mensaje espera lo suyo
+            // (Pablo, 4-oct: 30 s). Lo que el cliente escriba mientras tanto se
+            // junta en la misma tanda, así la bienvenida sale una sola vez.
             $objetivoDemora = $primerContacto
-                ? (float)($cfg['demora_primer_mensaje'] ?? 20)
+                ? (wabot_solo_bienvenida($cfg) ? (float)($cfg['demora_bienvenida'] ?? 30) : (float)($cfg['demora_primer_mensaje'] ?? 20))
                 : (float)($cfg['demora_segundos'] ?? 10);
             $espera = wabot_demora_restante($cfg, $arranque, $objetivoDemora);
             if ($espera > 0) usleep((int)($espera * 1000000));

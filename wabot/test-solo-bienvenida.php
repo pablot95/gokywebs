@@ -7,7 +7,7 @@
 $GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = true;
 require_once __DIR__ . '/test-lib.php';
 $cfg = wabot_config_load();
-$bienvenida = 'Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés';
+$bienvenida = 'Hola cómo estás? Para poder asesorarte y darte un precio adecuado, por favor contanos brevemente a qué te dedicás, o para qué necesitarías una web';
 
 caso('el texto de la bienvenida es el de Pablo', trim((string)$cfg['bienvenida']) === $bienvenida, (string)$cfg['bienvenida']);
 caso('viene prendido de fábrica', !empty(wabot_textos_default()['solo_bienvenida']));

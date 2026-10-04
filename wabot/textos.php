@@ -289,7 +289,9 @@ function wabot_textos_default() {
      * demos, plantillas y avisos automáticos siguen. Se apaga desde Ajustes
      * del panel y vuelve todo lo de antes. Ver wabot_solo_bienvenida_turno(). */
     'solo_bienvenida' => true,
-    'bienvenida' => 'Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés',
+    // Texto de Pablo del 4-oct; sale a los 30 s del primer mensaje (demora_bienvenida).
+    'bienvenida' => 'Hola cómo estás? Para poder asesorarte y darte un precio adecuado, por favor contanos brevemente a qué te dedicás, o para qué necesitarías una web',
+    'demora_bienvenida' => 30,
     'ia_proveedor' => 'openai',
     'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
