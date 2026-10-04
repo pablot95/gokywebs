@@ -48,6 +48,18 @@ $c = conv_nueva('999TEST999');
 $r = wabot_responder('', $c, $cfg);
 caso('un archivo sin leer de entrada → la bienvenida', $r === [$bienvenida], json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Instagram ya preguntó el rubro con su mensaje automático (4-oct): sin bienvenida, para Pablo.
+foreach (['Tengo una peluquería', 'Hola', ''] as $primero) {
+    $c = conv_nueva('999TEST999', ['canal' => 'instagram']);
+    $r = $primero === '' ? wabot_responder('', $c, $cfg) : turno($primero, $c, $cfg);
+    caso("Instagram «{$primero}» → sin bienvenida, para Pablo", $r === [] && !empty($c['handoff_pendiente']) && empty($c['bienvenida_ts']),
+        json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+$c = conv_nueva('999TEST999', ['canal' => 'instagram']);
+turno('Tengo una peluquería', $c, $cfg);
+$r = turno('Y cuánto sale?', $c, $cfg);
+caso('Instagram, segundo mensaje → tampoco', $r === [], json_encode($r, JSON_UNESCAPED_UNICODE));
+
 // El que no viene a comprar no se lleva "para pasarte el valor de tu web".
 $c = conv_nueva('999TEST999');
 $r = turno('Ya pagué la seña, cuando empiezan?', $c, $cfg);

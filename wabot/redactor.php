@@ -363,6 +363,14 @@ function wabot_solo_bienvenida_turno($texto, &$conv, $cfg) {
             $hablamos = true;
         }
     }
+    /* Instagram ya le pregunta a qué se dedica con su mensaje automático
+     * (Pablo, 4-oct), y ese mensaje no llega al bot: lo primero que entra suele
+     * ser la respuesta. Repetir la pregunta queda mal, así que ahí no hay
+     * bienvenida y el chat pasa directo a Pablo. */
+    if (!$hablamos && empty($conv['bienvenida_ts']) && wabot_canal($conv) === 'instagram') {
+        $conv['bienvenida_omitida'] = 'instagram';
+        $hablamos = true;
+    }
     if ($hablamos || !empty($conv['bienvenida_ts'])) {
         $conv['handoff_pendiente'] = true;
         $conv['ultimo_ts'] = time();
