@@ -6,9 +6,9 @@ import {
 import {
     $, escapeHtml, formatPesos, llenarSelect, toast, snapshotCampos, confirmarDescartarCambios,
     TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO, prepararCarpetaFacturas,
-} from './utils.js';
-import { estado, arcaListoParaFacturar } from './state.js';
-import { abrirFacturaModal, emitirFacturaDeCliente, motivoParaNoEmitir, letraDeCliente } from './facturacion.js';
+} from './utils.js?v=20261004';
+import { estado, arcaListoParaFacturar } from './state.js?v=20261004';
+import { abrirFacturaModal, emitirFacturaDeCliente, motivoParaNoEmitir, letraDeCliente } from './facturacion.js?v=20261004';
 
 let clientes = [];
 let snapshotClienteInicial = null;

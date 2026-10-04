@@ -1,8 +1,8 @@
 // Wizard de 3 pasos: datos de la empresa -> generar CSR -> subir el .crt de ARCA.
 import { auth } from '../firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { $ } from './utils.js';
-import { estado } from './state.js';
+import { $ } from './utils.js?v=20261004';
+import { estado } from './state.js?v=20261004';
 
 let estadoActual = null;
 

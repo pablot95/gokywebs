@@ -1,9 +1,9 @@
 // Guard de autenticación, header y estado de configuración de ARCA del panel.
 import { auth } from '../firebase-config.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { $ } from './utils.js';
-import { estado } from './state.js';
-import { initClientes } from './clientes.js';
+import { $ } from './utils.js?v=20261004';
+import { estado } from './state.js?v=20261004';
+import { initClientes } from './clientes.js?v=20261004';
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {

@@ -3,8 +3,8 @@
 // individual e impresión conjunta de todo lo que esté filtrado en pantalla.
 import { auth } from '../firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { $, escapeHtml, formatPesos, toast, prepararCarpetaFacturas, guardarFactura } from './utils.js';
-import { estado } from './state.js';
+import { $, escapeHtml, formatPesos, toast, prepararCarpetaFacturas, guardarFactura } from './utils.js?v=20261004';
+import { estado } from './state.js?v=20261004';
 
 const LETRA = { 1: 'A', 6: 'B', 11: 'C' };
 let facturas = [];

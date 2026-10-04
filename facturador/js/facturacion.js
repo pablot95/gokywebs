@@ -7,8 +7,8 @@ import {
     $, formatPesos, fechaInput, generarRequestId, llenarSelect, snapshotCampos, confirmarDescartarCambios,
     SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, CONDICION_IVA_MONOTRIBUTO, ALICUOTAS_IVA,
     prepararCarpetaFacturas, guardarFactura,
-} from './utils.js';
-import { estado, emisorEsResponsableInscripto } from './state.js';
+} from './utils.js?v=20261004';
+import { estado, emisorEsResponsableInscripto } from './state.js?v=20261004';
 
 const facturaModal = $('facturaModal');
 let clienteAFacturar = null;
