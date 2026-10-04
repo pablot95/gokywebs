@@ -2092,7 +2092,8 @@ function burbujaCita(t, chat) {
         $num = function ($v) { return number_format((int)$v, 0, ',', '.'); };
         $nombresTarea = ['conversacion' => 'Conversación antes del precio', 'clasificador' => 'Clasificar mensajes',
                          'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex',
-                         'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel'];
+                         'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel',
+                         'bienvenida_rubro' => '¿El primer mensaje ya dice el rubro? (bienvenida)'];
         $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
     ?>
         <style>
@@ -2858,6 +2859,9 @@ function burbujaCita(t, chat) {
         }
 
         function entraEnGrupoActivo(it) {
+            // Pidió info, recibió la bienvenida y no contestó más: no va en ninguna
+            // vista (Pablo, 4-oct). Sigue en la descarga de chats y en el buscador.
+            if (it.sin_respuesta_bienvenida) return false;
             const filtro = [...filtrosActivos][0] || 'todos_humano';
             return cumpleFiltro(it, filtro);
         }

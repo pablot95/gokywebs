@@ -12,7 +12,7 @@ $bienvenida = 'Hola cómo estás? Para poder asesorarte y darte un precio adecua
 caso('el texto de la bienvenida es el de Pablo', trim((string)$cfg['bienvenida']) === $bienvenida, (string)$cfg['bienvenida']);
 caso('viene prendido de fábrica', !empty(wabot_textos_default()['solo_bienvenida']));
 
-// El primer mensaje recibe la bienvenida, sea un saludo o ya cuente el negocio.
+// Sin OpenAI (los tests no tienen red), el primer mensaje recibe la bienvenida, sea un saludo o ya cuente el negocio.
 foreach (['Hola', 'Hola, quiero una página web', 'Buenas, tengo una pastelería y quiero vender online', 'Cuánto sale una web?'] as $primero) {
     $c = conv_nueva('999TEST999');
     $r = turno($primero, $c, $cfg);
@@ -47,6 +47,40 @@ caso('una charla vieja con el bot tampoco se saluda de nuevo', $r === [], json_e
 $c = conv_nueva('999TEST999');
 $r = wabot_responder('', $c, $cfg);
 caso('un archivo sin leer de entrada → la bienvenida', $r === [$bienvenida], json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Con OpenAI (simulado): si ya dice el rubro, sin bienvenida (4-oct); si no, la bienvenida.
+$GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-es-una-key-real';
+$GLOBALS['WABOT_TEST_IA_USO_DIR'] = sys_get_temp_dir() . '/wabot-test-bienvenida-' . getmypid();
+$oaPedidos = 0;
+$oaRespuesta = function ($valor) use (&$oaPedidos) {
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) use ($valor, &$oaPedidos) {
+        $oaPedidos++;
+        if ($valor === null) return [500, '{"error":{"message":"caido"}}'];
+        return [200, json_encode(['model' => 'gpt-6-sol', 'status' => 'completed', 'usage' => ['input_tokens' => 300, 'output_tokens' => 10],
+            'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode(['ya_dice_rubro' => $valor])]]]]])];
+    };
+};
+$oaRespuesta(true);
+$c = conv_nueva('999TEST999');
+$r = turno('Hola. ¿Puedo obtener más información sobre esto?presio soy pintor de obra', $c, $cfg);
+caso('ya dice el rubro → sin bienvenida, para Pablo', $r === [] && !empty($c['handoff_pendiente'])
+    && ($c['bienvenida_omitida'] ?? '') === 'ya_dijo_rubro', json_encode($r, JSON_UNESCAPED_UNICODE));
+$oaRespuesta(false);
+$c = conv_nueva('999TEST999');
+$r = turno('Hola. ¿Puedo obtener más información sobre esto?', $c, $cfg);
+caso('no dice el rubro → la bienvenida', $r === [$bienvenida], json_encode($r, JSON_UNESCAPED_UNICODE));
+$oaRespuesta(null);
+$c = conv_nueva('999TEST999');
+$r = turno('Tengo una verdulería', $c, $cfg);
+caso('OpenAI caído → la bienvenida, como siempre', $r === [$bienvenida], json_encode($r, JSON_UNESCAPED_UNICODE));
+$oaRespuesta(true);
+$oaPedidos = 0;
+$c = conv_nueva('999TEST999');
+wabot_responder('', $c, $cfg);
+caso('un archivo sin leer no le pregunta a OpenAI', $oaPedidos === 0);
+unset($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $GLOBALS['WABOT_TEST_OPENAI_KEY']);
+foreach ((array)glob($GLOBALS['WABOT_TEST_IA_USO_DIR'] . '/*') as $f) @unlink($f);
+@rmdir($GLOBALS['WABOT_TEST_IA_USO_DIR']);
 
 // Instagram ya preguntó el rubro con su mensaje automático (4-oct): sin bienvenida, para Pablo.
 foreach (['Tengo una peluquería', 'Hola', ''] as $primero) {
@@ -84,5 +118,27 @@ $GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = true;
 
 // El ajuste se guarda desde el panel.
 caso('solo_bienvenida es un ajuste del panel', in_array('solo_bienvenida', wabot_ajustes_claves(), true));
+
+// La lista del panel no muestra al que recibió la bienvenida y no contestó más (4-oct).
+$fila = function ($q, $t) { return ['q' => $q, 't' => $t, 'ts' => time()]; };
+$casos = [
+    'pidió info y no contestó la bienvenida' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida)], [], true],
+    'tampoco con el seguimiento de 23 h' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida), $fila('bot', 'Hola, buenas tardes, queríamos saber…')], [], true],
+    'contestó la bienvenida' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida), $fila('cliente', 'Tengo una verdulería')], [], false],
+    'Pablo le escribió' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida), $fila('humano', 'Hola!')], [], false],
+    'sin bienvenida todavía (o Instagram)' => [[$fila('cliente', 'Tengo una verdulería')], [], false],
+    'en favoritos' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida)], ['favorito' => true], false],
+    'completó el formulario' => [[$fila('cliente', 'Info'), $fila('bot', $bienvenida)], ['form_completado_ts' => time()], false],
+];
+foreach ($casos as $nombre => [$transcript, $extra, $oculto]) {
+    $c = conv_nueva('999TEST999', $extra + ['transcript' => $transcript]);
+    caso(($oculto ? 'oculto en la lista: ' : 'se ve en la lista: ') . $nombre, wabot_conv_sin_respuesta_a_bienvenida($c) === $oculto);
+}
+
+// Mandada la plantilla de interesado, el chat sale de favoritos (4-oct).
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$c = conv_nueva('999TEST999', ['favorito' => true, 'favorito_ts' => time()]);
+$ok = wabot_template_interesado_enviar($c, $cfg);
+caso('plantilla de interesado → sale de favoritos', $ok === 'ok' && empty($c['favorito']) && empty($c['favorito_ts']), $ok);
 
 todo_ok();

@@ -334,6 +334,32 @@ function wabot_solo_bienvenida($cfg) {
 }
 
 /**
+ * ¿El primer mensaje ya dice a qué se dedica? (Pablo, 4-oct: "en WhatsApp
+ * también evitá la bienvenida si ya dice el rubro"). La bienvenida pregunta
+ * justamente eso, así que repetirla queda mal. Lo decide OpenAI: las reglas por
+ * palabras fallan con "¿Puedo obtener más información sobre esto?presio soy
+ * pintor de obra". Corre dentro de la espera de la bienvenida, así que no suma
+ * demora. Devuelve true/false, o null si no se pudo preguntar (entonces va la
+ * bienvenida, como siempre).
+ */
+function wabot_bienvenida_ya_dice_rubro($texto, $conv, $cfg) {
+    $texto = trim((string)$texto);
+    if ($texto === '' || !function_exists('wabot_openai_disponible') || !wabot_openai_disponible()) return null;
+    $instrucciones = 'Sos parte del WhatsApp de Gokywebs, que hace páginas web. Te paso el primer mensaje de alguien que nos escribe. '
+        . 'Decí si ese mensaje ya cuenta a qué se dedica: su rubro, su profesión, su negocio o qué vende o qué servicio ofrece '
+        . '(por ejemplo «tengo una pastelería», «soy pintor de obra», «vendo ropa de mujer», «somos una asociación de pastores», «doy clases de yoga»). ' . "\n"
+        . 'No alcanza con pedir información, precio o una web, ni con decir el tipo de web sin el rubro '
+        . '(«Hola. ¿Puedo obtener más información sobre esto?», «quiero una página web», «cuánto sale?», «una tienda online para vender productos»: todos son false).';
+    $schema = ['type' => 'object', 'properties' => ['ya_dice_rubro' => ['type' => 'boolean']],
+               'required' => ['ya_dice_rubro'], 'additionalProperties' => false];
+    $r = wabot_openai_llamar('bienvenida_rubro', $instrucciones, [['role' => 'user', 'content' => mb_substr($texto, 0, 1200)]],
+        ['type' => 'json_schema', 'name' => 'wabot_bienvenida_rubro', 'strict' => true, 'schema' => $schema], $cfg,
+        ['usuario' => wabot_conversation_key($conv), 'max_tokens' => 400, 'esfuerzo' => 'low']);
+    if (!$r['ok'] || !is_bool($r['datos']['ya_dice_rubro'] ?? null)) return null;
+    return $r['datos']['ya_dice_rubro'];
+}
+
+/**
  * Solo bienvenida (Pablo, 3-oct): en la charla el bot solo saluda al que
  * escribe por primera vez, con el texto de Pablo; todo lo demás lo contesta
  * él. Los formularios, las demos, las plantillas y los avisos automáticos
@@ -369,6 +395,12 @@ function wabot_solo_bienvenida_turno($texto, &$conv, $cfg) {
      * bienvenida y el chat pasa directo a Pablo. */
     if (!$hablamos && empty($conv['bienvenida_ts']) && wabot_canal($conv) === 'instagram') {
         $conv['bienvenida_omitida'] = 'instagram';
+        $hablamos = true;
+    }
+    // Si ya contó a qué se dedica, la bienvenida le preguntaría lo mismo: pasa a Pablo.
+    if (!$hablamos && empty($conv['bienvenida_ts']) && wabot_bienvenida_ya_dice_rubro($texto, $conv, $cfg) === true) {
+        $conv['bienvenida_omitida'] = 'ya_dijo_rubro';
+        wabot_log('bienvenida_omitida', ['tel' => $conv['tel'] ?? '', 'motivo' => 'ya_dijo_rubro', 'msg' => mb_substr((string)$texto, 0, 90)]);
         $hablamos = true;
     }
     if ($hablamos || !empty($conv['bienvenida_ts'])) {

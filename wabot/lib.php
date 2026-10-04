@@ -2080,6 +2080,25 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
     $conv['transcript'][] = $fila;
 }
 
+/**
+ * ¿Pidió info, el bot le contestó (la bienvenida) y no volvió a escribir nunca?
+ * Pablo no quiere ver esos chats en la lista (4-oct), pero sí en la descarga de
+ * chats, que lee los archivos por su cuenta. Nunca se ocultan si Pablo escribió,
+ * si está en favoritos o si hay formulario, demo o pago.
+ */
+function wabot_conv_sin_respuesta_a_bienvenida($cv) {
+    if (!empty($cv['favorito']) || (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['presentado_ts'])
+        || !empty($cv['pago_avisado_ts']) || !empty($cv['lead_creado'])) return false;
+    $hablo = false;
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        $q = $fila['q'] ?? '';
+        if ($q === 'humano') return false;
+        if ($q === 'bot') $hablo = true;
+        elseif ($q === 'cliente' && $hablo) return false;
+    }
+    return $hablo;
+}
+
 /** ¿El texto lleva el link del formulario (gokywebs.com/form, con o sin código)? */
 function wabot_texto_tiene_link_form($texto) {
     return preg_match('~gokywebs\.com/form(?![a-z0-9])~i', (string)$texto) === 1;
@@ -3026,6 +3045,7 @@ function wabot_lista_items() {
             'favorito' => !empty($cv['favorito']),
             'demo_url' => wabot_demo_url($cv),
             'form_recibido' => wabot_conv_form_recibido($cv),
+            'sin_respuesta_bienvenida' => wabot_conv_sin_respuesta_a_bienvenida($cv),
             'form_completado' => (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado']),
         ];
     }
@@ -5338,6 +5358,10 @@ function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = f
     if (!wabot_enviar_plantilla($conv, 'seguimiento_interesado', $cfg)) return 'error';
     $conv['seguimiento_interesado_enviado'] = true;
     $conv['seguimiento_interesado_ts'] = time();
+    // Mandada la plantilla, sale de favoritos (Pablo, 4-oct): la estrella marca
+    // a quién hay que seguir, y a este ya se lo siguió.
+    $conv['favorito'] = false;
+    $conv['favorito_ts'] = 0;
     return 'ok';
 }
 
