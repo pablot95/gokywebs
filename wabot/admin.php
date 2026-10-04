@@ -2472,11 +2472,11 @@ function burbujaCita(t, chat) {
                          Con form = ya les llegó el link del formulario. Los filtros
                          históricos quedan en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat.">Sin leer</button>
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana.">Nuevos</button>
-                        <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana.">Con form</button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat. Pasadas 24 h sin que escriba, el chat sale de esta vista y vuelve cuando escribe.">Sin leer</button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Nuevos</button>
+                        <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Con form</button>
                         <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
-                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats, menos los archivados.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats donde el cliente escribió en las últimas 24 h, menos los archivados. Los demás, con el buscador.">Todos</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -2858,12 +2858,26 @@ function burbujaCita(t, chat) {
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
-        function entraEnGrupoActivo(it) {
+        /* Vencimiento (Pablo, 4-oct: "si una persona no contesta por 24 h, que se
+         * vaya el chat; si contesta, que reaparezca"): pasadas 24 h desde el
+         * último mensaje del cliente, el chat sale de las vistas de trabajo.
+         * Vuelve solo apenas escribe. Es solo la lista: las plantillas y los
+         * seguimientos automáticos salen igual. Favoritos, Demos presentadas,
+         * los filtros de "más" y el buscador lo siguen mostrando. */
+        const VISTAS_CON_VENCIMIENTO = new Set(['no_leidos', 'nuevos', 'con_form', 'todos_humano']);
+        function vencido(it) {
+            const ultimo = Number(it.ultimo_cliente_ts || 0);
+            return ultimo > 0 && Date.now() / 1000 - ultimo > 24 * 3600;
+        }
+        function visibleEn(it, filtro) {
             // Pidió info, recibió la bienvenida y no contestó más: no va en ninguna
             // vista (Pablo, 4-oct). Sigue en la descarga de chats y en el buscador.
             if (it.sin_respuesta_bienvenida) return false;
-            const filtro = [...filtrosActivos][0] || 'todos_humano';
+            if (VISTAS_CON_VENCIMIENTO.has(filtro) && vencido(it)) return false;
             return cumpleFiltro(it, filtro);
+        }
+        function entraEnGrupoActivo(it) {
+            return visibleEn(it, [...filtrosActivos][0] || 'todos_humano');
         }
 
         function renderFechasChats() {
@@ -3072,7 +3086,7 @@ function burbujaCita(t, chat) {
              * filtro tienen mensajes sin leer. Sin ninguno, no se muestra nada. */
             const sinLeer = items.filter(esNoLeido);
             for (const b of navBtns) {
-                const n = sinLeer.filter(it => cumpleFiltro(it, b.dataset.grupo)).length;
+                const n = sinLeer.filter(it => visibleEn(it, b.dataset.grupo)).length;
                 let globo = b.querySelector('.conv-chip-n');
                 if (n > 0 && !globo) {
                     globo = document.createElement('span');
