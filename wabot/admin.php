@@ -1461,7 +1461,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 /* Respuestas rápidas en horizontal (4-oct): arriba del editor, una fila con
    las 1 o 2 que sugiere la IA para lo último del cliente y otra con las
    categorías. Un clic en una categoría abre su lista encima del chat. */
-.rr-barra { position:relative; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.rr-barra { position:relative; flex:none; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
 .rr-sugeridas { display:flex; align-items:stretch; gap:6px; min-width:0; }
 .rr-sugeridas[hidden] { display:none; }
 .rr-sug-tit { flex:none; align-self:center; color:var(--ac); font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
@@ -1488,10 +1488,22 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 @media (min-width: 1181px) and (hover: hover) {
   body.conv-full .conv-main { margin-right:190px; }
 }
+/* Celular (4-oct): todo en UNA fila deslizable de ~40 px —las sugeridas
+   primero, en una línea, y después 🔍 y las categorías— para que el editor no
+   quede fuera de la pantalla. La lista de una categoría sube desde abajo. */
 @media (max-width: 720px) {
-  .rr-sugeridas { flex-wrap:wrap; }
-  .rr-sug { flex-basis:100%; }
-  .rr-sug-tit { flex-basis:100%; }
+  .rr-barra { flex-direction:row; align-items:center; gap:5px; margin-top:6px; overflow-x:auto; scrollbar-width:none; }
+  .rr-barra::-webkit-scrollbar { display:none; }
+  .rr-sugeridas { flex:none; gap:5px; }
+  .rr-sug-tit, .rr-sug-cat, .rr-sug-pensando { display:none; }
+  .rr-sug { flex:none; max-width:68vw; padding:7px 11px; border-radius:999px; }
+  .rr-sug-txt { display:block; white-space:nowrap; text-overflow:ellipsis; }
+  .rr-sug-txt::before { content:'✨ '; }
+  .rr-cats { flex:none; overflow:visible; padding-bottom:0; }
+  .rr-cat, .rr-sug { min-height:36px; }
+  .rr-cat { padding:7px 11px; }
+  .rr-pop { position:fixed; left:0; right:0; bottom:0; max-height:72vh; border-radius:14px 14px 0 0; padding:0 12px 14px; z-index:90; }
+  .rr-pop-items { grid-template-columns:1fr; }
 }
 .rr-buscador { position:absolute; left:0; right:0; bottom:calc(100% + 8px); z-index:80;
     padding:8px; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:11px;
@@ -1650,7 +1662,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 
     /* Que el chat nunca quede aplastado: si algo de arriba o de abajo crece,
        el que cede es ese bloque, no el chat. */
-    .conv-main .chat { flex: 1 1 auto; min-height: 42vh; }
+    .conv-main .chat { flex: 1 1 auto; min-height: 28vh; }
     #responder { margin-top: 8px; }
     #responder .fila { flex-wrap: nowrap; gap: 7px; }
     #respTexto { flex: 1 1 auto; min-width: 0; min-height: 42px; }
@@ -3491,7 +3503,10 @@ function burbujaCita(t, chat) {
             const pop = document.getElementById('rrPop');
             if (!panel || !pop) return;
             const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-            panel.innerHTML = RESPUESTAS_RAPIDAS.map((cat, i) => `
+            // 🔍 abre el buscador de respuestas: es el "/" del teclado, que en el
+            // celular no existe.
+            panel.innerHTML = `<button type="button" class="rr-cat rr-cat-buscar" aria-label="Buscar una respuesta" title="Buscar una respuesta (atajo: /)">🔍</button>`
+                + RESPUESTAS_RAPIDAS.map((cat, i) => `
                 <button type="button" class="rr-cat" data-cat="${i}" aria-haspopup="true" aria-expanded="false">
                     <span class="rr-cat-ico" aria-hidden="true">${esc(cat.ico)}</span>${esc(cat.tit)}
                 </button>`).join('');
@@ -3501,7 +3516,7 @@ function burbujaCita(t, chat) {
                 abierta = -1;
                 pop.hidden = true;
                 pop.textContent = '';
-                panel.querySelectorAll('.rr-cat').forEach(b => b.setAttribute('aria-expanded', 'false'));
+                panel.querySelectorAll('.rr-cat[data-cat]').forEach(b => b.setAttribute('aria-expanded', 'false'));
             };
             const abrir = i => {
                 const cat = RESPUESTAS_RAPIDAS[i];
@@ -3510,18 +3525,19 @@ function burbujaCita(t, chat) {
                 const sugeridas = window.rrSugeridasIds || [];
                 pop.innerHTML = `
                     <div class="rr-pop-cab"><span>${esc(cat.ico)} ${esc(cat.tit)}</span>
-                        <button type="button" class="rr-pop-cerrar" aria-label="Cerrar">Esc</button></div>
+                        <button type="button" class="rr-pop-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button></div>
                     <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item${
                         sugeridas.includes(i + '.' + j) ? ' rr-item-sugerida' : ''}" role="menuitem" data-id="${i}.${j}">${esc(msg)}</button>`).join('')}</div>`;
                 pop.hidden = false;
                 pop.scrollTop = 0;
-                panel.querySelectorAll('.rr-cat').forEach(b => b.setAttribute('aria-expanded', Number(b.dataset.cat) === i ? 'true' : 'false'));
+                panel.querySelectorAll('.rr-cat[data-cat]').forEach(b => b.setAttribute('aria-expanded', Number(b.dataset.cat) === i ? 'true' : 'false'));
             };
 
             panel.addEventListener('click', ev => {
                 const b = ev.target.closest('.rr-cat');
                 if (!b) return;
                 ev.stopPropagation();
+                if (b.classList.contains('rr-cat-buscar')) { cerrar(); rrAbrir(); return; }
                 const i = Number(b.dataset.cat);
                 if (abierta === i) cerrar(); else abrir(i);
             });
