@@ -814,17 +814,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    /* Las 1 o 2 respuestas rápidas que OpenAI sugiere para lo último que escribió
-       el cliente (4-oct). Ver respuestas-rapidas-sugeridas.php. */
-    if ($a === 'rr_sugerir' && !empty($_POST['tel'])) {
-        header('Content-Type: application/json; charset=utf-8');
-        // OpenAI tarda unos segundos: sin soltar la sesión, el refresco del chat
-        // de cada 5 s quedaría esperando a que termine.
-        session_write_close();
-        $conv = wabot_conv_load($_POST['tel']);
-        echo json_encode(wabot_rr_sugeridas($conv, $respuestasRapidas, $cfg), JSON_UNESCAPED_UNICODE);
-        exit;
-    }
     /**
      * Corrige el texto de una línea del transcript.
      *
@@ -1460,17 +1449,9 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-main .chat { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
 
 /* Respuestas rápidas en horizontal (4-oct): arriba del editor, una fila con
-   las 1 o 2 que sugiere la IA para lo último del cliente y otra con las
-   categorías. Un clic en una categoría abre su lista encima del chat. */
+   las categorías. Un clic en una categoría abre su lista encima del chat.
+   (Las sugeridas por IA se sacaron el mismo día: Pablo, "son malísimas".) */
 .rr-barra { position:relative; flex:none; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-.rr-sugeridas { display:flex; align-items:stretch; gap:6px; min-width:0; }
-.rr-sugeridas[hidden] { display:none; }
-.rr-sug-tit { flex:none; align-self:center; color:var(--ac); font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
-.rr-sug-pensando { align-self:center; color:var(--dim); font-size:12px; }
-.rr-sug { flex:1 1 0; min-width:0; display:block; padding:6px 10px; border:1px solid var(--ac); border-radius:9px; background:var(--ac-tenue); color:var(--tx); font:inherit; font-size:12.5px; line-height:1.4; text-align:left; cursor:pointer; }
-.rr-sug:hover, .rr-sug:focus-visible { background:var(--card-2); outline:0; }
-.rr-sug-cat { display:block; color:var(--ac); font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
-.rr-sug-txt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .rr-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--line-fuerte) transparent; padding-bottom:3px; }
 .rr-cats::-webkit-scrollbar { height:6px; }
 .rr-cats::-webkit-scrollbar-thumb { background:var(--line-fuerte); border-radius:3px; }
@@ -1484,24 +1465,18 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-pop-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap:7px; }
 .rr-item { display:block; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
 .rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
-.rr-item.rr-item-sugerida { border-color:var(--ac); }
 /* La franja derecha del escritorio ahora es solo de la navegación (.tabs-nav). */
 @media (min-width: 1181px) and (hover: hover) {
   body.conv-full .conv-main { margin-right:190px; }
 }
-/* Celular (4-oct): todo en UNA fila deslizable de ~40 px —las sugeridas
-   primero, en una línea, y después 🔍 y las categorías— para que el editor no
-   quede fuera de la pantalla. La lista de una categoría sube desde abajo. */
+/* Celular (4-oct): 🔍 y las categorías en UNA fila deslizable de ~40 px, para
+   que el editor no quede fuera de la pantalla. La lista de una categoría sube
+   desde abajo. */
 @media (max-width: 720px) {
   .rr-barra { flex-direction:row; align-items:center; gap:5px; margin-top:6px; overflow-x:auto; scrollbar-width:none; }
   .rr-barra::-webkit-scrollbar { display:none; }
-  .rr-sugeridas { flex:none; gap:5px; }
-  .rr-sug-tit, .rr-sug-cat, .rr-sug-pensando { display:none; }
-  .rr-sug { flex:none; max-width:68vw; padding:7px 11px; border-radius:999px; }
-  .rr-sug-txt { display:block; white-space:nowrap; text-overflow:ellipsis; }
-  .rr-sug-txt::before { content:'✨ '; }
   .rr-cats { flex:none; overflow:visible; padding-bottom:0; }
-  .rr-cat, .rr-sug { min-height:36px; }
+  .rr-cat { min-height:36px; }
   .rr-cat { padding:7px 11px; }
   .rr-pop { position:fixed; left:0; right:0; bottom:0; max-height:72vh; border-radius:14px 14px 0 0; padding:0 12px 14px; z-index:90; }
   .rr-pop-items { grid-template-columns:1fr; }
@@ -2616,13 +2591,11 @@ function burbujaCita(t, chat) {
 
                 <div class="chat" id="chat"></div>
 
-                <!-- Respuestas rápidas: arriba, las 1 o 2 que sugiere la IA para lo
-                     último del cliente; abajo, las categorías. Un clic abre la
+                <!-- Respuestas rápidas: las categorías en una fila. Un clic abre la
                      categoría y otro copia el mensaje al editor para revisarlo
                      antes de enviarlo: nunca se manda solo. -->
                 <div class="rr-barra" id="rrBarra">
                     <div class="rr-pop" id="rrPop" role="menu" hidden></div>
-                    <div class="rr-sugeridas" id="rrSugeridas" aria-live="polite" hidden></div>
                     <nav class="rr-cats" id="rrPanel" aria-label="Respuestas rápidas"></nav>
                 </div>
 
@@ -3547,12 +3520,10 @@ function burbujaCita(t, chat) {
                 const cat = RESPUESTAS_RAPIDAS[i];
                 if (!cat) return;
                 abierta = i;
-                const sugeridas = window.rrSugeridasIds || [];
                 pop.innerHTML = `
                     <div class="rr-pop-cab"><span>${esc(cat.ico)} ${esc(cat.tit)}</span>
                         <button type="button" class="rr-pop-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button></div>
-                    <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item${
-                        sugeridas.includes(i + '.' + j) ? ' rr-item-sugerida' : ''}" role="menuitem" data-id="${i}.${j}">${esc(msg)}</button>`).join('')}</div>`;
+                    <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item" role="menuitem" data-id="${i}.${j}">${esc(msg)}</button>`).join('')}</div>`;
                 pop.hidden = false;
                 pop.scrollTop = 0;
                 panel.querySelectorAll('.rr-cat[data-cat]').forEach(b => b.setAttribute('aria-expanded', Number(b.dataset.cat) === i ? 'true' : 'false'));
@@ -3580,81 +3551,10 @@ function burbujaCita(t, chat) {
             document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && abierta >= 0) cerrar(); });
         })();
 
-        /* Sugeridas (4-oct): cuando lo último de la charla es del cliente, se
-         * le pide al panel las 1 o 2 respuestas rápidas que mejor le contestan
-         * (las elige OpenAI de esta misma lista, ver respuestas-rapidas-sugeridas.php).
-         * Se vuelve a pedir solo cuando cambia lo que escribió el cliente. */
-        const rrSug = document.getElementById('rrSugeridas');
-        let rrSugFirma = '';
-        let rrSugPedido = 0;
-        window.rrSugeridasIds = [];
-        function rrSugPintar(ids, pensando) {
-            window.rrSugeridasIds = ids;
-            rrSug.textContent = '';
-            const items = ids.map(id => {
-                const [c, j] = id.split('.').map(Number);
-                const cat = RESPUESTAS_RAPIDAS[c];
-                return cat && typeof cat.items[j] === 'string' ? { cat, texto: cat.items[j] } : null;
-            }).filter(Boolean);
-            if (!pensando && !items.length) { rrSug.hidden = true; return; }
-            const tit = document.createElement('span');
-            tit.className = 'rr-sug-tit';
-            tit.textContent = '✨ Sugeridas';
-            rrSug.appendChild(tit);
-            if (pensando) {
-                const p = document.createElement('span');
-                p.className = 'rr-sug-pensando';
-                p.textContent = 'Buscando la mejor respuesta…';
-                rrSug.appendChild(p);
-            }
-            items.forEach(({ cat, texto }) => {
-                const b = document.createElement('button');
-                b.type = 'button';
-                b.className = 'rr-sug';
-                b.title = texto;
-                const c = document.createElement('span');
-                c.className = 'rr-sug-cat';
-                c.textContent = cat.ico + ' ' + cat.tit;
-                const t = document.createElement('span');
-                t.className = 'rr-sug-txt';
-                t.textContent = texto;
-                b.append(c, t);
-                b.addEventListener('click', () => rrInsertar(texto));
-                rrSug.appendChild(b);
-            });
-            rrSug.hidden = false;
-        }
-        async function rrSugActualizar(lineas) {
-            if (!rrSug) return;
-            // Los mensajes del cliente desde lo último que dijo el bot o Pablo.
-            const pendientes = [];
-            for (let i = lineas.length - 1; i >= 0; i--) {
-                const q = lineas[i].q;
-                if (q === 'sistema') continue;
-                if (q !== 'cliente') break;
-                pendientes.unshift((lineas[i].ts || '') + '|' + (lineas[i].t || ''));
-            }
-            const firma = pendientes.join('\n');
-            if (firma === rrSugFirma) return;
-            rrSugFirma = firma;
-            const pedido = ++rrSugPedido;
-            if (!pendientes.length) { rrSugPintar([], false); return; }
-            rrSugPintar([], true);
-            try {
-                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'rr_sugerir', tel: TEL }) });
-                const j = await r.json();
-                if (pedido === rrSugPedido) rrSugPintar(Array.isArray(j.ids) ? j.ids : [], false);
-            } catch (e) {
-                if (pedido === rrSugPedido) rrSugPintar([], false);
-            }
-        }
-
         function pintar(lineas) {
             const firma = JSON.stringify(lineas);
             if (firma === ultimoRender) return;
             ultimoRender = firma;
-            rrSugActualizar(lineas);
             const abajo = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
             chat.innerHTML = '';
             lineas.forEach((t, i) => { t.__idx = i; });
