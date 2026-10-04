@@ -5,7 +5,7 @@
 // la pestaña/documento elegido (nunca un selector aparte que se pueda desincronizar).
 import {
     $, formatPesos, fechaInput, generarRequestId, llenarSelect, snapshotCampos, confirmarDescartarCambios,
-    SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, ALICUOTAS_IVA,
+    SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, CONDICION_IVA_MONOTRIBUTO, ALICUOTAS_IVA,
     prepararCarpetaFacturas, guardarFactura,
 } from './utils.js';
 import { estado, emisorEsResponsableInscripto } from './state.js';
@@ -30,12 +30,19 @@ function numeroComprobante(tipo, puntoVenta, numero) {
 // A solo corresponde si el receptor está identificado con CUIT y es Responsable
 // Inscripto; cualquier otra combinación (consumidor final, DNI, otra condición)
 // es B. Se deriva de los campos reales del formulario, nunca de un selector aparte.
+// Misma regla que api/facturar.php: A para CUIT de Responsable Inscripto o de
+// Responsable Monotributo.
+function corresponderiaA(tipoDoc, condIva) {
+    return Number(tipoDoc) === TIPO_DOC_CUIT && [CONDICION_IVA_RESPONSABLE_INSCRIPTO, CONDICION_IVA_MONOTRIBUTO].includes(Number(condIva));
+}
+
 function tipoComprobanteDerivado() {
     if (!emisorEsResponsableInscripto()) return 11;
     if (facturaModo !== 'identificado') return 6;
-    const tipoDoc = Number(campoFactura('TipoDoc').value);
-    const condIva = Number(campoFactura('CondicionIva').value);
-    return (tipoDoc === TIPO_DOC_CUIT && condIva === CONDICION_IVA_RESPONSABLE_INSCRIPTO) ? 1 : 6;
+    // Antes de la primera consulta a ARCA el select de condición está vacío: vale
+    // la que tiene guardada el cliente (si no, nunca se llegaba a la Factura A).
+    const condIva = campoFactura('CondicionIva').value || clienteAFacturar?.condicionIva;
+    return corresponderiaA(campoFactura('TipoDoc').value, condIva) ? 1 : 6;
 }
 
 function mostrarErrorFactura(mensaje) {
@@ -94,27 +101,134 @@ async function llamarFacturacion(accion, cuerpo, extra = {}) {
     return datos;
 }
 
-async function abrirComprobante(factura) {
+// Genera el PDF de una factura emitida y lo guarda (carpeta elegida o Descargas).
+// El servidor lo arma desde su registro, por el requestId de la emisión.
+async function guardarComprobante(requestId, factura, carpeta, opciones = {}) {
+    const token = await estado.user.getIdToken();
+    const res = await fetch('api/comprobante.php', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId }),
+    });
+    if (!res.ok) {
+        const cuerpo = await res.text();
+        let detalle = cuerpo;
+        try { detalle = JSON.parse(cuerpo).error || cuerpo; } catch (e) {}
+        throw new Error(detalle);
+    }
+    const nombre = res.headers.get('X-Nombre-Archivo') || `${numeroComprobante(factura.tipoComprobante, factura.puntoVenta, factura.numero)}.pdf`;
+    await guardarFactura(await res.blob(), nombre, carpeta, opciones);
+}
+
+async function abrirComprobante(requestId, factura, carpeta) {
     try {
-        const carpeta = await prepararCarpetaFacturas();
-        const token = await estado.user.getIdToken();
-        const res = await fetch('api/comprobante.php', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ factura }),
-        });
-        if (!res.ok) {
-            const cuerpo = await res.text();
-            let detalle = cuerpo;
-            try { detalle = JSON.parse(cuerpo).error || cuerpo; } catch (e) {}
-            throw new Error(detalle);
-        }
-        const nombre = res.headers.get('X-Nombre-Archivo') || `${numeroComprobante(factura.tipoComprobante, factura.puntoVenta, factura.numero)}.pdf`;
-        await guardarFactura(await res.blob(), nombre, carpeta);
+        await guardarComprobante(requestId, factura, carpeta);
     } catch (err) {
         console.error(err);
         alert('No se pudo generar el comprobante: ' + err.message);
     }
+}
+
+/* ---------- Emitir todas (4-oct) ----------
+   Factura a un cliente sin abrir el modal, con lo que tiene cargado: precio,
+   descripción y, si tiene documento, sus datos fiscales (si no, consumidor
+   final). Lo demás va con los mismos valores que propone el modal: servicios,
+   período de los últimos 30 días, vencimiento hoy, Contado y, si corresponde
+   A o B, IVA 21% incluido en el precio. */
+export function facturaDeClienteIdentificada(cliente) {
+    return !!(cliente.tipoDocumento && cliente.documento);
+}
+
+export function tipoComprobanteDeCliente(cliente) {
+    if (!emisorEsResponsableInscripto()) return 11;
+    if (!facturaDeClienteIdentificada(cliente)) return 6;
+    return corresponderiaA(cliente.tipoDocumento, cliente.condicionIva) ? 1 : 6;
+}
+
+// Por qué este cliente no se puede facturar en tanda ('' si se puede).
+export function motivoParaNoEmitir(cliente) {
+    if (!(Number(cliente.precio) > 0)) return 'no tiene precio cargado';
+    if (facturaDeClienteIdentificada(cliente) && !cliente.condicionIva) return 'tiene documento pero le falta la condición frente al IVA';
+    return '';
+}
+
+export function letraDeCliente(cliente) {
+    return letraDe(tipoComprobanteDeCliente(cliente));
+}
+
+// El requestId de la tanda es fijo por cliente y mes: si una tanda se corta y se
+// vuelve a tocar, el servidor reconoce la que ya salió (o la verifica en ARCA si
+// quedó sin respuesta) en vez de emitir otra.
+function requestIdDeTanda(cliente) {
+    const d = new Date();
+    return `tanda-${cliente.id}-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// Emite la factura y guarda el PDF. Devuelve { factura, errorPdf }. Si no se
+// emitió, tira un Error con .grave = true cuando no tiene sentido seguir con los
+// demás (no se sabe si salió, falta configurar ARCA); un rechazo de ARCA o un
+// dato inválido de este cliente no es grave.
+export async function emitirFacturaDeCliente(cliente, carpeta) {
+    const tipo = tipoComprobanteDeCliente(cliente);
+    const total = Math.round(Number(cliente.precio) * 100) / 100;
+    let ivaDetalle = null;
+    if (tipo !== 11) {
+        const neto = Math.round((total / 1.21) * 100) / 100;
+        ivaDetalle = [{ alicuotaId: 5, baseImponible: neto, importe: Math.round((total - neto) * 100) / 100 }];
+    }
+    const cuerpo = {
+        requestId: requestIdDeTanda(cliente),
+        clienteId: cliente.id,
+        cliente: cliente.nombre,
+        total,
+        tipoComprobante: tipo,
+        concepto: 2,
+        descripcion: cliente.descripcion || '',
+        condicionVenta: 'Contado',
+        servicioDesde: fechaInput(-30),
+        servicioHasta: fechaInput(),
+        vencimientoPago: fechaInput(),
+        ...(facturaDeClienteIdentificada(cliente)
+            ? {
+                tipoDocumento: Number(cliente.tipoDocumento),
+                documento: cliente.documento,
+                condicionIva: Number(cliente.condicionIva),
+                nombre: cliente.nombre,
+            }
+            : { tipoDocumento: SIN_IDENTIFICAR, documento: '' }),
+        ...(ivaDetalle ? { ivaDetalle } : {}),
+    };
+
+    let datos;
+    try {
+        datos = await llamarFacturacion('emitir', cuerpo);
+    } catch (err) {
+        // Sin respuesta del servidor no se sabe si se emitió: se corta la tanda.
+        err.grave = true;
+        throw err;
+    }
+    if (datos.necesitaConfiguracion) {
+        const err = new Error('Falta terminar de configurar ARCA.');
+        err.grave = true;
+        throw err;
+    }
+    if (!datos.ok) {
+        const err = new Error(datos.error || 'No se pudo emitir la factura');
+        // Datos inválidos (400) o rechazo de ARCA: es de este cliente y no salió nada.
+        err.grave = !(datos.datosInvalidos || datos.rechazada);
+        throw err;
+    }
+
+    const factura = datos.factura;
+    estado.facturadosEsteMes.add(cliente.id);
+    let errorPdf = '';
+    try {
+        await guardarComprobante(cuerpo.requestId, factura, carpeta, { silencioso: true });
+    } catch (err) {
+        console.error(err);
+        errorPdf = err.message;
+    }
+    return { factura, errorPdf, numero: numeroComprobante(factura.tipoComprobante, factura.puntoVenta, factura.numero) };
 }
 
 async function refrescarProximo() {
@@ -231,6 +345,8 @@ $('facturaEmitirBtn').addEventListener('click', async () => {
 
     const ivaCalculado = tipo !== 11 ? recalcularIva() : null;
     const letra = letraDe(tipo);
+    const requestId = facturaRequestId;
+    const carpeta = await prepararCarpetaFacturas();
 
     if (!confirm(`¿Emitir la Factura ${letra} por ${formatPesos(total)} a "${cliente.nombre}"?\n\nUna vez emitida no se puede anular, solo con una nota de crédito.`)) return;
 
@@ -240,7 +356,7 @@ $('facturaEmitirBtn').addEventListener('click', async () => {
 
     try {
         const cuerpo = {
-            requestId: facturaRequestId,
+            requestId,
             clienteId: cliente.id,
             cliente: cliente.nombre,
             total,
@@ -276,7 +392,7 @@ $('facturaEmitirBtn').addEventListener('click', async () => {
         if (f.observaciones) {
             alert(`${numeroComprobante(f.tipoComprobante, f.puntoVenta, f.numero)} emitida, pero ARCA devolvió observaciones:\n\n${f.observaciones}`);
         }
-        await abrirComprobante(f);
+        await abrirComprobante(requestId, f, carpeta);
     } catch (err) {
         console.error(err);
         mostrarErrorFactura(err.message);

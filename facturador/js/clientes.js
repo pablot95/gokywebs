@@ -5,10 +5,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
     $, escapeHtml, formatPesos, llenarSelect, toast, snapshotCampos, confirmarDescartarCambios,
-    TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO,
+    TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO, prepararCarpetaFacturas,
 } from './utils.js';
 import { estado, arcaListoParaFacturar } from './state.js';
-import { abrirFacturaModal } from './facturacion.js';
+import { abrirFacturaModal, emitirFacturaDeCliente, motivoParaNoEmitir, letraDeCliente } from './facturacion.js';
 
 let clientes = [];
 let snapshotClienteInicial = null;
@@ -38,6 +38,7 @@ export function initClientes() {
     wireModal();
     wireInlineEditDelegation();
     wireRowActionsDelegation();
+    $('emitirTodasBtn').addEventListener('click', emitirTodas);
 }
 
 function mesActualYYYYMM() {
@@ -49,12 +50,14 @@ function mesActualYYYYMM() {
 // (facturador/data/{uid}/emitidas.json vía api/estadisticas.php), filtrado al mes
 // calendario actual -- no un flag aparte que se pueda desincronizar, y se resetea
 // solo al empezar el mes que viene.
+// Devuelve true si se pudo leer el historial (Emitir todas no arranca sin eso:
+// sin la lista de facturados del mes le volvería a facturar a todos).
 async function cargarFacturadosEsteMes() {
     try {
         const token = await estado.user.getIdToken();
         const res = await fetch('api/estadisticas.php', { headers: { Authorization: 'Bearer ' + token } });
         const datos = await res.json();
-        if (!datos.ok) return;
+        if (!datos.ok) return false;
         const mes = mesActualYYYYMM();
         estado.facturadosEsteMes = new Set(
             (datos.facturas || [])
@@ -62,14 +65,108 @@ async function cargarFacturadosEsteMes() {
                 .map(f => f.clienteId),
         );
         render();
+        return true;
     } catch (err) {
         console.error(err);
+        return false;
+    }
+}
+
+// ---------- Emitir todas (4-oct) ----------
+// Factura, uno por uno, a cada cliente que todavía no se facturó este mes, con
+// lo que tiene cargado (precio, descripción, documento y condición frente al
+// IVA; sin documento, consumidor final). Los que no tienen precio o les falta
+// un dato fiscal quedan afuera y se avisan. Cada PDF va a la carpeta elegida
+// (o a Descargas), sin un aviso por archivo.
+let emitiendoTodas = false;
+
+async function emitirTodas() {
+    if (emitiendoTodas) return;
+    if (!arcaListoParaFacturar()) {
+        toast('Configurá ARCA primero.', 'error');
+        return;
+    }
+    const boton = $('emitirTodasBtn');
+    emitiendoTodas = true;
+    boton.disabled = true;
+    try {
+        // Primero la carpeta: el navegador solo deja pedirla en el mismo clic.
+        const carpeta = await prepararCarpetaFacturas();
+        if (!(await cargarFacturadosEsteMes())) {
+            alert('No se pudo leer el historial de facturas de este mes, así que no se sabe a quién ya le facturaste. Probá de nuevo en un rato.');
+            return;
+        }
+        const pendientes = clientes.filter(c => !estado.facturadosEsteMes.has(c.id));
+        const yaFacturados = clientes.length - pendientes.length;
+        const listos = pendientes.filter(c => !motivoParaNoEmitir(c));
+        const afuera = pendientes.filter(c => motivoParaNoEmitir(c));
+        const lineasAfuera = afuera.map(c => `• ${c.nombre}: ${motivoParaNoEmitir(c)}`);
+
+        if (!listos.length) {
+            alert('No hay nada para emitir.'
+                + (yaFacturados ? `\n\n${yaFacturados} cliente${yaFacturados === 1 ? '' : 's'} ya ${yaFacturados === 1 ? 'tiene' : 'tienen'} factura este mes.` : '')
+                + (lineasAfuera.length ? `\n\nNo se pueden facturar así:\n${lineasAfuera.join('\n')}` : ''));
+            return;
+        }
+
+        const total = listos.reduce((s, c) => s + Number(c.precio), 0);
+        const lineas = listos.map(c => `• ${c.nombre} — Factura ${letraDeCliente(c)} por ${formatPesos(Number(c.precio))}${c.documento ? '' : ' (consumidor final)'}`);
+        if (!confirm(`¿Emitir ${listos.length} factura${listos.length === 1 ? '' : 's'} por un total de ${formatPesos(total)}?\n\n`
+            + lineas.join('\n')
+            + (yaFacturados ? `\n\nQuedan afuera ${yaFacturados} que ya facturaste este mes.` : '')
+            + (lineasAfuera.length ? `\n\nTambién quedan afuera:\n${lineasAfuera.join('\n')}` : '')
+            + '\n\nCada una sale con su precio y su descripción, servicios de los últimos 30 días y Contado. Una vez emitidas no se pueden anular, solo con una nota de crédito.')) return;
+
+        const avisarAlSalir = (e) => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', avisarAlSalir);
+        const emitidas = [];
+        const fallidas = [];
+        let cortada = null;
+        let fallasSeguidas = 0;
+        render(); // los Facturar de cada fila quedan deshabilitados mientras dura la tanda
+        try {
+            for (const [i, c] of listos.entries()) {
+                boton.textContent = `Emitiendo ${i + 1} de ${listos.length}…`;
+                try {
+                    emitidas.push({ cliente: c, ...(await emitirFacturaDeCliente(c, carpeta)) });
+                    fallasSeguidas = 0;
+                    render();
+                } catch (err) {
+                    console.error(err);
+                    fallidas.push({ cliente: c, error: err.message });
+                    // Tres seguidas ya no es un cliente: es ARCA o la conexión.
+                    if (err.grave || ++fallasSeguidas >= 3) { cortada = c; break; }
+                }
+            }
+        } finally {
+            window.removeEventListener('beforeunload', avisarAlSalir);
+        }
+
+        const faltaron = cortada ? listos.slice(listos.indexOf(cortada) + 1) : [];
+        const sinPdf = emitidas.filter(e => e.errorPdf);
+        const conObservaciones = emitidas.filter(e => e.factura.observaciones);
+        const partes = [];
+        if (emitidas.length) partes.push(`Emitidas (${emitidas.length}):\n${emitidas.map(e => `• ${e.cliente.nombre}: ${e.numero}`).join('\n')}`
+            + (carpeta ? `\n\nLos PDF quedaron en la carpeta ${carpeta.name}.` : '\n\nLos PDF se bajaron a Descargas.'));
+        if (fallidas.length) partes.push(`No se emitieron (${fallidas.length}):\n${fallidas.map(f => `• ${f.cliente.nombre}: ${f.error}`).join('\n')}`);
+        if (cortada) partes.push(`Se frenó ahí para no seguir con ARCA o la conexión fallando. Quedaron sin intentar: ${faltaron.length ? faltaron.map(c => c.nombre).join(', ') : 'ninguno'}. Volvé a tocar "Emitir todas" en un rato: los que ya salieron no se repiten.`);
+        if (sinPdf.length) partes.push(`Emitidas, pero no se pudo guardar el PDF (bajalo desde Facturas):\n${sinPdf.map(e => `• ${e.numero}: ${e.errorPdf}`).join('\n')}`);
+        if (conObservaciones.length) partes.push(`ARCA devolvió observaciones:\n${conObservaciones.map(e => `• ${e.numero}: ${e.factura.observaciones}`).join('\n')}`);
+        alert(partes.join('\n\n'));
+        cargarFacturadosEsteMes();
+    } finally {
+        emitiendoTodas = false;
+        boton.disabled = false;
+        boton.textContent = 'Emitir todas';
+        render();
     }
 }
 
 function render() {
     $('emptyState').hidden = clientes.length > 0;
     $('tableWrapper').hidden = clientes.length === 0;
+    $('emitirTodasBtn').hidden = clientes.length === 0;
+    if (!emitiendoTodas) $('emitirTodasBtn').disabled = !arcaListoParaFacturar();
     if (!clientes.length) return;
 
     $('clientsBody').innerHTML = clientes.map(filaCliente).join('');
@@ -77,7 +174,7 @@ function render() {
 
 function filaCliente(c) {
     const docLabel = c.documento ? `${TIPOS_DOCUMENTO_CLIENTE[c.tipoDocumento] || ''} ${escapeHtml(c.documento)}`.trim() : '';
-    const puedeFacturar = arcaListoParaFacturar();
+    const puedeFacturar = arcaListoParaFacturar() && !emitiendoTodas;
     const facturado = estado.facturadosEsteMes.has(c.id);
     return `
     <tr data-id="${c.id}">

@@ -94,6 +94,64 @@ function wireAcciones() {
     });
 
     $('imprimirTodasBtn').addEventListener('click', imprimirTodas);
+    $('descargarTodasBtn').addEventListener('click', descargarTodas);
+}
+
+// Descargar todas (4-oct): el PDF de cada factura de la lista filtrada, una por
+// una. En Chrome/Edge van directo a la carpeta elegida, sin preguntar nada; en
+// los otros navegadores van a Descargas y el navegador pide una vez permiso
+// para bajar varios archivos.
+let descargandoTodas = false;
+
+async function descargarTodas() {
+    if (descargandoTodas) return;
+    const lista = facturasFiltradas();
+    if (!lista.length) return;
+    const boton = $('descargarTodasBtn');
+    descargandoTodas = true;
+    boton.disabled = true;
+    try {
+        const carpeta = await prepararCarpetaFacturas();
+        if (!confirm(`¿Descargar ${lista.length} factura${lista.length === 1 ? '' : 's'}?`
+            + (carpeta ? `\n\nSe guardan en la carpeta ${carpeta.name}.` : '\n\nSe bajan a Descargas: si el navegador pregunta si permitís descargar varios archivos, decile que sí.'))) return;
+        const token = await estado.user.getIdToken();
+        let ok = 0;
+        const fallidas = [];
+        for (const [i, f] of lista.entries()) {
+            boton.textContent = `Descargando ${i + 1} de ${lista.length}…`;
+            try {
+                const res = await fetch('api/comprobante.php', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ requestId: f.requestId }),
+                });
+                if (!res.ok) {
+                    const cuerpo = await res.text();
+                    let detalle = cuerpo;
+                    try { detalle = JSON.parse(cuerpo).error || cuerpo; } catch (e) {}
+                    throw new Error(detalle);
+                }
+                const nombre = res.headers.get('X-Nombre-Archivo') || `factura-${i + 1}.pdf`;
+                await guardarFactura(await res.blob(), nombre, carpeta, { silencioso: true });
+                ok++;
+                // Sin carpeta, cada archivo es una descarga del navegador: un respiro
+                // entre una y otra para que no las descarte.
+                if (!carpeta) await new Promise(r => setTimeout(r, 400));
+            } catch (err) {
+                console.error(err);
+                fallidas.push(err.message);
+            }
+        }
+        if (fallidas.length) {
+            toast(`${ok} descargada${ok === 1 ? '' : 's'}; ${fallidas.length} no se pudo generar: ${fallidas[0]}`, 'error');
+        } else {
+            toast(carpeta ? `${ok} factura${ok === 1 ? '' : 's'} guardada${ok === 1 ? '' : 's'} en ${carpeta.name}.` : `${ok} factura${ok === 1 ? '' : 's'} descargada${ok === 1 ? '' : 's'}.`);
+        }
+    } finally {
+        descargandoTodas = false;
+        boton.disabled = false;
+        boton.textContent = 'Descargar todas';
+    }
 }
 
 async function descargarFactura(requestId, boton) {

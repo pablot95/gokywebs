@@ -47,5 +47,8 @@ if (file_put_contents($certPath, $contenido, LOCK_EX) === false) {
     facturador_responder(['ok' => false, 'error' => 'No se pudo guardar el certificado.'], 500);
 }
 @chmod($certPath, 0600);
+// El ticket de ARCA guardado es del certificado anterior: con otro certificado
+// ARCA lo rechaza hasta que vence (12 h). Se pide uno nuevo en la próxima factura.
+@unlink(facturador_ticket_path($uid));
 
 facturador_responder(['ok' => true, 'configurado' => true, 'certListo' => true]);

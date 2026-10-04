@@ -52,7 +52,10 @@
     <div id="facturasContent" hidden>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap">
             <p id="cantidadResultado" style="color:var(--text-muted)">—</p>
-            <button type="button" class="btn-primary" id="imprimirTodasBtn">Imprimir todas</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap">
+                <button type="button" class="btn-ghost" id="descargarTodasBtn" title="Guarda el PDF de cada factura de la lista (con el filtro aplicado)">Descargar todas</button>
+                <button type="button" class="btn-primary" id="imprimirTodasBtn">Imprimir todas</button>
+            </div>
         </div>
 
         <div id="sinResultados" class="empty-state" hidden>

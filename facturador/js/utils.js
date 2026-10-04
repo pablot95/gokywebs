@@ -1,4 +1,5 @@
 // Helpers compartidos entre clientes.js, facturacion.js y arca-setup.js.
+import { estado } from './state.js';
 
 export const $ = id => document.getElementById(id);
 
@@ -20,10 +21,12 @@ export function formatPesosCorto(n) {
     return formatPesos(v);
 }
 
+// Fecha local (AAAA-MM-DD). toISOString() da la fecha en UTC: en Argentina,
+// de 21 a 24 h ya es "mañana" y el período de la factura salía corrido un día.
 export function fechaInput(desplazamientoDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + desplazamientoDias);
-    return d.toISOString().slice(0, 10);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 export function generarRequestId() {
@@ -35,6 +38,7 @@ export function generarRequestId() {
 export const SIN_IDENTIFICAR = 99;
 export const TIPO_DOC_CUIT = 80;
 export const CONDICION_IVA_RESPONSABLE_INSCRIPTO = 1;
+export const CONDICION_IVA_MONOTRIBUTO = 6;
 
 export const TIPOS_DOCUMENTO_CLIENTE = { 80: 'CUIT', 96: 'DNI', 86: 'CUIL' };
 
@@ -131,29 +135,32 @@ async function kv(modo, fn) {
 // o abrir el selector). Devuelve el handle o null si hay que usar la descarga común.
 export async function prepararCarpetaFacturas() {
     if (!window.showDirectoryPicker) return null;
+    const clave = 'facturas-' + (estado.user?.uid || '');
     try {
-        let handle = await kv('readonly', s => s.get('facturas')).catch(() => null);
+        let handle = await kv('readonly', s => s.get(clave)).catch(() => null);
         if (handle) {
             if (await handle.queryPermission({ mode: 'readwrite' }) === 'granted') return handle;
             if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') return handle;
         }
         toast('Elegí la carpeta donde se guardan las facturas (una sola vez).');
         handle = await window.showDirectoryPicker({ id: 'facturas', mode: 'readwrite', startIn: 'desktop' });
-        await kv('readwrite', s => s.put(handle, 'facturas')).catch(() => {});
+        await kv('readwrite', s => s.put(handle, clave)).catch(() => {});
         return handle;
     } catch (err) {
         return null;
     }
 }
 
-export async function guardarFactura(blob, nombre, carpeta) {
+// silencioso: para las descargas en tanda (Emitir todas / Descargar todas), que
+// avisan una sola vez al final en vez de un cartel por archivo.
+export async function guardarFactura(blob, nombre, carpeta, { silencioso = false } = {}) {
     if (carpeta) {
         try {
             const archivo = await carpeta.getFileHandle(nombre, { create: true });
             const w = await archivo.createWritable();
             await w.write(blob);
             await w.close();
-            toast(`Guardada en ${carpeta.name}: ${nombre}`);
+            if (!silencioso) toast(`Guardada en ${carpeta.name}: ${nombre}`);
             return;
         } catch (err) {
             console.error(err);

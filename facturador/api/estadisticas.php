@@ -6,14 +6,20 @@
 
 require __DIR__ . '/lib/auth.php';
 require __DIR__ . '/lib/tenant.php';
+require __DIR__ . '/../../config/arca/registro.php';
 
 $uid = facturador_verificar_usuario();
 if (!$uid) facturador_responder(['ok' => false, 'error' => 'No autorizado'], 401);
 
 $dir = facturador_dir_tenant($uid);
 $registroPath = $dir . '/emitidas.json';
-$registro = is_readable($registroPath) ? json_decode(file_get_contents($registroPath), true) : [];
-if (!is_array($registro)) $registro = [];
+// Un registro ilegible no es "no facturaste nada": con eso "Emitir todas" le
+// volvería a facturar a todos.
+try {
+    $registro = registro_leer(['registro' => $registroPath]);
+} catch (RuntimeException $e) {
+    facturador_responder(['ok' => false, 'error' => $e->getMessage()], 500);
+}
 
 $facturas = [];
 foreach ($registro as $requestId => $f) {

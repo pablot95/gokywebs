@@ -40,7 +40,10 @@
             <h1>Tus clientes</h1>
             <p>Cargá el precio y la descripción una vez y facturales cada mes con un clic.</p>
         </div>
-        <button type="button" class="btn-primary" id="addClientBtn">+ Agregar cliente</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <button type="button" class="btn-ghost" id="emitirTodasBtn" hidden title="Factura a todos los clientes que todavía no facturaste este mes, cada uno con su precio, su descripción y sus datos fiscales">Emitir todas</button>
+            <button type="button" class="btn-primary" id="addClientBtn">+ Agregar cliente</button>
+        </div>
     </div>
 
     <div id="emptyState" class="empty-state" hidden>

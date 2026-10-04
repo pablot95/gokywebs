@@ -87,6 +87,10 @@ $config = [
     ],
 ];
 
+// Con otro CUIT, el ticket de ARCA guardado ya no sirve (es del CUIT anterior).
+$anterior = facturador_leer_config_tenant($uid);
+if ($anterior && ($anterior['cuit'] ?? '') !== $cuit) @unlink(facturador_ticket_path($uid));
+
 if (file_put_contents($dir . '/config.json', json_encode($config, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX) === false) {
     facturador_responder(['ok' => false, 'error' => 'No se pudo guardar la configuración.'], 500);
 }

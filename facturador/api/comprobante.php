@@ -14,11 +14,14 @@ if (!$config) {
 }
 
 $entrada = json_decode(file_get_contents('php://input'), true);
-$factura = is_array($entrada) && isset($entrada['factura']) ? $entrada['factura'] : null;
+// El PDF sale solo de lo que está en el registro (por requestId o clienteId):
+// antes también aceptaba la factura entera mandada por el navegador, y con eso
+// cualquiera podía armar un "Comprobante Autorizado" con datos inventados.
+$factura = null;
 
-// Historial (facturas.html): pide una factura puntual ya emitida por su requestId,
-// la clave exacta del registro -- no hace falta reenviar el objeto completo.
-if (!$factura && is_array($entrada) && !empty($entrada['requestId'])) {
+// Historial (facturas.html) y el modal recién emitido: la factura por su
+// requestId, la clave exacta del registro.
+if (is_array($entrada) && !empty($entrada['requestId'])) {
     $registro = is_readable($config['registro'])
         ? json_decode(file_get_contents($config['registro']), true)
         : [];
@@ -33,7 +36,7 @@ if (!$factura && is_array($entrada) && !empty($entrada['clienteId'])) {
         : [];
     if (is_array($registro)) {
         foreach ($registro as $candidata) {
-            if (($candidata['clienteId'] ?? null) !== $entrada['clienteId']) continue;
+            if (($candidata['clienteId'] ?? null) !== $entrada['clienteId'] || empty($candidata['cae'])) continue;
             if (!$factura || ($candidata['emitidaEl'] ?? '') > ($factura['emitidaEl'] ?? '')) $factura = $candidata;
         }
     }
