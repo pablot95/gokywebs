@@ -1340,6 +1340,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
 .conv-chips-panel[hidden] { display:none; }
 .conv-chip-item { width:100%; text-align:left; padding:7px 9px; border:0; border-radius:7px;
+.conv-chip-item .conv-chip-n { display:inline-block; margin-left:6px; }
     background:transparent; color:var(--dim); font:inherit; font-size:12.5px; cursor:pointer; }
 .conv-chip-item:hover { background:var(--card); color:var(--tx); }
 .conv-chip-item.on { background:var(--info); color:#0b1424; font-weight:600; }
@@ -2443,7 +2444,7 @@ function burbujaCita(t, chat) {
                 <div class="conv-filtros">
                     <div class="conv-busqueda-fila">
                         <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número, código o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número, código o proyecto">
-                        <button type="button" class="conv-fecha-toggle conv-chip--favoritos" data-grupo="favorito" title="Mostrar solamente los chats que marcaste con una estrella.">⭐ Favoritos <span class="conv-chip-n" id="cuentaFavoritos">0</span></button>
+                        <button type="button" class="conv-fecha-toggle conv-chip--favoritos" data-grupo="favorito" title="Mostrar solamente los chats que marcaste con una estrella.">⭐ Favoritos</button>
                         <button type="button" class="conv-fecha-toggle" id="convFechaToggle" aria-expanded="false" aria-controls="convFechaPanel">Fecha <span class="conv-fecha-cuenta" id="convFechaCuenta" hidden>0</span></button>
                     </div>
                     <div class="conv-fecha-panel" id="convFechaPanel" hidden>
@@ -2470,9 +2471,9 @@ function burbujaCita(t, chat) {
                          Con form = ya les llegó el link del formulario. Los filtros
                          históricos quedan en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario.">Nuevos <span class="conv-chip-n" id="cuentaNuevos">0</span></button>
-                        <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada.">Con form <span class="conv-chip-n" id="cuentaConForm">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat.">Sin leer</button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana.">Nuevos</button>
+                        <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana.">Con form</button>
                         <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats, menos los archivados.">Todos</button>
                         <div class="conv-chips-mas">
@@ -2681,8 +2682,13 @@ function burbujaCita(t, chat) {
         function esNoLeido(it) { return necesitaRespuesta(it) && !!it.no_leido; }
         /* Nuevos y Con form (4-oct): se separan por si ya les llegó el link del
          * formulario (form_recibido, wabot_conv_form_recibido). Los que pagaron
-         * y las demos presentadas tienen su propia vista. */
-        function enEmbudo(it) { return it.grupo !== 'archivado' && it.grupo !== 'pago' && !esDemoPresentada(it); }
+         * y las demos presentadas tienen su propia vista. Solo cuentan los chats
+         * con movimiento en los últimos días de reset_dias (7): sin ese corte
+         * entraban todos los chats guardados desde agosto (848 "nuevos"). Los
+         * más viejos siguen en Todos y en el buscador. */
+        const EMBUDO_DESDE_TS = Math.floor(Date.now() / 1000) - <?= max(1, (int)($cfg['reset_dias'] ?? 7)) ?> * 86400;
+        function conMovimiento(it) { return Math.max(Number(it.ts || 0), Number(it.ultimo_cliente_ts || 0)) >= EMBUDO_DESDE_TS; }
+        function enEmbudo(it) { return it.grupo !== 'archivado' && it.grupo !== 'pago' && !esDemoPresentada(it) && conMovimiento(it); }
         function esNuevo(it) { return enEmbudo(it) && !it.form_recibido; }
         function esConForm(it) { return enEmbudo(it) && !!it.form_recibido; }
         const SUBGRUPOS_CON_FORM = [
@@ -2932,7 +2938,7 @@ function burbujaCita(t, chat) {
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, nuevos: 0, con_form: 0, favorito: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, favorito: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
@@ -2940,8 +2946,6 @@ function burbujaCita(t, chat) {
                 const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
-                if (esNuevo(it)) cuentas.nuevos++;
-                if (esConForm(it)) cuentas.con_form++;
                 if (it.favorito) cuentas.favorito++;
                 if (esRTA(it)) cuentas.rta++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
@@ -3040,7 +3044,7 @@ function burbujaCita(t, chat) {
                     if (!deEsteGrupo.length) continue;
                     const encabezado = document.createElement('div');
                     encabezado.className = 'conv-sub-header';
-                    encabezado.textContent = sub.titulo + ' (' + deEsteGrupo.length + ')';
+                    encabezado.textContent = sub.titulo;
                     listaEl.appendChild(encabezado);
                     for (const r of deEsteGrupo) listaEl.appendChild(r.el);
                 }
@@ -3060,20 +3064,23 @@ function burbujaCita(t, chat) {
                 for (const r of renderizados) listaEl.appendChild(r.el);
             }
 
-            const elSinLeer = document.getElementById('cuentaNoLeidos');
-            if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
-            const elRta = document.getElementById('cuentaRta');
-            if (elRta) elRta.textContent = cuentas.rta ?? 0;
-            const elFavoritos = document.getElementById('cuentaFavoritos');
-            if (elFavoritos) elFavoritos.textContent = cuentas.favorito ?? 0;
-            const elNuevos = document.getElementById('cuentaNuevos');
-            if (elNuevos) elNuevos.textContent = cuentas.nuevos;
-            const elConForm = document.getElementById('cuentaConForm');
-            if (elConForm) elConForm.textContent = cuentas.con_form;
+            /* El único número de los filtros (Pablo, 4-oct): cuántos chats de ese
+             * filtro tienen mensajes sin leer. Sin ninguno, no se muestra nada. */
+            const sinLeer = items.filter(esNoLeido);
             for (const b of navBtns) {
-                if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
-                if (b.dataset.grupo === 'favorito') b.classList.toggle('tiene', (cuentas.favorito ?? 0) > 0);
-                if (b.dataset.grupo === 'rta') b.classList.toggle('tiene', (cuentas.rta ?? 0) > 0);
+                const n = sinLeer.filter(it => cumpleFiltro(it, b.dataset.grupo)).length;
+                let globo = b.querySelector('.conv-chip-n');
+                if (n > 0 && !globo) {
+                    globo = document.createElement('span');
+                    globo.className = 'conv-chip-n';
+                    b.append(globo);
+                }
+                if (globo) {
+                    if (n > 0) globo.textContent = n;
+                    else globo.remove();
+                }
+                b.classList.toggle('tiene', n > 0);
+                b.title = (b.title || '').replace(/ \(\d+ con mensajes sin leer\)$/, '') + (n > 0 ? ' (' + n + ' con mensajes sin leer)' : '');
             }
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;
