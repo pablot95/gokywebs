@@ -539,6 +539,12 @@ function wabot_textos_default() {
     'seguimiento_sin_precio_sin_portfolio' => '{saludo}, queríamos saber si seguías con interés de hacer la página web.',
     'ultima_llamada_activa' => true,
     'ultima_llamada_horas' => 23,
+    /* Recordatorio del formulario (Pablo, 4-oct): a las 12 h de mandarle el
+     * link (el bot o Pablo, desde el panel o el celular), si todavía no lo
+     * completó. {saludo} según la hora; {link} es el mismo link que se le pasó. */
+    'form_recordatorio_activo' => true,
+    'form_recordatorio_horas' => 12,
+    'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo. Te lo dejo de nuevo por acá: {link}',
     'ya_tengo_web' => 'Perfecto, pasame el link de tu página actual así la reviso y te digo qué conviene mejorar. También podés comparar con los modelos de gokywebs.com/modelos/.',
     'ya_tengo_web_sin_muestra' => 'Perfecto, pasame el link de tu página actual así la reviso y te confirmo cómo la mejoraríamos.',
 ];

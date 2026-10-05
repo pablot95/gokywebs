@@ -32,6 +32,10 @@ if (php_sapi_name() !== 'cli') {
 }
 
 $cfg = wabot_config_load();
+// En este orden: el recordatorio del formulario (más temprano en la charla),
+// la última llamada y las plantillas. Cada uno respeta wabot_auto_reciente(),
+// así que en la misma pasada nunca salen dos al mismo cliente.
+$recordatorio = wabot_form_recordatorio_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
 $plantillas = wabot_plantillas_auto_correr($cfg);
 
@@ -42,4 +46,5 @@ echo json_encode([
         'detalle'   => $ultima['detalle'],
     ],
     'plantillas' => $plantillas,
+    'form_recordatorio' => $recordatorio,
 ], JSON_UNESCAPED_UNICODE) . "\n";

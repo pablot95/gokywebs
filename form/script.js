@@ -413,6 +413,23 @@ function pasoDe(el) {
 const PASO3 = document.querySelector('.form-step[data-step="3"]');
 let introModelosVista = false;
 
+/* Modelos ocultos por ahora (Pablo, 4-oct: "vamos a ocultar por ahora lo de
+ * los modelos en el form"). El paso 3 sigue en el DOM pero no se llega: el
+ * Siguiente del paso 2 pasa a ser el Enviar, el formulario queda en 2 pasos y
+ * no viaja "modelos" (el diseñador prepara dos modelos a su elección). Para
+ * volver a mostrarlos alcanza con poner esto en true. */
+const MOSTRAR_MODELOS = false;
+if (!MOSTRAR_MODELOS) {
+    document.querySelector('.step-dot[data-s="3"]')?.setAttribute('hidden', '');
+    [...document.querySelectorAll('.step-connector')].at(-1)?.setAttribute('hidden', '');
+    document.querySelectorAll('.form-step:not([data-step="3"]) .step-header-badge').forEach(b => { b.textContent = b.textContent.replace('de 3', 'de 2'); });
+    // /formb usa este mismo script: todo con guardas por si falta algo.
+    const enviar2 = document.getElementById('btnSiguiente2');
+    if (enviar2) enviar2.textContent = 'Enviar →';
+    enviar2?.closest('.step-nav')?.insertAdjacentHTML('afterend',
+        '<p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>');
+}
+
 function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     PASOS.forEach(p => { p.hidden = Number(p.dataset.step) !== n; });
     document.querySelectorAll('.step-dot').forEach(dot => {
@@ -447,7 +464,7 @@ document.getElementById('btnSiguiente').addEventListener('click', () => {
     irAPaso(2);
 });
 
-document.getElementById('btnSiguiente2').addEventListener('click', () => {
+if (MOSTRAR_MODELOS) document.getElementById('btnSiguiente2').addEventListener('click', () => {
     clearErrors();
     const error = validarPaso2();
     if (error) {
@@ -474,7 +491,8 @@ document.getElementById('btnVerModelos').addEventListener('click', () => {
     irAPaso(3);
 });
 
-const btnEnviar = document.getElementById('btnEnviar');
+// Sin los modelos, el que envía es el botón del paso 2.
+const btnEnviar = document.getElementById(MOSTRAR_MODELOS ? 'btnEnviar' : 'btnSiguiente2');
 btnEnviar.addEventListener('click', () => {
     if (btnEnviar.disabled) return;
     clearErrors();
@@ -492,7 +510,7 @@ btnEnviar.addEventListener('click', () => {
         error2.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
-    if (!validarPaso3()) return;
+    if (MOSTRAR_MODELOS && !validarPaso3()) return;
     enviarFormulario();
 });
 
@@ -603,7 +621,7 @@ function buildPayload() {
         modalidad: get('modalidad'),
         // Id y nombre: el servidor valida el id y guarda el nombre tal como
         // lo vio el cliente (nuevos.js arma las letras en el navegador).
-        modelos: modelosSeleccionados.map(id => ({ id, nombre: modeloPorId(id).nombre })),
+        ...(MOSTRAR_MODELOS ? { modelos: modelosSeleccionados.map(id => ({ id, nombre: modeloPorId(id).nombre })) } : {}),
     };
     if (_codigoBot) payload.c = _codigoBot;
     return payload;

@@ -413,6 +413,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['leer_imagenes']       = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios']     = !empty($_POST['escuchar_audios']);
         $cfg['ultima_llamada_activa'] = !empty($_POST['ultima_llamada_activa']);
+        if (isset($_POST['form_recordatorio_horas'])) {
+            $cfg['form_recordatorio_activo'] = !empty($_POST['form_recordatorio_activo']);
+            $cfg['form_recordatorio_horas'] = max(1, min(23, (float)$_POST['form_recordatorio_horas']));
+        }
 
         if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
         if (isset($_POST['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = max(0, min(60, (int)$_POST['demora_primer_mensaje']));
@@ -2339,6 +2343,17 @@ function burbujaCita(t, chat) {
                     <input type="number" name="ultima_llamada_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['ultima_llamada_horas'] ?? 23)) ?>" style="width:100px">
                 </div>
             </div>
+            <div class="fila" style="gap:18px;align-items:flex-end;margin-top:12px">
+                <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
+                    <input type="checkbox" name="form_recordatorio_activo" value="1" <?= !empty($cfg['form_recordatorio_activo']) ? 'checked' : '' ?> style="width:auto">
+                    Preguntar si pudo completar el formulario
+                </label>
+                <div>
+                    <label>Horas desde que se le mandó el link</label>
+                    <input type="number" name="form_recordatorio_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['form_recordatorio_horas'] ?? 12)) ?>" style="width:100px">
+                </div>
+            </div>
+            <p class="meta" style="margin-top:8px">"<?= $e((string)($cfg['form_recordatorio'] ?? '')) ?>" — una vez por link, si todavía no lo completó, en horario de contacto y con la ventana de 24 h abierta. Nunca salen dos avisos automáticos al mismo cliente con menos de 12 h de diferencia.</p>
             <p class="meta" style="margin-top:8px">Un solo mensaje antes de que Meta cierre la ventana de 24 h, que es la última oportunidad de escribirle sin plantilla: al que vio el precio, siguió hablando y no pidió la demo, la última llamada; al que escribió y no llegó al precio, "queríamos saber si seguías con interés…" con el portfolio (si no se lo pasamos antes). Si la marca cae de noche, se adelanta al horario de contacto.</p>
             <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">
                 <div>

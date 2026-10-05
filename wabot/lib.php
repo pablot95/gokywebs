@@ -180,6 +180,7 @@ function wabot_ajustes_claves() {
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
+            'form_recordatorio_activo', 'form_recordatorio_horas',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
@@ -5107,6 +5108,101 @@ function wabot_mismo_dia_ar($ts1, $ts2) {
     return gmdate('Y-m-d', (int)$ts1 - 3 * 3600) === gmdate('Y-m-d', (int)$ts2 - 3 * 3600);
 }
 
+/* ──────────── Un automático a la vez (Pablo, 4-oct: "que no se pisen") ────────────
+ *
+ * Los mensajes automáticos (última llamada, recordatorio del formulario y las
+ * plantillas de las 18 h) se anotan en auto_ultimo_ts, y ninguno sale si otro
+ * salió en las últimas 12 h: el cliente nunca recibe dos seguidos. El que no
+ * sale ahora lo vuelve a intentar la próxima pasada del cron (el recordatorio
+ * y la última llamada) o el día siguiente a las 18 h (las plantillas).
+ */
+function wabot_auto_reciente($cv, $ahora) {
+    return (int)($cv['auto_ultimo_ts'] ?? 0) > $ahora - 12 * 3600;
+}
+
+/* ──────────── Recordatorio del formulario (Pablo, 4-oct) ────────────
+ *
+ * "Si después de 12 horas que se le envió el enlace del form, se mande un
+ * mensaje preguntando si pudo completar el form". La hora del link es
+ * form_link_mandado_ts (la pone wabot_conv_transcript con el link del bot o de
+ * Pablo, panel o celular), así que solo cuenta para links mandados desde el
+ * 4-oct. Sale una vez por link, en horario de contacto y con la ventana de 24 h
+ * abierta; nunca en medio de una charla (2 h sin mensajes de nadie).
+ */
+function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || empty($cfg['form_recordatorio_activo'])) return false;
+    $link = (int)($cv['form_link_mandado_ts'] ?? 0);
+    if ($link <= 0 || (int)($cv['form_recordatorio_auto_ts'] ?? 0) >= $link) return false;
+    if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])
+        || !empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['seguimiento_bloqueado']) || !empty($cv['contexto_consulta'])) return false;
+    if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    $horas = max(1, (float)($cfg['form_recordatorio_horas'] ?? 12));
+    if ($ahora - $link < $horas * 3600) return false;
+    if (wabot_auto_reciente($cv, $ahora)) return false;
+    $t = (array)($cv['transcript'] ?? []);
+    $ult = end($t);
+    if ($ult && $ahora - (int)($ult['ts'] ?? 0) < 2 * 3600) return false;
+    // Texto libre solo con la ventana abierta, y con margen para que llegue.
+    if (wabot_ventana_restante($cv, $ahora) < 1800) return false;
+    return wabot_seguimiento_hora_ok($cfg, $ahora);
+}
+
+/** El mismo link que se le mandó (el último del bot o de Pablo); si no se encuentra, el de la charla. */
+function wabot_form_recordatorio_link(&$cv, $cfg) {
+    $t = (array)($cv['transcript'] ?? []);
+    for ($i = count($t) - 1; $i >= 0; $i--) {
+        if (!in_array(($t[$i]['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        if (preg_match('~(?:https?://)?(?:www\.)?gokywebs\.com/form(?![a-z0-9])[^\s]*~i', (string)($t[$i]['t'] ?? ''), $m)) {
+            return rtrim($m[0], '.,;:!?)');
+        }
+    }
+    return wabot_form_link($cv, $cfg);
+}
+
+function wabot_form_recordatorio_texto_auto(&$cv, $cfg, $ahora) {
+    $link = wabot_form_recordatorio_link($cv, $cfg);
+    if ($link === '') return '';
+    $h = wabot_hora_local($ahora);
+    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    return trim(strtr((string)($cfg['form_recordatorio'] ?? ''), ['{saludo}' => $saludo, '{link}' => $link]));
+}
+
+function wabot_form_recordatorio_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (!wabot_form_recordatorio_corresponde($cv, $cfg, $ahora)) continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_form_recordatorio_corresponde($cv, $cfg, $ahora)) continue;
+            $texto = wabot_form_recordatorio_texto_auto($cv, $cfg, $ahora);
+            // Una sola vez por link, salga o no: un rechazo de Meta no se reintenta.
+            $cv['form_recordatorio_auto_ts'] = $ahora;
+            if ($texto !== '' && wabot_enviar($cv, $texto)) {
+                $cv['auto_ultimo_ts'] = $ahora;
+                wabot_conv_transcript($cv, 'bot', $texto);
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('form_recordatorio', ['clave' => $clave, 'enviado' => $texto !== '']);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
 /* ───────────── Última llamada antes de que cierre la ventana ─────────────
  *
  * El que vio el precio, siguió hablando y no llegó a pedir la demo es el lead
@@ -5126,6 +5222,7 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     // aviso también es perseguir: mismas reglas que el seguimiento común.
     if (!empty($cv['handoff_pendiente'])) return false;
     if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
+    if (wabot_auto_reciente($cv, $ahora)) return false;
     // Solo los que mostraron interés y no cerraron nada, o los que escribieron
     // y no llegaron al precio (2-oct).
     if (!wabot_conv_interesado($cv) && !wabot_conv_sin_precio_seguible($cv)) return false;
@@ -5210,6 +5307,7 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
             $cv['ultima_llamada_ts'] = $ahora;
             if (wabot_enviar($cv, $texto)) {
                 $cv['ultima_llamada_enviada'] = true;
+                $cv['auto_ultimo_ts'] = $ahora;
                 wabot_conv_transcript($cv, 'bot', $texto);
                 $res['enviados']++;
                 $res['detalle'][] = $clave;
@@ -5265,6 +5363,7 @@ function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
     if (empty($cv['presentado_via_bot']) || !empty($cv['favorito']) || !empty($cv['presentado_confirmado'])) return false;
     if (!empty($cv['confirmacion_demo_auto_intento_ts'])) return false;
     if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
+    if (wabot_auto_reciente($cv, $ahora)) return false;
     if (wabot_presentada_nivel($cv) !== 'sin_respuesta') return false;
     if (wabot_ultimo_cliente_ts($cv) > (int)$cv['presentado_ts']) return false;
     $horas = (float)($cfg['confirmacion_demo_horas'] ?? 72);
@@ -5277,6 +5376,7 @@ function wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora = null) {
     if (empty($cv['favorito']) || (int)($cv['favorito_ts'] ?? 0) < wabot_plantillas_auto_desde_ts()) return false;
     if (!empty($cv['seguimiento_interesado_enviado']) || !empty($cv['seguimiento_interesado_auto_intento_ts'])) return false;
     if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
+    if (wabot_auto_reciente($cv, $ahora)) return false;
     $ultimo = wabot_ultimo_mensaje_ts($cv);
     return $ultimo > 0 && $ahora - $ultimo >= 7 * 86400;
 }
@@ -5312,6 +5412,7 @@ function wabot_plantillas_auto_correr($cfg, $ahora = null) {
             $resultado = $tipo === 'demo'
                 ? wabot_template_72h_enviar($cv, $cfg)
                 : wabot_template_interesado_enviar($cv, $cfg);
+            if ($resultado === 'ok') $cv['auto_ultimo_ts'] = $ahora;
             if ($resultado === 'ok' && wabot_conv_save($cv)) {
                 $res['enviados']++;
                 $res['detalle'][] = ['clave' => $clave, 'plantilla' => $tipo];

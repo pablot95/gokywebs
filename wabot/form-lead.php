@@ -189,7 +189,8 @@ function formlead_extras_guardar($base, $extras) {
         }
         // El formulario ya se la preguntó: el chat no se la vuelve a pedir.
         if (array_key_exists('referencia', $extras)) $conv['referencia_preguntada'] = true;
-        if (!empty($extras['modalidad_elegida']) && !empty($extras['modelos_elegidos'])) $conv['esProspecto'] = true;
+        // Con los modelos ocultos en el form (4-oct) alcanza con la forma de pago.
+        if (!empty($extras['modalidad_elegida'])) $conv['esProspecto'] = true;
     }
 
     $partes = [];
@@ -200,6 +201,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
     if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único'][$extras['modalidad_elegida']] ?? 'Plan mensual');
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
+    elseif (array_key_exists('modalidad_elegida', $extras)) $partes[] = 'Modelos: a elección del diseñador (dos)';
     if ($partes) {
         $linea = ($aplicar ? '[Formulario web, paso 2] ' : '[Formulario web, paso 2, sin código — NO aplicado] ')
                . implode(' · ', $partes);
