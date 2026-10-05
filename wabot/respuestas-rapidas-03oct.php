@@ -68,9 +68,8 @@ function wabot_rr_03oct_catalogo($anteriores = []) {
         ]],
         ['ico' => '💰', 'titulo' => 'Precios', 'items' => [
             wabot_rr_03oct_precio('un sitio profesional para mostrar tu negocio y recibir consultas por WhatsApp', 'landing'),
+            // Tienda, cursos e inmobiliaria cuestan lo mismo: un solo bloque (4-oct).
             wabot_rr_03oct_precio('una tienda online para vender tus productos y cobrar desde la web', 'ecommerce'),
-            wabot_rr_03oct_precio('una plataforma para vender tus cursos online', 'elearning'),
-            wabot_rr_03oct_precio('una web inmobiliaria para publicar y administrar tus propiedades', 'inmobiliaria'),
             'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. ¿Querés que la armemos?',
             'Si querés ver el detalle de los planes, decime si te interesa el mensual o el anual y te paso el link correspondiente.',
         ]],

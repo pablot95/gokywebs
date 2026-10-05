@@ -1467,7 +1467,9 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-pop-cab { position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 7px; padding:9px 2px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
 .rr-pop-cerrar { padding:2px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--dim); font:inherit; font-size:12px; cursor:pointer; }
 .rr-pop-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap:7px; }
-.rr-item { display:block; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
+/* Cada mensaje en 4 líneas como mucho (4-oct: "no hace falta que se vea
+   todo"); el texto entero aparece al pasar el mouse y es el que va al editor. */
+.rr-item { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
 .rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
 /* La franja derecha del escritorio ahora es solo de la navegación (.tabs-nav). */
 @media (min-width: 1181px) and (hover: hover) {
@@ -3538,7 +3540,7 @@ function burbujaCita(t, chat) {
                 pop.innerHTML = `
                     <div class="rr-pop-cab"><span>${esc(cat.ico)} ${esc(cat.tit)}</span>
                         <button type="button" class="rr-pop-cerrar" aria-label="Cerrar" title="Cerrar (Esc)">✕</button></div>
-                    <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item" role="menuitem" data-id="${i}.${j}">${esc(msg)}</button>`).join('')}</div>`;
+                    <div class="rr-pop-items">${cat.items.map((msg, j) => `<button type="button" class="rr-item" role="menuitem" data-id="${i}.${j}" title="${esc(msg)}">${esc(msg)}</button>`).join('')}</div>`;
                 pop.hidden = false;
                 pop.scrollTop = 0;
                 panel.querySelectorAll('.rr-cat[data-cat]').forEach(b => b.setAttribute('aria-expanded', Number(b.dataset.cat) === i ? 'true' : 'false'));

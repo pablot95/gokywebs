@@ -807,6 +807,35 @@ function wabot_rr_03oct_pidio_codigo($conv) {
     return false;
 }
 
+/**
+ * En Precios había cuatro bloques y tres eran idénticos ($30.000 / $220.000 de
+ * tienda, cursos e inmobiliaria). Pablo, 4-oct: "dejá solo 1" de esos — quedan
+ * el del sitio profesional y el de la tienda. Corre una sola vez (marca en
+ * data/migrated/): si después él vuelve a cargar alguno, queda.
+ */
+function wabot_rr_precios_sin_repetir_04oct(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-precios-04oct';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        $items = (array)($categoria['items'] ?? []);
+        $hayTienda = false;
+        foreach ($items as $texto) if (strpos((string)$texto, '{ecommerce_mensual}') !== false) $hayTienda = true;
+        if (!$hayTienda) continue;
+        $quedan = array_values(array_filter($items, function ($texto) {
+            return strpos((string)$texto, '{elearning_mensual}') === false && strpos((string)$texto, '{inmobiliaria_mensual}') === false;
+        }));
+        if (count($quedan) !== count($items)) { $categoria['items'] = $quedan; $cambio = true; }
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
+
 /** Migra solamente textos estándar; conserva las respuestas personalizadas. */
 function wabot_respuestas_rapidas_precios_1oct($categorias) {
     foreach ($categorias as &$categoria) {
@@ -870,7 +899,7 @@ function wabot_respuestas_rapidas_load() {
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return $actual;
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_precios_sin_repetir_04oct($actual, $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {
