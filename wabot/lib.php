@@ -905,7 +905,10 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
 
     // Todas las demos nuevas ofrecen dos variantes dentro del mismo enlace.
     // Se aclara al presentarlas para que el cliente no pase por alto el selector.
-    $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.";
+    // Desde el 5-oct el texto de Pablo ya la trae: no se repite.
+    if (stripos($texto, 'dos modelos') === false) {
+        $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.";
+    }
 
     $textos = [$texto];
     // Segundo mensaje, aparte, pidiendo el feedback.

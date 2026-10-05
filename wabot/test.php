@@ -3973,42 +3973,32 @@ caso('el reinicio por antigüedad tampoco enciende el bot después de la plantil
     !empty($convSeguimientoViejo['bot_off']) && !empty($convSeguimientoViejo['control_manual']));
 @unlink(wabot_conv_path('QATESTPLANTILLAOFF'));
 
-echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
+echo "\n— La presentación de la demo: el texto de Pablo del 5-oct, igual para todas las webs —\n";
 
-/* Pablo encontró 17 envíos con la misma presentación, cambiando solo el enlace:
- * no decía qué mirar ni qué contenido era de muestra. Ahora hay un texto por
- * tipo, y cada uno nombra SOLO pantallas que esa demo tiene de verdad. */
+/* Del 6-sep al 4-oct hubo un texto por tipo de web que aclaraba qué contenido
+ * era de ejemplo. El 5-oct Pablo pidió uno solo: "Ya está lista la primera
+ * propuesta para la web de [negocio] … Hay dos modelos de web para elegir…".
+ * El sistema de gestión mantiene el suyo. */
 $demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'landing', 'nombre_negocio' => 'YF Prevención']);
-caso('usa el nombre del negocio', strpos($demoTextos[0], 'YF Prevención') !== false);
-caso('trae el link', strpos($demoTextos[0], 'gokywebs.com/demo/yfprevencion') !== false);
-caso('aclara que el contenido es de ejemplo',
-    stripos($demoTextos[0], 'de ejemplo') !== false);
-caso('y dice qué mirar', stripos($demoTextos[0], 'mirá') !== false);
-caso('aclara que hay dos modelos y dónde se cambian',
-    stripos($demoTextos[0], 'dos modelos') !== false
-    && stripos($demoTextos[0], 'parte superior') !== false);
+caso('es el texto de Pablo, con el negocio y el link',
+    $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\n\nPodés verla acá:\ngokywebs.com/demo/yfprevencion\n\n"
+        . "Mirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\n"
+        . "Hay dos modelos de web para elegir. En la parte superior podés cambiar de modelo", $demoTextos[0]);
+caso('la aclaración de los dos modelos va una sola vez', substr_count($demoTextos[0], 'dos modelos') === 1);
 caso('es un solo mensaje', count($demoTextos) === 1);
 
 $presentaciones = [];
-foreach (['landing', 'ecommerce', 'inmobiliaria', 'elearning', 'sistema'] as $tipoDemo) {
+foreach (['landing', 'ecommerce', 'inmobiliaria', 'elearning'] as $tipoDemo) {
     $t = wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => $tipoDemo, 'nombre_negocio' => 'Cuidar+'])[0];
     $presentaciones[$tipoDemo] = $t;
-    caso("la presentación de $tipoDemo trae el link y aclara que hay contenido de muestra",
-        strpos($t, 'gokywebs.com/demo/midemo') !== false
-        && preg_match('/de ejemplo|ficticios/iu', $t) === 1
-        && strpos($t, '{') === false);
+    caso("la presentación de $tipoDemo trae el link y no deja marcadores", strpos($t, 'gokywebs.com/demo/midemo') !== false && strpos($t, '{') === false);
 }
-caso('cada rubro tiene la suya, no son todas iguales',
-    count(array_unique(array_values($presentaciones))) === 5);
-caso('la tienda habla de productos y la inmobiliaria de propiedades',
-    stripos($presentaciones['ecommerce'], 'productos') !== false
-    && stripos($presentaciones['inmobiliaria'], 'propiedades') !== false);
-/* La demo de e-learning NO tiene aula: prometerla sería mostrar una pantalla
- * que no existe. En LMS se nombra solo para decir que se construye después. */
-caso('e-learning no promete el aula ni el acceso de alumnos',
-    preg_match('/\baula\b|acceso de (los )?alumnos/iu', $presentaciones['elearning']) === 0);
+caso('todas las webs llevan el mismo texto', count(array_unique(array_values($presentaciones))) === 1);
+$sistema = wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])[0];
+caso('el sistema mantiene el suyo, también con los dos modelos',
+    $sistema !== $presentaciones['landing'] && substr_count($sistema, 'dos modelos') === 1);
 caso('sin nombre de negocio, el texto igual cierra bien',
-    stripos(wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'ecommerce'])[0], 'la tienda de tu negocio') !== false);
+    stripos(wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'ecommerce'])[0], 'la web de tu negocio') !== false);
 
 echo "\n— Presentada la demo, el cierre lo lleva el desarrollador: se avisa una vez, con interés real —\n";
 

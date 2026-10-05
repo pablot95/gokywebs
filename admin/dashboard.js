@@ -5383,7 +5383,7 @@ const presentacionManualModal = document.getElementById("presentacionManualModal
 function textoPresentacionRespaldo(p, slug) {
     const negocio = p.nombre_negocio || p.rubro || "tu negocio";
     const link = slug ? `gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
-    return `¡Ya está lista la primera propuesta para la web de ${negocio}!\n\nPodés verla acá:\n${link}\n\nMirá el estilo general y cómo está distribuida la información. Los textos e imágenes de ejemplo se reemplazan o ajustan con tu contenido real si avanzamos.\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.`;
+    return `Ya está lista la primera propuesta para la web de ${negocio}\n\nPodés verla acá:\n${link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo`;
 }
 
 function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
