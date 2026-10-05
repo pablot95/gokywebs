@@ -53,8 +53,10 @@ caso('apagado en el panel, no', !wabot_form_recordatorio_corresponde(fr_conv(12.
 echo "Texto\n";
 $c = fr_conv(12.5);
 $texto = wabot_form_recordatorio_texto_auto($c, $cfg, $ahora);
-caso('saludo según la hora y el mismo link que se le mandó',
-    $texto === 'Hola, buenas tardes, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo. Te lo dejo de nuevo por acá: https://gokywebs.com/form/?c=AB12', $texto);
+caso('saludo según la hora y sin mandar el link otra vez',
+    $texto === 'Hola, buenas tardes, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.', $texto);
+$conLink = wabot_form_recordatorio_texto_auto($c, array_merge($cfg, ['form_recordatorio' => '{saludo}, acá está: {link}']), $ahora);
+caso('si algún día el texto pide {link}, va el mismo link que se le mandó', $conLink === 'Hola, buenas tardes, acá está: https://gokywebs.com/form/?c=AB12', $conLink);
 
 echo "Que no se pisen\n";
 caso('con otro automático en las últimas 12 h, el recordatorio espera',

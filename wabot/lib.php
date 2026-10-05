@@ -5163,11 +5163,13 @@ function wabot_form_recordatorio_link(&$cv, $cfg) {
 }
 
 function wabot_form_recordatorio_texto_auto(&$cv, $cfg, $ahora) {
-    $link = wabot_form_recordatorio_link($cv, $cfg);
-    if ($link === '') return '';
+    $plantilla = (string)($cfg['form_recordatorio'] ?? '');
+    // El link solo si el texto lo pide con {link} (desde el 5-oct no lo pide).
+    $link = strpos($plantilla, '{link}') !== false ? wabot_form_recordatorio_link($cv, $cfg) : '';
+    if ($link === '' && strpos($plantilla, '{link}') !== false) return '';
     $h = wabot_hora_local($ahora);
     $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
-    return trim(strtr((string)($cfg['form_recordatorio'] ?? ''), ['{saludo}' => $saludo, '{link}' => $link]));
+    return trim(strtr($plantilla, ['{saludo}' => $saludo, '{link}' => $link]));
 }
 
 function wabot_form_recordatorio_correr($cfg, $ahora = null) {

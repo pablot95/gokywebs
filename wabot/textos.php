@@ -541,7 +541,9 @@ function wabot_textos_default() {
     'ultima_llamada_horas' => 23,
     /* Recordatorio del formulario (Pablo, 4-oct): a las 12 h de mandarle el
      * link (el bot o Pablo, desde el panel o el celular), si todavía no lo
-     * completó. {saludo} según la hora; {link} es el mismo link que se le pasó. */
+     * completó. {saludo} según la hora. Sin el link otra vez (Pablo, 5-oct:
+     * "si el mensaje anterior ya tiene el link, queda re mal mandar dos");
+     * si algún día se quiere, {link} pone el mismo link que se le pasó. */
     /* Seguimiento de la oferta de la primera entrega (Pablo, 4-oct): si lo
      * último que le mandamos fue la oferta ("Siempre antes de avanzar, armamos
      * una primera entrega de la web, sin costo…") y no contestó, a las 23 h
@@ -551,7 +553,7 @@ function wabot_textos_default() {
     'oferta_entrega_seguimiento' => 'Buenas, avisame si te interesa la idea de que te armemos una primera entrega gratis',
     'form_recordatorio_activo' => true,
     'form_recordatorio_horas' => 12,
-    'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo. Te lo dejo de nuevo por acá: {link}',
+    'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.',
     'ya_tengo_web' => 'Perfecto, pasame el link de tu página actual así la reviso y te digo qué conviene mejorar. También podés comparar con los modelos de gokywebs.com/modelos/.',
     'ya_tengo_web_sin_muestra' => 'Perfecto, pasame el link de tu página actual así la reviso y te confirmo cómo la mejoraríamos.',
 ];
