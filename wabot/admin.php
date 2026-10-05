@@ -1532,6 +1532,17 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-demo-link { display:inline-flex; align-items:center; margin-top:7px; padding:5px 10px; border:1px solid #315aa0; border-radius:7px; color:#bfdbfe; font-size:12px; font-weight:700; text-decoration:none; }
 .conv-demo-link:hover { background:#19365f; color:#fff; }
 .conv-head form { display:inline; }
+/* "Ver info": lo que llenó en el formulario (5-oct). */
+.form-info { width:min(560px, calc(100vw - 32px)); max-height:min(80vh, 720px); margin:auto; padding:0; background:var(--card); color:var(--tx); border:1px solid var(--line-fuerte); border-radius:12px; }
+.form-info-cuerpo { padding:18px 20px; }
+.form-info::backdrop { background:rgba(0,0,0,.6); }
+.form-info-cab { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:4px; }
+.form-info-cerrar { background:none; border:0; color:var(--dim); font-size:18px; cursor:pointer; padding:2px 6px; }
+.form-info-cerrar:hover { color:var(--tx); }
+.form-info dl { margin:12px 0 0; }
+.form-info dt { font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--tenue); margin-top:12px; }
+.form-info dd { margin:3px 0 0; white-space:normal; overflow-wrap:anywhere; }
+.form-info dd a { color:var(--info); }
 .conv-acciones { gap:6px; flex-shrink:0; }
 .conv-acciones button { padding:5px 10px; font-size:12px; font-weight:500; border-radius:6px; }
 /* Resetear y Eliminar no se pueden deshacer, así que dejan de verse como los
@@ -2502,7 +2513,6 @@ function burbujaCita(t, chat) {
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
                         <?php if (!empty($conv['postprecio_derivacion'])): ?><span class="meta">Pendiente para Pablo: <?= $e($conv['postprecio_derivacion']) ?></span><?php elseif (!empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
-                        <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                         <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
                               $fichaResumen = function_exists('wabot_ficha_resumen') ? wabot_ficha_resumen($conv, $cfg) : '';
                               if ($fichaResumen !== ''): ?><span class="meta" title="Lo que el cliente fue contando, ordenado por el bot">📋 <?= $e($fichaResumen) ?></span><?php endif; ?>
@@ -2530,8 +2540,12 @@ function burbujaCita(t, chat) {
                             <button class="sec"<?= ($templateInteresadoEnviado || !$templateInteresadoActivo) ? ' disabled' : '' ?> title="<?= $e($templateInteresadoEnviado ? 'Ya fue enviada en este chat.' : (!$templateInteresadoActivo ? 'Activá y configurá la plantilla en Ajustes.' : 'Envía la plantilla de Marketing aprobada por Meta.')) ?>"><?= $templateInteresadoEnviado ? '✓ Seguimiento interesado enviado' : 'Enviar seguimiento interesado' ?></button>
                         </form>
                         <?php endif; ?>
-                        <form method="post"><input type="hidden" name="accion" value="conv_toggle"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec"><?= !empty($conv['bot_off']) ? 'Encender bot acá' : 'Apagar bot acá' ?></button></form>
+                        <?php /* "Encender/Apagar bot acá", "Rehacer boceto", "Confirmó la demo" y "Ya le
+                               contesté" se sacaron de acá (Pablo, 5-oct); sus acciones siguen en el
+                               servidor. "Ver info" muestra lo que llenó en el formulario. */
+                              $formTs = null; $formInfo = wabot_form_info($conv, $formTs); ?>
+                        <button type="button" class="sec" id="btnVerInfo"<?= $formInfo ? '' : ' disabled' ?>
+                            title="<?= $formInfo ? 'Lo que llenó en el formulario' : 'Todavía no completó el formulario' ?>">Ver info</button>
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
                             title="Pone en el chat el mensaje con el link del formulario (con el código de esta conversación), para revisarlo y enviarlo">Form al chat</button>
@@ -2571,14 +2585,13 @@ function burbujaCita(t, chat) {
                         // que es justo cuando más falta hace cargarlo a mano.
                         $bocetoHecho = !empty($conv['lead_creado']);
                         ?>
-                        <form method="post" onsubmit="return confirm(<?= $bocetoHecho
-                            ? "'Este chat YA tiene su boceto en Bocetos. Crear otro lo va a duplicar. Seguro?'"
-                            : "'Crear el boceto con lo que ya se conversó?'" ?>)">
+                        <?php if (!$bocetoHecho): ?>
+                        <form method="post" onsubmit="return confirm('Crear el boceto con lo que ya se conversó?')">
                             <input type="hidden" name="accion" value="conv_crear_boceto">
                             <input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <?php if ($bocetoHecho): ?><input type="hidden" name="forzar" value="1"><?php endif; ?>
-                            <button class="sec"<?= $bocetoHecho ? '' : ' style="border-color:var(--ac);color:var(--ac)"' ?>><?= $bocetoHecho ? 'Rehacer boceto' : '+ Crear boceto' ?></button>
+                            <button class="sec" style="border-color:var(--ac);color:var(--ac)">+ Crear boceto</button>
                         </form>
+                        <?php endif; ?>
                         <?php
                         // La demo se entrega apretando "Presentar" en Bocetos, pero
                         // muchas salen por otro lado (a mano, por mail, en persona).
@@ -2589,17 +2602,6 @@ function burbujaCita(t, chat) {
                             <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Ya la entregué</button></form>
                         <?php endif; ?>
-                        <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
-                        <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button>Confirmó la demo</button></form>
-                        <?php endif; ?>
-                        <?php // Las que ya contestaste por afuera: salen de SL y de RTA sin
-                              // mandarle nada al cliente. Ver wabot_conv_contestada().
-                              $yaContestada = wabot_conv_contestada($conv); ?>
-                        <form method="post"><input type="hidden" name="accion" value="conv_contestado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec" title="<?= $yaContestada
-                                ? 'Vuelve a quedar pendiente en SL o RTA.'
-                                : 'Para cuando le contestaste desde tu otro WhatsApp: sale de SL y de RTA y no se le manda nada. Si el cliente vuelve a escribir, reaparece solo.' ?>"><?= $yaContestada ? 'Sacar la marca' : 'Ya le contesté' ?></button></form>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
                         <span class="conv-acciones-sep" aria-hidden="true"></span>
@@ -2610,6 +2612,33 @@ function burbujaCita(t, chat) {
                     </div>
                     </div>
                 </div>
+
+                <?php if ($formInfo): ?>
+                <dialog class="form-info" id="formInfo" aria-labelledby="formInfoTitulo"><div class="form-info-cuerpo">
+                    <div class="form-info-cab">
+                        <strong id="formInfoTitulo">Lo que llenó en el formulario</strong>
+                        <button type="button" class="form-info-cerrar" aria-label="Cerrar">✕</button>
+                    </div>
+                    <?php if ($formTs): ?><p class="meta">Enviado el <?= $e(date('d/m/Y H:i', $formTs)) ?></p><?php endif; ?>
+                    <dl>
+                        <?php foreach ($formInfo as $dato): ?>
+                        <dt><?= $e($dato['etiqueta']) ?></dt>
+                        <dd><?php if ($dato['valor'] === ''): ?><span class="meta">—</span><?php
+                            elseif (preg_match('~^(https?://)?(www\.)?[\w-]+(\.[\w-]+)+(/\S*)?$~iu', $dato['valor'], $mUrl)): ?><a href="<?= $e(($mUrl[1] ?? '') !== '' ? $dato['valor'] : 'https://' . $dato['valor']) ?>" target="_blank" rel="noopener noreferrer"><?= $e($dato['valor']) ?></a><?php
+                            else: ?><?= nl2br($e($dato['valor'])) ?><?php endif; ?></dd>
+                        <?php endforeach; ?>
+                    </dl>
+                </div></dialog>
+                <script>
+                (function () {
+                    var dlg = document.getElementById('formInfo');
+                    document.getElementById('btnVerInfo').addEventListener('click', function () { dlg.showModal(); });
+                    dlg.querySelector('.form-info-cerrar').addEventListener('click', function () { dlg.close(); });
+                    // Un clic afuera del cuadro también lo cierra.
+                    dlg.addEventListener('click', function (ev) { if (ev.target === dlg) dlg.close(); });
+                })();
+                </script>
+                <?php endif; ?>
 
                 <div class="chat" id="chat"></div>
 

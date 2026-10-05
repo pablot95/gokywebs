@@ -2124,6 +2124,46 @@ function wabot_conv_form_recibido($cv) {
 }
 
 /**
+ * Lo que el cliente llenó en el formulario, para el botón "Ver info" del panel
+ * (Pablo, 5-oct). Sale de las líneas que el formulario deja en el transcript
+ * ("[Formulario web] Negocio: … · Resumen: …" y la del paso 2): son lo que
+ * mandó tal cual, aunque la ficha después se haya corregido a mano. Del último
+ * envío de cada paso; [] si nunca lo completó.
+ * Devuelve [['etiqueta' => 'Negocio', 'valor' => '…'], …] y la fecha en $ts.
+ */
+function wabot_form_info($cv, &$ts = null) {
+    $ts = null;
+    $ultimas = [];
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'sistema') continue;
+        if (!preg_match('/^\[Formulario web(, paso 2)?(?:, sin código[^\]]*| sin código[^\]]*)?\]\s*(.*)$/us', (string)($fila['t'] ?? ''), $m)) continue;
+        $ultimas[$m[1] !== '' ? 'paso2' : 'paso1'] = $m[2];
+        $ts = max((int)$ts, (int)($fila['ts'] ?? 0)) ?: null;
+    }
+    $etiquetas = 'Nombre|Negocio|Resumen|Colores|WhatsApp que dejó|Quiere lograr|Instagram|Estilo|Referencia|Incluir sí o sí|Forma de pago|Modelos';
+    $info = [];
+    foreach (['paso1', 'paso2'] as $paso) {
+        if (!isset($ultimas[$paso])) continue;
+        foreach (preg_split('/ · (?=(?:' . $etiquetas . '): )/u', $ultimas[$paso]) as $parte) {
+            if (!preg_match('/^(' . $etiquetas . '): ?(.*)$/us', $parte, $m)) continue;
+            $info[] = ['etiqueta' => $m[1], 'valor' => trim($m[2])];
+        }
+    }
+    /* Completó el formulario pero no quedó la línea (la charla que adoptó a su
+     * hermana trae form_completado_ts sin transcript del form): lo guardado. */
+    if (!$info && (int)($cv['form_completado_ts'] ?? 0) > 0) {
+        $ts = (int)$cv['form_completado_ts'];
+        $modalidad = ['unico' => 'Plan anual', 'propia' => 'Pago único', 'mensual' => 'Plan mensual'][$cv['modalidad_elegida'] ?? ''] ?? '';
+        foreach (['Nombre' => $cv['nombre'] ?? '', 'Negocio' => $cv['nombre_negocio'] ?? '', 'Resumen' => $cv['descripcion'] ?? '',
+                  'Colores' => $cv['colores'] ?? '', 'Instagram' => ($cv['instagram'] ?? '') !== '' ? 'instagram.com/' . $cv['instagram'] : '',
+                  'Referencia' => $cv['referencia'] ?? '', 'Incluir sí o sí' => $cv['incluir'] ?? '', 'Forma de pago' => $modalidad] as $etiqueta => $valor) {
+            if (trim((string)$valor) !== '') $info[] = ['etiqueta' => $etiqueta, 'valor' => trim((string)$valor)];
+        }
+    }
+    return $info;
+}
+
+/**
  * Guarda a disco una foto o un audio que mandó un cliente, para que Pablo la
  * pueda descargar desde el panel. Antes se bajaba solo para describirla con
  * IA y los bytes se tiraban: no había forma de recuperar la imagen original.
