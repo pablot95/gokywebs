@@ -270,6 +270,7 @@ document.getElementById("inversionRecargarBtn")?.addEventListener("click", () =>
 let erroresDatos = null;     // { sitios: [...], docs: [...], resueltos: Map(id -> Date) }
 let erroresMes = null;       // "YYYY-MM" elegido
 const erroresAbiertos = new Set();
+let erroresIrA = null;       // web a mostrar al llegar desde Mantenimiento
 
 function erroresMesActual() {
     const h = new Date();
@@ -325,6 +326,8 @@ async function cargarErrores({ silencioso = false } = {}) {
     }
     if (!silencioso || activeTab === "errores") renderErrores();
     else actualizarBadgeErrores();
+    // Mantenimiento muestra el estado de cada web en Errores (_mantErroresHTML).
+    if (activeTab === "mantenimiento") renderMantenimiento();
 }
 
 // "https://www.Foo.com/algo" -> "foo.com"
@@ -359,26 +362,37 @@ function erroresResumen() {
     // Esta misma web (1-oct): no es de un cliente pero se monitorea igual, y figura desde el
     // primer día aunque todavía nadie la haya abierto. Sus páginas llevan la misma línea de err.js.
     porWeb.set("gokywebs.com", { id: "gokywebs.com", nombre: "Gokywebs", persona: "", tieneEmpresa: true, dominio: "gokywebs.com", esCliente: false, propia: true, senal: null, grupos: new Map() });
+    // Los que están en Mantenimiento (suscriptores y clientes de los planes): su web lo dice (5-oct).
+    const { anual: mantAnual, mensual: mantMensual } = _clientesEnMantenimiento();
+    const enMant = new Set([...mantenimiento.filter(m => avisoMantDe(m)?.tipoEvento !== "baja"), ...mantAnual, ...mantMensual]);
     for (const c of [...clients, ...completados, ...mantenimiento]) {
         const { nombre, persona, tieneEmpresa } = erroresNombreCliente(c);
         const dom = erroresDominio(c.dominio || c.web || c.url);
+        const mant = enMant.has(c);
         if (!dom) {
             const claves = [...new Set([erroresNorm(c.nombre), erroresNorm(c.proyecto)])].filter(k => k.length >= 4);
-            if (claves.length) sinDominio.push({ nombre, persona, tieneEmpresa, claves });
+            if (claves.length) sinDominio.push({ nombre, persona, tieneEmpresa, claves, mant, doc: c });
             continue;
         }
         if (porWeb.has(dom)) {
             const actual = porWeb.get(dom);
             if (tieneEmpresa && !actual.tieneEmpresa) Object.assign(actual, { nombre, persona, tieneEmpresa });
+            if (mant) actual.mant = true;
+            actual.fichas.add(c);
             continue;
         }
-        porWeb.set(dom, { id: dom, nombre: nombre || dom, persona, tieneEmpresa, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
+        porWeb.set(dom, { id: dom, nombre: nombre || dom, persona, tieneEmpresa, dominio: dom, esCliente: true, mant, fichas: new Set([c]), senal: null, grupos: new Map() });
     }
+    // Todas las fichas que coinciden (el cliente y su suscriptor de Mantenimiento suelen ser dos):
+    // el nombre sale de la que tiene empresa; la web queda unida a todas (fichas, para Mantenimiento).
+    // "cooperativamanoscalidas.com.ar" también es de "Cooperativa Manos Cálidas Limitada" (5-oct).
     const clientePorNombre = (host) => {
         const label = erroresNorm(host.replace(/^www\./, "").split(".")[0]);
         if (!label) return null;
-        const coincidencias = sinDominio.filter(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k))));
-        return coincidencias.find(x => x.tieneEmpresa) || coincidencias[0] || null;
+        const coincidencias = sinDominio.filter(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k)) || (label.length >= 10 && k.startsWith(label))));
+        if (!coincidencias.length) return null;
+        const elegida = coincidencias.find(x => x.tieneEmpresa) || coincidencias[0];
+        return { ...elegida, mant: coincidencias.some(x => x.mant), fichas: new Set(coincidencias.map(x => x.doc)) };
     };
     // A qué web pertenece un host que avisó: el dominio de un cliente (o un subdominio), un cliente
     // que coincide por nombre, o él mismo.
@@ -386,7 +400,7 @@ function erroresResumen() {
         for (const dom of porWeb.keys()) if (host === dom || host.endsWith("." + dom)) return dom;
         if (!porWeb.has(host)) {
             const c = clientePorNombre(host);
-            porWeb.set(host, { id: host, nombre: c ? c.nombre : host, persona: c?.persona || "", dominio: host, esCliente: !!c, senal: null, grupos: new Map() });
+            porWeb.set(host, { id: host, nombre: c ? c.nombre : host, persona: c?.persona || "", dominio: host, esCliente: !!c, mant: !!c?.mant, fichas: c?.fichas || new Set(), senal: null, grupos: new Map() });
         }
         return host;
     };
@@ -474,7 +488,7 @@ function erroresHtmlWeb(w) {
       '<div class="err-head">' +
         '<button type="button" class="err-toggle" data-err-toggle aria-expanded="' + abierto + '">' +
           '<span class="err-dot" aria-hidden="true"></span>' +
-          '<span class="err-nombre">' + escapeHtml(w.nombre) + (w.persona ? ' <small>· ' + escapeHtml(w.persona) + '</small>' : "") + (w.dominio && w.dominio !== w.nombre ? ' <small>· ' + escapeHtml(w.dominio) + '</small>' : "") + '</span>' +
+          '<span class="err-nombre">' + escapeHtml(w.nombre) + (w.mant ? ' <span class="err-mant" title="Está en Mantenimiento">Mantenimiento</span>' : "") + (w.persona ? ' <small>· ' + escapeHtml(w.persona) + '</small>' : "") + (w.dominio && w.dominio !== w.nombre ? ' <small>· ' + escapeHtml(w.dominio) + '</small>' : "") + '</span>' +
           '<span class="err-estado">' + escapeHtml(titulo) + (nota ? ' <small>· ' + nota + '</small>' : "") +
             (w.menores ? ' <small>· ' + w.menores + (w.menores === 1 ? " aviso menor" : " avisos menores") + '</small>' : "") + '</span>' +
         '</button>' +
@@ -510,6 +524,16 @@ function renderErrores() {
               '<summary>Webs ocultas <span class="pill-count">' + ocultas.length + '</span><small class="muted"> · no suman al contador; abrí una y tocá «Volver a mostrar»</small></summary>' +
               ocultas.map(erroresHtmlWeb).join("") + '</details>'
             : "");
+    // Llegó desde Mantenimiento (_mantErroresHTML): esa web, desplegada y a la vista.
+    if (erroresIrA && erroresMes === erroresMesActual()) {
+        const box = [...cont.querySelectorAll(".err-site")].find(b => b.dataset.web === erroresIrA);
+        erroresIrA = null;
+        if (box) {
+            box.scrollIntoView({ block: "center" });
+            box.classList.add("err-site--destacada");
+            setTimeout(() => box.classList.remove("err-site--destacada"), 1800);
+        }
+    }
 }
 
 document.getElementById("erroresRecargarBtn")?.addEventListener("click", () => cargarErrores());
@@ -880,20 +904,54 @@ function ingresosPorDia(hastaYmd) {
             agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", nombre: s.nombre || "Suscriptor", cobrado: false });
         }
     }
-    // Falta cobrar: mensuales cargados a mano, sin suscripción de Mercado Pago (no están arriba).
-    for (const c of (clients || [])) {
-        if (getEstado(c) !== "cliente" || modalidadDe(c) !== "mensual") continue;
-        const sus = suscripcionDe(c);
-        if (sus.estado !== "activa" || sus.preapprovalId || sus.mant || !sus.desde || !sus.mensual) continue;
+    // Falta cobrar: los mensuales que no cobra Mercado Pago (no están arriba).
+    for (const k of _mensualesSinMercadoPago()) {
         const [y, m] = hoy.split("-").map(Number);
         for (let i = 0; i < 36; i++) {
-            const ymd = _ymdDelMes(y, m - 1 + i, sus.desde.getDate());
+            const ymd = _ymdDelMes(y, m - 1 + i, k.desde.getDate());
             if (ymd > hastaYmd) break;
             if (ymd < hoy) continue;
-            agregar(ymd, { monto: sus.mensual, clase: "subs", tipo: "Mensualidad (a mano)", nombre: c.nombre || c.proyecto || "Cliente", cobrado: false });
+            agregar(ymd, { monto: k.monto, clase: "subs", tipo: "Mensualidad (a mano)", nombre: k.nombre, cobrado: false });
         }
     }
     return dias;
+}
+
+/* Los mensuales activos que suma "Mensualidad activa" de Mantenimiento (los
+   suscriptores de Mantenimiento y los clientes del plan mensual sin suscriptor)
+   que NO son una suscripción de Mercado Pago. Muchos clientes figuran activos
+   sin el ID de su suscripción, y el 5-oct el calendario los contaba dos veces:
+   una por Mercado Pago y otra a mano ($645.000 en vez de $360.000). Sin ID, se
+   toma como suya la suscripción de Mercado Pago del mismo monto dada de alta
+   hasta 3 días antes o después; si no hay ninguna, se paga por otro lado. */
+function _mensualesSinMercadoPago() {
+    const subs = (ingresosMp?.suscripciones || []).map(s => ({ id: String(s.id), monto: Number(s.monto) || 0, alta: new Date(s.alta), usada: false }));
+    const candidatos = [];
+    for (const m of (mantenimiento || [])) {
+        if (avisoMantDe(m) || (m.estado || "activo") !== "activo") continue;
+        const monto = Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0);
+        const desde = mantToDate(m.createdAt);
+        if (monto > 0 && desde) candidatos.push({ pre: String(m.preapprovalId || "").trim(), monto, desde, nombre: m.nombre || "Suscriptor" });
+    }
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
+        const sus = suscripcionDe(c);
+        if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
+        candidatos.push({ pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, nombre: c.proyecto || c.nombre || "Cliente" });
+    }
+    const out = [];
+    for (const k of candidatos.sort((a, b) => a.desde - b.desde)) {
+        // Con ID es de Mercado Pago: si no está entre las activas, se dio de baja.
+        if (k.pre) {
+            const sub = subs.find(s => s.id === k.pre);
+            if (sub) sub.usada = true;
+            continue;
+        }
+        const sub = subs.find(s => !s.usada && s.monto === k.monto && Math.abs(s.alta - k.desde) <= 3 * 86400000);
+        if (sub) sub.usada = true;
+        else out.push(k);
+    }
+    return out;
 }
 
 function renderIngresos() {
@@ -7087,13 +7145,48 @@ function _mantContactoHTML(c, m) {
         telefono: telefono
             ? `<a href="${escapeHtml(mantWaLink(telefono))}" target="_blank" rel="noopener noreferrer">${escapeHtml(telefono)}</a>`
             : `<span class="muted">—</span>`,
-        dominio: dominio
+        dominio: (dominio
             ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>${destino ? ` <button type="button" class="icon-btn" ${destino} data-dom-valor="${escapeHtml(dominio)}" title="Cambiar el dominio">✎</button>` : ""}`
             : destino
                 ? `<button type="button" class="btn-ghost" ${destino} data-dom-valor="" style="font-size:12px;padding:2px 8px">+ Agregar dominio</button>`
-                : `<span class="muted">—</span>`
+                : `<span class="muted">—</span>`) + _mantErroresHTML(c, m, dominio)
     };
 }
+
+/* Mantenimiento ↔ Errores (Pablo, 5-oct-2026: "los que están en mantenimiento
+   deberían estar vinculados con los que están en Errores"). Debajo del dominio,
+   cómo está su web en Errores este mes; un clic la abre allá. La web se busca
+   igual que en Errores: por el dominio o, sin dominio, por el nombre. */
+let mantErroresWebs = null;   // erroresResumen() del mes actual, una vez por render
+
+function _erroresWebDe(c, m, dominio) {
+    if (!mantErroresWebs) return null;
+    const dom = erroresDominio(dominio);
+    if (dom) return mantErroresWebs.find(w => w.id === dom || dom.endsWith("." + w.id) || w.id.endsWith("." + dom)) || null;
+    // Sin dominio: la web que Errores le asignó a esta ficha (por el nombre).
+    return mantErroresWebs.find(w => w.fichas && ((c && w.fichas.has(c)) || (m && w.fichas.has(m)))) || null;
+}
+
+function _mantErroresHTML(c, m, dominio) {
+    const w = _erroresWebDe(c, m, dominio);
+    if (!w || w.oculto) return "";
+    const [texto, clase] = w.altosPend > 0
+        ? [`⚠ ${w.altosPend} error${w.altosPend === 1 ? "" : "es"} sin resolver`, "mant-err--alerta"]
+        : !w.senal ? ["Sin monitoreo (falta err.js)", "mant-err--sinsenal"]
+        : ["✓ Sin errores este mes", "mant-err--ok"];
+    return `<div><button type="button" class="mant-err ${clase}" data-ir-errores="${escapeHtml(w.id)}" title="Ver esta web en Errores">${texto}</button></div>`;
+}
+
+// Desde Mantenimiento: abre la pestaña Errores con esa web desplegada (erroresIrA).
+document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-ir-errores]");
+    if (!btn) return;
+    erroresIrA = btn.dataset.irErrores;
+    erroresAbiertos.add(erroresIrA);
+    const sel = document.getElementById("erroresMes");
+    if (sel) sel.value = erroresMesActual();
+    document.querySelector('.tab-btn[data-tab="errores"]')?.click();
+});
 
 // Convierte la celda en un campo para escribir el dominio; Enter guarda, Esc cancela.
 function _bindDominioMant(tbody) {
@@ -7223,6 +7316,7 @@ function renderMantenimiento() {
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
     const filas = _mantFilas();
+    mantErroresWebs = erroresDatos && erroresMes === erroresMesActual() ? erroresResumen() : null;
     const conteo = { todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: 0 };
     sinSusc.forEach(c => { conteo[_claveMantCliente(c)]++; });
     filas.forEach(f => { conteo[f.clave]++; });
