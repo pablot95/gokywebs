@@ -78,7 +78,10 @@ if (preg_match('#^(chrome|moz|safari)-extension:#i', $src)) exit;
 
 $id   = $sitio;
 $ua   = limpiar($_SERVER['HTTP_USER_AGENT'] ?? '', 160);
-$ip   = $_SERVER['REMOTE_ADDR'] ?? '0';
+// gokywebs.com va detrás de Cloudflare: REMOTE_ADDR es la IP del borde (compartida por muchos
+// visitantes) y la del visitante viene en CF-Connecting-IP. Falsearla solo esquiva el tope por IP;
+// el tope total por día sigue igual.
+$ip   = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? ($_SERVER['REMOTE_ADDR'] ?? '0');
 // Mismo error = mismo hash (sin números del mensaje ni query del archivo), para que el panel lo agrupe.
 $hash = substr(md5($id . '|' . $tipo . '|' . preg_replace('/\d+/', '#', $msg) . '|' . preg_replace('/[?#].*$/', '', $src) . '|' . $line), 0, 12);
 
@@ -113,6 +116,19 @@ if (!$pasa) exit;
 // Limpieza de topes viejos (1 de cada 50 pedidos): más de 2 días.
 if (mt_rand(1, 50) === 1) {
     foreach (glob($dir . '/{ip-*.json,dia-*.txt}', GLOB_BRACE) ?: [] as $f) { if (@filemtime($f) < $now - 172800) @unlink($f); }
+}
+
+/* ── Resumen en disco para la rutina de Claude (err/agrupados.php, err/pendientes.php) ── */
+if (!$esPing) {
+    require_once __DIR__ . '/agrupados.php';
+    try {
+        err_agrupar($hash, [
+            'site' => $id, 'tipo' => $tipo, 'nivel' => $nivel, 'msg' => $msg, 'src' => $src,
+            'line' => $line, 'col' => $col, 'stack' => $stack, 'url' => $url, 'ua' => $ua,
+        ], substr(md5($ip . '|' . $ua), 0, 10), $now);  // visitante anónimo
+    } catch (Throwable $t) {
+        error_log('[err/log.php] agrupados: ' . $t->getMessage());
+    }
 }
 
 /* ── Guardar en Firestore (typed values del REST API) ── */
