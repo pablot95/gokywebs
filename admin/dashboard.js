@@ -711,14 +711,16 @@ function renderInversion() {
      cobrado antes sin fecha va a la seña y, lo que pasa de la seña, a la
      semana de entrega (marcado como aproximado). Las renovaciones anuales ya
      tenían fecha (`renovaciones`).
-   Semanas de domingo a sábado, las mismas del resto de Inversión.
+   5-oct: las dos vistas (por semana y planificador) pasaron a ser un
+   calendario mensual ("me confunde, no entiendo cuánto voy a cobrar"): cada
+   día con lo que entró y las suscripciones que faltan cobrar, y arriba los
+   números del mes. Los otros pagos se cuentan solo cuando ya entraron.
    ══════════════════════════════════════════════════════════════════════ */
 let inversionVista = "contactos";
 let ingresosMp = null;            // respuesta de ingresos.php (null = no se pidió)
 let ingresosMpError = "";
 let ingresosMpCargando = false;
 const INGRESOS_DESDE = "2026-07-01";
-const PLAN_SEMANAS = 8;
 const TIPO_COBRO_LABEL = { sena: "Seña", saldo: "Saldo", anual: "Cobro anual", ajuste: "Ajuste", primerPago: "Primer pago", cobro: "Cobro" };
 
 function _cobrosRegistrados(c, nuevo) {
@@ -784,10 +786,6 @@ function cobrosAnualesYUnicos() {
     return lista;
 }
 
-function _semanaDe(fecha) {
-    return semanaClave(Math.floor(fecha.getTime() / 1000));
-}
-
 function _fechaMp(ymd) {
     const [y, m, d] = String(ymd).split("-").map(Number);
     return new Date(y, m - 1, d, 12);
@@ -815,203 +813,206 @@ function _avisoMp() {
     return "";
 }
 
-function _cajaNumeros(items) {
-    return `<div class="stats-box stats-box--periods" style="margin-bottom:16px">${items.map(([label, valor, sub]) => `
-        <div class="stat-item"><span class="stat-label">${escapeHtml(label)}</span><span class="stat-value">${fmtMoney(valor)}</span>${sub ? `<span class="muted" style="font-size:11px">${sub}</span>` : ""}</div>`).join("")}</div>`;
+/* Mes que se está mirando ("YYYY-MM") y día abierto abajo del calendario ("YYYY-MM-DD"). */
+let calMes = null;
+let calDia = null;
+const MESES_AR = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const DIAS_AR = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function _diaDe(fecha) {
+    return argYmd(Math.floor(fecha.getTime() / 1000));
+}
+
+/* "YYYY-MM-DD" del día `dia` del mes `m0` (0-11, puede pasarse de 11): un 31 en un mes de 30 cae el 30. */
+function _ymdDelMes(y, m0, dia) {
+    const d = new Date(y, m0, 1);
+    const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
+}
+
+function _mesMas(ym, n) {
+    const [y, m] = ym.split("-").map(Number);
+    return _ymdDelMes(y, m - 1 + n, 1).slice(0, 7);
+}
+
+/* $20.000 → "$20k", $1.250.000 → "$1,25M": entra en la celda del calendario. */
+function _montoCorto(n) {
+    const v = Math.round(Number(n) || 0);
+    if (v >= 1e6) return `$${(Math.round(v / 1e4) / 100).toLocaleString("es-AR")}M`;
+    if (v >= 1000) return `$${(Math.round(v / 100) / 10).toLocaleString("es-AR")}k`;
+    return `$${v}`;
+}
+
+/* Todo lo que entró y lo que falta cobrar de suscripciones, día por día, hasta `hastaYmd`:
+   Map("YYYY-MM-DD" → [{monto, clase: "subs" | "otros", tipo, nombre, cobrado, aprox}]). */
+function ingresosPorDia(hastaYmd) {
+    const hoy = _diaDe(new Date());
+    const dias = new Map();
+    const agregar = (ymd, it) => {
+        if (!dias.has(ymd)) dias.set(ymd, []);
+        dias.get(ymd).push(it);
+    };
+
+    // Ya entró: suscripciones (cobros reales de Mercado Pago, netos de devoluciones).
+    for (const c of (ingresosMp?.cobros || [])) {
+        const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
+        if (neto > 0 && c.dia) agregar(c.dia, { monto: neto, clase: "subs", tipo: "Suscripción", nombre: c.nombre || "Suscriptor", cobrado: true });
+    }
+    // Ya entró: otros pagos (señas, saldos, cobros anuales, ajustes).
+    for (const k of cobrosAnualesYUnicos()) {
+        agregar(_diaDe(k.fecha), { monto: k.monto, clase: "otros", tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, cobrado: true, aprox: k.aprox });
+    }
+
+    // Falta cobrar: suscripciones de Mercado Pago, el próximo cobro y uno por mes después.
+    // Si el próximo cobro ya pasó (Mercado Pago lo está reintentando), va hoy.
+    for (const s of (ingresosMp?.suscripciones || [])) {
+        if (s.estado !== "authorized" || !s.proximoCobro || !(Number(s.monto) > 0)) continue;
+        const prox = new Date(s.proximoCobro);
+        if (Number.isNaN(prox.getTime())) continue;
+        const [y, m, d] = _diaDe(prox).split("-").map(Number);
+        for (let i = 0; i < 36; i++) {
+            let ymd = _ymdDelMes(y, m - 1 + i, d);
+            if (ymd > hastaYmd) break;
+            if (ymd < hoy) {
+                if (i > 0) continue;
+                ymd = hoy;
+            }
+            agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", nombre: s.nombre || "Suscriptor", cobrado: false });
+        }
+    }
+    // Falta cobrar: mensuales cargados a mano, sin suscripción de Mercado Pago (no están arriba).
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente" || modalidadDe(c) !== "mensual") continue;
+        const sus = suscripcionDe(c);
+        if (sus.estado !== "activa" || sus.preapprovalId || sus.mant || !sus.desde || !sus.mensual) continue;
+        const [y, m] = hoy.split("-").map(Number);
+        for (let i = 0; i < 36; i++) {
+            const ymd = _ymdDelMes(y, m - 1 + i, sus.desde.getDate());
+            if (ymd > hastaYmd) break;
+            if (ymd < hoy) continue;
+            agregar(ymd, { monto: sus.mensual, clase: "subs", tipo: "Mensualidad (a mano)", nombre: c.nombre || c.proyecto || "Cliente", cobrado: false });
+        }
+    }
+    return dias;
 }
 
 function renderIngresos() {
     const cont = document.getElementById("invVistaIngresos");
     if (!cont) return;
-    const semanas = new Map();
-    const semana = key => {
-        if (!semanas.has(key)) semanas.set(key, { subs: 0, unicos: 0, items: [] });
-        return semanas.get(key);
-    };
-    for (const c of (ingresosMp?.cobros || [])) {
-        const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
-        if (neto <= 0) continue;
-        const s = semana(_semanaDe(_fechaMp(c.dia)));
-        s.subs += neto;
-        s.items.push({ fecha: _fechaMp(c.dia), monto: neto, tipo: "Suscripción", nombre: c.nombre || "Suscriptor", aprox: false });
+    const hoy = _diaDe(new Date());
+    const mesHoy = hoy.slice(0, 7);
+    if (!calMes) {
+        calMes = mesHoy;
+        calDia = hoy;
     }
-    for (const k of cobrosAnualesYUnicos()) {
-        const s = semana(_semanaDe(k.fecha));
-        s.unicos += k.monto;
-        s.items.push({ fecha: k.fecha, monto: k.monto, tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, aprox: k.aprox });
+    const [y, m] = calMes.split("-").map(Number);
+    const finMes = _ymdDelMes(y, m - 1, 31);
+    const dias = ingresosPorDia(finMes);
+
+    // Hasta dónde se puede ir: atrás, el primer mes con algo cobrado; adelante, un año.
+    const primerMes = [...dias.keys()].sort()[0]?.slice(0, 7) || mesHoy;
+    const minMes = primerMes < INGRESOS_DESDE.slice(0, 7) ? primerMes : INGRESOS_DESDE.slice(0, 7);
+    const maxMes = _mesMas(mesHoy, 12);
+
+    // Números del mes.
+    let subsCobrado = 0, subsFalta = 0, otros = 0, nOtros = 0;
+    for (const [ymd, items] of dias) {
+        if (ymd.slice(0, 7) !== calMes) continue;
+        for (const it of items) {
+            if (it.clase === "otros") { otros += it.monto; nOtros++; }
+            else if (it.cobrado) subsCobrado += it.monto;
+            else subsFalta += it.monto;
+        }
+    }
+    const subsTotal = subsCobrado + subsFalta;
+    const esPasado = calMes < mesHoy;
+    const esFuturo = calMes > mesHoy;
+    const subSubs = esPasado ? "todo cobrado"
+        : esFuturo ? "a cobrar (estimado)"
+        : `${fmtMoney(subsCobrado)} ya entró · ${fmtMoney(subsFalta)} falta cobrar`;
+    const subOtros = esFuturo ? "todavía no entró nada"
+        : nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas, saldos y cobros anuales` : "ningún pago este mes";
+    const subTotal = esPasado ? "todo cobrado"
+        : esFuturo ? "suscripciones a cobrar"
+        : `${fmtMoney(subsCobrado + otros)} ya entró · ${fmtMoney(subsFalta)} falta cobrar`;
+
+    // Grilla: semanas de lunes a domingo.
+    const primero = `${calMes}-01`;
+    const offset = (ymdDiaSemana(primero) + 6) % 7;
+    const celdas = [];
+    for (let i = 0; i < offset; i++) celdas.push(`<div class="ingcal-celda ingcal-celda--fuera"></div>`);
+    for (let ymd = primero; ymd <= finMes; ymd = ymdAgregarDias(ymd, 1)) {
+        const items = dias.get(ymd) || [];
+        const subsOk = items.filter(it => it.clase === "subs" && it.cobrado).reduce((a, it) => a + it.monto, 0);
+        const subsPend = items.filter(it => it.clase === "subs" && !it.cobrado).reduce((a, it) => a + it.monto, 0);
+        const otr = items.filter(it => it.clase === "otros").reduce((a, it) => a + it.monto, 0);
+        const total = subsOk + subsPend + otr;
+        const clases = ["ingcal-celda"];
+        if (ymd === hoy) clases.push("ingcal-celda--hoy");
+        if (ymd === calDia) clases.push("ingcal-celda--sel");
+        if (ymd < hoy) clases.push("ingcal-celda--pasado");
+        if (!total) clases.push("ingcal-celda--vacia");
+        celdas.push(`
+            <button type="button" class="${clases.join(" ")}" data-dia="${ymd}" title="${total ? fmtMoney(total) : "Sin ingresos"}">
+                <span class="ingcal-num">${Number(ymd.slice(8))}</span>
+                ${subsOk ? `<span class="ingcal-mov ingcal-mov--subs">${_montoCorto(subsOk)}</span>` : ""}
+                ${subsPend ? `<span class="ingcal-mov ingcal-mov--falta">${_montoCorto(subsPend)}</span>` : ""}
+                ${otr ? `<span class="ingcal-mov ingcal-mov--otros">${_montoCorto(otr)}</span>` : ""}
+            </button>`);
     }
 
-    const hoyKey = _semanaDe(new Date());
-    const claves = [...semanas.keys()].filter(k => k <= hoyKey);
-    const primera = claves.length ? claves.sort()[0] : hoyKey;
-    const todas = [];
-    for (let k = hoyKey; k >= primera; k = ymdAgregarDias(k, -7)) todas.push(k);
-
-    const suma = (keys, campo) => keys.reduce((acc, k) => acc + (semanas.get(k)?.[campo] || 0), 0);
-    const ult4 = todas.slice(0, 4);
-    const mes = new Date().toISOString().slice(0, 7);
-    let mesSubs = 0, mesUnicos = 0;
-    for (const s of semanas.values()) for (const it of s.items) {
-        const ym = `${it.fecha.getFullYear()}-${String(it.fecha.getMonth() + 1).padStart(2, "0")}`;
-        if (ym !== mes) continue;
-        if (it.tipo === "Suscripción") mesSubs += it.monto; else mesUnicos += it.monto;
+    // Detalle del día tocado.
+    let detalle = `<p class="muted">Tocá un día para ver de quién es cada ingreso.</p>`;
+    if (calDia && calDia.slice(0, 7) === calMes) {
+        const items = [...(dias.get(calDia) || [])].sort((a, b) => (a.clase === b.clase ? b.monto - a.monto : a.clase === "subs" ? -1 : 1));
+        const [, dm, dd] = calDia.split("-").map(Number);
+        const titulo = `${DIAS_AR[ymdDiaSemana(calDia)]} ${dd} de ${MESES_AR[dm - 1]}${calDia === hoy ? " (hoy)" : ""}`;
+        const total = items.reduce((a, it) => a + it.monto, 0);
+        detalle = `
+            <p class="mant-subtitulo ingcal-detalle-titulo">${escapeHtml(titulo)}${total ? ` · ${fmtMoney(total)}` : ""}</p>
+            ${items.length ? `<div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${items.map(it => `
+                <tr>
+                    <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${escapeHtml(it.nombre)}</td>
+                    <td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
+                    <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}</td>
+                    <td class="num">${fmtMoney(it.monto)}</td>
+                </tr>`).join("")}</tbody></table></div>` : `<p class="muted">Este día no entró ni entra nada.</p>`}`;
     }
-
-    const filas = todas.map(k => {
-        const s = semanas.get(k) || { subs: 0, unicos: 0, items: [] };
-        const total = s.subs + s.unicos;
-        const gasto = gastoAdsPorSemana.get(k) || 0;
-        const items = [...s.items].sort((a, b) => a.fecha - b.fecha).map(it => `
-            <tr><td>${escapeHtml(fechaCortaJs(it.fecha))}</td><td>${escapeHtml(it.nombre)}</td><td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en la semana de entrega">(aprox.)</span>` : ""}</td><td class="num">${fmtMoney(it.monto)}</td></tr>`).join("");
-        return `
-        <tr class="ing-fila${total ? "" : " ing-fila--vacia"}" data-semana="${k}">
-            <td>${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))}${k === hoyKey ? ` <span class="muted">(esta semana)</span>` : ""}</td>
-            <td class="num">${s.subs ? fmtMoney(s.subs) : "—"}</td>
-            <td class="num">${s.unicos ? fmtMoney(s.unicos) : "—"}</td>
-            <td class="num"><strong>${total ? fmtMoney(total) : "—"}</strong></td>
-            <td class="num">${gasto ? fmtMoney(gasto) : "—"}</td>
-            <td class="num">${total || gasto ? `<span style="color:${total - gasto >= 0 ? "var(--accent-green,#4ade80)" : "var(--danger,#f87171)"}">${fmtMoney(total - gasto)}</span>` : "—"}</td>
-        </tr>
-        ${items ? `<tr class="ing-detalle" data-detalle="${k}" hidden><td colspan="6">
-            <table class="clients-table ing-detalle-tabla"><tbody>${items}</tbody></table></td></tr>` : ""}`;
-    }).join("");
 
     cont.innerHTML = `
-        <p class="muted">Lo que entró cada semana (domingo a sábado): las suscripciones son los cobros reales de Mercado Pago; anual y pago único, las señas, saldos y cobros anuales que registrás en Clientes. Tocá una semana para ver el detalle. La publicidad es la que cargás en "Contactos y clientes".</p>
-        ${_avisoMp()}
-        ${_cajaNumeros([
-            ["Esta semana", suma([hoyKey], "subs") + suma([hoyKey], "unicos"), `${fmtMoney(suma([hoyKey], "subs"))} suscripciones · ${fmtMoney(suma([hoyKey], "unicos"))} anual/único`],
-            ["Últimas 4 semanas", suma(ult4, "subs") + suma(ult4, "unicos"), `${fmtMoney(suma(ult4, "subs"))} suscripciones · ${fmtMoney(suma(ult4, "unicos"))} anual/único`],
-            ["Este mes", mesSubs + mesUnicos, `${fmtMoney(mesSubs)} suscripciones · ${fmtMoney(mesUnicos)} anual/único`],
-        ])}
-        <div class="table-wrapper">
-            <table class="clients-table ing-tabla">
-                <thead><tr><th>Semana</th><th class="num">Suscripciones</th><th class="num">Anual / pago único</th><th class="num">Total</th><th class="num">Publicidad</th><th class="num">Resultado</th></tr></thead>
-                <tbody>${filas}</tbody>
-            </table>
-        </div>`;
-}
-
-/* Próximas fechas de cobro de una mensualidad, desde `primera`, cada mes, hasta `hasta`. */
-function _fechasMensuales(primera, hasta) {
-    const out = [];
-    for (let i = 0; i < 6; i++) {
-        const d = new Date(primera.getFullYear(), primera.getMonth() + i, primera.getDate(), 12);
-        if (d > hasta) break;
-        out.push(d);
-    }
-    return out;
-}
-
-function renderPlanificador() {
-    const cont = document.getElementById("invVistaPlan");
-    if (!cont) return;
-    const hoy = new Date();
-    const inicioKey = _semanaDe(hoy);
-    const claves = Array.from({ length: PLAN_SEMANAS }, (_, i) => ymdAgregarDias(inicioKey, i * 7));
-    const finHorizonte = _fechaMp(ymdAgregarDias(claves.at(-1), 6));
-    finHorizonte.setHours(23, 59, 59);
-    const semanas = new Map(claves.map(k => [k, { subs: 0, anuales: 0, items: [] }]));
-    const vencidos = [];
-    const agregar = (fecha, monto, tipo, nombre, campo) => {
-        const s = semanas.get(_semanaDe(fecha));
-        if (!s) return;
-        s[campo] += monto;
-        s.items.push({ fecha, monto, tipo, nombre });
-    };
-
-    // Suscripciones de Mercado Pago: el próximo cobro y uno por mes después.
-    const hoy0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
-    for (const s of (ingresosMp?.suscripciones || [])) {
-        if (s.estado !== "authorized" || !s.proximoCobro || !(Number(s.monto) > 0)) continue;
-        let primera = new Date(s.proximoCobro);
-        if (Number.isNaN(primera.getTime())) continue;
-        if (primera < hoy0) primera = new Date(hoy0.getFullYear(), hoy0.getMonth(), hoy0.getDate(), 12);
-        for (const f of _fechasMensuales(primera, finHorizonte)) agregar(f, Number(s.monto), "Suscripción (Mercado Pago)", s.nombre || "Suscriptor", "subs");
-    }
-    // Mensuales cargados a mano, sin suscripción de Mercado Pago (no están en la lista de arriba).
-    for (const c of (clients || [])) {
-        if (getEstado(c) !== "cliente" || modalidadDe(c) !== "mensual") continue;
-        const sus = suscripcionDe(c);
-        if (sus.estado !== "activa" || sus.preapprovalId || sus.mant || !sus.desde || !sus.mensual) continue;
-        let d = new Date(hoy0.getFullYear(), hoy0.getMonth(), sus.desde.getDate(), 12);
-        if (d < hoy0) d = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate(), 12);
-        for (const f of _fechasMensuales(d, finHorizonte)) agregar(f, sus.mensual, "Mensualidad (a mano)", c.nombre || c.proyecto || "Cliente", "subs");
-    }
-    // Cobros anuales del plan anual.
-    for (const c of (clients || [])) {
-        if (getEstado(c) !== "cliente") continue;
-        const r = renovacionAnualDe(c);
-        if (!r || r.legado || !r.proximo || !r.monto) continue;
-        const nombre = c.nombre || c.proyecto || "Cliente";
-        if (r.proximo < hoy0) vencidos.push({ fecha: r.proximo, monto: r.monto, tipo: "Cobro anual vencido", nombre });
-        else if (r.proximo <= finHorizonte) agregar(r.proximo, r.monto, "Cobro anual", nombre, "anuales");
-    }
-    // Saldos de anual y pago único: se cobran al entregar, sin fecha fija.
-    const saldos = [];
-    for (const c of (clients || [])) {
-        if (getEstado(c) !== "cliente" || !_conSena(modalidadDe(c))) continue;
-        const { saldo, cobrado } = pagoUnicoDe(c);
-        if (!saldo || (!cobrado && !c.senaAt)) continue;
-        const item = { monto: saldo, nombre: c.nombre || c.proyecto || "Cliente" };
-        if (webEntregada(c)) vencidos.push({ ...item, fecha: mantToDate(c.entregadoAt), tipo: "Saldo de una web entregada" });
-        else saldos.push(item);
-    }
-
-    const totalSubs = claves.reduce((a, k) => a + semanas.get(k).subs, 0);
-    const totalAnuales = claves.reduce((a, k) => a + semanas.get(k).anuales, 0);
-    const totalSaldos = saldos.reduce((a, s) => a + s.monto, 0);
-    const totalVencidos = vencidos.reduce((a, s) => a + s.monto, 0);
-
-    const filas = claves.map(k => {
-        const s = semanas.get(k);
-        const total = s.subs + s.anuales;
-        const items = [...s.items].sort((a, b) => a.fecha - b.fecha).map(it => `
-            <tr><td>${escapeHtml(fechaCortaJs(it.fecha))}</td><td>${escapeHtml(it.nombre)}</td><td>${escapeHtml(it.tipo)}</td><td class="num">${fmtMoney(it.monto)}</td></tr>`).join("");
-        return `
-        <tr class="ing-fila${total ? "" : " ing-fila--vacia"}" data-semana="${k}">
-            <td>${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))}${k === inicioKey ? ` <span class="muted">(esta semana)</span>` : ""}</td>
-            <td class="num">${s.subs ? fmtMoney(s.subs) : "—"}</td>
-            <td class="num">${s.anuales ? fmtMoney(s.anuales) : "—"}</td>
-            <td class="num"><strong>${total ? fmtMoney(total) : "—"}</strong></td>
-        </tr>
-        ${items ? `<tr class="ing-detalle" data-detalle="${k}" hidden><td colspan="4">
-            <table class="clients-table ing-detalle-tabla"><tbody>${items}</tbody></table></td></tr>` : ""}`;
-    }).join("");
-
-    const lista = (arr, conFecha) => arr.length ? `<div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${arr
-        .sort((a, b) => b.monto - a.monto)
-        .map(it => `<tr>${conFecha ? `<td>${escapeHtml(fechaCortaJs(it.fecha))}</td>` : ""}<td>${escapeHtml(it.nombre)}</td>${it.tipo ? `<td>${escapeHtml(it.tipo)}</td>` : ""}<td class="num">${fmtMoney(it.monto)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Ninguno.</p>`;
-
-    cont.innerHTML = `
-        <p class="muted">Lo que debería entrar en las próximas ${PLAN_SEMANAS} semanas: las suscripciones de Mercado Pago (próximo cobro y uno por mes después), los mensuales cargados a mano y los cobros anuales del plan anual. Es una estimación: una tarjeta rechazada o una baja la cambian.</p>
-        ${_avisoMp()}
-        ${_cajaNumeros([
-            [`Próximas ${PLAN_SEMANAS} semanas`, totalSubs + totalAnuales, `${fmtMoney(totalSubs)} suscripciones · ${fmtMoney(totalAnuales)} anuales`],
-            ["Saldos al entregar", totalSaldos, `${saldos.length} web${saldos.length === 1 ? "" : "s"} en desarrollo, sin fecha`],
-            ["Vencido sin cobrar", totalVencidos, `${vencidos.length} cobro${vencidos.length === 1 ? "" : "s"}`],
-        ])}
-        <div class="table-wrapper">
-            <table class="clients-table ing-tabla">
-                <thead><tr><th>Semana</th><th class="num">Suscripciones</th><th class="num">Cobros anuales</th><th class="num">Total</th></tr></thead>
-                <tbody>${filas}</tbody>
-            </table>
+        <div class="ingcal-cabecera">
+            <button type="button" class="btn-ghost ingcal-flecha" data-cal-mes="-1" ${calMes <= minMes ? "disabled" : ""} aria-label="Mes anterior">‹</button>
+            <h2 class="ingcal-titulo">${MESES_AR[m - 1]} ${y}</h2>
+            <button type="button" class="btn-ghost ingcal-flecha" data-cal-mes="1" ${calMes >= maxMes ? "disabled" : ""} aria-label="Mes siguiente">›</button>
+            ${calMes !== mesHoy ? `<button type="button" class="btn-ghost ingcal-hoy" data-cal-mes="0">Volver a este mes</button>` : ""}
         </div>
-        <p class="mant-subtitulo" style="margin-top:18px">Saldos de webs en desarrollo (se cobran al entregar)</p>
-        ${lista(saldos, false)}
-        <p class="mant-subtitulo" style="margin-top:18px">Vencido sin cobrar</p>
-        ${lista(vencidos, true)}`;
+        ${_avisoMp()}
+        <div class="stats-box stats-box--periods ingcal-stats">
+            <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
+            <div class="stat-item"><span class="stat-label">💵 Otros pagos (ya entró)</span><span class="stat-value">${fmtMoney(otros)}</span><span class="muted ingcal-stat-sub">${subOtros}</span></div>
+            <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
+        </div>
+        <div class="ingcal-leyenda">
+            <span><span class="ingcal-punto ingcal-punto--subs"></span>Suscripción que ya entró</span>
+            <span><span class="ingcal-punto ingcal-punto--falta"></span>Suscripción que falta cobrar</span>
+            <span><span class="ingcal-punto ingcal-punto--otros"></span>Otro pago (seña, saldo, anual)</span>
+        </div>
+        <div class="ingcal-grilla">
+            ${["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(d => `<div class="ingcal-dia-semana">${d}</div>`).join("")}
+            ${celdas.join("")}
+        </div>
+        <div class="ingcal-detalle">${detalle}</div>
+        <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
 }
 
 function renderInversionVista() {
     document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
-    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos", plan: "invVistaPlan" };
+    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos" };
     for (const [clave, id] of Object.entries(vistas)) {
         const el = document.getElementById(id);
         if (el) el.hidden = clave !== inversionVista;
     }
     if (inversionVista === "ingresos") renderIngresos();
-    if (inversionVista === "plan") renderPlanificador();
 }
 
 document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {
@@ -1020,18 +1021,23 @@ document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventLi
     if (inversionVista !== "contactos") cargarIngresosMp();
 }));
 
-// Una semana se abre y se cierra con un clic (el detalle de qué entró y de quién).
-for (const id of ["invVistaIngresos", "invVistaPlan"]) {
-    document.getElementById(id)?.addEventListener("click", (e) => {
-        const fila = e.target.closest("tr.ing-fila");
-        if (!fila) return;
-        const det = fila.parentElement.querySelector(`tr[data-detalle="${fila.dataset.semana}"]`);
-        if (det) {
-            det.hidden = !det.hidden;
-            fila.classList.toggle("abierta", !det.hidden);
-        }
-    });
-}
+// Flechas de mes y clic en un día (abre el detalle abajo; otro clic lo cierra).
+document.getElementById("invVistaIngresos")?.addEventListener("click", (e) => {
+    const flecha = e.target.closest("[data-cal-mes]");
+    if (flecha) {
+        const paso = Number(flecha.dataset.calMes);
+        const mesHoy = _diaDe(new Date()).slice(0, 7);
+        calMes = paso ? _mesMas(calMes || mesHoy, paso) : mesHoy;
+        calDia = calMes === mesHoy ? _diaDe(new Date()) : null;
+        renderIngresos();
+        return;
+    }
+    const celda = e.target.closest("[data-dia]");
+    if (celda) {
+        calDia = calDia === celda.dataset.dia ? null : celda.dataset.dia;
+        renderIngresos();
+    }
+});
 
 /* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
    de la pestaña. Mismo panel embebido que la pestaña WhatsApp (mismo iframe,

@@ -879,15 +879,63 @@ textarea:focus {
 
 .stats-week-row:last-child { border-bottom: 0; }
 
-/* Inversión → Ingresos por semana y Planificador (4-oct-2026). */
-.ing-tabla .num, .ing-detalle-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ing-fila { cursor: pointer; }
-.ing-fila:hover td { background: var(--bg-elev); }
-.ing-fila--vacia td { color: var(--text-muted); }
-.ing-fila.abierta td { background: var(--bg-elev); }
-.ing-detalle > td { padding: 0 0 10px 18px; background: var(--bg-elev); }
+/* Inversión → Calendario de ingresos (5-oct-2026). Azul = suscripción que ya
+   entró, azul punteado = suscripción que falta cobrar, verde = otro pago. */
 .ing-detalle-tabla { margin: 0; font-size: 12.5px; }
-.ing-detalle-tabla td { padding: 6px 10px; }
+.ing-detalle-tabla td { padding: 7px 10px; }
+.ing-detalle-tabla .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ingcal-cabecera { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; flex-wrap: wrap; }
+.ingcal-titulo { font-size: 22px; font-weight: 700; text-transform: capitalize; min-width: 190px; text-align: center; letter-spacing: -0.01em; }
+.ingcal-flecha { font-size: 20px; line-height: 1; padding: 6px 14px; }
+.ingcal-flecha:disabled { opacity: .3; cursor: default; }
+.ingcal-hoy { margin-left: auto; }
+.ingcal-stats { margin-bottom: 12px; }
+.ingcal-stats .stat-item { flex: 1 1 200px; }
+.ingcal-stats .stat-item:nth-child(1) .stat-value { color: #60A5FA; }
+.ingcal-stats .stat-item:nth-child(3) .stat-value { color: var(--text); }
+.ingcal-stat-sub { display: block; font-size: 12px; margin-top: 4px; }
+.ingcal-leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+.ingcal-punto { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ingcal-punto--subs { background: #60A5FA; }
+.ingcal-punto--falta { border: 1.5px dashed #60A5FA; }
+.ingcal-punto--otros { background: var(--accent); }
+.ingcal-grilla { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.ingcal-dia-semana { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; text-align: center; padding-bottom: 2px; }
+.ingcal-celda {
+    display: flex; flex-direction: column; align-items: stretch; gap: 3px;
+    min-height: 92px; padding: 7px; text-align: left;
+    background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font: inherit; cursor: pointer;
+}
+.ingcal-celda:hover { border-color: var(--border-strong); }
+.ingcal-celda--fuera { background: transparent; border-color: transparent; cursor: default; }
+.ingcal-celda--vacia .ingcal-num, .ingcal-celda--pasado .ingcal-num { color: var(--text-muted); }
+.ingcal-celda--hoy { border-color: var(--accent); }
+.ingcal-celda--hoy .ingcal-num { color: var(--accent); }
+.ingcal-celda--sel { background: var(--bg-card); border-color: var(--text-muted); box-shadow: inset 0 0 0 1px var(--text-muted); }
+.ingcal-celda--hoy.ingcal-celda--sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ingcal-num { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+.ingcal-mov { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; border-radius: 6px; padding: 2px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ingcal-mov--subs { background: rgba(96, 165, 250, .16); color: #93C5FD; }
+.ingcal-mov--falta { border: 1px dashed rgba(96, 165, 250, .6); color: #93C5FD; padding: 1px 5px; }
+.ingcal-mov--otros { background: rgba(34, 197, 94, .16); color: #4ADE80; }
+.ingcal-detalle { margin-top: 16px; }
+.mant-subtitulo.ingcal-detalle-titulo { text-transform: none; font-size: 15px; letter-spacing: 0; color: var(--text); }
+.ingcal-detalle .clients-table { min-width: 0; }
+.ingcal-detalle .muted { font-size: inherit; }
+.ingcal-detalle-titulo::first-letter { text-transform: uppercase; }
+.ingcal-nota { margin-top: 14px; font-size: 12px; }
+@media (max-width: 640px) {
+    .ingcal-grilla { gap: 3px; }
+    .ingcal-celda { min-height: 64px; padding: 4px 3px; gap: 2px; }
+    .ingcal-num { font-size: 11px; }
+    .ingcal-mov { font-size: 10px; padding: 1px 2px; text-align: center; }
+    .ingcal-mov--falta { padding: 0 1px; }
+    .ingcal-dia-semana { font-size: 10px; letter-spacing: 0; }
+    .ingcal-titulo { font-size: 18px; min-width: 150px; }
+    .ingcal-hoy { margin-left: 0; }
+    .ingcal-detalle td { padding: 7px 6px; font-size: 12px; }
+}
 
 .stats-week-label { color: var(--text); display: flex; flex-direction: column; gap: 2px; }
 .stats-week-label small { color: var(--text-muted); font-size: 11px; }

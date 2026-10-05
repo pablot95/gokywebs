@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261004-ingresos">
+    <link rel="stylesheet" href="styles.css?v=20261005-calendario">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -484,12 +484,11 @@
                 </div>
                 <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
             </div>
-            <!-- 4-oct-2026: Ingresos por semana (suscripciones y anual/único por separado)
-                 y el Planificador de las próximas semanas. dashboard.js: renderIngresos, renderPlanificador. -->
+            <!-- 5-oct-2026: Calendario de ingresos (antes "Ingresos por semana" y "Planificador"):
+                 cada día lo que entró y lo que falta cobrar, y los números del mes. dashboard.js: renderIngresos. -->
             <nav class="subtab-nav" id="inversionNav">
                 <button type="button" class="subtab-btn active" data-inv="contactos">👥 Contactos y clientes</button>
-                <button type="button" class="subtab-btn" data-inv="ingresos">💵 Ingresos por semana</button>
-                <button type="button" class="subtab-btn" data-inv="plan">🗓️ Planificador</button>
+                <button type="button" class="subtab-btn" data-inv="ingresos">📅 Calendario de ingresos</button>
             </nav>
             <div id="invVistaContactos">
                 <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta Ads Manager (no hay integración con esa API, se mira aparte), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
@@ -497,7 +496,6 @@
                 <div id="inversionContent"><p class="muted">Cargando…</p></div>
             </div>
             <div id="invVistaIngresos" hidden></div>
-            <div id="invVistaPlan" hidden></div>
         </section>
 
         <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
@@ -1215,6 +1213,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261005-presentacion"></script>
+    <script type="module" src="dashboard.js?v=20261005-calendario"></script>
 </body>
 </html>
