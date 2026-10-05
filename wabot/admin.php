@@ -3423,10 +3423,10 @@ function burbujaCita(t, chat) {
          * buscador de respuestas rápidas. Texto genérico, sin tipo de web ni
          * monto (Pablo, 5-oct): solo cambia el link. */
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual20000');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual30000');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
