@@ -3420,12 +3420,13 @@ function burbujaCita(t, chat) {
 
         /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
-         * buscador de respuestas rápidas. */
+         * buscador de respuestas rápidas. Texto genérico, sin tipo de web ni
+         * monto (Pablo, 5-oct): solo cambia el link. */
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
