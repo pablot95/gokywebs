@@ -180,7 +180,7 @@ function wabot_ajustes_claves() {
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
-            'form_recordatorio_activo', 'form_recordatorio_horas',
+            'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
@@ -5203,6 +5203,78 @@ function wabot_form_recordatorio_correr($cfg, $ahora = null) {
     return $res;
 }
 
+/* ──────────── Seguimiento de la oferta de la primera entrega (Pablo, 4-oct) ────────────
+ *
+ * "Si el último mensaje que mandé fue lo de propuesta, precio y «Siempre antes
+ * de avanzar, armamos una primera entrega de la web, sin costo…» y el cliente
+ * no contesta, a las 23 h que se mande: «Buenas, avisame si te interesa la idea
+ * de que te armemos una primera entrega gratis»". Una vez por charla, aunque el
+ * bot esté apagado (lo atiende Pablo), con el mismo horario que la última
+ * llamada y sin pisarse con otros automáticos (wabot_auto_reciente).
+ */
+function wabot_texto_es_oferta_entrega($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    return strpos($t, 'primera entrega') !== false && preg_match('/\b(sin costo|gratis|gratuita)\b/u', $t) === 1;
+}
+
+function wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || empty($cfg['oferta_entrega_seguimiento_activo'])) return false;
+    if (!empty($cv['oferta_entrega_seguimiento_ts'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['seguimiento_bloqueado']) || !empty($cv['contexto_consulta'])) return false;
+    if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
+    if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])
+        || !empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    // Lo último de la charla es nuestro y, desde que escribió el cliente, le
+    // mandamos la oferta (puede venir después de la propuesta y el precio).
+    $hayOferta = false;
+    $t = (array)($cv['transcript'] ?? []);
+    for ($i = count($t) - 1; $i >= 0; $i--) {
+        $q = $t[$i]['q'] ?? '';
+        if ($q === 'sistema') continue;
+        if ($q === 'cliente') break;
+        if (wabot_texto_es_oferta_entrega($t[$i]['t'] ?? '')) { $hayOferta = true; break; }
+    }
+    if (!$hayOferta) return false;
+    if (wabot_auto_reciente($cv, $ahora)) return false;
+    return wabot_cerca_del_cierre($cfg, (int)($cv['ultimo_cliente_ts'] ?? 0),
+        (float)($cfg['oferta_entrega_seguimiento_horas'] ?? 23), $ahora);
+}
+
+function wabot_oferta_entrega_seguimiento_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (!wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora)) continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora)) continue;
+            $texto = trim((string)($cfg['oferta_entrega_seguimiento'] ?? ''));
+            // Una sola vez, salga o no: un rechazo de Meta no se reintenta.
+            $cv['oferta_entrega_seguimiento_ts'] = $ahora;
+            if ($texto !== '' && wabot_enviar($cv, $texto)) {
+                $cv['auto_ultimo_ts'] = $ahora;
+                wabot_conv_transcript($cv, 'bot', $texto);
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('oferta_entrega_seguimiento', ['clave' => $clave, 'enviado' => $texto !== '']);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
 /* ───────────── Última llamada antes de que cierre la ventana ─────────────
  *
  * El que vio el precio, siguió hablando y no llegó a pedir la demo es el lead
@@ -5232,9 +5304,18 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     $ult = end($t);
     if (!$ult || ($ult['q'] ?? '') !== 'bot') return false;
 
-    $ultimoCliente = (int)($cv['ultimo_cliente_ts'] ?? 0);
+    return wabot_cerca_del_cierre($cfg, (int)($cv['ultimo_cliente_ts'] ?? 0), (float)($cfg['ultima_llamada_horas'] ?? 23), $ahora);
+}
+
+/**
+ * ¿Es el momento de un aviso "antes de que cierre la ventana de 24 h"? A las
+ * $desde horas del último mensaje del cliente, dentro del horario de contacto;
+ * si esa marca cae de noche, se adelanta a la última hora hábil antes del
+ * cierre. La usan la última llamada y el seguimiento de la oferta de la
+ * primera entrega.
+ */
+function wabot_cerca_del_cierre($cfg, $ultimoCliente, $desde, $ahora) {
     if ($ultimoCliente <= 0) return false;
-    $desde = (float)($cfg['ultima_llamada_horas'] ?? 23);
     $transcurrido = $ahora - $ultimoCliente;
     // Después del cierre real de la ventana Meta ya no deja pasar el mensaje.
     $cierre = $ultimoCliente + (int)(23.7 * 3600);

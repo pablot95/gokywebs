@@ -36,6 +36,7 @@ $cfg = wabot_config_load();
 // la última llamada y las plantillas. Cada uno respeta wabot_auto_reciente(),
 // así que en la misma pasada nunca salen dos al mismo cliente.
 $recordatorio = wabot_form_recordatorio_correr($cfg);
+$ofertaEntrega = wabot_oferta_entrega_seguimiento_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
 $plantillas = wabot_plantillas_auto_correr($cfg);
 
@@ -47,4 +48,5 @@ echo json_encode([
     ],
     'plantillas' => $plantillas,
     'form_recordatorio' => $recordatorio,
+    'oferta_entrega' => $ofertaEntrega,
 ], JSON_UNESCAPED_UNICODE) . "\n";

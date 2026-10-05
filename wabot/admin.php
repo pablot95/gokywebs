@@ -415,6 +415,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['ultima_llamada_activa'] = !empty($_POST['ultima_llamada_activa']);
         if (isset($_POST['form_recordatorio_horas'])) {
             $cfg['form_recordatorio_activo'] = !empty($_POST['form_recordatorio_activo']);
+            $cfg['oferta_entrega_seguimiento_activo'] = !empty($_POST['oferta_entrega_seguimiento_activo']);
             $cfg['form_recordatorio_horas'] = max(1, min(23, (float)$_POST['form_recordatorio_horas']));
         }
 
@@ -2355,6 +2356,10 @@ function burbujaCita(t, chat) {
                     <input type="number" name="form_recordatorio_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['form_recordatorio_horas'] ?? 12)) ?>" style="width:100px">
                 </div>
             </div>
+            <label style="display:flex;align-items:center;gap:7px;margin:12px 0 0;cursor:pointer">
+                <input type="checkbox" name="oferta_entrega_seguimiento_activo" value="1" <?= !empty($cfg['oferta_entrega_seguimiento_activo']) ? 'checked' : '' ?> style="width:auto">
+                Si lo último fue la oferta de la primera entrega y no contestó, a las 23 h: "<?= $e((string)($cfg['oferta_entrega_seguimiento'] ?? '')) ?>"
+            </label>
             <p class="meta" style="margin-top:8px">"<?= $e((string)($cfg['form_recordatorio'] ?? '')) ?>" — una vez por link, si todavía no lo completó, en horario de contacto y con la ventana de 24 h abierta. Nunca salen dos avisos automáticos al mismo cliente con menos de 12 h de diferencia.</p>
             <p class="meta" style="margin-top:8px">Un solo mensaje antes de que Meta cierre la ventana de 24 h, que es la última oportunidad de escribirle sin plantilla: al que vio el precio, siguió hablando y no pidió la demo, la última llamada; al que escribió y no llegó al precio, "queríamos saber si seguías con interés…" con el portfolio (si no se lo pasamos antes). Si la marca cae de noche, se adelanta al horario de contacto.</p>
             <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">

@@ -542,6 +542,13 @@ function wabot_textos_default() {
     /* Recordatorio del formulario (Pablo, 4-oct): a las 12 h de mandarle el
      * link (el bot o Pablo, desde el panel o el celular), si todavía no lo
      * completó. {saludo} según la hora; {link} es el mismo link que se le pasó. */
+    /* Seguimiento de la oferta de la primera entrega (Pablo, 4-oct): si lo
+     * último que le mandamos fue la oferta ("Siempre antes de avanzar, armamos
+     * una primera entrega de la web, sin costo…") y no contestó, a las 23 h
+     * de su último mensaje. Texto de Pablo, tal cual. */
+    'oferta_entrega_seguimiento_activo' => true,
+    'oferta_entrega_seguimiento_horas' => 23,
+    'oferta_entrega_seguimiento' => 'Buenas, avisame si te interesa la idea de que te armemos una primera entrega gratis',
     'form_recordatorio_activo' => true,
     'form_recordatorio_horas' => 12,
     'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo. Te lo dejo de nuevo por acá: {link}',
