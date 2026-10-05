@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Encode+Sans:wdth,wght@100..125,400..700&amp;family=Martian+Mono:wdth,wght@87.5,500&amp;display=swap">
-<link rel="stylesheet" href="styles.css?v=20261004230453">
+<link rel="stylesheet" href="styles.css?v=20261005100606">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
 </head>
 <body class="m1">
@@ -39,7 +39,7 @@
       <a href="#tienda" data-cat="puertas-ventana">Puertas-ventana</a>
       <a href="#tienda" data-cat="gran-luz">Gran luz</a>
       <a href="#trabajos">Trabajos</a>
-      <a class="nav-dest" href="#medida">A medida</a>
+      <a class="nav-dest" href="https://wa.me/5492281312467?text=Hola%20Todo%20Aberturas!%20Quiero%20presupuesto%20para%20una%20abertura%20a%20medida.%20Mi%20vano%20mide%20__%20%C3%97%20__%20cm." target="_blank" rel="noopener">A medida</a>
     </nav>
     <form class="busca" id="busca-form" role="search">
       <label class="sr-only" for="q">Buscar aberturas</label>
@@ -84,7 +84,7 @@
           <p class="hero-lead">Ventanas, puertas-ventana y paños fijos en línea tradicional y de media prestación. El asesoramiento, el diseño y el presupuesto no tienen costo.</p>
           <div class="hero-ctas">
             <a class="btn btn--solid" href="#tienda">Ver aberturas y precios</a>
-            <a class="btn btn--line" href="#medida">Cotizar mi medida</a>
+            <a class="btn btn--line" href="https://wa.me/5492281312467?text=Hola%20Todo%20Aberturas!%20Quiero%20presupuesto%20para%20una%20abertura%20a%20medida.%20Mi%20vano%20mide%20__%20%C3%97%20__%20cm." target="_blank" rel="noopener">Pedir presupuesto a medida</a>
           </div>
         </div>
         <div class="rotulo rotulo--hero">
@@ -149,11 +149,11 @@
           </button>
         </li>
         <li data-animate="escala" style="opacity:0;transform:translateY(16px) scale(.92)">
-          <a class="familia familia--medida" href="#medida">
+          <a class="familia familia--medida" href="https://wa.me/5492281312467?text=Hola%20Todo%20Aberturas!%20Quiero%20presupuesto%20para%20una%20abertura%20a%20medida.%20Mi%20vano%20mide%20__%20%C3%97%20__%20cm." target="_blank" rel="noopener">
             <span class="familia__foto recorte" data-foto="colocacion" data-foco="0.56,0.42,1.45"><img src="images/obra-colocacion.webp" width="1254" height="1254" alt="Colocación del marco de una puerta-ventana corrediza"></span>
             <span class="familia__letra" aria-hidden="true">F</span>
             <span class="familia__t">A medida</span>
-            <span class="familia__d">Cotizá tu vano</span>
+            <span class="familia__d">Pedí tu presupuesto</span>
           </a>
         </li>
       </ul>
@@ -244,94 +244,15 @@
         <div class="tienda__main">
           <div class="catalogo-grid" id="grid"></div>
           <div class="vacio" id="vacio" hidden>
-            <p>No hay aberturas con esos filtros. Probá con otra medida, o cotizala a medida.</p>
+            <p>No hay aberturas con esos filtros. Probá con otra medida, o pedila a medida.</p>
             <div class="vacio__acts">
               <button type="button" class="btn btn--line btn--sm" data-limpiar>Ver todas</button>
-              <a class="btn btn--solid btn--sm" href="#medida">Cotizar a medida</a>
+              <a class="btn btn--solid btn--sm" href="https://wa.me/5492281312467?text=Hola%20Todo%20Aberturas!%20Quiero%20presupuesto%20para%20una%20abertura%20a%20medida.%20Mi%20vano%20mide%20__%20%C3%97%20__%20cm." target="_blank" rel="noopener">Pedir presupuesto a medida</a>
             </div>
           </div>
           <div class="mas" data-animate="subir" style="opacity:0;transform:translateY(20px)">
             <button type="button" class="btn btn--line" id="ver-mas" hidden>Ver más aberturas</button>
-            <p class="mas__n" id="mas-n">¿No está tu medida? <a href="#medida">Cargala y te la cotizamos</a>.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="sec sec-medida" id="medida" aria-labelledby="t-medida">
-    <div class="container">
-      <div class="sec-head">
-        <p class="folio"><span class="cota-regla" data-animate="linea" style="transform:scaleX(0)"></span><span class="folio__n">04</span></p>
-        <h2 id="t-medida" data-animate="subir" style="opacity:0;transform:translateY(40px)">¿Tu vano es estándar <em>o va a medida?</em></h2>
-        <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(20px)">Medí el hueco de la pared, de lado a lado y de piso a dintel. Si entra una estándar, la llevás ya; si no, te la fabricamos a medida.</p>
-      </div>
-      <div class="vano-app" id="vano-app">
-        <div class="vano-tipos" data-animate="subir" style="opacity:0;transform:translateY(20px)">
-          <fieldset class="seg seg--tipos">
-            <legend class="sr-only">Tipo de abertura</legend>
-            <label><input type="radio" name="v-tipo" value="ventana" checked><span>Ventana corrediza</span></label>
-            <label><input type="radio" name="v-tipo" value="puerta-ventana"><span>Puerta-ventana</span></label>
-            <label><input type="radio" name="v-tipo" value="pano"><span>Paño fijo</span></label>
-            <label><input type="radio" name="v-tipo" value="ventiluz"><span>Ventiluz</span></label>
-          </fieldset>
-        </div>
-        <div class="vano-cuerpo">
-          <div class="vano-col">
-            <figure class="vano-plano" data-animate="subir" style="opacity:0;transform:translateY(40px)">
-              <div class="plano" id="plano"></div>
-              <p class="plano__ayuda">Arrastrá la esquina <span class="plano__punto" aria-hidden="true"></span> para cambiar la medida, o escribila al lado.</p>
-              <div class="rotulo rotulo--plano" id="plano-rotulo"></div>
-            </figure>
-          </div>
-          <div class="vano-panel" data-animate="subir" style="opacity:0;transform:translateY(40px)">
-            <div class="vano-cm">
-              <div class="cm">
-                <label class="cm__lbl" for="v-ancho">Ancho del vano</label>
-                <div class="cm__in">
-                  <button type="button" class="cm__paso" data-cm="ancho" data-d="-1" aria-label="Restar un centímetro al ancho">−</button>
-                  <input type="number" id="v-ancho" inputmode="numeric" min="30" max="600" step="1" value="152">
-                  <span class="cm__u" aria-hidden="true">cm</span>
-                  <button type="button" class="cm__paso" data-cm="ancho" data-d="1" aria-label="Sumar un centímetro al ancho">+</button>
-                </div>
-                <p class="cm__err" id="v-ancho-err" hidden></p>
-              </div>
-              <div class="cm">
-                <label class="cm__lbl" for="v-alto">Alto del vano</label>
-                <div class="cm__in">
-                  <button type="button" class="cm__paso" data-cm="alto" data-d="-1" aria-label="Restar un centímetro al alto">−</button>
-                  <input type="number" id="v-alto" inputmode="numeric" min="30" max="300" step="1" value="112">
-                  <span class="cm__u" aria-hidden="true">cm</span>
-                  <button type="button" class="cm__paso" data-cm="alto" data-d="1" aria-label="Sumar un centímetro al alto">+</button>
-                </div>
-                <p class="cm__err" id="v-alto-err" hidden></p>
-              </div>
-            </div>
-            <div class="vano-ops">
-              <fieldset class="op">
-                <legend class="op__t">Línea</legend>
-                <div class="seg seg--linea">
-                  <label><input type="radio" name="v-linea" value="t" checked><span>Tradicional</span></label>
-                  <label><input type="radio" name="v-linea" value="m"><span>Media prestación</span></label>
-                </div>
-              </fieldset>
-              <fieldset class="op">
-                <legend class="op__t">Color</legend>
-                <div class="swatches">
-                  <label class="swatch"><input type="radio" name="v-color" value="blanco" checked><span class="sw sw--blanco"></span><span class="swatch__n">Blanco</span></label>
-                  <label class="swatch"><input type="radio" name="v-color" value="negro"><span class="sw sw--negro"></span><span class="swatch__n">Negro</span></label>
-                  <label class="swatch"><input type="radio" name="v-color" value="natural"><span class="sw sw--natural"></span><span class="swatch__n">Natural</span></label>
-                  <label class="swatch"><input type="radio" name="v-color" value="madera"><span class="sw sw--madera"></span><span class="swatch__n">Símil madera</span></label>
-                </div>
-              </fieldset>
-              <div class="op op--fila">
-                <label class="op__sel"><span class="op__t">Vidrio</span>
-                  <select id="v-vidrio"></select>
-                </label>
-                <label class="op__check" id="v-mosq-wrap"><input type="checkbox" id="v-mosq"><span>Con mosquitero</span></label>
-              </div>
-            </div>
-            <div class="vano-res" id="vano-res" aria-live="polite"></div>
+            <p class="mas__n" id="mas-n">¿No está tu medida? <a href="https://wa.me/5492281312467?text=Hola%20Todo%20Aberturas!%20Quiero%20presupuesto%20para%20una%20abertura%20a%20medida.%20Mi%20vano%20mide%20__%20%C3%97%20__%20cm." target="_blank" rel="noopener">Pasanos el ancho y el alto y te la cotizamos</a>.</p>
           </div>
         </div>
       </div>
@@ -345,7 +266,7 @@
       </figure>
       <div class="obras-intro__txt">
         <div class="sec-head">
-          <p class="folio"><span class="cota-regla" data-animate="linea" style="transform:scaleX(0)"></span><span class="folio__n">05</span><span class="folio__t">Trabajos</span></p>
+          <p class="folio"><span class="cota-regla" data-animate="linea" style="transform:scaleX(0)"></span><span class="folio__n">04</span><span class="folio__t">Trabajos</span></p>
           <h2 id="t-obras" data-animate="subir" style="opacity:0;transform:translateY(40px)">De nuestra fábrica en Azul <em>a tu obra</em></h2>
         </div>
         <p class="obras-intro__p" data-animate="subir" style="opacity:0;transform:translateY(20px)">Hace 15 años que diseñamos y fabricamos aberturas de aluminio, con materiales de primera fundición y bajo normas. Las mismas líneas que ves en la tienda, en obras terminadas.</p>
@@ -375,14 +296,14 @@
   <section class="sec sec-pasos" id="comprar" aria-labelledby="t-pasos">
     <div class="container">
       <div class="sec-head">
-        <p class="folio"><span class="cota-regla" data-animate="linea" style="transform:scaleX(0)"></span><span class="folio__n">06</span></p>
+        <p class="folio"><span class="cota-regla" data-animate="linea" style="transform:scaleX(0)"></span><span class="folio__n">05</span></p>
         <h2 id="t-pasos" data-animate="subir" style="opacity:0;transform:translateY(40px)">Del vano a tu casa, <em>en tres pasos</em></h2>
       </div>
       <ol class="pasos">
         <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
           <span class="pasos__n">01</span>
           <h3>Elegí estándar o a medida</h3>
-          <p>Las estándar tienen precio y se compran acá. Para otra medida, cargá tu vano y te la cotizamos.</p>
+          <p>Las estándar tienen precio y se compran acá. Para otra medida, pasanos el ancho y el alto del vano y te la cotizamos.</p>
         </li>
         <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
           <span class="pasos__n">02</span>
@@ -480,7 +401,7 @@
 
 <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-<script src="script.js?v=20261004230453"></script>
+<script src="script.js?v=20261005100606"></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>

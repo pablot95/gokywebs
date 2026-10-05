@@ -39,70 +39,70 @@ const M = (k, precio, stock) => { const [a, h] = k.split('x').map(Number); retur
 
 const PRODUCTOS = [
   { id: 'vc2-t', cod: 'TA-VC2-T', cat: 'ventanas', tipo: 'ventana', linea: 't', hojas: 2, nombre: 'Ventana corrediza 2 hojas', prio: 1,
-    foto: 'ventana', foco: [0.5, 0.47, 1], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural'], vidrios: ['f3', 'lam'], mosq: true, amb: ['dormitorio', 'obra'],
+    foto: 'ventana', foco: [0.5, 0.5, 1], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural'], vidrios: ['f3', 'lam'], mosq: true, amb: ['dormitorio', 'obra'],
     medidas: [M('100x110', 118900, 9), M('120x110', 139900, 7), M('150x110', 164900, 12), M('200x110', 219900, 4)], def: '150x110',
     spec: '2 hojas · float 3 mm o laminado',
     desc: 'La corrediza de todos los días: dos hojas sobre guía, con burletes y felpas para que cierre parejo. Para dormitorios, cocinas y comedores.',
     ficha: [['Apertura', 'Corrediza, 2 hojas'], ['Línea', 'Tradicional'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 3 mm o laminado 3+3'], ['Colocación', 'Con premarco o amurada con grapas']],
     alt: 'Ventana corrediza de aluminio natural de dos hojas en una pared blanca' },
-  { id: 'vc2-m', cod: 'TA-VC2-M', cat: 'ventanas', tipo: 'ventana', linea: 'm', hojas: 2, nombre: 'Ventana corrediza 2 hojas', prio: 2,
-    foto: 'ventana', foco: [0.66, 0.42, 1.75], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['dormitorio'],
+  { id: 'vc2-m', cod: 'TA-VC2-M', cat: 'ventanas', tipo: 'ventana', linea: 'm', hojas: 2, nombre: 'Ventana corrediza 2 hojas', prio: 6,
+    foto: 'ventana', foco: [0.5, 0.5, 1], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['dormitorio'],
     medidas: [M('100x110', 189900, 6), M('120x110', 224900, 6), M('150x110', 269900, 8), M('200x110', 419900, 3)], def: '150x110',
     spec: '2 hojas · float 4 mm, laminado o DVH',
     desc: 'Perfil más robusto y hojas más pesadas, que aceptan doble vidriado hermético (DVH) para aislar mejor del frío y del ruido.',
     ficha: [['Apertura', 'Corrediza, 2 hojas'], ['Línea', 'Media prestación'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 4 mm, laminado 3+3 o DVH 4/9/4'], ['Colocación', 'Con premarco o amurada con grapas']],
-    alt: 'Detalle del encuentro central de una ventana corrediza de aluminio con su manija' },
-  { id: 'pv2-t', cod: 'TA-PV2-T', cat: 'puertas-ventana', tipo: 'puerta-ventana', linea: 't', hojas: 2, nombre: 'Puerta-ventana corrediza 2 hojas', prio: 1, descuento: 10,
-    foto: 'terraza', foco: [0.42, 0.42, 1.05], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural'], vidrios: ['f3', 'lam'], mosq: true, amb: ['living', 'obra'],
+    alt: 'Ventana corrediza de aluminio de dos hojas en una pared blanca' },
+  { id: 'pv2-t', cod: 'TA-PV2-T', cat: 'puertas-ventana', tipo: 'puerta-ventana', linea: 't', hojas: 2, nombre: 'Puerta-ventana corrediza 2 hojas', prio: 2, descuento: 10,
+    foto: 'terraza', foco: [0.5, 0.45, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural'], vidrios: ['f3', 'lam'], mosq: true, amb: ['living', 'obra'],
     medidas: [M('150x200', 299900, 5), M('180x200', 349900, 6), M('200x200', 369900, 4)], def: '180x200',
     spec: '2 hojas · de piso a dintel',
     desc: 'Para salir al patio o al balcón: dos hojas corredizas de piso a dintel, con cierre lateral embutido.',
     ficha: [['Apertura', 'Corrediza, 2 hojas'], ['Línea', 'Tradicional'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 3 mm o laminado 3+3'], ['Cierre', 'Lateral embutido']],
     alt: 'Puerta-ventana corrediza negra de dos hojas abierta hacia una terraza' },
-  { id: 'pv2-m', cod: 'TA-PV2-M', cat: 'puertas-ventana', tipo: 'puerta-ventana', linea: 'm', hojas: 2, nombre: 'Puerta-ventana corrediza 2 hojas', prio: 2,
-    foto: 'living', foco: [0.47, 0.42, 1.6], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
+  { id: 'pv2-m', cod: 'TA-PV2-M', cat: 'puertas-ventana', tipo: 'puerta-ventana', linea: 'm', hojas: 2, nombre: 'Puerta-ventana corrediza 2 hojas', prio: 8,
+    foto: 'terraza', foco: [0.5, 0.45, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
     medidas: [M('150x200', 449900, 4), M('180x200', 529900, 5), M('200x200', 579900, 3)], def: '200x200',
     spec: '2 hojas · acepta DVH',
     desc: 'La puerta-ventana de media prestación: hojas más anchas y pesadas, ruedas a rulemán y la opción de DVH para el living.',
     ficha: [['Apertura', 'Corrediza, 2 hojas'], ['Línea', 'Media prestación'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 4 mm, laminado 3+3 o DVH 4/9/4'], ['Ruedas', 'A rulemán']],
-    alt: 'Dos hojas corredizas negras con vista a un lago' },
-  { id: 'pv3-m', cod: 'TA-PV3-M', cat: 'gran-luz', tipo: 'puerta-ventana', linea: 'm', hojas: 3, nombre: 'Puerta-ventana corrediza 3 hojas', prio: 1,
-    foto: 'casa', foco: [0.64, 0.5, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
+    alt: 'Puerta-ventana corrediza negra de dos hojas abierta hacia una terraza con árboles' },
+  { id: 'pv3-m', cod: 'TA-PV3-M', cat: 'gran-luz', tipo: 'puerta-ventana', linea: 'm', hojas: 3, nombre: 'Puerta-ventana corrediza 3 hojas', prio: 3,
+    foto: 'casa', foco: [0.62, 0.5, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
     medidas: [M('270x200', 799900, 2), M('300x200', 869900, 3), M('300x220', 949900, 2)], def: '300x200',
     spec: '3 hojas · acepta DVH',
     desc: 'Tres hojas corredizas para abrir la galería o el quincho casi de punta a punta.',
     ficha: [['Apertura', 'Corrediza, 3 hojas'], ['Línea', 'Media prestación'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 4 mm, laminado 3+3 o DVH 4/9/4'], ['Ruedas', 'A rulemán']],
     alt: 'Puerta-ventana corrediza negra de tres hojas en una casa con galería' },
-  { id: 'pv4-m', cod: 'TA-PV4-M', cat: 'gran-luz', tipo: 'puerta-ventana', linea: 'm', hojas: 4, nombre: 'Ventanal corredizo 4 hojas', prio: 2,
-    foto: 'living', foco: [0.54, 0.36, 1.04], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
+  { id: 'pv4-m', cod: 'TA-PV4-M', cat: 'gran-luz', tipo: 'puerta-ventana', linea: 'm', hojas: 4, nombre: 'Ventanal corredizo 4 hojas', prio: 4,
+    foto: 'living', foco: [0.5, 0.5, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: true, amb: ['living'],
     medidas: [M('300x200', 979900, 2), M('360x200', 1149900, 2), M('400x220', 1389900, 1)], def: '360x200',
     spec: '4 hojas · acepta DVH',
     desc: 'Cuatro hojas que se corren hacia los costados y dejan el centro libre: el living queda abierto al patio.',
     ficha: [['Apertura', 'Corrediza, 4 hojas'], ['Línea', 'Media prestación'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 4 mm, laminado 3+3 o DVH 4/9/4'], ['Ruedas', 'A rulemán']],
     alt: 'Ventanal corredizo negro de cuatro hojas en un living luminoso' },
-  { id: 'pf-m', cod: 'TA-PF-M', cat: 'panos', tipo: 'pano', linea: 'm', hojas: 0, nombre: 'Paño fijo', prio: 1,
-    foto: 'casa', foco: [0.8, 0.44, 1.7], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: false, amb: ['living'],
+  { id: 'pf-m', cod: 'TA-PF-M', cat: 'panos', tipo: 'pano', linea: 'm', hojas: 0, nombre: 'Paño fijo', prio: 5,
+    foto: 'casa', foco: [0.3, 0.5, 1], colorFoto: 'negro', colores: ['blanco', 'negro', 'natural', 'madera'], vidrios: ['f4', 'lam', 'dvh'], mosq: false, amb: ['living'],
     medidas: [M('60x110', 119900, 6), M('100x110', 149900, 5), M('150x110', 184900, 4), M('100x200', 239900, 3)], def: '100x200',
     spec: 'Fijo · acepta DVH',
     desc: 'Vidrio que no abre, para sumar luz al lado de una puerta-ventana o en una pared donde no hace falta ventilar.',
     ficha: [['Apertura', 'Paño fijo'], ['Línea', 'Media prestación'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 4 mm, laminado 3+3 o DVH 4/9/4'], ['Uso', 'Solo o junto a una corrediza']],
-    alt: 'Gran paño de vidrio con perfil negro en el frente de una casa' },
-  { id: 'vl-t', cod: 'TA-VL-T', cat: 'ventiluces', tipo: 'ventiluz', linea: 't', hojas: 1, nombre: 'Ventiluz proyectante', prio: 2,
+    alt: 'Frente vidriado de una casa con galería y pileta' },
+  { id: 'vl-t', cod: 'TA-VL-T', cat: 'ventiluces', tipo: 'ventiluz', linea: 't', hojas: 1, nombre: 'Ventiluz proyectante', prio: 9,
     foto: null, slot: 'ventiluz.webp', colores: ['blanco', 'negro', 'natural'], vidrios: ['sti'], mosq: false, amb: ['dormitorio'],
     medidas: [M('40x40', 54900, 10), M('60x40', 69900, 8), M('80x40', 84900, 6)], def: '60x40',
     spec: 'Proyectante · vidrio stipolite',
     desc: 'Para baños, lavaderos y cocinas: abre hacia afuera desde arriba y ventila aunque llueva. El stipolite deja pasar la luz pero no la vista.',
     ficha: [['Apertura', 'Proyectante, con brazo de empuje'], ['Línea', 'Tradicional'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Stipolite 4 mm'], ['Uso', 'Baño, lavadero o cocina']],
     alt: 'Ventiluz proyectante de aluminio' },
-  { id: 'pa-t', cod: 'TA-PA-T', cat: 'puertas', tipo: 'puerta', linea: 't', hojas: 1, nombre: 'Puerta de abrir medio vidrio', prio: 2,
+  { id: 'pa-t', cod: 'TA-PA-T', cat: 'puertas', tipo: 'puerta', linea: 't', hojas: 1, nombre: 'Puerta de abrir medio vidrio', prio: 10,
     foto: null, slot: 'puerta-de-abrir.webp', colores: ['blanco', 'negro', 'natural'], vidrios: ['f3', 'lam'], mosq: false, amb: ['obra'],
     medidas: [M('70x200', 269900, 3), M('80x200', 289900, 5), M('90x200', 309900, 4)], def: '80x200',
     spec: '1 hoja · medio vidrio',
     desc: 'Puerta de una hoja con la mitad de arriba vidriada, para entradas de servicio, patios y lavaderos.',
     ficha: [['Apertura', 'De abrir, 1 hoja'], ['Línea', 'Tradicional'], ['Perfil', 'Aluminio de primera fundición'], ['Vidrio', 'Float 3 mm o laminado 3+3'], ['Mano', 'Derecha o izquierda, a pedido']],
     alt: 'Puerta de aluminio de una hoja con medio vidrio' },
-  { id: 'premarco', cod: 'TA-PM', cat: 'accesorios', tipo: 'premarco', linea: null, hojas: 0, nombre: 'Premarco de aluminio', prio: 3,
-    foto: 'taller', foco: [0.4, 0.64, 1.7], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural'], vidrios: [], mosq: false, amb: ['obra'],
+  { id: 'premarco', cod: 'TA-PM', cat: 'accesorios', tipo: 'premarco', linea: null, hojas: 0, nombre: 'Premarco de aluminio', prio: 7,
+    foto: 'taller', foco: [0.5, 0.5, 1], colorFoto: 'natural', colores: ['blanco', 'negro', 'natural'], vidrios: [], mosq: false, amb: ['obra'],
     medidas: [M('100x110', 39900, 20), M('150x110', 46900, 20), M('200x110', 54900, 12), M('180x200', 69900, 10), M('200x200', 74900, 10)], def: '150x110',
     spec: 'Para colocar en seco',
     desc: 'Se amura en la obra antes de terminar el revoque, y la abertura se coloca después, en seco, sin romper nada.',
@@ -117,7 +117,7 @@ const OBRAS = [
   { foto: 'ventana', pos: '50% 46%', t1: 'La de todos los días,', t2: 'en aluminio natural', tipologia: 'Ventana corrediza, 2 hojas', linea: 't', color: 'natural', vidrio: 'f3', ancho: 150, alto: 110, cat: 'ventanas', tipo: 'ventana' }
 ];
 
-const DESTACADOS = ['vc2-t', 'pv2-t', 'vc2-m', 'pv2-m', 'pf-m', 'pv3-m', 'pv4-m', 'premarco'];
+const DESTACADOS = ['vc2-t', 'pv3-m', 'pv2-t', 'pv4-m', 'vc2-m', 'pf-m', 'pv2-m', 'premarco'];
 
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
@@ -130,7 +130,6 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const fmtDec = (n, d) => n.toLocaleString('es-AR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const fmtM2 = m2 => `${fmtDec(m2, 2)} m²`;
 const redondeo = n => Math.max(900, Math.round(n / 1000) * 1000 - 100);
-const redondeoMil = n => Math.round(n / 1000) * 1000;
 const nombreLinea = p => (p.linea ? `${p.nombre} · ${LINEAS[p.linea]}` : p.nombre);
 const medidaTxt = m => `${m.a} × ${m.h} cm`;
 const medidaDe = (p, k) => p.medidas.find(m => m.k === k) || null;
@@ -270,7 +269,7 @@ function showToast(msg) {
   setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 220); }, 3200);
 }
 
-const ICONO_WSP = '<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>';
+const ICONO_FLECHA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
 function precioDesdeHTML(p) {
   const o = p.descuento > 0 ? desdeBase(p) : 0;
@@ -285,21 +284,16 @@ function cardHTML(p, animar = true) {
     p.descuento > 0 ? `<span class="badge badge--off">−${p.descuento}%</span>` : '',
     p.vidrios.includes('dvh') ? '<span class="badge badge--dvh">Acepta DVH</span>' : ''
   ].join('');
-  const chips = p.medidas.slice(0, 3).map(m => `<span>${m.a}×${m.h}</span>`).join('') +
-    (p.medidas.length > 3 ? `<span class="mas-medidas">+${p.medidas.length - 3}</span>` : '');
   return `<article class="card" data-id="${p.id}"${animar ? ' data-animate="subir" style="opacity:0;transform:translateY(40px)"' : ''}>
-    <div class="card__media">
-      ${fotoHTML(p, AR_CARD, 'card__img', ` data-quick="${p.id}"`)}
-      <div class="card__badges">${badges}</div>
-      <button type="button" class="card__quick" data-quick="${p.id}" tabindex="-1" aria-hidden="true">Vista rápida</button>
-    </div>
-    <div class="card__body">
-      <p class="card__cod"><b>${esc(p.cod)}</b>${p.linea ? `<span>${esc(LINEAS[p.linea])}</span>` : ''}</p>
+    ${fotoHTML(p, AR_CARD, 'card__img', ` data-quick="${p.id}"`)}
+    <div class="card__badges">${badges}</div>
+    <div class="card__info">
+      <p class="card__cod"><b>${esc(p.cod)}</b><span>${p.linea ? esc(LINEAS[p.linea]) : 'Para obra'} · ${p.medidas.length} medidas</span></p>
       <h3 class="card__t">${esc(p.nombre)}</h3>
-      <p class="card__spec">${esc(p.spec)}</p>
-      <div class="card__medidas">${chips}</div>
-      ${precioDesdeHTML(p)}
-      <div class="prod-actions"><button type="button" class="btn btn--solid btn--sm prod-add" data-quick="${p.id}" aria-label="Elegir medida y color de ${esc(nombreLinea(p))}"><span class="lbl-long">Elegir medida y color</span><span class="lbl-short">Elegir medida</span></button></div>
+      <div class="card__fila">
+        ${precioDesdeHTML(p)}
+        <button type="button" class="card__cta" data-quick="${p.id}" aria-label="Elegir medida y color de ${esc(nombreLinea(p))}"><span class="card__cta-t">Elegir medida</span>${ICONO_FLECHA}</button>
+      </div>
     </div>
   </article>`;
 }
@@ -628,414 +622,13 @@ function initRailDrag(vp) {
   vp.addEventListener('dragstart', e => e.preventDefault());
 }
 
-/* ---------- componente: ¿estándar o a medida? ---------- */
-const TIPOS_VANO = {
-  ventana: { n: 'Ventana corrediza', lim: { ancho: [50, 400], alto: [40, 200] } },
-  'puerta-ventana': { n: 'Puerta-ventana corrediza', lim: { ancho: [120, 600], alto: [180, 300] } },
-  pano: { n: 'Paño fijo', lim: { ancho: [30, 400], alto: [30, 300] } },
-  ventiluz: { n: 'Ventiluz proyectante', lim: { ancho: [30, 100], alto: [30, 80] } }
-};
-const VIDRIOS_VANO = {
-  ventana: { t: ['f3', 'lam'], m: ['f4', 'lam', 'dvh'] },
-  'puerta-ventana': { t: ['f3', 'lam'], m: ['f4', 'lam', 'dvh'] },
-  pano: { t: ['f3', 'lam'], m: ['f4', 'lam', 'dvh'] },
-  ventiluz: { t: ['sti'], m: ['sti', 'dvh'] }
-};
-const COLORES_LINEA = { t: ['blanco', 'negro', 'natural'], m: ['blanco', 'negro', 'natural', 'madera'] };
-const PM2 = {
-  ventana: { t: [120000, 110000], m: [196000, 180000] },
-  'puerta-ventana': { t: [117000, 290000], m: [177000, 430000] },
-  pano: { t: [110000, 70000], m: [164000, 110000] },
-  ventiluz: { t: [190000, 52000], m: [290000, 140000] }
-};
-const TOL = [1, 4];
-const VANO = { tipo: 'ventana', ancho: 152, alto: 112, linea: 't', color: 'blanco', vidrio: 'f3', mosq: false };
-
-function hojasPara(tipo, ancho) {
-  if (tipo === 'pano') return 0;
-  if (tipo === 'ventiluz') return 1;
-  if (tipo === 'ventana') return ancho <= 240 ? 2 : 4;
-  return ancho <= 220 ? 2 : ancho <= 330 ? 3 : 4;
-}
-
-function estandaresDe(tipo, linea) {
-  const out = [];
-  PRODUCTOS.filter(p => p.tipo === tipo && p.linea === linea).forEach(p => p.medidas.forEach(m => out.push({ p, m })));
-  return out;
-}
-
-function buscarEstandar(s = VANO) {
-  const lista = estandaresDe(s.tipo, s.linea);
-  const entra = ({ m }) => s.ancho - m.a >= TOL[0] && s.ancho - m.a <= TOL[1] && s.alto - m.h >= TOL[0] && s.alto - m.h <= TOL[1];
-  const ok = lista.filter(entra).sort((a, b) => b.m.a * b.m.h - a.m.a * a.m.h);
-  if (ok.length) return { tipo: 'std', p: ok[0].p, m: ok[0].m };
-  const dist = ({ m }) => {
-    const da = s.ancho < m.a + TOL[0] ? m.a + TOL[0] - s.ancho : s.ancho > m.a + TOL[1] ? s.ancho - m.a - TOL[1] : 0;
-    const dh = s.alto < m.h + TOL[0] ? m.h + TOL[0] - s.alto : s.alto > m.h + TOL[1] ? s.alto - m.h - TOL[1] : 0;
-    return da + dh;
-  };
-  const cerca = lista.map(x => ({ ...x, d: dist(x) })).sort((a, b) => a.d - b.d)[0];
-  return { tipo: 'medida', cerca: cerca && cerca.d <= 30 ? cerca : null };
-}
-
-function estimarMedida(s = VANO) {
-  const ancho = Math.max(1, s.ancho - 2);
-  const alto = Math.max(1, s.alto - 2);
-  const m2 = (ancho / 100) * (alto / 100);
-  const [pm2, minimo] = PM2[s.tipo][s.linea];
-  const f = (COLORES[s.color]?.f || 1) * (VIDRIOS[s.vidrio]?.f || 1) * (s.mosq && (s.tipo === 'ventana' || s.tipo === 'puerta-ventana') ? MOSQ_F : 1);
-  const base = Math.max(minimo, m2 * pm2) * f;
-  return { m2, hojas: hojasPara(s.tipo, ancho), min: redondeoMil(base * 0.92), max: redondeoMil(base * 1.08) };
-}
-
-function varVano(p, m, s = VANO) {
-  return armarVar(p, { medida: m.k, color: s.color, vidrio: s.vidrio, mosq: s.mosq });
-}
-
-function mensajeVano(r, s = VANO) {
-  const t = TIPOS_VANO[s.tipo];
-  const lineas = [`Hola ${MARCA}! Quiero presupuesto para esta abertura:`];
-  lineas.push(`• ${t.n}, línea ${LINEAS[s.linea].toLowerCase()}`);
-  lineas.push(`• Vano: ${s.ancho} × ${s.alto} cm`);
-  lineas.push(`• Color ${COLORES[s.color].n.toLowerCase()} · vidrio ${VIDRIOS[s.vidrio].n}${s.mosq && (s.tipo === 'ventana' || s.tipo === 'puerta-ventana') ? ' · con mosquitero' : ''}`);
-  if (r.tipo === 'std') lineas.push(`• En la web me sugiere la estándar de ${medidaTxt(r.m)} (${formatearPrecio(precioFinal(r.p, varVano(r.p, r.m, s)))})`);
-  else { const e = estimarMedida(s); lineas.push(`• Estimado de la web: entre ${formatearPrecio(e.min)} y ${formatearPrecio(e.max)}`); }
-  return lineas.join('\n');
-}
-
-function planoSVG(s, r, fijo) {
-  const W = 600;
-  const H = 430;
-  const L = 36;
-  const T = 62;
-  const R = 92;
-  const B = 44;
-  const MURO = 16;
-  const std = r.tipo === 'std';
-  const ab = std ? { a: r.m.a, h: r.m.h } : { a: Math.max(1, s.ancho - 2), h: Math.max(1, s.alto - 2) };
-  const hojas = std ? r.p.hojas : hojasPara(s.tipo, ab.a);
-  const sc = fijo ? fijo.s : Math.min((W - L - R - 2 * MURO) / s.ancho, (H - T - B - 2 * MURO) / s.alto);
-  const vw = s.ancho * sc;
-  const vh = s.alto * sc;
-  const x0 = fijo ? fijo.x : L + MURO + (W - L - R - 2 * MURO - vw) / 2;
-  const y0 = fijo ? fijo.y : T + MURO + (H - T - B - 2 * MURO - vh) / 2;
-  const ax = x0 + ((s.ancho - ab.a) / 2) * sc;
-  const ay = y0 + ((s.alto - ab.h) / 2) * sc;
-  const aw = ab.a * sc;
-  const ah = ab.h * sc;
-  const mk = Math.max(4, Math.min(9, 5 * sc));
-  const n = v => v.toFixed(1);
-  let g = '';
-  g += `<rect class="pl-pared" x="${n(x0 - MURO)}" y="${n(y0 - MURO)}" width="${n(vw + 2 * MURO)}" height="${n(vh + 2 * MURO)}"/>`;
-  g += `<rect class="pl-vano" x="${n(x0)}" y="${n(y0)}" width="${n(vw)}" height="${n(vh)}"/>`;
-  g += `<rect class="pl-marco" x="${n(ax)}" y="${n(ay)}" width="${n(aw)}" height="${n(ah)}"/>`;
-  g += `<rect class="pl-marco-in" x="${n(ax + mk)}" y="${n(ay + mk)}" width="${n(Math.max(2, aw - 2 * mk))}" height="${n(Math.max(2, ah - 2 * mk))}"/>`;
-  const ix = ax + mk;
-  const iy = ay + mk;
-  const iw = Math.max(2, aw - 2 * mk);
-  const ih = Math.max(2, ah - 2 * mk);
-  const cy = iy + ih / 2;
-  if (s.tipo === 'pano') {
-    g += `<rect class="pl-fijo" x="${n(ix + 3)}" y="${n(iy + 3)}" width="${n(Math.max(1, iw - 6))}" height="${n(Math.max(1, ih - 6))}"/>`;
-    g += `<text class="pl-etq" x="${n(ix + iw / 2)}" y="${n(cy + 4)}" text-anchor="middle">Fijo</text>`;
-  } else if (s.tipo === 'ventiluz') {
-    g += `<rect class="pl-hoja" x="${n(ix + 3)}" y="${n(iy + 3)}" width="${n(Math.max(1, iw - 6))}" height="${n(Math.max(1, ih - 6))}"/>`;
-    g += `<path class="pl-apertura" d="M${n(ix + 4)} ${n(iy + ih - 4)}L${n(ix + iw / 2)} ${n(iy + 4)}L${n(ix + iw - 4)} ${n(iy + ih - 4)}"/>`;
-  } else {
-    const k = Math.max(2, hojas);
-    const hw = iw / k;
-    for (let i = 0; i < k; i++) {
-      const hx = ix + i * hw;
-      g += `<rect class="pl-hoja" x="${n(hx + 2)}" y="${n(iy + 2)}" width="${n(Math.max(1, hw - 4))}" height="${n(Math.max(1, ih - 4))}"/>`;
-      const largo = Math.min(hw * 0.5, 64);
-      const mx = hx + hw / 2;
-      let dir = 0;
-      if (k === 2) dir = i === 0 ? 1 : -1;
-      if (k === 4) dir = i < 2 ? -1 : 1;
-      if (dir === 0) {
-        g += `<path class="pl-flecha" d="M${n(mx - largo / 2)} ${n(cy)}H${n(mx + largo / 2)}M${n(mx - largo / 2 + 7)} ${n(cy - 6)}L${n(mx - largo / 2)} ${n(cy)}L${n(mx - largo / 2 + 7)} ${n(cy + 6)}M${n(mx + largo / 2 - 7)} ${n(cy - 6)}L${n(mx + largo / 2)} ${n(cy)}L${n(mx + largo / 2 - 7)} ${n(cy + 6)}"/>`;
-      } else {
-        const a = mx - (dir * largo) / 2;
-        const b = mx + (dir * largo) / 2;
-        g += `<path class="pl-flecha" d="M${n(a)} ${n(cy)}H${n(b)}M${n(b - dir * 7)} ${n(cy - 6)}L${n(b)} ${n(cy)}L${n(b - dir * 7)} ${n(cy + 6)}"/>`;
-      }
-      if (s.mosq && i === k - 1) {
-        let d = '';
-        for (let yy = iy + 10; yy < iy + ih - 6; yy += 9) d += `M${n(hx + 6)} ${n(yy)}H${n(hx + hw - 6)}`;
-        g += `<path class="pl-mosq" d="${d}"/>`;
-      }
-    }
-  }
-  const cyA = y0 - MURO - 24;
-  g += `<path class="pl-cota" d="M${n(x0)} ${n(cyA)}H${n(x0 + vw)}M${n(x0)} ${n(cyA - 7)}V${n(cyA + 7)}M${n(x0 + vw)} ${n(cyA - 7)}V${n(cyA + 7)}M${n(x0)} ${n(y0 - MURO - 4)}V${n(cyA - 2)}M${n(x0 + vw)} ${n(y0 - MURO - 4)}V${n(cyA - 2)}"/>`;
-  g += `<rect class="pl-cota-bg" x="${n(x0 + vw / 2 - 30)}" y="${n(cyA - 10)}" width="60" height="20"/>`;
-  g += `<text class="pl-cota-txt" x="${n(x0 + vw / 2)}" y="${n(cyA + 5)}" text-anchor="middle">${s.ancho}</text>`;
-  const cxA = x0 + vw + MURO + 26;
-  g += `<path class="pl-cota" d="M${n(cxA)} ${n(y0)}V${n(y0 + vh)}M${n(cxA - 7)} ${n(y0)}H${n(cxA + 7)}M${n(cxA - 7)} ${n(y0 + vh)}H${n(cxA + 7)}M${n(x0 + vw + MURO + 4)} ${n(y0)}H${n(cxA - 2)}M${n(x0 + vw + MURO + 4)} ${n(y0 + vh)}H${n(cxA - 2)}"/>`;
-  g += `<rect class="pl-cota-bg" x="${n(cxA - 26)}" y="${n(y0 + vh / 2 - 10)}" width="52" height="20"/>`;
-  g += `<text class="pl-cota-txt" x="${n(cxA)}" y="${n(y0 + vh / 2 + 5)}" text-anchor="middle">${s.alto}</text>`;
-  const etq = std ? `Estándar ${r.m.a} × ${r.m.h}` : `A medida ${ab.a} × ${ab.h}`;
-  g += `<text class="pl-etq" x="${n(x0 - MURO)}" y="${n(Math.min(H - 8, y0 + vh + MURO + 22))}">Vano ${s.ancho} × ${s.alto} · ${etq} cm</text>`;
-  const defs = '<defs><pattern id="pl-trama" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#EEF2F7"/><path d="M0 0V7" stroke="#B6C2D2" stroke-width="1.3"/></pattern></defs>';
-  const desc = `Plano de ${TIPOS_VANO[s.tipo].n.toLowerCase()}${hojas > 1 ? ` de ${hojas} hojas` : ''}, vano de ${s.ancho} por ${s.alto} centímetros`;
-  return { svg: `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(desc)}">${defs}${g}</svg>`, s: sc, x: x0, y: y0, hx: (x0 + vw) / W, hy: (y0 + vh) / H };
-}
-
-const PLANO_CAJA = { L: 36 + 16, T: 62 + 16, W: 600 - 36 - 92 - 32, H: 430 - 62 - 44 - 32 };
-let planoFijo = null;
-let planoGeo = null;
-
-function pintarPlano(r) {
-  const cont = document.getElementById('plano');
-  if (!cont) return;
-  let fijo = null;
-  if (planoFijo) {
-    const ajuste = Math.min(PLANO_CAJA.W / VANO.ancho, PLANO_CAJA.H / VANO.alto);
-    const entra = planoFijo.x + VANO.ancho * planoFijo.s <= PLANO_CAJA.L + PLANO_CAJA.W && planoFijo.y + VANO.alto * planoFijo.s <= PLANO_CAJA.T + PLANO_CAJA.H;
-    fijo = entra ? planoFijo : { s: ajuste, x: PLANO_CAJA.L, y: PLANO_CAJA.T };
-  }
-  const out = planoSVG(VANO, r, fijo);
-  let svgEl = cont.querySelector('svg');
-  if (svgEl) svgEl.outerHTML = out.svg;
-  else cont.insertAdjacentHTML('afterbegin', out.svg);
-  let handle = cont.querySelector('.plano__handle');
-  if (!handle) {
-    handle = document.createElement('span');
-    handle.className = 'plano__handle';
-    handle.setAttribute('aria-hidden', 'true');
-    cont.appendChild(handle);
-  }
-  handle.style.left = `${(out.hx * 100).toFixed(3)}%`;
-  handle.style.top = `${(out.hy * 100).toFixed(3)}%`;
-  planoGeo = { s: out.s, x: out.x, y: out.y };
-  const rot = document.getElementById('plano-rotulo');
-  if (rot) {
-    const hojas = r.tipo === 'std' ? r.p.hojas : hojasPara(VANO.tipo, VANO.ancho - 2);
-    const tipologia = `${TIPOS_VANO[VANO.tipo].n}${hojas > 1 ? `, ${hojas} hojas` : ''}`;
-    const folio = document.querySelector('#medida .folio__n')?.textContent || '04';
-    const html = `<dl class="rotulo__grilla"><div><dt>Tipología</dt><dd>${esc(tipologia)}</dd></div><div><dt>Línea</dt><dd>${esc(LINEAS[VANO.linea])}</dd></div><div><dt>Perfil</dt><dd>${esc(COLORES[VANO.color].n)}</dd></div><div><dt>Vidrio</dt><dd>${esc(VIDRIOS[VANO.vidrio].n)}</dd></div></dl><p class="rotulo__folio"><span>Lámina ${esc(folio)}</span><span>${esc(MARCA)}</span><span>Diseño sin costo</span></p>`;
-    if (rot.innerHTML !== html) rot.innerHTML = html;
-  }
-}
-
-function resultadoHTML(r) {
-  const s = VANO;
-  const msg = mensajeVano(r, s);
-  if (r.tipo === 'std') {
-    const v = varVano(r.p, r.m, s);
-    const libre = Cart.libre(r.p, v);
-    const pre = getProducto('premarco');
-    const preM = pre ? medidaDe(pre, r.m.k) : null;
-    const preV = preM ? armarVar(pre, { medida: preM.k, color: COLORES_LINEA.t.includes(s.color) ? s.color : 'blanco' }) : '';
-    const luzA = s.ancho - r.m.a;
-    const luzH = s.alto - r.m.h;
-    return `<p class="res__estado res__estado--ok">Entra una estándar</p>
-      <div class="res__prod">
-        ${fotoHTML(r.p, 1)}
-        <div>
-          <p class="res__cod">${esc(r.p.cod)} · ${esc(LINEAS[r.p.linea])}</p>
-          <p class="res__t">${esc(r.p.nombre)} de ${medidaTxt(r.m)}</p>
-          <p class="res__m">${esc(COLORES[s.color].n)} · ${esc(VIDRIOS[s.vidrio].n)}${s.mosq && r.p.mosq ? ' · con mosquitero' : ''}</p>
-        </div>
-      </div>
-      <p class="res__precio">${formatearPrecio(precioFinal(r.p, v))}<small>${libre > 0 ? `Medida estándar · en stock` : 'Ya tenés en el carrito todo el stock de esta medida'}</small></p>
-      <p class="res__p">Tu vano deja <b>${fmtDec(luzA / 2, luzA % 2 ? 1 : 0)} cm por lado</b> de ancho y <b>${fmtDec(luzH / 2, luzH % 2 ? 1 : 0)} cm</b> arriba y abajo, para la espuma y el sellador.</p>
-      <div class="res__acts">
-        <button type="button" class="btn btn--solid" data-add-std${libre <= 0 ? ' disabled' : ''}>Agregar al carrito</button>
-        <a class="btn btn--line" href="${wspLink(msg)}" target="_blank" rel="noopener">${ICONO_WSP}Consultar por WhatsApp</a>
-      </div>
-      ${preM ? `<p class="res__nota">¿Obra nueva? <button type="button" class="link res__link" data-add-premarco="${esc(preV)}">Sumá el premarco de ${medidaTxt(preM)} (${formatearPrecio(precioFinal(pre, preV))})</button></p>` : ''}`;
-  }
-  const e = estimarMedida(s);
-  const cerca = r.cerca ? `<p class="res__p">La estándar más parecida es de <b>${medidaTxt(r.cerca.m)}</b>: entra en vanos de ${r.cerca.m.a + TOL[0]} a ${r.cerca.m.a + TOL[1]} × ${r.cerca.m.h + TOL[0]} a ${r.cerca.m.h + TOL[1]} cm. <button type="button" class="link res__link" data-quick="${r.cerca.p.id}" data-medida="${r.cerca.m.k}">Verla</button></p>` : '';
-  const hojas = e.hojas > 1 ? ` · ${e.hojas} hojas` : '';
-  return `<p class="res__estado res__estado--medida">Va a medida</p>
-    <p class="res__precio">${formatearPrecio(e.min)} a ${formatearPrecio(e.max)}<small>Estimado · ${fmtM2(e.m2)}${hojas}</small></p>
-    ${cerca}
-    <div class="res__acts">
-      <a class="btn btn--solid" href="${wspLink(msg)}" target="_blank" rel="noopener">${ICONO_WSP}Pedir presupuesto sin costo</a>
-    </div>
-    <p class="res__nota">Es un estimado con precios de muestra: el presupuesto final lo armamos con vos, sin costo.</p>`;
-}
-
-function validarVano() {
-  const lim = TIPOS_VANO[VANO.tipo].lim;
-  let ok = true;
-  ['ancho', 'alto'].forEach(dim => {
-    const el = document.getElementById(`v-${dim}`);
-    const err = document.getElementById(`v-${dim}-err`);
-    const [a, b] = lim[dim];
-    const val = Number(el?.value);
-    const bien = el && el.value !== '' && Number.isFinite(val) && val >= a && val <= b;
-    if (el) el.setAttribute('aria-invalid', String(!bien));
-    if (err) { err.hidden = bien; err.textContent = `Entre ${a} y ${b} cm para ${TIPOS_VANO[VANO.tipo].n.toLowerCase()}`; }
-    if (!bien) ok = false;
-  });
-  return ok;
-}
-
-function sincronizarVano() {
-  const app = document.getElementById('vano-app');
-  if (!app) return;
-  const lim = TIPOS_VANO[VANO.tipo].lim;
-  ['ancho', 'alto'].forEach(dim => {
-    const el = document.getElementById(`v-${dim}`);
-    if (!el) return;
-    el.min = String(lim[dim][0]);
-    el.max = String(lim[dim][1]);
-    if (document.activeElement !== el) el.value = String(VANO[dim]);
-  });
-  app.querySelectorAll('input[name="v-tipo"]').forEach(i => { i.checked = i.value === VANO.tipo; });
-  app.querySelectorAll('input[name="v-linea"]').forEach(i => { i.checked = i.value === VANO.linea; });
-  const coloresOk = COLORES_LINEA[VANO.linea];
-  if (!coloresOk.includes(VANO.color)) VANO.color = 'blanco';
-  app.querySelectorAll('input[name="v-color"]').forEach(i => { i.disabled = !coloresOk.includes(i.value); i.checked = i.value === VANO.color; });
-  const vidrios = VIDRIOS_VANO[VANO.tipo][VANO.linea];
-  if (!vidrios.includes(VANO.vidrio)) VANO.vidrio = vidrios[0];
-  const sel = document.getElementById('v-vidrio');
-  if (sel) {
-    sel.innerHTML = vidrios.map(v => `<option value="${v}">${esc(VIDRIOS[v].n)}</option>`).join('');
-    sel.value = VANO.vidrio;
-  }
-  const corrediza = VANO.tipo === 'ventana' || VANO.tipo === 'puerta-ventana';
-  const mw = document.getElementById('v-mosq-wrap');
-  if (mw) mw.hidden = !corrediza;
-  const mq = document.getElementById('v-mosq');
-  if (mq) mq.checked = corrediza && VANO.mosq;
-}
-
-let ultimoRes = '';
-
-function pintarVano(forzar = false) {
-  const res = document.getElementById('vano-res');
-  if (!res) return;
-  const ok = validarVano();
-  const r = buscarEstandar();
-  pintarPlano(r);
-  if (!ok) {
-    const lim = TIPOS_VANO[VANO.tipo].lim;
-    ultimoRes = 'error';
-    res.innerHTML = `<p class="res__estado res__estado--error">Revisá la medida</p><p class="res__p">Para ${esc(TIPOS_VANO[VANO.tipo].n.toLowerCase())} cargá un vano de ${lim.ancho[0]} a ${lim.ancho[1]} cm de ancho y de ${lim.alto[0]} a ${lim.alto[1]} cm de alto. Si es más grande, <a class="res__link" href="${wspLink(`Hola ${MARCA}! Necesito una abertura grande y quiero asesoramiento.`)}" target="_blank" rel="noopener">escribinos y lo vemos</a>.</p>`;
-    return;
-  }
-  const clave = r.tipo === 'std'
-    ? `std|${r.p.id}|${r.m.k}|${VANO.ancho}|${VANO.alto}|${VANO.color}|${VANO.vidrio}|${VANO.mosq}|${Cart.libre(r.p, varVano(r.p, r.m))}`
-    : `med|${VANO.tipo}|${VANO.linea}|${VANO.ancho}|${VANO.alto}|${VANO.color}|${VANO.vidrio}|${VANO.mosq}`;
-  if (!forzar && clave === ultimoRes) return;
-  ultimoRes = clave;
-  res.innerHTML = resultadoHTML(r);
-}
-
-function cotizar(pre = {}) {
-  ['tipo', 'linea', 'color', 'vidrio', 'ancho', 'alto', 'mosq'].forEach(k => { if (pre[k] !== undefined) VANO[k] = pre[k]; });
-  const lim = TIPOS_VANO[VANO.tipo].lim;
-  VANO.ancho = Math.min(lim.ancho[1], Math.max(lim.ancho[0], Math.round(VANO.ancho)));
-  VANO.alto = Math.min(lim.alto[1], Math.max(lim.alto[0], Math.round(VANO.alto)));
-  sincronizarVano();
-  pintarVano(true);
-  irA('medida');
-}
-
-function initVano() {
-  const app = document.getElementById('vano-app');
-  if (!app) return;
-  const fijarDim = (dim, v) => {
-    const [a, b] = TIPOS_VANO[VANO.tipo].lim[dim];
-    VANO[dim] = Math.min(b, Math.max(a, Math.round(v)));
-  };
-  ['ancho', 'alto'].forEach(dim => {
-    const el = document.getElementById(`v-${dim}`);
-    if (!el) return;
-    el.addEventListener('input', () => {
-      const v = Number(el.value);
-      const [a, b] = TIPOS_VANO[VANO.tipo].lim[dim];
-      if (el.value !== '' && Number.isFinite(v) && v >= a && v <= b) VANO[dim] = Math.round(v);
-      pintarVano();
-    });
-    el.addEventListener('change', () => {
-      const v = Number(el.value);
-      if (el.value !== '' && Number.isFinite(v) && v > 0) fijarDim(dim, v);
-      el.value = String(VANO[dim]);
-      pintarVano();
-    });
-  });
-  app.addEventListener('click', e => {
-    const b = e.target.closest('[data-cm]');
-    if (!b) return;
-    const dim = b.dataset.cm;
-    fijarDim(dim, VANO[dim] + Number(b.dataset.d));
-    const el = document.getElementById(`v-${dim}`);
-    if (el) el.value = String(VANO[dim]);
-    pintarVano();
-  });
-  app.addEventListener('change', e => {
-    const t = e.target;
-    if (t.name === 'v-tipo') {
-      VANO.tipo = t.value;
-      const lim = TIPOS_VANO[VANO.tipo].lim;
-      const ej = { ventana: [152, 112], 'puerta-ventana': [182, 202], pano: [102, 112], ventiluz: [62, 42] }[VANO.tipo];
-      VANO.ancho = Math.min(lim.ancho[1], Math.max(lim.ancho[0], ej[0]));
-      VANO.alto = Math.min(lim.alto[1], Math.max(lim.alto[0], ej[1]));
-      if (VANO.tipo === 'pano') VANO.linea = 'm';
-    } else if (t.name === 'v-linea') VANO.linea = t.value;
-    else if (t.name === 'v-color') VANO.color = t.value;
-    else if (t.id === 'v-vidrio') VANO.vidrio = t.value;
-    else if (t.id === 'v-mosq') VANO.mosq = t.checked;
-    else return;
-    sincronizarVano();
-    pintarVano();
-  });
-  const plano = document.getElementById('plano');
-  let arrastre = null;
-  const punto = ev => {
-    const svg = plano?.querySelector('svg');
-    const ctm = svg?.getScreenCTM();
-    if (!svg || !ctm) return null;
-    const pt = svg.createSVGPoint();
-    pt.x = ev.clientX; pt.y = ev.clientY;
-    return pt.matrixTransform(ctm.inverse());
-  };
-  let cuadro = 0;
-  plano?.addEventListener('pointerdown', ev => {
-    if (!ev.target.closest('.plano__handle') || !planoGeo) return;
-    const p = punto(ev);
-    if (!p) return;
-    ev.preventDefault();
-    arrastre = { id: ev.pointerId, px: p.x, py: p.y, a: VANO.ancho, h: VANO.alto, s: planoGeo.s };
-    planoFijo = { ...planoGeo };
-    plano.classList.add('arrastrando');
-    try { plano.setPointerCapture(ev.pointerId); } catch { arrastre.sinCaptura = true; }
-  });
-  plano?.addEventListener('pointermove', ev => {
-    if (!arrastre || ev.pointerId !== arrastre.id) return;
-    const p = punto(ev);
-    if (!p) return;
-    fijarDim('ancho', arrastre.a + (p.x - arrastre.px) / arrastre.s);
-    fijarDim('alto', arrastre.h + (p.y - arrastre.py) / arrastre.s);
-    if (cuadro) return;
-    cuadro = requestAnimationFrame(() => { cuadro = 0; sincronizarVano(); pintarVano(); });
-  });
-  const soltar = ev => {
-    if (!arrastre || (ev && ev.pointerId !== arrastre.id)) return;
-    try { plano.releasePointerCapture(arrastre.id); } catch { arrastre = null; }
-    arrastre = null;
-    planoFijo = null;
-    plano.classList.remove('arrastrando');
-    sincronizarVano();
-    pintarVano(true);
-  };
-  plano?.addEventListener('pointerup', soltar);
-  plano?.addEventListener('pointercancel', soltar);
-  sincronizarVano();
-  pintarVano(true);
-}
-
 /* ---------- trabajos: la hoja que se corre (momento) ---------- */
 let obraActiva = -1;
 
 function fichaObraHTML(k) {
   const o = OBRAS[k];
   const n = PRODUCTOS.filter(p => p.cat === o.cat).length;
+  const pedido = `Hola ${MARCA}! Vi la obra «${o.t1} ${o.t2}» en la web y quiero presupuesto para una así: ${o.tipologia.toLowerCase()}, línea ${LINEAS[o.linea].toLowerCase()}, ${COLORES[o.color].n.toLowerCase()}, ${VIDRIOS[o.vidrio].n}. Mi vano mide __ × __ cm.`;
   return `<p class="ficha-obra__n">Obra ${String(k + 1).padStart(2, '0')} <span>/ ${String(OBRAS.length).padStart(2, '0')}</span></p>
     <p class="ficha-obra__etq">${esc(o.tipologia)}</p>
     <p class="ficha-obra__t">${esc(o.t1)} <em>${esc(o.t2)}</em></p>
@@ -1047,7 +640,7 @@ function fichaObraHTML(k) {
       <div><dt>Vidriado</dt><dd class="vivo" id="obra-m2">${fmtM2((o.ancho * o.alto * 0.82) / 10000)}</dd></div>
     </dl>
     <div class="ficha-obra__ctas">
-      <button type="button" class="btn btn--solid btn--sm" data-obra-cotizar="${k}">Quiero una así</button>
+      <a class="btn btn--solid btn--sm" href="${wspLink(pedido)}" target="_blank" rel="noopener">Quiero una así</a>
       <button type="button" class="btn btn--claro btn--sm" data-ver-cat="${o.cat}">Ver ${esc(CATS_CORTO[o.cat])} (${n})</button>
     </div>`;
 }
@@ -1146,7 +739,7 @@ function pintarDrawer() {
   if (!body) return;
   const items = Cart.get();
   if (!items.length) {
-    body.innerHTML = '<div class="drawer-vacio"><p>Tu carrito está vacío. Elegí una abertura estándar, o cargá tu vano y te la cotizamos a medida.</p><button type="button" class="btn btn--line" data-cerrar-drawer>Ver las aberturas</button></div>';
+    body.innerHTML = '<div class="drawer-vacio"><p>Tu carrito está vacío. Elegí una abertura estándar, o pedinos una a medida por WhatsApp.</p><button type="button" class="btn btn--line" data-cerrar-drawer>Ver las aberturas</button></div>';
     if (foot) foot.hidden = true;
     return;
   }
@@ -1258,15 +851,13 @@ function modalHTML(p) {
   const base = precioBase(p, v);
   const fin = precioFinal(p, v);
   const m = medidaDe(p, o.medida);
-  const vistas = p.foto ? '<div class="m-vistas" role="group" aria-label="Fotos de la abertura"><button type="button" class="m-vista" data-m-vista="0" aria-pressed="true">De cerca</button><button type="button" class="m-vista" data-m-vista="1" aria-pressed="false">La foto entera</button></div>' : '';
   const rel = PRODUCTOS.filter(x => x.id !== p.id && (x.cat === p.cat || x.amb.some(a => p.amb.includes(a)))).sort((a, b) => (a.cat === p.cat ? 0 : 1) - (b.cat === p.cat ? 0 : 1)).slice(0, 3);
   const relHTML = rel.map(x => `<li><button type="button" class="m-rel" data-quick="${x.id}">${fotoHTML(x, 1)}<span>${esc(nombreLinea(x))}</span><b>Desde ${formatearPrecio(desde(x))}</b></button></li>`).join('');
   const ficha = `<dl class="ficha">${p.ficha.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}<div><dt>Medidas</dt><dd>${p.medidas.map(x => `${x.a}×${x.h}`).join(' · ')} cm</dd></div></dl>`;
-  const cotizable = ['ventana', 'puerta-ventana', 'pano', 'ventiluz'].includes(p.tipo);
+  const aMedida = `Hola ${MARCA}! Quiero ${nombreLinea(p)} a medida, en ${(COLORES[o.color]?.n || '').toLowerCase()}${o.vidrio ? ` con ${VIDRIOS[o.vidrio].n}` : ''}. Mi vano mide __ × __ cm.`;
   return `<div class="m-grid">
     <div class="m-fotos">
-      ${fotoHTML(p, AR_MODAL, 'm-foto', ' id="m-foto"')}
-      ${vistas}
+      ${fotoHTML(p, AR_MODAL, 'm-foto')}
     </div>
     <div class="m-info">
       <p class="m-cod"><b>${esc(p.cod)}</b>${p.linea ? ` · Línea ${esc(LINEAS[p.linea].toLowerCase())}` : ''}</p>
@@ -1282,7 +873,7 @@ function modalHTML(p) {
       <button type="button" class="btn btn--line btn--block" data-comprar-modal="${p.id}"${libre <= 0 ? ' disabled' : ''}>Comprar ahora</button>
       <div class="m-links">
         <a class="link" href="${wspLink(consultaTxt(p, v))}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
-        ${cotizable ? `<button type="button" class="link" data-cotizar-p="${p.id}">¿Otra medida? Cotizala a medida</button>` : ''}
+        <a class="link" href="${wspLink(aMedida)}" target="_blank" rel="noopener">¿Otra medida? Pedila a medida</a>
       </div>
       ${ficha}
       ${relHTML ? `<div class="m-rels"><p class="m-rels__t">También te puede servir</p><ul>${relHTML}</ul></div>` : ''}
@@ -1360,16 +951,6 @@ function initModal() {
   });
   modal.addEventListener('click', e => {
     if (e.target.closest('[data-close-modal]')) { cerrarModal(); return; }
-    const vista = e.target.closest('[data-m-vista]');
-    if (vista) {
-      const p = actual();
-      const foto = document.getElementById('m-foto');
-      if (!p || !foto || !p.foto) return;
-      const k = Number(vista.dataset.mVista);
-      foto.setAttribute('style', `--ar:${AR_MODAL};${recorte(p.foto, k ? [p.foco[0], p.foco[1], 1] : p.foco, AR_MODAL)}`);
-      modal.querySelectorAll('[data-m-vista]').forEach(b => b.setAttribute('aria-pressed', String(b === vista)));
-      return;
-    }
     const add = e.target.closest('[data-add-modal], [data-comprar-modal]');
     if (add) {
       const p = getProducto(add.dataset.addModal || add.dataset.comprarModal);
@@ -1408,39 +989,6 @@ function initAcciones() {
       out.textContent = String(Math.max(1, Math.min(libre, (parseInt(out.textContent, 10) || 1) + Number(paso.dataset.paso))));
       return;
     }
-    const cotP = e.target.closest('[data-cotizar-p]');
-    if (cotP) {
-      const p = getProducto(cotP.dataset.cotizarP);
-      if (!p) return;
-      const o = leerVar(p, varModal);
-      const m = medidaDe(p, o.medida);
-      cerrarModal(true);
-      cotizar({ tipo: p.tipo, linea: p.linea || 't', color: o.color, vidrio: o.vidrio, mosq: o.mosq, ancho: m ? m.a + 2 : undefined, alto: m ? m.h + 2 : undefined });
-      return;
-    }
-    if (e.target.closest('[data-add-std]')) {
-      const r = buscarEstandar();
-      if (r.tipo !== 'std') return;
-      const v = varVano(r.p, r.m);
-      const ok = Cart.add(r.p, 1, v);
-      showToast(ok ? `Agregaste ${r.p.nombre} de ${medidaTxt(r.m)} al carrito.` : 'Ya tenés en el carrito todo el stock de esa medida.');
-      pintarVano();
-      return;
-    }
-    const pre = e.target.closest('[data-add-premarco]');
-    if (pre) {
-      const p = getProducto('premarco');
-      if (!p) return;
-      const ok = Cart.add(p, 1, pre.dataset.addPremarco);
-      showToast(ok ? `Sumaste el premarco de ${varTxt(p, pre.dataset.addPremarco).split(' · ')[0]}.` : 'Ya tenés en el carrito todo el stock de ese premarco.');
-      return;
-    }
-    const obra = e.target.closest('[data-obra-cotizar]');
-    if (obra) {
-      const o = OBRAS[Number(obra.dataset.obraCotizar)];
-      if (o) cotizar({ tipo: o.tipo, linea: o.linea, color: o.color, vidrio: o.vidrio, mosq: false, ancho: o.ancho + 2, alto: o.alto + 2 });
-      return;
-    }
     const verCat = e.target.closest('[data-ver-cat]');
     if (verCat) { filtrarPor({ tipos: [verCat.dataset.verCat] }); return; }
     const amb = e.target.closest('[data-amb]');
@@ -1477,10 +1025,6 @@ function initAcciones() {
   });
 }
 
-function refrescarVistas() {
-  if (document.getElementById('vano-res') && !document.querySelector('.plano.arrastrando')) pintarVano();
-}
-
 function updateCartBadge() {
   const n = Cart.count();
   document.querySelectorAll('[data-cart-count]').forEach(b => {
@@ -1489,7 +1033,6 @@ function updateCartBadge() {
   });
 }
 document.addEventListener('cart:updated', updateCartBadge);
-document.addEventListener('cart:updated', refrescarVistas);
 
 /* ---------- entradas ---------- */
 let revealsListos = false;
@@ -1652,7 +1195,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initCatalogo();
   initFiltros();
   initRail();
-  initVano();
   initObras();
   initReveals();
   if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
