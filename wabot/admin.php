@@ -2529,7 +2529,7 @@ function burbujaCita(t, chat) {
                             <button class="sec"><?= !empty($conv['bot_off']) ? 'Encender bot acá' : 'Apagar bot acá' ?></button></form>
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
-                            title="Copia el link del formulario con el código de esta conversación, para mandárselo vos">Copiar form</button>
+                            title="Pone en el chat el mensaje con el link del formulario (con el código de esta conversación), para revisarlo y enviarlo">Form al chat</button>
                         <?php if (wabot_rr_03oct_botones_pago_listos($cfg)): ?>
                         <?php /* Los dos links de pago del plan mensual, listos para mandar (25-sep;
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
@@ -3224,9 +3224,11 @@ function burbujaCita(t, chat) {
             pintarLista(itemsCache);
         });
 
-        /* "Copiar form": el link del formulario con el código de esta charla.
-           Sin el ?c= lo único que ata el envío a la conversación es el teléfono
-           que el cliente tipea, y desde Instagram no hay ninguno (21-sep). */
+        /* "Form al chat": el mensaje con el link del formulario y el código de
+           esta charla. Sin el ?c= lo único que ata el envío a la conversación es
+           el teléfono que el cliente tipea, y desde Instagram no hay ninguno
+           (21-sep). Desde el 4-oct va directo al editor del chat, como las
+           respuestas rápidas (Pablo); el portapapeles queda de respaldo. */
         document.addEventListener('click', async (ev) => {
             const boton = ev.target.closest('.form-copiar');
             if (!boton) return;
@@ -3238,17 +3240,22 @@ function burbujaCita(t, chat) {
                     body: new URLSearchParams({ accion: 'form_link', tel: boton.dataset.tel }) });
                 const j = await r.json();
                 if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
-                try {
-                    await navigator.clipboard.writeText(j.mensaje || j.link);
-                } catch (err) {
-                    const caja = document.createElement('textarea');
-                    caja.value = j.mensaje || j.link;
-                    document.body.appendChild(caja);
-                    caja.select();
-                    document.execCommand('copy');
-                    caja.remove();
+                if (typeof window.gwInsertarEnChat === 'function') {
+                    window.gwInsertarEnChat(j.mensaje || j.link);
+                    boton.textContent = 'en el chat ✓';
+                } else {
+                    try {
+                        await navigator.clipboard.writeText(j.mensaje || j.link);
+                    } catch (err) {
+                        const caja = document.createElement('textarea');
+                        caja.value = j.mensaje || j.link;
+                        document.body.appendChild(caja);
+                        caja.select();
+                        document.execCommand('copy');
+                        caja.remove();
+                    }
+                    boton.textContent = j.codigo + ' copiado ✓';
                 }
-                boton.textContent = j.codigo + ' copiado ✓';
                 boton.title = j.link;
             } catch (error) {
                 boton.textContent = 'no se pudo';
@@ -3385,6 +3392,9 @@ function burbujaCita(t, chat) {
             rrBusqueda.value = '';
             rrResultados.textContent = '';
         }
+
+        // "Form al chat" (otro <script>) escribe con esto en el editor.
+        window.gwInsertarEnChat = texto => rrInsertar(texto);
 
         function rrInsertar(texto) {
             const actual = txt.value;
@@ -4168,7 +4178,9 @@ function burbujaCita(t, chat) {
                 }
             }
 
-            async function copiarFormLink(tel, boton) {
+            // Al cuadro de respuesta de la tarjeta (4-oct); si está cerrado (ventana
+            // de 24 h vencida), al portapapeles como antes.
+            async function copiarFormLink(tel, boton, caja) {
                 const previo = boton.textContent;
                 boton.disabled = true;
                 boton.textContent = '…';
@@ -4177,7 +4189,17 @@ function burbujaCita(t, chat) {
                         body: new URLSearchParams({ accion: 'form_link', tel }) });
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
-                    await copiarAlPortapapeles(j.mensaje || j.link);
+                    const texto = j.mensaje || j.link;
+                    if (caja && !caja.disabled) {
+                        const actual = caja.value.replace(/\s+$/, '');
+                        caja.value = actual ? actual + '\n\n' + texto : texto;
+                        caja.dispatchEvent(new Event('input', { bubbles: true }));
+                        caja.focus();
+                        caja.setSelectionRange(caja.value.length, caja.value.length);
+                        boton.textContent = 'en el chat ✓';
+                        return;
+                    }
+                    await copiarAlPortapapeles(texto);
                     boton.textContent = j.codigo + ' copiado ✓';
                 } catch (error) {
                     boton.textContent = 'error';
@@ -4226,9 +4248,9 @@ function burbujaCita(t, chat) {
                 const form = document.createElement('button');
                 form.type = 'button';
                 form.className = 'live-form';
-                form.textContent = 'Copiar form';
-                form.title = 'Copia el link del formulario con el código de esta conversación';
-                form.addEventListener('click', () => copiarFormLink(it.tel, form));
+                form.textContent = 'Form al chat';
+                form.title = 'Pone en el cuadro de respuesta el mensaje con el link del formulario de esta conversación';
+                form.addEventListener('click', () => copiarFormLink(it.tel, form, c.el.querySelector('.live-responder textarea')));
                 sub.appendChild(form);
                 const del = document.createElement('button');
                 del.type = 'button';
