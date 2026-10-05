@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261003-facturas">
+    <link rel="stylesheet" href="styles.css?v=20261004-ingresos">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -481,12 +481,23 @@
             <div class="panel-header">
                 <div>
                     <h1>Inversión</h1>
-                    <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta Ads Manager (no hay integración con esa API, se mira aparte), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
                 </div>
                 <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
             </div>
-            <div class="seg-views" id="inversionSemanas"></div>
-            <div id="inversionContent"><p class="muted">Cargando…</p></div>
+            <!-- 4-oct-2026: Ingresos por semana (suscripciones y anual/único por separado)
+                 y el Planificador de las próximas semanas. dashboard.js: renderIngresos, renderPlanificador. -->
+            <nav class="subtab-nav" id="inversionNav">
+                <button type="button" class="subtab-btn active" data-inv="contactos">👥 Contactos y clientes</button>
+                <button type="button" class="subtab-btn" data-inv="ingresos">💵 Ingresos por semana</button>
+                <button type="button" class="subtab-btn" data-inv="plan">🗓️ Planificador</button>
+            </nav>
+            <div id="invVistaContactos">
+                <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta Ads Manager (no hay integración con esa API, se mira aparte), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
+                <div class="seg-views" id="inversionSemanas"></div>
+                <div id="inversionContent"><p class="muted">Cargando…</p></div>
+            </div>
+            <div id="invVistaIngresos" hidden></div>
+            <div id="invVistaPlan" hidden></div>
         </section>
 
         <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
@@ -1204,6 +1215,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261004-intentos"></script>
+    <script type="module" src="dashboard.js?v=20261004-ingresos"></script>
 </body>
 </html>

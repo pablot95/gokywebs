@@ -102,7 +102,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         if (activeTab === "metricas") renderSubMetrica(subMetrica);
         if (activeTab === "wabot") { abrirWabot(); requestAnimationFrame(ajustarAltoWabot); }
         if (activeTab === "mantenimiento") renderMantenimiento();
-        if (activeTab === "inversion") abrirInversion();
+        if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); if (inversionVista !== "contactos") cargarIngresosMp(); }
         if (activeTab === "errores") cargarErrores();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
@@ -256,7 +256,10 @@ async function abrirInversion() {
     }
     renderInversion();
 }
-document.getElementById("inversionRecargarBtn")?.addEventListener("click", abrirInversion);
+document.getElementById("inversionRecargarBtn")?.addEventListener("click", () => {
+    abrirInversion();
+    if (inversionVista !== "contactos") cargarIngresosMp(true);
+});
 
 /* ── Errores de las webs (pestaña Errores) ──
    Cada web manda sus errores con err/err.js → err/log.php → Firestore `errores_web`.
@@ -695,6 +698,339 @@ function renderInversion() {
         const inputGasto = div.querySelector(".gasto-input");
         inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));
     }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Inversión → Ingresos por semana y Planificador (Pablo, 4-oct-2026):
+   "llevar un registro de las ganancias semana a semana, tanto suscriptores
+   como pagos anuales/únicos, por separado" y "en base a los mantenimientos,
+   un planificador de cuánta plata ingresará".
+   - Suscripciones: los cobros reales de Mercado Pago (admin/api/ingresos.php).
+   - Anual y pago único: lo cobrado de cada cliente (cobrosDeCliente). Desde
+     el 4-oct cada seña, saldo o ajuste queda en `cobros` con su fecha; lo
+     cobrado antes sin fecha va a la seña y, lo que pasa de la seña, a la
+     semana de entrega (marcado como aproximado). Las renovaciones anuales ya
+     tenían fecha (`renovaciones`).
+   Semanas de domingo a sábado, las mismas del resto de Inversión.
+   ══════════════════════════════════════════════════════════════════════ */
+let inversionVista = "contactos";
+let ingresosMp = null;            // respuesta de ingresos.php (null = no se pidió)
+let ingresosMpError = "";
+let ingresosMpCargando = false;
+const INGRESOS_DESDE = "2026-07-01";
+const PLAN_SEMANAS = 8;
+const TIPO_COBRO_LABEL = { sena: "Seña", saldo: "Saldo", anual: "Cobro anual", ajuste: "Ajuste", primerPago: "Primer pago", cobro: "Cobro" };
+
+function _cobrosRegistrados(c, nuevo) {
+    return [...(Array.isArray(c?.cobros) ? c.cobros : []), nuevo];
+}
+
+/* Lo cobrado de un cliente de plan anual o pago único, con fecha: [{fecha, monto, tipo, aprox}]. */
+function cobrosDeCliente(c) {
+    const out = [];
+    let registrado = 0;
+    for (const r of (Array.isArray(c.cobros) ? c.cobros : [])) {
+        const fecha = mantToDate(r?.at);
+        const monto = Number(r?.monto) || 0;
+        if (!fecha || !monto) continue;
+        out.push({ fecha, monto, tipo: r.tipo || "cobro", aprox: false });
+        registrado += monto;
+    }
+    const mod = modalidadDe(c);
+    if (_conSena(mod)) {
+        // Lo cobrado antes del registro con fecha (abono sin cobros que lo expliquen).
+        let resto = _num(c.abono) - registrado;
+        const sena = mantToDate(c.senaAt);
+        const entrega = mantToDate(c.entregadoAt) || mantToDate(c.completadoAt);
+        if (resto > 0) {
+            const senaPlan = planDe(c, propuestaDeCliente(c)).sena || 60000;
+            if (sena && entrega) {
+                const s = Math.min(resto, senaPlan);
+                out.push({ fecha: sena, monto: s, tipo: "sena", aprox: false });
+                resto -= s;
+                if (resto > 0) out.push({ fecha: entrega, monto: resto, tipo: "saldo", aprox: true });
+            } else if (sena) {
+                out.push({ fecha: sena, monto: resto, tipo: "sena", aprox: resto > senaPlan });
+            } else if (entrega) {
+                out.push({ fecha: entrega, monto: resto, tipo: "cobro", aprox: true });
+            }
+        }
+    }
+    for (const r of (Array.isArray(c.renovaciones) ? c.renovaciones : [])) {
+        const fecha = mantToDate(r?.at);
+        const monto = Number(r?.monto) || 0;
+        if (fecha && monto) out.push({ fecha, monto, tipo: "anual", aprox: false });
+    }
+    // Modelo del 10 al 14-sep-2026: el primer pago de un cliente mensual.
+    const primerPagoAt = mantToDate(c.primerPagoAt);
+    if (_num(c.primerPago) && primerPagoAt) out.push({ fecha: primerPagoAt, monto: _num(c.primerPago), tipo: "primerPago", aprox: false });
+    return out;
+}
+
+/* Todos los cobros de anual y pago único, de clientes y de completados viejos sin cliente. */
+function cobrosAnualesYUnicos() {
+    const lista = [];
+    const ids = new Set();
+    for (const c of (clients || [])) {
+        ids.add(c.id);
+        for (const k of cobrosDeCliente(c)) lista.push({ ...k, nombre: c.nombre || c.proyecto || "Cliente" });
+    }
+    for (const c of (completados || [])) {
+        if (c.clienteId && ids.has(c.clienteId)) continue;
+        for (const k of cobrosDeCliente({ ...c, entregadoAt: c.entregadoAt || c.completadoAt })) {
+            lista.push({ ...k, nombre: c.nombre || c.proyecto || "Cliente" });
+        }
+    }
+    return lista;
+}
+
+function _semanaDe(fecha) {
+    return semanaClave(Math.floor(fecha.getTime() / 1000));
+}
+
+function _fechaMp(ymd) {
+    const [y, m, d] = String(ymd).split("-").map(Number);
+    return new Date(y, m - 1, d, 12);
+}
+
+async function cargarIngresosMp(forzar = false) {
+    if (ingresosMpCargando || (ingresosMp && !forzar)) return;
+    ingresosMpCargando = true;
+    ingresosMpError = "";
+    renderInversionVista();
+    try {
+        ingresosMp = await llamarFacturacion("lista", null, { desde: INGRESOS_DESDE }, "ingresos.php");
+    } catch (err) {
+        console.error(err);
+        ingresosMpError = err.message;
+    } finally {
+        ingresosMpCargando = false;
+        renderInversionVista();
+    }
+}
+
+function _avisoMp() {
+    if (ingresosMpCargando) return `<p class="muted">Consultando Mercado Pago…</p>`;
+    if (ingresosMpError) return `<div class="factura-error">No se pudieron traer las suscripciones de Mercado Pago: ${escapeHtml(ingresosMpError)}. El resto de los números sí está.</div>`;
+    return "";
+}
+
+function _cajaNumeros(items) {
+    return `<div class="stats-box stats-box--periods" style="margin-bottom:16px">${items.map(([label, valor, sub]) => `
+        <div class="stat-item"><span class="stat-label">${escapeHtml(label)}</span><span class="stat-value">${fmtMoney(valor)}</span>${sub ? `<span class="muted" style="font-size:11px">${sub}</span>` : ""}</div>`).join("")}</div>`;
+}
+
+function renderIngresos() {
+    const cont = document.getElementById("invVistaIngresos");
+    if (!cont) return;
+    const semanas = new Map();
+    const semana = key => {
+        if (!semanas.has(key)) semanas.set(key, { subs: 0, unicos: 0, items: [] });
+        return semanas.get(key);
+    };
+    for (const c of (ingresosMp?.cobros || [])) {
+        const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
+        if (neto <= 0) continue;
+        const s = semana(_semanaDe(_fechaMp(c.dia)));
+        s.subs += neto;
+        s.items.push({ fecha: _fechaMp(c.dia), monto: neto, tipo: "Suscripción", nombre: c.nombre || "Suscriptor", aprox: false });
+    }
+    for (const k of cobrosAnualesYUnicos()) {
+        const s = semana(_semanaDe(k.fecha));
+        s.unicos += k.monto;
+        s.items.push({ fecha: k.fecha, monto: k.monto, tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, aprox: k.aprox });
+    }
+
+    const hoyKey = _semanaDe(new Date());
+    const claves = [...semanas.keys()].filter(k => k <= hoyKey);
+    const primera = claves.length ? claves.sort()[0] : hoyKey;
+    const todas = [];
+    for (let k = hoyKey; k >= primera; k = ymdAgregarDias(k, -7)) todas.push(k);
+
+    const suma = (keys, campo) => keys.reduce((acc, k) => acc + (semanas.get(k)?.[campo] || 0), 0);
+    const ult4 = todas.slice(0, 4);
+    const mes = new Date().toISOString().slice(0, 7);
+    let mesSubs = 0, mesUnicos = 0;
+    for (const s of semanas.values()) for (const it of s.items) {
+        const ym = `${it.fecha.getFullYear()}-${String(it.fecha.getMonth() + 1).padStart(2, "0")}`;
+        if (ym !== mes) continue;
+        if (it.tipo === "Suscripción") mesSubs += it.monto; else mesUnicos += it.monto;
+    }
+
+    const filas = todas.map(k => {
+        const s = semanas.get(k) || { subs: 0, unicos: 0, items: [] };
+        const total = s.subs + s.unicos;
+        const gasto = gastoAdsPorSemana.get(k) || 0;
+        const items = [...s.items].sort((a, b) => a.fecha - b.fecha).map(it => `
+            <tr><td>${escapeHtml(fechaCortaJs(it.fecha))}</td><td>${escapeHtml(it.nombre)}</td><td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en la semana de entrega">(aprox.)</span>` : ""}</td><td class="num">${fmtMoney(it.monto)}</td></tr>`).join("");
+        return `
+        <tr class="ing-fila${total ? "" : " ing-fila--vacia"}" data-semana="${k}">
+            <td>${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))}${k === hoyKey ? ` <span class="muted">(esta semana)</span>` : ""}</td>
+            <td class="num">${s.subs ? fmtMoney(s.subs) : "—"}</td>
+            <td class="num">${s.unicos ? fmtMoney(s.unicos) : "—"}</td>
+            <td class="num"><strong>${total ? fmtMoney(total) : "—"}</strong></td>
+            <td class="num">${gasto ? fmtMoney(gasto) : "—"}</td>
+            <td class="num">${total || gasto ? `<span style="color:${total - gasto >= 0 ? "var(--accent-green,#4ade80)" : "var(--danger,#f87171)"}">${fmtMoney(total - gasto)}</span>` : "—"}</td>
+        </tr>
+        ${items ? `<tr class="ing-detalle" data-detalle="${k}" hidden><td colspan="6">
+            <table class="clients-table ing-detalle-tabla"><tbody>${items}</tbody></table></td></tr>` : ""}`;
+    }).join("");
+
+    cont.innerHTML = `
+        <p class="muted">Lo que entró cada semana (domingo a sábado): las suscripciones son los cobros reales de Mercado Pago; anual y pago único, las señas, saldos y cobros anuales que registrás en Clientes. Tocá una semana para ver el detalle. La publicidad es la que cargás en "Contactos y clientes".</p>
+        ${_avisoMp()}
+        ${_cajaNumeros([
+            ["Esta semana", suma([hoyKey], "subs") + suma([hoyKey], "unicos"), `${fmtMoney(suma([hoyKey], "subs"))} suscripciones · ${fmtMoney(suma([hoyKey], "unicos"))} anual/único`],
+            ["Últimas 4 semanas", suma(ult4, "subs") + suma(ult4, "unicos"), `${fmtMoney(suma(ult4, "subs"))} suscripciones · ${fmtMoney(suma(ult4, "unicos"))} anual/único`],
+            ["Este mes", mesSubs + mesUnicos, `${fmtMoney(mesSubs)} suscripciones · ${fmtMoney(mesUnicos)} anual/único`],
+        ])}
+        <div class="table-wrapper">
+            <table class="clients-table ing-tabla">
+                <thead><tr><th>Semana</th><th class="num">Suscripciones</th><th class="num">Anual / pago único</th><th class="num">Total</th><th class="num">Publicidad</th><th class="num">Resultado</th></tr></thead>
+                <tbody>${filas}</tbody>
+            </table>
+        </div>`;
+}
+
+/* Próximas fechas de cobro de una mensualidad, desde `primera`, cada mes, hasta `hasta`. */
+function _fechasMensuales(primera, hasta) {
+    const out = [];
+    for (let i = 0; i < 6; i++) {
+        const d = new Date(primera.getFullYear(), primera.getMonth() + i, primera.getDate(), 12);
+        if (d > hasta) break;
+        out.push(d);
+    }
+    return out;
+}
+
+function renderPlanificador() {
+    const cont = document.getElementById("invVistaPlan");
+    if (!cont) return;
+    const hoy = new Date();
+    const inicioKey = _semanaDe(hoy);
+    const claves = Array.from({ length: PLAN_SEMANAS }, (_, i) => ymdAgregarDias(inicioKey, i * 7));
+    const finHorizonte = _fechaMp(ymdAgregarDias(claves.at(-1), 6));
+    finHorizonte.setHours(23, 59, 59);
+    const semanas = new Map(claves.map(k => [k, { subs: 0, anuales: 0, items: [] }]));
+    const vencidos = [];
+    const agregar = (fecha, monto, tipo, nombre, campo) => {
+        const s = semanas.get(_semanaDe(fecha));
+        if (!s) return;
+        s[campo] += monto;
+        s.items.push({ fecha, monto, tipo, nombre });
+    };
+
+    // Suscripciones de Mercado Pago: el próximo cobro y uno por mes después.
+    const hoy0 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    for (const s of (ingresosMp?.suscripciones || [])) {
+        if (s.estado !== "authorized" || !s.proximoCobro || !(Number(s.monto) > 0)) continue;
+        let primera = new Date(s.proximoCobro);
+        if (Number.isNaN(primera.getTime())) continue;
+        if (primera < hoy0) primera = new Date(hoy0.getFullYear(), hoy0.getMonth(), hoy0.getDate(), 12);
+        for (const f of _fechasMensuales(primera, finHorizonte)) agregar(f, Number(s.monto), "Suscripción (Mercado Pago)", s.nombre || "Suscriptor", "subs");
+    }
+    // Mensuales cargados a mano, sin suscripción de Mercado Pago (no están en la lista de arriba).
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente" || modalidadDe(c) !== "mensual") continue;
+        const sus = suscripcionDe(c);
+        if (sus.estado !== "activa" || sus.preapprovalId || sus.mant || !sus.desde || !sus.mensual) continue;
+        let d = new Date(hoy0.getFullYear(), hoy0.getMonth(), sus.desde.getDate(), 12);
+        if (d < hoy0) d = new Date(d.getFullYear(), d.getMonth() + 1, d.getDate(), 12);
+        for (const f of _fechasMensuales(d, finHorizonte)) agregar(f, sus.mensual, "Mensualidad (a mano)", c.nombre || c.proyecto || "Cliente", "subs");
+    }
+    // Cobros anuales del plan anual.
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente") continue;
+        const r = renovacionAnualDe(c);
+        if (!r || r.legado || !r.proximo || !r.monto) continue;
+        const nombre = c.nombre || c.proyecto || "Cliente";
+        if (r.proximo < hoy0) vencidos.push({ fecha: r.proximo, monto: r.monto, tipo: "Cobro anual vencido", nombre });
+        else if (r.proximo <= finHorizonte) agregar(r.proximo, r.monto, "Cobro anual", nombre, "anuales");
+    }
+    // Saldos de anual y pago único: se cobran al entregar, sin fecha fija.
+    const saldos = [];
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente" || !_conSena(modalidadDe(c))) continue;
+        const { saldo, cobrado } = pagoUnicoDe(c);
+        if (!saldo || (!cobrado && !c.senaAt)) continue;
+        const item = { monto: saldo, nombre: c.nombre || c.proyecto || "Cliente" };
+        if (webEntregada(c)) vencidos.push({ ...item, fecha: mantToDate(c.entregadoAt), tipo: "Saldo de una web entregada" });
+        else saldos.push(item);
+    }
+
+    const totalSubs = claves.reduce((a, k) => a + semanas.get(k).subs, 0);
+    const totalAnuales = claves.reduce((a, k) => a + semanas.get(k).anuales, 0);
+    const totalSaldos = saldos.reduce((a, s) => a + s.monto, 0);
+    const totalVencidos = vencidos.reduce((a, s) => a + s.monto, 0);
+
+    const filas = claves.map(k => {
+        const s = semanas.get(k);
+        const total = s.subs + s.anuales;
+        const items = [...s.items].sort((a, b) => a.fecha - b.fecha).map(it => `
+            <tr><td>${escapeHtml(fechaCortaJs(it.fecha))}</td><td>${escapeHtml(it.nombre)}</td><td>${escapeHtml(it.tipo)}</td><td class="num">${fmtMoney(it.monto)}</td></tr>`).join("");
+        return `
+        <tr class="ing-fila${total ? "" : " ing-fila--vacia"}" data-semana="${k}">
+            <td>${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))}${k === inicioKey ? ` <span class="muted">(esta semana)</span>` : ""}</td>
+            <td class="num">${s.subs ? fmtMoney(s.subs) : "—"}</td>
+            <td class="num">${s.anuales ? fmtMoney(s.anuales) : "—"}</td>
+            <td class="num"><strong>${total ? fmtMoney(total) : "—"}</strong></td>
+        </tr>
+        ${items ? `<tr class="ing-detalle" data-detalle="${k}" hidden><td colspan="4">
+            <table class="clients-table ing-detalle-tabla"><tbody>${items}</tbody></table></td></tr>` : ""}`;
+    }).join("");
+
+    const lista = (arr, conFecha) => arr.length ? `<div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${arr
+        .sort((a, b) => b.monto - a.monto)
+        .map(it => `<tr>${conFecha ? `<td>${escapeHtml(fechaCortaJs(it.fecha))}</td>` : ""}<td>${escapeHtml(it.nombre)}</td>${it.tipo ? `<td>${escapeHtml(it.tipo)}</td>` : ""}<td class="num">${fmtMoney(it.monto)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">Ninguno.</p>`;
+
+    cont.innerHTML = `
+        <p class="muted">Lo que debería entrar en las próximas ${PLAN_SEMANAS} semanas: las suscripciones de Mercado Pago (próximo cobro y uno por mes después), los mensuales cargados a mano y los cobros anuales del plan anual. Es una estimación: una tarjeta rechazada o una baja la cambian.</p>
+        ${_avisoMp()}
+        ${_cajaNumeros([
+            [`Próximas ${PLAN_SEMANAS} semanas`, totalSubs + totalAnuales, `${fmtMoney(totalSubs)} suscripciones · ${fmtMoney(totalAnuales)} anuales`],
+            ["Saldos al entregar", totalSaldos, `${saldos.length} web${saldos.length === 1 ? "" : "s"} en desarrollo, sin fecha`],
+            ["Vencido sin cobrar", totalVencidos, `${vencidos.length} cobro${vencidos.length === 1 ? "" : "s"}`],
+        ])}
+        <div class="table-wrapper">
+            <table class="clients-table ing-tabla">
+                <thead><tr><th>Semana</th><th class="num">Suscripciones</th><th class="num">Cobros anuales</th><th class="num">Total</th></tr></thead>
+                <tbody>${filas}</tbody>
+            </table>
+        </div>
+        <p class="mant-subtitulo" style="margin-top:18px">Saldos de webs en desarrollo (se cobran al entregar)</p>
+        ${lista(saldos, false)}
+        <p class="mant-subtitulo" style="margin-top:18px">Vencido sin cobrar</p>
+        ${lista(vencidos, true)}`;
+}
+
+function renderInversionVista() {
+    document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
+    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos", plan: "invVistaPlan" };
+    for (const [clave, id] of Object.entries(vistas)) {
+        const el = document.getElementById(id);
+        if (el) el.hidden = clave !== inversionVista;
+    }
+    if (inversionVista === "ingresos") renderIngresos();
+    if (inversionVista === "plan") renderPlanificador();
+}
+
+document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {
+    inversionVista = b.dataset.inv;
+    renderInversionVista();
+    if (inversionVista !== "contactos") cargarIngresosMp();
+}));
+
+// Una semana se abre y se cierra con un clic (el detalle de qué entró y de quién).
+for (const id of ["invVistaIngresos", "invVistaPlan"]) {
+    document.getElementById(id)?.addEventListener("click", (e) => {
+        const fila = e.target.closest("tr.ing-fila");
+        if (!fila) return;
+        const det = fila.parentElement.querySelector(`tr[data-detalle="${fila.dataset.semana}"]`);
+        if (det) {
+            det.hidden = !det.hidden;
+            fila.classList.toggle("abierta", !det.hidden);
+        }
+    });
 }
 
 /* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
@@ -3044,6 +3380,7 @@ async function registrarCobroAnual(id) {
             try {
                 await updateDoc(doc(db, "clientes", id), {
                     abono: _num(c.abono) + cobradoAhora,
+                    cobros: _cobrosRegistrados(c, { at: new Date(), monto: cobradoAhora, tipo: "saldo" }),
                     updatedAt: serverTimestamp()
                 });
             } catch (err) {
@@ -3148,6 +3485,7 @@ async function setStatus(id, value) {
                     if (monto) {
                         updateData.abono = monto;
                         updateData.senaAt = serverTimestamp();
+                        updateData.cobros = _cobrosRegistrados(c, { at: new Date(), monto, tipo: "sena" });
                     }
                 }
             } else {
@@ -3612,6 +3950,15 @@ form.addEventListener("submit", async (e) => {
            saliendo de la entrega. */
         data.valorTotal = Number(document.getElementById("valorTotal").value) || 0;
         data.abono = Number(document.getElementById("abono").value) || 0;
+        // Lo que cambió lo cobrado queda con fecha, para Inversión → Ingresos (4-oct).
+        const antes = actual && _conSena(modalidadDe(actual)) ? _num(actual.abono) : 0;
+        const diferencia = data.abono - antes;
+        if (diferencia) {
+            data.cobros = _cobrosRegistrados(actual, {
+                at: new Date(), monto: diferencia,
+                tipo: diferencia < 0 ? "ajuste" : antes ? "saldo" : "sena",
+            });
+        }
         const senaEl = document.getElementById("senaAt");
         const senaRegistrada = !!actual && _conSena(modalidadDe(actual)) && !!actual.senaAt;
         if (senaEl.value !== senaEl.dataset.original) data.senaAt = _fechaDeInput(senaEl.value);
@@ -5478,7 +5825,7 @@ async function presupuestoToCliente(id) {
             // ── Pago único: el precio y la seña cobrada. En un cliente mensual, valorTotal = primer pago (compatibilidad) ──
             valorTotal:     senaCobrada ? precioUnico : primerPago,
             abono:          senaCobrada || primerPago,
-            ...(senaCobrada ? { senaAt: pagadoAt } : {}),
+            ...(senaCobrada ? { senaAt: pagadoAt, cobros: [{ at: pagadoAt, monto: senaCobrada, tipo: "sena" }] } : {}),
             notas:          "",
             presupuestoId:  id,
             siteType:        p.siteType || "",
