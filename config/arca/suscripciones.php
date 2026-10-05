@@ -375,6 +375,31 @@ function sus_pistas_a_mano(array $registro, array $cobros)
     return $pistas;
 }
 
+/**
+ * Antes de facturar un cobro a mano desde la lista: facturas sin cobro de
+ * Mercado Pago (hechas desde el modal) del mismo importe, hechas entre unos días
+ * antes del cobro y unas semanas después, que no son de otra suscripción. Las
+ * de antes de la activación no tienen la suscripción, así que puede ser la de
+ * este cobro o la de otro cliente que paga lo mismo: no se frena, se pide
+ * confirmarlo. Misma ventana que sus_factura_a_mano(), más ancha que la pista.
+ * Devuelve [clave => factura].
+ */
+function sus_facturas_parecidas(array $registro, array $cobro)
+{
+    $aprobado = strtotime($cobro['aprobado']);
+    $parecidas = [];
+    foreach ($registro as $clave => $factura) {
+        if (!empty($factura['mpPagoId']) || empty($factura['cae'])) continue;
+        $suscripcion = (string) ($factura['preapprovalId'] ?? '');
+        if ($suscripcion !== '' && $suscripcion !== $cobro['suscripcion']) continue;
+        if (abs((float) ($factura['total'] ?? 0) - $cobro['monto']) > 0.005) continue;
+        $emitida = strtotime((string) ($factura['emitidaEl'] ?? ''));
+        if (!$emitida || $emitida < $aprobado - 5 * 86400 || $emitida > $aprobado + 25 * 86400) continue;
+        $parecidas[$clave] = $factura;
+    }
+    return $parecidas;
+}
+
 /* ── Emitir ───────────────────────────────────────────────────────────── */
 
 /**
@@ -455,26 +480,30 @@ function sus_facturar_cobro($arca, array $config, array $cobro, array $receptor,
  * comprobantes posteriores al último que había antes del intento, salvo los
  * que ya están en el registro, y se busca uno de la misma fecha, importe y
  * documento. Devuelve la factura armada o null si no se emitió.
+ *
+ * El tope cuenta solo los que hay que consultar (los que no están en el
+ * registro): un intento del modal se puede verificar semanas después, cuando
+ * ya salieron muchas facturas del admin, y esas no hace falta preguntarlas.
  */
 function sus_recuperar_intento($arca, $puntoVenta, array $intento, array $registro)
 {
     $anterior = (int) ($intento['anterior'] ?? 0);
     $ultimo = $arca->ultimoComprobante($puntoVenta, 11);
     if ($ultimo <= $anterior) return null;
-    if ($ultimo - $anterior > 20) {
+
+    $conocidos = [];
+    foreach ($registro as $factura) {
+        if ((int) ($factura['puntoVenta'] ?? 0) === (int) $puntoVenta) $conocidos[(int) ($factura['numero'] ?? 0)] = true;
+    }
+    $aConsultar = array_diff(range($anterior + 1, $ultimo), array_keys($conocidos));
+    if (count($aConsultar) > 20) {
         throw new RuntimeException(
             'Un intento anterior quedó sin respuesta de ARCA y desde entonces se emitieron demasiados comprobantes para '
             . 'verificarlo solo: revisar en ARCA si la factura de ' . $intento['fecha'] . ' por $' . $intento['total'] . ' existe.'
         );
     }
 
-    $conocidos = [];
-    foreach ($registro as $factura) {
-        if ((int) ($factura['puntoVenta'] ?? 0) === (int) $puntoVenta) $conocidos[(int) ($factura['numero'] ?? 0)] = true;
-    }
-
-    for ($numero = $anterior + 1; $numero <= $ultimo; $numero++) {
-        if (isset($conocidos[$numero])) continue;
+    foreach ($aConsultar as $numero) {
         $comprobante = $arca->consultarComprobante($puntoVenta, 11, $numero);
         if (!$comprobante) continue;
         if ((string) $comprobante['fecha'] !== (string) $intento['fecha']) continue;

@@ -354,6 +354,24 @@ caso('el intento queda guardado en disco antes de pedir el CAE (por si el proces
     is_array($enDisco) && ($enDisco['anterior'] ?? null) === 500, $enDisco);
 limpiar($config);
 
+// Un intento que se verifica mucho después (el modal, semanas más tarde): entre
+// medio salieron 25 facturas que ya están en el registro; esas no se consultan.
+$arca = new ArcaDoble();
+$cf = ['puntoVenta' => 10, 'fecha' => registro_fecha_hoy(), 'concepto' => 2, 'tipoDocumento' => 99, 'numeroDocumento' => '0',
+    'condicionIvaReceptor' => 5, 'servicioDesde' => '', 'servicioHasta' => '', 'vencimientoPago' => ''];
+$intento = ['anterior' => 500, 'fecha' => registro_fecha_hoy(), 'total' => 20000, 'numeroDocumento' => '0', 'receptor' => receptor_normalizar(['tipoDocumento' => 99])];
+$arca->modo = 'sin_respuesta';
+try { $arca->emitirFacturaC($cf + ['total' => 20000]); } catch (ArcaError $e) {}
+$arca->modo = 'ok';
+$registro = [];
+for ($i = 1; $i <= 25; $i++) $registro["m$i"] = $arca->emitirFacturaC($cf + ['total' => 1000 + $i]);
+$r = sus_recuperar_intento($arca, 10, $intento, $registro);
+caso('verificar un intento viejo: las facturas del registro no cuentan para el tope de 20', ($r['numero'] ?? 0) === 501, $r);
+for ($i = 1; $i <= 20; $i++) unset($registro["m$i"]);
+$tiro = false;
+try { sus_recuperar_intento($arca, 10, $intento, $registro); } catch (RuntimeException $e) { $tiro = true; }
+caso('...pero con más de 20 desconocidas para consultar, pide revisarlo en ARCA', $tiro);
+
 $config = config_prueba();
 $pagos = [pago('461', $S1, 25000, $hace1, ['transaction_amount_refunded' => 25000])];
 $mp = mp_doble($pagos);
@@ -433,6 +451,20 @@ $porId = array_column(sus_panorama($config, $mp)['cobros'], null, 'id');
 caso('una factura a mano se sugiere solo para el cobro más cercano',
     ($porId['952']['pista']['numero'] ?? 0) === 495 && ($porId['951']['pista'] ?? null) === null, $porId);
 limpiar($config);
+
+// Facturar a mano un cobro desde la lista: qué facturas hay que confirmar antes.
+$cobro = sus_cobro_de_pago(pago('961', $S1, 20000, $hace10), YO);
+$cerca = gmdate('c', strtotime('-3 days'));
+$parecidas = sus_facturas_parecidas([
+    'a-mano' => ['numero' => 1, 'total' => 20000, 'cae' => 'x', 'emitidaEl' => $cerca],
+    'de-la-misma' => ['numero' => 2, 'total' => 20000, 'cae' => 'x', 'emitidaEl' => $cerca, 'preapprovalId' => $S1],
+    'de-otra' => ['numero' => 3, 'total' => 20000, 'cae' => 'x', 'emitidaEl' => $cerca, 'preapprovalId' => $S2],
+    'automatica' => ['numero' => 4, 'total' => 20000, 'cae' => 'x', 'emitidaEl' => $cerca, 'mpPagoId' => '777'],
+    'vieja' => ['numero' => 5, 'total' => 20000, 'cae' => 'x', 'emitidaEl' => gmdate('c', strtotime('-40 days'))],
+    'otro-importe' => ['numero' => 6, 'total' => 25000, 'cae' => 'x', 'emitidaEl' => $cerca],
+], $cobro);
+caso('parecidas: del modal, mismo importe, cerca del cobro, sin otra suscripción',
+    array_keys($parecidas) === ['a-mano', 'de-la-misma'], array_keys($parecidas));
 
 echo $fallas ? "\n$fallas de $casos casos fallaron.\n" : "OK: $casos casos.\n";
 exit($fallas ? 1 : 0);

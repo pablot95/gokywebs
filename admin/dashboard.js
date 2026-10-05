@@ -4789,7 +4789,7 @@ async function llamarFacturacion(accion, cuerpo, extra = {}, endpoint = "factura
     const res = await fetch(`/admin/api/${endpoint}?` + params, opciones);
     const datos = await res.json().catch(() => null);
     if (!datos) throw new Error(`El servidor no respondió JSON (HTTP ${res.status})`);
-    if (!datos.ok) throw new Error(datos.error || `HTTP ${res.status}`);
+    if (!datos.ok) throw Object.assign(new Error(datos.error || `HTTP ${res.status}`), { datos });
     return datos;
 }
 
@@ -4973,7 +4973,12 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
         const f = datos.factura;
         if (!facturaEsAdhoc) await completarCliente(cliente.id, f);
         cerrarFacturaModal();
-        if (f.observaciones) {
+        if (datos.recuperada) {
+            alert(
+                `${numeroComprobante(f.puntoVenta, f.numero)} (${fmtMoney(f.total)}) ya se había emitido en un intento anterior ` +
+                "que quedó sin respuesta de ARCA: quedó registrada y no se emitió otra."
+            );
+        } else if (f.observaciones) {
             alert(
                 `${numeroComprobante(f.puntoVenta, f.numero)} emitida, pero ARCA devolvió observaciones:\n\n` +
                 f.observaciones
@@ -7220,11 +7225,21 @@ function renderFactAuto() {
     }
 }
 
-async function _factAutoAccion(boton, accion, cuerpo) {
+// otraVez(datos, cuerpo): ante un error, el cuerpo con el que reintentar, o false para dejarlo sin avisar.
+async function _factAutoAccion(boton, accion, cuerpo, otraVez = null) {
     const texto = boton?.textContent;
     if (boton) { boton.disabled = true; boton.textContent = "…"; }
     try {
-        return await llamarFacturacion(accion, cuerpo, {}, "facturacion-automatica.php");
+        for (;;) {
+            try {
+                return await llamarFacturacion(accion, cuerpo, {}, "facturacion-automatica.php");
+            } catch (err) {
+                const siguiente = otraVez && err.datos ? otraVez(err.datos, cuerpo) : null;
+                if (siguiente === false) return null;
+                if (!siguiente) throw err;
+                cuerpo = siguiente;
+            }
+        }
     } catch (err) {
         console.error(err);
         alert(err.message);
@@ -7284,7 +7299,14 @@ document.getElementById("faCobrosTbody")?.addEventListener("click", async (e) =>
     if (!confirm(`¿Facturar ahora el cobro del ${_factAutoFecha(cobro.aprobado)} de ${cobro.nombre || suscripcion?.nombre || "esta suscripción"} por ${fmtMoney(cobro.monto)}?\n\n`
         + `Se emite la Factura C a ${receptor ? _factAutoReceptorTexto(receptor) : "lo que diga su suscripción"}.`
         + (p ? `\n\nOjo: hay una factura hecha a mano del mismo importe (${numeroComprobante(p.puntoVenta, p.numero)}, del ${_factAutoFecha(p.fecha)}). Si es de este cobro, no la emitas de nuevo.` : ""))) return;
-    const datos = await _factAutoAccion(facturarBtn, "facturar", { pago: cobro.id });
+    // El server vuelve a buscar facturas a mano parecidas: las que ya se mostraron
+    // viajan con el pedido y, si encuentra otras, se pregunta de nuevo con esas.
+    const datos = await _factAutoAccion(facturarBtn, "facturar", { pago: cobro.id, facturasVistas: p ? [p.numero] : [] }, (r, cuerpo) => {
+        if (!r.confirmar || !r.parecidas?.length) return null;
+        const lista = r.parecidas.map(f => `• ${numeroComprobante(f.puntoVenta, f.numero)} del ${_factAutoFecha(f.fecha)} por ${fmtMoney(f.total)}${f.cliente ? ` (${f.cliente})` : ""}`).join("\n");
+        if (!confirm(`Hay ${r.parecidas.length === 1 ? "una factura hecha a mano" : "facturas hechas a mano"} del mismo importe cerca de este cobro:\n\n${lista}\n\nSi alguna es de este cobro, no lo factures de nuevo. ¿Emitir igual la factura del cobro?`)) return false;
+        return { ...cuerpo, facturasVistas: [...cuerpo.facturasVistas, ...r.parecidas.map(f => f.numero)] };
+    });
     if (!datos) return;
     const f = datos.factura;
     if (datos.resultado === "recuperada") alert(`${numeroComprobante(f.puntoVenta, f.numero)}: ya se había emitido en un intento anterior; quedó registrada.`);

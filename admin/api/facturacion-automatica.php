@@ -8,7 +8,9 @@
  *   POST ?accion=activar     {activa}                   prende o pausa la facturación automática
  *   POST ?accion=receptor    {suscripcion, modo, …}     a quién se le facturan los cobros de esa suscripción
  *   POST ?accion=excluir     {suscripcion, excluida}    que esa suscripción no se facture sola
- *   POST ?accion=facturar    {pago}                     factura ya un cobro puntual (por ejemplo, uno anterior a la activación)
+ *   POST ?accion=facturar    {pago, facturasVistas}     factura ya un cobro puntual (por ejemplo, uno anterior a la activación);
+ *                                                       si hay facturas a mano parecidas que no están en facturasVistas
+ *                                                       (sus números), responde 409 con confirmar y parecidas
  */
 
 require __DIR__ . '/auth-admin.php';
@@ -108,6 +110,27 @@ try {
             if ($aMano !== null && !isset($registro[sus_clave($cobro['id'])])) {
                 responder(['ok' => false, 'error' => 'Ese cobro ya tiene una factura hecha a mano desde su fila (C '
                     . str_pad((string) ($registro[$aMano]['numero'] ?? ''), 8, '0', STR_PAD_LEFT) . ').'], 409);
+            }
+            // Una factura a mano del mismo importe cerca del cobro puede ser la de este
+            // cobro (las de antes de la activación no tienen la suscripción): se emite
+            // solo si el admin ya mostró cada una y Pablo dijo que sí igual. Si el cobro
+            // ya tiene factura o un intento a verificar, esa decisión ya se tomó.
+            if (!isset($registro[sus_clave($cobro['id'])]) && !isset($estado['intentos'][sus_clave($cobro['id'])])) {
+                $vistas = array_map('intval', is_array($entrada['facturasVistas'] ?? null) ? $entrada['facturasVistas'] : []);
+                $sinVer = array_filter(sus_facturas_parecidas($registro, $cobro), function ($f) use ($vistas) {
+                    return !in_array((int) ($f['numero'] ?? 0), $vistas, true);
+                });
+                if ($sinVer) {
+                    responder(['ok' => false, 'confirmar' => true, 'parecidas' => array_values(array_map(function ($f) {
+                        return [
+                            'puntoVenta' => (int) ($f['puntoVenta'] ?? 0),
+                            'numero' => (int) ($f['numero'] ?? 0),
+                            'fecha' => (string) ($f['fecha'] ?? ''),
+                            'total' => (float) ($f['total'] ?? 0),
+                            'cliente' => (string) ($f['cliente'] ?? ''),
+                        ];
+                    }, $sinVer)), 'error' => 'Hay una factura hecha a mano del mismo importe cerca de ese cobro: confirmá que no es la de este cobro.'], 409);
+                }
             }
             [$receptor] = sus_receptor($cobro['suscripcion'], $ajustes, $registro);
             $receptor = sus_receptor_revalidar($receptor, array_column(sus_condiciones_iva($config), 'id'));
