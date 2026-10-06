@@ -2552,6 +2552,9 @@ function burbujaCita(t, chat) {
                               $formTs = null; $formInfo = wabot_form_info($conv, $formTs); ?>
                         <button type="button" class="sec" id="btnVerInfo"<?= $formInfo ? '' : ' disabled' ?>
                             title="<?= $formInfo ? 'Lo que llenó en el formulario' : 'Todavía no completó el formulario' ?>">Ver info</button>
+                        <?php /* Pablo, 6-oct: copia los últimos 10 mensajes y, si llenó el formulario, su resumen arriba. */ ?>
+                        <button type="button" class="sec" id="btnCopiarMsjs"
+                            title="Copia los últimos 10 mensajes del chat<?= $formInfo ? ' y lo que llenó en el formulario' : '' ?>">Copiar msjs</button>
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
                             title="Pone en el chat el mensaje con el link del formulario (con el código de esta conversación), para revisarlo y enviarlo">Form al chat</button>
@@ -3359,6 +3362,41 @@ function burbujaCita(t, chat) {
         const btn  = document.getElementById('respEnviar');
         const est  = document.getElementById('respEstado');
         let ultimoRender = '';
+        let lineasChat = [];   // las del último pintar(), para "Copiar msjs"
+
+        /* "Copiar msjs" (Pablo, 6-oct): los últimos 10 mensajes del cliente, del
+           bot y de Pablo, con el resumen del formulario arriba si lo llenó. */
+        const FORM_RESUMEN = <?= json_encode(!empty($formInfo)
+            ? 'Formulario' . (!empty($formTs) ? ' (' . date('d/m/Y H:i', $formTs) . ')' : '') . ":\n"
+                . implode("\n", array_map(fn($d) => $d['etiqueta'] . ': ' . ($d['valor'] !== '' ? $d['valor'] : '—'), $formInfo))
+            : '', JSON_UNESCAPED_UNICODE) ?>;
+        function textoUltimosMensajes() {
+            const dd = n => String(n).padStart(2, '0');
+            const msjs = lineasChat.filter(t => ['cliente', 'bot', 'humano'].includes(t.q)).slice(-10).map(t => {
+                const f = new Date((t.ts || 0) * 1000);
+                const quien = t.q === 'cliente' ? 'Cliente' : 'Gokywebs';
+                const texto = String(t.t || '').trim() || (t.media && t.media.clase ? '[' + t.media.clase + ']' : '');
+                return '[' + dd(f.getDate()) + '/' + dd(f.getMonth() + 1) + ' ' + dd(f.getHours()) + ':' + dd(f.getMinutes()) + '] ' + quien + ': ' + texto;
+            });
+            return (FORM_RESUMEN ? FORM_RESUMEN + '\n\n' : '') + 'Últimos mensajes:\n' + msjs.join('\n');
+        }
+        document.getElementById('btnCopiarMsjs')?.addEventListener('click', async (ev) => {
+            const boton = ev.currentTarget;
+            const texto = textoUltimosMensajes();
+            try {
+                await navigator.clipboard.writeText(texto);
+            } catch (err) {
+                const caja = document.createElement('textarea');
+                caja.value = texto;
+                document.body.appendChild(caja);
+                caja.select();
+                document.execCommand('copy');
+                caja.remove();
+            }
+            const previo = boton.textContent;
+            boton.textContent = 'Copiado ✓';
+            setTimeout(() => { boton.textContent = previo; }, 1500);
+        });
 
         // Crece con el contenido al escribir, pegar o elegir una respuesta rápida.
         // El límite es 80vh, sin tapar del todo el historial del chat.
@@ -3621,6 +3659,7 @@ function burbujaCita(t, chat) {
         })();
 
         function pintar(lineas) {
+            lineasChat = lineas;
             const firma = JSON.stringify(lineas);
             if (firma === ultimoRender) return;
             ultimoRender = firma;
