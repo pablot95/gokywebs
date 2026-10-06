@@ -35,11 +35,11 @@ caso('una consulta sin regla asociada deriva toda la tanda', pp_silencio($c, $r)
 $c = pp_conv('landing');
 $c['precio_cotizado'] = '$180.000'; $c['mensualidad_cotizada'] = '$25.000'; $c['precio_unico_cotizado'] = '$240.000';
 $p = wabot_precio_vigente($c, $cfg);
-caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$140.000' && $p['mensualidad'] === '$22.000' && $p['precio_unico'] === '$220.000');
+caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$140.000' && $p['mensualidad'] === '$20.000' && $p['precio_unico'] === '$220.000');
 $c2 = pp_conv('ecommerce');
 $c2['precio_cotizado'] = '$190.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$290.000';
 $p2 = wabot_precio_vigente($c2, $cfg);
-// 2-oct la lista bajó a $29.000 y valía la lista; desde el 3-oct la lista ($32.000 / $220.000 / $330.000) es más alta: vale lo congelado.
+// 2-oct la lista bajó a $29.000 y valía la lista; desde el 3-oct la lista ($30.000 / $220.000 / $330.000) es más alta: vale lo congelado.
 caso('cotización del 1-oct con $29.900 conserva sus montos, más bajos que la lista del 3-oct', $p2['mensualidad'] === '$29.900' && $p2['precio'] === '$190.000' && $p2['precio_unico'] === '$290.000');
 $c['precio_cotizado'] = '$120.000'; $c['presentado_ts'] = time(); $c['modalidad_elegida'] = 'anual';
 pp_api(pp_decision(['pago_link']));
@@ -117,10 +117,10 @@ function pp_silencio($c, $r) {
         && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']);
 }
 
-foreach (['landing' => ['$22.000', '$140.000', '$220.000', '$80.000', '$160.000'],
-    'ecommerce' => ['$32.000', '$220.000', '$330.000', '$160.000', '$270.000'],
-    'elearning' => ['$32.000', '$220.000', '$330.000', '$160.000', '$270.000'],
-    'inmobiliaria' => ['$32.000', '$220.000', '$330.000', '$160.000', '$270.000']]
+foreach (['landing' => ['$20.000', '$140.000', '$220.000', '$80.000', '$160.000'],
+    'ecommerce' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000'],
+    'elearning' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000'],
+    'inmobiliaria' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -138,7 +138,7 @@ foreach (['landing' => ['$22.000', '$140.000', '$220.000', '$80.000', '$160.000'
     $c = pp_conv($tipo, ['presentado_ts' => time(), 'modalidad_elegida' => 'mensual']);
     pp_api(pp_decision(['pago_link']));
     $r = turno('Pasame el link para pagar el mensual', $c, $cfg);
-    $pagina = $tipo === 'landing' ? 'mensual22000' : 'mensual32000';
+    $pagina = $tipo === 'landing' ? 'mensual20000' : 'mensual30000';
     caso("$tipo: enlace mensual correcto", str_contains(implode(' ', $r), '/pago/' . $pagina . '/'));
 }
 // 3-oct: el pago único no se ofrece; la respuesta de pago lo nombra solo al que lo eligió.
@@ -240,7 +240,7 @@ foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual220', 'un
 // 2-oct (Pablo): los links al detalle de cada modalidad ya no van en el turno
 // del precio; salen cuando el cliente los pide.
 caso('detalle_modalidades está en el catálogo que ve el clasificador', isset(wabot_postprecio_catalogo()['detalle_modalidades']));
-foreach (['landing' => ['mensual22000', 'anual140'], 'ecommerce' => ['mensual32000', 'anual220']] as $tipo => $paginas) {
+foreach (['landing' => ['mensual20000', 'anual140'], 'ecommerce' => ['mensual30000', 'anual220']] as $tipo => $paginas) {
     $c = pp_conv($tipo);
     pp_api(pp_decision(['detalle_modalidades']));
     $r = turno('Tenés más info de cada plan? Dónde veo qué incluye cada uno?', $c, $cfg);
@@ -331,9 +331,9 @@ $rr = wabot_respuestas_rapidas_precios_1oct([['titulo' => 'Pago', 'items' => [
     'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25',
     'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29900',
     'Mi respuesta personalizada con $25.000']]]);
-caso('respuestas rápidas migran el enlace estándar y conservan texto personalizado', str_contains($rr[0]['items'][0], 'mensual22000') && str_contains($rr[0]['items'][0], '$22.000')
+caso('respuestas rápidas migran el enlace estándar y conservan texto personalizado', str_contains($rr[0]['items'][0], 'mensual20000') && str_contains($rr[0]['items'][0], '$20.000')
     && $rr[0]['items'][2] === 'Mi respuesta personalizada con $25.000');
-caso('respuestas rápidas guardadas con $29.900 pasan a $32.000 y a pago/mensual32000 (3-oct)', str_contains($rr[0]['items'][1], '($32.000 por mes)') && str_ends_with($rr[0]['items'][1], 'pago/mensual32000'));
+caso('respuestas rápidas guardadas con $29.900 pasan a $30.000 y a pago/mensual30000 (3-oct)', str_contains($rr[0]['items'][1], '($30.000 por mes)') && str_ends_with($rr[0]['items'][1], 'pago/mensual30000'));
 caso('curso de marketing no se confunde con contratar publicidad', !in_array('publicidad', wabot_ficha_fuera_de('Vendo cursos de marketing digital online'), true));
 caso('pedido real de publicidad se sigue reconociendo', in_array('publicidad', wabot_ficha_fuera_de('Quiero que hagan publicidad y manejen mis redes'), true));
 

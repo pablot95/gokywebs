@@ -799,16 +799,16 @@ function getSiteType() {
    de exito.html (lo mismo PRECIO_ANUAL y PRECIO_PAGO_UNICO con los de
    exito.html). Son montos que nunca se suman entre sí. Clave 'landing' = sitio
    profesional.
-   Montos al 5-oct-2026, los mismos que wabot/textos.php y las páginas de
-   /pago: mensual $22.000 / $32.000, anual $140.000 / $220.000 y pago único
+   Montos al 6-oct-2026, los mismos que wabot/textos.php y las páginas de
+   /pago: mensual $20.000 / $30.000, anual $140.000 / $220.000 y pago único
    $220.000 / $330.000. */
 const PRECIO_ANUAL      = { landing: 140000, ecommerce: 220000, inmobiliaria: 220000, elearning: 220000 };
 const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD       = { landing: 22000,  ecommerce: 32000,  inmobiliaria: 32000,  elearning: 32000 };
+const MENSUALIDAD       = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
 const MANTENIMIENTO_APARTE = { landing: 10000, ecommerce: 15000, inmobiliaria: 15000, elearning: 15000 };
-const SUSCRIPCION_SITIO = 'https://mpago.la/2nEoNGN';   // $22.000 por mes
-const SUSCRIPCION_RESTO = 'https://mpago.la/2CQLnCv';   // $32.000 por mes
+const SUSCRIPCION_SITIO = 'https://mpago.la/1pfejMG';   // $20.000 por mes
+const SUSCRIPCION_RESTO = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b';   // $30.000 por mes
 const SUSCRIPCION_LINK = { landing: SUSCRIPCION_SITIO, ecommerce: SUSCRIPCION_RESTO, inmobiliaria: SUSCRIPCION_RESTO, elearning: SUSCRIPCION_RESTO };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget(),
@@ -1088,8 +1088,8 @@ function validateCheckout() {
    modalidades y el checkout tiene un botón para cada una. Hoy no hay botón que
    abra este paso (ver ctmCtaBtn): el plan anual y el pago único se piden por
    WhatsApp.
-   · 'mensual' → el link de suscripción del plan del tipo de web: $22.000/mes el
-     sitio profesional y $32.000/mes el resto. Mercado Pago vuelve a exito.html
+   · 'mensual' → el link de suscripción del plan del tipo de web: $20.000/mes el
+     sitio profesional y $30.000/mes el resto. Mercado Pago vuelve a exito.html
      con preapproval_id solo si el plan tiene esa URL de retorno configurada
      (eso se define en el plan, en la cuenta de Mercado Pago, no acá).
    · 'unico' (plan anual) y 'propia' (pago único) → la seña por Checkout Pro,

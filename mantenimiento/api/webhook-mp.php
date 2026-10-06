@@ -57,7 +57,8 @@ $MP_PLANES = [
     'b7d653f4f61a445ba8859ae497e7ca66' => ['plan' => 'mensual', 'label' => 'Plan $35.000'],   // mpago.la/1hYAiTM
     'ea40c15059ec42a7ac5b6293d77ae148' => ['plan' => 'landing', 'label' => 'Plan $20.000'],   // mpago.la/1pfejMG
     '36a67a7e42e7404989beb99703a0569b' => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
-    // 5-oct-2026 (Pablo): mensual $22.000 / $32.000.
+    // 5-oct-2026 (Pablo): mensual $22.000 / $32.000. El 6-oct se volvió a $20.000 / $30.000
+    // (los dos de arriba); estos quedan para quien se haya suscripto esos días.
     '8df0842d799e40b5a0e9ef0696b47e8b' => ['plan' => 'landing', 'label' => 'Plan $22.000'],   // mpago.la/2nEoNGN
     '4640949ef7694b5ab565d714326f04a2' => ['plan' => 'mensual', 'label' => 'Plan $32.000'],   // mpago.la/2CQLnCv
 ];

@@ -73,7 +73,7 @@ caso('cotizada con las imágenes de hoy (27-sep a la tarde): "2" es el plan anua
     tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r));
 $c = conv_nueva('549110004TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
     'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0, 'precio_cotizado' => '$120.000', 'sena_cotizada' => '$40.000',
-    'mensualidad_cotizada' => '$22.000', 'precio_modelo' => 'anual', 'precio_cotizado_ts' => strtotime('2026-09-24 12:00:00 -03:00')]);
+    'mensualidad_cotizada' => '$20.000', 'precio_modelo' => 'anual', 'precio_cotizado_ts' => strtotime('2026-09-24 12:00:00 -03:00')]);
 $r = turno('1', $c, $cfg);
 caso('cotizada el 24-sep: "1" sigue siendo el plan anual',
     tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r));
