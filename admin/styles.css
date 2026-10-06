@@ -1093,6 +1093,23 @@ textarea:focus {
     border-color: rgba(96, 165, 250, 0.55);
 }
 
+/* Desplegable (5-oct): las opciones con los colores del panel, no blancas. */
+select.prop-type-input {
+    cursor: pointer;
+    padding-right: 26px;
+    color-scheme: dark;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2360A5FA' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+}
+
+select.prop-type-input option {
+    color: var(--text, #e5e7eb);
+    background: var(--bg-elev, #1f2937);
+    font-weight: 500;
+}
+
 .prop-type-input:focus {
     outline: none;
     border-color: #60A5FA;

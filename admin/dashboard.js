@@ -4177,6 +4177,20 @@ function getPropuestaTipoWeb(p) {
     return cleanFieldValue(p.tipoDetectadoLabel || p.tipoDetectado || "");
 }
 
+/* Pablo, 5-oct: el tipo de web del prospecto se elige de un desplegable en vez
+   de tipearlo. Son las etiquetas que manda el bot (wabot/textos.php) más
+   noticias, que también tiene plan. Un tipo viejo escrito a mano que no está
+   en la lista se muestra igual, como una opción más, para no perderlo. */
+const TIPOS_WEB_PROSPECTO = ["Sitio profesional", "Ecommerce", "Plataforma de cursos", "Web inmobiliaria", "Web de noticias"];
+
+function tipoWebOpcionesHTML(actual) {
+    const valor = cleanFieldValue(actual || "");
+    const opciones = [...TIPOS_WEB_PROSPECTO];
+    if (valor && !opciones.includes(valor)) opciones.unshift(valor);
+    return `<option value=""${valor ? "" : " selected"}>Elegí el tipo</option>`
+        + opciones.map(o => `<option value="${escapeHtml(o)}"${o === valor ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
+}
+
 function modelosElegidosDe(src = {}) {
     const crudo = src.modelosElegidos ?? src.modelos_elegidos ?? [];
     let modelos = crudo;
@@ -4421,16 +4435,12 @@ function renderPropuestas() {
                     ${p.email ? `<div class="muted prop-contact-email" title="${escapeHtml(p.email)}">${escapeHtml(p.email)}</div>` : ""}
                 </td>
                 <td class="prop-col-tipo">
-                    <input
-                        type="text"
+                    <select
                         class="prop-type-input"
                         data-prop-type-id="${p.id}"
                         data-original="${escapeHtml(tipoWeb)}"
-                        value="${escapeHtml(tipoWeb)}"
-                        maxlength="100"
-                        placeholder="Escribí el tipo"
                         aria-label="Tipo de web de ${escapeHtml(nombreNegocio || "este boceto")}"
-                    >
+                    >${tipoWebOpcionesHTML(tipoWeb)}</select>
                 </td>
                 <td class="prop-col-modelos">
                     ${modelos.length
@@ -4477,17 +4487,8 @@ function renderPropuestas() {
     tbody.querySelectorAll("[data-prop-type-id]").forEach(input => {
         input.addEventListener("pointerdown", (e) => e.stopPropagation());
         input.addEventListener("click", (e) => e.stopPropagation());
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                input.blur();
-            }
-            if (e.key === "Escape") {
-                input.value = input.dataset.original || "";
-                input.blur();
-            }
-        });
-        input.addEventListener("blur", () => savePropuestaTipoWeb(input));
+        // Desplegable: se guarda apenas se elige otro tipo.
+        input.addEventListener("change", () => savePropuestaTipoWeb(input));
     });
     const lastBocetoPhone = localStorage.getItem("gkyLastBocetoPhone") || "";
     tbody.querySelectorAll("[data-phone-copy]").forEach(el => {
@@ -4663,7 +4664,7 @@ function openPropuestaModal(id) {
         ` : ""}
 
         <label for="propTipoDetectado">Tipo de web detectado</label>
-        <input type="text" id="propTipoDetectado" maxlength="100" value="${escapeHtml(getPropuestaTipoWeb(p))}">
+        <select id="propTipoDetectado">${tipoWebOpcionesHTML(getPropuestaTipoWeb(p))}</select>
 
         <div class="prop-row"><span class="prop-label">Modelos elegidos</span><span>${modelosElegidos.length
             ? `<span class="prop-modelos-links">${modelosElegidos.map(m => {
