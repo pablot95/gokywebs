@@ -3601,7 +3601,6 @@ function briefDetailHTML(src) {
     // Pasos 2 y 3 del formulario: estilo, "incluir sí o sí" y los 2 modelos elegidos (16-sep).
     const estiloPagina = cleanFieldValue(src.estilo_pagina || "");
     const incluir   = cleanFieldValue(src.incluir_si_o_si || "");
-    const modelosElegidos = modelosElegidosTexto(src);
     // Dos modalidades (15-sep-2026): la elegida en el boceto o, si no eligió, las dos.
     const plan = planDe(src);
     const fecha = src.fecha || src.propuestaFecha || "";
@@ -3616,7 +3615,6 @@ function briefDetailHTML(src) {
         row("Contacto", contacto),
         row("Rubro / actividad", rubro, true),
         row("Tipo de web", tipoWeb),
-        row("Modelos elegidos", modelosElegidos, true),
         row("Objetivos de la web", objetivos, true),
         row("Estilo de página", estiloPagina),
         row("Incluir sí o sí", incluir, true),
@@ -4191,44 +4189,6 @@ function tipoWebOpcionesHTML(actual) {
         + opciones.map(o => `<option value="${escapeHtml(o)}"${o === valor ? " selected" : ""}>${escapeHtml(o)}</option>`).join("");
 }
 
-function modelosElegidosDe(src = {}) {
-    const crudo = src.modelosElegidos ?? src.modelos_elegidos ?? [];
-    let modelos = crudo;
-    if (typeof crudo === "string") {
-        try { modelos = JSON.parse(crudo || "[]"); } catch (_) { modelos = []; }
-    }
-    if (!Array.isArray(modelos)) return [];
-    return modelos.map((m) => {
-        if (typeof m === "string") return { id: m.toLowerCase(), letra: m.toUpperCase(), nombre: "" };
-        if (!m || typeof m !== "object") return null;
-        const id = cleanFieldValue(m.id || "").toLowerCase();
-        const letra = cleanFieldValue(m.letra || id).toUpperCase();
-        const nombre = cleanFieldValue(m.nombre || "");
-        return letra || nombre ? { id, letra, nombre } : null;
-    }).filter(Boolean).slice(0, 2);
-}
-
-function modelosElegidosTexto(src = {}) {
-    return modelosElegidosDe(src)
-        .map(m => `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`)
-        .join(" + ");
-}
-
-function modeloElegidoUrl(modelo = {}) {
-    const id = cleanFieldValue(modelo.id || modelo.letra || "").toLowerCase();
-    return id ? `https://gokywebs.com/modelos/ver.html?m=${encodeURIComponent(id)}` : "https://gokywebs.com/modelos/";
-}
-
-const MODELOS_CARPETA_LOCAL = String.raw`C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\modelos`;
-
-function modelosElegidosParaCopiar(src = {}) {
-    return modelosElegidosDe(src).map(m => {
-        const etiqueta = `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`;
-        const id = cleanFieldValue(m.id || m.letra || "").toLowerCase();
-        return `${etiqueta}${id ? ` (id: ${id})` : ""}`;
-    }).join("\n");
-}
-
 async function savePropuestaTipoWeb(input) {
     const id = input.dataset.propTypeId;
     const p = propuestas.find(x => x.id === id);
@@ -4364,7 +4324,6 @@ function renderPropuestas() {
             (p.tipo_web            || "").toLowerCase().includes(term) ||
             (p.tipoDetectado       || "").toLowerCase().includes(term) ||
             (p.tipoDetectadoLabel  || "").toLowerCase().includes(term) ||
-            modelosElegidosTexto(p).toLowerCase().includes(term) ||
             (p.objetivo_web        || "").toLowerCase().includes(term) ||
             // Lo del formulario ya no se repite en objetivo_web (27-sep): se busca en su campo.
             getPropuestaObjetivosTexto(p).toLowerCase().includes(term) ||
@@ -4391,7 +4350,7 @@ function renderPropuestas() {
             : fechasSeleccionadas.size ? " en las fechas marcadas"
             : term ? " para esa búsqueda"
             : " recibidas aún";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No hay propuestas${motivo}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay propuestas${motivo}.</td></tr>`;
         return;
     }
 
@@ -4401,7 +4360,6 @@ function renderPropuestas() {
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
-        const modelos = modelosElegidosDe(p);
         const aviso = estadoAvisoBoceto(p);
         return `
             <tr class="client-row" data-row-prop-id="${p.id}" style="cursor:pointer">
@@ -4441,11 +4399,6 @@ function renderPropuestas() {
                         data-original="${escapeHtml(tipoWeb)}"
                         aria-label="Tipo de web de ${escapeHtml(nombreNegocio || "este boceto")}"
                     >${tipoWebOpcionesHTML(tipoWeb)}</select>
-                </td>
-                <td class="prop-col-modelos">
-                    ${modelos.length
-                        ? `<div class="prop-modelos-lista">${modelos.map(m => `<span class="prop-modelo-chip">${escapeHtml(`${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`)}</span>`).join("")}</div>`
-                        : `<span class="muted">—</span>`}
                 </td>
                 <td class="prop-col-colores">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="center">
@@ -4639,8 +4592,7 @@ function openPropuestaModal(id) {
     // Paso 2 del formulario: solo los trae el que lo completó (incluir es opcional).
     const estiloPagina = cleanFieldValue(p.estilo_pagina);
     const incluirSiOSi = cleanFieldValue(p.incluir_si_o_si);
-    const modelosElegidos = modelosElegidosDe(p);
-    const showCiudad     = !esPresupuestoModal || ciudadZona;
+    const showCiudad    = !esPresupuestoModal || ciudadZona;
     const showCantCursos = !esPresupuestoModal || cantCursos;
     const showFondos      = !esPresupuestoModal || colorFondos;
     const showTipografias = !esPresupuestoModal || tipografias;
@@ -4665,13 +4617,6 @@ function openPropuestaModal(id) {
 
         <label for="propTipoDetectado">Tipo de web detectado</label>
         <select id="propTipoDetectado">${tipoWebOpcionesHTML(getPropuestaTipoWeb(p))}</select>
-
-        <div class="prop-row"><span class="prop-label">Modelos elegidos</span><span>${modelosElegidos.length
-            ? `<span class="prop-modelos-links">${modelosElegidos.map(m => {
-                const etiqueta = `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`;
-                return `<a class="prop-modelo-link" href="${modeloElegidoUrl(m)}" target="_blank" rel="noopener noreferrer">${escapeHtml(etiqueta)} ↗</a>`;
-            }).join("")}</span>`
-            : '<span class="muted">No eligió modelos</span>'}</span></div>
 
         ${instagramUsuario(p.instagram) ? `<div class="prop-row"><span class="prop-label">Instagram</span><span>${instagramLinkHTML(p.instagram)}</span></div>` : ""}
 
@@ -4918,8 +4863,6 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Teléfono / WhatsApp (número real para los wa.me del demo)", value: p.telefono || p.contacto_cel || "" },
         { title: "Instagram", value: instagramUrl(p.instagram) },
         { title: "Tipo de web", value: getPropuestaTipoWeb(p) },
-        { title: "Modelos elegidos", value: modelosElegidosParaCopiar(p) },
-        { title: "Carpeta local de los modelos", value: modelosElegidosDe(p).length ? MODELOS_CARPETA_LOCAL : "" },
         { title: "Ciudad / zona", value: p.ciudad_zona || "" },
         { title: "Cantidad de cursos", value: p.cant_cursos || "" },
         { title: "Imágenes que mandó por WhatsApp/Instagram", value: Number(p.imagenes_recibidas || 0) > 0 ? String(p.imagenes_recibidas) : "" },
