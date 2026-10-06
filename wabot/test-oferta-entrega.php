@@ -22,7 +22,7 @@ function oe_conv($horas, $extra = [], $ultimas = null) {
     $c = conv_nueva('999TEST999', ['bot_off' => true, 'ultimo_cliente_ts' => $cliente, 'transcript' => [
         ['q' => 'cliente', 't' => 'Tengo una verdulería, cuánto sale?', 'ts' => $cliente],
         ['q' => 'humano', 't' => 'Te podemos armar un sitio profesional para mostrar tu negocio', 'ts' => $cliente + 60],
-        ['q' => 'humano', 't' => "Podés elegir entre dos planes:\n• Plan mensual: \$20.000 por mes", 'ts' => $cliente + 70],
+        ['q' => 'humano', 't' => "Podés elegir entre dos planes:\n• Plan mensual: \$22.000 por mes", 'ts' => $cliente + 70],
     ]]);
     foreach ($ultimas ?? [['humano', $oferta]] as $i => [$q, $t]) $c['transcript'][] = ['q' => $q, 't' => $t, 'ts' => $cliente + 80 + $i];
     foreach ($extra as $k => $v) $c[$k] = $v;

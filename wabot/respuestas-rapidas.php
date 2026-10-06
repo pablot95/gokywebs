@@ -42,8 +42,8 @@ function wabot_respuestas_rapidas_default() {
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20000',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30000',
+            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($22.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual22000',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($32.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual32000',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -841,13 +841,19 @@ function wabot_respuestas_rapidas_precios_1oct($categorias) {
     foreach ($categorias as &$categoria) {
         foreach ($categoria['items'] as &$texto) {
             if (str_starts_with($texto, 'Te mando el link de Mercado Pago para activar el plan mensual ')) {
-                // 2-oct: los planes de MP bajaron a $19.000 / $29.000 (mismos links); 3-oct: $20.000 / $30.000.
-                $texto = str_replace(['($25.000 por mes)', 'pago/mensual25', '($35.000 por mes)', 'pago/mensual35',
-                        '($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900',
-                        '($19.000 por mes)', 'pago/mensual19000', '($29.000 por mes)', 'pago/mensual29000'],
-                    ['($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000',
-                        '($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000',
-                        '($20.000 por mes)', 'pago/mensual20000', '($30.000 por mes)', 'pago/mensual30000'], $texto);
+                // 2-oct: los planes de MP bajaron a $19.000 / $29.000 (mismos links); 3-oct: $20.000 / $30.000;
+                // 5-oct: $22.000 / $32.000 (planes nuevos de MP, páginas mensual22000 y mensual32000).
+                // Por la página, no por el monto: el sitio llegó a cobrar $30.000 en el test de precios.
+                foreach (['/pago\/mensual(25|19900|19000|20000)\b/u' => ['mensual22000', '$22.000'],
+                        '/pago\/mensual(35|29900|29000|30000)\b/u' => ['mensual32000', '$32.000']] as $viejas => [$pagina, $monto]) {
+                    if (!preg_match($viejas, $texto)) continue;
+                    $texto = preg_replace($viejas, 'pago/' . $pagina, $texto);
+                    $texto = preg_replace_callback('/\(\$[\d.]+ por mes\)/u', static fn() => '(' . $monto . ' por mes)', $texto, 1);
+                }
+            }
+            // 5-oct: el mensual sin permanencia con los montos del 3-oct.
+            if (str_starts_with($texto, 'El plan mensual no tiene permanencia: se mantiene activo mientras quieras seguir usando el servicio. Son $20.000 por mes el sitio profesional y $30.000 la tienda,')) {
+                $texto = str_replace(['Son $20.000 por mes', 'y $30.000 la tienda'], ['Son $22.000 por mes', 'y $32.000 la tienda'], $texto);
             }
             // 3-oct: el detalle de las modalidades ya no trae el pago único.
             if ($texto === WABOT_RR_DETALLE_MODALIDADES_ANTES) $texto = WABOT_RR_DETALLE_MODALIDADES;

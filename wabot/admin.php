@@ -2554,11 +2554,11 @@ function burbujaCita(t, chat) {
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
-                        <?php /* Desde el 3-oct: $20.000 y $30.000 (pago/mensual20000 y pago/mensual30000; antes $19.000 y $29.000, mismos links de MP). */ ?>
+                        <?php /* Desde el 5-oct: $22.000 y $32.000 (pago/mensual22000 y pago/mensual32000, mpago.la/2nEoNGN y 2CQLnCv; antes $20.000 y $30.000). */ ?>
                         <button type="button" class="sec" id="btnPlan25"
-                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $20.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $22.000</button>
                         <button type="button" class="sec" id="btnPlan35"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $32.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
                                datos para la transferencia (pago/anual140 y pago/anual220). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
@@ -3447,15 +3447,15 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
+        /* Los dos botones de "Plan $22.000" / "Plan $32.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. Texto genérico, sin tipo de web ni
          * monto (Pablo, 5-oct): solo cambia el link. */
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual20000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual22000');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual30000');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual32000');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */

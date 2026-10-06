@@ -57,6 +57,9 @@ $MP_PLANES = [
     'b7d653f4f61a445ba8859ae497e7ca66' => ['plan' => 'mensual', 'label' => 'Plan $35.000'],   // mpago.la/1hYAiTM
     'ea40c15059ec42a7ac5b6293d77ae148' => ['plan' => 'landing', 'label' => 'Plan $20.000'],   // mpago.la/1pfejMG
     '36a67a7e42e7404989beb99703a0569b' => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
+    // 5-oct-2026 (Pablo): mensual $22.000 / $32.000.
+    '8df0842d799e40b5a0e9ef0696b47e8b' => ['plan' => 'landing', 'label' => 'Plan $22.000'],   // mpago.la/2nEoNGN
+    '4640949ef7694b5ab565d714326f04a2' => ['plan' => 'mensual', 'label' => 'Plan $32.000'],   // mpago.la/2CQLnCv
 ];
 
 // Status de MP que dejan un aviso para el admin en vez de crear el suscriptor.
@@ -173,6 +176,8 @@ $MP_MONTOS = [
     19000 => ['plan' => 'landing', 'label' => 'Plan $19.000'],
     29000 => ['plan' => 'mensual', 'label' => 'Plan $29.000'],
     30000 => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
+    22000 => ['plan' => 'landing', 'label' => 'Plan $22.000'],
+    32000 => ['plan' => 'mensual', 'label' => 'Plan $32.000'],
     35000 => ['plan' => 'mensual', 'label' => 'Plan $35.000'],
 ];
 if ($planId !== '' && isset($MP_PLANES[$planId])) {

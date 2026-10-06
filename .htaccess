@@ -24,10 +24,10 @@ RewriteRule ^mantenimientoweb(/.*)?$ /planmensual/tienda/ [R=301,L]
 # El plan mensual bajó de $19.900 / $29.900 a $19.000 / $29.000 (Pablo, 2-oct-2026,
 # mismos links de Mercado Pago): las páginas se renombraron y los links que el bot
 # ya mandó con el monto viejo llevan a las nuevas.
-RewriteRule ^pago/mensual19900(/.*)?$ /pago/mensual20000/ [R=301,L]
-RewriteRule ^pago/mensual29900(/.*)?$ /pago/mensual30000/ [R=301,L]
-RewriteRule ^planmensual/19900(/.*)?$ /planmensual/20000/ [R=301,L]
-RewriteRule ^planmensual/29900(/.*)?$ /planmensual/30000/ [R=301,L]
+RewriteRule ^pago/mensual19900(/.*)?$ /pago/mensual22000/ [R=301,L]
+RewriteRule ^pago/mensual29900(/.*)?$ /pago/mensual32000/ [R=301,L]
+RewriteRule ^planmensual/19900(/.*)?$ /planmensual/22000/ [R=301,L]
+RewriteRule ^planmensual/29900(/.*)?$ /planmensual/32000/ [R=301,L]
 
 # El anual de tienda/cursos/inmobiliaria y los pagos únicos bajaron el mismo día
 # ($199.000 → $190.000, $299.000 → $290.000; el anual del sitio sigue en $149.000).
@@ -38,14 +38,23 @@ RewriteRule ^pago/unico299(/.*)?$ /pago/unico330/ [R=301,L]
 # 3-oct-2026 (Pablo): mensual $20.000 / $30.000 (mismos links de Mercado Pago),
 # anual $140.000 / $220.000 y pago único $220.000 / $330.000. Las páginas se
 # renombraron; las de arriba ya apuntan directo a las nuevas, sin cadena.
-RewriteRule ^pago/mensual19000(/.*)?$ /pago/mensual20000/ [R=301,L]
-RewriteRule ^pago/mensual29000(/.*)?$ /pago/mensual30000/ [R=301,L]
+RewriteRule ^pago/mensual19000(/.*)?$ /pago/mensual22000/ [R=301,L]
+RewriteRule ^pago/mensual29000(/.*)?$ /pago/mensual32000/ [R=301,L]
 RewriteRule ^pago/anual149(/.*)?$ /pago/anual140/ [R=301,L]
 RewriteRule ^pago/anual190(/.*)?$ /pago/anual220/ [R=301,L]
 RewriteRule ^pago/unico190(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico290(/.*)?$ /pago/unico330/ [R=301,L]
-RewriteRule ^planmensual/19000(/.*)?$ /planmensual/20000/ [R=301,L]
-RewriteRule ^planmensual/29000(/.*)?$ /planmensual/30000/ [R=301,L]
+RewriteRule ^planmensual/19000(/.*)?$ /planmensual/22000/ [R=301,L]
+RewriteRule ^planmensual/29000(/.*)?$ /planmensual/32000/ [R=301,L]
+
+# 5-oct-2026 (Pablo): mensual $22.000 / $32.000, con los planes de Mercado Pago
+# mpago.la/2nEoNGN y mpago.la/2CQLnCv. Las páginas del 3-oct se renombraron y las
+# reglas de arriba ya apuntan directo a las nuevas. Las páginas viejas que siguen
+# online (pago/mensual20 y mensual30) tienen los montos y links de hoy.
+RewriteRule ^pago/mensual20000(/.*)?$ /pago/mensual22000/ [R=301,L]
+RewriteRule ^pago/mensual30000(/.*)?$ /pago/mensual32000/ [R=301,L]
+RewriteRule ^planmensual/20000(/.*)?$ /planmensual/22000/ [R=301,L]
+RewriteRule ^planmensual/30000(/.*)?$ /planmensual/32000/ [R=301,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

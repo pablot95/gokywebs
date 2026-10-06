@@ -12,8 +12,8 @@
  * 1 mensual y 2 anual. El pago único existe solo para el que pide la
  * propiedad absoluta del código (info.web_propia, titularidad…); no se ofrece
  * en el precio. Hoy el bot está en "solo bienvenida" y el precio lo pasa Pablo.
- * - Mensual (3-oct, antes $19.000 / $29.000): $20.000 sitio profesional; $30.000 resto. Mercado Pago:
- *   mpago.la/1pfejMG (sitio) y el plan 36a67a7e… de MP (resto; 3-oct, planes nuevos). Sin pago inicial adicional.
+ * - Mensual (5-oct, antes $20.000 / $30.000): $22.000 sitio profesional; $32.000 resto. Mercado Pago:
+ *   mpago.la/2nEoNGN (sitio) y mpago.la/2CQLnCv (resto). Sin pago inicial adicional.
  * - Anual (antes $149.000 / $190.000): $140.000 sitio profesional; $220.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
  * - Pago único (antes $190.000 / $290.000): $220.000 sitio profesional; $330.000 resto. Misma seña,
@@ -296,11 +296,11 @@ function wabot_textos_default() {
     'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
         'landing' => [
-            'precio' => '$20.000',
+            'precio' => '$22.000',
             'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
-            'precio' => '$30.000',
+            'precio' => '$32.000',
             'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
@@ -482,7 +482,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
-            'mensualidad' => '$20.000',
+            'mensualidad' => '$22.000',
             'mantenimiento' => '$10.000',
             'sena' => '$60.000',
         ],
@@ -497,7 +497,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
-            'mensualidad' => '$30.000',
+            'mensualidad' => '$32.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
@@ -512,7 +512,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
-            'mensualidad' => '$30.000',
+            'mensualidad' => '$32.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
@@ -527,7 +527,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
-            'mensualidad' => '$30.000',
+            'mensualidad' => '$32.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
