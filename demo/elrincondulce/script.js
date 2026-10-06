@@ -83,6 +83,7 @@ function recorte(img, foco, ar = 1) {
 }
 
 const imgAttrs = img => `width="${IMG[img]?.[0] || 800}" height="${IMG[img]?.[1] || 800}"`;
+const rutaImg = img => `images/${img}?v=2`;
 const intentar = fn => {
   try { fn(); } catch (err) { return err; }
   return null;
@@ -148,7 +149,7 @@ function prodHTML(p, anim = true) {
     ? `<button type="button" class="prod-add" data-quick="${p.id}">Elegir tamaño</button>`
     : `${stepperHTML(p)}<button type="button" class="prod-add" data-add="${p.id}">Agregar</button>`;
   return `<li class="cat-item"${a}><article class="prod" data-id="${p.id}">
-    <div class="prod__foto"><button type="button" class="prod__media recorte" data-quick="${p.id}" style="${recorte(p.foto, p.foco, 1)}" aria-label="Ver ${esc(p.nombre)}"><img src="images/${p.foto}" alt="${esc(p.alt)}" ${imgAttrs(p.foto)} draggable="false"></button>${mas}</div>
+    <div class="prod__foto"><button type="button" class="prod__media recorte" data-quick="${p.id}" style="${recorte(p.foto, p.foco, 1)}" aria-label="Ver ${esc(p.nombre)}"><img src="${rutaImg(p.foto)}" alt="${esc(p.alt)}" ${imgAttrs(p.foto)} draggable="false"></button>${mas}</div>
     <div class="prod__info">
       ${badgesHTML(p)}
       <p class="prod__cat">${esc(catDe(p.cat)?.nombre)}</p>
@@ -497,8 +498,8 @@ function renderQuick() {
   const tambien = [...mismos, ...vecinos].slice(0, 3);
   body.innerHTML = `
     <div class="qv__galeria">
-      <div class="qv__foto recorte" style="${recorte(f[0], f[1], 1)}"><img src="images/${f[0]}" alt="${esc(p.alt)}" ${imgAttrs(f[0])}>${badgesHTML(p)}</div>
-      ${fotos.length > 1 ? `<div class="qv__thumbs">${fotos.map((x, i) => `<button type="button" class="qv__thumb recorte" data-qv-foto="${i}" aria-pressed="${i === qv.foto}" aria-label="Ver la foto ${i + 1}" style="${recorte(x[0], x[1], 1)}"><img src="images/${x[0]}" alt="" ${imgAttrs(x[0])}></button>`).join('')}</div>` : ''}
+      <div class="qv__foto recorte" style="${recorte(f[0], f[1], 1)}"><img src="${rutaImg(f[0])}" alt="${esc(p.alt)}" ${imgAttrs(f[0])}>${badgesHTML(p)}</div>
+      ${fotos.length > 1 ? `<div class="qv__thumbs">${fotos.map((x, i) => `<button type="button" class="qv__thumb recorte" data-qv-foto="${i}" aria-pressed="${i === qv.foto}" aria-label="Ver la foto ${i + 1}" style="${recorte(x[0], x[1], 1)}"><img src="${rutaImg(x[0])}" alt="" ${imgAttrs(x[0])}></button>`).join('')}</div>` : ''}
     </div>
     <div class="qv__info">
       <p class="qv__cat">${esc(catDe(p.cat)?.nombre)}${ocs ? ` · ${esc(ocs)}` : ''}</p>
@@ -509,7 +510,7 @@ function renderQuick() {
       ${medidas}
       <div class="qv__acciones"><div class="stepper"><button type="button" data-qv-menos aria-label="Restar uno">−</button><span class="stepper__n">${qv.q}</span><button type="button" data-qv-mas aria-label="Sumar uno">+</button></div><button type="button" class="btn btn--cta" data-qv-agregar>Agregar al carrito</button><button type="button" class="btn btn--ghost" data-qv-comprar>Comprar ahora</button></div>
     </div>
-    ${tambien.length ? `<div class="qv__tambien"><p class="qv__tambien-tit">También te puede gustar</p><div class="qv__mini-lista">${tambien.map(x => `<button type="button" class="mini" data-quick="${x.id}"><span class="mini__foto recorte" style="${recorte(x.foto, x.foco, 1)}"><img src="images/${x.foto}" alt="" ${imgAttrs(x.foto)}></span><span class="mini__txt"><b>${esc(x.nombre)}</b><span>${precioHTML(x)}</span></span></button>`).join('')}</div></div>` : ''}`;
+    ${tambien.length ? `<div class="qv__tambien"><p class="qv__tambien-tit">También te puede gustar</p><div class="qv__mini-lista">${tambien.map(x => `<button type="button" class="mini" data-quick="${x.id}"><span class="mini__foto recorte" style="${recorte(x.foto, x.foco, 1)}"><img src="${rutaImg(x.foto)}" alt="" ${imgAttrs(x.foto)}></span><span class="mini__txt"><b>${esc(x.nombre)}</b><span>${precioHTML(x)}</span></span></button>`).join('')}</div></div>` : ''}`;
 }
 
 function ldProducto(p) {
@@ -585,7 +586,7 @@ function renderDrawer() {
     if (!p) return '';
     const v = varTexto(p, it.m);
     return `<div class="linea" style="--i:${i}">
-      <div class="linea__foto recorte" style="${recorte(p.foto, p.foco, 1)}"><img src="images/${p.foto}" alt="" ${imgAttrs(p.foto)}></div>
+      <div class="linea__foto recorte" style="${recorte(p.foto, p.foco, 1)}"><img src="${rutaImg(p.foto)}" alt="" ${imgAttrs(p.foto)}></div>
       <div class="linea__cuerpo">
         <p class="linea__nombre">${esc(p.nombre)}</p>
         ${v ? `<p class="linea__var">${esc(v)}</p>` : ''}
