@@ -461,12 +461,11 @@ caso('una forma inventada se sigue rechazando',
 
 $htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
 $htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
-/* 26-sep a la noche: el pago único incluye el hosting y el dominio el primer
- * año y el mantenimiento se contrata aparte; ya no "No incluye mantenimiento
- * ni renovaciones". */
-caso('el formulario principal ofrece el pago único, con el primer año de hosting y el mantenimiento aparte',
-    preg_match('/<option value="propia" data-desc="[^"]*primer año de hosting y dominio[^"]*mantenimiento se contrata aparte[^"]*">Pago único<\/option>/u', $htmlPrincipal) === 1
-    && strpos($htmlPrincipal, 'No incluye mantenimiento ni renovaciones') === false);
+/* 6-oct: el formulario principal ya no ofrece el pago único (Pablo); quedan
+ * el plan mensual y el anual. El servidor sigue aceptando "propia" (arriba). */
+caso('el formulario principal ofrece solo el plan mensual y el plan anual',
+    strpos($htmlPrincipal, '<option value="mensual"') !== false && strpos($htmlPrincipal, '<option value="unico"') !== false
+    && strpos($htmlPrincipal, 'value="propia"') === false && stripos($htmlPrincipal, 'pago único') === false);
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',

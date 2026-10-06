@@ -560,7 +560,7 @@ function validarPaso2() {
 
     const modalidad = document.getElementById('modalidad');
     if (!modalidad.value) {
-        markError(modalidad, 'Elegí el plan mensual, el plan anual o el pago único.');
+        markError(modalidad, 'Elegí el plan mensual o el plan anual.');
         if (!firstError) firstError = modalidad;
     }
 
@@ -818,7 +818,7 @@ function pintarInstagram() {
 }
 instagramInput?.addEventListener('input', pintarInstagram);
 
-// Lo mismo con la forma de pago: qué implica cada una de las tres opciones.
+// Lo mismo con la forma de pago: qué implica cada una de las dos opciones.
 const planSelect = document.getElementById('modalidad');
 const planAyuda = document.getElementById('modalidadDetalle');
 const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';
