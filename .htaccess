@@ -49,12 +49,20 @@ RewriteRule ^planmensual/29000(/.*)?$ /planmensual/32000/ [R=301,L]
 
 # 5-oct-2026 (Pablo): mensual $22.000 / $32.000, con los planes de Mercado Pago
 # mpago.la/2nEoNGN y mpago.la/2CQLnCv. Las páginas del 3-oct se renombraron y las
-# reglas de arriba ya apuntan directo a las nuevas. Las páginas viejas que siguen
-# online (pago/mensual20 y mensual30) tienen los montos y links de hoy.
+# reglas de arriba ya apuntan directo a las nuevas.
 RewriteRule ^pago/mensual20000(/.*)?$ /pago/mensual22000/ [R=301,L]
 RewriteRule ^pago/mensual30000(/.*)?$ /pago/mensual32000/ [R=301,L]
 RewriteRule ^planmensual/20000(/.*)?$ /planmensual/22000/ [R=301,L]
 RewriteRule ^planmensual/30000(/.*)?$ /planmensual/32000/ [R=301,L]
+# Las páginas de fines de septiembre (19 al 29-sep) seguían online con sus montos
+# de entonces: se borraron y sus links llevan a la de hoy del mismo tipo.
+# mensual20, 25 y 30 eran del sitio profesional; mensual35 y 40, del resto.
+RewriteRule ^pago/mensual(20|25|30)(/.*)?$ /pago/mensual22000/ [R=301,L]
+RewriteRule ^pago/mensual(35|40)(/.*)?$ /pago/mensual32000/ [R=301,L]
+RewriteRule ^pago/anual180(/.*)?$ /pago/anual140/ [R=301,L]
+RewriteRule ^pago/anual250(/.*)?$ /pago/anual220/ [R=301,L]
+RewriteRule ^pago/unico240(/.*)?$ /pago/unico220/ [R=301,L]
+RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

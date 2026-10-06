@@ -350,10 +350,10 @@ const modalidad   = preapprovalId ? 'mensual'
    en Firestore: sale siempre del siteType (PRECIO_PAGO_UNICO, igual que en
    script.js) y solo se muestra. Sin siteType no se muestra ningún monto, antes
    que afirmar uno que no se leyó. */
-const PRECIO_ANUAL      = { landing: 180000, ecommerce: 250000, inmobiliaria: 250000, elearning: 250000 }; // plan anual, 26-sep-2026
-const PRECIO_PAGO_UNICO = { landing: 240000, ecommerce: 360000, inmobiliaria: 360000, elearning: 360000 }; // pago único, 26-sep-2026
+const PRECIO_ANUAL      = { landing: 140000, ecommerce: 220000, inmobiliaria: 220000, elearning: 220000 }; // plan anual, 3-oct-2026
+const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 }; // pago único, 3-oct-2026
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD       = { landing: 25000,  ecommerce: 35000,  inmobiliaria: 35000,  elearning: 35000 }; // 26-sep-2026
+const MENSUALIDAD       = { landing: 22000,  ecommerce: 32000,  inmobiliaria: 32000,  elearning: 32000 }; // 5-oct-2026
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const borradorNuevo  = Number(presupuesto.precioUnico) > 0;
 const tipoWeb        = presupuesto.siteType;
