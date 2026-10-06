@@ -4579,6 +4579,32 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
 }
 
 /**
+ * La transcripción de una nota de voz que Pablo mandó desde el panel (5-oct):
+ * la línea "[nota de voz]" pasa a "[nota de voz] lo que dijo", igual que las
+ * del cliente. Se busca por el archivo guardado y bajo el candado de la
+ * charla, que para entonces el webhook pudo haber sumado líneas. Si no se
+ * entiende o falla la IA, la línea queda como estaba.
+ */
+function wabot_nota_voz_transcribir($clave, $archivo, $bytes, $mime) {
+    if ($archivo === '' || !$bytes || strlen((string)$bytes) > WABOT_MEDIA_MAX_LEER) return false;
+    $texto = wabot_media_a_texto($bytes, $mime, 'audio');
+    if ($texto === null || trim($texto) === '') return false;
+    $lock = wabot_lock_tomar_esperando($clave, 40, 250000);
+    if (!$lock) { wabot_log('error', ['donde' => 'nota_voz_transcribir', 'clave' => $clave, 'motivo' => 'ocupado']); return false; }
+    try {
+        $conv = wabot_conv_load($clave);
+        for ($i = count($conv['transcript']) - 1; $i >= 0; $i--) {
+            $fila = $conv['transcript'][$i];
+            if (($fila['q'] ?? '') !== 'humano' || (string)($fila['media']['archivo'] ?? '') !== $archivo) continue;
+            if (($fila['t'] ?? '') !== '[nota de voz]') return false;
+            $conv['transcript'][$i]['t'] = '[nota de voz] ' . trim($texto);
+            return wabot_conv_save($conv);
+        }
+        return false;
+    } finally { wabot_lock_soltar($lock); }
+}
+
+/**
  * Cuánto esperar antes de contestar, para que no parezca un robot.
  * Se descuenta lo que ya tardaron Gemini y la API: si pensar llevó 3 s y la
  * demora configurada es 5, espera 2 más. Nunca alarga de gusto.

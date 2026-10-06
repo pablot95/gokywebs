@@ -797,6 +797,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_log('respuesta_panel_audio', ['tel' => $conv['tel'], 'mime' => $mime, 'bytes' => strlen($bytes)]);
 
         echo json_encode(['ok' => true, 'bot_off' => true]);
+        /* Pablo, 5-oct: sus notas de voz también se leen en el chat, como las
+         * del cliente. La transcripción tarda unos segundos: se responde
+         * primero y se escribe después en la misma línea. */
+        if ($guardado && !empty($guardado['archivo'])) {
+            if (function_exists('litespeed_finish_request')) litespeed_finish_request();
+            elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+            ignore_user_abort(true);
+            @set_time_limit(120);
+            wabot_nota_voz_transcribir(wabot_conversation_key($conv), (string)$guardado['archivo'], $bytes, $mime);
+        }
         exit;
     }
     if ($a === 'transcript' && !empty($_POST['tel'])) {
@@ -1233,13 +1243,9 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .grabando #grabandoTiempo { font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
 .grabando button { padding:7px 14px; font-size:13px; }
 .grabando-hint { flex:1 1 auto; font-size:12.5px; color:var(--dim); }
-/* Deslizó hacia la izquierda: al soltar se cancela, y la barra lo dice en rojo pleno. */
-.grabando.grabando--cancelar { background:var(--bad); }
-.grabando.grabando--cancelar .grabando-hint, .grabando.grabando--cancelar #grabandoTiempo { color:#fff; }
-/* El micrófono es "mantener apretado": sin esto el celular abre el menú de
-   copiar/seleccionar o empieza a scrollear a mitad de la nota. */
-#respGrabar { touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-#respGrabar.apretado { background:var(--bad); border-color:var(--bad); color:#fff; transform:scale(1.12); }
+.grabando #grabarEnviar { margin-left:auto; }
+/* Grabando: el micrófono queda en rojo mientras la nota sigue abierta. */
+#respGrabar.apretado { background:var(--bad); border-color:var(--bad); color:#fff; }
 @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.25 } }
 @media (prefers-reduced-motion: reduce) { .grabando-punto { animation:none } }
 .meta { font-size:11px; color:var(--dim); }
@@ -2662,15 +2668,16 @@ function burbujaCita(t, chat) {
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
-                        <button id="respGrabar" class="sec" type="button" title="Mantené apretado para grabar una nota de voz. Soltá para enviar, deslizá a la izquierda para cancelar.">🎤</button>
+                        <button id="respGrabar" class="sec" type="button" title="Grabar una nota de voz" aria-label="Grabar una nota de voz">🎤</button>
                         <?php endif; ?>
                         <button id="respEnviar">Enviar</button>
                     </div>
                     <div id="grabando" class="grabando" hidden>
                         <span class="grabando-punto"></span>
                         <span id="grabandoTiempo">0:00</span>
-                        <span class="grabando-hint" id="grabandoHint">◀ Deslizá para cancelar</span>
-                        <button type="button" id="grabarCancelar" class="bad" title="Cancelar la grabación">✕</button>
+                        <span class="grabando-hint" id="grabandoHint">Grabando…</span>
+                        <button type="button" id="grabarCancelar" class="sec" title="Descartar la nota de voz">Cancelar</button>
+                        <button type="button" id="grabarEnviar" title="Enviar la nota de voz">Enviar</button>
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
                 </div>
@@ -3849,9 +3856,10 @@ function burbujaCita(t, chat) {
             });
         }
 
-        /* ── Notas de voz, como en WhatsApp ──
-           Mantener apretado el micrófono graba, soltar envía, deslizar a la
-           izquierda cancela. Un toque corto solo muestra la ayuda.
+        /* ── Notas de voz ──
+           Pablo, 5-oct: un toque en el micrófono empieza a grabar y sigue
+           grabando solo; la barra roja tiene "Enviar" y "Cancelar" (antes era
+           mantener apretado, soltar para enviar y deslizar para cancelar).
 
            El audio se codifica ACÁ, en el navegador, a OGG/Opus mono con
            opus-recorder (WebAssembly). Es el único formato que WhatsApp muestra
@@ -3862,8 +3870,7 @@ function burbujaCita(t, chat) {
            iPhone salen todos por el mismo camino. MediaRecorder queda solo de
            respaldo, para un navegador sin WebAssembly. */
         const OPUS_WORKER = 'vendor/opus-recorder/encoderWorker.min.js?v=8.0.5';
-        const GRAB_MIN_MS = 800;        // más corto que esto es un toque, no una nota
-        const GRAB_CANCEL_PX = 70;      // cuánto hay que deslizar a la izquierda
+        const GRAB_MIN_MS = 600;        // más corto que esto no llega a ser una nota
 
         /* Respaldo sin WebAssembly. WhatsApp valida el CONTENEDOR y el CODEC:
            mp4 con AAC adentro, ogg con Opus. Por eso el codec va explícito
@@ -3885,10 +3892,10 @@ function burbujaCita(t, chat) {
         const tiempoEl  = document.getElementById('grabandoTiempo');
         const hintEl    = document.getElementById('grabandoHint');
         const btnGrabCancel = document.getElementById('grabarCancelar');
+        const btnGrabEnviar = document.getElementById('grabarEnviar');
 
         let grab = null;          // la grabación en curso
         let cronometro = null;
-        let grabX0 = 0, grabDeslizoCancelar = false;
 
         function avisar(txt, malo) { est.textContent = txt; est.style.color = malo ? 'var(--bad)' : 'var(--dim)'; }
         function pintarTiempo() {
@@ -3901,9 +3908,11 @@ function burbujaCita(t, chat) {
         }
         function mostrarCaja(visible) {
             cajaGrab.hidden = !visible;
-            cajaGrab.classList.remove('grabando--cancelar');
-            hintEl.textContent = '◀ Deslizá para cancelar';
-            if (btnGrabar) btnGrabar.classList.toggle('apretado', visible);
+            hintEl.textContent = 'Grabando…';
+            if (btnGrabar) {
+                btnGrabar.classList.toggle('apretado', visible);
+                btnGrabar.title = visible ? 'Grabando: enviá o cancelá abajo' : 'Grabar una nota de voz';
+            }
         }
         function errorMic(e) {
             avisar(e && e.name === 'NotAllowedError'
@@ -3913,9 +3922,8 @@ function burbujaCita(t, chat) {
 
         function empezarGrabacion() {
             if (grab) return;
-            // `presionado` es el momento del dedo; `arranque` el del micrófono
-            // abierto (para el cronómetro). El "toque corto" se mide con el
-            // primero: abrir el micrófono puede tardar más que el toque.
+            // `presionado` es el momento del toque; `arranque` el del micrófono
+            // abierto (para el cronómetro y el largo mínimo).
             const g = { presionado: Date.now(), arranque: Date.now(), trozos: [], cancelado: false, inicio: null, rec: null, stream: null, mime: '' };
             grab = g;
 
@@ -3934,7 +3942,7 @@ function burbujaCita(t, chat) {
                 rec.ondataavailable = arr => { if (arr && arr.length) g.trozos.push(new Uint8Array(arr)); };
                 rec.onstop = () => terminarGrabacion(g);
                 // start() pide el micrófono: tiene que salir del gesto del usuario
-                // (el pointerdown), si no Safari lo bloquea.
+                // (el clic), si no Safari lo bloquea.
                 g.inicio = rec.start().catch(e => { errorMic(e); throw e; });
             } else {
                 const mime = formatoGrabable();
@@ -3957,31 +3965,30 @@ function burbujaCita(t, chat) {
             }
 
             g.inicio.then(() => {
-                if (grab !== g) return;      // ya la soltó antes de que abriera el micrófono
+                if (grab !== g) return;      // la canceló antes de que abriera el micrófono
                 g.arranque = Date.now();
                 pintarTiempo();
                 cronometro = setInterval(pintarTiempo, 250);
                 mostrarCaja(true);
-                avisar('Grabando… soltá para enviar, deslizá a la izquierda para cancelar.', false);
+                avisar('', false);
             }).catch(() => { if (grab === g) { grab = null; mostrarCaja(false); } });
         }
 
-        /* Soltó el botón (o canceló). Se espera a que el micrófono haya
-           abierto: en un toque corto el stop puede llegar antes que el start. */
+        /* "Enviar" o "Cancelar". Se espera a que el micrófono haya abierto:
+           el stop puede llegar antes que el start. */
         async function pararGrabacion(enviar) {
             const g = grab;
             if (!g) return;
             grab = null;
-            // Cuánto estuvo apretado, medido AHORA: después del await ya no se
-            // sabe (un micrófono lento convertía un toque en una nota vacía).
-            const apretadoMs = Date.now() - g.presionado;
+            // Cuánto grabó, medido AHORA: después del await ya no se sabe.
+            const grabadoMs = Date.now() - g.arranque;
             clearInterval(cronometro); cronometro = null;
             mostrarCaja(false);
             try { await g.inicio; } catch (e) { return; }
             g.cancelado = !enviar;
-            if (enviar && apretadoMs < GRAB_MIN_MS) {
+            if (enviar && grabadoMs < GRAB_MIN_MS) {
                 g.cancelado = true;
-                avisar('Mantené apretado el micrófono mientras hablás, y soltá para enviar.', false);
+                avisar('La nota de voz quedó demasiado corta: no se envió.', false);
             }
             try {
                 if (g.rec && typeof g.rec.stop === 'function') await g.rec.stop();
@@ -3992,7 +3999,7 @@ function burbujaCita(t, chat) {
             // Con opus-recorder el stop ya apaga el micrófono; el respaldo lo apaga acá.
             soltarStream(g.stream); g.stream = null;
             if (g.rec && typeof g.rec.close === 'function') { try { g.rec.close(); } catch (e) {} }
-            if (g.cancelado) { if (!est.textContent.startsWith('Mantené')) avisar('Nota de voz descartada.', false); return; }
+            if (g.cancelado) { if (!est.textContent.startsWith('La nota de voz quedó')) avisar('Nota de voz descartada.', false); return; }
             if (!g.trozos.length) { avisar('La grabación salió vacía. Probá de nuevo.', true); return; }
             subirAudio(new Blob(g.trozos, { type: g.mime.split(';')[0] }), g.mime);
         }
@@ -4014,7 +4021,10 @@ function burbujaCita(t, chat) {
                 if (j.ok) {
                     document.getElementById('handoffPill')?.remove();
                     await refrescar(); await refrescarLista();
-                    avisar('Nota de voz enviada. El bot queda en silencio en este chat.', false);
+                    avisar('Nota de voz enviada. En unos segundos aparece su transcripción en el chat.', false);
+                    // La transcripción se escribe después de responder: los
+                    // refrescos de cada 5 s la traen, y estos dos la adelantan.
+                    setTimeout(refrescar, 4000); setTimeout(refrescar, 9000);
                 } else {
                     avisar(j.error || 'No se pudo enviar la nota de voz.', true);
                 }
@@ -4035,31 +4045,12 @@ function burbujaCita(t, chat) {
                 btnGrabar.disabled = true;
                 btnGrabar.title = 'Este navegador no puede grabar notas de voz';
             }
-            btnGrabar.addEventListener('contextmenu', ev => ev.preventDefault());
-            btnGrabar.addEventListener('pointerdown', ev => {
-                if (ev.button !== 0 || btnGrabar.disabled) return;
-                ev.preventDefault();
-                try { btnGrabar.setPointerCapture(ev.pointerId); } catch (e) {}
-                grabX0 = ev.clientX; grabDeslizoCancelar = false;
-                empezarGrabacion();
-            });
-            btnGrabar.addEventListener('pointermove', ev => {
-                if (!grab) return;
-                const cancelar = ev.clientX - grabX0 < -GRAB_CANCEL_PX;
-                if (cancelar === grabDeslizoCancelar) return;
-                grabDeslizoCancelar = cancelar;
-                cajaGrab.classList.toggle('grabando--cancelar', cancelar);
-                hintEl.textContent = cancelar ? 'Soltá para cancelar' : '◀ Deslizá para cancelar';
-            });
-            btnGrabar.addEventListener('pointerup', ev => { if (grab) { ev.preventDefault(); pararGrabacion(!grabDeslizoCancelar); } });
-            btnGrabar.addEventListener('pointercancel', () => pararGrabacion(false));
-            // Teclado: barra o Enter apretados graban, al soltar se envía.
-            btnGrabar.addEventListener('keydown', ev => {
-                if ((ev.key === ' ' || ev.key === 'Enter') && !ev.repeat && !grab) { ev.preventDefault(); grabX0 = 0; grabDeslizoCancelar = false; empezarGrabacion(); }
-                if (ev.key === 'Escape' && grab) pararGrabacion(false);
-            });
-            btnGrabar.addEventListener('keyup', ev => { if ((ev.key === ' ' || ev.key === 'Enter') && grab) { ev.preventDefault(); pararGrabacion(true); } });
+            // Un toque empieza; mientras graba, el micrófono no hace nada (se
+            // termina con Enviar o Cancelar).
+            btnGrabar.addEventListener('click', () => { if (!grab && !btnGrabar.disabled) empezarGrabacion(); });
+            document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && grab) pararGrabacion(false); });
             btnGrabCancel.onclick = () => pararGrabacion(false);
+            btnGrabEnviar.onclick = () => pararGrabacion(true);
         }
         pintar(<?= json_encode(array_values(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv))), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;

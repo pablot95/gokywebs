@@ -442,12 +442,36 @@ caso('la librería que codifica Opus está en el repo, con el worker y la licenc
     && filesize(__DIR__ . '/vendor/opus-recorder/encoderWorker.min.js') > 300000
     && file_exists(__DIR__ . '/vendor/opus-recorder/LICENSE.md'));
 $adminSrc = (string)@file_get_contents(__DIR__ . '/admin.php');
-caso('el panel carga esa librería y graba con "mantener apretado"',
+/* 5-oct (Pablo): un toque empieza a grabar y queda grabando; la barra tiene
+ * "Enviar" y "Cancelar". Ya no es mantener apretado. */
+caso('el panel carga esa librería y graba con un toque, con Enviar y Cancelar (5-oct)',
     strpos($adminSrc, 'vendor/opus-recorder/recorder.min.js') !== false
-    && strpos($adminSrc, "addEventListener('pointerdown'") !== false
+    && strpos($adminSrc, "btnGrabar.addEventListener('click'") !== false
+    && strpos($adminSrc, "btnGrabar.addEventListener('pointerdown'") === false
+    && strpos($adminSrc, 'id="grabarEnviar"') !== false && strpos($adminSrc, 'id="grabarCancelar"') !== false
     && strpos($adminSrc, 'numberOfChannels: 1') !== false);
-caso('y ya no queda el botón viejo de "Enviar nota de voz"',
-    strpos($adminSrc, 'grabarEnviar') === false);
+
+/* 5-oct (Pablo): "quiero que mis audios también se lean la transcripción". */
+echo "— La transcripción de las notas de voz de Pablo —\n";
+$GLOBALS['WABOT_TEST_MEDIA'] = fn($bytes, $mime, $tipo) => $tipo === 'audio' ? 'Hola, te paso el link del plan' : null;
+$cv = conv_nueva('5491100000777TEST', ['transcript' => [
+    ['q' => 'cliente', 't' => 'Hola, cómo pago?', 'ts' => time() - 60],
+    ['q' => 'humano', 't' => '[nota de voz]', 'ts' => time() - 30, 'media' => ['clase' => 'audio', 'mime' => 'audio/ogg', 'archivo' => 'nv-1.ogg']],
+    ['q' => 'cliente', 't' => 'dale', 'ts' => time() - 5],
+]]);
+wabot_conv_save($cv);
+$claveNv = wabot_conversation_key($cv);
+caso('la nota de voz de Pablo queda con su transcripción, en su línea',
+    wabot_nota_voz_transcribir($claveNv, 'nv-1.ogg', 'OggS...', 'audio/ogg')
+    && wabot_conv_load($claveNv)['transcript'][1]['t'] === '[nota de voz] Hola, te paso el link del plan'
+    && wabot_conv_load($claveNv)['transcript'][2]['t'] === 'dale');
+caso('una segunda vez no la pisa', !wabot_nota_voz_transcribir($claveNv, 'nv-1.ogg', 'OggS...', 'audio/ogg'));
+$GLOBALS['WABOT_TEST_MEDIA'] = fn() => null;
+$cv['transcript'][1]['t'] = '[nota de voz]';
+wabot_conv_save($cv);
+caso('si no se entiende, la línea queda como estaba',
+    !wabot_nota_voz_transcribir($claveNv, 'nv-1.ogg', 'OggS...', 'audio/ogg') && wabot_conv_load($claveNv)['transcript'][1]['t'] === '[nota de voz]');
+@unlink(wabot_conv_path($claveNv));
 
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR'], $GLOBALS['WABOT_TEST_MEDIA']);
 todo_ok();
