@@ -592,7 +592,24 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        if (!wabot_enviar($conv, $texto)) {
+        /* Un mismo envío no sale dos veces (7-oct): si el panel se tildó y Pablo
+         * volvió a tocar Enviar, o llegó un reintento con el mismo envio_id, el
+         * mensaje ya salió o está saliendo: se confirma sin mandarlo de nuevo. */
+        $claveEnvio = wabot_conversation_key($conv);
+        $envioId = (string)($_POST['envio_id'] ?? '');
+        if (!wabot_panel_envio_marcar($claveEnvio, $texto, $envioId)) {
+            wabot_log('respuesta_panel_repetida', ['tel' => $conv['tel']]);
+            echo json_encode(['ok' => true, 'bot_off' => true, 'repetido' => true]);
+            exit;
+        }
+        try {
+            $salio = wabot_enviar($conv, $texto);
+        } catch (Throwable $e) {
+            wabot_panel_envio_liberar($claveEnvio, $texto, $envioId);
+            throw $e;
+        }
+        if (!$salio) {
+            wabot_panel_envio_liberar($claveEnvio, $texto, $envioId);
             echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);
             exit;
         }
@@ -3841,14 +3858,30 @@ function burbujaCita(t, chat) {
             } catch (e) {}
         }
 
+        /* Un mensaje no sale dos veces (7-oct): mientras uno está en camino, Enter
+           y el botón no mandan otro, y cada mensaje lleva un envio_id que se
+           conserva hasta que llega la confirmación. Si la respuesta se pierde o
+           tarda y Pablo toca Enviar de nuevo con el mismo texto, el servidor
+           reconoce el envío y no lo repite. */
+        let enviando = false, envioId = '', envioTexto = '';
+        function nuevoEnvioId() {
+            try { return crypto.randomUUID().replace(/-/g, ''); }
+            catch (e) { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); }
+        }
         async function enviar() {
+            if (enviando) return;
             const t = txt.value.trim(); if (!t) return;
+            if (!envioId || t !== envioTexto) { envioId = nuevoEnvioId(); envioTexto = t; }
+            enviando = true;
             btn.disabled = true; est.textContent = 'Enviando…'; est.style.color = 'var(--dim)';
+            const corte = new AbortController();
+            const reloj = setTimeout(() => corte.abort(), 45000);
             try {
-                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'responder', tel: TEL, texto: t }) });
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: corte.signal,
+                    body: new URLSearchParams({ accion: 'responder', tel: TEL, texto: t, envio_id: envioId }) });
                 const j = await r.json();
                 if (j.ok) {
+                    envioId = ''; envioTexto = '';
                     txt.value = '';
                     txt.dispatchEvent(new Event('input', { bubbles:true }));
                     document.getElementById('handoffPill')?.remove();
@@ -3856,7 +3889,11 @@ function burbujaCita(t, chat) {
                     est.textContent = 'Enviado. El bot queda en silencio en este chat.';
                 }
                 else { est.textContent = j.error || 'No se pudo enviar.'; est.style.color = 'var(--bad)'; btn.disabled = false; }
-            } catch (e) { est.textContent = 'Error de red: ' + e; est.style.color = 'var(--bad)'; btn.disabled = false; }
+            } catch (e) {
+                est.textContent = (e && e.name === 'AbortError' ? 'El servidor no respondió.' : 'Error de red: ' + e)
+                    + ' Mirá si el mensaje salió; si no, tocá Enviar de nuevo (si ya había salido, no se repite).';
+                est.style.color = 'var(--bad)'; btn.disabled = false;
+            } finally { clearTimeout(reloj); enviando = false; }
         }
 
         btn.onclick = enviar;
@@ -4212,25 +4249,38 @@ function burbujaCita(t, chat) {
                 const estadoRespuesta = c.el.querySelector('.live-responder-estado');
                 const mensaje = texto.value.trim();
                 if (!mensaje) { texto.focus(); return; }
+                /* Mismo envio_id mientras no llegue la confirmación del mismo texto
+                   (7-oct): si la respuesta se pierde y se reintenta, el servidor no lo repite. */
+                if (!c.envioId || mensaje !== c.envioTexto) {
+                    c.envioId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replace(/-/g, '')
+                        : 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+                    c.envioTexto = mensaje;
+                }
                 c.enviando = true;
                 texto.disabled = true;
                 boton.disabled = true;
                 estadoRespuesta.textContent = 'Enviando…';
                 estadoRespuesta.classList.remove('error');
+                const corte = new AbortController();
+                const reloj = setTimeout(() => corte.abort(), 45000);
                 try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'responder', tel: c.tel, texto: mensaje }) });
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: corte.signal,
+                        body: new URLSearchParams({ accion: 'responder', tel: c.tel, texto: mensaje, envio_id: c.envioId }) });
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'No se pudo enviar.');
+                    c.envioId = ''; c.envioTexto = '';
                     texto.value = '';
                     borradorGuardar(c.tel, '');   // se fue: el borrador ya no existe
                     estadoRespuesta.textContent = 'Enviado. El bot quedó en silencio en este chat.';
                     await refrescar();
                 } catch (error) {
-                    estadoRespuesta.textContent = error.message || 'No se pudo enviar.';
+                    estadoRespuesta.textContent = error && error.name === 'AbortError'
+                        ? 'El servidor no respondió. Mirá si salió; si no, tocá Enviar de nuevo (si ya había salido, no se repite).'
+                        : (error.message || 'No se pudo enviar.');
                     estadoRespuesta.classList.add('error');
                     if (estadoRespuesta.textContent.includes('24 horas')) c.ventanaAbierta = false;
                 } finally {
+                    clearTimeout(reloj);
                     c.enviando = false;
                     texto.disabled = !c.ventanaAbierta;
                     boton.disabled = !c.ventanaAbierta;

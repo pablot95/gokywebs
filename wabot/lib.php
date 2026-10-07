@@ -658,6 +658,70 @@ function wabot_msg_visto_marcar($id) {
     return $primera;
 }
 
+/**
+ * Dedup de lo que Pablo manda desde el panel (7-oct-2026: "a veces se tilda y
+ * se manda dos veces el mismo mensaje"). El panel se quedaba esperando la
+ * respuesta del servidor con el texto todavía en el cuadro; el mensaje ya había
+ * salido, pero al tocar Enviar o Enter otra vez salía de nuevo. Atómico y fuera
+ * de la conversación, como wabot_msg_visto_marcar().
+ *
+ * Con $envioId (lo arma el panel por cada mensaje y lo conserva hasta que llega
+ * la confirmación) vale una hora: un reintento del MISMO envío no se repite
+ * aunque la primera respuesta se haya perdido. Sin id (una pestaña vieja que
+ * quedó abierta) vale el mismo texto a la misma charla dentro de 15 segundos.
+ * Devuelve true si el envío es nuevo (hay que mandarlo) y false si ya salió o
+ * está saliendo. Si no se puede abrir el archivo, true: mejor mandar de más que
+ * perder un mensaje.
+ */
+function wabot_panel_envio_clave($clave, $texto, $envioId = '') {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    $envioId = preg_replace('/[^0-9A-Za-z_-]/', '', (string)$envioId);
+    return $envioId !== '' ? 'i|' . $clave . '|' . $envioId : 't|' . $clave . '|' . md5(trim((string)$texto));
+}
+
+function wabot_panel_envio_marcar($clave, $texto, $envioId = '', $ahora = null) {
+    $ahora = $ahora ?? time();
+    wabot_ensure_dirs();
+    $h = @fopen(WABOT_DATA . '/panel-envios.json', 'c+');
+    if (!$h) return true;
+    flock($h, LOCK_EX);
+
+    $envios = json_decode((string)stream_get_contents($h), true);
+    if (!is_array($envios)) $envios = [];
+    foreach ($envios as $k => $ts) {
+        if ((int)$ts < $ahora - 3600) unset($envios[$k]);
+    }
+    $k = wabot_panel_envio_clave($clave, $texto, $envioId);
+    $ventana = preg_replace('/[^0-9A-Za-z_-]/', '', (string)$envioId) !== '' ? 3600 : 15;
+    $nuevo = !isset($envios[$k]) || (int)$envios[$k] < $ahora - $ventana;
+    if ($nuevo) $envios[$k] = $ahora;
+
+    ftruncate($h, 0);
+    rewind($h);
+    fwrite($h, json_encode($envios));
+    fflush($h);
+    flock($h, LOCK_UN);
+    fclose($h);
+    return $nuevo;
+}
+
+/** El envío no salió (el canal lo rechazó): se suelta la marca para poder reintentarlo. */
+function wabot_panel_envio_liberar($clave, $texto, $envioId = '') {
+    $h = @fopen(WABOT_DATA . '/panel-envios.json', 'c+');
+    if (!$h) return;
+    flock($h, LOCK_EX);
+    $envios = json_decode((string)stream_get_contents($h), true);
+    if (is_array($envios)) {
+        unset($envios[wabot_panel_envio_clave($clave, $texto, $envioId)]);
+        ftruncate($h, 0);
+        rewind($h);
+        fwrite($h, json_encode($envios));
+        fflush($h);
+    }
+    flock($h, LOCK_UN);
+    fclose($h);
+}
+
 function wabot_session_id_nuevo($clave, $ahora = null) {
     $ahora = $ahora ?? time();
     return substr(hash('sha256', $clave . '|' . $ahora . '|' . microtime(true) . '|' . mt_rand()), 0, 20);
