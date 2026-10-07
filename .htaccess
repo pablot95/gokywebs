@@ -62,10 +62,9 @@ RewriteRule ^pago/anual250(/.*)?$ /pago/anual190/ [R=301,L]
 RewriteRule ^pago/unico240(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 
-# 7-oct-2026 (Pablo): anual $120.000 / $190.000 (antes $140.000 / $220.000). Las páginas se
-# renombraron; las de arriba ya apuntan directo a las nuevas.
+# 7-oct-2026 (Pablo): el anual general es $120.000 / $190.000. El plan de
+# $220.000 tiene de nuevo su propia página para la propuesta mensual de $32.000.
 RewriteRule ^pago/anual140(/.*)?$ /pago/anual120/ [R=301,L]
-RewriteRule ^pago/anual220(/.*)?$ /pago/anual190/ [R=301,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
