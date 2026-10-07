@@ -8,17 +8,17 @@
    el ancho, sin fondo, apoyada sobre el borde de abajo de la web.
    ============================================================ */
 .gv, .gv-toolbar {
-    --gv-bg: #0b0a09;
-    --gv-text: #f5f1e8;
-    --gv-soft: #d9d3c8;
-    --gv-muted: #9e988e;
+    --gv-bg: #0A1F44;
+    --gv-text: #F4F1EC;
+    --gv-soft: #D5DCEA;
+    --gv-muted: #9AA8C4;
     --gv-line: rgba(255, 255, 255, 0.14);
     --gv-line-2: rgba(255, 255, 255, 0.3);
-    --gv-gold: #e5b46e;
+    --gv-gold: #FF8A3D;
     --gv-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --gv-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --gv-ease: cubic-bezier(0.22, 1, 0.36, 1);
-    --gv-fondo: #ebe8e2;                  /* alrededor de la web */
+    --gv-fondo: #E7E1D8;                  /* alrededor de la web */
     --gv-pantalla: 100vh;
     --gv-encima: 47px;                     /* alto de la barra de filtros */
     /* La web baja hasta 5px del final de la pantalla (la tira va encima)
@@ -42,7 +42,7 @@
 .gv-stage {
     position: relative; flex: none; width: var(--gv-ancho); height: var(--gv-alto); min-height: 320px; margin-top: 6px; cursor: pointer;
     overflow: hidden; border-radius: 10px; border: 1px solid rgba(0, 0, 0, 0.08); background: #fff;
-    box-shadow: 0 18px 50px -24px rgba(40, 32, 20, 0.35);
+    box-shadow: 0 18px 50px -24px rgba(10, 31, 68, 0.35);
 }
 .gv-stage[hidden] { display: none; }
 .gv-view {
@@ -60,7 +60,7 @@
 /* En la home los filtros van dentro del visor, en una barra pegada arriba. */
 .gv--con-filtros > .gv-toolbar {
     align-self: stretch; padding: 8px 14px;
-    background: #0e0d0b; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0A1F44; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .gv-chips { display: flex; flex-wrap: nowrap; gap: 4px; }
 .gv-chip {
@@ -74,7 +74,7 @@
 .gv-chip[hidden] { display: none; }
 .gv-chip:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
 .gv-chip:active { transform: scale(0.97); }
-.gv-chip[aria-pressed="true"] { background: #fff; color: #111; }
+.gv-chip[aria-pressed="true"] { background: #fff; color: #0A1F44; }
 .gv-chip-n { font-size: 0.64rem; color: var(--gv-muted); font-variant-numeric: tabular-nums; }
 .gv-chip-n:empty { display: none; }
 .gv-chip[aria-pressed="true"] .gv-chip-n { color: #6b665f; }
@@ -97,12 +97,12 @@
     font: 500 0.74rem/1 var(--gv-sans); cursor: pointer; width: 112px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.gv-select select option { background: #1a1816; color: #f5f1e8; }
+.gv-select select option { background: #0A1F44; color: #F4F1EC; }
 /* El buscador es un botón con la lupa que se abre al tocarlo. */
 .gv-search-wrap { position: relative; display: inline-block; width: 30px; height: 30px; flex: none; }
 .gv-search {
     position: absolute; right: 0; top: 0; z-index: 3; width: 30px; overflow: hidden;
-    padding-left: 8px; background: #1a1816; cursor: text;
+    padding-left: 8px; background: #0A1F44; cursor: text;
     transition: width 0.3s var(--gv-ease);
 }
 .gv-search:focus-within, .gv-search.lleno { width: 230px; }
@@ -132,11 +132,11 @@
 .gv-nav {
     position: absolute; z-index: 2; bottom: calc(12px + 4px + (clamp(169px, 11.7vw, 247px) * 0.625 - 40px) / 2);
     display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
-    border: 0; background: #1a1816; color: #fff; cursor: pointer;
+    border: 0; background: #0A1F44; color: #fff; cursor: pointer;
     box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.45);
     transition: background 0.2s ease, transform 0.15s ease;
 }
-.gv-nav:hover { background: #000; }
+.gv-nav:hover { background: #0057FF; }
 .gv-prev { left: 12px; }
 .gv-next { right: 12px; }
 .gv-nav:active { transform: scale(0.94); }
@@ -167,11 +167,11 @@
 /* ── Sin resultados ──────────────────────────────────────── */
 .gv-vacio { padding: 80px 20px; text-align: center; color: #5d574e; }
 .gv-vacio[hidden] { display: none; }
-.gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: #1a1816; }
+.gv-vacio-t { margin: 0 0 8px; font-family: var(--gv-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); color: #0A1F44; }
 .gv-vacio p { margin: 0 0 22px; }
 .gv-btn {
     display: inline-flex; align-items: center; height: 44px; padding: 0 22px; border-radius: 999px;
-    border: 0; background: #1a1816; color: #fff;
+    border: 0; background: #0A1F44; color: #fff;
     font: 600 0.88rem/1 var(--gv-sans); cursor: pointer;
 }
 

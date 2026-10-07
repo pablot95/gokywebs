@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta property="og:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
     <title>Pago confirmado — Gokywebs</title>
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20261007-rebrand">
     <style>
         .exito-wrap { max-width: 620px; margin: 0 auto; padding: 7rem 1.5rem 5rem; text-align: center; }
         .exito-badge {
@@ -18,31 +23,31 @@
             padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 700;
             letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem;
         }
-        .exito-title { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.85rem; line-height: 1.2; color: var(--text); }
+        .exito-title { font-family: var(--font-display); font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.85rem; line-height: 1.2; color: var(--navy); }
         .exito-title span { color: var(--green); }
         .exito-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 2rem; }
         .pending-box {
             text-align: left; padding: 1.25rem 1.5rem;
-            background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.3);
+            background: var(--amber-dim); border: 1px solid rgba(255,138,61,0.4);
             border-radius: var(--radius-lg); margin-bottom: 1.75rem;
         }
-        .pending-box h2 { font-size: 1.05rem; font-weight: 700; color: var(--amber); margin-bottom: 0.4rem; }
+        .pending-box h2 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--amber); margin-bottom: 0.4rem; }
         .pending-box p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.7; }
         .recap { text-align: left; margin-bottom: 2rem; }
         .btn-wsp-final {
             display: inline-flex; align-items: center; gap: 0.55rem;
-            padding: 0.95rem 1.75rem; background: #0F7A40; color: #fff;
+            padding: 0.95rem 1.75rem; background: var(--navy); color: #fff; font-family: var(--font-display);
             border-radius: var(--radius); font-size: 0.92rem; font-weight: 700;
             transition: all 0.2s var(--ease);
         }
-        .btn-wsp-final:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(15,122,64,0.3); }
+        .btn-wsp-final:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(10,31,68,0.3); }
     </style>
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
 
 <header class="pres-header">
-    <a href="../index.html" class="header-logo"><span>Gokywebs</span></a>
+    <a href="../index.html" class="header-logo"><img src="../logonav.png" alt="" width="56" height="26"><span>Gokywebs</span></a>
     <a href="../index.html" class="btn-back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
         Inicio

@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculá tu plan web | Gokywebs</title>
-    <link rel="icon" type="image/png" href="../logo.png">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta property="og:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
     <meta name="description" content="Respondé 3 preguntas y conocé al instante cuánto sale tu web a medida: con el plan mensual, con el plan anual o con el pago único.">
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260915">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20261007-rebrand">
     <script>
         try {
             var _d = JSON.parse(sessionStorage.getItem('gky_pres_draft'));
@@ -23,7 +27,7 @@
 
 <header class="pres-header">
     <a href="../index.html" class="header-logo">
-        <span>Gokywebs</span>
+        <img src="../logonav-claro.png" alt="" width="56" height="26"><span>Gokywebs</span>
     </a>
     <a href="../index.html" class="btn-back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -84,7 +88,7 @@
                 </select>
                 <input type="tel" id="step1Tel" class="form-input phone-num" placeholder="11 1234-5678" autocomplete="tel-national" inputmode="numeric" required aria-required="true">
             </div>
-            <span class="form-error" id="err-step1Tel" style="display:none;font-size:0.78rem;color:var(--error,#f87171);margin-top:0.3rem">Ingresá un número válido (mínimo 7 dígitos)</span>
+            <span class="form-error" id="err-step1Tel" style="display:none;font-size:0.78rem;color:var(--red);margin-top:0.3rem">Ingresá un número válido (mínimo 7 dígitos)</span>
         </div>
 
         <div class="step-nav">
@@ -128,7 +132,7 @@
         <p class="step-label">Paso 3 de 3</p>
         <h2 class="step-question">Todo esto viene incluido</h2>
         <!-- Lo llena renderStep3Context(): lista de INCLUDES[tipo] + las tres modalidades. -->
-        <div id="func-included" style="margin-bottom:1.5rem;padding:1rem 1.1rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)"></div>
+        <div id="func-included" style="margin-bottom:1.5rem;padding:1rem 1.1rem;background:var(--surface-soft);border-radius:10px;border:1px solid var(--border)"></div>
         <p class="form-helper" style="margin-top:0;margin-bottom:0.9rem">Necesitás algo que no está en la lista? Contanos y lo vemos juntos.</p>
         <div class="custom-request-wrap" style="margin-top:0">
             <button type="button" class="pill pill-custom" id="customRequestBtn">✨ Quiero algo diferente</button>
@@ -437,6 +441,6 @@
     </div>
 </div>
 
-<script type="module" src="script.js?v=20261007-anual-120-190"></script>
+<script type="module" src="script.js?v=20261007-rebrand"></script>
 </body>
 </html>

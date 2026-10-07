@@ -5594,7 +5594,7 @@ function wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora = null) {
     if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
     $ultimo = wabot_ultimo_mensaje_ts($cv);
-    return $ultimo > 0 && $ahora - $ultimo >= 7 * 86400;
+    return $ultimo > 0 && $ahora - $ultimo >= 4 * 86400;
 }
 
 /** Una pasada de cron; registra el intento antes de llamar a Meta para no duplicar ante un timeout. */

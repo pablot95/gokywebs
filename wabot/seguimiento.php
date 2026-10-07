@@ -3,7 +3,7 @@
  * wabot/seguimiento.php — automatismos por cron:
  *   - la "última llamada" antes de que cierre la ventana de Meta;
  *   - seguimiento_demo_72h, a las 18 h tras 72 h sin respuesta;
- *   - seguimiento_interesado, a las 18 h tras 7 días sin mensajes.
+ *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes.
  *
  * Desde el hosting, cada 5-30 minutos (zona horaria argentina para las plantillas):
  *   php /home/USUARIO/public_html/wabot/seguimiento.php

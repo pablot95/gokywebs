@@ -86,7 +86,7 @@
       return '<div class="' + clase + '">' +
         '<img class="ph-screen" alt="" width="430" height="1000" decoding="async" draggable="false">' +
         '<img class="ph-screen" alt="" width="430" height="1000" decoding="async" draggable="false">' +
-        '<div class="ph-splash"><img src="logonav.png" alt="" draggable="false"></div>' +
+        '<div class="ph-splash"><img src="logonav-claro.png" alt="" draggable="false"></div>' +
         '<span class="ph-notch"></span><span class="ph-glare"></span>' +
       '</div>';
     }
@@ -180,20 +180,20 @@
     var fallbacks = {
       ecommerce: '#35d4df',
       comercios: '#f5279e',
-      profesionales: '#35e08b',
+      profesionales: '#FF8A3D',
       moda: '#d8d2c4',
       gastronomia: '#f2b35d',
-      tecnologia: '#5b8cff',
+      tecnologia: '#3d7dff',
       inmobiliaria: '#d2b63f'
     };
-    return (project && project.accent) || fallbacks[project && project.cat] || '#35e08b';
+    return (project && project.accent) || fallbacks[project && project.cat] || '#FF8A3D';
   }
 
   function hexToRgb(hex) {
     var clean = String(hex || '').replace('#', '');
     if (clean.length === 3) clean = clean.replace(/(.)/g, '$1$1');
     var value = parseInt(clean, 16);
-    if (!isFinite(value)) return [53, 224, 139];
+    if (!isFinite(value)) return [255, 138, 61];
     return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
   }
 
@@ -259,7 +259,7 @@
       activeId = nextId;
 
       activeColor = project ? portalAccent(project) : null;
-      var rgb = hexToRgb(activeColor || '#35e08b');
+      var rgb = hexToRgb(activeColor || '#FF8A3D');
       stage.style.setProperty('--portal-rgb', rgb.join(', '));
       stage.setAttribute('data-active-project', nextId || 'gokywebs');
       status.classList.toggle('has-project', !!project);

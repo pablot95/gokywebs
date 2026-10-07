@@ -8,13 +8,13 @@
     html, body { height: 100%; overflow: hidden; }
     body {
       background:
-        radial-gradient(120% 90% at 50% 42%, #0a0f1e 0%, #070b16 46%, #04060d 100%);
+        radial-gradient(120% 90% at 50% 42%, #10295a 0%, #0A1F44 46%, #06142e 100%);
     }
 
     /* Glows de marca, muy tenues, derivan apenas con el scroll */
     .glow { position: fixed; border-radius: 50%; filter: blur(90px); will-change: transform; transition: background-color 0.9s cubic-bezier(0.23, 1, 0.32, 1); }
-    .glow-a { width: 46vw; height: 46vw; left: -14vw; top: -16vh; background-color: rgba(63, 99, 255, 0.16); }
-    .glow-b { width: 40vw; height: 40vw; right: -12vw; bottom: -18vh; background-color: rgba(53, 224, 139, 0.09); }
+    .glow-a { width: 46vw; height: 46vw; left: -14vw; top: -16vh; background-color: rgba(0, 87, 255, 0.2); }
+    .glow-b { width: 40vw; height: 40vw; right: -12vw; bottom: -18vh; background-color: rgba(255, 138, 61, 0.11); }
 
     /* Órbitas: elipses finas que insinúan la espiral de previews */
     .orbits { position: fixed; inset: -12%; width: 124%; height: 124%; will-change: transform; }
@@ -42,7 +42,7 @@
     <g>
       <ellipse cx="720" cy="560" rx="620" ry="150" stroke="rgba(255,255,255,0.055)" transform="rotate(-7 720 560)"/>
       <ellipse cx="720" cy="430" rx="640" ry="165" stroke="rgba(255,255,255,0.04)" transform="rotate(-7 720 430)"/>
-      <ellipse cx="720" cy="300" rx="600" ry="145" stroke="rgba(91,140,255,0.06)" transform="rotate(-7 720 300)"/>
+      <ellipse cx="720" cy="300" rx="600" ry="145" stroke="rgba(0,87,255,0.08)" transform="rotate(-7 720 300)"/>
     </g>
   </svg>
 
@@ -80,14 +80,14 @@
       function setProjectColor(color) {
         var primary = parseHex(color);
         if (!primary) {
-          glowA.style.backgroundColor = 'rgba(63,99,255,.16)';
-          glowB.style.backgroundColor = 'rgba(53,224,139,.09)';
+          glowA.style.backgroundColor = 'rgba(0,87,255,.2)';
+          glowB.style.backgroundColor = 'rgba(255,138,61,.11)';
           orbitLines[0].style.stroke = 'rgba(255,255,255,.055)';
           orbitLines[1].style.stroke = 'rgba(255,255,255,.04)';
-          orbitLines[2].style.stroke = 'rgba(91,140,255,.06)';
+          orbitLines[2].style.stroke = 'rgba(0,87,255,.08)';
           return;
         }
-        var secondary = mix(primary, [53, 224, 139], 0.38);
+        var secondary = mix(primary, [255, 138, 61], 0.38);
         glowA.style.backgroundColor = rgba(primary, 0.2);
         glowB.style.backgroundColor = rgba(secondary, 0.12);
         orbitLines[0].style.stroke = rgba(primary, 0.1);

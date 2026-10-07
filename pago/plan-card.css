@@ -1,14 +1,21 @@
 :root {
-    --bg: #eef2fa;
+    /* Marca 7-oct-2026: fondo Arena, tarjeta blanca, Azul Eléctrico para
+       acciones, Azul Profundo para títulos y Naranja Cobre como detalle. Sobre
+       Arena el texto chico azul va en --blue-dark (el Azul Eléctrico no llega a AA). */
+    --bg: #E7E1D8;
     --card: #ffffff;
-    --card-border: #dee4f5;
-    --ink: #101828;
-    --muted: #667085;
-    --blue: #2f5fe6;
-    --blue-dark: #1f46c9;
+    --surface-soft: #F4F1EC;
+    --card-border: #D8D0C4;
+    --ink: #2B2B2B;
+    --navy: #0A1F44;
+    --muted: #5E5953;
+    --blue: #0057FF;
+    --blue-dark: #0046CC;
+    --copper: #FF8A3D;
     --radius: 20px;
-    --shadow: 0 20px 50px rgba(16, 24, 40, 0.07);
+    --shadow: 0 20px 50px rgba(10, 31, 68, 0.08);
     --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display: "Manrope", "Inter", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -33,8 +40,8 @@ a { color: inherit; text-decoration: none; }
     gap: 1rem;
 }
 
-.brand { display: inline-flex; align-items: center; gap: .5rem; font-weight: 800; font-size: 1.05rem; }
-.brand img { width: 28px; height: 28px; object-fit: contain; }
+.brand { display: inline-flex; align-items: center; gap: .5rem; color: var(--navy); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; letter-spacing: -.02em; }
+.brand img { width: auto; height: 26px; object-fit: contain; }
 
 .back-link {
     padding: .5rem .9rem;
@@ -46,7 +53,7 @@ a { color: inherit; text-decoration: none; }
     font-weight: 700;
     transition: color .15s, border-color .15s;
 }
-.back-link:hover { color: var(--blue); border-color: var(--blue); }
+.back-link:hover { color: var(--blue-dark); border-color: var(--blue); }
 
 main {
     display: flex;
@@ -75,7 +82,7 @@ main {
     text-transform: uppercase;
 }
 
-.plan-title { font-size: 1.55rem; font-weight: 800; letter-spacing: -.01em; line-height: 1.2; }
+.plan-title { color: var(--navy); font-family: var(--font-display); font-size: 1.55rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
 
 .plan-price-row {
     display: flex;
@@ -85,14 +92,15 @@ main {
     padding-bottom: 1.4rem;
     border-bottom: 1px solid var(--card-border);
 }
-.plan-price { font-size: 2.5rem; font-weight: 800; letter-spacing: -.02em; color: var(--blue); }
+.plan-price { font-family: var(--font-display); font-size: 2.5rem; font-weight: 700; letter-spacing: -.03em; color: var(--blue); }
 .plan-period { color: var(--muted); font-weight: 600; font-size: .92rem; }
 
 .plan-section { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px solid var(--card-border); }
 .plan-section:first-of-type { margin-top: 1.6rem; padding-top: 0; border-top: none; }
 .plan-section h2 {
     margin-bottom: .85rem;
-    color: var(--ink);
+    color: var(--navy);
+    font-family: var(--font-display);
     font-size: .76rem;
     font-weight: 800;
     letter-spacing: .07em;
@@ -138,18 +146,20 @@ main {
     border-radius: 12px;
     background: var(--blue);
     color: #ffffff;
+    font-family: var(--font-display);
     font-size: .93rem;
-    font-weight: 800;
+    font-weight: 700;
     text-align: center;
-    box-shadow: 0 14px 30px rgba(47, 95, 230, 0.28);
+    box-shadow: 0 14px 30px rgba(0, 87, 255, 0.26);
     transition: transform .15s ease, background .15s ease;
 }
 .subscribe-btn:hover { transform: translateY(-2px); background: var(--blue-dark); }
+.subscribe-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
 
 .mp-note { margin-top: .7rem; color: var(--muted); text-align: center; font-size: .74rem; }
 
 .support { margin-top: 1.2rem; text-align: center; color: var(--muted); font-size: .82rem; }
-.support a { color: var(--blue); font-weight: 700; }
+.support a { color: var(--blue-dark); font-weight: 700; }
 
 .footer {
     width: min(680px, calc(100% - 2rem));
@@ -170,11 +180,11 @@ main {
     padding: .85rem 1rem;
     border: 1px solid var(--card-border);
     border-radius: 12px;
-    background: #f7f9fe;
+    background: var(--surface-soft);
 }
 .pay-step span { color: var(--ink); font-size: .88rem; font-weight: 600; line-height: 1.35; }
 .pay-step small { display: block; color: var(--muted); font-size: .76rem; font-weight: 500; }
-.pay-step strong { color: var(--blue); font-size: 1.1rem; font-weight: 800; white-space: nowrap; }
+.pay-step strong { color: var(--blue-dark); font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; white-space: nowrap; }
 .pay-plazo { margin-top: .8rem; color: var(--muted); font-size: .82rem; line-height: 1.5; }
 .pay-plazo strong { color: var(--ink); }
 
@@ -202,7 +212,7 @@ main {
     border: 1px solid var(--card-border);
     border-radius: 999px;
     background: #fff;
-    color: var(--blue);
+    color: var(--blue-dark);
     font: inherit;
     font-size: .74rem;
     font-weight: 700;
@@ -212,8 +222,8 @@ main {
 .copy-btn:hover { border-color: var(--blue); }
 .copy-btn.ok { background: var(--blue); border-color: var(--blue); color: #fff; }
 .transfer-note { margin-top: .8rem; color: var(--muted); font-size: .8rem; line-height: 1.5; }
-.transfer-note a { color: var(--blue); font-weight: 700; }
-.plan-note a { color: var(--blue); font-weight: 700; }
+.transfer-note a { color: var(--blue-dark); font-weight: 700; }
+.plan-note a { color: var(--blue-dark); font-weight: 700; }
 
 /* Pago único (29-sep): lo que no incluye, dicho en texto y no en tildes. */
 .plan-text { color: var(--ink); font-size: .9rem; line-height: 1.5; }
@@ -223,7 +233,7 @@ main {
     padding: .85rem 1rem;
     border: 1px solid var(--card-border);
     border-radius: 12px;
-    background: #f7f9fe;
+    background: var(--surface-soft);
     color: var(--ink);
     font-size: .88rem;
     line-height: 1.5;
@@ -246,7 +256,7 @@ main {
     padding: .3rem;
     border: 1px solid var(--card-border);
     border-radius: 14px;
-    background: #e6ebf8;
+    background: #DDD5C9;
 }
 .plan-tabs a {
     display: flex;
@@ -261,11 +271,11 @@ main {
     text-align: center;
     transition: background .15s, color .15s, box-shadow .15s;
 }
-.plan-tabs a:hover { color: var(--blue); }
+.plan-tabs a:hover { color: var(--blue-dark); }
 .plan-tabs a[aria-current="page"] {
     background: #fff;
-    color: var(--blue);
-    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.1);
+    color: var(--blue-dark);
+    box-shadow: inset 0 -2px 0 var(--copper), 0 2px 8px rgba(10, 31, 68, 0.1);
 }
 .plan-tabs a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 

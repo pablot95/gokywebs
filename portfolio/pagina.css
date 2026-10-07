@@ -6,7 +6,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
 body {
-    min-height: 100svh; background: #0b0a09; color: #f5f1e8;
+    min-height: 100svh; background: #0A1F44; color: #F4F1EC;
     font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
     overflow-x: clip;
 }
@@ -14,7 +14,7 @@ a { color: inherit; }
 
 .skip-link {
     position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 18px; border-radius: 999px;
-    background: #fff; color: #111; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: top 0.2s ease;
+    background: #fff; color: #0A1F44; font-weight: 600; font-size: 0.85rem; text-decoration: none; transition: top 0.2s ease;
 }
 .skip-link:focus { top: 12px; }
 
@@ -28,22 +28,22 @@ html, body { height: 100%; overflow: hidden; }
 .pv-header {
     display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px 18px;
     padding: 8px 14px 8px 20px;
-    background: #0e0d0b; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0A1F44; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.pv-brand { display: inline-flex; align-items: baseline; gap: 9px; text-decoration: none; white-space: nowrap; }
-.pv-brand-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; letter-spacing: -0.01em; color: #f5f1e8; }
-.pv-brand-sub { font-size: 0.8rem; color: #9e988e; }
-.pv-brand:focus-visible, .pv-hablemos:focus-visible { outline: 2px solid #e5b46e; outline-offset: 3px; border-radius: 6px; }
+.pv-brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; white-space: nowrap; }
+.pv-brand-logo { height: 28px; width: auto; display: block; }
+.pv-brand-sub { font-family: 'Manrope', system-ui, sans-serif; font-weight: 600; font-size: 0.8rem; color: #AEB8CE; }
+.pv-brand:focus-visible, .pv-hablemos:focus-visible { outline: 2px solid #FF8A3D; outline-offset: 3px; border-radius: 6px; }
 
 .pv-toolbar { min-width: 0; }
 .pv-end { display: flex; align-items: center; justify-self: end; }
 .pv-hablemos {
     display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 14px; border-radius: 999px;
-    background: #fff; color: #111; text-decoration: none; font-weight: 600; font-size: 0.74rem; white-space: nowrap;
+    background: #FF8A3D; color: #0A1F44; text-decoration: none; font-family: 'Manrope', system-ui, sans-serif; font-weight: 700; font-size: 0.74rem; white-space: nowrap;
 }
 .pv-hablemos svg { width: 13px; height: 13px; }
 
-.pv-noscript { padding: 120px 20px 60px; text-align: center; color: #d9d3c8; }
+.pv-noscript { padding: 120px 20px 60px; text-align: center; color: #D5DCEA; }
 
 
 /* Si los filtros no entran en una fila con la marca y el botón, bajan. */

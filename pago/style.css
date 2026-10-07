@@ -1,31 +1,37 @@
 :root {
-    /* Tema claro: fondo casi blanco, cards blancas puras, texto oscuro.
-       Colores de texto (--blue-text/--green/--amber/--red) son variantes
-       oscurecidas de la marca para pasar contraste AA sobre fondos claros —
-       no usar los tonos "brillantes" (--blue/--blue-2) para texto chico. */
-    --bg: #f8fafc;
+    /* Marca 7-oct-2026 ("Equilibrio Esencial"): fondo Arena, tarjetas blancas,
+       Azul Eléctrico para acciones, Azul Profundo para fondos oscuros y Naranja
+       Cobre como acento puntual (texto encima siempre Azul Profundo).
+       Sobre Arena el Azul Eléctrico no llega a AA en texto chico: para texto
+       chico usar --blue-text; --blue queda para botones y texto grande.
+       Verde solo para estados de éxito. */
+    --bg: #E7E1D8;
     --bg-card: #ffffff;
-    --blue: #2563EB;
-    --blue-2: #3B82F6;
-    --blue-text: #1D4ED8;
-    --blue-glow: rgba(37,99,235,0.15);
-    --blue-border: rgba(37,99,235,0.25);
-    --green: #047857;
-    --green-dim: rgba(16,185,129,0.1);
-    --green-border: rgba(16,185,129,0.28);
-    --amber: #92400E;
-    --amber-dim: rgba(245,158,11,0.1);
+    --surface-soft: #F4F1EC;
+    --blue: #0057FF;
+    --blue-2: #5B8CFF;
+    --blue-text: #0046CC;
+    --blue-glow: rgba(0,87,255,0.16);
+    --blue-border: rgba(0,87,255,0.32);
+    --navy: #0A1F44;
+    --copper: #FF8A3D;
+    --green: #03643F;
+    --green-dim: rgba(3,100,63,0.08);
+    --green-border: rgba(3,100,63,0.28);
+    --amber: #8A3B0C;
+    --amber-dim: rgba(255,138,61,0.12);
     --red: #B91C1C;
-    --text: #0f172a;
-    --text-muted: #475569;
-    --text-light: #64748b;
-    --border: rgba(15,23,42,0.08);
-    --border-2: rgba(15,23,42,0.14);
+    --text: #2B2B2B;
+    --text-muted: #5E5953;
+    --text-light: #6B665F;
+    --border: #DDD6CB;
+    --border-2: #CFC6B8;
     --radius: 12px;
     --radius-lg: 20px;
     --radius-xl: 28px;
-    --shadow: 0 24px 64px rgba(15,23,42,0.14);
+    --shadow: 0 24px 64px rgba(10,31,68,0.18);
     --font: 'Inter', system-ui, sans-serif;
+    --font-display: 'Manrope', 'Inter', system-ui, sans-serif;
     --ease: cubic-bezier(0.4,0,0.2,1);
 }
 
@@ -44,11 +50,16 @@ input, select { font-family: var(--font); }
     padding: 0 2rem;
     height: 64px;
     display: flex; align-items: center; justify-content: space-between;
-    background: rgba(248,250,252,0.9);
+    background: rgba(231,225,216,0.92);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border);
 }
-.header-logo { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.header-logo {
+    display: inline-flex; align-items: center; gap: 0.55rem;
+    font-family: var(--font-display); font-size: 1.05rem; font-weight: 700;
+    letter-spacing: -0.02em; color: var(--navy);
+}
+.header-logo img { width: auto; height: 26px; }
 .btn-back {
     display: flex; align-items: center; gap: 0.4rem;
     font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
@@ -88,7 +99,7 @@ input, select { font-family: var(--font); }
     font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em;
     text-transform: uppercase; color: var(--blue-text); margin-bottom: 0.6rem;
 }
-.pago-section-title { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.5rem; color: var(--text); }
+.pago-section-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: var(--navy); }
 .pago-section-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.5rem; }
 
 /* ── Timeline "Cómo sigue" ── */
@@ -100,12 +111,12 @@ input, select { font-family: var(--font); }
 .timeline-step:last-child { border-bottom: none; }
 .timeline-num {
     width: 36px; height: 36px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--blue-text), var(--blue));
-    color: #fff; font-size: 0.85rem; font-weight: 800;
+    background: var(--blue);
+    color: #fff; font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,87,255,0.28);
 }
-.timeline-body h3 { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--text); }
+.timeline-body h3 { font-family: var(--font-display); font-size: 0.98rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--text); }
 .timeline-body p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
 .timeline-body p strong { color: var(--text); }
 
@@ -114,10 +125,10 @@ input, select { font-family: var(--font); }
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem 1.75rem;
     display: flex; gap: 1.1rem; align-items: flex-start;
-    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+    box-shadow: 0 2px 12px rgba(10,31,68,0.06);
 }
 .mods-icon { font-size: 1.6rem; flex-shrink: 0; }
-.mods-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text); }
+.mods-card h3 { font-family: var(--font-display); font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text); }
 .mods-card p { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
 .mods-card p strong { color: var(--text); }
 
@@ -125,7 +136,7 @@ input, select { font-family: var(--font); }
 .price-table-wrap {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); overflow: hidden;
-    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+    box-shadow: 0 2px 12px rgba(10,31,68,0.06);
 }
 .price-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .price-table th {
@@ -133,7 +144,7 @@ input, select { font-family: var(--font); }
     font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--text-muted);
     border-bottom: 1px solid var(--border-2);
-    background: #f8fafc;
+    background: var(--surface-soft);
 }
 .price-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); color: var(--text); }
 .price-table tr:last-child td { border-bottom: none; }
@@ -148,17 +159,17 @@ input, select { font-family: var(--font); }
     background: #ffffff; color: var(--text);
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
-    box-shadow: 0 4px 24px rgba(15,23,42,0.08);
+    box-shadow: 0 4px 24px rgba(10,31,68,0.08);
     display: flex; flex-direction: column;
     overflow: hidden;
 }
-.pay-card.is-featured { border-color: var(--blue-border); box-shadow: 0 8px 32px rgba(37,99,235,0.12); }
+.pay-card.is-featured { border-color: var(--blue-border); box-shadow: inset 0 3px 0 var(--copper), 0 8px 32px rgba(0,87,255,0.12); }
 .pay-card-header {
     padding: 1.5rem 1.5rem 1.1rem;
     border-bottom: 1px solid var(--border);
 }
 .pay-card-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-.pay-card-header h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
+.pay-card-header h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; color: var(--text); }
 .pay-card-header p { font-size: 0.8rem; color: var(--text-muted); }
 .pay-card-body { padding: 1.4rem 1.5rem 1.6rem; flex: 1; display: flex; flex-direction: column; }
 
@@ -166,7 +177,7 @@ input, select { font-family: var(--font); }
 .transfer-alias-row {
     display: flex; align-items: center; justify-content: space-between;
     gap: 0.75rem; padding: 0.75rem 0.9rem;
-    background: #f8fafc; border: 1px solid var(--border);
+    background: var(--surface-soft); border: 1px solid var(--border);
     border-radius: var(--radius);
     margin-bottom: 0.65rem;
 }
@@ -192,19 +203,19 @@ input, select { font-family: var(--font); }
     margin-top: auto;
     width: 100%; padding: 0.85rem;
     border: none; border-radius: var(--radius);
-    background: #0F7A40; color: #fff;
-    font-size: 0.9rem; font-weight: 700;
+    background: var(--navy); color: #fff;
+    font-family: var(--font-display); font-size: 0.9rem; font-weight: 700;
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
     transition: all 0.2s var(--ease);
 }
-.btn-wsp-transfer:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15,122,64,0.3); }
+.btn-wsp-transfer:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(10,31,68,0.3); }
 
 /* Mercado Pago form */
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.9rem; }
 .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text); }
 .form-input {
     width: 100%; padding: 0.78rem 1rem;
-    background: #f8fafc; border: 1.5px solid var(--border-2);
+    background: var(--surface-soft); border: 1.5px solid var(--border-2);
     border-radius: var(--radius); color: var(--text);
     font-size: 0.9rem; outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
@@ -219,11 +230,11 @@ input, select { font-family: var(--font); }
 .phone-country {
     flex-shrink: 0; width: 110px;
     padding: 0.78rem 0.6rem;
-    background: #f8fafc; border: 1.5px solid var(--border-2);
+    background: var(--surface-soft); border: 1.5px solid var(--border-2);
     border-radius: var(--radius); color: var(--text);
     font-size: 0.84rem; outline: none; cursor: pointer;
     appearance: none; -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235E5953' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 8px center; background-size: 13px;
     padding-right: 1.75rem;
 }
@@ -233,13 +244,15 @@ input, select { font-family: var(--font); }
     width: 100%; padding: 1rem; border: none;
     border-radius: var(--radius); font-size: 0.95rem; font-weight: 700;
     letter-spacing: 0.02em;
-    background: linear-gradient(135deg, var(--blue-text), var(--blue));
+    font-family: var(--font-display);
+    background: var(--blue);
     color: #fff; cursor: pointer; margin-top: 0.4rem;
-    box-shadow: 0 6px 22px rgba(37,99,235,0.35);
+    box-shadow: 0 6px 22px rgba(0,87,255,0.3);
     transition: all 0.2s var(--ease);
     display: flex; align-items: center; justify-content: center; gap: 0.55rem;
 }
-.btn-pay:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(37,99,235,0.45); }
+.btn-pay:hover { transform: translateY(-2px); background: var(--blue-text); box-shadow: 0 10px 30px rgba(0,87,255,0.4); }
+.btn-pay:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
 .btn-pay:disabled { opacity: 0.6; pointer-events: none; }
 .btn-pay svg { width: 17px; height: 17px; }
 
@@ -263,7 +276,7 @@ input, select { font-family: var(--font); }
     display: flex; flex-wrap: wrap; gap: 1.25rem;
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
-    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+    box-shadow: 0 2px 12px rgba(10,31,68,0.06);
 }
 .trust-item { display: flex; align-items: flex-start; gap: 0.65rem; flex: 1; min-width: 220px; }
 .trust-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
@@ -273,7 +286,7 @@ input, select { font-family: var(--font); }
 /* ── Toasts (overlay oscuro — independiente del tema de la página) ── */
 .toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 500; display: flex; flex-direction: column; gap: 0.5rem; }
 .toast {
-    background: #0f172a; color: #F9FAFB;
+    background: var(--navy); color: #F4F1EC;
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: var(--radius); padding: 0.75rem 1.25rem;
     font-size: 0.84rem; font-weight: 500;

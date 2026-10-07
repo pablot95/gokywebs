@@ -1,4 +1,4 @@
-﻿const navbar = document.querySelector('.navbar');
+const navbar = document.querySelector('.navbar');
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -15,7 +15,7 @@ if (typeof particlesJS !== 'undefined') {
                 }
             },
             color: {
-                value: ['#2563EB', '#3B82F6', '#9CA3AF']
+                value: ['#0057FF', '#3D7DFF', '#FF8A3D']
             },
             shape: {
                 type: 'circle',
@@ -47,7 +47,7 @@ if (typeof particlesJS !== 'undefined') {
             line_linked: {
                 enable: true,
                 distance: 100,
-                color: '#2563EB',
+                color: '#3D7DFF',
                 opacity: 0.5,
                 width: 2
             },
@@ -243,11 +243,11 @@ function showNotification(message, type = 'success') {
         position: fixed;
         top: 100px;
         right: 20px;
-        background: ${type === 'success' ? 'linear-gradient(135deg, #2563EB, #3B82F6)' : 'linear-gradient(135deg, #f5576c, #60A5FA)'};
+        background: ${type === 'success' ? '#0057FF' : '#B42318'};
         color: #FFFFFF;
         padding: 1rem 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+        box-shadow: 0 10px 30px rgba(10, 31, 68, 0.3);
         z-index: 10000;
         animation: slideIn 0.3s ease;
         font-weight: 500;
@@ -299,7 +299,7 @@ style.textContent = `
     .cursor-dot {
         width: 8px;
         height: 8px;
-        background: linear-gradient(135deg, #2563EB, #3B82F6);
+        background: #0057FF;
         border-radius: 50%;
         position: fixed;
         transform: translate(-50%, -50%);
@@ -309,7 +309,7 @@ style.textContent = `
     .cursor-outline {
         width: 30px;
         height: 30px;
-        border: 2px solid #2563EB;
+        border: 2px solid #0057FF;
         border-radius: 50%;
         position: fixed;
         transform: translate(-50%, -50%);
@@ -319,13 +319,13 @@ style.textContent = `
     .custom-cursor.hover .cursor-dot {
         width: 50px;
         height: 50px;
-        background: rgba(37, 99, 235, 0.3);
+        background: rgba(0, 87, 255, 0.3);
     }
     
     .custom-cursor.hover .cursor-outline {
         width: 50px;
         height: 50px;
-        border-color: #3B82F6;
+        border-color: #FF8A3D;
     }
     
     .btn-primary::after {
@@ -374,7 +374,7 @@ style.textContent = `
         width: 0;
         height: 0;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(37, 99, 235, 0.1), transparent);
+        background: radial-gradient(circle, rgba(0, 87, 255, 0.1), transparent);
         transform: translate(-50%, -50%);
         transition: width 0.6s, height 0.6s;
         z-index: -1;
@@ -674,14 +674,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Efecto de brillo en el borde al entrar
         gsap.fromTo(card, 
-            { boxShadow: '0 0 0 rgba(37, 99, 235, 0)' },
+            { boxShadow: '0 0 0 rgba(0, 87, 255, 0)' },
             {
                 scrollTrigger: {
                     trigger: card,
                     start: 'top 85%',
                     toggleActions: 'play none none none'
                 },
-                boxShadow: '0 0 40px rgba(37, 99, 235, 0.25), 0 0 80px rgba(59, 130, 246, 0.1)',
+                boxShadow: '0 0 40px rgba(0, 87, 255, 0.25), 0 0 80px rgba(0, 87, 255, 0.1)',
                 duration: 0.5,
                 delay: i * 0.12 + 0.8,
                 ease: 'power2.out',
@@ -1059,14 +1059,14 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 
         // Efecto de glow al entrar
         gsap.fromTo(item, 
-            { boxShadow: '0 0 0 rgba(37, 99, 235, 0)' },
+            { boxShadow: '0 0 0 rgba(0, 87, 255, 0)' },
             {
                 scrollTrigger: {
                     trigger: item,
                     start: 'top 88%',
                     toggleActions: 'play none none reverse'
                 },
-                boxShadow: '0 0 30px rgba(37, 99, 235, 0.3), 0 15px 35px rgba(0,0,0,0.2)',
+                boxShadow: '0 0 30px rgba(0, 87, 255, 0.3), 0 15px 35px rgba(0,0,0,0.2)',
                 duration: 0.6,
                 delay: (index % 3) * 0.15 + 0.8,
                 ease: 'power2.out',

@@ -556,18 +556,18 @@ function renderStep3Context() {
     const { precioAnual, precioPagoUnico, sena, mensualidad, mantenimiento, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Plan mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial y con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. Plan anual de <strong style="color:black">${fmt(precioAnual)} por año</strong>, también con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. O pago único de <strong style="color:black">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(sena)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y el mantenimiento se contrata aparte, por ${fmt(mantenimiento)} por mes. Con cualquiera la web queda lista en unos 7 días.`;
+        : `Plan mensual de <strong style="color:var(--navy)">${fmt(mensualidad)} por mes</strong>, sin pago inicial y con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. Plan anual de <strong style="color:var(--navy)">${fmt(precioAnual)} por año</strong>, también con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. O pago único de <strong style="color:var(--navy)">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(sena)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y el mantenimiento se contrata aparte, por ${fmt(mantenimiento)} por mes. Con cualquiera la web queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
-            <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
+            <p style="font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:0.6rem">Tu web ya incluye:</p>
             <ul style="list-style:none;display:flex;flex-direction:column;gap:0.35rem;margin-bottom:0.9rem">
                 ${items.map(i => `
                     <li style="display:flex;align-items:baseline;gap:0.5rem;font-size:0.85rem;color:var(--text-muted)">
-                        <span style="color:var(--green);flex-shrink:0;font-size:0.8rem">✓</span>
+                        <span style="color:var(--blue);flex-shrink:0;font-size:0.8rem">✓</span>
                         <span>${i}</span>
                     </li>`).join('')}
             </ul>
-            <p style="font-size:0.9rem;color:black">${precioTexto}</p>`;
+            <p style="font-size:0.9rem;color:var(--navy)">${precioTexto}</p>`;
     }
 
     updateLiveBudget();

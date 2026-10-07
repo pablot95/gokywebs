@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta property="og:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
     <title>¡Arrancamos! Completá tu brief | Gokywebs</title>
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260915">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20261007-rebrand">
     <style>
         .exito-wrap { max-width: 660px; margin: 0 auto; padding: 7rem 1.5rem 5rem; }
 
@@ -19,13 +24,13 @@
             padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 700;
             letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem;
         }
-        .exito-title { font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.75rem; line-height: 1.15; color: var(--text); }
+        .exito-title { font-family: var(--font-display); font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.75rem; line-height: 1.15; color: var(--text); }
         .exito-title span { color: #10B981; }
         .exito-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 2rem; }
 
         .payment-pill {
             display: inline-flex; align-items: center; gap: 0.5rem;
-            background: rgba(37,99,235,0.1); border: 1px solid var(--blue-border);
+            background: rgba(0,87,255,0.14); border: 1px solid var(--blue-border);
             border-radius: var(--radius); padding: 0.65rem 1rem;
             font-size: 0.82rem; color: var(--text-muted); margin-bottom: 2rem;
         }
@@ -33,73 +38,73 @@
 
         .pending-box {
             text-align: center; padding: 2.5rem;
-            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25);
+            background: rgba(255,138,61,0.08); border: 1px solid rgba(255,138,61,0.35);
             border-radius: var(--radius-xl); margin-bottom: 2rem;
         }
-        .pending-box h2 { font-size: 1.35rem; font-weight: 700; color: var(--amber); margin-bottom: 0.5rem; }
+        .pending-box h2 { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--amber); margin-bottom: 0.5rem; }
         .pending-box p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
 
         .brief-card {
-            background: #ffffff; border: 1px solid rgba(0,0,0,0.08);
+            background: #ffffff; border: 1px solid rgba(10,31,68,0.08);
             border-radius: 24px; overflow: hidden;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 24px rgba(3,10,26,0.3);
         }
         .brief-header {
-            padding: 1.5rem 2rem; border-bottom: 1px solid rgba(0,0,0,0.07);
-            background: linear-gradient(135deg, rgba(37,99,235,0.04), #fff);
+            padding: 1.5rem 2rem; border-bottom: 1px solid #EAE4DA;
+            background: linear-gradient(135deg, rgba(0,87,255,0.04), #fff);
         }
-        .brief-header h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: #111827; }
-        .brief-header p { font-size: 0.82rem; color: #6B7280; }
+        .brief-header h2 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; color: var(--navy); }
+        .brief-header p { font-size: 0.82rem; color: var(--ink-muted); }
         .brief-body { padding: 1.75rem 2rem; }
 
         .brief-section-title {
             font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em;
-            text-transform: uppercase; color: #2563EB; margin-bottom: 1rem;
-            padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.07);
+            text-transform: uppercase; color: var(--blue-ink); margin-bottom: 1rem;
+            padding-bottom: 0.5rem; border-bottom: 1px solid #EAE4DA;
         }
         .brief-group { margin-bottom: 1.25rem; }
-        .brief-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; display: block; }
-        .brief-label .req { color: #EF4444; }
+        .brief-label { font-size: 0.8rem; font-weight: 600; color: #3A3733; margin-bottom: 0.4rem; display: block; }
+        .brief-label .req { color: var(--red); }
 
         .brief-input, .brief-textarea {
             width: 100%; padding: 0.82rem 1rem;
-            background: #f9fafb; border: 1.5px solid rgba(0,0,0,0.12);
-            border-radius: 12px; color: #111827;
+            background: var(--surface-soft); border: 1.5px solid var(--line-light);
+            border-radius: 12px; color: var(--ink);
             font-size: 0.88rem; outline: none;
             transition: border-color 0.2s, box-shadow 0.2s; font-family: var(--font);
         }
-        .brief-input::placeholder, .brief-textarea::placeholder { color: #9CA3AF; }
-        .brief-input:focus, .brief-textarea:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .brief-input::placeholder, .brief-textarea::placeholder { color: var(--ink-soft); }
+        .brief-input:focus, .brief-textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(0,87,255,0.14); }
         .brief-textarea { resize: vertical; min-height: 90px; }
 
         .logo-upload-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
         .btn-upload {
             display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.7rem 1.2rem; background: #f3f4f6;
-            border: 1.5px dashed rgba(0,0,0,0.18); border-radius: 12px;
-            font-size: 0.84rem; font-weight: 600; color: #6B7280;
+            padding: 0.7rem 1.2rem; background: var(--surface-soft);
+            border: 1.5px dashed #B3A999; border-radius: 12px;
+            font-size: 0.84rem; font-weight: 600; color: var(--ink-muted);
             cursor: pointer; transition: all 0.2s; white-space: nowrap;
         }
-        .btn-upload:hover { border-color: #2563EB; color: #2563EB; background: rgba(37,99,235,0.06); }
+        .btn-upload:hover { border-color: var(--blue); color: var(--blue-ink); background: rgba(0,87,255,0.06); }
         #logoFile { display: none; }
-        #logoName { font-size: 0.8rem; color: #9CA3AF; }
+        #logoName { font-size: 0.8rem; color: var(--ink-soft); }
 
         .color-row { display: flex; gap: 0.65rem; align-items: flex-start; flex-wrap: wrap; }
         .color-swatches-wrap { display: flex; gap: 0.65rem; align-items: flex-start; flex-wrap: wrap; }
         .color-swatch-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
         .color-swatch {
             width: 44px; height: 44px; border-radius: 10px;
-            border: 1.5px solid rgba(0,0,0,0.12); cursor: pointer;
+            border: 1.5px solid var(--line-light); cursor: pointer;
         }
-        .color-swatch-label { font-size: 0.65rem; color: #9CA3AF; font-weight: 500; }
+        .color-swatch-label { font-size: 0.65rem; color: var(--ink-soft); font-weight: 500; }
         .btn-add-color {
             height: 44px; padding: 0 1rem; border-radius: 10px;
-            border: 1.5px dashed rgba(0,0,0,0.18); background: #f3f4f6;
+            border: 1.5px dashed #B3A999; background: var(--surface-soft);
             display: flex; align-items: center; justify-content: center; gap: 0.35rem;
-            font-size: 0.82rem; font-weight: 600; color: #6B7280; cursor: pointer;
+            font-size: 0.82rem; font-weight: 600; color: var(--ink-muted); cursor: pointer;
             transition: all 0.2s; flex-shrink: 0; white-space: nowrap;
         }
-        .btn-add-color:hover { border-color: #2563EB; color: #2563EB; background: rgba(37,99,235,0.06); }
+        .btn-add-color:hover { border-color: var(--blue); color: var(--blue-ink); background: rgba(0,87,255,0.06); }
         .btn-add-color.hidden { display: none; }
         .color-text { flex: 1; min-width: 180px; }
 
@@ -107,13 +112,13 @@
 
         .btn-submit-brief {
             width: 100%; padding: 1.1rem; border: none; border-radius: 12px;
-            font-size: 0.95rem; font-weight: 700; letter-spacing: 0.03em;
-            background: linear-gradient(135deg, #2563EB, #4F46E5);
+            font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; letter-spacing: 0.01em;
+            background: var(--blue);
             color: #fff; cursor: pointer; margin-top: 0.5rem;
-            box-shadow: 0 6px 24px rgba(37,99,235,0.35);
+            box-shadow: 0 6px 24px rgba(0,87,255,0.3);
             transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
         }
-        .btn-submit-brief:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(37,99,235,0.5); }
+        .btn-submit-brief:hover { transform: translateY(-2px); background: var(--blue-ink); box-shadow: 0 10px 32px rgba(0,87,255,0.42); }
         .btn-submit-brief:disabled { opacity: 0.55; pointer-events: none; }
 
         .thanks-card {
@@ -124,19 +129,19 @@
         @keyframes cardIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         .thanks-card.visible { display: block; }
         .thanks-icon { font-size: 3.5rem; margin-bottom: 1rem; }
-        .thanks-card h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text); }
+        .thanks-card h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; color: var(--text); }
         .thanks-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; max-width: 440px; margin: 0 auto 1.5rem; }
         .btn-volver {
             display: inline-flex; align-items: center; gap: 0.4rem;
-            padding: 0.75rem 1.75rem; background: #2563EB; color: #fff;
+            padding: 0.75rem 1.75rem; background: var(--blue); color: #fff; font-family: var(--font-display);
             border-radius: 12px; font-size: 0.88rem; font-weight: 700;
             border: none; cursor: pointer; transition: all 0.2s; text-decoration: none;
         }
-        .btn-volver:hover { background: #1d4ed8; }
+        .btn-volver:hover { background: var(--blue-ink); }
 
         .toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 500; display: flex; flex-direction: column; gap: 0.5rem; }
-        .toast { background: #111827; color: #F9FAFB; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1.25rem; font-size: 0.84rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: toastIn 0.3s ease both; }
-        .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563EB; flex-shrink: 0; }
+        .toast { background: var(--navy-deep); color: #F4F1EC; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1.25rem; font-size: 0.84rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 8px 32px rgba(3,10,26,0.35); animation: toastIn 0.3s ease both; }
+        .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue-2); flex-shrink: 0; }
         .toast.success .toast-dot { background: #10B981; }
         .toast.error .toast-dot { background: #EF4444; }
         @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
@@ -153,7 +158,7 @@
 
 <header class="pres-header">
     <a href="../index.html" class="header-logo">
-        <span>Gokywebs</span>
+        <img src="../logonav-claro.png" alt="" width="56" height="26"><span>Gokywebs</span>
     </a>
     <a href="../index.html" class="btn-back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -462,7 +467,7 @@ logoFileInput.addEventListener('change', () => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast('El archivo es muy grande (máx 5MB)', 'error'); logoFileInput.value = ''; return; }
     document.getElementById('logoName').textContent = '✓ ' + file.name;
-    document.getElementById('logoName').style.color = '#10B981';
+    document.getElementById('logoName').style.color = '#03643F';
 });
 
 async function fileToBase64(file) {

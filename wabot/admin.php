@@ -2412,7 +2412,7 @@ function burbujaCita(t, chat) {
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
-            <p class="meta" style="margin-top:0">Las plantillas deben estar aprobadas por Meta. El cron revisa a las 18 h de Argentina: la demo a las 72 h sin respuesta y el interesado a los 7 días del último mensaje de cualquiera de los dos. También podés enviarlas manualmente desde el chat o Seguimientos. Los chats anteriores a esta automatización no se envían en bloque.</p>
+            <p class="meta" style="margin-top:0">Las plantillas deben estar aprobadas por Meta. El cron revisa a las 18 h de Argentina: la demo a las 72 h sin respuesta y el interesado a los 4 días del último mensaje de cualquiera de los dos. También podés enviarlas manualmente desde el chat o Seguimientos. Los chats anteriores a esta automatización no se envían en bloque.</p>
             <?php $plantillasLabels = [
                 'confirmacion_demo_48h' => 'Seguimiento de la demo · 72 h',
                 'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
