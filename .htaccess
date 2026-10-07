@@ -46,12 +46,10 @@ RewriteRule ^pago/unico290(/.*)?$ /pago/unico330/ [R=301,L]
 RewriteRule ^planmensual/19000(/.*)?$ /planmensual/20000/ [R=301,L]
 RewriteRule ^planmensual/29000(/.*)?$ /planmensual/30000/ [R=301,L]
 
-# 5-oct-2026 (Pablo): el mensual subió a $22.000 / $32.000 (páginas mensual22000 y
-# mensual32000) y el 6-oct volvió a $20.000 / $30.000, con los planes de Mercado
-# Pago del 3-oct. Los links de $22.000 / $32.000 que ya se mandaron llevan a las
-# de hoy, que cobran menos.
+# 5-oct-2026 (Pablo): el mensual subió a $22.000 / $32.000 y el 6-oct volvió
+# a $20.000 / $30.000. El enlace viejo de $22.000 lleva al plan de $20.000.
+# /pago/mensual32000 vuelve a tener una página propia desde el 7-oct-2026.
 RewriteRule ^pago/mensual22000(/.*)?$ /pago/mensual20000/ [R=301,L]
-RewriteRule ^pago/mensual32000(/.*)?$ /pago/mensual30000/ [R=301,L]
 RewriteRule ^planmensual/22000(/.*)?$ /planmensual/20000/ [R=301,L]
 RewriteRule ^planmensual/32000(/.*)?$ /planmensual/30000/ [R=301,L]
 # Las páginas de fines de septiembre (19 al 29-sep) seguían online con sus montos
