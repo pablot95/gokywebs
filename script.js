@@ -200,8 +200,10 @@ function animateValue(element, start, end, duration) {
     window.requestAnimationFrame(step);
 }
 
-emailjs.init("_WA82jXCJEH8sWNSq");
-console.log('EmailJS inicializado correctamente');
+if (typeof emailjs !== 'undefined') {
+    emailjs.init("_WA82jXCJEH8sWNSq");
+    console.log('EmailJS inicializado correctamente');
+}
 
 if (contactForm) {
     contactForm.addEventListener('submit', function(e) {
@@ -554,6 +556,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Si el CDN de GSAP no cargó (red lenta, bloqueador), seguimos sin animaciones
+    // en vez de cortar el resto del DOMContentLoaded (efecto de tipeo incluido).
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
     console.log('✅ GSAP OK');
     
@@ -937,7 +942,8 @@ document.addEventListener('DOMContentLoaded', () => {
         portfolio: document.querySelectorAll('.portfolio-item').length,
         timeline: document.querySelectorAll('.timeline-item').length
     });
-    
+    }
+
     const words = ['Descubrilo acá.', 'Tu web ideal.', 'Vende online.', 'Tu marca en la web.'];
     let wordIndex = 0;
     let charIndex = 0;
@@ -975,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 (function() {
-    emailjs.init("_WA82jXCJEH8sWNSq");
+    if (typeof emailjs !== 'undefined') emailjs.init("_WA82jXCJEH8sWNSq");
 })();
 
 const contactFormElement = document.getElementById('contact-form');
