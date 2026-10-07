@@ -555,6 +555,12 @@ function wabot_cta_muestra_ya_ofrecida($conv) {
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
         if (($linea['q'] ?? '') !== 'bot') continue;
         if ($inicio > 0 && (int)($linea['ts'] ?? 0) < $inicio) continue;
+        /* El mensaje que lleva el link del formulario no ofrece nada: ya es el sí.
+         * Desde el 7-oct dice "Para hacer la demo, solo tendrías que llenar este
+         * formulario" (Pablo) y esa palabra más "formulario" bastaba para tomarlo por
+         * la oferta. */
+        $crudo = (string)($linea['t'] ?? '');
+        if (wabot_texto_tiene_link_form($crudo) || strpos($crudo, '{link}') !== false) continue;
         $t = wabot_normalizar_frase((string)($linea['t'] ?? ''));
         /* "como podria quedar tu web" es el encuadre que fijó Pablo el 2-sep y
          * no dice la palabra demo: sin esta alternativa el ofrecimiento que sí

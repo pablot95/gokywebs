@@ -48,7 +48,7 @@ $si = $c;
 clasifica(['otro']);
 $rSi = turno('Sí, dale', $si, $cfg);
 caso('un sí recibe solo el formulario, con el link de la charla',
-    count($rSi) === 1 && tiene_form($rSi) && str_starts_with($rSi[0], 'Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: https://gokywebs.com/form/'),
+    count($rSi) === 1 && tiene_form($rSi) && str_starts_with($rSi[0], 'Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: https://gokywebs.com/form/'),
     json_encode($rSi, JSON_UNESCAPED_UNICODE));
 caso('el formulario aclara que la entregamos en menos de 24 hs (21-sep; texto de Pablo del 2-oct)',
     mb_strpos($rSi[0] ?? '', 'La entregamos en menos de 24 hs') !== false, json_encode($rSi, JSON_UNESCAPED_UNICODE));

@@ -142,8 +142,8 @@ function wabot_textos_default() {
      * preguntar; si vende cursos, talleres o capacitaciones, plataforma de cursos. */
     /* Lo que copia el botón "Copiar form" del panel, para que Pablo se lo
      * mande él mismo (21-sep). El link con el código de la charla va abajo. */
-    // El mensaje del botón "Copiar form" del panel, con el {link} en el medio (Pablo, 2-oct).
-    'form_link_panel' => "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
+    // El mensaje del botón "Copiar form" del panel, con el {link} en el medio (Pablo, 2-oct; desde el 7-oct empieza "Para hacer la demo,", antes "…la primera entrega gratuita de la web,").
+    'form_link_panel' => "Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     'reconocimiento_activo' => false,
     'reconocimiento' => 'Te consulto, buscás vender por la web o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
@@ -436,9 +436,9 @@ function wabot_textos_default() {
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
-    'prediseno_link' => "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
+    'prediseno_link' => "Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     'prediseno_link_variantes' => [
-        "Para hacer la primera entrega gratuita de la web, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
+        "Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: {link}\nLa entregamos en menos de 24 hs.",
     ],
     'prediseno_referencia' => 'Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.',
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
