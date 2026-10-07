@@ -3119,6 +3119,14 @@ function burbujaCita(t, chat) {
             /* El único número de los filtros (Pablo, 4-oct): cuántos chats de ese
              * filtro tienen mensajes sin leer. Sin ninguno, no se muestra nada. */
             const sinLeer = items.filter(esNoLeido);
+            /* Pablo, 6-oct: los sin leer en la pestaña del navegador, como
+             * WhatsApp. Embebido, se lo pasa al admin; suelto, lo pone acá. */
+            const nSinLeer = sinLeer.filter(it => visibleEn(it, 'no_leidos')).length;
+            if (window.parent !== window) {
+                try { parent.postMessage({ wabotSinLeer: nSinLeer }, location.origin); } catch (e) {}
+            } else {
+                document.title = (nSinLeer > 0 ? '(' + nSinLeer + ') ' : '') + 'Bot WhatsApp — Gokywebs';
+            }
             for (const b of navBtns) {
                 const n = sinLeer.filter(it => visibleEn(it, b.dataset.grupo)).length;
                 let globo = b.querySelector('.conv-chip-n');

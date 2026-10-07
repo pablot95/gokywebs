@@ -1197,21 +1197,38 @@ async function sincronizarNoLeidosWabot() {
         });
         const data = await res.json();
         const items = data.items || [];
-        // Mismo criterio que la pestaña del panel (ver GRUPOS_SIN_LEER en
-        // wabot/admin.php): solo parte 2 y cola de demos, con el cliente
-        // esperando respuesta y el chat sin abrir.
-        const GRUPOS_SIN_LEER = ["pago", "presentados", "presentadas_48", "muestra"];
-        const noLeidos = items.filter(it =>
-            it.grupo !== "archivado"
-            && (GRUPOS_SIN_LEER.includes(it.grupo) || it.espera || it.handoff_pendiente)
-            && it.quien === "cliente" && it.no_leido).length;
-        const el = document.getElementById("countWabotNoLeidos");
-        if (el) el.textContent = noLeidos;
+        // Mismo criterio que el filtro "Sin leer" de los chats (esNoLeido y
+        // visibleEn en wabot/admin.php): el cliente escribió después de la
+        // última respuesta, no abriste el chat, no lo lleva el bot, y no es uno
+        // que solo recibió la bienvenida ni uno vencido (24 h sin escribir).
+        const ahora = Date.now() / 1000;
+        const noLeidos = items.filter(it => {
+            const ultimoCliente = Number(it.ultimo_cliente_ts || 0);
+            return it.grupo !== "archivado"
+                && !(it.estado === "bot" && !it.handoff_pendiente)
+                && ultimoCliente > Number(it.ultimo_salida_ts || 0)
+                && !it.contestado && !!it.no_leido
+                && !it.sin_respuesta_bienvenida
+                && !(ultimoCliente > 0 && ahora - ultimoCliente > 24 * 3600);
+        }).length;
+        ponerSinLeer(noLeidos);
     } catch (e) {
         console.warn("No se pudo sincronizar los no leídos del bot:", e);
     }
 }
-setInterval(sincronizarNoLeidosWabot, 60 * 1000);
+setInterval(sincronizarNoLeidosWabot, 30 * 1000);
+
+/* Pablo, 6-oct: "cuando tengo mensajes sin leer quiero que me aparezcan ahí
+   arriba como WhatsApp": la pestaña del navegador dice "(3) Panel de
+   Clientes…". Lo actualiza el sondeo de arriba y, al instante, el panel de
+   chats embebido cuando abrís uno (postMessage wabotSinLeer). */
+const TITULO_BASE = document.title;
+function ponerSinLeer(n) {
+    n = Math.max(0, Number(n) || 0);
+    document.title = (n > 0 ? `(${n}) ` : "") + TITULO_BASE;
+    const el = document.getElementById("countWabotNoLeidos");
+    if (el) el.textContent = n;
+}
 
 /* ── Puntito del aviso de la mañana, en Bocetos ──
    Guarda por teléfono cuándo salió el aviso de la mañana (wabot) y cuándo
@@ -1279,6 +1296,9 @@ window.addEventListener("resize", ajustarAltoWabot);
 window.addEventListener("message", (ev) => {
     if (ev.origin !== location.origin) return;
     const d = ev.data;
+    // El contador de "Sin leer" que manda el panel de chats (el de la pestaña
+    // WhatsApp o el del chat abierto desde otra pestaña).
+    if (d && typeof d.wabotSinLeer === "number") { ponerSinLeer(d.wabotSinLeer); return; }
     if (!d || d.wabot !== true) return;
 
     const f = document.getElementById("wabotFrame");
