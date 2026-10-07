@@ -2569,11 +2569,11 @@ function burbujaCita(t, chat) {
                         <button type="button" class="sec" id="btnPlan35"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual140 y pago/anual220). */ ?>
+                               datos para la transferencia (pago/anual120 y pago/anual190). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $140.000</button>
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $120.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $220.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
                                datos para la transferencia (pago/unico220 y pago/unico330). Desde el
@@ -3513,10 +3513,10 @@ function burbujaCita(t, chat) {
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($140.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
+            rrInsertar('Te paso el plan anual del sitio profesional ($120.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($60.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual120');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($220.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual220');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la

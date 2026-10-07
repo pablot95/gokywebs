@@ -167,7 +167,7 @@ $con19 = static fn($intro, $a, $m) => $intro . str_replace(['{A}', '{M}'], [$a, 
 $suyo = 'Para tu escuela de costura te armamos la plataforma con los cursos.';
 $panel21 = [
     ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
-        $con19('Para lo que me contás, te serviría un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.', '$140.000', '$20.000'),
+        $con19('Para lo que me contás, te serviría un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.', '$120.000', '$20.000'),
         $con19('Para lo que me contás, te serviría una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.', '$230.000', '$30.000'),
         $con19('Para tu inmobiliaria te serviría una web para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades.', '$190.000', '$30.000'),
         $con19($suyo, '$230.000', '$30.000'),   // escrita por Pablo, con el bloque viejo
@@ -192,11 +192,11 @@ caso('los cuatro bloques quedan con los precios de hoy',
     && mb_strpos($planes21[2], $lineasHoy('inmobiliaria')) !== false
     && mb_strpos($planes21[3], $lineasHoy('elearning')) !== false, $planes21[0]);
 // Desde el 26-sep a la noche el bloque vuelve a decir "por año" y "por mes", pero numerado.
-// 3-oct: $140.000 vuelve a ser el anual del sitio profesional: solo puede quedar en su bloque, el primero.
+// 3-oct: $120.000 vuelve a ser el anual del sitio profesional: solo puede quedar en su bloque, el primero.
 caso('no queda ningún monto viejo ni las viñetas del 19-sep',
     count(array_filter($planes21, fn($t) => mb_strpos($t, '$230.000') !== false
         || mb_strpos($t, '• Plan') !== false || mb_strpos($t, 'Hosting y dominio .com.ar') !== false)) === 0
-    && count(array_filter(array_slice($planes21, 1), fn($t) => mb_strpos($t, '$140.000') !== false)) === 0, implode("\n", $planes21));
+    && count(array_filter(array_slice($planes21, 1), fn($t) => mb_strpos($t, '$120.000') !== false)) === 0, implode("\n", $planes21));
 caso('las recomendaciones de fábrica viejas pasan a las cortas de ahora',
     mb_strpos($planes21[0], 'Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio') === 0
     && mb_strpos($planes21[2], 'Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros') === 0, $planes21[2]);
@@ -434,13 +434,13 @@ caso('si la lista del pago único sube, a la tienda ya cotizada le sale el suyo'
  * Desde el 3-oct, solo el mensual y el anual. */
 $detalleDe = static fn($m, $a) => "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a";
 caso('detalle de las modalidades: el sitio profesional, con sus 2 páginas (3-oct)',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual140'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual120'));
 caso('detalle de las modalidades: la inmobiliaria, con las de la tienda',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual220'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual190'));
 $sinTipo = wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, null, $cfgNoche);
 caso('detalle de las modalidades sin tipo: una página por grupo, sin el pago único',
     str_contains($sinTipo, 'gokywebs.com/pago/mensual20000 (sitio profesional) o gokywebs.com/pago/mensual30000 (tienda, cursos o inmobiliaria)')
-    && str_contains($sinTipo, 'gokywebs.com/pago/anual140 (sitio profesional) o gokywebs.com/pago/anual220 (tienda, cursos o inmobiliaria)')
+    && str_contains($sinTipo, 'gokywebs.com/pago/anual120 (sitio profesional) o gokywebs.com/pago/anual190 (tienda, cursos o inmobiliaria)')
     && !str_contains($sinTipo, '{link_') && !str_contains($sinTipo, 'Pago único'), $sinTipo);
 // 3-oct: el detalle guardado con las 3 (con el pago único) pasa al de 2.
 $detalleViejo = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";

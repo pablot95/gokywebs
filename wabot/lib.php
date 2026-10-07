@@ -3958,8 +3958,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): sus links salen
  * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
  * en las respuestas rápidas. Viven en pago/
- * (mensual20000, anual140, unico220 y, para tienda, cursos e inmobiliaria,
- * mensual30000, anual220, unico330; 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
+ * (mensual20000, anual120, unico220 y, para tienda, cursos e inmobiliaria,
+ * mensual30000, anual190, unico330 (el anual bajó el 7-oct: antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
  * las pestañas para pasar de uno al otro; el pago único ya no se ofrece y su
  * página solo la manda Pablo al que pide el código propio.
  *
@@ -3971,13 +3971,13 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_planes_paginas() {
     $tienda = [
         'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
-        'anual'   => ['pagina' => 'anual220',  'monto' => '$220.000'],
+        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
         'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [
         'landing'      => [
             'mensual' => ['pagina' => 'mensual20000', 'monto' => '$20.000'],
-            'anual'   => ['pagina' => 'anual140',  'monto' => '$140.000'],
+            'anual'   => ['pagina' => 'anual120',  'monto' => '$120.000'],
             'unico'   => ['pagina' => 'unico220',  'monto' => '$220.000'],
         ],
         'ecommerce'    => $tienda,

@@ -35,13 +35,13 @@ caso('una consulta sin regla asociada deriva toda la tanda', pp_silencio($c, $r)
 $c = pp_conv('landing');
 $c['precio_cotizado'] = '$180.000'; $c['mensualidad_cotizada'] = '$25.000'; $c['precio_unico_cotizado'] = '$240.000';
 $p = wabot_precio_vigente($c, $cfg);
-caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$140.000' && $p['mensualidad'] === '$20.000' && $p['precio_unico'] === '$220.000');
+caso('cotización original de septiembre toma las nuevas tarifas menores', $p['precio'] === '$120.000' && $p['mensualidad'] === '$20.000' && $p['precio_unico'] === '$220.000');
 $c2 = pp_conv('ecommerce');
 $c2['precio_cotizado'] = '$190.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$290.000';
 $p2 = wabot_precio_vigente($c2, $cfg);
-// 2-oct la lista bajó a $29.000 y valía la lista; desde el 3-oct la lista ($30.000 / $220.000 / $330.000) es más alta: vale lo congelado.
+// 2-oct la lista bajó a $29.000 y valía la lista; desde el 3-oct la lista ($30.000 / $190.000 / $330.000) es más alta: vale lo congelado.
 caso('cotización del 1-oct con $29.900 conserva sus montos, más bajos que la lista del 3-oct', $p2['mensualidad'] === '$29.900' && $p2['precio'] === '$190.000' && $p2['precio_unico'] === '$290.000');
-$c['precio_cotizado'] = '$120.000'; $c['presentado_ts'] = time(); $c['modalidad_elegida'] = 'anual';
+$c['precio_cotizado'] = '$100.000'; $c['presentado_ts'] = time(); $c['modalidad_elegida'] = 'anual';
 pp_api(pp_decision(['pago_link']));
 $r = turno('Mandame el link del anual', $c, $cfg);
 caso('una oferta especial menor no recibe una página que cobra más', pp_silencio($c, $r));
@@ -117,10 +117,10 @@ function pp_silencio($c, $r) {
         && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']);
 }
 
-foreach (['landing' => ['$20.000', '$140.000', '$220.000', '$80.000', '$160.000'],
-    'ecommerce' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000'],
-    'elearning' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000'],
-    'inmobiliaria' => ['$30.000', '$220.000', '$330.000', '$160.000', '$270.000']]
+foreach (['landing' => ['$20.000', '$120.000', '$220.000', '$60.000', '$160.000'],
+    'ecommerce' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000'],
+    'elearning' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000'],
+    'inmobiliaria' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -228,7 +228,7 @@ foreach (['Gracias', '👍', 'Gracias por comunicarte, nuestro horario de atenci
     caso('acuse o respuesta automática no inventa avance: ' . $texto, $r === [] && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
 // El pago único ya no se ofrece (3-oct), pero al que lo elige igual se le manda su página.
-foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual220', 'unico330']] as $tipo => [$anual, $propia]) {
+foreach (['landing' => ['anual120', 'unico220'], 'ecommerce' => ['anual190', 'unico330']] as $tipo => [$anual, $propia]) {
     foreach (['El plan anual' => [$anual, 'plan anual'], 'El pago único' => [$propia, 'pago único']] as $texto => [$pagina, $nombre]) {
         $c = pp_conv($tipo, ['presentado_ts' => time()]);
         pp_api(pp_decision(['pago_link']));
@@ -240,7 +240,7 @@ foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual220', 'un
 // 2-oct (Pablo): los links al detalle de cada modalidad ya no van en el turno
 // del precio; salen cuando el cliente los pide.
 caso('detalle_modalidades está en el catálogo que ve el clasificador', isset(wabot_postprecio_catalogo()['detalle_modalidades']));
-foreach (['landing' => ['mensual20000', 'anual140'], 'ecommerce' => ['mensual30000', 'anual220']] as $tipo => $paginas) {
+foreach (['landing' => ['mensual20000', 'anual120'], 'ecommerce' => ['mensual30000', 'anual190']] as $tipo => $paginas) {
     $c = pp_conv($tipo);
     pp_api(pp_decision(['detalle_modalidades']));
     $r = turno('Tenés más info de cada plan? Dónde veo qué incluye cada uno?', $c, $cfg);

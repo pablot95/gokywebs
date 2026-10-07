@@ -6133,7 +6133,7 @@ function wabot_modalidades_anual_primero($conv) {
     return ($ts > 0 && $ts < 1790353244) || ($ts >= 1790478900 && $ts < 1790533800);
 }
 
-/** "plan mensual de $20.000 o plan anual de $140.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
+/** "plan mensual de $20.000 o plan anual de $120.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if ($v['mensualidad'] === '') return $v['precio'];

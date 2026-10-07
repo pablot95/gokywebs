@@ -31,7 +31,7 @@ RewriteRule ^planmensual/29900(/.*)?$ /planmensual/30000/ [R=301,L]
 
 # El anual de tienda/cursos/inmobiliaria y los pagos únicos bajaron el mismo día
 # ($199.000 → $190.000, $299.000 → $290.000; el anual del sitio sigue en $149.000).
-RewriteRule ^pago/anual199(/.*)?$ /pago/anual220/ [R=301,L]
+RewriteRule ^pago/anual199(/.*)?$ /pago/anual190/ [R=301,L]
 RewriteRule ^pago/unico199(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico299(/.*)?$ /pago/unico330/ [R=301,L]
 
@@ -40,8 +40,7 @@ RewriteRule ^pago/unico299(/.*)?$ /pago/unico330/ [R=301,L]
 # renombraron; las de arriba ya apuntan directo a las nuevas, sin cadena.
 RewriteRule ^pago/mensual19000(/.*)?$ /pago/mensual20000/ [R=301,L]
 RewriteRule ^pago/mensual29000(/.*)?$ /pago/mensual30000/ [R=301,L]
-RewriteRule ^pago/anual149(/.*)?$ /pago/anual140/ [R=301,L]
-RewriteRule ^pago/anual190(/.*)?$ /pago/anual220/ [R=301,L]
+RewriteRule ^pago/anual149(/.*)?$ /pago/anual120/ [R=301,L]
 RewriteRule ^pago/unico190(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico290(/.*)?$ /pago/unico330/ [R=301,L]
 RewriteRule ^planmensual/19000(/.*)?$ /planmensual/20000/ [R=301,L]
@@ -60,10 +59,15 @@ RewriteRule ^planmensual/32000(/.*)?$ /planmensual/30000/ [R=301,L]
 # mensual20, 25 y 30 eran del sitio profesional; mensual35 y 40, del resto.
 RewriteRule ^pago/mensual(20|25|30)(/.*)?$ /pago/mensual20000/ [R=301,L]
 RewriteRule ^pago/mensual(35|40)(/.*)?$ /pago/mensual30000/ [R=301,L]
-RewriteRule ^pago/anual180(/.*)?$ /pago/anual140/ [R=301,L]
-RewriteRule ^pago/anual250(/.*)?$ /pago/anual220/ [R=301,L]
+RewriteRule ^pago/anual180(/.*)?$ /pago/anual120/ [R=301,L]
+RewriteRule ^pago/anual250(/.*)?$ /pago/anual190/ [R=301,L]
 RewriteRule ^pago/unico240(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
+
+# 7-oct-2026 (Pablo): anual $120.000 / $190.000 (antes $140.000 / $220.000). Las páginas se
+# renombraron; las de arriba ya apuntan directo a las nuevas.
+RewriteRule ^pago/anual140(/.*)?$ /pago/anual120/ [R=301,L]
+RewriteRule ^pago/anual220(/.*)?$ /pago/anual190/ [R=301,L]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
