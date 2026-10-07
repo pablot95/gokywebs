@@ -2684,7 +2684,7 @@ function burbujaCita(t, chat) {
                         </div>
                         <div class="rr-resultados" id="rrResultados" role="listbox"></div>
                     </div>
-                    <button type="button" id="respResize" class="resp-resize" aria-label="Arrastrá hacia arriba para agrandar el área de escritura" title="Arrastrá hacia arriba para agrandar; hacia abajo para achicar">↕</button>
+                    <button type="button" id="respResize" class="resp-resize" aria-label="Arrastrá hacia arriba para agrandar el área de escritura y hacia abajo para achicarla" title="Arrastrá hacia arriba para agrandar; hacia abajo para achicar. Doble clic: tamaño automático">↕</button>
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
@@ -3423,8 +3423,14 @@ function burbujaCita(t, chat) {
             setTimeout(() => { boton.textContent = previo; }, 1500);
         });
 
-        // Crece con el contenido al escribir, pegar o elegir una respuesta rápida.
-        // El límite es 80vh, sin tapar del todo el historial del chat.
+        // Crece con el contenido al escribir, pegar o elegir una respuesta rápida,
+        // hasta un máximo que no tape del todo el historial del chat. La manija de
+        // arriba lo agranda y lo achica a voluntad (7-oct, Pablo: "no se puede achicar
+        // cuando hay mucho texto"): antes la altura nunca bajaba del alto del contenido,
+        // así que con un texto largo arrastrar hacia abajo no hacía nada. Ahora el
+        // tamaño elegido a mano manda sobre el del contenido (el texto que no entra se
+        // desplaza dentro de la caja) hasta que se vacía el cuadro, al enviar, o se
+        // vuelve al tamaño automático con doble clic en la manija.
         if (resizeGrip && txt) {
             let altoManual = 0;
             const ajustarAlto = () => {
@@ -3435,14 +3441,20 @@ function burbujaCita(t, chat) {
                 const minimoChat = window.innerWidth <= 720 ? window.innerHeight * .42 : 80;
                 const disponible = contenedor ? contenedor.clientHeight - cabecera - minimoChat - 70 : window.innerHeight;
                 const maximo = Math.max(minimo, Math.min(window.innerHeight * .8, disponible));
-                txt.style.height = 'auto';
-                const contenido = txt.scrollHeight;
-                txt.style.height = Math.min(maximo, Math.max(minimo, contenido, altoManual)) + 'px';
-                txt.style.overflowY = contenido > maximo ? 'auto' : 'hidden';
+                let alto;
+                if (altoManual > 0) {
+                    alto = Math.min(maximo, Math.max(minimo, altoManual));
+                } else {
+                    txt.style.height = 'auto';
+                    alto = Math.min(maximo, Math.max(minimo, txt.scrollHeight));
+                }
+                txt.style.height = alto + 'px';
+                txt.style.overflowY = txt.scrollHeight > alto + 1 ? 'auto' : 'hidden';
             };
             txt.addEventListener('input', ajustarAlto);
             window.addEventListener('resize', ajustarAlto);
             ajustarAlto();
+            resizeGrip.addEventListener('dblclick', () => { altoManual = 0; ajustarAlto(); });
             resizeGrip.addEventListener('pointerdown', ev => {
                 if (ev.button !== 0) return;
                 ev.preventDefault();
@@ -3450,7 +3462,7 @@ function burbujaCita(t, chat) {
                 const inicioAlto = txt.getBoundingClientRect().height;
                 resizeGrip.setPointerCapture(ev.pointerId);
                 const mover = evento => {
-                    altoManual = Math.max(0, inicioAlto + inicioY - evento.clientY);
+                    altoManual = Math.max(1, inicioAlto + inicioY - evento.clientY);
                     ajustarAlto();
                 };
                 const terminar = () => {
@@ -3465,7 +3477,7 @@ function burbujaCita(t, chat) {
             resizeGrip.addEventListener('keydown', ev => {
                 if (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown') return;
                 ev.preventDefault();
-                altoManual = Math.max(0, txt.getBoundingClientRect().height + (ev.key === 'ArrowUp' ? 20 : -20));
+                altoManual = Math.max(1, txt.getBoundingClientRect().height + (ev.key === 'ArrowUp' ? 20 : -20));
                 ajustarAlto();
             });
         }
