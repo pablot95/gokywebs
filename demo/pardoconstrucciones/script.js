@@ -1,0 +1,12 @@
+'use strict';
+const $=s=>document.querySelector(s);
+const menu=$('.menu-button'),nav=$('.main-nav'),models=$('.model-switch'),float=$('#wsp-float');
+menu?.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Cerrar menú':'Abrir menú');models.classList.toggle('is-hidden',open)});
+nav?.addEventListener('click',e=>{if(e.target.closest('a')){nav.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Abrir menú')}});
+let previousY=0,timer;
+addEventListener('scroll',()=>{float.classList.toggle('visible',scrollY>600);if(Math.abs(scrollY-previousY)>3&&scrollY>90)models.classList.add('is-hidden');clearTimeout(timer);timer=setTimeout(()=>{if(!nav.classList.contains('open'))models.classList.remove('is-hidden')},110);previousY=scrollY},{passive:true});
+const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('in');observer.unobserve(entry.target)}}),{threshold:0});
+document.querySelectorAll('[data-animate]').forEach(el=>observer.observe(el));
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('dragstart',e=>e.preventDefault());
+document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k==='f12'||(e.ctrlKey&&e.shiftKey&&['i','j','c'].includes(k))||(e.ctrlKey&&k==='u'))e.preventDefault()});
