@@ -22,3 +22,9 @@ footer{background:#16233a;color:#e8edf6;padding:55px 0}.footer-inner{display:gri
 @media(max-width:640px){.catalog-grid .product-image,.featured-grid .product-image{aspect-ratio:1/1.5}}
 
 @media(max-width:640px){.catalog-grid .prod-buy,.featured-grid .prod-buy{display:none}}
+
+/* El selector de modelos flota sobre el encabezado, sin reservar una franja arriba. */
+:root{--gw-modelos-h:0px}
+.site-header{margin-top:0}
+@media(min-width:781px){.header-inner{min-height:108px}.main-nav{margin-top:36px}}
+@media(max-width:780px){.header-inner{min-height:112px;padding-top:42px}}

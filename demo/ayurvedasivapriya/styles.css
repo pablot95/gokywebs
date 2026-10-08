@@ -22,3 +22,9 @@
 
 .m2 .hero-grid{width:min(calc(100% - 2*var(--gutter)),1280px);margin-inline:auto}
 @media(max-height:800px) and (min-width:681px){.m1 .hero-grid{padding-block:32px}.m1 .hero-copy .overline{margin-bottom:14px}.m1 .hero h1{font-size:clamp(2.8rem,4.45vw,4.7rem);margin-bottom:18px}.m1 .hero-actions{margin-top:19px}.m1 .hero-foot{margin-top:16px}}
+
+/* El selector de modelos flota sobre el encabezado, sin reservar una franja arriba. */
+:root{--gw-modelos-h:0px}
+body{padding-top:0}
+@media(min-width:851px){.header-inner{min-height:112px}.main-nav{margin-top:36px}}
+@media(max-width:850px){.header-inner{min-height:116px;padding-top:44px}}
