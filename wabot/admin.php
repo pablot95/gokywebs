@@ -1308,6 +1308,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
 .burb-cita b { display:block; color:var(--ac); font-size:11.5px; font-weight:700; }
 .burb-cita.sin-origen { cursor:default; font-style:italic; }
+.conv-item-borrador { color:#4ade80; font-weight:600; }
 /* El anuncio del que escribió (9-oct), arriba del mensaje como en WhatsApp. */
 .burb-anuncio { display:flex; gap:9px; margin:0 0 7px; padding:6px; border-radius:8px; border-left:3px solid #4ea1ff;
     background:rgba(255,255,255,.06); white-space:normal; max-width:360px; }
@@ -3036,8 +3037,16 @@ function burbujaCita(t, chat) {
             renderFechasChats();
             const termino = buscarChatsEl.value.trim();
             const buscandoGeneral = termino.length > 0;
+            // Los borradores también cambian la fila ("Borrador: …"), aunque no llegue nada nuevo.
+            let firmaBorradores = '';
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('wabot_borrador_')) firmaBorradores += k + '=' + localStorage.getItem(k) + '\n';
+                }
+            } catch (e) {}
             const firma = JSON.stringify(items) + '|' + [...filtrosActivos].sort().join(',') + '|' + termino + '|'
-                + [...fechasChatsSeleccionadas].sort().join(',');
+                + [...fechasChatsSeleccionadas].sort().join(',') + '|' + firmaBorradores;
             if (firma === firmaLista) return;
             firmaLista = firma;
 
@@ -3135,7 +3144,17 @@ function burbujaCita(t, chat) {
 
                 const ult = document.createElement('div');
                 ult.className = 'conv-item-ult';
-                ult.textContent = (it.quien === 'cliente' ? '' : (it.quien === 'humano' ? 'Vos: ' : 'Bot: ')) + (it.ult || '—');
+                // Lo que quedó escrito sin mandar en ese chat, como en WhatsApp (9-oct).
+                let borrador = '';
+                try { borrador = (localStorage.getItem('wabot_borrador_' + it.tel) || '').replace(/\s+/g, ' ').trim(); } catch (e) {}
+                if (borrador) {
+                    const marca = document.createElement('span');
+                    marca.className = 'conv-item-borrador';
+                    marca.textContent = 'Borrador: ';
+                    ult.append(marca, borrador);
+                } else {
+                    ult.textContent = (it.quien === 'cliente' ? '' : (it.quien === 'humano' ? 'Vos: ' : 'Bot: ')) + (it.ult || '—');
+                }
 
                 // Las filas quedan limpias: el filtro activo ya explica por qué
                 // está cada chat.
@@ -4276,6 +4295,30 @@ function burbujaCita(t, chat) {
         pintar(<?= json_encode(array_values(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv))), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();
+
+        /* Borrador del chat (Pablo, 9-oct: "si estoy escribiendo en un chat, me
+           voy a otro lado y vuelvo al chat, lo que estaba escribiendo se pierde").
+           Abrir otro chat recarga la página: lo escrito queda guardado en este
+           navegador con la clave del chat, vuelve al abrirlo (también en el
+           modal "Ver chat" del admin) y se borra al enviar. Misma clave que la
+           vista en vivo, así el borrador es uno solo. */
+        const BORRADOR_KEY = 'wabot_borrador_' + TEL;
+        function borradorChatGuardar() {
+            try {
+                if (txt.value.trim() !== '') localStorage.setItem(BORRADOR_KEY, txt.value);
+                else localStorage.removeItem(BORRADOR_KEY);
+            } catch (e) {}
+        }
+        try {
+            const guardado = localStorage.getItem(BORRADOR_KEY);
+            if (guardado && txt.value.trim() === '') {
+                txt.value = guardado;
+                txt.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        } catch (e) {}
+        txt.addEventListener('input', borradorChatGuardar);
+        window.addEventListener('pagehide', borradorChatGuardar);
+
         setInterval(refrescar, 5000);
         // Abrirlo lo marca leído al instante (antes lo hacía el PHP al cargar) y
         // la lista sale con el contador ya descontado.
