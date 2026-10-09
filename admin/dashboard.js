@@ -43,6 +43,7 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     initRealtime();
     cargarErrores({ silencioso: true });
+    escucharErrores();
     sincronizarNoLeidosWabot();
 });
 
@@ -100,7 +101,15 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
         if (activeTab === "completados") renderCompletados();
         if (activeTab === "metricas") renderSubMetrica(subMetrica);
-        if (activeTab === "wabot") { abrirWabot(); requestAnimationFrame(ajustarAltoWabot); }
+        if (activeTab === "wabot") {
+            abrirWabot();
+            requestAnimationFrame(() => {
+                ajustarAltoWabot();
+                // El chat que quedó abierto adentro se marca leído recién ahora,
+                // que vuelve a estar a la vista (wabot/admin.php, chatALaVista).
+                try { document.getElementById("wabotFrame").contentWindow.refrescar?.(); } catch (_) {}
+            });
+        }
         if (activeTab === "mantenimiento") renderMantenimiento();
         if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); if (inversionVista !== "contactos") cargarIngresosMp(); }
         if (activeTab === "errores") cargarErrores();
@@ -355,8 +364,8 @@ function erroresNombreCliente(c) {
 // Las webs esperadas salen de los dominios cargados en clientes, completados y mantenimiento.
 // Si una web que avisa no coincide con ningún dominio, se busca el cliente por nombre
 // (autoserviciohudson.com.ar -> "Autoservicio Hudson"), porque muchas fichas no tienen el dominio cargado.
-function erroresResumen() {
-    const { docs, resueltos, ocultos, pings } = erroresDatos;
+function erroresResumen(datos = erroresDatos) {
+    const { docs, resueltos, ocultos, pings } = datos;
     const porWeb = new Map();
     const sinDominio = [];
     // Esta misma web (1-oct): no es de un cliente pero se monitorea igual, y figura desde el
@@ -435,17 +444,70 @@ function erroresResumen() {
 
 // Los dominios de los clientes llegan por snapshots aparte: cuando cambian, se reagrupa lo de Errores.
 function refrescarErroresPorClientes() {
-    if (!erroresDatos) return;
-    if (activeTab === "errores") renderErrores(); else actualizarBadgeErrores();
+    if (!erroresDatos && !erroresVivo) return;
+    if (activeTab === "errores" && erroresDatos) renderErrores(); else actualizarBadgeErrores();
 }
 
+/* El globito cuenta siempre el mes actual, en vivo (erroresVivo), aunque en la
+   pestaña se esté mirando otro mes. */
 function actualizarBadgeErrores() {
     const el = document.getElementById("countErrores");
-    if (!el || !erroresDatos || erroresMes !== erroresMesActual()) return;
-    const n = erroresResumen().filter(w => !w.oculto).reduce((t, w) => t + w.altosPend, 0);
+    const datos = erroresVivo || (erroresMes === erroresMesActual() ? erroresDatos : null);
+    if (!el || !datos) return;
+    const n = erroresResumen(datos).filter(w => !w.oculto).reduce((t, w) => t + w.altosPend, 0);
     el.textContent = n;
     el.hidden = n === 0;
 }
+
+/* Pablo, 9-oct: "la pestaña de errores solo me dice los errores si entro a la
+   pestaña". El globito se calculaba una sola vez, al abrir el admin, y no se
+   enteraba de los errores que llegaban después (el admin queda abierto todo el
+   día). Ahora escucha en vivo los errores del mes y las marcas de resuelto u
+   oculto; si la pestaña está mirando el mes actual, se redibuja sola. Las
+   señales (errores_pings) siguen siendo las de la última carga: no cambian
+   el globito y se escriben con cada visita a las webs. */
+let erroresVivo = null;          // { docs, resueltos, ocultos, pings } del mes actual
+let erroresVivoMes = null;
+let erroresVivoCortes = [];
+function escucharErrores() {
+    const mes = erroresMesActual();
+    if (erroresVivoMes === mes) return;
+    erroresVivoCortes.forEach(cortar => cortar());
+    erroresVivoMes = mes;
+    erroresVivo = null;
+    const [y, m] = mes.split("-").map(Number);
+    let docs = null, resueltos = null, ocultos = null;
+    const aplicar = () => {
+        if (!docs || !resueltos) return;
+        erroresVivo = { docs, resueltos, ocultos, pings: erroresDatos?.pings || new Map() };
+        if (erroresDatos && erroresMes === mes) {
+            erroresDatos = { ...erroresVivo, pings: erroresDatos.pings };
+            if (activeTab === "errores") renderErrores(); else actualizarBadgeErrores();
+            if (activeTab === "mantenimiento") renderMantenimiento();
+            return;
+        }
+        actualizarBadgeErrores();
+    };
+    const qMes = query(collection(db, "errores_web"),
+        where("at", ">=", Timestamp.fromDate(new Date(y, m - 1, 1))),
+        where("at", "<", Timestamp.fromDate(new Date(y, m, 1))));
+    erroresVivoCortes = [
+        onSnapshot(qMes, snap => { docs = snap.docs.map(d => d.data()); aplicar(); },
+            e => console.warn("No se pudieron escuchar los errores:", e)),
+        onSnapshot(collection(db, "errores_sitios"), snap => {
+            resueltos = new Map();
+            ocultos = new Set();
+            snap.forEach(d => {
+                const x = d.data();
+                if (x.resueltoHasta?.toDate) resueltos.set(d.id, x.resueltoHasta.toDate());
+                if (x.oculto) ocultos.add(d.id);
+            });
+            aplicar();
+        }, e => console.warn("No se pudieron escuchar los errores:", e)),
+    ];
+}
+// Al cambiar de mes, la escucha pasa al mes nuevo.
+setInterval(() => { if (currentUser) escucharErrores(); }, 60 * 60 * 1000);
 
 // Mensaje para mandarle al cliente. Solo existe si no queda nada importante sin resolver:
 // no se puede copiar un "ya fue solucionado" mientras haya algo pendiente.
@@ -611,8 +673,10 @@ function renderInversion() {
     // normalizado, para poder cruzar contra el tel crudo de wabot y sacar
     // también la fecha de conversión de cada uno.
     const clientePorTel = new Map();
+    const clientePorId = new Map();
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente") continue;
+        clientePorId.set(c.id, c);
         const t = cleanArgPhone(c.telefono);
         if (t.length >= 8 && !clientePorTel.has(t)) clientePorTel.set(t, c);
     }
@@ -625,8 +689,14 @@ function renderInversion() {
         // En Instagram, c.tel es el ID de la cuenta (podía tener 16 dígitos),
         // no un teléfono: cruzar eso nunca matcheaba. tel_whatsapp es el
         // WhatsApp real si lo dejó (o el mismo tel, en whatsapp).
-        const telC = cleanArgPhone(c.tel_whatsapp || c.tel);
-        const clienteMatch = telC.length >= 8 ? clientePorTel.get(telC) : null;
+        // Pablo, 9-oct: "Suan Baby no aparece en Inversión". El WhatsApp que
+        // dejó en el form no era el del chat, y solo se probaba ese. Ahora va
+        // primero la ficha a la que se le presentó la demo (cliente_id) y
+        // después los dos teléfonos.
+        const tels = [c.tel_whatsapp, c.canal === "instagram" ? "" : c.tel]
+            .map(cleanArgPhone).filter(t => t.length >= 8);
+        const clienteMatch = (c.cliente_id && clientePorId.get(c.cliente_id))
+            || tels.map(t => clientePorTel.get(t)).find(Boolean) || null;
         c._esCliente = !!clienteMatch;
         c._clienteDoc = clienteMatch || null;
         c._clienteDesde = clienteMatch ? fechaPasoACliente(clienteMatch) : null;
@@ -797,14 +867,15 @@ function cobrosDeCliente(c) {
 function cobrosAnualesYUnicos() {
     const lista = [];
     const ids = new Set();
+    // El negocio primero (9-oct): Pablo busca "Suan Baby", no a la persona.
     for (const c of (clients || [])) {
         ids.add(c.id);
-        for (const k of cobrosDeCliente(c)) lista.push({ ...k, nombre: c.nombre || c.proyecto || "Cliente" });
+        for (const k of cobrosDeCliente(c)) lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente" });
     }
     for (const c of (completados || [])) {
         if (c.clienteId && ids.has(c.clienteId)) continue;
         for (const k of cobrosDeCliente({ ...c, entregadoAt: c.entregadoAt || c.completadoAt })) {
-            lista.push({ ...k, nombre: c.nombre || c.proyecto || "Cliente" });
+            lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente" });
         }
     }
     return lista;
@@ -1979,7 +2050,7 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
-// 6-oct-2026 (Pablo): mensual $20.000 / $30.000 (del 5 al 6-oct fue $22.000 / $32.000); anual $120.000 / $190.000 (desde el 7-oct; antes $140.000 / $220.000); pago único $220.000 / $330.000.
+// 6-oct-2026 (Pablo): mensual $20.000 / $30.000 (del 5 al 6-oct fue $22.000 / $32.000); anual $160.000 / $240.000 (desde el 9-oct; del 7 al 9-oct fue $120.000 / $190.000, antes $140.000 / $220.000); pago único $220.000 / $330.000.
 // La seña es de $60.000 para el anual y el pago único. El mensual y el anual incluyen un cambio por mes;
 // el plan con cambios ya no existe. Desde el 3-oct el pago único sale de la oferta pública (solo para
 // quien pide la titularidad del código; lo maneja Pablo a mano): sigue acá para poder cotizarlo, pero
@@ -1987,15 +2058,15 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 // `unico` es el precio del plan anual; `propia`, el del pago único. A los
 // clientes que ya tienen un plan, planDe les toma los montos guardados en el doc.
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    unico: 120000, sena: 60000, mensual: 20000, propia: 220000 },
-    ecommerce:    { label: "Ecommerce",            unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
-    cursos:       { label: "Plataforma de cursos", unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
+    profesional:  { label: "Sitio profesional",    unico: 160000, sena: 60000, mensual: 20000, propia: 220000 },
+    ecommerce:    { label: "Ecommerce",            unico: 240000, sena: 60000, mensual: 30000, propia: 330000 },
+    cursos:       { label: "Plataforma de cursos", unico: 240000, sena: 60000, mensual: 30000, propia: 330000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 240000, sena: 60000, mensual: 30000, propia: 330000 },
     // Desde el 19-sep-2026 el portal de noticias se cotiza como la tienda (Pablo): presupuestos/noticias.
-    noticias:     { label: "Portal de noticias",   unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
+    noticias:     { label: "Portal de noticias",   unico: 240000, sena: 60000, mensual: 30000, propia: 330000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 190000, sena: 60000, mensual: 30000, propia: 330000 };
+const PLAN_RESTO = { unico: 240000, sena: 60000, mensual: 30000, propia: 330000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
 const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único" };
 // Modalidades que se cobran con seña y saldo al entregar: el plan anual y la web propia.
@@ -2960,6 +3031,7 @@ const TEMPLATE_72H_MOTIVOS = {
     canal:    "Su chat es de Instagram, y el template de 72 h sale solo por WhatsApp.",
     sin_chat: "No hay una conversación del bot con ese teléfono.",
     ambiguo:  "Hay más de una conversación del bot con ese teléfono: mandalo desde el chat que corresponde, en la pestaña WhatsApp.",
+    ocupado:  "El chat estaba ocupado (entraba un mensaje en ese momento). Probá de nuevo en unos segundos.",
     error:    "Meta rechazó el template, o está apagado en Ajustes del bot.",
 };
 
@@ -4275,17 +4347,6 @@ function getPropuestaFechaInfo(p) {
     return { key: "Sin fecha", hora: "", sortMs: -Infinity };
 }
 
-/* Hora (24 hs) en que el CLIENTE mandó el primer mensaje de la charla, no
-   cuándo se armó el boceto (eso ya lo muestra "hora" de arriba, que sale de
-   createdAt). Solo los bocetos que llegaron con una charla real de por medio
-   traen `primerMensajeAt`: los cargados a mano o por un formulario sin chat
-   previo no tienen de dónde sacarlo. */
-function horaPrimerMensajeDe(p) {
-    if (!p.primerMensajeAt?.toDate) return "";
-    const d = p.primerMensajeAt.toDate();
-    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
-
 // Fechas marcadas para filtrar Bocetos. Vive fuera de renderPropuestas() para
 // no perderse en cada re-render (búsqueda, llegada de datos nuevos).
 const fechasSeleccionadas = new Set();
@@ -4375,8 +4436,9 @@ function renderPropuestas() {
     }
 
     tbody.innerHTML = list.map(p => {
+        // Solo la hora en que completó el formulario (createdAt). La del primer
+        // mensaje de la charla (💬) se sacó el 9-oct a pedido de Pablo.
         const { key: fecha, hora } = getPropuestaFechaInfo(p);
-        const horaPrimerMensaje = horaPrimerMensajeDe(p);
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
@@ -4386,9 +4448,7 @@ function renderPropuestas() {
                 <td>
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
-                    ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}
-                    ${horaPrimerMensaje ? `<div class="muted" style="font-size:11px;margin-top:2px" title="Hora en que el cliente mandó el primer mensaje de la charla">💬 ${escapeHtml(horaPrimerMensaje)}</div>` : ""}
-                </td>
+                    ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}                </td>
                 <td class="prop-col-marca">
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`
@@ -4429,7 +4489,7 @@ function renderPropuestas() {
                 <td class="notes-col">
                     <div class="notes-cell" data-note-id="${p.id}">
                         <span class="notes-label${p.notas ? ' has-note' : ''}">${escapeHtml(p.notas || 'Agregar nota…')}</span>
-                        <textarea class="notes-input" maxlength="500" rows="2" data-original="${escapeHtml(p.notas || '')}">${escapeHtml(p.notas || '')}</textarea>
+                        <textarea class="notes-input" maxlength="2000" rows="2" data-original="${escapeHtml(p.notas || '')}">${escapeHtml(p.notas || '')}</textarea>
                     </div>
                 </td>
                 <td class="actions-col">
@@ -4622,10 +4682,10 @@ function openPropuestaModal(id) {
         <input type="text" id="propNombreNegocio" maxlength="160" value="${escapeHtml(negocioFields.nombreNegocio)}">
 
         <label for="propRubro">Sobre el negocio y qué quiere lograr con la web</label>
-        <textarea id="propRubro" rows="4" maxlength="800" style="resize:vertical">${escapeHtml(getPropuestaSobreNegocio(p))}</textarea>
+        <textarea id="propRubro" rows="4" maxlength="2000" style="resize:vertical">${escapeHtml(getPropuestaSobreNegocio(p))}</textarea>
 
         <label for="propAdicionales">Adicionales elegidos</label>
-        <textarea id="propAdicionales" rows="2" maxlength="500">${escapeHtml(adicionalesTexto)}</textarea>
+        <textarea id="propAdicionales" rows="2" maxlength="2000">${escapeHtml(adicionalesTexto)}</textarea>
 
         <label for="propTelefono">Teléfono / WhatsApp</label>
         <input type="text" id="propTelefono" maxlength="40" value="${escapeHtml(p.telefono || p.contacto_cel || "")}">
@@ -4641,7 +4701,7 @@ function openPropuestaModal(id) {
         ${instagramUsuario(p.instagram) ? `<div class="prop-row"><span class="prop-label">Instagram</span><span>${instagramLinkHTML(p.instagram)}</span></div>` : ""}
 
         <label for="propObjetivos">Objetivos de la web</label>
-        <textarea id="propObjetivos" rows="2" maxlength="500">${escapeHtml(objetivosTexto)}</textarea>
+        <textarea id="propObjetivos" rows="2" maxlength="2000">${escapeHtml(objetivosTexto)}</textarea>
 
         ${estiloPagina ? `
         <label for="propEstiloPagina">Estilo de página</label>
@@ -4650,7 +4710,7 @@ function openPropuestaModal(id) {
 
         ${incluirSiOSi ? `
         <label for="propIncluirSiOSi">Incluir sí o sí</label>
-        <textarea id="propIncluirSiOSi" rows="2" maxlength="600">${escapeHtml(incluirSiOSi)}</textarea>
+        <textarea id="propIncluirSiOSi" rows="2" maxlength="2000">${escapeHtml(incluirSiOSi)}</textarea>
         ` : ""}
 
         ${showCantCursos ? `
@@ -4675,7 +4735,7 @@ function openPropuestaModal(id) {
         ` : ""}
 
         <label for="propNotas">Notas internas</label>
-        <textarea id="propNotas" rows="3" maxlength="500" placeholder="Notas internas (no visibles para el cliente)">${escapeHtml(p.notas || "")}</textarea>
+        <textarea id="propNotas" rows="3" maxlength="2000" placeholder="Notas internas (no visibles para el cliente)">${escapeHtml(p.notas || "")}</textarea>
 
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60A5FA;margin-bottom:8px">💰 Presupuesto</div>

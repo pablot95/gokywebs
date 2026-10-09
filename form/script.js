@@ -647,7 +647,8 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, referencia: 300, incluir: 600 };
+// Resumen e incluir: 2000 (Pablo, 9-oct: "1000 es poco"; venían en 600).
+const LIMITES = { nombre_negocio: 80, instagram: 100, resumen: 2000, colores: 200, referencia: 300, incluir: 2000 };
 const NOMBRES_CAMPO = { nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
     referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
@@ -801,8 +802,43 @@ const _pintarContadores = [_contador('resumen', 'resumenContador'), _contador('i
  * tampoco cuenta como elegido. */
 function colorElegido(id) {
     const el = document.getElementById(id);
-    return !!el && el.value.toLowerCase() !== el.defaultValue.toLowerCase();
+    return !!el && (el.dataset.elegido === '1' || el.value.toLowerCase() !== el.defaultValue.toLowerCase());
 }
+
+/* Colores sin elegir (9-oct, Pablo): en vez del azul y el verde de fábrica, un
+   círculo punteado con un "+" (clase sin-color) hasta que eligen uno; abajo
+   dice el color elegido y aparece "Quitar" para volver a dejarlo vacío. */
+const COLOR_IDS = ['color_principal', 'color_secundario'];
+function pintarColor(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const elegido = colorElegido(id);
+    el.classList.toggle('sin-color', !elegido);
+    const estado = document.getElementById(id + '_estado');
+    if (estado) estado.textContent = elegido ? el.value.toUpperCase() : 'Sin elegir';
+    const quitar = document.querySelector(`[data-color-quitar="${id}"]`);
+    if (quitar) quitar.hidden = !elegido;
+}
+COLOR_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const elegir = () => { el.dataset.elegido = '1'; pintarColor(id); };
+    el.addEventListener('input', elegir);
+    el.addEventListener('change', elegir);
+    pintarColor(id);
+});
+document.querySelectorAll('[data-color-quitar]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.dataset.colorQuitar;
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = el.defaultValue;
+        delete el.dataset.elegido;
+        pintarColor(id);
+        saveDraft();
+        el.focus();
+    });
+});
 
 // Instagram (28-sep): abajo del campo, el link que queda con lo que escriben.
 // Si pegan el link entero o ponen un @, se muestra ya limpio (igual que el servidor).
@@ -854,7 +890,16 @@ function restoreDraft() {
 
     Object.entries(d.fields || {}).forEach(([id, v]) => {
         const el = document.getElementById(id);
-        if (!el || el.value.trim()) return;
+        if (!el) return;
+        // Un color siempre trae valor: se restaura solo si es uno que eligieron.
+        if (el.type === 'color') {
+            if (/^#[0-9a-f]{6}$/i.test(v) && v.toLowerCase() !== el.defaultValue.toLowerCase()) {
+                el.value = v;
+                el.dataset.elegido = '1';
+            }
+            return;
+        }
+        if (el.value.trim()) return;
         // Una opción que ya no está en la lista dejaría el desplegable en blanco.
         if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === v)) return;
         el.value = v;
@@ -876,3 +921,4 @@ restoreDraft();
 _pintarContadores.forEach(pintar => pintar());
 pintarInstagram();
 pintarPlan();
+COLOR_IDS.forEach(pintarColor);

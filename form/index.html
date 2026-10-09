@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20261007-rebrand">
+    <link rel="stylesheet" href="styles.css?v=20261009-colores-mas">
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -88,9 +88,9 @@
                         <div class="field-group">
                             <label class="field-label" for="resumen">
                                 Breve resumen de lo que ofrecés <span class="req">*</span>
-                                <span class="field-hint" id="resumenContador" aria-live="polite">0/600</span>
+                                <span class="field-hint" id="resumenContador" aria-live="polite">0/2000</span>
                             </label>
-                            <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required maxlength="600"></textarea>
+                            <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required maxlength="2000"></textarea>
                         </div>
 
                         <div class="field-group" id="telefonoGroup">
@@ -138,20 +138,26 @@
 
                         <!-- Dos colores (2-oct, sin el de fondos). El que no se toca no viaja:
                              script.js solo manda los que cambiaron, y si no cambió ninguno la
-                             ficha queda "A elección del diseñador" (wabot/lib.php). -->
+                             ficha queda "A elección del diseñador" (wabot/lib.php).
+                             9-oct (Pablo): sin colores de fábrica a la vista; hasta que eligen
+                             uno se ve un círculo punteado con un "+" (clase sin-color). -->
                         <div class="field-group">
                             <label class="field-label">
                                 Colores de identidad <span class="optional">(opcional)</span>
-                                <span class="field-hint">¿Tenés colores de marca? Si no, dejalos como están y los elegimos nosotros.</span>
+                                <span class="field-hint">¿Tenés colores de marca? Tocá el + para elegirlos. Si no, dejalos vacíos y los elegimos nosotros.</span>
                             </label>
                             <div class="color-fields-grid">
                                 <div class="field-group color-field-group">
                                     <label class="field-label small-label" for="color_principal">Color principal</label>
-                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
+                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input sin-color" value="#2563EB" aria-describedby="color_principal_estado">
+                                    <span class="color-estado" id="color_principal_estado">Sin elegir</span>
+                                    <button type="button" class="color-quitar" data-color-quitar="color_principal" hidden>Quitar</button>
                                 </div>
                                 <div class="field-group color-field-group">
                                     <label class="field-label small-label" for="color_secundario">Color secundario</label>
-                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
+                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input sin-color" value="#16A34A" aria-describedby="color_secundario_estado">
+                                    <span class="color-estado" id="color_secundario_estado">Sin elegir</span>
+                                    <button type="button" class="color-quitar" data-color-quitar="color_secundario" hidden>Quitar</button>
                                 </div>
                             </div>
                         </div>
@@ -167,9 +173,9 @@
                         <div class="field-group">
                             <label class="field-label" for="incluir">
                                 Cosas que quieras incluir sí o sí en la web <span class="optional">(opcional)</span>
-                                <span class="field-hint" id="incluirContador" aria-live="polite">0/600</span>
+                                <span class="field-hint" id="incluirContador" aria-live="polite">0/2000</span>
                             </label>
-                            <textarea id="incluir" name="incluir" class="field-input field-textarea autosize" rows="1" placeholder="Ej: galería de trabajos, mapa con la ubicación, horarios de atención" maxlength="600"></textarea>
+                            <textarea id="incluir" name="incluir" class="field-input field-textarea autosize" rows="1" placeholder="Ej: galería de trabajos, mapa con la ubicación, horarios de atención" maxlength="2000"></textarea>
                         </div>
 
                     </div>
@@ -292,6 +298,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261006-sin-pago-unico"></script>
+    <script type="module" src="script.js?v=20261009-colores-mas"></script>
 </body>
 </html>

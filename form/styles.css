@@ -475,6 +475,38 @@ body {
 .color-swatch-input:hover { border-color: var(--blue); transform: scale(1.05); }
 .color-swatch-input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 
+/* Sin elegir (9-oct, Pablo): "sacar los colores predeterminados, poné un +
+   que se entienda que los pueden cambiar". El input igual trae un valor (un
+   type=color no puede estar vacío), pero no se ve: círculo punteado con un +. */
+.color-swatch-input.sin-color {
+    border-style: dashed;
+    border-color: var(--blue-mid);
+    background: var(--blue-light) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230057FF' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E") center / 24px no-repeat;
+}
+.color-swatch-input.sin-color:hover { border-color: var(--blue); }
+.color-swatch-input.sin-color::-webkit-color-swatch-wrapper { opacity: 0; }
+.color-swatch-input.sin-color::-webkit-color-swatch { opacity: 0; }
+.color-swatch-input.sin-color::-moz-color-swatch { opacity: 0; }
+
+.color-estado {
+    font-size: 12px;
+    color: var(--text-light);
+    font-variant-numeric: tabular-nums;
+}
+.color-quitar {
+    border: none;
+    background: none;
+    padding: 2px 6px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: underline;
+    cursor: pointer;
+}
+.color-quitar:hover { color: var(--blue); }
+/* Oculto pero ocupando su lugar: si no, el círculo del otro color baja. */
+.color-quitar[hidden] { display: inline-block; visibility: hidden; }
+
 @media (prefers-reduced-motion: reduce) {
     .color-swatch-input { transition: none; }
     .color-swatch-input:hover { transform: none; }

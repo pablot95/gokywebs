@@ -121,7 +121,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     $contactos = [];
     foreach ($semanas as $s) {
         foreach ($s['detalle'] as $d) {
-            $contactos[] = ['tel' => $d['tel'], 'tel_whatsapp' => $d['tel_whatsapp'], 'nombre' => $d['nombre'], 'canal' => $d['canal'], 'inicio_ts' => $d['inicio_ts']];
+            $contactos[] = ['tel' => $d['tel'], 'tel_whatsapp' => $d['tel_whatsapp'], 'cliente_id' => $d['cliente_id'] ?? '', 'nombre' => $d['nombre'], 'canal' => $d['canal'], 'inicio_ts' => $d['inicio_ts']];
         }
     }
     header('Content-Type: application/json; charset=utf-8');
@@ -527,7 +527,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if ($lock) {
             try {
                 $conv = wabot_conv_load($tel);
-                $resultado = wabot_template_interesado_enviar($conv, $cfg);
+                // Pablo, 9-oct: "no me deja mandar el template de seguimiento a
+                // todos". Desde el chat también es una decisión manual: sale en
+                // cualquier chat de WhatsApp, con estrella o sin ella (como en
+                // Seguimientos). El automático de las 18 h sigue pidiendo la estrella.
+                $resultado = wabot_template_interesado_enviar($conv, $cfg, true);
                 if ($resultado === 'ok') wabot_conv_save($conv);
             } finally { wabot_lock_soltar($lock); }
         }
@@ -832,9 +836,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // Abrir el chat es lo que lo marca "leído". Solo se llama para la
         // conversación abierta en el panel (cada 5s mientras siga abierta), así
         // que no hace falta un botón aparte ni un evento de "marcar leído".
+        // Pablo, 9-oct: "hay mensajes que pasan a leídos por más que no haya
+        // abierto el chat". El chat que quedaba abierto en la pestaña WhatsApp
+        // del admin se seguía refrescando con el iframe oculto (Pablo en otra
+        // pestaña) y cada vuelta lo marcaba leído. Ahora el panel manda
+        // visto=1 solo si el chat está a la vista (chatALaVista en el JS).
         $ultimaFila = end($conv['transcript']);
         $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
-        if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
+        if (!empty($_POST['visto']) && $ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
             wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
         }
         echo json_encode([
@@ -844,6 +853,28 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
             'handoff_pendiente' => !empty($conv['handoff_pendiente']),
         ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    /* "Transcribir" en un audio que quedó sin texto (Pablo, 9-oct: "algunos
+     * audios no los transcribe"): Gemini estaba saturado cuando llegó. Se
+     * vuelve a probar a pedido, con el archivo que ya está guardado. */
+    if ($a === 'transcribir_audio' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $conv = wabot_conv_load($_POST['tel']);
+        $clave = wabot_conversation_key($conv);
+        $archivo = (string)($_POST['archivo'] ?? '');
+        $quien = ($_POST['quien'] ?? '') === 'humano' ? 'humano' : 'cliente';
+        $ruta = WABOT_DATA . '/media/' . preg_replace('/[^0-9A-Za-z]/', '', $clave) . '/' . $archivo;
+        if (!preg_match('/^\d{8}-\d{6}-[0-9a-f]{8}\.[a-z0-9]{1,5}$/', $archivo) || !is_file($ruta)) {
+            echo json_encode(['ok' => false, 'error' => 'No se encontró el audio.']);
+            exit;
+        }
+        $mimes = array_flip(wabot_media_extensiones());
+        $mime = $mimes[strtolower(pathinfo($archivo, PATHINFO_EXTENSION))] ?? 'audio/ogg';
+        @set_time_limit(150);
+        $ok = wabot_audio_fila_transcribir($clave, $archivo, (string)file_get_contents($ruta), $mime, $quien);
+        echo json_encode($ok ? ['ok' => true]
+            : ['ok' => false, 'error' => 'No se pudo transcribir (la IA no respondió o el audio no se entiende). Probá en un rato.']);
         exit;
     }
     /**
@@ -1246,6 +1277,9 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .media-box { margin-top:6px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
 .burb.bot .media-box, .burb.humano .media-box { align-items:flex-end; }
 .media-img { display:block; max-width:220px; max-height:220px; border-radius:8px; cursor:zoom-in; object-fit:cover; }
+/* Stickers (9-oct): chicos y sin recorte, como en WhatsApp. Los animados se mueven igual. */
+.media-sticker { display:block; width:128px; height:128px; object-fit:contain; }
+.media-transcribir { margin-top:4px; padding:3px 10px; font-size:12px; }
 .media-audio { max-width:260px; height:36px; }
 .media-video { display:block; max-width:260px; max-height:260px; border-radius:8px; }
 .media-nombre { font-size:12.5px; color:var(--dim); word-break:break-all; }
@@ -2453,16 +2487,10 @@ function burbujaCita(t, chat) {
         $verMotivo = null;
         $verResuelto = $ver !== '' ? wabot_conv_resolver($ver, $verMotivo) : null;
         $conv     = $ver !== '' ? wabot_conv_load($verResuelto ?? $ver) : null;
-        // Abrir el chat lo marca leído antes de armar la lista, para que el
-        // contador de Demos/Presentados ya salga descontado en esta misma carga.
-        if ($conv) {
-            $ultimaFila = end($conv['transcript']);
-            $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
-            if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
-                wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
-                $conv = wabot_conv_load(wabot_conversation_key($conv));
-            }
-        }
+        // Cargar la página con ?ver= ya no lo marca leído (9-oct): el navegador
+        // puede restaurar el iframe del admin en ese chat sin que Pablo lo esté
+        // mirando. Lo marca el JS del chat apenas carga, si está a la vista
+        // (chatALaVista), y enseguida refresca la lista.
         // La lista la arma lib.php y se pinta por JS: el render inicial y el
         // refresco automático usan exactamente los mismos datos y el mismo código.
         $items = wabot_lista_items();
@@ -2554,7 +2582,8 @@ function burbujaCita(t, chat) {
                             <button class="sec"<?= ($template72Enviado || !$template72Activo) ? ' disabled' : '' ?> title="<?= $e($template72Enviado ? 'Ya fue enviado en esta conversación.' : (!$template72Activo ? 'Activá y configurá el template en Ajustes.' : 'Envía manualmente la plantilla aprobada por Meta.')) ?>"><?= $template72Enviado ? '✓ Template 72 h enviado' : 'Enviar template 72 h' ?></button>
                         </form>
                         <?php endif; ?>
-                        <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['favorito'])):
+                        <?php /* En todos los chats de WhatsApp, no solo los favoritos (9-oct). */ ?>
+                        <?php if (wabot_canal($conv) !== 'instagram'):
                             $templateInteresadoEnviado = !empty($conv['seguimiento_interesado_enviado']);
                             $templateInteresadoActivo = wabot_plantilla_config('seguimiento_interesado', $cfg) !== null;
                         ?>
@@ -2586,11 +2615,11 @@ function burbujaCita(t, chat) {
                         <button type="button" class="sec" id="btnPlan35"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual120 y pago/anual190). */ ?>
+                               datos para la transferencia (pago/anual160 y pago/anual240; 9-oct). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $120.000</button>
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $160.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $240.000</button>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
                                datos para la transferencia (pago/unico220 y pago/unico330). Desde el
@@ -3532,20 +3561,22 @@ function burbujaCita(t, chat) {
         /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. Texto genérico, sin tipo de web ni
-         * monto (Pablo, 5-oct): solo cambia el link. */
+         * monto (Pablo, 5-oct): solo cambia el link. Texto de Pablo del 9-oct,
+         * tal cual. */
+        const TEXTO_PLAN_MENSUAL = 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: ';
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual20000');
+            rrInsertar(TEXTO_PLAN_MENSUAL + 'gokywebs.com/pago/mensual20000');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo: gokywebs.com/pago/mensual30000');
+            rrInsertar(TEXTO_PLAN_MENSUAL + 'gokywebs.com/pago/mensual30000');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($120.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($60.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual120');
+            rrInsertar('Te paso el plan anual del sitio profesional ($160.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($100.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual160');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($240.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($180.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual240');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
@@ -3706,7 +3737,12 @@ function burbujaCita(t, chat) {
             for (const t of lineas) {
                 const d = document.createElement('div');
                 d.className = 'burb ' + t.q;
-                d.textContent = t.t;
+                /* 9-oct: el sticker se ve (abajo) y no hace falta el "[sticker]";
+                   las filas viejas "[unsupported]" dicen qué pasó. */
+                const esSticker = t.media && t.media.clase === 'sticker' && t.media.archivo;
+                d.textContent = esSticker && t.t === '[sticker]' ? ''
+                    : t.t === '[unsupported]' ? '[Mensaje que WhatsApp no deja ver acá (una encuesta, un "ver una vez", un mensaje editado o automático de otra empresa…): miralo en el celular]'
+                    : t.t;
                 if (t.id) d.dataset.id = t.id;
                 if (t.cita) d.prepend(burbujaCita(t, chat));
                 if (t.media && t.media.archivo) {
@@ -3728,6 +3764,33 @@ function burbujaCita(t, chat) {
                         audio.preload = 'none';
                         audio.src = base + '&modo=ver';
                         caja.appendChild(audio);
+                        // Sin transcripción (Gemini no respondió cuando llegó): se puede pedir de nuevo.
+                        if ((t.q === 'cliente' && t.t === '[audio]') || (t.q === 'humano' && t.t === '[nota de voz]')) {
+                            const tr = document.createElement('button');
+                            tr.type = 'button';
+                            tr.className = 'sec media-transcribir';
+                            tr.textContent = 'Transcribir';
+                            tr.title = 'Volver a pedir la transcripción de este audio';
+                            tr.addEventListener('click', async () => {
+                                tr.disabled = true; tr.textContent = 'Transcribiendo…';
+                                try {
+                                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                        body: new URLSearchParams({ accion: 'transcribir_audio', tel: TEL, archivo: t.media.archivo, quien: t.q }) });
+                                    const j = await r.json();
+                                    if (j.ok) { ultimoRender = ''; await refrescar(); return; }
+                                    tr.textContent = 'Transcribir'; tr.disabled = false;
+                                    alert(j.error || 'No se pudo transcribir.');
+                                } catch (e) { tr.textContent = 'Transcribir'; tr.disabled = false; alert('Error de red: ' + e); }
+                            });
+                            caja.appendChild(tr);
+                        }
+                    } else if (esSticker) {
+                        const img = document.createElement('img');
+                        img.className = 'media-sticker';
+                        img.src = base + '&modo=ver';
+                        img.loading = 'lazy';
+                        img.alt = 'Sticker';
+                        caja.appendChild(img);
                     } else if (t.media.clase === 'video') {
                         const video = document.createElement('video');
                         video.className = 'media-video';
@@ -3860,10 +3923,24 @@ function burbujaCita(t, chat) {
             }
         }
 
+        /* ¿Pablo está viendo este chat? (9-oct) No, si la pestaña del navegador
+           está en segundo plano, ni si el panel está embebido en el admin y el
+           iframe está oculto porque Pablo está en otra pestaña (Clientes,
+           Bocetos…): un elemento con display:none no tiene rectángulos. Solo a
+           la vista el refresco lo marca leído. */
+        function chatALaVista() {
+            if (document.hidden) return false;
+            try {
+                const marco = window.frameElement;
+                if (marco && !marco.getClientRects().length) return false;
+            } catch (e) {}
+            return true;
+        }
+
         async function refrescar() {
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'transcript', tel: TEL }) });
+                    body: new URLSearchParams({ accion: 'transcript', tel: TEL, visto: chatALaVista() ? '1' : '' }) });
                 const j = await r.json();
                 if (j.transcript) pintar(j.transcript);
                 if (typeof j.ventana === 'number') { ventana = j.ventana; estadoVentana(); }
@@ -4152,6 +4229,10 @@ function burbujaCita(t, chat) {
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();
         setInterval(refrescar, 5000);
+        // Abrirlo lo marca leído al instante (antes lo hacía el PHP al cargar) y
+        // la lista sale con el contador ya descontado.
+        if (chatALaVista()) refrescar().then(refrescarLista);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
         </script>
         <?php endif; ?>
 

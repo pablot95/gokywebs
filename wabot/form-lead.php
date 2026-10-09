@@ -82,7 +82,8 @@ function formlead_instagram_sincronizar($clave) {
 function formlead_extras($payload, &$motivo = null) {
     $motivo = null;
     $extras = [];
-    foreach (['estilo' => 40, 'referencia' => 300, 'incluir' => 600, 'instagram' => 100] as $campo => $max) {
+    // Incluir hasta 2000 (Pablo, 9-oct; era 600). Mismo tope en form/script.js.
+    foreach (['estilo' => 40, 'referencia' => 300, 'incluir' => 2000, 'instagram' => 100] as $campo => $max) {
         if (!array_key_exists($campo, $payload)) continue;
         $valor = is_scalar($payload[$campo]) ? trim((string)$payload[$campo]) : '';
         if (mb_strlen($valor) > $max) {

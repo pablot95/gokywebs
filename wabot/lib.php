@@ -226,6 +226,10 @@ function wabot_ia_disponible($para = null) {
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return false;
     $j = json_decode((string)@file_get_contents(WABOT_DATA . '/ia-circuit.json'), true);
     if (!is_array($j) || (int)($j['hasta_ts'] ?? 0) <= time()) return true;
+    /* Un audio solo lo frena un 429 (9-oct, "algunos audios no los transcribe"):
+     * con el circuito abierto por un 503 de otro pedido, el audio que llegaba
+     * en esos 30 s quedaba "[audio]" para siempre sin dejar rastro. */
+    if ($para === 'audio') return (int)($j['http'] ?? 0) !== 429;
     return $para === 'clasificador' && ($j['donde'] ?? '') !== 'clasificador' && (int)($j['http'] ?? 0) !== 429;
 }
 
@@ -2005,6 +2009,54 @@ function wabot_transcript_citas($lineas) {
     return $lineas;
 }
 
+/**
+ * Lo que leen la IA y el clasificador cuando el cliente tocó "Responder" sobre
+ * un mensaje (Pablo, 9-oct: "que el bot sepa leer el mensaje al que el usuario
+ * se está refiriendo"): '[respondiendo a un mensaje nuestro: «…»] '. Vacío si
+ * la línea no cita nada. $porId: las líneas de la charla completa por id
+ * (wabot_lineas_por_id), que se arma una vez por turno.
+ */
+function wabot_cita_prefijo_ia($fila, $porId) {
+    $id = trim((string)($fila['cita'] ?? ''));
+    if ($id === '') return '';
+    $citada = $porId[$id] ?? null;
+    if (!$citada) return '[respondiendo a un mensaje anterior] ';
+    $t = mb_substr(trim((string)preg_replace('/\s+/u', ' ', (string)($citada['t'] ?? ''))), 0, 200);
+    return '[respondiendo a ' . (($citada['q'] ?? '') === 'cliente' ? 'un mensaje suyo' : 'un mensaje nuestro') . ': «' . $t . '»] ';
+}
+
+/** Las líneas de la charla completa (con lo archivado) por id, solo si alguna de $lineas cita algo. */
+function wabot_lineas_por_id($conv, $lineas) {
+    $cita = false;
+    foreach ((array)$lineas as $l) if (!empty($l['cita'])) { $cita = true; break; }
+    if (!$cita) return [];
+    $porId = [];
+    foreach (wabot_transcript_completo(wabot_conversation_key($conv), $conv) as $l) {
+        if (!empty($l['id'])) $porId[(string)$l['id']] = $l;
+    }
+    return $porId;
+}
+
+/** Las líneas del cliente del final del transcript: la tanda que se está contestando. */
+function wabot_tanda_cliente($conv) {
+    $tanda = [];
+    $todo = (array)($conv['transcript'] ?? []);
+    for ($i = count($todo) - 1; $i >= 0 && ($todo[$i]['q'] ?? '') === 'cliente'; $i--) array_unshift($tanda, $todo[$i]);
+    return $tanda;
+}
+
+/** Lo que cita la tanda nueva, en una línea ('' si no responde a nada). */
+function wabot_tanda_citas_texto($conv) {
+    $tanda = wabot_tanda_cliente($conv);
+    $porId = wabot_lineas_por_id($conv, $tanda);
+    $citas = [];
+    foreach ($tanda as $t) {
+        $p = trim(wabot_cita_prefijo_ia($t, $porId));
+        if ($p !== '') $citas[] = $p;
+    }
+    return implode(' ', array_unique($citas));
+}
+
 function wabot_transcript_completo($clave, $conv = null) {
     $vivo = is_array($conv) ? (array)($conv['transcript'] ?? []) : [];
     $path = wabot_historial_path($clave);
@@ -2306,6 +2358,50 @@ function wabot_wa_adjunto($msg, $tipo) {
         return ['clase' => 'reaccion', 'ref' => '',
                 'caption' => trim((string)($msg['reaction']['emoji'] ?? ''))];
     }
+    /* Pablo, 9-oct: "siguen llegando cosas con unsupported". Lo que no es un
+     * adjunto quedaba como "[tipo]" a secas. El botón de una plantilla o de un
+     * mensaje interactivo trae su texto: va como lo que escribió el cliente.
+     * La ubicación y el contacto, en palabras ('etiqueta', la usa el webhook). */
+    if ($tipo === 'button') {
+        return ['clase' => 'boton', 'ref' => '', 'caption' => trim((string)($msg['button']['text'] ?? ''))];
+    }
+    if ($tipo === 'interactive') {
+        $i = (array)($msg['interactive'] ?? []);
+        return ['clase' => 'boton', 'ref' => '',
+                'caption' => trim((string)($i['button_reply']['title'] ?? ($i['list_reply']['title'] ?? '')))];
+    }
+    if ($tipo === 'location') {
+        $l = (array)($msg['location'] ?? []);
+        $donde = implode(' · ', array_filter([trim((string)($l['name'] ?? '')), trim((string)($l['address'] ?? ''))], 'strlen'));
+        $mapa = isset($l['latitude'], $l['longitude']) ? 'maps.google.com/?q=' . (float)$l['latitude'] . ',' . (float)$l['longitude'] : '';
+        return ['clase' => 'ubicacion', 'ref' => '', 'caption' => '',
+                'etiqueta' => trim('ubicación: ' . implode(' ', array_filter([$donde, $mapa], 'strlen')))];
+    }
+    if ($tipo === 'contacts') {
+        $partes = [];
+        foreach ((array)($msg['contacts'] ?? []) as $ct) {
+            $tels = array_map(fn($p) => (string)($p['phone'] ?? ''), (array)($ct['phones'] ?? []));
+            $partes[] = trim((string)($ct['name']['formatted_name'] ?? '') . ' ' . implode(', ', array_filter($tels, 'strlen')));
+        }
+        return ['clase' => 'contacto', 'ref' => '', 'caption' => '',
+                'etiqueta' => 'contacto: ' . (implode(' · ', array_filter($partes, 'strlen')) ?: 'sin datos')];
+    }
+    if ($tipo === 'unsupported') {
+        // Meta dice qué era en unsupported.type (desde 2025) y el código en errors[].
+        $sub = (string)($msg['unsupported']['type'] ?? '');
+        $codigo = (int)($msg['errors'][0]['code'] ?? 0);
+        $que = [
+            'poll_creation' => 'una encuesta', 'poll_update' => 'un voto en una encuesta',
+            'edit' => 'una edición de un mensaje', 'reaction' => 'una reacción', 'gif' => 'un GIF',
+            'hsm' => 'un mensaje automático de otra empresa', 'interactive' => 'un mensaje con botones',
+            'list' => 'una lista', 'button' => 'un botón', 'group_invite' => 'una invitación a un grupo',
+            'media_placeholder' => 'un archivo que todavía no terminó de llegar', 'pin' => 'un mensaje fijado',
+            'keep_in_chat' => 'un mensaje guardado en el chat', 'order' => 'un pedido', 'product' => 'un producto',
+            'view_once' => 'una foto o video de "ver una vez"',
+        ][$sub] ?? 'un tipo de mensaje';
+        return ['clase' => 'unsupported', 'ref' => '', 'caption' => '', 'sub' => $sub, 'codigo' => $codigo,
+                'etiqueta' => "mandó $que que WhatsApp no deja ver acá: miralo en el celular"];
+    }
     return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
 }
 
@@ -2514,6 +2610,9 @@ function wabot_cohortes_procesar_conv($tel, $cv, $desde, $hasta, &$semanas) {
         $s['detalle'][] = [
             'tel'                  => $tel,
             'tel_whatsapp'         => $telWsp !== '' ? $telWsp : $tel,
+            // La ficha de Clientes a la que se le presentó la demo: el cruce más
+            // firme, por si el WhatsApp del form no es el del chat (Suan Baby, 9-oct).
+            'cliente_id'           => (string)($cv['cliente_id'] ?? ''),
             'nombre'               => $nombre,
             'canal'                => wabot_canal($cv),
             'inicio_ts'            => $inicio,
@@ -4022,8 +4121,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): sus links salen
  * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
  * en las respuestas rápidas. Viven en pago/
- * (mensual20000, anual120, unico220 y, para tienda, cursos e inmobiliaria,
- * mensual30000, anual190, unico330 (el anual bajó el 7-oct: antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
+ * (mensual20000, anual160, unico220 y, para tienda, cursos e inmobiliaria,
+ * mensual30000, anual240, unico330 (el anual subió el 9-oct: del 7 al 9-oct anual120 y anual190, antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
  * las pestañas para pasar de uno al otro; el pago único ya no se ofrece y su
  * página solo la manda Pablo al que pide el código propio.
  *
@@ -4035,13 +4134,13 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_planes_paginas() {
     $tienda = [
         'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
-        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
+        'anual'   => ['pagina' => 'anual240',  'monto' => '$240.000'],
         'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [
         'landing'      => [
             'mensual' => ['pagina' => 'mensual20000', 'monto' => '$20.000'],
-            'anual'   => ['pagina' => 'anual120',  'monto' => '$120.000'],
+            'anual'   => ['pagina' => 'anual160',  'monto' => '$160.000'],
             'unico'   => ['pagina' => 'unico220',  'monto' => '$220.000'],
         ],
         'ecommerce'    => $tienda,
@@ -4573,7 +4672,13 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
     if (isset($GLOBALS['WABOT_TEST_MEDIA'])) {
         return call_user_func($GLOBALS['WABOT_TEST_MEDIA'], $bytes, $mime, $tipo, $caption);
     }
-    if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR' || !$bytes) return null;
+    if (!wabot_ia_disponible($tipo === 'audio' ? 'audio' : null) || WABOT_GEMINI_KEY === 'COMPLETAR' || !$bytes) {
+        // Que quede rastro de por qué un audio no se transcribió (antes no lo había).
+        if ($tipo === 'audio' && $bytes && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+            wabot_log('error', ['donde' => 'media_gemini', 'tipo' => $tipo, 'motivo' => 'ia_no_disponible']);
+        }
+        return null;
+    }
 
     // "audio/ogg; codecs=opus" → "audio/ogg"
     $mime = trim(explode(';', (string)$mime)[0]);
@@ -4612,25 +4717,29 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
         }
     }
 
-    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
+    /* Pablo, 9-oct: "algunos audios no los transcribe". Era un solo intento:
+     * con Gemini saturado (503 "high demand", o 0 por timeout) el audio quedaba
+     * "[audio]" para siempre (7 y 8-oct, 13 audios). Ahora, si falla por algo
+     * pasajero, se prueba otra vez con el modelo alterno. Y el tope de 500
+     * tokens cortaba los audios largos: el del audio es más alto. */
     $body = json_encode([
         'contents' => [['parts' => [
             ['text' => $prompt],
             ['inlineData' => ['mimeType' => $mime, 'data' => base64_encode($bytes)]],
         ]]],
-        'generationConfig' => ['temperature' => 0, 'maxOutputTokens' => 500],
+        'generationConfig' => ['temperature' => 0, 'maxOutputTokens' => $tipo === 'audio' ? 4000 : 800],
     ], JSON_UNESCAPED_UNICODE);
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 60,
-    ]);
-    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-
+    $modelo = wabot_gemini_modelo();
+    $code = 0; $res = '';
+    foreach ([$modelo, wabot_gemini_modelo_alterno($modelo)] as $intento => $m) {
+        if ($intento > 0) sleep(2);
+        [$code, $res] = wabot_gemini_post($m, $body, 60);
+        if ($code >= 200 && $code < 300 && $res) break;
+        wabot_log('error', ['donde' => 'media_gemini', 'tipo' => $tipo, 'modelo' => $m, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+        if (!in_array((int)$code, [0, 500, 502, 503, 504], true)) break;
+    }
     if ($code < 200 || $code >= 300 || !$res) {
-        wabot_log('error', ['donde' => 'media_gemini', 'tipo' => $tipo, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
         wabot_ia_reportar_error('media', $code);
         return null;
     }
@@ -4650,18 +4759,29 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
  * entiende o falla la IA, la línea queda como estaba.
  */
 function wabot_nota_voz_transcribir($clave, $archivo, $bytes, $mime) {
+    return wabot_audio_fila_transcribir($clave, $archivo, $bytes, $mime, 'humano');
+}
+
+/**
+ * Transcribe el audio de una línea que quedó sin texto: la nota de voz de
+ * Pablo ("[nota de voz]", q humano) o el audio del cliente que Gemini no pudo
+ * leer cuando llegó ("[audio]", q cliente; botón "Transcribir" del panel,
+ * 9-oct). La línea pasa a "[audio] lo que dijo". Si falla, queda como estaba.
+ */
+function wabot_audio_fila_transcribir($clave, $archivo, $bytes, $mime, $quien = 'humano') {
+    $marca = $quien === 'cliente' ? '[audio]' : '[nota de voz]';
     if ($archivo === '' || !$bytes || strlen((string)$bytes) > WABOT_MEDIA_MAX_LEER) return false;
     $texto = wabot_media_a_texto($bytes, $mime, 'audio');
     if ($texto === null || trim($texto) === '') return false;
     $lock = wabot_lock_tomar_esperando($clave, 40, 250000);
-    if (!$lock) { wabot_log('error', ['donde' => 'nota_voz_transcribir', 'clave' => $clave, 'motivo' => 'ocupado']); return false; }
+    if (!$lock) { wabot_log('error', ['donde' => 'audio_transcribir', 'clave' => $clave, 'motivo' => 'ocupado']); return false; }
     try {
         $conv = wabot_conv_load($clave);
         for ($i = count($conv['transcript']) - 1; $i >= 0; $i--) {
             $fila = $conv['transcript'][$i];
-            if (($fila['q'] ?? '') !== 'humano' || (string)($fila['media']['archivo'] ?? '') !== $archivo) continue;
-            if (($fila['t'] ?? '') !== '[nota de voz]') return false;
-            $conv['transcript'][$i]['t'] = '[nota de voz] ' . trim($texto);
+            if (($fila['q'] ?? '') !== $quien || (string)($fila['media']['archivo'] ?? '') !== $archivo) continue;
+            if (($fila['t'] ?? '') !== $marca) return false;
+            $conv['transcript'][$i]['t'] = $marca . ' ' . trim($texto);
             return wabot_conv_save($conv);
         }
         return false;
@@ -4778,6 +4898,12 @@ function wabot_clasificar($texto, $conv, $cfg) {
     }
 
     $hechosCliente = implode(' | ', wabot_contexto_cliente_sesion($conv, 16));
+    /* Si tocó "Responder" sobre un mensaje (9-oct), va como contexto aparte: dentro
+     * del texto, los detectores por palabras leerían también lo citado. */
+    $citaNueva = wabot_tanda_citas_texto($conv);
+    $lineaCita = $citaNueva !== ''
+        ? "- El mensaje del cliente responde (botón Responder) a: $citaNueva. Interpretalo en relación con ESE mensaje: un sí pelado contesta ese, no el último del bot.\n"
+        : '';
 
     $prompt = <<<EOT
 Sos el clasificador de intenciones del bot comercial de Gokywebs (agencia argentina de diseño web que vende webs por WhatsApp). NO redactás respuestas: solo etiquetás el mensaje del cliente. Respondé SOLO un JSON válido con esta forma exacta:
@@ -4840,7 +4966,7 @@ CONTEXTO DE LA CONVERSACIÓN:
 - Tipo ya asignado: {$conv['tipo']}
 - Último mensaje del bot: "$ultimoBot"
 - Hechos que el cliente ya dijo en esta sesión: "$hechosCliente"
-
+{$lineaCita}
 EOT;
 
     $prompt .= "MENSAJE DEL CLIENTE:\n\"$texto\"";
@@ -5967,7 +6093,8 @@ function wabot_form_lead_validar($payload, &$motivo = null) {
     foreach (['nombre_negocio' => $nombreNegocio, 'resumen' => $resumen] as $campo => $valor) {
         if ($valor === '') { $motivo = ['motivo' => 'vacio', 'campo' => $campo]; return null; }
     }
-    foreach (['nombre' => [$nombre, 80], 'nombre_negocio' => [$nombreNegocio, 80], 'resumen' => [$resumen, 600], 'colores' => [$colores, 200]] as $campo => [$valor, $max]) {
+    // Resumen hasta 2000 (Pablo, 9-oct; era 600). Mismo tope en form/script.js.
+    foreach (['nombre' => [$nombre, 80], 'nombre_negocio' => [$nombreNegocio, 80], 'resumen' => [$resumen, 2000], 'colores' => [$colores, 200]] as $campo => [$valor, $max]) {
         if (mb_strlen($valor) > $max) { $motivo = ['motivo' => 'largo', 'campo' => $campo, 'max' => $max]; return null; }
     }
     return compact('clave', 'telWsp', 'nombre', 'nombreNegocio', 'resumen', 'colores', 'conCodigo');

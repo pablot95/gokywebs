@@ -304,8 +304,8 @@ $rK = wabot_form_lead_procesar(['t' => '123', 'nombre' => 'X', 'nombre_negocio' 
 caso('rechaza sin teléfono válido, y dice que fue el teléfono', $rK['ok'] === false && ($rK['motivo'] ?? '') === 'telefono' && ($rK['campo'] ?? '') === 'telefono');
 $rK = wabot_form_lead_procesar(['t' => '5493810001001', 'nombre' => 'X', 'nombre_negocio' => '', 'resumen' => 'X', 'colores' => 'X'], $cfg);
 caso('campo vacío: dice cuál', $rK['ok'] === false && ($rK['motivo'] ?? '') === 'vacio' && ($rK['campo'] ?? '') === 'nombre_negocio');
-$rK = wabot_form_lead_procesar(['t' => '5493810001002', 'nombre' => 'X', 'nombre_negocio' => 'X', 'resumen' => str_repeat('a', 601), 'colores' => 'X'], $cfg);
-caso('resumen largo: dice el campo y el máximo', $rK['ok'] === false && ($rK['motivo'] ?? '') === 'largo' && ($rK['campo'] ?? '') === 'resumen' && ($rK['max'] ?? 0) === 600);
+$rK = wabot_form_lead_procesar(['t' => '5493810001002', 'nombre' => 'X', 'nombre_negocio' => 'X', 'resumen' => str_repeat('a', 2001), 'colores' => 'X'], $cfg);
+caso('resumen largo: dice el campo y el máximo', $rK['ok'] === false && ($rK['motivo'] ?? '') === 'largo' && ($rK['campo'] ?? '') === 'resumen' && ($rK['max'] ?? 0) === 2000);
 @unlink(WABOT_DATA . '/form-rate.json');
 $okRate = true;
 for ($i = 0; $i < 10; $i++) $okRate = $okRate && wabot_form_rate_ok('203.0.113.9', 10, 600, 1000000 + $i);

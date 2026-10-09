@@ -2,10 +2,10 @@
 /** Respuestas manuales basadas en las charlas de Pablo desde el 14-sep. */
 function wabot_rr_03oct_montos() {
     return [
-        'landing' => ['anual' => '$120.000', 'mensual' => '$20.000', 'unico' => '$220.000'],
-        'ecommerce' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'elearning' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'inmobiliaria' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'landing' => ['anual' => '$160.000', 'mensual' => '$20.000', 'unico' => '$220.000'],
+        'ecommerce' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'elearning' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'inmobiliaria' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
     ];
 }
 

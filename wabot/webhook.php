@@ -209,8 +209,13 @@ function wabot_procesar_entrante($ev, $cfg) {
         elseif ($util === '') { $texto = ''; }
     }
 
-    // El nombre del archivo dice muchísimo más que "[documento]" a secas.
-    $etiquetaMedia = (string)($media['clase'] ?? 'sin texto');
+    // El nombre del archivo dice muchísimo más que "[documento]" a secas. La
+    // ubicación, el contacto y lo que WhatsApp no deja ver traen su propia
+    // etiqueta en palabras (wabot_wa_adjunto, 9-oct).
+    $etiquetaMedia = (string)($media['etiqueta'] ?? ($media['clase'] ?? 'sin texto'));
+    if (($media['clase'] ?? '') === 'unsupported') {
+        wabot_log('no_soportado', ['tel' => $clave, 'sub' => $media['sub'] ?? '', 'codigo' => $media['codigo'] ?? 0]);
+    }
     if ($etiquetaMedia === 'documento' && !empty($mediaGuardada['nombre'])) {
         $etiquetaMedia = 'documento: ' . $mediaGuardada['nombre'];
     }
@@ -694,7 +699,9 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 'channel_user_id'  => $de,
                 'id'               => $id,
                 // "Responder" sobre un mensaje: WhatsApp manda el wamid del citado.
-                'cita'             => (string)($msg['context']['id'] ?? ''),
+                // Una reacción también dice a qué mensaje va (9-oct): un 👍 a
+                // "¿querés la demo?" se lee junto con esa pregunta.
+                'cita'             => (string)($msg['context']['id'] ?? ($msg['reaction']['message_id'] ?? '')),
                 'texto'            => $tipo === 'text' ? trim((string)($msg['text']['body'] ?? '')) : '',
                 'nombre'           => $nombresPerfil[$clave] ?? '',
                 'media'            => wabot_wa_adjunto($msg, $tipo),

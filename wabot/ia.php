@@ -568,9 +568,16 @@ function wabot_ia_contexto($texto, $conv, $cfg) {
     }
     $c[] = "\nÚLTIMOS MENSAJES (del más viejo al más nuevo)";
     if (!$recientes) $c[] = '(ninguno: es el primer mensaje)';
+    // Lo que cita cada mensaje ("Responder" de WhatsApp o Instagram), 9-oct.
+    $porId = wabot_lineas_por_id($conv, $recientes);
     foreach ($recientes as $t) {
         $quien = ($t['q'] ?? '') === 'cliente' ? 'Cliente' : 'Gokywebs';
-        $c[] = $quien . ': ' . mb_substr(trim((string)$t['t']), 0, 700);
+        $c[] = $quien . ': ' . wabot_cita_prefijo_ia($t, $porId) . mb_substr(trim((string)$t['t']), 0, 700);
+    }
+    $citasTanda = wabot_tanda_citas_texto($conv);
+    if ($citasTanda !== '') {
+        $c[] = "\nEL MENSAJE NUEVO RESPONDE A OTRO MENSAJE (el cliente tocó \"Responder\" sobre él): " . $citasTanda
+            . "\nInterpretalo en relación con ESE mensaje, aunque no sea el último de la charla.";
     }
     $c[] = "\nMENSAJE NUEVO DEL CLIENTE (puede venir en varias partes; respondé todo junto una sola vez)";
     $c[] = '"""' . "\n" . mb_substr(trim((string)$texto), 0, 3000) . "\n" . '"""';

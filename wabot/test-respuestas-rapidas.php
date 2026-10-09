@@ -434,13 +434,13 @@ caso('si la lista del pago único sube, a la tienda ya cotizada le sale el suyo'
  * Desde el 3-oct, solo el mensual y el anual. */
 $detalleDe = static fn($m, $a) => "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a";
 caso('detalle de las modalidades: el sitio profesional, con sus 2 páginas (3-oct)',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual120'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual160'));
 caso('detalle de las modalidades: la inmobiliaria, con las de la tienda',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual190'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual240'));
 $sinTipo = wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, null, $cfgNoche);
 caso('detalle de las modalidades sin tipo: una página por grupo, sin el pago único',
     str_contains($sinTipo, 'gokywebs.com/pago/mensual20000 (sitio profesional) o gokywebs.com/pago/mensual30000 (tienda, cursos o inmobiliaria)')
-    && str_contains($sinTipo, 'gokywebs.com/pago/anual120 (sitio profesional) o gokywebs.com/pago/anual190 (tienda, cursos o inmobiliaria)')
+    && str_contains($sinTipo, 'gokywebs.com/pago/anual160 (sitio profesional) o gokywebs.com/pago/anual240 (tienda, cursos o inmobiliaria)')
     && !str_contains($sinTipo, '{link_') && !str_contains($sinTipo, 'Pago único'), $sinTipo);
 // 3-oct: el detalle guardado con las 3 (con el pago único) pasa al de 2.
 $detalleViejo = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
