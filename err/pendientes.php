@@ -36,6 +36,7 @@ const ERR_REPOS = [
     'estudiojuridicogianaria.com.ar'   => 'pablot95/estudiojuridicogianaria',
     'floreriaromina.com.ar'            => 'pablot95/floreriaromina',
     'leloircultiva.org'                => 'pablot95/leloircultiva',
+    'losfantasmasdelapesca.com.ar'     => 'pablot95/losfantasmasdelapesca',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
     'asesoratesancorsalud.com.ar'      => 'pablot95/sancorsalud',
