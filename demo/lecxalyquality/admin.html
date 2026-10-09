@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Panel de productos | Lecxaly Quality</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238f1f67'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='36' fill='%23fff'%3ELQ%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css?v=1">
+  <script src="admin.js?v=1" defer></script>
+</head>
+<body>
+  <header class="admin-top">
+    <a class="admin-brand" href="./">Lecxaly<small>Quality</small></a>
+    <a class="admin-volver" href="./">Ver la tienda ↗</a>
+  </header>
+  <main class="admin-layout">
+    <aside class="admin-side">
+      <span>Panel de demostración</span>
+      <a class="active" href="#productos">Productos</a>
+      <a href="./#catalogo">Catálogo público ↗</a>
+      <a href="./#iphone">Tienda iPhone ↗</a>
+      <p>Vista de la carga para revisar el diseño y los datos. La edición y el acceso con clave se activan al pasar la web a producción.</p>
+    </aside>
+    <section class="admin-main" id="productos">
+      <div class="admin-heading">
+        <div>
+          <p>Catálogo / Lecxaly Quality</p>
+          <h1>Productos</h1>
+          <span>Consultas paginadas por cursor, de hasta 100 productos cada una.</span>
+        </div>
+        <b>DEMO</b>
+      </div>
+      <div class="admin-toolbar">
+        <label class="search">
+          <span class="sr-only">Buscar productos</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="admin-search" type="search" placeholder="Buscar por nombre, línea, color, modelo…" autocomplete="off">
+        </label>
+        <span id="admin-count" aria-live="polite">Cargando…</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Producto</th><th scope="col">Categoría</th><th scope="col">Variantes</th><th scope="col">Precio demo</th><th scope="col">Stock</th><th scope="col">Estado</th></tr></thead>
+          <tbody id="admin-rows"><tr><td colspan="6">Cargando la primera página…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="admin-bottom">
+        <p id="admin-note">La primera consulta trae como máximo 100 productos.</p>
+        <button id="admin-more" type="button" hidden>Ver más productos ↓</button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
