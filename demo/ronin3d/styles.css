@@ -1377,7 +1377,7 @@ body.m2 .pedido-pasos {
 }
 .filtros {
   position: sticky;
-  top: calc(var(--gw-modelos-h, 0px) + 16px);
+  top: 16px;
   display: grid;
   gap: 22px;
 }

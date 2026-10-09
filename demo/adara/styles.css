@@ -384,7 +384,7 @@ section {
 
 .site-header {
   position: sticky;
-  top: var(--gw-modelos-h, 0px);
+  top: 0;
   z-index: 15;
   min-height: var(--header-h);
 }
@@ -1087,7 +1087,7 @@ body.no-scroll {
 
 .trat-figure {
   position: sticky;
-  top: calc(var(--gw-modelos-h, 0px) + var(--header-h) + 16px);
+  top: calc(var(--header-h) + 16px);
   width: 100%;
   aspect-ratio: 4 / 5;
   overflow: hidden;
@@ -1903,7 +1903,7 @@ body.no-scroll {
 
 .filtros {
   position: sticky;
-  top: calc(var(--gw-modelos-h, 0px) + var(--header-h) + 16px);
+  top: calc(var(--header-h) + 16px);
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
