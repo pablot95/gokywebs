@@ -3094,23 +3094,112 @@ async function enviarTemplateInteresado(id, btn) {
         });
         const data = await res.json();
         if (data.ok || data.resultado === "ya") templateInteresadoEnviados[c.id] = data.enviado_ts || Math.floor(Date.now() / 1000);
-        if (!data.ok) {
-            const motivos = {
-                ya: "Esta plantilla ya fue enviada en este chat.",
-                no_interesado: "Este chat no permite el envío desde esa acción.",
-                canal: "Esta plantilla solo sale por WhatsApp.",
-                sin_chat: "No se encontró el chat de este cliente.",
-                ambiguo: "Hay más de un chat con ese teléfono. Abrí el chat correcto y revisá el número antes de enviar.",
-                ocupado: "El chat se está procesando. Revisá si la plantilla salió antes de intentarlo de nuevo.",
-                error: "Meta rechazó la plantilla o no está activa en Ajustes del bot."
-            };
-            alert(motivos[data.resultado] || motivos.error);
-        }
+        if (!data.ok) alert(TEMPLATE_INTERESADO_MOTIVOS[data.resultado] || TEMPLATE_INTERESADO_MOTIVOS.error);
     } catch (e) {
         alert("No se pudo contactar al panel del bot: " + e.message);
     }
     renderSeg();
 }
+
+const TEMPLATE_INTERESADO_MOTIVOS = {
+    ya: "Esta plantilla ya fue enviada en este chat.",
+    no_interesado: "Este chat no permite el envío desde esa acción.",
+    canal: "Esta plantilla solo sale por WhatsApp.",
+    sin_chat: "No se encontró el chat de este cliente.",
+    ambiguo: "Hay más de un chat con ese teléfono. Abrí el chat correcto y revisá el número antes de enviar.",
+    ocupado: "El chat se está procesando. Revisá si la plantilla salió antes de intentarlo de nuevo.",
+    error: "Meta rechazó la plantilla o no está activa en Ajustes del bot."
+};
+
+/* Envío masivo (Pablo, 9-oct: "sí, quiero un botón de envío masivo"). Manda
+   seguimiento_interesado a todos los de la vista de Seguimientos que se está
+   mirando (con la búsqueda aplicada), de a uno y con el mismo endpoint que el
+   botón de cada fila. Saltea a los que ya lo recibieron, a los de Instagram y
+   a los que no tienen chat ni teléfono. Se puede detener a mitad. Cada envío
+   es de Marketing: Meta lo cobra. El servidor igual no lo repite en un chat
+   que ya lo tiene. */
+let segListaVisible = [];
+let segEnvioMasivo = null;   // { detener: bool, hechos, total } mientras manda
+
+function _segPendientesSeguimiento(list) {
+    return list.filter(c => {
+        const it = presentadoDeCliente(c);
+        if (!it && cleanArgPhone(c.telefono).length < 8) return false;
+        if (templateInteresadoEnviados[c.id] || it?.template_interesado_ts) return false;
+        return it?.canal !== "instagram";
+    });
+}
+
+function _pintarBotonSegTodos() {
+    const btn = document.getElementById("segEnviarTodos");
+    if (!btn) return;
+    if (segEnvioMasivo) {
+        btn.disabled = segEnvioMasivo.detener;
+        btn.textContent = segEnvioMasivo.detener
+            ? `Deteniendo… (${segEnvioMasivo.hechos}/${segEnvioMasivo.total})`
+            : `Detener envío (${segEnvioMasivo.hechos}/${segEnvioMasivo.total})`;
+        return;
+    }
+    const n = _segPendientesSeguimiento(segListaVisible).length;
+    btn.disabled = n === 0;
+    btn.textContent = `Enviar seguimiento a todos (${n})`;
+    btn.title = n ? "Manda la plantilla seguimiento_interesado a todos los de esta vista que todavía no la recibieron"
+                  : "En esta vista no queda nadie a quien mandarle el seguimiento";
+}
+
+async function enviarSeguimientoATodos() {
+    if (segEnvioMasivo) { segEnvioMasivo.detener = true; _pintarBotonSegTodos(); return; }
+    // Lo que el bot ya mandó (también el cron) antes de contar a quién falta.
+    await sincronizarPresentados();
+    const pendientes = _segPendientesSeguimiento(segListaVisible);
+    if (!pendientes.length) { _pintarBotonSegTodos(); return; }
+    const vista = document.querySelector("#segViews .seg-chip.active")?.childNodes[0]?.textContent.trim() || "esta vista";
+    if (!confirm(`¿Mandar la plantilla seguimiento_interesado por WhatsApp a ${pendientes.length} ${pendientes.length === 1 ? "cliente" : "clientes"} de «${vista}»?\n\nEs una plantilla de Marketing: Meta cobra cada envío. Sale una sola vez por chat. Podés detenerlo a mitad.`)) return;
+
+    segEnvioMasivo = { detener: false, hechos: 0, total: pendientes.length };
+    const avisoSalida = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", avisoSalida);
+    let enviadas = 0, yaTenian = 0;
+    const fallas = [];
+    try {
+        await wabotAuthHandshake();
+        for (const c of pendientes) {
+            if (segEnvioMasivo.detener) break;
+            _pintarBotonSegTodos();
+            const it = presentadoDeCliente(c);
+            const nombre = c.nombre || c.proyecto || c.telefono || "sin nombre";
+            try {
+                const res = await fetch("../wabot/admin.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({ accion: "seguimiento_template_interesado", tel: it?.clave || c.telefono }),
+                    credentials: "same-origin"
+                });
+                const data = await res.json();
+                if (data.ok || data.resultado === "ya") templateInteresadoEnviados[c.id] = data.enviado_ts || Math.floor(Date.now() / 1000);
+                if (data.ok) enviadas++;
+                else if (data.resultado === "ya") yaTenian++;
+                else fallas.push(`${nombre}: ${TEMPLATE_INTERESADO_MOTIVOS[data.resultado] || TEMPLATE_INTERESADO_MOTIVOS.error}`);
+            } catch (e) {
+                fallas.push(`${nombre}: no se pudo contactar al panel del bot (${e.message})`);
+            }
+            segEnvioMasivo.hechos++;
+            // Un respiro entre envíos: no se le tiran todos juntos a Meta.
+            await new Promise(r => setTimeout(r, 400));
+        }
+    } finally {
+        const detenido = segEnvioMasivo.detener && segEnvioMasivo.hechos < segEnvioMasivo.total;
+        const faltaron = segEnvioMasivo.total - segEnvioMasivo.hechos;
+        segEnvioMasivo = null;
+        window.removeEventListener("beforeunload", avisoSalida);
+        renderSeg();
+        sincronizarPresentados();
+        alert(`Enviadas: ${enviadas}.` + (yaTenian ? ` Ya la tenían: ${yaTenian}.` : "")
+            + (detenido ? ` Detenido: quedaron ${faltaron} sin mandar.` : "")
+            + (fallas.length ? `\n\nNo salieron (${fallas.length}):\n` + fallas.join("\n") : ""));
+    }
+}
+document.getElementById("segEnviarTodos")?.addEventListener("click", enviarSeguimientoATodos);
 
 function _segRow(c) {
     const estado = getEstado(c);
@@ -3383,6 +3472,9 @@ function renderSeg() {
         ? list.map(_segRow).join("")
         : `<tr class="empty-row"><td colspan="8">No hay ${emptyLabels[segView] || "seguimientos"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
+    // El envío masivo manda a esta misma lista (vista + búsqueda).
+    segListaVisible = list;
+    _pintarBotonSegTodos();
     _updateClientCounters();
     _bindTableListeners(segTbody);
 }
