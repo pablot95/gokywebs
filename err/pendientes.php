@@ -31,6 +31,7 @@ const ERR_REPOS = [
     'distsur.com.ar'                   => 'pablot95/dsur',
     'servitechba.com'                  => 'pablot95/Servitech',
     'bernalfleetconsulting.com.ar'     => 'pablot95/bernalfleetconsulting',
+    'carinapelusomuebleria.com.ar'     => 'pablot95/carinapelusomuebleria',
     'clinicademaraguasabiertas.com.ar' => 'pablot95/clinicademaraguasabiertas',
     'cooperativamanoscalidas.com.ar'   => 'pablot95/cooperativamanoscalidaslimitada',
     'estudiojuridicogianaria.com.ar'   => 'pablot95/estudiojuridicogianaria',
