@@ -34,6 +34,7 @@ const ERR_REPOS = [
     'clinicademaraguasabiertas.com.ar' => 'pablot95/clinicademaraguasabiertas',
     'cooperativamanoscalidas.com.ar'   => 'pablot95/cooperativamanoscalidaslimitada',
     'estudiojuridicogianaria.com.ar'   => 'pablot95/estudiojuridicogianaria',
+    'floreriaromina.com.ar'            => 'pablot95/floreriaromina',
     'leloircultiva.org'                => 'pablot95/leloircultiva',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
