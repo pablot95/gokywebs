@@ -3431,7 +3431,22 @@ function burbujaCita(t, chat) {
                 if (j.items) pintarLista(j.items);
             } catch (e) {}
         }
-        setInterval(refrescarLista, 8000);
+        /* ¿Alguien está mirando el panel? (9-oct, "anda muy lento gokywebs"). No,
+           si la pestaña del navegador está en segundo plano o el panel está
+           embebido en el admin con el iframe oculto (Pablo en otra pestaña):
+           un elemento con display:none no tiene rectángulos. Antes la lista
+           (todas las charlas) se pedía cada 8 s igual, desde cada panel abierto. */
+        function panelALaVista() {
+            if (document.hidden) return false;
+            try {
+                const marco = window.frameElement;
+                if (marco && !marco.getClientRects().length) return false;
+            } catch (e) {}
+            return true;
+        }
+        setInterval(() => { if (panelALaVista()) refrescarLista(); }, 8000);
+        // Al volver a la pestaña, al día enseguida.
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescarLista(); });
         </script>
 
         <?php if ($conv): ?>
@@ -3995,14 +4010,7 @@ function burbujaCita(t, chat) {
            iframe está oculto porque Pablo está en otra pestaña (Clientes,
            Bocetos…): un elemento con display:none no tiene rectángulos. Solo a
            la vista el refresco lo marca leído. */
-        function chatALaVista() {
-            if (document.hidden) return false;
-            try {
-                const marco = window.frameElement;
-                if (marco && !marco.getClientRects().length) return false;
-            } catch (e) {}
-            return true;
-        }
+        function chatALaVista() { return panelALaVista(); }
 
         async function refrescar() {
             try {
@@ -4319,7 +4327,8 @@ function burbujaCita(t, chat) {
         txt.addEventListener('input', borradorChatGuardar);
         window.addEventListener('pagehide', borradorChatGuardar);
 
-        setInterval(refrescar, 5000);
+        // Solo a la vista (9-oct); al volver, visibilitychange y el admin lo refrescan enseguida.
+        setInterval(() => { if (chatALaVista()) refrescar(); }, 5000);
         // Abrirlo lo marca leído al instante (antes lo hacía el PHP al cargar) y
         // la lista sale con el contador ya descontado.
         if (chatALaVista()) refrescar().then(refrescarLista);
@@ -4677,7 +4686,13 @@ function burbujaCita(t, chat) {
             }
 
             refrescar();
-            setInterval(() => { if (!document.hidden) refrescar(); }, 4000);
+            // Tampoco con el iframe del admin oculto (Pablo en otra pestaña del admin), 9-oct.
+            const aLaVista = () => {
+                if (document.hidden) return false;
+                try { const m = window.frameElement; if (m && !m.getClientRects().length) return false; } catch (e) {}
+                return true;
+            };
+            setInterval(() => { if (aLaVista()) refrescar(); }, 4000);
             document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
         })();
         </script>

@@ -106,8 +106,13 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
             requestAnimationFrame(() => {
                 ajustarAltoWabot();
                 // El chat que quedó abierto adentro se marca leído recién ahora,
-                // que vuelve a estar a la vista (wabot/admin.php, chatALaVista).
-                try { document.getElementById("wabotFrame").contentWindow.refrescar?.(); } catch (_) {}
+                // que vuelve a estar a la vista (wabot/admin.php, chatALaVista), y
+                // la lista se pone al día: con el iframe oculto no se refresca.
+                try {
+                    const w = document.getElementById("wabotFrame").contentWindow;
+                    w.refrescar?.();
+                    w.refrescarLista?.();
+                } catch (_) {}
             });
         }
         if (activeTab === "mantenimiento") renderMantenimiento();

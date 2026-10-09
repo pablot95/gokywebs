@@ -3288,10 +3288,55 @@ function wabot_zip_armar($entradas) {
 function wabot_lista_items() {
     $archivos = glob(WABOT_DATA . '/conv/*.json') ?: [];
 
-    $items = [];
+    /* Pablo, 9-oct: "anda muy lento gokywebs". Armar la lista leía las 1578
+     * charlas (13 MB de JSON, ~2 s de CPU) y cada panel abierto la pide cada 8 s
+     * —el admin, cada 30—. Ahora queda guardada en data/lista-cache.json: una
+     * charla se vuelve a leer solo si su archivo cambió o si pasaron
+     * WABOT_LISTA_CACHE_SEG (lo que depende de la hora: ventana de 24 h,
+     * pausas, vencidos). Cada fila vence en un momento distinto, así no se
+     * recalculan todas juntas. Los tests la arman siempre de cero. */
+    $usarCache = empty($GLOBALS['WABOT_TEST_SIN_RED']) || !empty($GLOBALS['WABOT_TEST_LISTA_CACHE']);
+    $rutaCache = WABOT_DATA . '/lista-cache.json';
+    $guardada = $usarCache ? json_decode((string)@file_get_contents($rutaCache), true) : null;
+    // Un deploy que cambia el código (lib.php, engine.php) la arma de cero: las filas pueden traer campos nuevos.
+    $version = @filemtime(__FILE__) . '-' . @filemtime(__DIR__ . '/engine.php');
+    $cache = is_array($guardada) && ($guardada['version'] ?? '') === $version && is_array($guardada['filas'] ?? null) ? $guardada['filas'] : [];
+    $ahora = time();
+    $nuevo = [];
+    $cambio = false;
     foreach ($archivos as $f) {
         $tel = basename($f, '.json');
         if ($tel === 'TEST') continue;          // el chat de prueba no es un cliente
+        // Fecha, tamaño e inodo: cada guardado reemplaza el archivo (wabot_json_guardar_atomico
+        // escribe uno nuevo y lo renombra), así que dos guardados en el mismo segundo y del
+        // mismo tamaño igual se notan.
+        $m = (int)@filemtime($f);
+        $s = (int)@filesize($f);
+        $n = (int)@fileinode($f);
+        $c = $cache[$tel] ?? null;
+        if (is_array($c) && ($c['m'] ?? -1) === $m && ($c['s'] ?? -1) === $s && ($c['n'] ?? -1) === $n
+            && (int)($c['vence'] ?? 0) > $ahora && isset($c['i'])) {
+            $nuevo[$tel] = $c;
+            continue;
+        }
+        $nuevo[$tel] = ['m' => $m, 's' => $s, 'n' => $n, 'vence' => $ahora + WABOT_LISTA_CACHE_SEG - random_int(0, (int)(WABOT_LISTA_CACHE_SEG / 2)),
+                        'i' => wabot_lista_item($tel)];
+        $cambio = true;
+    }
+    if ($usarCache && ($cambio || count($nuevo) !== count($cache))) {
+        wabot_json_guardar_atomico($rutaCache, ['version' => $version, 'filas' => $nuevo]);
+    }
+    $items = array_values(array_column($nuevo, 'i'));
+    usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
+    return $items;
+}
+
+/** Cuánto puede tener una fila de la lista sin volver a leer su charla (si el archivo no cambió).
+ *  Solo lo que depende de la hora (ventana, pausas, vencidos) puede atrasarse eso. */
+const WABOT_LISTA_CACHE_SEG = 300;
+
+/** Una fila de la lista de Conversaciones, leída de su charla. */
+function wabot_lista_item($tel) {
         $cv  = wabot_conv_load($tel);
         $ult = end($cv['transcript']);
         $inicio = (int)($cv['chat_started_ts'] ?? 0);
@@ -3299,7 +3344,7 @@ function wabot_lista_items() {
             $primera = reset($cv['transcript']);
             $inicio = (int)($primera['ts'] ?? 0);
         }
-        $items[] = [
+        return [
             'tel'    => $tel,
             'conversation_key' => $tel,
             'channel_user_id' => wabot_channel_user_id($cv),
@@ -3354,9 +3399,6 @@ function wabot_lista_items() {
             'sin_respuesta_bienvenida' => wabot_conv_sin_respuesta_a_bienvenida($cv),
             'form_completado' => (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado']),
         ];
-    }
-    usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
-    return $items;
 }
 
 /**
