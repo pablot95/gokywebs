@@ -48,7 +48,8 @@ caso('las licencias son de terceros, y el código va por el plazo del plan',
 /* 26-sep a la noche: el pago único incluye el hosting y el dominio el primer
  * año; el mantenimiento no va incluido y se suma aparte. */
 echo "— El pago único: hosting y dominio el primer año, y el mantenimiento aparte —\n";
-foreach (['landing' => '$10.000', 'ecommerce' => '$15.000', 'elearning' => '$15.000', 'inmobiliaria' => '$15.000'] as $tipo => $mant) {
+// 9-oct (noche, Pablo): el mantenimiento opcional del pago único es $15.000 para todos.
+foreach (['landing' => '$15.000', 'ecommerce' => '$15.000', 'elearning' => '$15.000', 'inmobiliaria' => '$15.000'] as $tipo => $mant) {
     $c = conv_nueva('549110000PROP' . strtoupper($tipo), ['tipo' => $tipo, 'precio_dado' => true, 'quiere_web_propia' => true]);
     wabot_precio_congelar($c, $tipo, $cfg);
     $unico = (string)$cfg['tipos'][$tipo]['precio_unico'];
@@ -57,8 +58,9 @@ foreach (['landing' => '$10.000', 'ecommerce' => '$15.000', 'elearning' => '$15.
         strpos($wp, 'pago único, de ' . $unico) !== false && mb_stripos($wp, 'Incluye hosting y dominio el primer año') !== false
         && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
     caso("$tipo: el código queda suyo al abonar el total", mb_stripos($wp, 'el código queda tuyo') !== false);
-    caso("$tipo: el mantenimiento no va incluido y se suma por $mant por mes",
-        mb_stripos($wp, 'el mantenimiento es aparte, por ' . $mant . ' por mes') !== false, $wp);
+    // 9-oct a la noche: el mantenimiento es opcional.
+    caso("$tipo: el mantenimiento no va incluido, es opcional y se suma por $mant por mes",
+        mb_stripos($wp, 'el mantenimiento es aparte y opcional, por ' . $mant . ' por mes') !== false, $wp);
     // Desde el 3-oct el bloque trae solo mensual y anual: al que pide la web propia se le suma el pago único abajo.
     caso("$tipo: debajo del bloque se suma el renglón de la web propia con el pago único",
         mb_strpos(wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg)), $unico) !== false);

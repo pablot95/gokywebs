@@ -30,10 +30,10 @@ caso('la propuesta arranca "Para lo que me contás, te podemos armar", nunca "Lo
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te podemos armar una tienda online completa, para vender directo desde la web')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('termina con las 2 modalidades y su monto; lo incluido de cada una queda para las páginas de detalle (22-sep, 29-sep; 3-oct)',
-    str_ends_with($r[0] ?? '', modalidades_de_precio('$30.000', '$240.000'))
+    str_ends_with($r[0] ?? '', modalidades_de_precio('$30.000', '$190.000'))
     && strpos($r[0] ?? '', 'Las 2 incluyen la web completa:') === false && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
-caso('los links al detalle de las modalidades de la tienda (pago/mensual30000 y anual240) no van en el turno del precio (2-oct)',
+caso('los links al detalle de las modalidades de la tienda (pago/mensual30000 y anual190) no van en el turno del precio (2-oct)',
     !in_array(links_de_precio('ecommerce'), $r, true) && strpos($todo, 'gokywebs.com/pago/') === false, $todo);
 caso('el segundo mensaje ofrece el primer diseño sin cargo, atado a la tienda (26-sep), y pregunta, sin formulario',
     ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?'
@@ -206,11 +206,11 @@ caso('precio y oferta, sin los links ni el formulario pegado al monto (2-oct)',
 clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
-// Tienda, cursos e inmobiliaria cuestan lo mismo y comparten las páginas de detalle (pago/mensual30000, anual240; 3-oct).
+// Tienda, cursos e inmobiliaria cuestan lo mismo y comparten las páginas de detalle (pago/mensual30000, anual190; 3-oct).
 $esperados = [
-    'landing' => ['un sitio profesional completo', ['$20.000', '$160.000']],
-    'inmobiliaria' => ['una web inmobiliaria completa', ['$30.000', '$240.000']],
-    'elearning' => ['una plataforma de cursos completa', ['$30.000', '$240.000']],
+    'landing' => ['un sitio profesional completo', ['$20.000', '$140.000']],
+    'inmobiliaria' => ['una web inmobiliaria completa', ['$30.000', '$190.000']],
+    'elearning' => ['una plataforma de cursos completa', ['$30.000', '$190.000']],
 ];
 foreach ($esperados as $tipo => [$frase, $montos]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);

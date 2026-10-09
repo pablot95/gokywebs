@@ -14,7 +14,7 @@
  * en el precio. Hoy el bot está en "solo bienvenida" y el precio lo pasa Pablo.
  * - Mensual (6-oct; del 5 al 6-oct fue $22.000 / $32.000): $20.000 sitio profesional; $30.000 resto.
  *   Mercado Pago: mpago.la/1pfejMG (sitio) y el plan 36a67a7e… de MP (resto). Sin pago inicial adicional.
- * - Anual (9-oct; del 7 al 9-oct fue $120.000 / $190.000, del 3 al 7-oct $140.000 / $220.000, antes $149.000 / $190.000): $160.000 sitio profesional; $240.000 resto. Seña de $60.000,
+ * - Anual (9-oct a la noche, Pablo: "anual los bajamos, a como estaban antes"; a la mañana del 9-oct había subido a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, del 3 al 7-oct $140.000 / $220.000): $140.000 sitio profesional; $190.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
  * - Pago único (antes $190.000 / $290.000): $220.000 sitio profesional; $330.000 resto. Misma seña,
  *   saldo al entregar; hosting y dominio incluidos el primer año.
@@ -70,8 +70,9 @@ function wabot_textos_default() {
     'capi_dataset_id' => '',
     'capi_token' => '',
     'cambios_plan' => 'El plan mensual y el anual incluyen un cambio por mes en la web.',
-    // Se suma a cambios_plan: los cuatro tipos incluyen panel (Pablo, 20-sep).
+    // Se suma a cambios_plan en los planes con panel (Pablo, 20-sep). Desde el 9-oct (noche) la web informativa de $20.000 NO tiene panel: ahí va cambios_plan_sin_panel.
     'cambios_plan_panel' => 'Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
+    'cambios_plan_sin_panel' => 'En la web informativa los cambios los hacemos nosotros. Si querés manejar vos los textos y las fotos desde un panel, va con el plan de {mensualidad_panel}.',
     'caro' => 'Si pagar el año entero se te hace mucho, está el plan mensual de {mensualidad}: arrancás con la primera mensualidad, y con eso armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
     // Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): se cotiza como
     // sitio profesional y la carga de productos va aparte.
@@ -188,6 +189,16 @@ function wabot_textos_default() {
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros.',
         'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual y en el anual.',
         'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Los primeros productos los cargamos nosotros y, cuando esté lista, te mostramos cómo se usa.',
+        // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche).
+        'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, vos solo nos pedís lo que quieras cambiar.',
+        'carga_sitio' => 'En la web informativa los cambios los hacemos nosotros, uno por mes incluido. Si querés manejar vos el contenido desde un panel, va con el plan de {mensualidad_panel}.',
+        // "Se pueden cargar miles de artículos; si van a ser miles, que avisen antes" (Pablo, 9-oct).
+        'muchos_productos' => 'Sí, se pueden cargar miles de productos. Si vas a tener tantos, avisanos antes así preparamos la base de datos y la estructura para ese volumen.',
+        'video_panel' => 'Cuando la web esté lista te mandamos un video que explica paso a paso todas las funciones del panel.',
+        'a_pedido' => 'Sí, se puede mostrar qué está disponible y qué es a pedido, con la demora (por ejemplo 7 a 10 días). Si querés, también se puede comprar directo lo que es a pedido.',
+        'instagram_sigue' => 'Tu Instagram lo seguís usando igual: la web es aparte. Las vinculamos, usamos las mismas fotos y la misma identidad, y desde Instagram mandás gente a la web.',
+        'marca' => 'Tener el dominio no protege el nombre comercial: para que nadie lo use como marca hay que registrarla, que es un trámite aparte.',
+        'cobros_internacionales' => 'Sí, para cobrar en el exterior se integra PayPal u otra pasarela internacional, además de Mercado Pago para Argentina.',
         'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
         'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',
         'reuniones' => 'Sí, claro. Las llamadas las coordinamos con el desarrollador cuando avanzamos con la web, en el horario que te quede cómodo.',
@@ -241,7 +252,8 @@ function wabot_textos_default() {
         'contacto_desarrollador' => 'No tenés que hacer nada: te escribe él directamente por WhatsApp, desde nuestro número de proyectos. Si preferís escribirle vos primero, decímelo y le paso tu mensaje.',
         'sin_whatsapp' => 'No hay problema, el WhatsApp no es obligatorio: podemos poner un formulario de contacto o tu mail.',
         'comisiones' => 'No cobramos comisión por venta. Solo se descuenta la del medio de pago (Mercado Pago o la tarjeta).',
-        'envios' => 'Sí, la tienda calcula el envío con el código postal, antes de pagar, y también podés ofrecer retiro o un costo fijo por zona. Los internacionales los coordinás vos con la empresa que elijas.',
+        // Pablo, 9-oct (noche): por provincia, no "por zona"; Correo Argentino y Andreani ya vienen integrados.
+        'envios' => 'Sí, la tienda calcula el envío por código postal con Correo Argentino o Andreani, que ya vienen integrados (solo conectás tu cuenta), o con un costo por provincia. También se adapta a tu transporte propio o expreso.',
         'como_funciona_tienda' => 'Sí, así: el cliente arma el carrito y paga desde la web, y el pedido te llega al panel.',
         'que_incluye' => 'Con el mensual o el anual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para cargar los productos.',
         'emprendimientos' => 'Sí, trabajamos con emprendimientos y negocios chicos, no hay tamaño mínimo. Podés ver trabajos en gokywebs.com/portfolio',
@@ -252,6 +264,8 @@ function wabot_textos_default() {
         'rangos' => 'Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.',
         'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
         'que_incluye_sin_productos' => 'Con el mensual o el anual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para editarla.',
+        // La informativa de $20.000, sin panel (9-oct, noche).
+        'que_incluye_sitio' => 'Con el mensual o el anual está todo incluido: la web a medida, adaptada a celular, preparada para Google, hosting, dominio, mantenimiento, soporte y un cambio por mes.',
         'cupones' => 'Sí, desde tu panel creás cupones de descuento, para toda la tienda o para productos puntuales.',
         'cobros_tienda' => 'Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.',
         'turnos' => 'Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.',
@@ -263,11 +277,14 @@ function wabot_textos_default() {
         'cuenta_mercado_pago' => 'No hace falta tener cuenta de Mercado Pago: el plan mensual se paga por Mercado Pago, pero te podés suscribir con cualquier tarjeta, sin cuenta.',
         'plan_es_servicio' => 'Entonces te conviene el anual: lo pagás una vez por año{precio_un_solo_pago} e incluye lo mismo que el mensual.',
         'un_solo_pago' => 'Sí: con el plan anual pagás una vez por año{precio_un_solo_pago}, y sale menos que doce meses del plan mensual. Incluye lo mismo: hosting, dominio, mantenimiento y soporte.',
-        'web_propia' => 'Con el pago único{precio_web_propia}, pagás la web una sola vez y el código queda tuyo al abonar el total. Incluye hosting y dominio el primer año; el mantenimiento es aparte, por {mantenimiento_mes}.',
+        'web_propia' => 'Con el pago único{precio_web_propia}, pagás la web una sola vez y el código queda tuyo al abonar el total. Incluye hosting y dominio el primer año; el mantenimiento es aparte y opcional, por {mantenimiento_mes}.',
+        // Pablo, 9-oct (noche): "hosting incluido, pero si quiere todo a su nombre, es aparte".
+        'hosting_pago_unico' => 'Con el pago único, el hosting y el dominio van incluidos el primer año y los gestionamos nosotros. Si querés tenerlos a tu nombre, se contratan aparte.',
         // Las que faltaban según las charlas del 11-sep al 2-oct (2-oct).
         'mensual' => 'Sí, el mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas. El valor se actualiza una vez al año.',
         'cuotas' => 'Sí, se puede pagar con tarjeta: el mensual se paga por Mercado Pago con cualquier tarjeta.',
-        'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: lo registrás vos o te lo pasamos cuando la web esté lista (un .com.ar se transfiere por TAD y sale $8.500).',
+        // Pablo, 9-oct (noche): se transfiere con el primer pago.
+        'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: te lo transferimos con el primer pago.',
         'que_es_dominio' => 'El dominio es la dirección de tu web, por ejemplo www.tunegocio.com.ar. Va incluido y el nombre lo elegís vos.',
         'demo_gratis' => 'No tiene costo ni compromiso: es un primer diseño para que veas cómo quedaría tu web antes de decidir.',
         'alternativas' => 'Son alternativas, elegís una sola: no se suman. Las dos incluyen el mantenimiento.',
@@ -294,6 +311,60 @@ function wabot_textos_default() {
     'demora_bienvenida' => 30,
     'ia_proveedor' => 'openai',
     'openai_modelo' => 'gpt-6-sol',
+    /* Flujo comercial unificado (plan del 9-oct-2026, wabot/comercial.php):
+     * GPT Sol interpreta la charla con contexto, redacta una propuesta breve
+     * adaptada al negocio, contesta las dudas con las respuestas oficiales y
+     * avanza hasta mandar el formulario. Tres modos (Ajustes → IA):
+     *   - off: como hasta ahora (solo bienvenida + lo que ya había).
+     *   - sugerencias: el bot NO contesta (salvo la bienvenida); por cada
+     *     mensaje del cliente prepara una respuesta que solo ve Pablo en el
+     *     panel, que la manda, la edita o la descarta (sugerencias.php).
+     *   - auto: contesta solo con ese flujo. Se decide después de las pruebas.
+     * Arranca en off: la activación no es un efecto colateral del deploy. */
+    'flujo_comercial' => 'off',
+    /* Una cotización ya dada se mantiene aunque la lista haya bajado (Pablo,
+     * 9-oct: "si el cliente ya recibió una cotización, se mantiene el precio
+     * anterior incluso si la tarifa actual es menor"). Con false vuelve la regla
+     * del 26-sep (vale la lista si es más baja, wabot_monto_menor). */
+    'cotizacion_conservar' => true,
+    /* Los bloques aprobados por Pablo para el flujo comercial (plan del 9-oct).
+     * La secuencia de la cotización son TRES mensajes separados: la propuesta
+     * breve (la redacta el modelo, adaptada al negocio), los planes del bloque
+     * que corresponde (anual primero) y la oferta de la demo. El sí se lleva
+     * `prediseno_link` (el formulario). {anual} y {mensual} los resuelve
+     * wabot_comercial_planes_texto() con los montos de ESA charla. */
+    'comercial' => [
+        'planes_informativa' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'planes_panel' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'oferta_demo' => 'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?',
+        /* Proyectos que cobran a clientes del exterior (PayPal u otra pasarela):
+         * $40.000 por mes (Pablo, 9-oct a la noche). El anual sale del caso que
+         * Pablo cotizó así y lo confirmó el 9-oct: $240.000. Sin pago único:
+         * si lo pide, lo ve Pablo. */
+        'internacional' => ['mensual' => '$40.000', 'anual' => '$240.000'],
+        'planes_internacional' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Cobros internacionales (PayPal u otra pasarela)\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        // Debajo de los planes, solo si pidió comprar la web, el código propio o no tener suscripción (plan del 9-oct).
+        'pago_unico' => 'Y si preferís comprarla, está el pago único: {unico}. Pagás la web una sola vez y el código queda tuyo al abonar el total.',
+        // Si el modelo no dejó una pregunta usable para saber el negocio.
+        'pregunta_negocio' => 'Te consulto, a qué te dedicás o qué vendés?',
+        /* La propuesta breve la redacta el modelo (adaptada al negocio, estilo
+         * de los chats de Pablo). Si no pasa la red (montos, links, promesas),
+         * sale la fija de la solución. */
+        'propuesta_fija' => [
+            'informativa'  => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con toda tu información y el contacto directo a tu WhatsApp',
+            'informativa_panel' => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con un panel para que cambies vos los textos y las fotos cuando quieras',
+            'tienda'       => 'Perfecto, te podemos armar una tienda online para que vendas directamente desde la web y llegues a más público, incluso generar ventas sin que estés pendiente del celular.',
+            'catalogo'     => 'Perfecto, te podemos armar un catálogo online con todos tus productos, con fotos y precios, donde la gente arma su pedido y te llega directo a tu WhatsApp.',
+            'cursos'       => 'Perfecto, te podemos armar una web para tus cursos, con toda la información de cada uno y la inscripción directo desde la web.',
+            'inmobiliaria' => 'Perfecto, te podemos armar una web inmobiliaria para publicar tus propiedades con fotos y buscador, y que los interesados te consulten directo.',
+            'reservas'     => 'Perfecto, te podemos armar una web con tus servicios y la reserva de turnos online, para que tus clientes elijan día y horario desde la web.',
+        ],
+        // Cuántos mensajes recientes ve el modelo y el tope de mensajes propios por turno.
+        'historial' => 30,
+        'max_mensajes' => 2,
+        // Segundos entre cada mensaje cuando Pablo manda una sugerencia de varios (9-oct: "un delay de 4 segundos entre cada uno").
+        'demora_entre_sugeridos' => 4,
+    ],
     'mantenimiento_planes' => [
         'landing' => [
             'precio' => '$20.000',
@@ -473,7 +544,7 @@ function wabot_textos_default() {
     'tipos' => [
         'landing' => [
             'label' => 'Sitio profesional',
-            'precio' => '$160.000',
+            'precio' => '$140.000',
             'precio_unico' => '$220.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
@@ -483,12 +554,13 @@ function wabot_textos_default() {
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
             'mensualidad' => '$20.000',
-            'mantenimiento' => '$10.000',
+            // El mantenimiento opcional del pago único: $15.000 para todos (Pablo, 9-oct; antes $10.000 el sitio profesional).
+            'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$240.000',
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
@@ -503,7 +575,7 @@ function wabot_textos_default() {
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$240.000',
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos completa',
@@ -518,7 +590,7 @@ function wabot_textos_default() {
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$240.000',
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',

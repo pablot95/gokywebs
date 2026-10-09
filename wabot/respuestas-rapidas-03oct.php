@@ -2,10 +2,10 @@
 /** Respuestas manuales basadas en las charlas de Pablo desde el 14-sep. */
 function wabot_rr_03oct_montos() {
     return [
-        'landing' => ['anual' => '$160.000', 'mensual' => '$20.000', 'unico' => '$220.000'],
-        'ecommerce' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'elearning' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'inmobiliaria' => ['anual' => '$240.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'landing' => ['anual' => '$140.000', 'mensual' => '$20.000', 'unico' => '$220.000'],
+        'ecommerce' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'elearning' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'inmobiliaria' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
     ];
 }
 
@@ -33,7 +33,8 @@ function wabot_rr_03oct_precio($descripcion, $grupo) {
         . "Ambos incluyen todo:\n"
         . "✓ Desarrollo completo de la web\n"
         . "✓ Adaptada a celulares\n"
-        . "✓ Panel para autogestionar contenido\n"
+        // La informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche).
+        . ($grupo === 'landing' ? '' : "✓ Panel para autogestionar contenido\n")
         . "✓ Certificado de seguridad (SSL)\n"
         . "✓ Preparada para que Google la encuentre\n"
         . "✓ Un cambio por mes en la web\n\n"
@@ -142,7 +143,7 @@ function wabot_rr_03oct_catalogo($anteriores = []) {
         ]],
         ['ico' => '🔐', 'titulo' => 'Propiedad absoluta del código', 'items' => [
             'Si necesitás la propiedad absoluta del código, podemos hacerlo con pago único. Para el sitio profesional son {landing_unico}; para tienda, cursos o inmobiliaria son {ecommerce_unico}. El código queda tuyo cuando abonás el total.',
-            'Con el pago único, el hosting y el dominio van incluidos el primer año. Después los renovás vos o contratás el mantenimiento aparte.',
+            'Con el pago único, el hosting y el dominio van incluidos el primer año. Si los querés a tu nombre, se contratan aparte. Después los renovás vos o contratás el mantenimiento, que es opcional.',
         ]],
     ];
 }

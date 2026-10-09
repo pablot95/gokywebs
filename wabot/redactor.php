@@ -13,6 +13,8 @@
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 require_once __DIR__ . '/postprecio.php';
+// El flujo comercial unificado y el modo de sugerencias (plan del 9-oct-2026).
+require_once __DIR__ . '/sugerencias.php';   // trae comercial.php
 
 /* ── Después del precio: una sola respuesta (Pablo, 18-sep) ──────────────────
  *
@@ -330,6 +332,9 @@ function wabot_upgrade_aplicar(&$conv, $pendiente) {
 /** ¿El bot está en modo "solo bienvenida" (3-oct)? Se cambia en el panel. */
 function wabot_solo_bienvenida($cfg) {
     if (isset($GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'])) return (bool)$GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'];
+    /* En el modo de sugerencias (9-oct) el bot tampoco conversa: saluda y lo
+     * demás lo prepara como sugerencia para Pablo (sugerencias.php). */
+    if (wabot_flujo_comercial($cfg) === 'sugerencias') return true;
     return !empty($cfg['solo_bienvenida']);
 }
 
@@ -425,6 +430,10 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     // Una intervención humana nunca vence por reloj ni por un mensaje nuevo.
     if (!empty($conv['control_manual'])) return [];
+    /* El flujo comercial unificado en automático (plan del 9-oct): un solo
+     * criterio antes y después del precio, hasta el formulario. Se activa
+     * desde Ajustes recién después de las pruebas; mientras, off. */
+    if (wabot_flujo_comercial($cfg) === 'auto') return wabot_comercial_turno($texto, $conv, $cfg);
     if (wabot_solo_bienvenida($cfg)) return wabot_solo_bienvenida_turno($texto, $conv, $cfg);
     $postprecio = wabot_postprecio_turno($texto, $conv, $cfg);
     if ($postprecio !== null) {

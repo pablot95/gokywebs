@@ -800,13 +800,13 @@ function getSiteType() {
    exito.html). Son montos que nunca se suman entre sí. Clave 'landing' = sitio
    profesional.
    Montos al 6-oct-2026, los mismos que wabot/textos.php y las páginas de
-   /pago: mensual $20.000 / $30.000, anual $160.000 / $240.000 (9-oct) y pago único
+   /pago: mensual $20.000 / $30.000, anual $140.000 / $190.000 (9-oct a la noche) y pago único
    $220.000 / $330.000. */
-const PRECIO_ANUAL      = { landing: 160000, ecommerce: 240000, inmobiliaria: 240000, elearning: 240000 };
+const PRECIO_ANUAL      = { landing: 140000, ecommerce: 190000, inmobiliaria: 190000, elearning: 190000 };
 const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
 const MENSUALIDAD       = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
-const MANTENIMIENTO_APARTE = { landing: 10000, ecommerce: 15000, inmobiliaria: 15000, elearning: 15000 };
+const MANTENIMIENTO_APARTE = { landing: 15000, ecommerce: 15000, inmobiliaria: 15000, elearning: 15000 };
 const SUSCRIPCION_SITIO = 'https://mpago.la/1pfejMG';   // $20.000 por mes
 const SUSCRIPCION_RESTO = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b';   // $30.000 por mes
 const SUSCRIPCION_LINK = { landing: SUSCRIPCION_SITIO, ecommerce: SUSCRIPCION_RESTO, inmobiliaria: SUSCRIPCION_RESTO, elearning: SUSCRIPCION_RESTO };

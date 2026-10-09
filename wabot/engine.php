@@ -1283,6 +1283,14 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     if (!empty($conv['postprecio_auto']) && !empty($conv['postprecio_reglas'])) {
         return array_map(static fn($m) => wabot_personalizar((string)$m, $conv), $mensajes);
     }
+    /* Lo mismo con el flujo comercial unificado (comercial.php, 9-oct): sus
+     * bloques son los aprobados y ya pasaron por su red; los filtros de acá
+     * (la CTA repetida, la coletilla de "gratis", el anti-repetición) los
+     * romperían. La marca es de un solo turno. */
+    if (!empty($conv['_comercial_salida'])) {
+        unset($conv['_comercial_salida']);
+        return array_values(array_map(static fn($m) => wabot_personalizar((string)$m, $conv), $mensajes));
+    }
 
     $mensajes = wabot_salida_limpiar($mensajes);
     $mensajes = wabot_salida_sin_promesas($mensajes, $cfg);
@@ -2717,10 +2725,30 @@ function wabot_texto_pregunta_cambios_plan($texto, $conv = null) {
     return (bool)(preg_match('/' . $cambios . '/u', $t) && preg_match('/' . $plan . '/u', $t));
 }
 
+/**
+ * ¿La web de esta charla es la informativa sin panel? Desde el 9-oct (noche,
+ * Pablo) el plan de $20.000 no tiene panel; con panel va el plan con panel. El
+ * sitio con catálogo de antes y las webs informativas que se cotizaron con el
+ * plan con panel (reservas, informativa con panel) sí lo tienen.
+ */
+function wabot_conv_sin_panel($conv) {
+    return is_array($conv) && (string)($conv['tipo'] ?? '') === 'landing'
+        && empty($conv['landing_con_panel']) && empty($conv['catalogo']);
+}
+
+/** La mensualidad del plan con panel, para los textos que la nombran. */
+function wabot_mensualidad_panel($cfg) {
+    return trim((string)($cfg['tipos']['ecommerce']['mensualidad'] ?? '$30.000'));
+}
+
 function wabot_texto_cambios_plan($conv, $cfg) {
     $texto = trim((string)($cfg['cambios_plan'] ?? ''));
     if ($texto === '') return null;
-    // El panel está incluido en los cuatro tipos de web (20-sep).
+    // El panel está incluido en los planes con panel (20-sep); la informativa de $20.000 no lo tiene (9-oct).
+    if (wabot_conv_sin_panel($conv) && trim((string)($cfg['cambios_plan_sin_panel'] ?? '')) !== '') {
+        $texto .= ' ' . str_replace('{mensualidad_panel}', wabot_mensualidad_panel($cfg), trim((string)$cfg['cambios_plan_sin_panel']));
+        return trim(wabot_precio_placeholders($texto, $conv, $cfg));
+    }
     $panel = trim((string)($cfg['cambios_plan_panel'] ?? ''));
     if ($panel !== '') $texto .= ' ' . $panel;
     return trim(wabot_precio_placeholders($texto, $conv, $cfg));
@@ -5800,7 +5828,10 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * profesional no le corresponde la carga de productos ni el panel de
      * estadísticas de la tienda. */
     $variante = is_array($conv) ? wabot_info_variante_por_tipo($clave, (string)($conv['tipo'] ?? '')) : null;
+    // La informativa sin panel (9-oct, noche): qué incluye y quién hace los cambios.
+    if (wabot_conv_sin_panel($conv) && in_array($clave, ['que_incluye', 'carga', 'manual'], true)) $variante = $clave . '_sitio';
     if ($variante !== null && trim((string)($cfg['info'][$variante] ?? '')) !== '') $texto = (string)$cfg['info'][$variante];
+    if (strpos($texto, '{mensualidad_panel}') !== false) $texto = str_replace('{mensualidad_panel}', wabot_mensualidad_panel($cfg), $texto);
     /* info.proceso son los tres pasos, y desde el 11-sep su paso 2 dice el
      * primer pago de lo cotizado: sin charla cotizada, el monto se cae solo. */
     if ($clave === 'proceso') {
@@ -6065,25 +6096,30 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
     ];
     if (is_array($conv) && (string)($conv['tipo'] ?? '') === $tipo && $tipo !== '' && !empty($conv['precio_cotizado'])) {
         $modelo = (string)($conv['precio_modelo'] ?? '');
+        /* Una cotización dada se mantiene aunque la lista haya bajado (Pablo,
+         * 9-oct: "se mantiene el precio anterior incluso si la tarifa actual es
+         * menor"; `cotizacion_conservar` en textos.php). Con el ajuste en false
+         * vuelve la regla del 26-sep: vale la lista si es más baja. */
+        $vigente = empty($cfg['cotizacion_conservar']) ? 'wabot_monto_menor' : 'wabot_monto_congelado';
         if ($modelo === 'anual') {
             // Las 3 modalidades (19-sep). La seña, la congelada o la de lista (las
             // charlas cotizadas el 19-sep a la mañana no la tienen); el pago único,
             // el congelado desde el 26-sep a la noche o el de lista.
-            $v['precio']       = wabot_monto_menor($conv['precio_cotizado'], $v['precio']);
-            $v['sena']         = wabot_monto_menor($conv['sena_cotizada'] ?? '', $v['sena']);
-            $v['mensualidad']  = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
-            $v['precio_unico'] = wabot_monto_menor($conv['precio_unico_cotizado'] ?? '', $v['precio_unico']);
+            $v['precio']       = $vigente($conv['precio_cotizado'], $v['precio']);
+            $v['sena']         = $vigente($conv['sena_cotizada'] ?? '', $v['sena']);
+            $v['mensualidad']  = $vigente($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+            $v['precio_unico'] = $vigente($conv['precio_unico_cotizado'] ?? '', $v['precio_unico']);
         } elseif ($modelo === 'doble') {
             // Cotizada del 15 al 18-sep: pago único con su seña, o mensual.
             $v['modelo']       = 'doble';
-            $v['precio']       = wabot_monto_menor($conv['precio_cotizado'], $v['precio_unico']);
+            $v['precio']       = $vigente($conv['precio_cotizado'], $v['precio_unico']);
             $v['precio_unico'] = $v['precio'];
             $v['sena']         = trim((string)($conv['sena_cotizada'] ?? '')) ?: '$40.000';
-            $v['mensualidad']  = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+            $v['mensualidad']  = $vigente($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
         } elseif ($modelo === 'mensual') {
             /* Cotizada del 10 al 14-sep, con la mensualidad sola: conserva SU
              * mensualidad y se le ofrece también el plan anual de lista. */
-            $v['mensualidad'] = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+            $v['mensualidad'] = $vigente($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
         }
     }
     // El plan con cambios y el mantenimiento después del primer año salen siempre de lista.
@@ -6104,6 +6140,12 @@ function wabot_monto_menor($congelado, $lista) {
     if ($congelado === '') return $lista;
     if ($lista === '' || wabot_monto_a_numero($lista) <= 0) return $congelado;
     return wabot_monto_a_numero($lista) < wabot_monto_a_numero($congelado) ? $lista : $congelado;
+}
+
+/** El congelado siempre que exista (9-oct); si falta, la lista. */
+function wabot_monto_congelado($congelado, $lista) {
+    $congelado = trim((string)$congelado);
+    return $congelado !== '' && wabot_monto_a_numero($congelado) > 0 ? $congelado : trim((string)$lista);
 }
 
 /** El pago único de ESTA charla (wabot_precio_vigente), o el de lista si el arreglo no lo trae. */

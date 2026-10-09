@@ -465,6 +465,17 @@ function wabot_procesar_entrante($ev, $cfg) {
         wabot_lock_soltar($lock);
     }
 
+    /* Modo de sugerencias (9-oct): si el cliente quedó sin respuesta, se piensa
+     * con el candado libre la respuesta que Pablo va a ver en el panel. Nada
+     * sale por WhatsApp; un error acá no puede tumbar el webhook. */
+    if (wabot_flujo_comercial($cfg) === 'sugerencias') {
+        try {
+            wabot_sugerencia_tras_turno($clave, $cfg);
+        } catch (Throwable $err) {
+            wabot_log('error', ['donde' => 'sugerencia', 'tel' => $de, 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+        }
+    }
+
     /* Modo shadow (27-sep): con el cliente ya contestado y el candado libre,
      * OpenAI piensa lo que habría contestado. No manda nada: lo anota para
      * comparar en el panel. Un error acá no puede tumbar el webhook. */

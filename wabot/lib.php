@@ -175,7 +175,7 @@ function wabot_gemini_modelo($cfg = null) {
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
-    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida',
+    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida', 'flujo_comercial',
             'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
@@ -3377,6 +3377,10 @@ function wabot_lista_item($tel) {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
+            // Hay una sugerencia del flujo comercial lista para mandar (sugerencias.php, 9-oct).
+            'sugerencia' => function_exists('wabot_sugerencia_pendiente') && wabot_sugerencia_pendiente($cv),
+            // Cuándo el bot conversó por última vez (sin la bienvenida ni los avisos automáticos): la vista "Bot" (9-oct).
+            'bot_conversa_ts' => wabot_conv_bot_conversa_ts($cv),
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
             // automático posterior (el recordatorio de 20 h, la última llamada,
@@ -3399,6 +3403,31 @@ function wabot_lista_item($tel) {
             'sin_respuesta_bienvenida' => wabot_conv_sin_respuesta_a_bienvenida($cv),
             'form_completado' => (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado']),
         ];
+}
+
+/**
+ * La última vez que el bot le contestó algo en la charla (9-oct, Pablo: "un
+ * filtro donde yo pueda ver qué va contestando el bot"), o 0. No cuentan la
+ * bienvenida, las plantillas ni los avisos automáticos (recordatorio del
+ * formulario, seguimientos, última llamada) ni la presentación de la demo:
+ * esos los manda siempre, conteste o no.
+ */
+function wabot_conv_bot_conversa_ts($cv) {
+    static $fijos = null;
+    if ($fijos === null) {
+        $cfg = function_exists('wabot_textos_default') ? wabot_textos_default() : [];
+        $fijos = array_filter(array_map(function ($t) { return function_exists('wabot_normalizar_frase') ? wabot_normalizar_frase((string)$t) : mb_strtolower((string)$t); },
+            [$cfg['bienvenida'] ?? '', $cfg['oferta_entrega_seguimiento'] ?? '']));
+    }
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'bot' || !empty($fila['plantilla'])) continue;
+        $t = (string)($fila['t'] ?? '');
+        $n = function_exists('wabot_normalizar_frase') ? wabot_normalizar_frase($t) : mb_strtolower($t);
+        if ($n === '' || in_array($n, $fijos, true)) continue;
+        if (preg_match('/pudiste completar el formulario|queriamos saber si seguias|te escribo por ultima vez|ya esta lista la primera propuesta|ya esta lista la demo|pudiste ver la demo/u', $n)) continue;
+        return (int)($fila['ts'] ?? 0);
+    }
+    return 0;
 }
 
 /**
@@ -3730,6 +3759,12 @@ function wabot_postprecio_encendido($cfg = null) {
 function wabot_conv_encender_manual(&$cv) {
     $cv['control_manual'] = false;
     unset($cv['postprecio_derivacion']);
+    // La derivación del flujo comercial (comercial.php) también se levanta solo a mano.
+    if (in_array((string)($cv['comercial_pausa'] ?? ''), ['humano', 'rechazo'], true)) {
+        unset($cv['comercial_pausa'], $cv['comercial_pausa_ts'], $cv['comercial_motivo']);
+        if (($cv['cierre'] ?? '') === 'rechazo') $cv['cierre'] = null;
+        $cv['seguimiento_bloqueado'] = false;
+    }
     $cv['postprecio_auto'] = !empty($cv['precio_dado']) && wabot_postprecio_encendido();
     $cv['bot_off'] = false;
     $cv['pausado_hasta'] = 0;
@@ -4262,8 +4297,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): sus links salen
  * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
  * en las respuestas rápidas. Viven en pago/
- * (mensual20000, anual160, unico220 y, para tienda, cursos e inmobiliaria,
- * mensual30000, anual240, unico330 (el anual subió el 9-oct: del 7 al 9-oct anual120 y anual190, antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
+ * (mensual20000, anual140, unico220 y, para tienda, cursos e inmobiliaria,
+ * mensual30000, anual190, unico330 (el anual bajó la noche del 9-oct; a la mañana había subido a anual160/anual240, que siguen en línea para los que ya tenían ese precio; del 7 al 9-oct anual120 y anual190, antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
  * las pestañas para pasar de uno al otro; el pago único ya no se ofrece y su
  * página solo la manda Pablo al que pide el código propio.
  *
@@ -4275,13 +4310,13 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_planes_paginas() {
     $tienda = [
         'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
-        'anual'   => ['pagina' => 'anual240',  'monto' => '$240.000'],
+        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
         'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [
         'landing'      => [
             'mensual' => ['pagina' => 'mensual20000', 'monto' => '$20.000'],
-            'anual'   => ['pagina' => 'anual160',  'monto' => '$160.000'],
+            'anual'   => ['pagina' => 'anual140',  'monto' => '$140.000'],
             'unico'   => ['pagina' => 'unico220',  'monto' => '$220.000'],
         ],
         'ecommerce'    => $tienda,
@@ -5627,7 +5662,11 @@ function wabot_form_recordatorio_correr($cfg, $ahora = null) {
  */
 function wabot_texto_es_oferta_entrega($texto) {
     $t = wabot_normalizar_frase((string)$texto);
-    return strpos($t, 'primera entrega') !== false && preg_match('/\b(sin costo|gratis|gratuita)\b/u', $t) === 1;
+    if (strpos($t, 'primera entrega') !== false && preg_match('/\b(sin costo|gratis|gratuita)\b/u', $t) === 1) return true;
+    /* La oferta aprobada el 9-oct ("Si te interesa, te preparamos una demo
+     * gratis para que veas cómo quedaría tu web antes de decidir…"), que es
+     * la que manda el flujo comercial y la que Pablo ya mandaba a mano. */
+    return strpos($t, 'demo gratis') !== false && strpos($t, 'antes de decidir') !== false;
 }
 
 function wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora = null) {

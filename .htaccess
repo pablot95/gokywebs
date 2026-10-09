@@ -40,7 +40,7 @@ RewriteRule ^pago/unico299(/.*)?$ /pago/unico330/ [R=301,L]
 # renombraron; las de arriba ya apuntan directo a las nuevas, sin cadena.
 RewriteRule ^pago/mensual19000(/.*)?$ /pago/mensual20000/ [R=301,L]
 RewriteRule ^pago/mensual29000(/.*)?$ /pago/mensual30000/ [R=301,L]
-RewriteRule ^pago/anual149(/.*)?$ /pago/anual120/ [R=301,L]
+RewriteRule ^pago/anual149(/.*)?$ /pago/anual140/ [R=301,L]
 RewriteRule ^pago/unico190(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico290(/.*)?$ /pago/unico330/ [R=301,L]
 RewriteRule ^planmensual/19000(/.*)?$ /planmensual/20000/ [R=301,L]
@@ -57,19 +57,26 @@ RewriteRule ^planmensual/32000(/.*)?$ /planmensual/30000/ [R=301,L]
 # mensual20, 25 y 30 eran del sitio profesional; mensual35 y 40, del resto.
 RewriteRule ^pago/mensual(20|25|30)(/.*)?$ /pago/mensual20000/ [R=301,L]
 RewriteRule ^pago/mensual(35|40)(/.*)?$ /pago/mensual30000/ [R=301,L]
-RewriteRule ^pago/anual180(/.*)?$ /pago/anual120/ [R=301,L]
+RewriteRule ^pago/anual180(/.*)?$ /pago/anual140/ [R=301,L]
 RewriteRule ^pago/anual250(/.*)?$ /pago/anual190/ [R=301,L]
 RewriteRule ^pago/unico240(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 
 # 7-oct-2026 (Pablo): el anual general es $120.000 / $190.000. El plan de
 # $220.000 tiene de nuevo su propia página para la propuesta mensual de $32.000.
-RewriteRule ^pago/anual140(/.*)?$ /pago/anual120/ [R=301,L]
+# (Hasta el 9-oct a la noche, /pago/anual140 redirigía a /pago/anual120.)
 
 # 9-oct-2026 (Pablo): el anual sube a $160.000 / $240.000 (pago/anual160 y
 # pago/anual240). Las páginas de $120.000 / $190.000 SIGUEN en línea, sin
 # redirección: "que esos clientes sigan viendo ese precio si ya se los pasé".
-# Los links de antes que ya llevaban ahí (anual140, 149, 180, 199, 250) siguen igual.
+
+# 9-oct-2026 a la noche (Pablo): el anual baja a $140.000 / $190.000 (saldos
+# $80.000 / $130.000, seña $60.000). /pago/anual140 vuelve a ser una página real
+# (se sacó su 301 a anual120) y /pago/anual190 es la del resto. Los links viejos
+# del sitio (anual149, anual180) llevan a anual140; los del resto (anual199,
+# anual250) siguen yendo a anual190. anual120, anual160, anual220 y anual240
+# quedan en línea tal cual, sin redirección, para los clientes que ya tienen
+# ese precio.
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

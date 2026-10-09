@@ -436,6 +436,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (in_array($_POST['ia_proveedor'] ?? '', ['gemini', 'openai', 'shadow'], true)) $cfg['ia_proveedor'] = (string)$_POST['ia_proveedor'];
         if (isset($_POST['postprecio_config_presente'])) $cfg['postprecio_activo'] = !empty($_POST['postprecio_activo']);
         if (isset($_POST['postprecio_config_presente'])) $cfg['solo_bienvenida'] = !empty($_POST['solo_bienvenida']);
+        // El flujo comercial unificado (9-oct): off, sugerencias o auto.
+        if (in_array($_POST['flujo_comercial'] ?? '', ['off', 'sugerencias', 'auto'], true)) $cfg['flujo_comercial'] = (string)$_POST['flujo_comercial'];
         $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
         if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
         if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
@@ -852,7 +854,40 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'ventana'    => wabot_ventana_restante($conv),
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
             'handoff_pendiente' => !empty($conv['handoff_pendiente']),
+            // La sugerencia del flujo comercial para este chat (sugerencias.php, 9-oct), si el modo está prendido.
+            'sugerencia' => wabot_flujo_comercial($cfg) !== 'off' ? wabot_sugerencia_para_panel($conv, $cfg) : null,
         ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    /* Modo de sugerencias del flujo comercial (9-oct, sugerencias.php): mandar
+     * la sugerencia (entera o editada), descartarla o volver a pensarla. El
+     * envío va por el mismo camino que "responder": marca contra duplicados,
+     * transcript como mensaje de Pablo y control manual. */
+    if ($a === 'sugerencia_enviar' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $conv = wabot_conv_load($_POST['tel']);
+        $finales = json_decode((string)($_POST['mensajes'] ?? '[]'), true);
+        $finales = array_map(function ($t) { return is_string($t) ? $t : ''; }, is_array($finales) ? $finales : []);
+        $r = wabot_sugerencia_enviar(wabot_conversation_key($conv), (string)($_POST['id'] ?? ''), $finales, (string)($_POST['envio_id'] ?? ''), $cfg);
+        if (!empty($r['ok'])) wabot_log('sugerencia_panel', ['tel' => $conv['tel'], 'enviados' => (int)($r['enviados'] ?? 0)]);
+        echo json_encode($r + ['bot_off' => true], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if ($a === 'sugerencia_descartar' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $conv = wabot_conv_load($_POST['tel']);
+        $ok = wabot_sugerencia_descartar(wabot_conversation_key($conv), (string)($_POST['id'] ?? ''), (string)($_POST['motivo'] ?? ''));
+        echo json_encode(['ok' => $ok]);
+        exit;
+    }
+    if ($a === 'sugerencia_recalcular' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        // Tarda lo que tarda el modelo: la sesión se suelta para no trabar el refresco del chat.
+        session_write_close();
+        $conv = wabot_conv_load($_POST['tel']);
+        $clave = wabot_conversation_key($conv);
+        wabot_sugerencia_generar($clave, $cfg, true);
+        echo json_encode(['ok' => true, 'sugerencia' => wabot_sugerencia_para_panel(wabot_conv_load($clave), $cfg)], JSON_UNESCAPED_UNICODE);
         exit;
     }
     /* "Transcribir" en un audio que quedó sin texto (Pablo, 9-oct: "algunos
@@ -1519,12 +1554,32 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-vacio { padding:16px; color:var(--dim); font-size:13px; }
 
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
-.conv-main .chat { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
+/* min-height: con la tarjeta de sugerencia abierta (9-oct) el chat no puede quedar en cero. */
+.conv-main .chat { flex:1 1 0; min-height:180px; max-height:none; overflow-y:auto; }
 
 /* Respuestas rápidas en horizontal (4-oct): arriba del editor, una fila con
    las categorías. Un clic en una categoría abre su lista encima del chat.
    (Las sugeridas por IA se sacaron el mismo día: Pablo, "son malísimas".) */
 .rr-barra { position:relative; flex:none; display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+/* La sugerencia del flujo comercial (9-oct), arriba del cuadro de escribir. */
+.sug { flex:none; border:1px solid var(--ac); border-radius:10px; padding:10px 12px; margin-top:10px; background:var(--ac-tenue); max-height:42vh; overflow-y:auto; }
+.sug-cab { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.sug-estado { margin-left:auto; font-size:11px; color:var(--ac); }
+.sug-plegar { background:none; border:1px solid var(--line); color:var(--dim); border-radius:6px; padding:1px 7px; font-size:11px; cursor:pointer; }
+.sug--plegada { max-height:none; }
+.sug--plegada .sug-msgs, .sug--plegada .sug-motivo, .sug--plegada .sug-acciones { display:none; }
+.sug-estado--vieja { color:var(--warn); }
+.sug-estado--humano { color:var(--bad); }
+.sug-motivo { margin:6px 0 0; color:var(--tx); font-size:12px; }
+.sug-msg { margin-top:8px; }
+.sug-msg-cab { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--dim); margin:0 0 3px; cursor:pointer; }
+.sug-msg-cab input { width:auto; margin:0; }
+.sug-etq { padding:1px 6px; border-radius:5px; background:#1f2a24; color:var(--ac); font-size:10px; }
+.sug-etq--formulario, .sug-etq--planes { background:var(--warn-tenue); color:var(--warn); }
+.sug-texto { width:100%; min-height:38px; max-height:150px; resize:vertical; font:inherit; }
+.sug-msg.sug-msg--no .sug-texto { opacity:.45; }
+.sug-acciones { margin-top:8px; align-items:center; gap:8px; flex-wrap:wrap; }
+.estado-tag--sug { background:var(--ac-tenue); }
 .rr-cats { display:flex; gap:5px; overflow-x:auto; scrollbar-width:thin; scrollbar-color:var(--line-fuerte) transparent; padding-bottom:3px; }
 .rr-cats::-webkit-scrollbar { height:6px; }
 .rr-cats::-webkit-scrollbar-thumb { background:var(--line-fuerte); border-radius:3px; }
@@ -2343,6 +2398,21 @@ function burbujaCita(t, chat) {
             <p class="meta">El bot saluda al que escribe por primera vez y después no contesta más. Formularios, demos, plantillas y avisos automáticos siguen igual. Destildado vuelve a conversar como antes.</p>
             <label style="margin-top:12px"><input type="checkbox" name="postprecio_activo" value="1" <?= !empty($cfg['postprecio_activo']) ? 'checked' : '' ?> style="width:auto"> Responder consultas aprobadas después del precio y de la demo</label>
             <p class="meta">Los pagos recibidos, las excepciones y los temas nuevos pasan a Pablo sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
+
+            <h3 style="margin:18px 0 6px">Flujo comercial nuevo</h3>
+            <p class="meta" style="margin-top:0">Un solo criterio antes y después del precio, hasta el formulario (plan del 9-oct): entiende la charla con contexto, redacta una propuesta breve para ese negocio, manda los planes con el bloque aprobado y la oferta de la demo, contesta las dudas habituales y, con el sí, el formulario. Los precios y los textos fijos siguen saliendo del sistema. Los casos especiales (CRM, funciones no aprobadas, problemas con el formulario) quedan para Pablo con el motivo a la vista, sin avisarle nada al cliente.</p>
+            <div style="display:grid;gap:8px;margin-top:8px">
+                <?php foreach ([
+                    'off' => ['Apagado', 'Como hasta ahora: la bienvenida y lo que ya había.'],
+                    'sugerencias' => ['Sugerencias', 'El bot solo da la bienvenida. Por cada mensaje del cliente prepara la respuesta que mandaría y la ves arriba del cuadro de escribir: la mandás, la editás o la descartás. Nada sale solo.'],
+                    'auto' => ['Automático', 'Contesta solo con el flujo nuevo. Se activa recién después de revisar las sugerencias; se puede volver a Sugerencias en cualquier momento.'],
+                ] as $valorFlujo => [$tituloFlujo, $textoFlujo]): ?>
+                    <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
+                        <input type="radio" name="flujo_comercial" value="<?= $valorFlujo ?>" <?= wabot_flujo_comercial($cfg) === $valorFlujo ? 'checked' : '' ?> style="width:auto;margin-top:3px">
+                        <span><strong><?= $tituloFlujo ?></strong> — <span class="meta"><?= $textoFlujo ?></span></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
             <p class="meta" style="margin-top:10px">Key de OpenAI:
                 <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
             </p>
@@ -2545,6 +2615,7 @@ function burbujaCita(t, chat) {
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat. Pasadas 24 h sin que escriba, el chat sale de esta vista y vuelve cuando escribe.">Sin leer</button>
                         <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Nuevos</button>
                         <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Con form</button>
+                        <button type="button" class="conv-chip" data-grupo="bot" title="Lo que va contestando el bot: las charlas donde conversó en la última semana (sin contar la bienvenida ni los avisos automáticos) y las que tienen una sugerencia lista para mandar. Arriba, la más reciente.">Bot</button>
                         <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats donde el cliente escribió en las últimas 24 h, menos los archivados. Los demás, con el buscador.">Todos</button>
                         <div class="conv-chips-mas">
@@ -2573,6 +2644,7 @@ function burbujaCita(t, chat) {
                         <strong><?= $e(wabot_nombre_agenda($conv)) ?: 'Sin nombre' ?></strong>
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
+                        <?php if (($conv['comercial_pausa'] ?? '') === 'humano'): ?><span class="meta" style="color:var(--warn)">Pendiente para Pablo: <?= $e((string)($conv['comercial_motivo'] ?? 'caso especial')) ?></span><?php endif; ?>
                         <?php if (!empty($conv['postprecio_derivacion'])): ?><span class="meta">Pendiente para Pablo: <?= $e($conv['postprecio_derivacion']) ?></span><?php elseif (!empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
                         <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
@@ -2626,11 +2698,11 @@ function burbujaCita(t, chat) {
                         <button type="button" class="sec" id="btnPlan35"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual160 y pago/anual240; 9-oct). */ ?>
+                               datos para la transferencia (pago/anual140 y pago/anual190; 9-oct a la noche). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $160.000</button>
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $140.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $240.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
                                datos para la transferencia (pago/unico220 y pago/unico330). Desde el
@@ -2715,6 +2787,27 @@ function burbujaCita(t, chat) {
                     <div class="rr-pop" id="rrPop" role="menu" hidden></div>
                     <nav class="rr-cats" id="rrPanel" aria-label="Respuestas rápidas"></nav>
                 </div>
+
+                <?php if (wabot_flujo_comercial($cfg) !== 'off'): ?>
+                <!-- La sugerencia del flujo comercial (9-oct): lo que el bot mandaría
+                     en este chat, para revisarla, editarla y mandarla. Nunca sale sola. -->
+                <div class="sug" id="sug" hidden>
+                    <div class="sug-cab">
+                        <strong>💡 Sugerencia del bot</strong>
+                        <span class="meta" id="sugMeta"></span>
+                        <span class="sug-estado" id="sugEstado"></span>
+                        <button type="button" class="sug-plegar" id="sugPlegar" title="Plegar o desplegar la sugerencia para ver el chat">Ocultar</button>
+                    </div>
+                    <p class="meta sug-motivo" id="sugMotivo" hidden></p>
+                    <div class="sug-msgs" id="sugMsgs"></div>
+                    <div class="fila sug-acciones">
+                        <button type="button" id="sugEnviar" title="Manda los mensajes tildados, en orden, como si los escribieras vos">Enviar sugerencia</button>
+                        <button type="button" class="sec" id="sugDescartar" title="La saca de acá y queda registrada como descartada">Descartar</button>
+                        <button type="button" class="sec" id="sugRecalcular" title="Vuelve a pensar la respuesta con lo último de la charla">Recalcular</button>
+                        <span class="meta" id="sugRes"></span>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <div id="responder" style="margin-top:12px;position:relative">
                     <div class="rr-buscador" id="rrBuscador" hidden>
@@ -2942,6 +3035,8 @@ function burbujaCita(t, chat) {
             if (filtro === 'con_form') return esConForm(it);
             if (filtro === 'todos_humano') return it.grupo !== 'archivado';
             if (filtro === 'demos_presentadas') return esDemoPresentada(it);
+            // Lo que va contestando el bot (9-oct): charlas donde conversó en la última semana, o con una sugerencia lista.
+            if (filtro === 'bot') return it.grupo !== 'archivado' && (!!it.sugerencia || Number(it.bot_conversa_ts || 0) >= EMBUDO_DESDE_TS);
             if (filtro === 'favorito') return !!it.favorito;
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
@@ -2963,7 +3058,8 @@ function burbujaCita(t, chat) {
         function visibleEn(it, filtro) {
             // Pidió info, recibió la bienvenida y no contestó más: no va en ninguna
             // vista (Pablo, 4-oct). Sigue en la descarga de chats y en el buscador.
-            if (it.sin_respuesta_bienvenida) return false;
+            // En la vista Bot sí: ahí se mira lo que contestó el bot aunque el cliente no haya vuelto a escribir.
+            if (it.sin_respuesta_bienvenida && filtro !== 'bot') return false;
             if (VISTAS_CON_VENCIMIENTO.has(filtro) && vencido(it)) return false;
             return cumpleFiltro(it, filtro);
         }
@@ -3104,6 +3200,14 @@ function burbujaCita(t, chat) {
                     tag.textContent = etiqueta.txt;
                     tag.title = etiqueta.tit;
                     nombreBox.appendChild(tag);
+                }
+                // Hay una sugerencia del flujo comercial lista para mandar (9-oct).
+                if (it.sugerencia) {
+                    const tagSug = document.createElement('span');
+                    tagSug.className = 'estado-tag estado-tag--sug';
+                    tagSug.textContent = '💡';
+                    tagSug.title = 'El bot dejó una sugerencia de respuesta: abrí el chat para mandarla, editarla o descartarla.';
+                    nombreBox.appendChild(tagSug);
                 }
                 if (esRTA(it)) {
                     const tagRta = document.createElement('span');
@@ -3650,10 +3754,10 @@ function burbujaCita(t, chat) {
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($160.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($100.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual160');
+            rrInsertar('Te paso el plan anual del sitio profesional ($140.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($240.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($180.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual240');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
@@ -4019,7 +4123,143 @@ function burbujaCita(t, chat) {
                 const j = await r.json();
                 if (j.transcript) pintar(j.transcript);
                 if (typeof j.ventana === 'number') { ventana = j.ventana; estadoVentana(); }
+                if ('sugerencia' in j) pintarSugerencia(j.sugerencia);
             } catch (e) {}
+        }
+
+        /* ── La sugerencia del flujo comercial (9-oct) ──
+           Lo que el bot mandaría en este chat, en orden, cada mensaje editable y
+           con su tilde. Enviar la manda por el mismo camino que el cuadro de
+           escribir (con el envio_id que evita duplicados); si el cliente escribió
+           después de pensarla, no se puede mandar hasta recalcularla. */
+        const sugBox = document.getElementById('sug');
+        const SUG_DEMORA = <?= json_encode(function_exists('wabot_sugerencia_demora') ? wabot_sugerencia_demora($cfg) : 4) ?>;
+        let sugActual = null, sugEnviando = false, sugEnvioId = '';
+        function sugEsc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function sugCuando(ts) {
+            const m = Math.round((Date.now() / 1000 - ts) / 60);
+            if (m < 1) return 'recién';
+            if (m < 60) return 'hace ' + m + ' min';
+            return new Date(ts * 1000).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        }
+        function sugEstadoPintar(s) {
+            const est = document.getElementById('sugEstado');
+            const btn = document.getElementById('sugEnviar');
+            if (!est || !btn) return;
+            const conMsgs = !!(s.mensajes && s.mensajes.length);
+            if (!s.vigente) {
+                est.textContent = 'Desactualizada: el cliente escribió o alguien contestó después. Recalculá antes de mandar.';
+                est.className = 'sug-estado sug-estado--vieja'; btn.disabled = true;
+            } else if (s.accion === 'humano') {
+                est.textContent = 'Lo contestás vos'; est.className = 'sug-estado sug-estado--humano'; btn.disabled = true;
+            } else if (s.accion === 'pausa' || s.accion === 'error' || s.accion === 'esperar') {
+                est.textContent = ''; est.className = 'sug-estado'; btn.disabled = true;
+            } else {
+                est.textContent = conMsgs ? 'Lista para mandar' : ''; est.className = 'sug-estado'; btn.disabled = !conMsgs;
+            }
+        }
+        function pintarSugerencia(s) {
+            if (!sugBox) return;
+            if (!s) { sugBox.hidden = true; sugActual = null; return; }
+            const editando = sugActual && sugActual.id === s.id && sugBox.contains(document.activeElement);
+            const mismo = sugActual && sugActual.id === s.id && sugActual.vigente === s.vigente;
+            if (mismo || editando) { sugActual = Object.assign({}, sugActual, { vigente: s.vigente }); sugEstadoPintar(sugActual); return; }
+            sugActual = s;
+            sugEnvioId = '';
+            const conMsgs = !!(s.mensajes && s.mensajes.length);
+            sugBox.hidden = false;
+            sugBox.classList.remove('sug--plegada');
+            const plegar = document.getElementById('sugPlegar');
+            if (plegar) plegar.textContent = 'Ocultar';
+            document.getElementById('sugMeta').textContent = sugCuando(s.ts)
+                + (s.solucion && s.solucion !== 'sin_definir' ? ' · ' + s.solucion : '')
+                + (s.segundos ? ' · ' + s.segundos + ' s' : '');
+            const motivo = document.getElementById('sugMotivo');
+            let textoMotivo = '';
+            if (s.accion === 'humano') textoMotivo = 'Para Pablo: ' + (s.motivo || 'caso especial') + '. El bot no le contesta nada.';
+            else if (s.accion === 'pausa' || s.accion === 'error' || s.accion === 'esperar') textoMotivo = s.motivo || '';
+            else if (s.motivo) textoMotivo = 'Nota: ' + s.motivo;
+            motivo.textContent = textoMotivo;
+            motivo.hidden = textoMotivo === '';
+            document.getElementById('sugMsgs').innerHTML = conMsgs ? s.mensajes.map((m, i) => `
+                <div class="sug-msg" data-i="${i}">
+                    <label class="sug-msg-cab"><input type="checkbox" class="sug-mandar" checked> <span class="sug-etq sug-etq--${sugEsc(m.efecto)}">${sugEsc(m.etiqueta || 'Mensaje')}</span></label>
+                    <textarea class="sug-texto" rows="${Math.min(5, Math.max(2, String(m.t).split('\n').length))}">${sugEsc(m.t)}</textarea>
+                </div>`).join('') : '';
+            document.getElementById('sugEnviar').hidden = !conMsgs;
+            document.getElementById('sugDescartar').hidden = !conMsgs;
+            document.getElementById('sugRes').textContent = '';
+            sugEstadoPintar(s);
+        }
+        async function sugPost(datos) {
+            const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(datos) });
+            return r.json();
+        }
+        async function sugEnviar() {
+            if (!sugActual || sugEnviando) return;
+            const finales = [...document.querySelectorAll('#sugMsgs .sug-msg')]
+                .map(d => d.querySelector('.sug-mandar').checked ? d.querySelector('.sug-texto').value.trim() : '');
+            const res = document.getElementById('sugRes');
+            if (!finales.some(Boolean)) { res.textContent = 'No hay ningún mensaje tildado para mandar.'; return; }
+            if (!sugEnvioId) sugEnvioId = nuevoEnvioId();
+            sugEnviando = true;
+            const b = document.getElementById('sugEnviar');
+            const cuantos = finales.filter(Boolean).length;
+            b.disabled = true;
+            res.textContent = cuantos > 1 ? 'Enviando ' + cuantos + ' mensajes, con ' + SUG_DEMORA + ' s entre cada uno…' : 'Enviando…';
+            try {
+                const j = await sugPost({ accion: 'sugerencia_enviar', tel: TEL, id: sugActual.id, mensajes: JSON.stringify(finales), envio_id: sugEnvioId });
+                if (j.ok) {
+                    sugEnvioId = ''; sugBox.hidden = true; sugActual = null;
+                    document.getElementById('handoffPill')?.remove();
+                    await refrescar(); await refrescarLista();
+                    est.textContent = j.repetido ? 'Esa sugerencia ya había salido.' : 'Sugerencia enviada (' + (j.enviados || 0) + '). El bot queda en silencio en este chat.';
+                    est.style.color = 'var(--dim)';
+                } else {
+                    res.textContent = j.error || 'No se pudo enviar.';
+                    if (j.desactualizada) { sugEnvioId = ''; await refrescar(); }
+                    b.disabled = false;
+                }
+            } catch (e) {
+                res.textContent = 'Error de red: ' + e + ' Mirá si salió; si no, tocá Enviar de nuevo (si ya había salido, no se repite).';
+                b.disabled = false;
+            } finally { sugEnviando = false; }
+        }
+        async function sugDescartar() {
+            if (!sugActual) return;
+            const b = document.getElementById('sugDescartar');
+            b.disabled = true;
+            try {
+                const j = await sugPost({ accion: 'sugerencia_descartar', tel: TEL, id: sugActual.id });
+                if (j.ok) { sugBox.hidden = true; sugActual = null; await refrescarLista(); }
+            } catch (e) {}
+            b.disabled = false;
+        }
+        async function sugRecalcular() {
+            const b = document.getElementById('sugRecalcular');
+            const res = document.getElementById('sugRes');
+            b.disabled = true; b.textContent = 'Pensando…'; res.textContent = '';
+            try {
+                const j = await sugPost({ accion: 'sugerencia_recalcular', tel: TEL });
+                sugActual = null;
+                pintarSugerencia(j.sugerencia || null);
+                if (!j.sugerencia) res.textContent = 'No hay nada que sugerir: el último mensaje no es del cliente.';
+            } catch (e) { res.textContent = 'Error de red: ' + e; }
+            b.disabled = false; b.textContent = 'Recalcular';
+        }
+        if (sugBox) {
+            document.getElementById('sugEnviar').addEventListener('click', sugEnviar);
+            document.getElementById('sugDescartar').addEventListener('click', sugDescartar);
+            document.getElementById('sugRecalcular').addEventListener('click', sugRecalcular);
+            // Plegada deja ver el chat entero; una sugerencia nueva vuelve a abrirse sola.
+            document.getElementById('sugPlegar').addEventListener('click', () => {
+                const plegada = sugBox.classList.toggle('sug--plegada');
+                document.getElementById('sugPlegar').textContent = plegada ? 'Mostrar' : 'Ocultar';
+            });
+            sugBox.addEventListener('change', ev => {
+                const chk = ev.target.closest('.sug-mandar');
+                if (chk) chk.closest('.sug-msg').classList.toggle('sug-msg--no', !chk.checked);
+            });
         }
 
         /* Un mensaje no sale dos veces (7-oct): mientras uno está en camino, Enter

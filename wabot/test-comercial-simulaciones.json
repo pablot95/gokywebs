@@ -1,0 +1,84 @@
+[
+ {"id": "01", "titulo": "Anuncio genérico → zapatillas → acepta", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Vendo zapatillas, tengo un local en Lanús y también vendo por Instagram"},
+   {"t": "Dale, a ver cómo quedaría", "si": "oferta", "sino": "Ok"}]},
+ {"id": "02", "titulo": "Pide precio sin decir nada, después peluquería", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Precios"},
+   {"t": "Tengo una peluquería"},
+   {"t": "Y cuánto tardan en hacerla?"},
+   {"t": "Dale", "si": "oferta"}]},
+ {"id": "03", "titulo": "Oficios varios, pregunta cómo se paga y posterga", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Hola mucho gusto, yo me llamo Pedro soy albañil yesero electricista y plomero ya no quiero trabajar mas para otra persona ya quiero independizar y quiero crear una página"},
+   {"t": "Y eso cómo se paga?"},
+   {"t": "Bueno lo hablo con mi señora y te aviso"}]},
+ {"id": "04", "titulo": "Psicóloga: solo información y contacto", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Soy psicóloga"},
+   {"t": "Solo información y que me contacten por WhatsApp, los turnos los manejo yo"},
+   {"t": "Que necesitás para hacerla?", "si": "oferta"}]},
+ {"id": "05", "titulo": "Cursos de maquillaje presenciales, solo mostrar", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Doy cursos de maquillaje presenciales en mi estudio, quiero mostrarlos y que me consulten por WhatsApp"},
+   {"t": "Me interesa", "si": "oferta"}]},
+ {"id": "06", "titulo": "Inmobiliaria chica, contesta Ok", "turnos": [
+   {"t": "Hola! Quiero pedir presupuesto para mi web."},
+   {"t": "Negocio inmobiliario, somos dos martilleros en Pilar"},
+   {"t": "Ok", "si": "oferta"}]},
+ {"id": "07", "titulo": "Kiosco: registrar deudores y precios (sistema)", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Ya tenemos un kiosko, la idea sería registrar a los deudores, registrar los productos para ver los precios, actualizar los precios. Todavía no vendemos por Internet"},
+   {"t": "Cuánto saldría?"}]},
+ {"id": "08", "titulo": "Uniformes mayorista/minorista, pide descuento", "turnos": [
+   {"t": "Una informativa que genere pedidos nosotros vendemos uniformes deportivos camisetas de fútbol short etc. Mayorista y minorista"},
+   {"t": "Me hacés descuento si pago el anual?"},
+   {"t": "Bueno dale", "si": "oferta"}]},
+ {"id": "09", "titulo": "Libros digitales, quiere comprar la web", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Vendo libros de medicina natural, recetas y plantas medicinales, algunos en PDF"},
+   {"t": "No quiero suscripción, quiero comprar la página y que sea mía"},
+   {"t": "Y el hosting quién lo paga?"}]},
+ {"id": "10", "titulo": "Leches maternizadas, solo catálogo por WhatsApp", "turnos": [
+   {"t": "Hola vendo leches maternizadas y medicamentosas"},
+   {"t": "Solo quiero mostrar los productos con precio y que me pidan por WhatsApp, no cobrar por la web"},
+   {"t": "Si", "si": "oferta"}]},
+ {"id": "11", "titulo": "Migrar 400 productos de Instagram", "turnos": [
+   {"t": "Buenas, necesito migrar mi cuenta/tienda de instagram a una web. Calculo que deben ser aproximadamente unos 400 productos distribuidos en unas 10 categorías. Vendo ropa y accesorios"},
+   {"t": "Se pueden cargar todos ustedes?"},
+   {"t": "Dale", "si": "oferta"}]},
+ {"id": "12", "titulo": "Radio con reproductor y noticias", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "[audio] Hola, ¿cómo andas? ¿Todo bien? Mirá, yo tengo una radio. Me gustaría, de ser posible, ponerle un reproductor en vivo, algunas noticias y esas cosas."}]},
+ {"id": "13", "titulo": "Abogado, acepta con duda de pago", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre la creación de páginas web?"},
+   {"t": "Si, abogado con 26 años de profesión. Hoy cambiaron ciertas cosas, la virtualidad, la IA, y quiero tener una web para que me encuentren y me consulten"},
+   {"t": "Dale, pero tengo que pagar algo antes?", "si": "oferta"}]},
+ {"id": "14", "titulo": "Fundación, lo piensa", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Es para una fundación que rehabilita personas en salud mental y consumo problemático. Lo que más queremos destacar es la casa de mujeres. Es para hacerla conocer y recibir donaciones"},
+   {"t": "Déjame pensarlo, ver dudas preguntas que quisiera hacer y les aviso"}]},
+ {"id": "15", "titulo": "Odontóloga con turnos online", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Tengo un consultorio odontológico y quiero que los pacientes saquen turno online eligiendo día y horario"},
+   {"t": "Si", "si": "oferta"}]},
+ {"id": "16", "titulo": "Conocido / referido", "turnos": [
+   {"t": "Xavier aqui, te acordas que le hicimos un sitio web a Gabriela? Te paso un cliente"}]},
+ {"id": "17", "titulo": "Calzado e iPhone, acepta y después escribe", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Vendo calzados y iphone en el mismo lugar"},
+   {"t": "Dale", "si": "oferta"},
+   {"t": "Ya mande todo", "si": "form"}]},
+ {"id": "18", "titulo": "Lencería, acepta pero pregunta por el pago único", "turnos": [
+   {"t": "Mi tienda es de lencería, vendo por Instagram"},
+   {"t": "Sí, me interesa. Antes de avanzar con el diseño quería confirmar qué incluye el pago único, porque mi idea es hacer una inversión ahora y después manejarla yo", "si": "oferta"}]},
+ {"id": "19", "titulo": "Velas: primero quiere ver trabajos", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto? Necesito armar un catálogo de velas"},
+   {"t": "Tenés ejemplos de trabajos que hayan hecho?"},
+   {"t": "Buenísimas. Dale armala", "si": "oferta"}]},
+ {"id": "20", "titulo": "Turismo, pregunta por publicidad y rechaza", "turnos": [
+   {"t": "Nesecito una pagina web para viajes turisticos, somos una empresa de viajes pequeña"},
+   {"t": "Y ustedes hacen la publicidad en redes también?"},
+   {"t": "No por ahora gracias, lo dejo para más adelante"}]}
+]
