@@ -16,7 +16,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
-$GLOBALS['WABOT_TEST_IA_USO_DIR'] = sys_get_temp_dir() . '/wabot-simular-uso';
+// Una carpeta por corrida: las charlas reusan las mismas claves y el costo de cada una sumaba el de corridas anteriores.
+$GLOBALS['WABOT_TEST_IA_USO_DIR'] = sys_get_temp_dir() . '/wabot-simular-uso-' . date('Ymd-His');
 require_once __DIR__ . '/redactor.php';
 // Con SIN_RED el bot no llama a OpenAI solo: este gancho hace la llamada real.
 $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) {
@@ -69,6 +70,7 @@ foreach ($escenarios as $n => $esc) {
         wabot_conv_transcript($conv, 'cliente', $texto, null, ['id' => 'wamid.sim.' . uniqid()]);
         $conv['ultimo_cliente_ts'] = time();
         $GLOBALS['WABOT_IA_CLAVE'] = $clave;
+        unset($conv['comercial_ultimo']['revision']);
         $ti = microtime(true);
         try { $r = wabot_salida_preparar(wabot_responder($texto, $conv, $cfg), $conv, $cfg); }
         catch (Throwable $e) { $r = []; echo "!!! " . $e->getMessage() . "\n"; }
@@ -92,6 +94,17 @@ foreach ($escenarios as $n => $esc) {
                 echo "<<< BOT [{$seg}s]: " . str_replace("\n", "\n           ", $m) . "\n";
             }
             $salida[count($salida) - 1] = '';
+        }
+        // Lo que vio el revisor en este turno (9-oct): qué corrigió, o por qué la frenó.
+        $rev = $conv['comercial_ultimo']['revision'] ?? null;
+        if (is_array($rev) && in_array($rev['estado'] ?? '', ['corregida', 'dudosa', 'frenada'], true)) {
+            $det = implode(' · ', array_map(function ($p) { return $p['tipo'] . ': ' . rtrim((string)$p['detalle'], '. '); }, (array)($rev['problemas'] ?? [])));
+            $antes = implode(' / ', array_map(function ($t) { return mb_substr(str_replace("\n", ' ', (string)$t), 0, 140); }, (array)($rev['antes'] ?? [])));
+            $nota = ['corregida' => 'el revisor corrigió la primera versión', 'dudosa' => 'el revisor corrigió, pero le quedó una duda menor',
+                     'frenada' => 'el revisor la frenó: la contesta Pablo'][$rev['estado']];
+            $salida[] = "> 🔎 _({$nota} — {$det}. La primera versión decía: «{$antes}»)_";
+            $salida[] = '';
+            echo "    [revisor: {$rev['estado']} — {$det}]\n";
         }
         $u = $conv['comercial_ultimo'] ?? [];
         echo "    [accion=" . ($u['accion'] ?? '-') . " sol=" . ($conv['comercial_solucion'] ?? '-') . " precio=" . (int)!empty($conv['precio_dado'])

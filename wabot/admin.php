@@ -948,16 +948,42 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     /* Conversaciones live (13-sep): las charlas con movimiento, la más reciente
      * primero, cada una con su tramo final de mensajes. Solo lee: no las marca
-     * como leídas (eso lo hace abrirla en Conversaciones). */
+     * como leídas (eso lo hace abrirla en Conversaciones).
+     * Desde el 9-oct, solo las que están en manos del bot (Pablo: "para poder yo
+     * vigilar bien que conteste bien… una vez que me pase el chat a mí, sale de
+     * ahí"), con lo que hizo el bot en cada una, y las que salieron hace poco. */
     if ($a === 'live') {
         header('Content-Type: application/json; charset=utf-8');
-        $items = array_values(array_filter(wabot_lista_items(), function ($it) {
+        $cfgLive = wabot_config_load();
+        $todos = array_values(array_filter(wabot_lista_items(), function ($it) {
             return stripos((string)$it['tel'], 'TEST') === false && (int)($it['ts'] ?? 0) > 0;
         }));
+        $items = array_values(array_filter($todos, function ($it) { return !empty($it['bot_tiene']); }));
         usort($items, function ($x, $y) { return (int)$y['ts'] <=> (int)$x['ts']; });
         $items = array_slice($items, 0, 30);
-        foreach ($items as &$it) {
+        $salieron = [];
+        foreach ($todos as $it) {
+            $s = $it['bot_salio'] ?? null;
+            if (!empty($it['bot_tiene']) || !is_array($s) || (int)($s['ts'] ?? 0) < time() - 1800) continue;
+            $salieron[] = ['tel' => (string)$it['tel'], 'nombre' => (string)($it['nombre_agenda'] ?: ($it['nombre'] ?: ($it['nombre_negocio'] ?: $it['tel']))),
+                           'motivo' => (string)$s['motivo'], 'ts' => (int)$s['ts']];
+        }
+        usort($salieron, function ($x, $y) { return $y['ts'] <=> $x['ts']; });
+        $salieron = array_slice($salieron, 0, 5);
+        $vivos = [];
+        foreach ($items as $it) {
             $cv = wabot_conv_load($it['tel']);
+            // La lista guardada puede tener unos minutos (una pausa que se cumplió): lo que manda es la charla.
+            if (!wabot_comercial_bot_tiene($cv, $cfgLive)) continue;
+            $rev = $cv['comercial_ultimo']['revision']['estado'] ?? '';
+            $cot = wabot_comercial_cotizacion($cv, $cfgLive);
+            $it['bot'] = [
+                'solucion' => (string)($cv['comercial_solucion'] ?? ''),
+                'mensual' => (string)($cot['mensual'] ?? ''),
+                'oferta' => wabot_comercial_oferta_hecha($cv, $cfgLive),
+                'sugerencia' => !empty($it['sugerencia']),
+                'revision' => in_array($rev, ['corregida', 'dudosa'], true) && (int)($cv['comercial_ultimo']['ts'] ?? 0) > 0 ? $rev : '',
+            ];
             $it['ventana'] = wabot_ventana_restante($cv);
             $it['transcript'] = array_map(function ($l) {
                 $fila = ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
@@ -966,9 +992,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                 if (!empty($l['cita'])) { $fila['cita'] = 1; $fila['cita_q'] = $l['cita_q']; $fila['cita_t'] = $l['cita_t']; }
                 return $fila;
             }, array_slice(wabot_transcript_citas(wabot_transcript_completo($it['tel'], $cv)), -40));
+            $vivos[] = $it;
         }
-        unset($it);
-        echo json_encode(['items' => $items, 'ahora' => time()], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['items' => $vivos, 'ahora' => time(), 'modo' => wabot_flujo_comercial($cfgLive), 'salieron' => $salieron],
+            JSON_UNESCAPED_UNICODE);
         exit;
     }
     // Busca DENTRO de los mensajes, no en los datos de contacto: recorre cada
@@ -1229,8 +1256,17 @@ h2 { font-size:16px; margin:22px 0 10px; }
   .tabs-nav::-webkit-scrollbar { display:none; }
   .tabs-nav a { white-space:nowrap; flex:0 0 auto; }
 }
-/* Conversaciones live: 5 columnas por pantalla de compu, scroll horizontal. */
-.live-bar { display:flex; align-items:center; gap:10px; margin-bottom:8px; color:var(--dim); font-size:12.5px; }
+/* Conversaciones live: 4 columnas por pantalla de compu (9-oct), scroll horizontal. */
+.live-bar { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-bottom:8px; color:var(--dim); font-size:12.5px; }
+/* Las que salieron de las manos del bot en la última media hora (9-oct). */
+.live-salieron { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:-2px 0 8px; font-size:12px; color:var(--dim); }
+.live-salieron-titulo { color:var(--tenue); }
+.live-salieron a { color:var(--tx); text-decoration:none; border-bottom:1px dotted var(--line-fuerte); }
+.live-salieron a:hover { color:var(--ac); }
+.pill.live-pill-bot { background:transparent; border:1px solid var(--line-fuerte); color:var(--tx); }
+.pill.live-pill-sug { background:var(--ac-tenue); color:var(--ac); }
+.pill.live-pill-rev { background:transparent; border:1px solid var(--line-fuerte); color:var(--dim); }
+.pill.live-pill-alerta { background:var(--warn-tenue); color:var(--warn); }
 .live-punto { width:8px; height:8px; border-radius:50%; background:var(--ac, #3ecf8e); box-shadow:0 0 0 0 rgba(62,207,142,.6); animation:livePulso 2s infinite; }
 .live-punto.caido { background:var(--bad); animation:none; }
 @keyframes livePulso { 0% { box-shadow:0 0 0 0 rgba(62,207,142,.55); } 70% { box-shadow:0 0 0 8px rgba(62,207,142,0); } 100% { box-shadow:0 0 0 0 rgba(62,207,142,0); } }
@@ -1267,7 +1303,7 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-responder-estado.error { color:var(--bad); }
 .live-responder textarea:disabled { opacity:.65; cursor:not-allowed; }
 .live-vacio { color:var(--dim); font-size:13px; padding:30px 4px; }
-@media (max-width: 1100px) { .live-board { grid-auto-columns:calc((100% - 2 * 10px) / 3); } }
+/* Cuatro por pantalla en cualquier compu (Pablo, 9-oct); en tablet, dos; en el celular, una. */
 @media (max-width: 860px)  { .live-board { grid-auto-columns:calc((100% - 10px) / 2); } }
 @media (max-width: 700px)  { .live-board { grid-auto-columns:88%; scroll-snap-type:x mandatory; } .live-col { scroll-snap-align:start; } }
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
@@ -1557,7 +1593,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .sug-estado { margin-left:auto; font-size:11px; color:var(--ac); }
 .sug-plegar { background:none; border:1px solid var(--line); color:var(--dim); border-radius:6px; padding:1px 7px; font-size:11px; cursor:pointer; }
 .sug--plegada { max-height:none; }
-.sug--plegada .sug-msgs, .sug--plegada .sug-motivo, .sug--plegada .sug-acciones { display:none; }
+.sug--plegada .sug-msgs, .sug--plegada .sug-motivo, .sug--plegada .sug-revision, .sug--plegada .sug-acciones { display:none; }
+/* Lo que vio el revisor (9-oct): corrigió la primera versión, o le sigue viendo un problema. */
+.sug-revision { margin:6px 0 0; font-size:12px; color:var(--dim); }
+.sug-revision--dudosa { color:var(--warn); }
 .sug-estado--vieja { color:var(--warn); }
 .sug-estado--humano { color:var(--bad); }
 .sug-motivo { margin:6px 0 0; color:var(--tx); font-size:12px; }
@@ -2789,6 +2828,7 @@ function burbujaCita(t, chat) {
                         <button type="button" class="sug-plegar" id="sugPlegar" title="Plegar o desplegar la sugerencia para ver el chat">Ocultar</button>
                     </div>
                     <p class="meta sug-motivo" id="sugMotivo" hidden></p>
+                    <p class="meta sug-revision" id="sugRevision" hidden></p>
                     <div class="sug-msgs" id="sugMsgs"></div>
                     <div class="fila sug-acciones">
                         <button type="button" id="sugEnviar" title="Manda los mensajes tildados, en orden, como si los escribieras vos">Enviar sugerencia</button>
@@ -4171,6 +4211,17 @@ function burbujaCita(t, chat) {
             else if (s.motivo) textoMotivo = 'Nota: ' + s.motivo;
             motivo.textContent = textoMotivo;
             motivo.hidden = textoMotivo === '';
+            const revBox = document.getElementById('sugRevision');
+            if (revBox) {
+                const rv = s.revision || null;
+                const detalles = (lista) => (lista || []).map(p => p.detalle).filter(Boolean).join(' · ');
+                let textoRev = '';
+                if (rv && rv.estado === 'dudosa') textoRev = '⚠ El revisor todavía ve un problema: ' + (detalles(rv.finales) || detalles(rv.problemas)) + '. Miralo antes de mandar.';
+                else if (rv && rv.estado === 'corregida') textoRev = '🔎 El revisor encontró algo en la primera versión y el bot la corrigió: ' + detalles(rv.problemas);
+                revBox.textContent = textoRev;
+                revBox.hidden = textoRev === '';
+                revBox.classList.toggle('sug-revision--dudosa', !!(rv && rv.estado === 'dudosa'));
+            }
             document.getElementById('sugMsgs').innerHTML = conMsgs ? s.mensajes.map((m, i) => `
                 <div class="sug-msg" data-i="${i}">
                     <label class="sug-msg-cab"><input type="checkbox" class="sug-mandar" checked> <span class="sug-etq sug-etq--${sugEsc(m.efecto)}">${sugEsc(m.etiqueta || 'Mensaje')}</span></label>
@@ -4567,14 +4618,17 @@ function burbujaCita(t, chat) {
         <?php endif; ?>
 
     <?php elseif ($tab === 'live'): ?>
-        <?php /* Conversaciones live (Pablo, 13-sep): varias charlas a la vez, 5 por
-         * pantalla de compu, con scroll horizontal. La que tuvo el último mensaje
-         * —del cliente, del bot o tuyo— pasa sola al primer lugar. */ ?>
+        <?php /* Conversaciones live (Pablo, 13-sep): varias charlas a la vez, con
+         * scroll horizontal. La que tuvo el último mensaje pasa sola al primer lugar.
+         * Desde el 9-oct: 4 por pantalla y solo las que están en manos del bot,
+         * para vigilar que conteste bien; cuando el bot se la pasa a Pablo (o la
+         * toma él), sale de acá y queda anotada arriba un rato. */ ?>
         <div class="live-bar">
             <span class="live-punto" id="livePunto" aria-hidden="true"></span>
             <span id="liveEstado">Conectando…</span>
-            <span style="margin-left:auto">La charla con el último mensaje va primero, a la izquierda.</span>
+            <span style="margin-left:auto">Solo las charlas que tiene el bot. Cuando te la pasa, sale de acá.</span>
         </div>
+        <div class="live-salieron" id="liveSalieron" hidden></div>
         <p class="live-vacio" id="liveVacio">Cargando conversaciones…</p>
         <div class="live-board" id="liveBoard"></div>
         <script>
@@ -4583,6 +4637,8 @@ function burbujaCita(t, chat) {
             const vacio  = document.getElementById('liveVacio');
             const punto  = document.getElementById('livePunto');
             const estado = document.getElementById('liveEstado');
+            const salieronBox = document.getElementById('liveSalieron');
+            const MODOS = { off: 'flujo nuevo apagado', sugerencias: 'modo Sugerencias', auto: 'modo Automático' };
             const cols = new Map();   // tel -> { el, firma, ts, pintado }
             const dd = n => String(n).padStart(2, '0');
             let cargando = false;
@@ -4694,7 +4750,8 @@ function burbujaCita(t, chat) {
                     c.envioId = ''; c.envioTexto = '';
                     texto.value = '';
                     borradorGuardar(c.tel, '');   // se fue: el borrador ya no existe
-                    estadoRespuesta.textContent = 'Enviado. El bot quedó en silencio en este chat.';
+                    // La tomaste vos: el bot quedó en silencio y la charla sale de esta vista (queda anotada arriba).
+                    estadoRespuesta.textContent = 'Enviado. La tomaste vos: sale de esta vista.';
                     await refrescar();
                 } catch (error) {
                     estadoRespuesta.textContent = error && error.name === 'AbortError'
@@ -4769,7 +4826,14 @@ function burbujaCita(t, chat) {
                     s.className = 'pill ' + cls; s.textContent = txt; sub.appendChild(s);
                 };
                 pill(it.canal === 'instagram' ? 'Instagram' : 'WhatsApp', 'tipo');
-                if (it.fase) {
+                // Lo que hizo el bot en esta charla (9-oct): qué le cotizó, si ofreció la demo, si hay sugerencia o el revisor corrigió.
+                const b = it.bot || {};
+                if (b.solucion) pill(String(b.solucion).replace(/_/g, ' ') + (b.mensual ? ' · ' + b.mensual + '/mes' : ''), 'live-pill-bot');
+                if (b.oferta) pill('demo ofrecida', 'live-pill-bot');
+                if (b.sugerencia) pill('💡 sugerencia', 'live-pill-sug');
+                if (b.revision === 'corregida') pill('🔎 el revisor corrigió', 'live-pill-rev');
+                else if (b.revision === 'dudosa') pill('⚠ revisar', 'live-pill-alerta');
+                if (!b.solucion && it.fase) {
                     const f = document.createElement('span');
                     f.textContent = String(it.fase).replace(/_/g, ' ');
                     sub.appendChild(f);
@@ -4870,9 +4934,29 @@ function burbujaCita(t, chat) {
                 const items = Array.isArray(j && j.items) ? j.items : [];
                 const ahora = (j && j.ahora) || Math.floor(Date.now() / 1000);
                 const hoy = new Date();
-                estado.textContent = items.length + ' conversaciones · actualizado ' + dd(hoy.getHours()) + ':' + dd(hoy.getMinutes()) + ':' + dd(hoy.getSeconds());
+                const modo = (j && j.modo) || 'off';
+                estado.textContent = items.length + (items.length === 1 ? ' charla en manos del bot' : ' charlas en manos del bot')
+                    + ' · ' + (MODOS[modo] || modo) + ' · actualizado ' + dd(hoy.getHours()) + ':' + dd(hoy.getMinutes()) + ':' + dd(hoy.getSeconds());
                 vacio.hidden = items.length > 0;
-                if (!items.length) vacio.textContent = 'Todavía no hay conversaciones.';
+                if (!items.length) vacio.textContent = modo === 'off'
+                    ? 'El bot no tiene charlas ahora. Con el flujo nuevo apagado, acá aparecen las que el bot saludó y el cliente contestó, hasta que las tomás vos.'
+                    : 'El bot no tiene charlas ahora. Cuando un cliente le escriba, aparece acá; cuando te la pasa, sale.';
+                // Las que salieron de las manos del bot en la última media hora, con el motivo.
+                const salieron = Array.isArray(j && j.salieron) ? j.salieron : [];
+                salieronBox.hidden = salieron.length === 0;
+                salieronBox.textContent = '';
+                if (salieron.length) {
+                    const t = document.createElement('span');
+                    t.className = 'live-salieron-titulo';
+                    t.textContent = 'Salieron hace poco:';
+                    salieronBox.appendChild(t);
+                    for (const s of salieron) {
+                        const a = document.createElement('a');
+                        a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(s.tel);
+                        a.textContent = s.nombre + ' · ' + s.motivo + ' · ' + hace(s.ts, ahora);
+                        salieronBox.appendChild(a);
+                    }
+                }
 
                 // Mover una columna en el DOM le resetea el scroll: se guarda antes.
                 const scrolls = new Map();

@@ -8,6 +8,7 @@
    {"t": "Precios"},
    {"t": "Tengo una peluquería"},
    {"t": "Y cuánto tardan en hacerla?"},
+   {"t": "Ah bien. Por WhatsApp, que me escriban para pedir turno"},
    {"t": "Dale", "si": "oferta"}]},
  {"id": "03", "titulo": "Oficios varios, pregunta cómo se paga y posterga", "turnos": [
    {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
@@ -80,5 +81,59 @@
  {"id": "20", "titulo": "Turismo, pregunta por publicidad y rechaza", "turnos": [
    {"t": "Nesecito una pagina web para viajes turisticos, somos una empresa de viajes pequeña"},
    {"t": "Y ustedes hacen la publicidad en redes también?"},
-   {"t": "No por ahora gracias, lo dejo para más adelante"}]}
+   {"t": "No por ahora gracias, lo dejo para más adelante"}]},
+ {"id": "21", "titulo": "Masajista pide el precio sin contestar lo de los turnos", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Soy masajista, atiendo en mi casa"},
+   {"t": "Cuánto sale?"},
+   {"t": "Por WhatsApp nomás"},
+   {"t": "Dale", "si": "oferta"}]},
+ {"id": "22", "titulo": "Mates: pregunta si le cargan los productos", "turnos": [
+   {"t": "Hola, vendo mates y bombillas, tengo unos 80 productos"},
+   {"t": "Yo te paso las fotos y los precios, los cargás vos?"},
+   {"t": "Ah ok, y cuánto sale que los carguen todos ustedes?"}]},
+ {"id": "23", "titulo": "Impresión 3D, acepta para analizarlo en pareja (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información para armar mi página web"},
+   {"t": "Hacemos impresiones en 3d"},
+   {"t": "Sería buenísimo, asi podría analizarlo con mi esposo", "si": "oferta"}]},
+ {"id": "24", "titulo": "Masajista quiere más audiencia y pregunta si tiene costo (chat del 9-oct)", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Soy masajista profecional queria tener mas audiencia en el rubro"},
+   {"t": "Si tiene un costo"},
+   {"t": "Sin reservas, que me escriban por WhatsApp"},
+   {"t": "Dale", "si": "oferta"}]},
+ {"id": "25", "titulo": "Celulares: ¿esto es como marketing? (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Vende celulares."},
+   {"t": "Y esto que seria como.marketing"},
+   {"t": "OK."}]},
+ {"id": "26", "titulo": "Lencería y sexshop: nombre de fantasía al cobrar (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Tengo un negocio de lencería y sexshop"},
+   {"t": "Sí pero quiero hacer para con venta directa pero que cuando paguen no no aparezca mi nombre de la cuenta quiero Que aparezca el nombre de fantasía porque no quiero que la gente sepa que soy yo la dueña no sé si me explico", "si": "oferta"},
+   {"t": "Bueno. Ahora veo eso"}]},
+ {"id": "27", "titulo": "Pizzería para acceder a más clientes (chat del 9-oct)", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "La página web sería para una pizzería para acceder a más cliente"},
+   {"t": "Bueno", "si": "oferta"}]},
+ {"id": "28", "titulo": "Indumentaria: pide la demo y pregunta por los medios de pago (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información de costos para una pyme de indumentaria y accesorios!!"},
+   {"t": "venta al x menor de indumentaria femenina y accesorios local recién abrimos el sabado"},
+   {"t": "ok pásame el demo y los medios de pago te los pasaría yo?", "si": "oferta"}]},
+ {"id": "29", "titulo": "Mayorista con dropshipping (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Somos mayoristas con modelo dropshipping, importadores tambien"}]},
+ {"id": "30", "titulo": "Servicio que quiere gestionarla y publicar todos los meses (chat del 9-oct)", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Quiero saber cuanto cuesta hacer y que este en funcionamiento después que pueda gestionar yo solamente. Es de servicio la página, con publicaciones mensuales"},
+   {"t": "Dale", "si": "oferta"}]},
+ {"id": "31", "titulo": "Costura: qué pasa si un mes no puede pagar (chat del 9-oct)", "turnos": [
+   {"t": "Hola! Quiero mas información"},
+   {"t": "Hola que tal hago costura vendo de todo un poco, nesecer, bolso, bolso playero, bolso matero etc"},
+   {"t": "[audio] Te hago una consulta, yo de esto no entiendo nada. Si lo pongo por mes, son 30 por mes, y un mes no tengo el dinero, pasa algo? O tiene que ser seguido?", "si": "oferta"}]},
+ {"id": "32", "titulo": "Fonoaudióloga: centro, contacto por WhatsApp (chat del 9-oct)", "turnos": [
+   {"t": "Hola. ¿Puedo obtener más información sobre esto?"},
+   {"t": "Hola! Soy fonoaudiologa. Me gustaría crear una página sobre un centro en el que estoy trabajando."},
+   {"t": "Prefiero que se contacte por WhatsApp nomás"},
+   {"t": "Dale", "si": "oferta"}]}
 ]

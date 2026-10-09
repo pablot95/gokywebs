@@ -189,6 +189,11 @@ function wabot_textos_default() {
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros.',
         'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual y en el anual.',
         'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Los primeros productos los cargamos nosotros y, cuando esté lista, te mostramos cómo se usa.',
+        /* "Se pueden cargar todos ustedes?" no es "lo puedo manejar yo?" (Pablo,
+         * 9-oct: la respuesta de arriba contradecía la pregunta). Con sus palabras
+         * del 22-sep: algunos los cargamos para entregarla funcionando; todos,
+         * también, con un costo adicional según la cantidad. */
+        'carga_nosotros' => 'Si preferís que carguemos nosotros todos los productos, también podemos, con un costo adicional según la cantidad. Algunos los cargamos igual para entregarte la web funcionando, y el resto lo cargás vos desde el panel sin costo.',
         // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche).
         'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, vos solo nos pedís lo que quieras cambiar.',
         'carga_sitio' => 'En la web informativa los cambios los hacemos nosotros, uno por mes incluido. Si querés manejar vos el contenido desde un panel, va con el plan de {mensualidad_panel}.',
@@ -199,6 +204,9 @@ function wabot_textos_default() {
         'instagram_sigue' => 'Tu Instagram lo seguís usando igual: la web es aparte. Las vinculamos, usamos las mismas fotos y la misma identidad, y desde Instagram mandás gente a la web.',
         'marca' => 'Tener el dominio no protege el nombre comercial: para que nadie lo use como marca hay que registrarla, que es un trámite aparte.',
         'cobros_internacionales' => 'Sí, para cobrar en el exterior se integra PayPal u otra pasarela internacional, además de Mercado Pago para Argentina.',
+        // Pablo en sus chats del 9-oct ("los medios de pago te los pasaría yo?" y el nombre de fantasía al cobrar).
+        'medios_pago_tienda' => 'Por lo general integramos Mercado Pago, pero si tenés otra billetera virtual de preferencia, integramos esa. También podés ofrecer transferencia o efectivo.',
+        'mp_nombre_negocio' => 'Sí, eso depende de cómo tengas configurado Mercado Pago: ahí elegís el nombre del negocio, y cuando te pagan figura ese nombre.',
         'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
         'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',
         'reuniones' => 'Sí, claro. Las llamadas las coordinamos con el desarrollador cuando avanzamos con la web, en el horario que te quede cómodo.',
@@ -350,20 +358,37 @@ function wabot_textos_default() {
         /* La propuesta breve la redacta el modelo (adaptada al negocio, estilo
          * de los chats de Pablo). Si no pasa la red (montos, links, promesas),
          * sale la fija de la solución. */
+        /* Con la web como herramienta (Pablo, 9-oct: automatizar ventas, ordenar
+         * pedidos, profesionalizar y aprovechar el tráfico de redes, Google,
+         * WhatsApp o publicidad, sin prometer que la web sola trae clientes). */
         'propuesta_fija' => [
-            'informativa'  => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con toda tu información y el contacto directo a tu WhatsApp',
-            'informativa_panel' => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con un panel para que cambies vos los textos y las fotos cuando quieras',
-            'tienda'       => 'Perfecto, te podemos armar una tienda online para que vendas directamente desde la web y llegues a más público, incluso generar ventas sin que estés pendiente del celular.',
-            'catalogo'     => 'Perfecto, te podemos armar un catálogo online con todos tus productos, con fotos y precios, donde la gente arma su pedido y te llega directo a tu WhatsApp.',
-            'cursos'       => 'Perfecto, te podemos armar una web para tus cursos, con toda la información de cada uno y la inscripción directo desde la web.',
-            'inmobiliaria' => 'Perfecto, te podemos armar una web inmobiliaria para publicar tus propiedades con fotos y buscador, y que los interesados te consulten directo.',
-            'reservas'     => 'Perfecto, te podemos armar una web con tus servicios y la reserva de turnos online, para que tus clientes elijan día y horario desde la web.',
+            'informativa'  => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con toda tu información y el contacto directo a tu WhatsApp, así aprovechás mejor a la gente que te llega por redes, Google o recomendaciones',
+            'informativa_panel' => 'Perfecto, te podemos armar una página web profesional para mostrar tus servicios, con un panel para que cambies vos los textos y las fotos cuando quieras y tengas tu información siempre al día',
+            'tienda'       => 'Perfecto, te podemos armar una tienda online para que la gente vea tus productos, compre y pague desde la web, y los pedidos te queden ordenados en tu panel sin que estés pendiente del celular',
+            'catalogo'     => 'Perfecto, te podemos armar un catálogo online con todos tus productos, con fotos y precios, donde la gente arma su pedido y te llega directo y ordenado a tu WhatsApp. Los productos los manejás vos desde un panel',
+            'cursos'       => 'Perfecto, te podemos armar una web para tus cursos, con el programa, las fechas y la inscripción desde ahí, así la gente tiene toda la información sin que respondas cada consulta a mano',
+            'inmobiliaria' => 'Perfecto, te podemos armar una web inmobiliaria para publicar tus propiedades con fotos y buscador, así la gente que te llega por redes o carteles ve todo y te consulta directo',
+            'reservas'     => 'Perfecto, te podemos armar una web con tus servicios y la reserva de turnos online, para que tus clientes elijan día y horario solos y tengas la agenda ordenada sin coordinar cada turno por mensaje',
         ],
+        /* La pregunta de los turnos queda pendiente hasta que la conteste (Pablo,
+         * 9-oct): si pregunta otra cosa y el modelo igual quiere cotizar, sale
+         * esto (la pregunta de Pablo en sus chats) y no los planes. */
+        'pregunta_turnos' => 'Y te consulto: querés que la gente solamente te escriba por WhatsApp o también que pueda reservar turnos desde la página?',
+        /* Si en cambio pregunta el precio sin contestarla, los dos precios, como
+         * Pablo el 9-oct ("Si tiene un costo" → "Es otro plan si incluye
+         * reservas" / "Sin reservas podés elegir…" / "Con reservas quedaría en:"). */
+        'dos_planes_intro' => 'Es otro plan si incluye reservas',
+        'sin_reservas' => 'Sin reservas',
+        'con_reservas' => "Con reservas quedaría en:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}",
         // Cuántos mensajes recientes ve el modelo y el tope de mensajes propios por turno.
         'historial' => 30,
         'max_mensajes' => 2,
         // Segundos entre cada mensaje cuando Pablo manda una sugerencia de varios (9-oct: "un delay de 4 segundos entre cada uno").
         'demora_entre_sugeridos' => 4,
+        /* El revisor lee cada respuesta antes de que salga (9-oct: "que pueda
+         * autodarse cuenta de que está desviándose… o si se saltea respuestas").
+         * Una llamada más por turno; false lo apaga. */
+        'revisor' => true,
     ],
     'mantenimiento_planes' => [
         'landing' => [

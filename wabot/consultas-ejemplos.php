@@ -74,11 +74,9 @@ return [
     ],
     'carga' => [
         'Mí duda es los productos los cargo yo?',
-        'Los articulos los cargan ustedes o lo debo hacer yo?',
         'Quien lo maneja',
         'Consulta quien manejaria las páginas',
         'la página la administras vos o nosotros?',
-        'Los productos los podemos llenar nosotros o los llenan ustedes?',
         'tengo algún link como de admin para actualizar o algo así?',
         'A mí me interesaría poder actualizarla yo... Es posible?',
         'Cuantas fotos podemos subir o como es?',
@@ -87,6 +85,27 @@ return [
         'Osea ustedes se encargan de todo manejo y todo?',
         'cuánto es el adicional para cargar todos los productos con fotos y precios?',
         'cuando no hay stock se actualiza solo?',
+    ],
+    // Chats del 9-oct: medios de pago de la tienda y el nombre que figura al cobrar.
+    'medios_pago_tienda' => [
+        'ok pásame el demo y los medios de pago te los pasaría yo?',
+        'qué medios de pago se pueden poner en la web?',
+        'en la tienda mis clientes pueden pagar con transferencia o efectivo?',
+        'puedo usar otra billetera virtual en vez de mercado pago?',
+    ],
+    'mp_nombre_negocio' => [
+        'cuando paguen no quiero que aparezca mi nombre de la cuenta, quiero que aparezca el nombre de fantasía',
+        'cuando me pagan figura mi nombre o el del negocio?',
+        'se puede cobrar con el nombre de la marca y no con el mío?',
+    ],
+    // Que los carguemos NOSOTROS (9-oct: "Se pueden cargar todos ustedes?" recibía "lo manejás vos").
+    'carga_nosotros' => [
+        'Se pueden cargar todos ustedes?',
+        'Los articulos los cargan ustedes o lo debo hacer yo?',
+        'los productos vienen ya cargados? yo te paso los precios, los ponés vos o cómo funciona eso?',
+        'Los productos los podemos llenar nosotros o los llenan ustedes?',
+        'son muchos productos, me los pueden subir ustedes?',
+        'ustedes me cargan todo el catálogo con fotos y precios?',
     ],
     'logo' => [
         'Si te paso el logo',

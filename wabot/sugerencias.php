@@ -121,18 +121,22 @@ function wabot_sugerencia_generar($clave, $cfg, $forzar = false) {
         return $s;
     }
     $GLOBALS['WABOT_IA_CLAVE'] = $clave;
-    $r = wabot_comercial_pensar($tanda['texto'], $conv, $cfg, 'sugerencia');
+    $res = wabot_comercial_decidir($tanda['texto'], $conv, $cfg, 'sugerencia');
     $s = $base;
-    if (!$r['ok']) {
+    if (!$res['ok']) {
         $s['accion'] = 'error';
-        $s['motivo'] = 'No se pudo preparar la sugerencia (' . (string)$r['error'] . '). Probá "Recalcular" o contestá vos.';
-        $s['costo_usd'] = (float)($r['gastado']['costo_usd'] ?? 0);
-        wabot_log('sugerencia_error', ['tel' => $clave, 'error' => (string)$r['error']]);
+        $s['motivo'] = 'No se pudo preparar la sugerencia (' . (string)$res['error'] . '). Probá "Recalcular" o contestá vos.';
+        $s['costo_usd'] = (float)($res['gastado']['costo_usd'] ?? 0);
+        wabot_log('sugerencia_error', ['tel' => $clave, 'error' => (string)$res['error']]);
         wabot_sugerencia_guardar_si_vigente($clave, $s);
         return $s;
     }
-    [$d, $ajustes] = wabot_comercial_validar($r['decision'], $tanda['texto'], $conv, $cfg);
-    $b = wabot_comercial_construir($d, $tanda['texto'], $conv, $cfg);
+    $d = $res['decision'];
+    $ajustes = $res['ajustes'];
+    $b = $res['b'];
+    $r = ['modelo' => $res['modelo'], 'segundos' => $res['segundos'], 'gastado' => $res['gastado']];
+    // Lo que vio el revisor (corrigió algo, o le quedan dudas): la tarjeta se lo muestra a Pablo.
+    $s['revision'] = $res['revision'];
     $s['accion'] = $b['accion'];
     $s['solucion'] = $b['solucion'];
     $s['intencion'] = $b['intencion'];
@@ -189,7 +193,21 @@ function wabot_sugerencia_para_panel($conv, $cfg = null) {
         'mensajes' => array_values(array_map(function ($m) { return ['t' => (string)$m['t'], 'efecto' => (string)$m['efecto'], 'etiqueta' => (string)($m['etiqueta'] ?? '')]; }, (array)$s['mensajes'])),
         'segundos' => $s['segundos'] ?? null, 'costo_usd' => (float)($s['costo_usd'] ?? 0), 'modelo' => (string)($s['modelo'] ?? ''),
         'ajustes' => (array)($s['ajustes'] ?? []),
+        'revision' => wabot_sugerencia_revision_panel($s['revision'] ?? null),
     ];
+}
+
+/**
+ * Lo que la tarjeta dice del revisor, o null si no hay nada que avisar:
+ * corregida (encontró un problema y el bot lo arregló) o dudosa (le sigue
+ * viendo un problema: mirala antes de mandar).
+ */
+function wabot_sugerencia_revision_panel($rev) {
+    if (!is_array($rev) || !in_array($rev['estado'] ?? '', ['corregida', 'dudosa', 'frenada'], true)) return null;
+    $lista = function ($ps) {
+        return array_values(array_map(function ($p) { return ['tipo' => (string)($p['tipo'] ?? 'otro'), 'detalle' => (string)($p['detalle'] ?? '')]; }, (array)$ps));
+    };
+    return ['estado' => (string)$rev['estado'], 'problemas' => $lista($rev['problemas'] ?? []), 'finales' => $lista($rev['problemas_finales'] ?? [])];
 }
 
 /** ¿Hay una sugerencia con mensajes para mandar, vigente, en esta charla? (para la lista del panel) */

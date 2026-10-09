@@ -46,9 +46,27 @@ siendo GPT Sol (`openai_modelo`), con la misma key y el mismo cliente de la Resp
 3. Cuando corresponde una persona, la tarjeta muestra "Para Pablo: <motivo>" y ningún mensaje. Con el
    formulario ya mandado, muestra el aviso y no piensa (no gasta).
 4. Las sugerencias siguen apareciendo aunque la charla esté en control manual (es la prueba).
+5. Lo que vio el revisor va en la tarjeta: "🔎 El revisor encontró algo en la primera versión y el bot
+   la corrigió: …" o, si le sigue viendo un problema, "⚠ El revisor todavía ve un problema: …". En
+   sugerencias el revisor nunca frena: decide Pablo.
 
 Registro: `data/sugerencias-log/AAAA-MM.jsonl` (lo sugerido, lo mandado de verdad, si se editó,
-descartes). Consumo: pestaña IA, tarea `comercial`, modo `sugerencia`.
+descartes). Consumo: pestaña IA, tareas `comercial` y `comercial_revisor`, modo `sugerencia`.
+
+## Conversaciones live (9-oct)
+
+Pablo: "Vamos a hacer que entren 4 por pantalla. Y esas conversaciones sean las que tiene el bot, para
+poder yo vigilar bien que conteste bien. Una vez que me pase el chat a mí, sale de ahí".
+
+- Cuatro columnas por pantalla de compu (dos en tablet, una en el celular), la del último mensaje primero.
+- Solo las charlas en manos del bot (`wabot_comercial_bot_tiene`): el bot puede contestar (sin control
+  manual, sin pase a Pablo, sin formulario, sin rechazo, sin pausa ni archivo) y hay algo que mirar
+  (el bot ya contestó algo más que la bienvenida, hay una sugerencia, o el cliente contestó la
+  bienvenida). La fila de la lista guarda `bot_tiene` y `bot_salio` en la caché.
+- Cada columna dice qué cotizó el bot, si ofreció la demo, si hay sugerencia y si el revisor corrigió.
+- Sale cuando la pasa a Pablo, manda el formulario, el cliente rechaza o Pablo la toma (contestar
+  desde la columna también la toma). Arriba quedan media hora las que salieron, con el motivo
+  (`wabot_comercial_bot_salio`; para "La tomaste vos" se anota `control_manual_ts`).
 
 ## Estados de la charla (`wabot_comercial_estado`)
 

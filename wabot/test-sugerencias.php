@@ -44,9 +44,12 @@ function dc(array $d = []) {
     if (isset($d['ficha'])) $d['ficha'] = array_merge($base['ficha'], $d['ficha']);
     return array_merge($base, $d);
 }
-function oa(array $cola) {
+/** $revisor: lo que contesta el revisor en orden (si no hay, aprueba). */
+function oa(array $cola, array $revisor = []) {
     $GLOBALS['OA_COLA'] = $cola;
     $GLOBALS['OA_PEDIDOS'] = [];
+    $GLOBALS['OA_REVISOR'] = $revisor;
+    $GLOBALS['OA_REVISIONES'] = [];
     $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) {
         $ok = function ($datos) {
             return [200, json_encode(['id' => 'resp_test', 'model' => 'gpt-6-sol', 'status' => 'completed',
@@ -55,6 +58,10 @@ function oa(array $cola) {
                             'output_tokens_details' => ['reasoning_tokens' => 30], 'total_tokens' => 4200]], JSON_UNESCAPED_UNICODE)];
         };
         if (str_ends_with((string)($payload['prompt_cache_key'] ?? ''), 'bienvenida_rubro')) return $ok(['ya_dice_rubro' => !empty($GLOBALS['TS_DICE_RUBRO'])]);
+        if (str_ends_with((string)($payload['prompt_cache_key'] ?? ''), 'comercial_revisor')) {
+            $GLOBALS['OA_REVISIONES'][] = $payload;
+            return $ok(array_shift($GLOBALS['OA_REVISOR']) ?? ['ok' => true, 'problemas' => [], 'falta_contestar' => []]);
+        }
         $GLOBALS['OA_PEDIDOS'][] = $payload;
         $sig = array_shift($GLOBALS['OA_COLA']);
         if ($sig === null) return [0, ''];
@@ -222,6 +229,28 @@ $GLOBALS['WABOT_TEST_SIN_ESPERA'] = true;
 $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'sugerencias';
 $cvOff = conv_nueva('5491100009199TEST', ['control_manual' => true]);
 caso('el modo sugerencias deja el bot en "solo bienvenida" aunque el ajuste viejo esté apagado', wabot_solo_bienvenida(['solo_bienvenida' => false]) === true);
+
+echo "— 8. El revisor en sugerencias: avisa, no frena —\n";
+$telsRev = ['5491100009106TEST', '5491100009107TEST', '5491100009108TEST'];
+foreach ($telsRev as $t) { @unlink(wabot_conv_path($t)); @unlink(wabot_cola_path($t)); }
+$revGrave = ['ok' => false, 'problemas' => [['tipo' => 'decide_por_cliente', 'detalle' => 'Da por hecho que quiere vender online sin habérselo preguntado']], 'falta_contestar' => []];
+oa([$cotizar, $cotizar], [$revGrave, $revGrave]);
+entra($telsRev[0], 'Vendo zapatillas', $cfg);
+$s = wabot_sugerencia_leer($telsRev[0]);
+$panel = wabot_sugerencia_para_panel(wabot_conv_load($telsRev[0]), $cfg);
+caso('si al revisor le sigue pareciendo mal, la sugerencia sale igual para que decida Pablo, con el aviso',
+    $s['accion'] === 'cotizar' && count($s['mensajes']) === 3 && ($panel['revision']['estado'] ?? '') === 'dudosa'
+    && ($panel['revision']['finales'][0]['tipo'] ?? '') === 'decide_por_cliente', json_encode($panel['revision'] ?? null, JSON_UNESCAPED_UNICODE));
+caso('y el costo suma las cuatro llamadas (dos del bot, dos del revisor)', count(pedidos()) === 2 && count($GLOBALS['OA_REVISIONES']) === 2 && ($s['costo_usd'] ?? 0) > 0);
+oa([$cotizar, $cotizar], [$revGrave]);
+entra($telsRev[1], 'Vendo zapatillas', $cfg);
+$panel = wabot_sugerencia_para_panel(wabot_conv_load($telsRev[1]), $cfg);
+caso('si la corrección pasa, la tarjeta dice que el revisor la corrigió', ($panel['revision']['estado'] ?? '') === 'corregida'
+    && strpos($panel['revision']['problemas'][0]['detalle'] ?? '', 'vender online') !== false, json_encode($panel['revision'] ?? null, JSON_UNESCAPED_UNICODE));
+oa([$cotizar]);
+entra($telsRev[2], 'Vendo zapatillas', $cfg);
+caso('si estaba bien, la tarjeta no dice nada del revisor', wabot_sugerencia_para_panel(wabot_conv_load($telsRev[2]), $cfg)['revision'] === null);
+foreach ($telsRev as $t) { @unlink(wabot_conv_path($t)); @unlink(wabot_cola_path($t)); }
 
 foreach ($tels as $t) { @unlink(wabot_conv_path($t)); @unlink(wabot_cola_path($t)); }
 foreach (['uso', 'sugerencias', 'log'] as $d) { foreach ((array)glob($tmp . "/$d/*") as $f) @unlink($f); @rmdir($tmp . "/$d"); }

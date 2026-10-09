@@ -3381,6 +3381,9 @@ function wabot_lista_item($tel) {
             'sugerencia' => function_exists('wabot_sugerencia_pendiente') && wabot_sugerencia_pendiente($cv),
             // Cuándo el bot conversó por última vez (sin la bienvenida ni los avisos automáticos): la vista "Bot" (9-oct).
             'bot_conversa_ts' => wabot_conv_bot_conversa_ts($cv),
+            // En manos del bot, o cuándo y por qué salió: "Conversaciones live" muestra solo esas (9-oct).
+            'bot_tiene' => function_exists('wabot_comercial_bot_tiene') && wabot_comercial_bot_tiene($cv),
+            'bot_salio' => function_exists('wabot_comercial_bot_salio') ? wabot_comercial_bot_salio($cv) : null,
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
             // automático posterior (el recordatorio de 20 h, la última llamada,
@@ -3732,6 +3735,8 @@ function wabot_conv_bot_inactivo($cv) {
 
 /** Pablo tomó la conversación: el bot no vuelve solo por reloj ni por eventos. */
 function wabot_conv_tomar_control(&$cv) {
+    // Desde cuándo la sigue Pablo: "Conversaciones live" avisa qué charlas salieron del bot (9-oct).
+    if (empty($cv['control_manual'])) $cv['control_manual_ts'] = time();
     $cv['control_manual'] = true;
     $cv['postprecio_auto'] = false;
     $cv['bot_off'] = true;
