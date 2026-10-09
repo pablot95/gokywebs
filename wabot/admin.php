@@ -1308,6 +1308,16 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
 .burb-cita b { display:block; color:var(--ac); font-size:11.5px; font-weight:700; }
 .burb-cita.sin-origen { cursor:default; font-style:italic; }
+/* El anuncio del que escribió (9-oct), arriba del mensaje como en WhatsApp. */
+.burb-anuncio { display:flex; gap:9px; margin:0 0 7px; padding:6px; border-radius:8px; border-left:3px solid #4ea1ff;
+    background:rgba(255,255,255,.06); white-space:normal; max-width:360px; }
+.burb-anuncio img { width:72px; height:72px; object-fit:cover; border-radius:6px; flex:0 0 auto; cursor:zoom-in; }
+.burb-anuncio .anuncio-txt { min-width:0; display:flex; flex-direction:column; gap:2px; font-size:12.5px; line-height:1.35; color:var(--dim); }
+.burb-anuncio .anuncio-et { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#4ea1ff; }
+.burb-anuncio b { color:inherit; filter:brightness(1.35); font-size:13px; }
+.burb-anuncio .anuncio-cuerpo { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.burb-anuncio .anuncio-ve { font-style:italic; font-size:11.5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.burb-anuncio a { color:#4ea1ff; font-size:12px; }
 .burb.resaltada { outline:2px solid var(--ac); outline-offset:2px; transition:outline-color .6s; }
 .meta-editado { color:var(--dim); font-style:italic; }
 /* El lápiz aparece al pasar por encima de la burbuja: en el celular, donde no
@@ -3410,6 +3420,39 @@ function burbujaCita(t, chat) {
         <script>
         const TEL = <?= json_encode($convClave) ?>;
         let ventana = <?= (int)$restante ?>;
+        /* Charlas de antes del 9-oct que vinieron de un anuncio: el mensaje no
+           guardaba el anuncio (ni su imagen), pero la charla sí su título. */
+        const ANUNCIO_CHARLA = <?= json_encode((trim((string)($conv['anuncio_titular'] ?? '')) !== '' || trim((string)($conv['anuncio_id'] ?? '')) !== '')
+            ? ['titular' => (string)($conv['anuncio_titular'] ?? ''), 'ts' => (int)($conv['ctwa_clid_ts'] ?? 0), 'viejo' => true]
+            : null, JSON_UNESCAPED_UNICODE) ?>;
+
+        /* El anuncio del que escribió (9-oct): imagen, título y texto arriba del
+           mensaje, como en WhatsApp. Abajo, lo que el bot "ve" en la imagen. */
+        function tarjetaAnuncio(a) {
+            const caja = document.createElement('div');
+            caja.className = 'burb-anuncio';
+            if (a.imagen) {
+                const src = 'admin.php?accion=media&tel=' + encodeURIComponent(TEL) + '&archivo=' + encodeURIComponent(a.imagen) + '&modo=ver';
+                const img = document.createElement('img');
+                img.src = src; img.alt = 'Imagen del anuncio'; img.loading = 'lazy';
+                img.addEventListener('click', () => window.open(src, '_blank', 'noopener'));
+                caja.appendChild(img);
+            }
+            const txt = document.createElement('div');
+            txt.className = 'anuncio-txt';
+            const agregar = (tag, clase, texto) => { const el = document.createElement(tag); if (clase) el.className = clase; el.textContent = texto; txt.appendChild(el); return el; };
+            agregar('span', 'anuncio-et', a.media_tipo === 'video' ? 'Desde un anuncio (video)' : 'Desde un anuncio');
+            if (a.titular) agregar('b', '', a.titular);
+            if (a.cuerpo) agregar('span', 'anuncio-cuerpo', a.cuerpo);
+            if (a.descripcion) agregar('span', 'anuncio-ve', 'El bot ve: ' + a.descripcion).title = a.descripcion;
+            if (a.viejo) agregar('span', 'anuncio-ve', 'La imagen del anuncio se guarda desde el 9-oct.');
+            if (a.link && /^https:\/\//i.test(a.link)) {
+                const l = agregar('a', '', 'Ver anuncio');
+                l.href = a.link; l.target = '_blank'; l.rel = 'noopener';
+            }
+            caja.appendChild(txt);
+            return caja;
+        }
         const chat = document.getElementById('chat');
         const txt  = document.getElementById('respTexto');
         const resizeGrip = document.getElementById('respResize');
@@ -3734,6 +3777,9 @@ function burbujaCita(t, chat) {
             const abajo = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
             chat.innerHTML = '';
             lineas.forEach((t, i) => { t.__idx = i; });
+            // Charla vieja de un anuncio: la tarjeta (solo el título) va en su primer mensaje.
+            const filaAnuncioVieja = ANUNCIO_CHARLA && !lineas.some(l => l.anuncio)
+                ? lineas.find(l => l.q === 'cliente' && (l.ts || 0) >= (ANUNCIO_CHARLA.ts || 0) - 5) : null;
             for (const t of lineas) {
                 const d = document.createElement('div');
                 d.className = 'burb ' + t.q;
@@ -3745,6 +3791,8 @@ function burbujaCita(t, chat) {
                     : t.t;
                 if (t.id) d.dataset.id = t.id;
                 if (t.cita) d.prepend(burbujaCita(t, chat));
+                const anuncio = t.anuncio || (t === filaAnuncioVieja ? ANUNCIO_CHARLA : null);
+                if (anuncio) d.prepend(tarjetaAnuncio(anuncio));
                 if (t.media && t.media.archivo) {
                     const base = 'admin.php?accion=media&tel=' + encodeURIComponent(TEL) + '&archivo=' + encodeURIComponent(t.media.archivo);
                     const caja = document.createElement('div');

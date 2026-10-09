@@ -561,6 +561,9 @@ function wabot_ia_contexto($texto, $conv, $cfg) {
         $c[] = '- La última pregunta fue la de la bienvenida (qué tipo de web busca: 1 web informativa, 2 tienda online, 3 algo diferente): su mensaje probablemente elige una.';
     }
     $c[] = '- Canal: ' . (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp');
+    // El anuncio del que escribió (9-oct): qué le ofrecimos, con lo que se ve en la imagen.
+    $anuncio = wabot_anuncio_contexto_texto($conv);
+    if ($anuncio !== '') $c[] = '- Escribió desde un anuncio nuestro: ' . $anuncio . '. Si pide "info" o dice "me interesa", se refiere a lo que ofrece ese anuncio.';
     if ($viejos) {
         $antes = [];
         foreach ($viejos as $t) if (($t['q'] ?? '') === 'cliente') $antes[] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t['t'])), 0, 200);

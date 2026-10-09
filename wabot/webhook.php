@@ -107,6 +107,26 @@ function wabot_procesar_entrante($ev, $cfg) {
     // más abajo)—, se aplica recién con el $conv que sí se guarda, adentro
     // del candado.
     $ref = $ev['referral'] ?? null;
+    /* Lo que se ve del anuncio (9-oct): la imagen se baja ya —el link de Meta
+     * vence en unos días— y la IA dice qué ofrece, una vez por anuncio, para
+     * que el bot también la "vea". Viaja con este mensaje en la cola y el panel
+     * la muestra arriba, como WhatsApp. */
+    $anuncioFila = null;
+    if (is_array($ref)) {
+        $img = ($ref['anuncio_imagen_url'] ?? '') !== '' ? wabot_anuncio_imagen_guardar($clave, $ref['anuncio_imagen_url']) : null;
+        $descripcion = wabot_anuncio_descripcion($ref['anuncio_id'] ?? '', $img['bytes_crudos'] ?? null,
+                                                 (string)($img['mime'] ?? ''), (string)($ref['anuncio_titular'] ?? ''));
+        $anuncioFila = array_filter([
+            'id'          => (string)($ref['anuncio_id'] ?? ''),
+            'titular'     => (string)($ref['anuncio_titular'] ?? ''),
+            'cuerpo'      => (string)($ref['anuncio_cuerpo'] ?? ''),
+            'link'        => (string)($ref['anuncio_link'] ?? ''),
+            'media_tipo'  => (string)($ref['anuncio_media_tipo'] ?? ''),
+            'imagen'      => (string)($img['archivo'] ?? ''),
+            'descripcion' => $descripcion,
+        ], 'strlen');
+        $ref['anuncio_fila'] = $anuncioFila;
+    }
 
     $arranque = microtime(true);
     $primerContacto = empty($conv['lead_recibido_evento']);
@@ -221,7 +241,7 @@ function wabot_procesar_entrante($ev, $cfg) {
     }
     $etiqueta = $texto !== '' ? $marcaMedia . $texto : '[' . $etiquetaMedia . ']';
     wabot_cola_encolar($clave, $etiqueta, $texto, $nombreEntrante, $mediaGuardada,
-                       (string)$id, (string)($ev['cita'] ?? ''));
+                       (string)$id, (string)($ev['cita'] ?? ''), $anuncioFila);
 
     // Un solo proceso contesta por conversación. Si el candado ya está tomado,
     // el que lo tiene se va a llevar este mensaje también.
@@ -269,12 +289,16 @@ function wabot_procesar_entrante($ev, $cfg) {
                 $conv['anuncio_titular'] = (string)($ref['anuncio_titular'] ?? '');
                 wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id']]);
             }
+            // Lo que dice el anuncio, para el contexto de la IA (ia.php, clasificador).
+            if (is_array($ref) && !empty($ref['anuncio_fila'])) {
+                $conv['anuncio_visto'] = array_diff_key($ref['anuncio_fila'], ['imagen' => 1, 'media_tipo' => 1]) + ['ts' => time()];
+            }
 
             $usables = [];
             $primerContacto = empty($conv['lead_recibido_evento']);
             foreach ($tanda as $item) {
                 wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null,
-                                      ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '']);
+                                      ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '', 'anuncio' => $item['anuncio'] ?? null]);
                 wabot_imagenes_contar($conv, $item['media'] ?? null);
                 if (trim((string)($item['u'] ?? '')) !== '') {
                     $usables[] = $item['u'];
@@ -493,7 +517,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         $usables = [];
         foreach ($tanda as $item) {
             wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null,
-                                  ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '']);
+                                  ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '', 'anuncio' => $item['anuncio'] ?? null]);
             wabot_imagenes_contar($conv, $item['media'] ?? null);
             if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
             if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
