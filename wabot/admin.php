@@ -17,18 +17,8 @@ ini_set('log_errors', '1');
 ini_set('error_log', WABOT_DATA . '/log/php-errors.log');
 
 // Sesión larga: el panel vive embebido en el admin, no queremos pedir la clave todo el tiempo.
-session_set_cookie_params([
-    'lifetime' => 30 * 24 * 3600,
-    'path'     => '/',
-    // Detrás del proxy de Hostinger $_SERVER['HTTPS'] puede venir vacío aunque
-    // el cliente esté en HTTPS: sin esto la cookie de sesión perdía el flag
-    // Secure y podía viajar en claro.
-    'secure'   => !empty($_SERVER['HTTPS'])
-                  || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
-    'httponly' => true,
-    'samesite' => 'Lax',
-]);
-session_start();
+require_once __DIR__ . '/sesion.php';
+wabot_sesion_iniciar();
 
 // Modo embebido (dentro del iframe de admin/dashboard.html): sin encabezado propio.
 // Se guarda en la sesión para no tener que arrastrar ?embed= en cada link interno.

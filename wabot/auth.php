@@ -8,28 +8,26 @@
  * chequear la firma lo puede fabricar cualquiera con los campos correctos.
  */
 
-require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/sesion.php';
 
 define('WABOT_FIREBASE_ADMIN_EMAIL', 'pablo.travi95@gmail.com');
 
-session_set_cookie_params([
-    'lifetime' => 30 * 24 * 3600,
-    'path'     => '/',
-    // Detrás del proxy de Hostinger $_SERVER['HTTPS'] puede venir vacío aunque
-    // el cliente esté en HTTPS: sin esto la cookie de sesión perdía el flag
-    // Secure y podía viajar en claro.
-    'secure'   => !empty($_SERVER['HTTPS'])
-                  || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
-    'httponly' => true,
-    'samesite' => 'Lax',
-]);
-session_start();
+wabot_sesion_iniciar();
 
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'metodo']);
+    exit;
+}
+
+// El admin pide este handshake cada 30 s: si la sesión sigue abierta no se
+// toca. Renovar el id acá borraba el viejo y tiraba los pedidos del iframe
+// que estaban en vuelo (ver sesion.php).
+if (!empty($_SESSION['wabot'])) {
+    $_SESSION['wabot_embed'] = true;
+    echo json_encode(['ok' => true]);
     exit;
 }
 
