@@ -2925,6 +2925,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
                     <span style="font-weight:600">${escapeHtml(c.nombre)}</span>
                     ${mostrarProyecto ? `<small class="muted" style="font-size:12px">${escapeHtml(proyecto)}</small>` : ""}
                     ${phoneDisplay}
+                    ${/* Pablo, 9-oct: también desde Clientes (y el plan anual de Mantenimiento, que usa esta fila). */ _botonVerChat(c)}
                     ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
                     ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
@@ -3017,13 +3018,14 @@ function _botonTemplateInteresado(c) {
 }
 
 /* "Ver chat" como en Bocetos: el chat del bot en el modal, sin salir de la
-   pestaña. Va la clave exacta si la sincronización ya encontró el chat; si no,
-   el teléfono, y el panel lo busca como al presentar la demo. */
+   pestaña (Seguimientos, Clientes y el plan anual de Mantenimiento). Va la
+   clave exacta si la sincronización ya encontró el chat; si no, el teléfono,
+   y el panel lo busca como al presentar la demo. */
 function _botonVerChat(c) {
     const destino = presentadoDeCliente(c)?.clave || (cleanArgPhone(c.telefono).length >= 8 ? c.telefono : "");
     if (!destino) return "";
-    const titulo = [c.nombre, c.telefono].filter(Boolean).join(" · ");
-    return `<div><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de Seguimientos">Ver chat</button></div>`;
+    const titulo = [c.nombre, c.proyecto, c.telefono].filter(Boolean).join(" · ");
+    return `<div><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de la pestaña">Ver chat</button></div>`;
 }
 
 const TEMPLATE_72H_MOTIVOS = {
