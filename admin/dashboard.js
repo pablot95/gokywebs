@@ -231,9 +231,6 @@ let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
 const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
-let inversionSumaPaginas = false;    // el "+": suma COSTO_POR_PAGINA por cliente al total de la semana
-try { inversionSumaPaginas = localStorage.getItem("inversionSumaPaginas") === "1"; } catch (e) { /* sin storage */ }
-
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
    (el domingo). Vive en Firestore, no en wabot: es un número que Pablo tipea,
@@ -759,9 +756,10 @@ function renderInversion() {
         const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
         const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
         const gasto = gastoAdsPorSemana.get(key) || 0;
-        // El "+" de al lado del gasto (Pablo, 10-oct) suma $10.000 por cada cliente
-        // de la semana al total que se reparte.
-        const extraPaginas = inversionSumaPaginas ? COSTO_POR_PAGINA * convertidos.length : 0;
+        // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
+        // van siempre sumados al gasto, y el costo se reparte sobre ese total
+        // (Pablo, 10-oct).
+        const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
         const gastoTotal = gasto + extraPaginas;
         const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
         const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
@@ -827,11 +825,7 @@ function renderInversion() {
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
                            data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
                 </label>
-                <button type="button" class="btn-ghost inv-mas${inversionSumaPaginas ? " activo" : ""}" aria-pressed="${inversionSumaPaginas}"
-                        title="Suma ${fmtMoney(COSTO_POR_PAGINA)} por cada cliente de la semana (${convertidos.length}) al total que se reparte">
-                    + ${fmtMoney(COSTO_POR_PAGINA)} por cliente
-                </button>
-                ${inversionSumaPaginas ? `<span class="muted">${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · total ${fmtMoney(gastoTotal)}</span>` : ""}
+                ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong></span>` : ""}
             </div>
             ${tarjetasCosto}
             ${convertidos.length ? `
@@ -844,13 +838,7 @@ function renderInversion() {
         cont.appendChild(div);
 
         const inputGasto = div.querySelector(".gasto-input");
-        inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));
-        div.querySelector(".inv-mas").addEventListener("click", () => {
-            inversionSumaPaginas = !inversionSumaPaginas;
-            try { localStorage.setItem("inversionSumaPaginas", inversionSumaPaginas ? "1" : "0"); } catch (e) { /* sin storage: queda solo en esta carga */ }
-            renderInversion();
-        });
-    }
+        inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));    }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
