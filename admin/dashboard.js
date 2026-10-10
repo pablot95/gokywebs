@@ -7415,9 +7415,34 @@ function _telefonoMantenimiento(c, m) {
 /* El dominio se carga y se cambia desde la lista (Pablo, 29-sep-2026): sin dominio,
    un botón "+ Agregar dominio"; con dominio, el link y un lápiz. Se guarda en el
    suscriptor si la fila es de una suscripción y, si no, en el cliente. */
+/* Sin dominio cargado, el de la web que Errores ya le asignó a esta ficha por el
+   nombre (Pablo, 10-oct: "si mantenimiento y errores está vinculado, ¿por qué en
+   mantenimiento no se vincula directamente el dominio? debería"). Se muestra y
+   se guarda en la ficha, una vez por sesión (el snapshot que vuelve ya lo trae);
+   el lápiz lo cambia si no era. */
+const mantDominiosGuardados = new Set();
+
+function _dominioDeErrores(c, m) {
+    const w = _erroresWebDe(c, m, "");
+    return w && w.esCliente && !w.propia && !w.oculto && erroresDominio(w.dominio) ? erroresDominio(w.dominio) : "";
+}
+
+function _guardarDominioDeErrores(c, m, dominio) {
+    const destino = m ? ["mantenimiento", m.id] : c ? ["clientes", c.id] : null;
+    if (!destino || mantDominiosGuardados.has(destino.join("/"))) return;
+    mantDominiosGuardados.add(destino.join("/"));
+    updateDoc(doc(db, destino[0], destino[1]), { dominio, dominioOrigen: "errores", updatedAt: serverTimestamp() })
+        .catch(err => console.error("No se pudo guardar el dominio que detectó Errores:", err));
+}
+
 function _mantContactoHTML(c, m) {
     const telefono = _telefonoMantenimiento(c, m);
-    const dominio = _dominioMantenimiento(c, m);
+    let dominio = _dominioMantenimiento(c, m);
+    let deErrores = false;
+    if (!dominio) {
+        dominio = _dominioDeErrores(c, m);
+        if (dominio) { deErrores = true; _guardarDominioDeErrores(c, m, dominio); }
+    }
     const destino = m ? `data-dom-mant="${escapeHtml(m.id)}"` : c ? `data-dom-cliente="${escapeHtml(c.id)}"` : "";
     return {
         telefono: telefono
@@ -7425,6 +7450,7 @@ function _mantContactoHTML(c, m) {
             : `<span class="muted">—</span>`,
         dominio: (dominio
             ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>${destino ? ` <button type="button" class="icon-btn" ${destino} data-dom-valor="${escapeHtml(dominio)}" title="Cambiar el dominio">✎</button>` : ""}`
+              + (deErrores ? `<div class="muted" style="font-size:11px" title="Es la web que avisa en Errores con el nombre de esta ficha. Si no es, cambialo con el lápiz.">tomado de Errores</div>` : "")
             : destino
                 ? `<button type="button" class="btn-ghost" ${destino} data-dom-valor="" style="font-size:12px;padding:2px 8px">+ Agregar dominio</button>`
                 : `<span class="muted">—</span>`) + _mantErroresHTML(c, m, dominio)
