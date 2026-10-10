@@ -806,7 +806,7 @@ body.m2 .contacto__texto p { margin-inline: auto; }
 }
 
 :root {
-  --gw-modelos-h: 54px;
+  --gw-modelos-h: 0px;
   --gw-modelos-bg: #1C2575;
   --gw-modelos-active-bg: #F8F8FF;
   --gw-modelos-active-ink: #1C2575;
@@ -814,16 +814,16 @@ body.m2 .contacto__texto p { margin-inline: auto; }
 body { padding-top: var(--gw-modelos-h); }
 html { scroll-padding-top: var(--gw-modelos-h); }
 .gw-modelos {
-  position: fixed; top: 9px; left: 50%; z-index: 95;
+  position: fixed; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%; z-index: 95;
   transform: translateX(-50%);
   display: flex; align-items: center; gap: 3px;
   max-width: calc(100vw - 16px); padding: 4px;
   border-radius: 999px; background: var(--gw-modelos-bg); color: #fff;
-  box-shadow: 0 5px 22px rgba(0,0,0,.11);
-  transition: transform .2s ease-out, opacity .2s ease-out;
+  box-shadow: 0 10px 30px rgba(0,0,0,.24);
+  transition: transform .25s ease-out, opacity .25s ease-out;
 }
 .gw-modelos__btn {
-  flex: 0 1 116px; min-height: 30px; padding: 7px 14px;
+  flex: 0 1 116px; min-height: 34px; padding: 9px 14px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: 999px; color: inherit;
   font: 800 12px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -836,5 +836,11 @@ html { scroll-padding-top: var(--gw-modelos-h); }
 .gw-modelos__btn[aria-current="page"] { pointer-events: none; }
 .gw-modelos__btn:focus-visible { outline: 3px solid var(--gw-modelos-active-bg); outline-offset: 3px; }
 body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
-.gw-modelos.gw-modelos--scrolling { transform: translate(-50%,-120%); opacity: 0; pointer-events: none; }
+.gw-modelos.gw-modelos--scrolling { transform: translate(-50%, calc(100% + 24px)); opacity: 0; pointer-events: none; }
+.toast-wrap { margin-bottom: 64px; }
+.site-footer::after { content: ""; display: block; height: 64px; }
+@media (max-width: 359px) {
+  .gw-modelos { left: 12px; transform: none; }
+  .gw-modelos.gw-modelos--scrolling { transform: translateY(calc(100% + 24px)); }
+}
 @media (prefers-reduced-motion: reduce) { .gw-modelos, .gw-modelos__btn { transition: none; } }
