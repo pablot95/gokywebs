@@ -7,7 +7,8 @@
  * (`errores_web` solo lo lee el admin logueado).
  *
  * - data/agrupados.json  { hash: { site, tipo, nivel, msg, src, line, col, stack, url, ua,
- *                                  primera, ultima, veces, visitantes[], urls[] } }
+ *                                  detalle, primera, ultima, veces, visitantes[], urls[] } }
+ *                         (detalle: el último motivo de un fetch 5xx, "" si no hubo)
  * - data/estados.json    { hash: { estado, nota, rama, at } }  (lo escribe la rutina)
  *
  * Los dos viven en err/data/ (gitignored, con .htaccess que niega todo).
@@ -68,6 +69,8 @@ function err_agrupar($hash, array $e, $visitante, $ahora = null) {
         if ($e['url'] !== '' && !in_array($e['url'], $grupo['urls'], true) && count($grupo['urls']) < 5) $grupo['urls'][] = $e['url'];
         // El stack más reciente suele ser el más útil (el primero puede venir de una versión vieja).
         if ($e['stack'] !== '') $grupo['stack'] = $e['stack'];
+        // Igual con el motivo de un 5xx: queda el último que llegó.
+        if (($e['detalle'] ?? '') !== '') $grupo['detalle'] = $e['detalle'];
         $g[$hash] = $grupo;
         // Olvidar lo viejo y no crecer sin límite.
         $limite = $ahora - ERR_AGRUPADOS_DIAS * 86400;

@@ -7,7 +7,8 @@
  * en cuanto avisa por primera vez.
  *
  * - POST { tipo:"ping" }  -> una vez por día por web: `errores_pings/{dominio}` = "esta web está viva".
- * - POST { tipo, nivel, msg, src, line, col, stack, url } -> un error en `errores_web`.
+ * - POST { tipo, nivel, msg, src, line, col, stack, url, detalle? } -> un error en `errores_web`
+ *   (detalle: en un fetch 5xx de la propia web, el campo "error" del JSON que respondió).
  *
  * Se ignoran localhost, IPs y los dominios de prueba/preview (vercel.app, etc.): una web
  * cuenta cuando está en su dominio real. Topes por IP y por día para que nadie pueda
@@ -73,7 +74,13 @@ $stack = limpiar($in['stack'] ?? '', 1200);
 $url   = limpiar($in['url'] ?? '', 200);
 $line  = max(0, min(1000000, (int)($in['line'] ?? 0)));
 $col   = max(0, min(1000000, (int)($in['col'] ?? 0)));
+// El motivo de un 5xx (el campo "error" del JSON que respondió la web). Solo en los fetch.
+$detalle = $tipo === 'fetch' ? trim(preg_replace('/\s+/', ' ', limpiar($in['detalle'] ?? '', 200))) : '';
 if (!$esPing && ($msg === '' || $msg === 'Script error.')) exit;
+// Un error de JS de un script que no vino por http(s) no es de la web: extensiones, el navegador
+// interno de Instagram/Facebook en Android (iabjs://), etc. Lo filtra también err.js, pero así
+// tampoco entra desde una copia vieja cacheada. (En los fetch, src puede ser una ruta relativa.)
+if ($tipo === 'error' && $src !== '' && !preg_match('#^https?:#i', $src)) exit;
 if (preg_match('#^(chrome|moz|safari)-extension:#i', $src)) exit;
 
 $id   = $sitio;
@@ -124,7 +131,7 @@ if (!$esPing) {
     try {
         err_agrupar($hash, [
             'site' => $id, 'tipo' => $tipo, 'nivel' => $nivel, 'msg' => $msg, 'src' => $src,
-            'line' => $line, 'col' => $col, 'stack' => $stack, 'url' => $url, 'ua' => $ua,
+            'line' => $line, 'col' => $col, 'stack' => $stack, 'url' => $url, 'ua' => $ua, 'detalle' => $detalle,
         ], substr(md5($ip . '|' . $ua), 0, 10), $now);  // visitante anónimo
     } catch (Throwable $t) {
         error_log('[err/log.php] agrupados: ' . $t->getMessage());
@@ -166,15 +173,28 @@ $fields = [
     'hash'  => $s($hash),
     'at'    => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
 ];
-$ch = curl_init("https://firestore.googleapis.com/v1/projects/{$FB_PROJECT}/databases/(default)/documents/errores_web?key={$FB_APIKEY}");
-curl_setopt_array($ch, [
-    CURLOPT_POST           => true,
-    CURLOPT_POSTFIELDS     => json_encode(['fields' => $fields]),
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
-    CURLOPT_TIMEOUT        => 10,
-]);
-$res  = curl_exec($ch);
-$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+if ($detalle !== '') $fields['detalle'] = $s($detalle);
+function guardar_error($fields) {
+    global $FB_PROJECT, $FB_APIKEY;
+    $ch = curl_init("https://firestore.googleapis.com/v1/projects/{$FB_PROJECT}/databases/(default)/documents/errores_web?key={$FB_APIKEY}");
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode(['fields' => $fields]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+        CURLOPT_TIMEOUT        => 10,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$code, $res];
+}
+[$code, $res] = guardar_error($fields);
+// Si las reglas publicadas en Firebase todavía no aceptan `detalle` (firestore.rules se publica a
+// mano), Firestore rechaza el doc entero: se guarda igual, sin el motivo (queda en agrupados.json).
+if ($code === 403 && isset($fields['detalle'])) {
+    unset($fields['detalle']);
+    error_log('[err/log.php] Firestore no acepta `detalle`: publicar firestore.rules');
+    [$code, $res] = guardar_error($fields);
+}
 if ($code !== 200) error_log('[err/log.php] Firestore ' . $code . ': ' . substr((string)$res, 0, 300));

@@ -69,8 +69,10 @@ service cloud.firestore {
     // Errores de las webs de los clientes (pestaña Errores del admin). Los escribe
     // err/log.php sin login (mismo patrón que el webhook de MP): solo CREAR, con
     // campos y largos acotados. Leer y borrar es solo del admin.
+    // `detalle` (10-oct-2026, opcional): el motivo de un fetch 5xx, el campo "error" del JSON.
     match /errores_web/{doc} {
-      allow create: if request.resource.data.keys().hasOnly(['site', 'tipo', 'nivel', 'msg', 'src', 'line', 'col', 'stack', 'url', 'ua', 'hash', 'at'])
+      allow create: if request.resource.data.keys().hasOnly(['site', 'tipo', 'nivel', 'msg', 'src', 'line', 'col', 'stack', 'url', 'ua', 'hash', 'at', 'detalle'])
+                    && (!('detalle' in request.resource.data) || (request.resource.data.detalle is string && request.resource.data.detalle.size() <= 200))
                     && request.resource.data.site is string && request.resource.data.site.size() <= 80
                     && request.resource.data.tipo in ['error', 'promesa', 'recurso', 'fetch']
                     && request.resource.data.nivel in ['alto', 'bajo']

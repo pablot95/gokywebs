@@ -2878,6 +2878,8 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .err-item-msg { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; word-break: break-word; }
 .err-item--alto .err-item-msg { color: #FCA5A5; }
 .err-item--resuelto .err-item-msg { color: var(--text-muted); text-decoration: line-through; }
+.err-item-motivo { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; margin-top: 2px; word-break: break-word; }
+.err-item--resuelto .err-item-motivo { color: var(--text-muted); }
 .err-item-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
 @media (max-width: 768px) {
     .err-head { flex-wrap: wrap; }

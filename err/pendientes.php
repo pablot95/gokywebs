@@ -81,7 +81,7 @@ function err_pendientes(array $grupos, array $estados, $ahora) {
             'web' => $g['site'],
             'repo' => ERR_REPOS[$g['site']] ?? null,
             'tipo' => $g['tipo'], 'nivel' => $g['nivel'],
-            'mensaje' => $g['msg'], 'archivo' => $g['src'], 'linea' => $g['line'], 'columna' => $g['col'],
+            'mensaje' => $g['msg'], 'motivo' => $g['detalle'] ?? '', 'archivo' => $g['src'], 'linea' => $g['line'], 'columna' => $g['col'],
             'stack' => $g['stack'] ?? '', 'paginas' => $g['urls'] ?? [], 'navegador' => $g['ua'] ?? '',
             'veces' => (int)$g['veces'], 'visitantes' => count($g['visitantes'] ?? []),
             'primera' => gmdate('c', (int)$g['primera']), 'ultima' => gmdate('c', (int)$g['ultima']),

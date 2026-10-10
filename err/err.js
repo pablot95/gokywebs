@@ -7,8 +7,9 @@
  * En localhost y en dominios de prueba (vercel.app, etc.) no manda nada.
  *
  * Reporta:  errores de JavaScript, promesas rechazadas, scripts/CSS que no cargan
- *           y pedidos fetch que devuelven 5xx.  Ignora lo que no es de la web
- *           (extensiones del navegador, "Script error." de terceros, etc.).
+ *           y pedidos fetch que devuelven 5xx (si son de la propia web y responden
+ *           JSON, con el motivo: el campo "error").  Ignora lo que no es de la web
+ *           (extensiones, navegadores internos de apps, "Script error." de terceros, etc.).
  * No toca nada de la página y nunca tira un error propio.
  */
 (function () {
@@ -30,9 +31,12 @@
     }
     function esRuido(msg, src) {
       msg = String(msg || "");
+      src = String(src || "");
       if (!msg || msg === "Script error." || msg === "Script error") return true;
       if (/ResizeObserver loop/i.test(msg)) return true;
-      if (/^(chrome|moz|safari)-extension:/i.test(String(src || ""))) return true;
+      // Un script que no vino por http(s) no es de la web: extensiones (chrome-extension:),
+      // lo que inyecta el navegador interno de Instagram/Facebook en Android (iabjs://), etc.
+      if (src && !/^https?:/i.test(src)) return true;
       if (/^(Load failed|Failed to fetch|NetworkError|Network request failed)/i.test(msg)) return true;
       return false;
     }
@@ -96,6 +100,18 @@
       } catch (_) {}
     });
 
+    // El motivo de un 5xx de la propia web: los api/*.php responden {"error": "<motivo>"}.
+    // Solo el campo error, y solo si el cuerpo es JSON y chico.
+    function motivoDe(texto) {
+      try {
+        texto = String(texto || "");
+        if (texto.length > 20000) return "";
+        var j = JSON.parse(texto);
+        var m = j && typeof j.error === "string" ? j.error : "";
+        return m.replace(/\s+/g, " ").trim().slice(0, 200);
+      } catch (_) { return ""; }
+    }
+
     // fetch que devuelve 5xx: importante si es de la propia web, menor si es de un tercero.
     if (nativeFetch) {
       window.fetch = function (input) {
@@ -104,9 +120,26 @@
           var u = typeof input === "string" ? input : (input && input.url) || "";
           if (u.indexOf(ENDPOINT) !== 0) {
             p.then(function (res) {
-              if (res && res.status >= 500) {
+              try {
+                if (!res || res.status < 500) return;
                 var limpio = u.split("?")[0];
-                enviar({ tipo: "fetch", nivel: mismoOrigen(u) ? "alto" : "bajo", msg: "HTTP " + res.status + " en " + limpio, src: limpio, line: 0, col: 0, stack: "" });
+                var propio = mismoOrigen(u) && (!res.url || mismoOrigen(res.url));
+                var r = { tipo: "fetch", nivel: mismoOrigen(u) ? "alto" : "bajo", msg: "HTTP " + res.status + " en " + limpio, src: limpio, line: 0, col: 0, stack: "" };
+                var tipoCuerpo = (res.headers && res.headers.get("content-type")) || "";
+                if (!propio || !/json/i.test(tipoCuerpo) || typeof res.clone !== "function") { enviar(r); return; }
+                // Se lee una copia en segundo plano: la respuesta original queda intacta para la web.
+                // Si el cuerpo no llega en 3 s, se avisa igual sin el motivo.
+                var listo = false;
+                var mandar = function (motivo) {
+                  if (listo) return;
+                  listo = true;
+                  if (motivo) r.detalle = motivo;
+                  enviar(r);
+                };
+                setTimeout(function () { mandar(""); }, 3000);
+                res.clone().text().then(function (t) { mandar(motivoDe(t)); }, function () { mandar(""); });
+              } catch (_) {
+                try { if (r && !listo) { listo = true; enviar(r); } } catch (_) {}
               }
             }, function () {});
           }

@@ -430,10 +430,12 @@ function erroresResumen(datos = erroresDatos) {
         if (!w.senal || at > w.senal) w.senal = at;
         const pendiente = !resueltos.has(w.id) || at > resueltos.get(w.id);
         let g = w.grupos.get(d.hash);
-        if (!g) { g = { msg: d.msg, tipo: d.tipo, nivel: d.nivel, url: d.url, src: d.src, line: d.line, count: 0, pend: 0, last: at }; w.grupos.set(d.hash, g); }
+        if (!g) { g = { msg: d.msg, tipo: d.tipo, nivel: d.nivel, url: d.url, src: d.src, line: d.line, count: 0, pend: 0, last: at, detalle: "", detalleAt: null }; w.grupos.set(d.hash, g); }
         g.count++;
         if (pendiente) g.pend++;
         if (at > g.last) g.last = at;
+        // El motivo de un 5xx (lo que respondió la web en "error"): se muestra el último.
+        if (d.detalle && (!g.detalleAt || at > g.detalleAt)) { g.detalle = d.detalle; g.detalleAt = at; }
     }
     return [...porWeb.values()].map(w => {
         const grupos = [...w.grupos.values()].sort((a, b) => b.last - a.last);
@@ -539,6 +541,7 @@ function erroresHtmlWeb(w) {
     const filas = w.grupos.map(g => (
         '<li class="err-item err-item--' + escapeHtml(g.nivel) + (g.pend === 0 ? " err-item--resuelto" : "") + '">' +
           '<div class="err-item-msg">' + escapeHtml(g.msg) + '</div>' +
+          (g.detalle ? '<div class="err-item-motivo">Respondió: ' + escapeHtml(g.detalle) + '</div>' : "") +
           '<div class="err-item-meta">' +
             (g.nivel === "alto" ? "Importante" : "Menor") + " · " + escapeHtml(g.tipo) + " · " +
             g.count + (g.count === 1 ? " vez" : " veces") + " · última " + fechaHora(g.last) +
