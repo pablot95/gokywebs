@@ -368,6 +368,10 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
     if (!empty($conv['quiere_web_propia'])) $c[] = '- Pidió comprar la web o tenerla a su nombre (pago único).';
     $c[] = '- Observaciones: ' . $dato($f['observaciones_ia'] ?? '');
 
+    if (!empty($conv['comercial_pendientes'])) {
+        $c[] = "\nDUDAS QUE QUEDARON PENDIENTES (contestalas junto con lo nuevo; si ya las respondió una persona en la charla, no las repitas):";
+        foreach ((array)$conv['comercial_pendientes'] as $pendiente) $c[] = '- ' . (string)$pendiente;
+    }
     $c[] = "\nESTADO DE LA CHARLA";
     $sol = (string)($conv['comercial_solucion'] ?? '');
     if ($sol !== '' && wabot_comercial_solucion_estandar($sol)) $c[] = '- Solución que ya se definió: ' . $sol . '.';
@@ -467,7 +471,6 @@ function wabot_comercial_esquema($cfg) {
 /** Deja la decisión en un formato seguro: enums válidos, textos limpios y topes. */
 function wabot_comercial_normalizar($d, $cfg) {
     if (!is_array($d)) return null;
-    $max = max(1, min(3, (int)($cfg['comercial']['max_mensajes'] ?? 2)));
     $accion = in_array($d['accion'] ?? '', ['responder', 'cotizar', 'formulario', 'humano', 'esperar'], true) ? $d['accion'] : 'responder';
     $mensajes = [];
     foreach ((array)($d['mensajes'] ?? []) as $m) {
@@ -478,8 +481,9 @@ function wabot_comercial_normalizar($d, $cfg) {
         $m = preg_replace('/(?<!\.)\.[ \t]*(?=\n|$)/u', '', $m);
         if ($m !== '') $mensajes[] = $m;
     }
-    // En cotizar va un solo mensaje (la propuesta); en formulario, como mucho uno antes del link.
-    $mensajes = array_slice($mensajes, 0, in_array($accion, ['cotizar', 'formulario'], true) ? 1 : $max);
+    // La brevedad se pide en las instrucciones; nunca se borran respuestas para cumplir un tope.
+    // Al cotizar, la propuesta sigue siendo un solo bloque, con todo lo que escribió el modelo.
+    if ($accion === 'cotizar' && $mensajes) $mensajes = [implode("\n\n", $mensajes)];
     if (in_array($accion, ['humano', 'esperar'], true)) $mensajes = [];
     $info = array_values(array_intersect(array_unique(array_filter((array)($d['info_claves'] ?? []), 'is_string')), wabot_comercial_info_claves($cfg)));
     $ficha = is_array($d['ficha'] ?? null) ? $d['ficha'] : [];
@@ -498,7 +502,7 @@ function wabot_comercial_normalizar($d, $cfg) {
         'pago_unico' => !empty($d['pago_unico']),
         'internacional' => !empty($d['internacional']),
         'mensajes' => $mensajes,
-        'info_claves' => array_slice($info, 0, 2),
+        'info_claves' => $info,
         'motivo' => $limpiar($d['motivo'] ?? null, 200),
         'ficha' => [
             'nombre' => $limpiar($ficha['nombre'] ?? null, 60), 'negocio' => $limpiar($ficha['negocio'] ?? null, 80),
@@ -683,7 +687,7 @@ function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') 
         . "\n\nDECISIÓN DEL ASISTENTE: accion=" . (string)($b['accion'] ?? '') . ', solucion=' . (string)($b['solucion'] ?? '') . ($motivo !== '' ? ', motivo=' . $motivo : '')
         . "\n\nRESPUESTA PROPUESTA (lo que va a recibir el cliente, en orden):\n" . wabot_comercial_borrador_texto((array)($b['mensajes'] ?? []));
     $r = wabot_openai_llamar('comercial_revisor', $instrucciones, [['role' => 'user', 'content' => $entrada]], wabot_comercial_revision_esquema(), $cfg,
-        ['usuario' => (string)wabot_conversation_key($conv), 'modo' => $modo, 'max_tokens' => 700, 'esfuerzo' => 'low']);
+        ['usuario' => (string)wabot_conversation_key($conv), 'modo' => $modo, 'max_tokens' => 1800, 'esfuerzo' => 'low']);
     $gastado = ['llamadas' => $r['ok'] ? 1 : 0, 'costo_usd' => (float)($r['uso']['costo_usd'] ?? 0)];
     if (!$r['ok'] || !is_array($r['datos'])) {
         return ['ok' => null, 'problemas' => [], 'falta' => [], 'error' => (string)($r['error'] ?? 'sin_datos'), 'gastado' => $gastado];
@@ -697,10 +701,21 @@ function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') 
         $problemas[] = ['tipo' => $tipo, 'detalle' => mb_substr($detalle, 0, 300)];
     }
     $falta = array_values(array_filter(array_map(function ($x) { return mb_substr(trim((string)$x), 0, 200); }, (array)($r['datos']['falta_contestar'] ?? [])), 'strlen'));
-    $ok = !empty($r['datos']['ok']);
-    if (!$ok && !$problemas && $falta) $problemas[] = ['tipo' => 'no_contesta', 'detalle' => 'Queda sin contestar: ' . implode(' / ', $falta)];
+    $ok = !empty($r['datos']['ok']) && !$falta && !$problemas;
+    if ($falta && !in_array('no_contesta', array_column($problemas, 'tipo'), true)) $problemas[] = ['tipo' => 'no_contesta', 'detalle' => 'Queda sin contestar: ' . implode(' / ', $falta)];
     if (!$ok && !$problemas) $ok = true;
     return ['ok' => $ok, 'problemas' => $ok ? [] : $problemas, 'falta' => $ok ? [] : $falta, 'error' => null, 'gastado' => $gastado];
+}
+
+/** Conserva las dudas hasta que una revisión confirme que quedaron contestadas. */
+function wabot_comercial_revision_pendientes(array $revision, array $anteriores = []) {
+    $faltan = (array)($revision['falta'] ?? []);
+    if (!$faltan) {
+        foreach ((array)($revision['problemas'] ?? []) as $p) {
+            if (($p['tipo'] ?? '') === 'no_contesta') $faltan[] = (string)$p['detalle'];
+        }
+    }
+    return array_values(array_unique(array_filter(array_merge($anteriores, $faltan), 'strlen')));
 }
 
 /** El pedido de corrección para el modelo: qué vio el revisor en lo que iba a salir. */
@@ -719,8 +734,8 @@ function wabot_comercial_revision_pedido(array $revision) {
  * incoherentes, o si se saltea respuestas"). Si el revisor ve un problema, el
  * modelo corrige UNA vez con lo que dijo; si lo corregido sigue con un problema
  * grave, en automático no sale y lo ve Pablo con el motivo, y en sugerencias
- * sale con el aviso para que Pablo decida. Si el revisor no contesta, el turno
- * sigue como estaba (nunca frena por eso).
+ * sale con el aviso para que Pablo decida. Un fallo del revisor nunca borra
+ * dudas ya detectadas: quedan para Pablo. Sin dudas previas sigue como estaba.
  * Devuelve ['ok', 'error', 'decision', 'ajustes', 'b', 'modelo', 'revision', 'gastado', 'segundos'].
  */
 function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
@@ -735,13 +750,15 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
     if (!$r['ok']) return ['ok' => false, 'error' => $r['error'], 'gastado' => $gastado, 'segundos' => round(microtime(true) - $inicio, 2)];
     [$d, $ajustes] = wabot_comercial_validar($r['decision'], $texto, $conv, $cfg);
     $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
+    $pendientes = array_values((array)($conv['comercial_pendientes'] ?? []));
     $revision = ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => []];
 
-    if (wabot_comercial_revisor_activo($cfg) && wabot_comercial_hay_que_revisar($b, $texto)) {
+    if (wabot_comercial_revisor_activo($cfg) && (wabot_comercial_hay_que_revisar($b, $texto) || ($pendientes && $b['accion'] !== 'humano'))) {
         $rev = wabot_comercial_revisar($texto, $conv, $cfg, $b, $modo);
         $sumar($rev['gastado']);
         if ($rev['ok'] === true) {
             $revision['estado'] = 'ok';
+            $pendientes = [];
         } elseif ($rev['ok'] === false) {
             $antes = array_map(function ($m) { return (string)$m['t']; }, $b['mensajes']);
             $revision = ['estado' => 'corregida', 'problemas' => $rev['problemas'], 'falta' => $rev['falta'], 'antes' => $antes];
@@ -751,30 +768,41 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
                 'falta' => $rev['falta'], 'borrador' => wabot_comercial_borrador_texto($b['mensajes'])]);
             $sumar($r2['gastado'] ?? []);
             $finales = $rev['problemas'];
+            $pendientes = wabot_comercial_revision_pendientes($rev, $pendientes);
             if ($r2['ok']) {
                 [$d2, $aj2] = wabot_comercial_validar($r2['decision'], $texto, $conv, $cfg);
                 $b2 = wabot_comercial_construir($d2, $texto, $conv, $cfg);
-                $rev2 = wabot_comercial_hay_que_revisar($b2, $texto) ? wabot_comercial_revisar($texto, $conv, $cfg, $b2, $modo)
+                $rev2 = (wabot_comercial_hay_que_revisar($b2, $texto) || ($pendientes && $b2['accion'] !== 'humano')) ? wabot_comercial_revisar($texto, $conv, $cfg, $b2, $modo)
                     : ['ok' => true, 'problemas' => [], 'falta' => [], 'gastado' => []];
                 $sumar($rev2['gastado']);
                 [$r, $d, $b] = [$r2, $d2, $b2];
                 $ajustes = array_merge($aj2, ['revision_corrigio']);
-                $finales = $rev2['ok'] === false ? $rev2['problemas'] : [];
+                if ($b2['accion'] === 'humano') {
+                    // Derivar resuelve quién sigue, pero no contesta las dudas del cliente.
+                    $finales = [];
+                } elseif ($rev2['ok'] === true) {
+                    $finales = [];
+                    $pendientes = [];
+                } elseif ($rev2['ok'] === false) {
+                    $finales = $rev2['problemas'];
+                    $pendientes = wabot_comercial_revision_pendientes($rev2, $pendientes);
+                } else {
+                    // No sabemos si la corrección resolvió lo observado: conservarlo y pasarlo a Pablo.
+                    $revision['error'] = (string)($rev2['error'] ?? 'sin_datos');
+                }
             }
             if ($finales) {
                 $revision['estado'] = 'dudosa';
                 $revision['problemas_finales'] = $finales;
-                /* Con el precio saliendo, que falte contestar una parte no lo frena: "cuánto sale una web
-                 * para artes marciales? cómo es el tema?" se quedaba sin nada porque faltaba el proceso (10-oct). */
-                $cotiza = $d['accion'] === 'cotizar';
-                $graves = array_values(array_filter($finales, function ($p) use ($cotiza) {
-                    return in_array($p['tipo'], wabot_comercial_revision_graves(), true) && !($cotiza && $p['tipo'] === 'no_contesta');
+                $graves = array_values(array_filter($finales, function ($p) {
+                    return in_array($p['tipo'], wabot_comercial_revision_graves(), true);
                 }));
                 if ($graves && $modo !== 'sugerencia') {
                     // En automático no sale algo que el revisor sigue viendo mal: lo contesta Pablo, con el motivo.
                     $d['accion'] = 'humano';
                     $d['mensajes'] = [];
-                    $d['motivo'] = 'Revisión: ' . $graves[0]['detalle'];
+                    $d['motivo'] = 'Revisión: ' . $graves[0]['detalle']
+                        . ($pendientes ? ' Pendiente: ' . implode(' / ', $pendientes) : '');
                     $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
                     $revision['estado'] = 'frenada';
                     $ajustes[] = 'revision_frenada';
@@ -785,6 +813,25 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
             $revision['error'] = (string)($rev['error'] ?? '');
         }
     }
+    // Si había dudas de otro turno, un fallo del revisor no las da por respondidas.
+    if ($pendientes && $revision['estado'] === 'sin_revisar' && $b['accion'] !== 'humano') {
+        $revision['estado'] = $modo === 'sugerencia' ? 'dudosa' : 'frenada';
+        $revision['problemas_finales'] = [['tipo' => 'no_contesta', 'detalle' => 'No se pudo verificar la respuesta a: ' . implode(' / ', $pendientes)]];
+        if ($modo !== 'sugerencia') {
+            $d['accion'] = 'humano';
+            $d['mensajes'] = [];
+            $d['motivo'] = 'Pendiente: ' . implode(' / ', $pendientes);
+            $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
+        }
+    }
+    if ($pendientes && $b['accion'] === 'humano' && strpos((string)$d['motivo'], 'Pendiente: ') === false) {
+        $d['motivo'] = trim((string)$d['motivo'] . ' Pendiente: ' . implode(' / ', $pendientes));
+        $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
+    }
+    $revision['pendientes'] = $pendientes;
+    // La copia sirve al turno automático; el resumen sirve al envío de sugerencias.
+    $b['conv']['comercial_pendientes'] = $pendientes;
+    $b['resumen']['pendientes'] = $pendientes;
     return ['ok' => true, 'error' => null, 'decision' => $d, 'ajustes' => $ajustes, 'b' => $b, 'modelo' => (string)($r['modelo'] ?? ''),
             'revision' => $revision, 'gastado' => $gastado, 'segundos' => round(microtime(true) - $inicio, 2)];
 }
@@ -1056,15 +1103,15 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $planCot = (string)(wabot_comercial_cotizacion($conv, $cfg)['plan'] ?? '');
         $clave = ($sol === 'informativa' || ($sol === 'sin_definir' && $planCot === 'informativa')) ? 'carga_sitio' : 'carga_nosotros';
         $otras = array_diff($d['info_claves'], ['carga', 'carga_sitio', 'carga_nosotros', 'manual', 'manual_sitio']);
-        $d['info_claves'] = array_slice(array_values(array_unique(array_merge([$clave], $otras))), 0, 2);
+        $d['info_claves'] = array_values(array_unique(array_merge([$clave], $otras)));
         // Lo que el modelo haya dicho sobre la carga sobra (la propuesta de la cotización queda).
         if ($d['accion'] !== 'cotizar') $d['mensajes'] = array_values(array_filter($d['mensajes'], function ($m) { return !preg_match('/\bcarg/iu', $m); }));
         $ajustes[] = 'carga_nosotros';
     }
-    // Sin negocio contado, pedir el precio recibe la respuesta oficial (sin montos) y nada más.
+    // Sin negocio contado se pide el rubro, conservando las otras dudas respondibles sin montos.
     if ($d['accion'] === 'responder' && !$negocio && !wabot_comercial_cotizacion($conv, $cfg)
         && function_exists('wabot_texto_pide_precio') && wabot_texto_pide_precio($texto)) {
-        $d['info_claves'] = ['precio_sin_rubro'];
+        $d['info_claves'] = array_values(array_unique(array_merge(['precio_sin_rubro'], $d['info_claves'])));
         $d['mensajes'] = [];
         $ajustes[] = 'precio_sin_rubro';
     }
@@ -1074,7 +1121,6 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     if (in_array($d['accion'], ['responder', 'formulario'], true) && (!empty($conv['quiere_web_propia']) || $d['pago_unico'])
         && preg_match('/\b(hosting|dominio|servidor|alojamiento|renovacion|renovar)\b/u', $t)) {
         $d['info_claves'] = array_values(array_unique(array_merge(['hosting_pago_unico'], array_diff($d['info_claves'], ['hosting', 'accesos', 'hosting_renovacion', 'dominio_a_nombre']))));
-        $d['info_claves'] = array_slice($d['info_claves'], 0, 2);
         $d['mensajes'] = array_values(array_filter($d['mensajes'], function ($m) { return !preg_match('/\b(hosting|dominio)\b/iu', $m); }));
         $ajustes[] = 'hosting_pago_unico';
     }
@@ -1088,14 +1134,12 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     if (in_array($d['accion'], ['responder', 'cotizar', 'formulario'], true) && (int)wabot_ficha($conv)['cantidad_productos'] >= 300
         && !in_array('muchos_productos', $d['info_claves'], true) && empty($conv['comercial_muchos_avisado'])) {
         array_unshift($d['info_claves'], 'muchos_productos');
-        $d['info_claves'] = array_slice($d['info_claves'], 0, 2);
         $ajustes[] = 'muchos_productos';
     }
     // Un pedido de descuento se contesta con el texto aprobado y se sigue atendiendo.
     if (in_array($d['accion'], ['responder', 'cotizar', 'formulario'], true) && preg_match('/\bdescuento\b/u', $t)
         && !in_array('descuento', $d['info_claves'], true) && !preg_match('/\bcup[oó]n\w*\b/u', $t)) {
         array_unshift($d['info_claves'], 'descuento');
-        $d['info_claves'] = array_slice($d['info_claves'], 0, 2);
         $ajustes[] = 'descuento';
     }
     // En responder sin nada que decir y sin negocio, la pregunta fija (una sola vez por charla).
@@ -1243,7 +1287,6 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             break;
 
         case 'cotizar':
-            $deshacer = ['precio_sin_rubro', 'pago', 'pago_generico', 'que_incluye', 'que_incluye_sin_productos', 'mantenimiento', 'pago_sin_precio', 'proceso'];
             /* Preguntó el precio sin decir si quiere reservas: los dos precios
              * (Pablo, 9-oct). Se congela el de sin reservas; la oferta de la demo
              * sale cuando elige. */
@@ -1255,8 +1298,6 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 $con = trim((string)($cfg['comercial']['con_reservas'] ?? ''));
                 if ($planes !== '' && $con !== '' && $panel['anual'] !== '' && $panel['mensual'] !== '') {
                     $resumen['cotizacion'] = $nueva;
-                    $dePaso = array_values(array_diff($d['info_claves'], $deshacer));
-                    foreach (array_slice(wabot_comercial_info_textos($dePaso, $c, $cfg, true), 0, 1) as $t) $msgs[] = ['t' => $t, 'efecto' => 'info'];
                     $intro = trim((string)($cfg['comercial']['dos_planes_intro'] ?? ''));
                     if ($intro !== '') $msgs[] = ['t' => $intro, 'efecto' => 'texto'];
                     $sin = trim((string)($cfg['comercial']['sin_reservas'] ?? ''));
@@ -1354,15 +1395,6 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             $lista = wabot_comercial_montos_lista($plan, $cfg);
             $nueva = ['origen' => 'bot', 'plan' => $plan, 'anual' => $lista['anual'], 'mensual' => $lista['mensual'], 'unico' => $lista['unico'], 'ts' => time()];
             $resumen['cotizacion'] = $nueva;
-            /* Lo que preguntó además del precio se contesta antes (sin montos: los
-             * dicen los planes). Como mucho una respuesta oficial, y solo si
-             * preguntó algo o avisó muchos productos: el primer mensaje comercial
-             * va corto (Pablo, 9-oct). */
-            $dePaso = array_values(array_diff($d['info_claves'], $deshacer));
-            if (!wabot_mensaje_pregunta_algo($texto)) $dePaso = array_values(array_intersect($dePaso, ['muchos_productos']));
-            foreach (array_slice(wabot_comercial_info_textos($dePaso, $c, $cfg, true), 0, 1) as $t) {
-                $msgs[] = ['t' => $t, 'efecto' => 'info'];
-            }
             $propuesta = trim((string)($d['mensajes'][0] ?? ''));
             // El saludo lo devuelve el sistema al principio del primer mensaje: si la propuesta no va primera, sin su propio saludo.
             if ($msgs) $propuesta = wabot_comercial_sin_saludo_inicial($propuesta);
@@ -1403,6 +1435,34 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 if (!$msgs) $resumen['motivo'] = 'Aceptó la demo pero no hay formulario para mandarle';
             }
             break;
+    }
+
+    // Las dudas acompañan TODAS las variantes: precio nuevo, repetido, cambio de plan y dos webs.
+    // Se resuelven con la cotización de este turno, sin cambiar todavía la charla real.
+    if ($d['accion'] === 'cotizar') {
+        $paraInfo = $c;
+        $cotInfo = $resumen['cotizacion'] ?? $cot;
+        if ($tipoFuturo !== null && $tipoFuturo !== 'sistema') $paraInfo['tipo'] = $tipoFuturo;
+        if (is_array($cotInfo)) {
+            $paraInfo['precio_dado'] = true;
+            $paraInfo['comercial_cotizacion'] = $cotInfo;
+            $paraInfo['precio_cotizado'] = $cotInfo['anual'];
+            $paraInfo['mensualidad_cotizada'] = $cotInfo['mensual'];
+            $paraInfo['precio_unico_cotizado'] = $cotInfo['unico'] ?? '';
+            $paraInfo['sena_cotizada'] = wabot_comercial_montos_lista($cotInfo['plan'], $cfg)['sena'];
+            $paraInfo['landing_con_panel'] = $tipoFuturo === 'landing' && $cotInfo['plan'] !== 'informativa';
+        }
+        if ($d['pago_unico']) $paraInfo['quiere_web_propia'] = true;
+        $claves = array_values(array_diff($d['info_claves'], ['precio_sin_rubro']));
+        $infos = [];
+        foreach (wabot_comercial_info_textos($claves, $paraInfo, $cfg, $cotInfo === null) as $t) {
+            $infos[] = ['t' => $t, 'efecto' => 'info'];
+        }
+        if ($infos) {
+            foreach ($msgs as &$m) if ($m['efecto'] === 'propuesta') $m['t'] = wabot_comercial_sin_saludo_inicial($m['t']);
+            unset($m);
+            $msgs = array_merge($infos, $msgs);
+        }
     }
 
     // El saludo se devuelve una vez por charla, al principio del primer mensaje nuestro; nunca pegado a un bloque aprobado (planes, oferta, formulario).
@@ -1450,6 +1510,7 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     }
     $sol = (string)($resumen['solucion'] ?? 'sin_definir');
     if (wabot_comercial_solucion_estandar($sol)) $conv['comercial_solucion'] = $sol;
+    if (array_key_exists('pendientes', $resumen)) $conv['comercial_pendientes'] = (array)$resumen['pendientes'];
     $conv['comercial_ultimo'] = ['ts' => $ahora, 'accion' => (string)($resumen['accion'] ?? ''), 'motivo' => (string)($resumen['motivo'] ?? '')];
     if (($conv['fase'] ?? 'nuevo') === 'nuevo') $conv['fase'] = 'menu';
 

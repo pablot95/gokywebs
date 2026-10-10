@@ -6,6 +6,17 @@ y las respuestas rápidas del panel. Donde dos fuentes se contradicen y el plan 
 punto queda en la lista final para que lo decida Pablo; mientras tanto el bot usa lo indicado en
 cada caso.
 
+## Actualización del 10-oct: responder todas las dudas
+
+- La brevedad no recorta respuestas: se conservan todas las claves oficiales seleccionadas, sin duplicados. También se conservan cuando una regla agrega la respuesta de carga, hosting, descuento o muchos productos.
+- Las dudas acompañan todas las variantes de cotización: precio nuevo, repetido, cambio de solución, comparación con/sin reservas y dos webs. Las respuestas que llevan montos usan la cotización correspondiente a esa charla.
+- Se puede contestar más de dos dudas antes del formulario. Después de enviarlo sigue Pablo, sin cambios.
+- El revisor comprueba cada pregunta, incluidas las pendientes de turnos anteriores. Si la corrección sigue dejando una pregunta sin contestar, tampoco sale la cotización: se deriva a Pablo con el detalle.
+- `comercial_pendientes` conserva las dudas detectadas y se incluye en el contexto. Solo una revisión satisfactoria las da por resueltas; derivar a Pablo o fallar la segunda revisión no las borra. En sugerencias se mantiene el borrador con el aviso, para que Pablo decida.
+- Un fallo inicial del revisor sin pendientes conocidos conserva el comportamiento anterior. Con pendientes, la respuesta requiere verificación o intervención de Pablo.
+
+Validación local sin red: `test-comercial.php` 299/299, `test-sugerencias.php` 48/48 y `test-concurrencia.php` 12/12. Se usan respuestas simuladas del modelo; esto verifica el código, no mide la precisión del modelo real. Incluye regresiones con cuatro consultas juntas, precio con dudas, pendientes, errores del revisor y pausa después del formulario.
+
 ## 1. Soluciones y precios (decisión del plan)
 
 | Solución (`solucion`) | Plan | Mensual | Anual | Pago único | Tipo que guarda la charla |

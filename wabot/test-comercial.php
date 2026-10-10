@@ -539,8 +539,8 @@ caso('miles de productos ya no van a Pablo: se cotiza y se avisa que lo digan an
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['instagram_sigue', 'muchos_productos'], 'mensajes' => ['Buenas! Te podemos armar una tienda online de ropa.'], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Hola buenas, quiero pasar mi tienda de Instagram a una web, son unos 400 productos de ropa', $c, $cfg);
-caso('al cotizar sin pregunta: como mucho una respuesta oficial (los muchos productos), un solo saludo y después la propuesta (simulación 11)',
-    count($r) === 4 && strpos($r[0], 'miles de productos') !== false && str_starts_with($r[0], 'Hola') && str_starts_with($r[1], 'Te podemos armar'), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('cotizar conserva las respuestas seleccionadas aunque el cliente no escriba signos de pregunta, con un solo saludo',
+    count($r) === 5 && strpos($r[1], 'miles de productos') !== false && str_starts_with($r[0], 'Hola') && str_starts_with($r[2], 'Te podemos armar'), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te podemos armar una tienda.'], 'ficha' => ['que_vende' => 'leches']])]);
 turno('Vendo leches maternizadas', $c, $cfg);
@@ -851,8 +851,9 @@ $decCotiza = dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' 
 $c = cv();
 oa([$decCotiza, $decCotiza], [$revFalta, $revFalta]);
 $r = turno('Cuánto sale hacer una web para una entidad de artes marciales? Cómo es el tema?', $c, $cfg);
-caso('cotizando, que falte contestar una parte no frena el precio (sale y queda dudosa)', count($r) === 3 && empty($c['comercial_pausa']) && !empty($c['precio_dado'])
-    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
+caso('cotizando, una duda sin resolver frena la salida y queda para Pablo con el detalle', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && empty($c['precio_dado'])
+    && ($c['comercial_pendientes'] ?? []) === ['cómo es el tema'] && strpos($c['comercial_motivo'] ?? '', 'cómo es el tema') !== false
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'frenada', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada('tienda');
 oa([$decMal, $decMal], [$revFalta, $revFalta]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
@@ -890,6 +891,162 @@ $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'intencion' => 'acepta', 'motivo' => 'Quiere pagar el anual ya'])]);
 $r = turno('Va a ser anual. Te hago el pago ya para todo el año', $c, $cfg);
 caso('"te hago el pago ya" → no sale nada y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && ($c['comercial_motivo'] ?? '') === 'Quiere pagar el anual ya', json_encode($r, JSON_UNESCAPED_UNICODE));
+
+
+echo "— 14. Todas las dudas y seguimiento de pendientes (10-oct) —\n";
+$clavesCuatro = ['hosting', 'mantenimiento', 'carga', 'plataformas'];
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => array_merge($clavesCuatro, ['hosting', 'clave_inexistente'])])]);
+$r = turno('El hosting está incluido? Qué incluye el mantenimiento? Puedo editar mis productos? Qué plataforma usan?', $c, $cfg);
+caso('cuatro dudas conocidas → cuatro respuestas, sin duplicados ni claves inventadas', count($r) === 4
+    && strpos($r[0], 'hosting') !== false && strpos($r[1], 'mantenimiento') !== false
+    && strpos($r[2], 'panel') !== false && strpos($r[3], 'WordPress') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$clavesVenta = ['envios', 'medios_pago_tienda', 'proceso', 'mantenimiento'];
+$cotCompleta = dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => $clavesVenta,
+    'mensajes' => ['Podemos armarte una tienda online de vinos'], 'ficha' => ['que_vende' => 'vinos']]);
+$c = cv();
+oa([$cotCompleta]);
+$r = turno('Vendo vinos. Quisiera saber cuánto sale, cómo son los envíos, con qué pueden pagar, cómo se empieza y qué mantenimiento incluye', $c, $cfg);
+caso('cotiza y contesta cuatro dudas aunque no haya signos de pregunta, incluido el proceso', count($r) === 7
+    && $r[0] === $cfg['info']['envios'] && $r[1] === $cfg['info']['medios_pago_tienda']
+    && $r[2] === $cfg['info']['proceso'] && strpos($r[3], 'mantenimiento') !== false
+    && strpos($r[5], 'Plan anual: $190.000') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['envios', 'medios_pago_tienda']])]);
+$r = turno('Cuánto sale? Y cómo son los envíos y los medios de pago de la tienda?', $c, $cfg);
+caso('repetir el precio también contesta las dudas que lo acompañan', count($r) === 3 && $r[0] === $cfg['info']['envios']
+    && $r[1] === $cfg['info']['medios_pago_tienda'] && strpos($r[2], 'Plan anual') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'catalogo', 'info_claves' => ['envios', 'medios_pago_tienda'],
+    'mensajes' => ['Entonces lo armamos como catálogo con pedido por WhatsApp']])]);
+$r = turno('Solo quiero mostrar y que me pidan por WhatsApp. Cómo son los envíos y los pagos?', $c, $cfg);
+caso('cambio de solución con mismo precio conserva las dudas, sin repetir los planes', count($r) === 3 && $r[0] === $cfg['info']['envios']
+    && $r[1] === $cfg['info']['medios_pago_tienda'] && strpos(implode(' ', $r), 'Plan anual') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'segunda_solucion' => 'tienda',
+    'info_claves' => ['envios', 'medios_pago_tienda'], 'ficha' => ['rubro' => 'electricidad y vinos']])]);
+$r = turno('Quiero una web de electricidad y otra para vender vinos. Cómo son los envíos y con qué me pueden pagar?', $c, $cfg);
+caso('dos webs juntas no pierden las dudas', count($r) === 4 && $r[0] === $cfg['info']['envios']
+    && $r[1] === $cfg['info']['medios_pago_tienda'] && strpos($r[2], 'Por las dos webs') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta', 'info_claves' => $clavesCuatro])]);
+$r = turno('Dale, armala, pero antes contame lo del hosting, mantenimiento, si edito los productos y qué plataforma usan?', $c, $cfg);
+caso('aceptar la demo con cuatro dudas → contesta todas antes del formulario', count($r) === 5 && con_form([$r[4]])
+    && ($c['comercial_pausa'] ?? '') === 'formulario', json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([]);
+$r = turno('Y cómo se paga?', $c, $cfg);
+caso('después del formulario sigue Pablo, sin llamar al modelo ni contestar', $r === [] && count(pedidos()) === 0);
+
+// Las reglas que agregan una respuesta prioritaria tampoco pueden borrar las otras.
+$c = cv_cotizada('tienda');
+foreach (['Lo cargan ustedes?' => 'carga_nosotros', 'Me hacés un descuento?' => 'descuento'] as $t => $esperada) {
+    $d = wabot_comercial_normalizar(dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting', 'envios', 'medios_pago_tienda']]), $cfg);
+    [$v] = wabot_comercial_validar($d, $t, $c, $cfg);
+    caso("regla $esperada conserva todas las otras respuestas", count($v['info_claves']) === 4 && in_array($esperada, $v['info_claves'], true));
+}
+$d = wabot_comercial_normalizar(dc(['accion' => 'responder', 'solucion' => 'tienda', 'pago_unico' => true,
+    'info_claves' => ['hosting', 'envios', 'medios_pago_tienda', 'plazos']]), $cfg);
+[$v] = wabot_comercial_validar($d, 'Y el hosting del pago único?', $c, $cfg);
+caso('hosting del pago único reemplaza la respuesta general sin perder las demás', $v['info_claves'] === ['hosting_pago_unico', 'envios', 'medios_pago_tienda', 'plazos']);
+$cMuchos = $c;
+wabot_ficha_actualizar($cMuchos, 'Tengo 500 productos');
+$d = wabot_comercial_normalizar(dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting', 'envios', 'medios_pago_tienda']]), $cfg);
+[$v] = wabot_comercial_validar($d, 'Tengo 500 productos', $cMuchos, $cfg);
+caso('aviso de muchos productos conserva las tres dudas', count($v['info_claves']) === 4 && $v['info_claves'][0] === 'muchos_productos');
+$d = wabot_comercial_normalizar(dc(['accion' => 'formulario', 'mensajes' => ['Una respuesta', 'Otra respuesta', 'La tercera respuesta']]), $cfg);
+caso('los mensajes libres tampoco se recortan al mandar el formulario', count($d['mensajes']) === 3);
+
+$faltaDos = ['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'Faltan la plataforma y quién carga los productos']],
+    'falta_contestar' => ['Qué plataforma usan?', 'Quién carga los productos?']];
+$parcial = dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting']]);
+$completa = dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting', 'plataformas', 'carga']]);
+$c = cv_cotizada('tienda');
+oa([$parcial, $completa], [$faltaDos]);
+$r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
+caso('el revisor pide completar y la respuesta corregida resuelve todas las dudas', count($r) === 3
+    && ($c['comercial_pendientes'] ?? null) === [] && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'corregida');
+
+$c = cv_cotizada('tienda');
+oa([$parcial, $parcial], [$faltaDos, $faltaDos]);
+$r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
+caso('si no se corrige, conserva las dos dudas y las muestra en el motivo para Pablo', $r === []
+    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && !empty($c['handoff_pendiente'])
+    && strpos($c['comercial_motivo'], 'Qué plataforma usan?') !== false && strpos($c['comercial_motivo'], 'Quién carga los productos?') !== false);
+caso('los pendientes llegan al contexto del turno siguiente', strpos(wabot_comercial_contexto('Hola', $c, $cfg), 'DUDAS QUE QUEDARON PENDIENTES') !== false
+    && strpos(wabot_comercial_contexto('Hola', $c, $cfg), 'Quién carga los productos?') !== false);
+// Simula que Pablo vuelve a habilitar la charla: solo se limpian tras una revisión satisfactoria.
+$c['comercial_pausa'] = ''; $c['control_manual'] = false; $c['bot_off'] = false;
+oa([$completa]);
+$r = turno('Y lo que te pregunté?', $c, $cfg);
+caso('al resolver pendientes verificados se limpian y no quedan arrastrados', count($r) === 3 && ($c['comercial_pendientes'] ?? null) === []);
+
+$c = cv_cotizada('tienda');
+oa([$parcial, $completa], [$faltaDos, 'falla']);
+$r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
+caso('si falla la segunda revisión, no se da por resuelta una omisión conocida', $r === []
+    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && ($c['comercial_pausa'] ?? '') === 'humano');
+
+$c = cv_cotizada('tienda');
+$c['comercial_pendientes'] = ['Quién carga los productos?'];
+oa([$completa], ['falla']);
+$r = turno('Y lo que te pregunté?', $c, $cfg);
+caso('si falla la primera revisión con pendientes previos, los conserva para Pablo', $r === []
+    && ($c['comercial_pendientes'] ?? []) === ['Quién carga los productos?'] && ($c['comercial_pausa'] ?? '') === 'humano');
+
+$c = cv_cotizada('tienda');
+oa([$parcial, dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pablo debe confirmar el caso'])], [$faltaDos]);
+$r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
+caso('derivar durante la corrección conserva las preguntas para que Pablo las conteste', $r === []
+    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && strpos($c['comercial_motivo'], 'Pablo debe confirmar el caso') !== false);
+
+$c = cv_cotizada('tienda');
+$revInconsistente = $faltaDos; $revInconsistente['ok'] = true;
+oa([$parcial, $parcial], [$revInconsistente, $revInconsistente]);
+$r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
+caso('ok=true no oculta un falta_contestar no vacío', $r === [] && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar']);
+
+$c = cv_cotizada('tienda');
+oa([$parcial, $parcial], [$faltaDos, $faltaDos]);
+$decision = wabot_comercial_decidir('Qué plataforma usan? Quién carga los productos?', $c, $cfg, 'sugerencia');
+caso('sugerencias conserva el borrador con el aviso y las preguntas sin alterar la charla real', $decision['b']['accion'] === 'responder'
+    && $decision['revision']['estado'] === 'dudosa' && $decision['b']['resumen']['pendientes'] === $faltaDos['falta_contestar']
+    && empty($c['comercial_pendientes']));
+wabot_comercial_efectos_aplicar($c, $decision['b']['mensajes'], $decision['b']['resumen'], $cfg);
+caso('aplicar los efectos de una sugerencia conserva las preguntas pendientes', $c['comercial_pendientes'] === $faltaDos['falta_contestar']);
+
+$c = cv_cotizada('tienda');
+$c['comercial_cotizacion']['anual'] = '$250.000';
+$c['comercial_cotizacion']['mensual'] = '$35.000';
+$c['precio_cotizado'] = '$250.000';
+$c['mensualidad_cotizada'] = '$35.000';
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['pago', 'envios']])]);
+$r = turno('Cuánto sale? Cómo se paga y cómo son los envíos?', $c, $cfg);
+caso('las dudas con montos usan la cotización histórica, no los precios de lista', strpos(implode(' ', $r), '$35.000') !== false
+    && strpos(implode(' ', $r), '$250.000') !== false && strpos(implode(' ', $r), '$190.000') === false
+    && strpos(implode(' ', $r), '{') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv();
+wabot_conv_transcript($c, 'bot', $cfg['comercial']['pregunta_turnos']);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'info_claves' => ['plazos', 'medios_pago'], 'ficha' => ['rubro' => 'peluquería']])]);
+$r = turno('Tengo una peluquería. Qué costo tiene, cuánto tarda y qué medios de pago aceptan?', $c, $cfg);
+caso('la comparación con y sin reservas conserva ambas dudas y todavía no ofrece la demo', count($r) === 5
+    && strpos($r[0], '7 días') !== false && $r[1] === $cfg['info']['medios_pago'] && !in_array(OFERTA, $r, true), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$sinLista = ['falta' => [], 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'Falta el hosting'], ['tipo' => 'no_contesta', 'detalle' => 'Falta el panel']]];
+caso('si el revisor no da lista, se conservan todos los detalles de omisiones', wabot_comercial_revision_pendientes($sinLista) === ['Falta el hosting', 'Falta el panel']);
+
+$c = cv_cotizada('tienda');
+$c['comercial_pendientes'] = ['Quién carga los productos?'];
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta']), dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta', 'info_claves' => ['carga']])],
+    [['ok' => false, 'problemas' => [], 'falta_contestar' => ['Quién carga los productos?']]]);
+$r = turno('Dale', $c, $cfg);
+caso('un formulario solo también se revisa si había una duda pendiente', count($GLOBALS['OA_REVISIONES']) === 2
+    && count($r) === 2 && strpos($r[0], 'panel') !== false && con_form($r) && ($c['comercial_pendientes'] ?? null) === [], json_encode($r, JSON_UNESCAPED_UNICODE));
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);
