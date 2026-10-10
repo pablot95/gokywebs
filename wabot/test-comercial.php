@@ -171,6 +171,23 @@ foreach (['Sale $25.000.' => 'nombra un monto', 'Te lo conectamos con Mercado Li
     caso("red: «{$m}» ($motivo)", wabot_comercial_mensaje_problema($m) === $motivo, (string)wabot_comercial_mensaje_problema($m));
 }
 caso('una propuesta normal pasa', wabot_comercial_mensaje_problema('Perfecto, te podemos armar una tienda online para que vendas directo desde la web, incluso sin estar pendiente del celular 24/7.') === null);
+// 10-oct, Charlie: "Vendo por mercado libre y necesito tener un canal de venta alternativo" quedaba sin respuesta.
+caso('red: nombrar Mercado Libre como el canal donde ya vende pasa; ofrecer conectarlo, no',
+    wabot_comercial_mensaje_problema('Buenísimo. Podemos armarte una tienda online propia, como otro canal de venta además de Mercado Libre') === null
+    && wabot_comercial_mensaje_problema('Te sincronizamos el stock con Mercado Libre') !== null
+    && wabot_comercial_mensaje_problema('Mercado Libre se puede vincular con la tienda') !== null);
+caso('ficha: vender por Mercado Libre no es pedir la conexión; conectarla o traer las publicaciones, sí',
+    wabot_ficha_senales_de('Vendo por mercado libre y necesito tener un canal de venta alternativo') === []
+    && wabot_ficha_senales_de('Tengo todo publicado en Mercado Libre y quiero mi propia web') === []
+    && in_array('mercadolibre', wabot_ficha_senales_de('Se puede sincronizar el stock con mercado libre?'), true)
+    && wabot_ficha_senales_de('Quiero que la web tome mis publicaciones de Mercado Libre') === ['mercadolibre']);
+$c = cv('5491100009007TEST');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Buenísimo. Podemos armarte una tienda online propia, como otro canal de venta además de Mercado Libre'],
+        'ficha' => ['rubro' => 'tu negocio', 'que_vende' => 'productos que vende por Mercado Libre']])]);
+$r = turno('Vendo  por mercado libre y necesito tener un canal de venta alternativo', $c, $cfg);
+caso('el caso de Charlie: vende por Mercado Libre y quiere otro canal → se cotiza la tienda (propuesta, planes y oferta)',
+    count($r) === 3 && mb_stripos($r[0], 'además de Mercado Libre') !== false && ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($r[2] ?? '') === OFERTA,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 4. Sin negocio no hay precio —\n";
 $c = cv();

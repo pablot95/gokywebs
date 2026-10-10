@@ -375,7 +375,14 @@ function wabot_ficha_senales_de($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return [];
     $s = [];
-    if (preg_match('/\b(mercado ?libre|meli)\b/u', $t)) $s[] = 'mercadolibre';
+    /* Conectar la web con Mercado Libre, no venderle a quien ya vende ahí (10-oct,
+     * Charlie: "Vendo por mercado libre y necesito tener un canal de venta
+     * alternativo" quedaba como "conexión con Mercado Libre" y sin precio). */
+    $verboMeli = '(conect\w*|integr\w*|sincroniz\w*|vincul\w*|enlaz\w*|import\w*|linke\w*|api)';
+    if (preg_match('/\b' . $verboMeli . '\b.{0,40}\b(mercado ?libre|meli)\b|\b(mercado ?libre|meli)\b.{0,40}\b' . $verboMeli . '\b'
+        . '|\b(tome|tomen|tomar|traiga|traer|muestre|mostrar|pase|pasar|copie|copiar|levante|levantar|use|usar)\b.{0,25}\bpublicaciones\b.{0,15}\b(mercado ?libre|meli)\b/u', $t)) {
+        $s[] = 'mercadolibre';
+    }
     if (preg_match('/\b(tango|erp|odoo|bejerman|sistema de (stock|gestion|facturacion) que (ya )?(tengo|uso|usamos|tenemos)|sincroniz\w* (el |los )?(stock|precios)|facturacion electronica)\b/u', $t)) $s[] = 'integracion';
     if (preg_match('/\b(marketplace|multivendedor|varios vendedores|que otros (vendan|publiquen)|cada vendedor)\b/u', $t)) $s[] = 'marketplace';
     if (preg_match('/\b(descarga automatica|se descargue\w* sol[oa]s?|entrega automatica|reciban el (archivo|pdf|ebook|libro) (al pagar|automaticamente)'

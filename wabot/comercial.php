@@ -512,7 +512,13 @@ function wabot_comercial_mensaje_problema($m) {
     $p = wabot_ia_mensaje_problema($sinDominios);
     if ($p !== null) return $p;
     $t = mb_strtolower((string)$m);
-    if (preg_match('/\b(mercado ?libre|integra\w*|factura\w*|crm|app|aplicaci[oó]n|sistema de gesti[oó]n|cuotas?|sin inter[eé]s|internacional\w*|marketplace|suscripci[oó]n|hosting|dominio)\b/u', $t)) {
+    if (preg_match('/\b(integra\w*|factura\w*|crm|app|aplicaci[oó]n|sistema de gesti[oó]n|cuotas?|sin inter[eé]s|internacional\w*|marketplace|suscripci[oó]n|hosting|dominio)\b/u', $t)) {
+        return 'nombra una función o condición que no corresponde';
+    }
+    /* Nombrar Mercado Libre como el canal donde ya vende está bien ("una tienda
+     * propia, además de Mercado Libre"); ofrecer conectarlos, no (10-oct, Charlie:
+     * la propuesta lo nombraba, la red la frenó dos veces y el cliente quedó sin respuesta). */
+    if (preg_match('/\b(conect\w*|sincroniz\w*|vincul\w*|enlaz\w*|import\w*|linke\w*|api)\b.{0,40}\bmercado ?libre\b|\bmercado ?libre\b.{0,40}\b(conect\w*|sincroniz\w*|vincul\w*|enlaz\w*|import\w*|linke\w*|api)\b/u', $t)) {
         return 'nombra una función o condición que no corresponde';
     }
     if (wabot_comercial_promete_resultados($t)) return 'promete resultados (clientes, ventas o alcance): la web es una herramienta';

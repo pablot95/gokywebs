@@ -41,8 +41,11 @@ const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo
  * anterior queda aparte (AAAA-MM-DD.vN.jsonl, no se muestra) y las últimas 6
  * horas se vuelven a revisar. v2 (9-oct, 23 h): la v1 marcaba como fuera de
  * lugar los avisos automáticos de las charlas que atiende Pablo. v3: el estado
- * de la charla es el del momento del aviso, no el de ahora. */
-const WABOT_REVISION_V = 3;
+ * de la charla es el del momento del aviso, no el de ahora. v4 (10-oct): la
+ * ficha del admin no es "ya pagó", y el adelanto del horario de los avisos.
+ * Desde la v4 se vuelve a revisar desde ayer (30 h) y se aparta lo de ayer y hoy. */
+const WABOT_REVISION_V = 4;
+const WABOT_REVISION_RECHEQUEO_SEG = 30 * 3600;
 
 /* ─────────────────────────────── Ajustes y archivos ─────────────────────────────── */
 
@@ -266,7 +269,7 @@ function wabot_revision_textos_fijos($cfg) {
         $t = trim(preg_replace('/\s+/u', ' ', (string)$t));
         if ($t !== '') $l[] = "- $nombre: «" . $t . '»';
     }
-    $l[] = '- Todos salen en horario de contacto (de 8 a 20): si la marca de las 23 h cae de noche, el aviso se adelanta y puede salir varias horas antes (16 o 18 h después del último mensaje del cliente está bien). Nunca dos al mismo cliente con menos de 12 h, y no salen si el cliente avisó que pagó, dijo que no le interesa o la charla está archivada. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
+    $l[] = '- Todos salen en horario de contacto (de 8 a 20): si la marca de las 23 h cae fuera de ese horario, el aviso se adelanta a la última hora de contacto ANTES de esa marca. Por eso puede salir bastante antes: si el cliente escribió a las 8 de la mañana, las 23 h caen a las 7 del día siguiente y el aviso sale a las 19 o 20 del mismo día, unas 11 o 12 h después. Eso está bien: no lo marques por el horario. Nunca dos al mismo cliente con menos de 12 h, y no salen si el cliente avisó que pagó, dijo que no le interesa o la charla está archivada. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
     return implode("\n", $l);
 }
 
@@ -349,7 +352,10 @@ function wabot_revision_contexto($cv, array $lineas, array $tramo, $cfg) {
     if ($yaEstaba($cv['form_completado_ts'] ?? 0) || (!empty($cv['lead_creado']) && $sinFecha('form_completado_ts'))) $c[] = '- Ya había completado el formulario.';
     if ($yaEstaba($cv['presentado_ts'] ?? 0)) $c[] = '- Ya se le había presentado la demo.';
     if ($yaEstaba($cv['pago_avisado_ts'] ?? 0)) $c[] = '- Ya había avisado que pagó.';
-    if (!empty($cv['cliente_id'])) $c[] = '- Ya es cliente de Gokywebs (tiene su ficha en Clientes).';
+    /* cliente_id es la ficha del admin desde la que Pablo le presentó la demo: casi
+     * siempre un interesado en Seguimientos, no alguien que pagó (10-oct: la v3 lo
+     * leía como cliente y marcó la plantilla de Nazik y Psicoenlace, que estaba bien). */
+    if (!empty($cv['cliente_id'])) $c[] = '- Pablo le presentó la demo desde su ficha del admin. Eso NO quiere decir que ya pagó: suele ser un interesado en seguimiento.';
     $estado = wabot_comercial_estado($cv);
     $pausaAntes = $yaEstaba($cv['comercial_pausa_ts'] ?? 0);
     if ($estado === 'humano' && $pausaAntes) $c[] = '- El bot se lo había pasado a Pablo. Motivo: ' . trim((string)($cv['comercial_motivo'] ?? 'caso especial'));
@@ -505,12 +511,16 @@ function wabot_revision_correr($cfg, $opciones = []) {
     try {
         $estado = wabot_revision_estado_leer();
         $vAntes = (int)($estado['v'] ?? 1);
-        if ($vAntes !== WABOT_REVISION_V) {
-            $hoy = $dir . '/' . date('Y-m-d', $ahora);
-            if (is_file($hoy . '.jsonl')) @rename($hoy . '.jsonl', $hoy . '.v' . $vAntes . '.jsonl');
+        if (!isset($estado['v']) && $estado['ultima_ts'] <= 0) {
+            $estado['v'] = WABOT_REVISION_V;   // la primera pasada de todas: nada que volver a revisar
+        } elseif ($vAntes !== WABOT_REVISION_V) {
+            foreach ([$ahora, $ahora - 86400] as $diaTs) {
+                $archivo = $dir . '/' . date('Y-m-d', $diaTs);
+                if (is_file($archivo . '.jsonl')) @rename($archivo . '.jsonl', $archivo . '.v' . $vAntes . '.jsonl');
+            }
             $estado['convs'] = [];
             $estado['pendientes'] = [];
-            $estado['ultima_ts'] = 0;
+            $estado['ultima_ts'] = $ahora - WABOT_REVISION_RECHEQUEO_SEG;
             $estado['v'] = WABOT_REVISION_V;
         }
         $base = $estado['ultima_ts'] > 0 ? $estado['ultima_ts'] : $ahora - WABOT_REVISION_PRIMERA_VEZ_SEG;

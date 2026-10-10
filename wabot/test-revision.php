@@ -104,14 +104,16 @@ caso('… los textos fijos aprobados (oferta de la demo, formulario)',
     strpos($ins, (string)$cfg['comercial']['oferta_demo']) !== false && strpos($ins, 'Formulario de la demo') !== false);
 caso('… y las reglas del bot y la información comercial, tal cual',
     strpos($ins, wabot_comercial_instrucciones_comportamiento()) !== false && strpos($ins, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false);
+caso('… el adelanto del horario de los avisos (el que escribió a la mañana recibe el aviso a la noche)', strpos($ins, 'unas 11 o 12 h después. Eso está bien') !== false);
 caso('… los avisos automáticos con su regla, y que salen aunque la charla la atienda Pablo',
     strpos($ins, 'AVISOS AUTOMÁTICOS') !== false && strpos($ins, 'marcó como favoritas') !== false
     && strpos($ins, (string)$cfg['plantillas']['seguimiento_interesado']['texto']) !== false
     && strpos($ins, 'Que un aviso automático o una plantilla salga en una charla que atiende Pablo') !== false);
 $cvCliente = conv_nueva('5491100000299TEST', ['cliente_id' => 'abc', 'favorito' => true, 'control_manual' => true]);
 $ctx = wabot_revision_contexto($cvCliente, [['q' => 'bot', 't' => 'Era para consultarte si querías continuar', 'ts' => $t0]], ['desde' => $t0 - 1, 'hasta' => $t0], $cfg);
-caso('el estado distingue al que ya es cliente, la favorita y el control manual (con los avisos permitidos)',
-    strpos($ctx, 'Ya es cliente de Gokywebs') !== false && strpos($ctx, 'Avisó que pagó') === false
+caso('el estado dice que tiene ficha en el admin SIN decir que pagó, la favorita y el control manual (con los avisos permitidos)',
+    strpos($ctx, 'le presentó la demo desde su ficha del admin') !== false && strpos($ctx, 'NO quiere decir que ya pagó') !== false
+    && strpos($ctx, 'Ya es cliente') === false && strpos($ctx, 'avisado que pagó') === false
     && strpos($ctx, 'marcó como favorita') !== false && strpos($ctx, 'siguen saliendo (está bien)') !== false, $ctx);
 $lin = [['q' => 'humano', 't' => (string)$cfg['comercial']['oferta_demo'], 'ts' => $t0 - 900], ['q' => 'bot', 't' => 'Buenas, avisame si te interesa', 'ts' => $t0 - 600],
         ['q' => 'cliente', 't' => 'Si', 'ts' => $t0 - 500], ['q' => 'humano', 't' => 'Para hacer la demo… gokywebs.com/form/?c=XS', 'ts' => $t0 - 400]];
@@ -230,7 +232,7 @@ file_put_contents($hoyRev . '.jsonl', json_encode(['ts' => $t0 + 5900, 'clave' =
 oa_revision([]);
 $rv = wabot_revision_correr($cfg, ['ahora' => $t0 + 6000]);
 $vieja = array_filter(wabot_revision_leer(1), function ($f) { return ($f['clave'] ?? '') === 'VIEJA'; });
-caso('con instrucciones nuevas, lo de hoy queda aparte y las últimas 6 horas se revisan de nuevo',
+caso('con instrucciones nuevas, lo de hoy queda aparte y se vuelve a revisar desde ayer',
     !$vieja && is_file($hoyRev . '.v' . (WABOT_REVISION_V - 1) . '.jsonl') && (int)(estado_rev()['v'] ?? 0) === WABOT_REVISION_V
     && count(pedidos_rev()) === 2 && ($rv['revisadas'] ?? 0) === 2, json_encode($rv));
 
