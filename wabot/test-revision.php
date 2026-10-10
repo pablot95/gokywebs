@@ -22,7 +22,7 @@ $GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-es-una-key-real';
 
 $cfg = wabot_config_load();
 $cfg['revision_activa'] = true;
-$cfg['revision_tope_usd_dia'] = 3;
+$cfg['revision_gasto_max_usd'] = 3;
 $bienvenida = (string)$cfg['bienvenida'];
 // Las pasadas se simulan hasta 90 minutos después de $t0: todo queda en el pasado (y en el archivo de hoy o ayer).
 $t0 = time() - 6000;
@@ -202,7 +202,7 @@ charla($G, [['cliente', 'tengo una inmobiliaria', -3700], ['bot', 'Buenísimo, t
 charla($H, [['cliente', 'soy psicóloga', -3720], ['bot', 'Buenísimo, querés que reserven turnos?', -3730]]);
 // El tope justo por encima de lo gastado hoy: entra una charla y la otra no.
 $cfgTope = $cfg;
-$cfgTope['revision_tope_usd_dia'] = (float)(estado_rev()['gasto'][date('Y-m-d', $t0 + 4200)] ?? 0) + 0.000001;
+$cfgTope['revision_gasto_max_usd'] = (float)(estado_rev()['gasto'][date('Y-m-d', $t0 + 4200)] ?? 0) + 0.000001;
 oa_revision([]);
 $r8 = wabot_revision_correr($cfgTope, ['ahora' => $t0 + 4200]);
 caso('al llegar al gasto del día deja el resto pendiente', count(pedidos_rev()) === 1 && ($r8['tope'] ?? false) === true && ($r8['pendientes'] ?? 0) === 1, json_encode($r8));
@@ -250,8 +250,9 @@ caso('el motivo del turno sin respuesta se explica',
     && wabot_revision_motivo_respaldo('no_disponible') === 'OpenAI estaba en pausa por errores anteriores');
 
 echo "Ajustes\n";
-caso('de fábrica está prendida y con tope de US$ 3', wabot_revision_activa([]) && wabot_revision_tope_usd([]) === 3.0);
-caso('las dos claves se guardan desde el panel', in_array('revision_activa', wabot_ajustes_claves(), true) && in_array('revision_tope_usd_dia', wabot_ajustes_claves(), true));
+caso('de fábrica está prendida y sin tope de gasto (Pablo, 10-oct)', wabot_revision_activa([]) && wabot_revision_tope_usd([]) === 0.0);
+caso('el tope viejo guardado en 3 ya no se lee; vacío o 0 también es sin tope', wabot_revision_tope_usd(['revision_tope_usd_dia' => 3]) === 0.0 && wabot_revision_tope_usd(['revision_gasto_max_usd' => 0]) === 0.0 && wabot_revision_tope_usd(['revision_gasto_max_usd' => '1.5']) === 1.5);
+caso('las dos claves se guardan desde el panel', in_array('revision_activa', wabot_ajustes_claves(), true) && in_array('revision_gasto_max_usd', wabot_ajustes_claves(), true));
 
 foreach (array_merge($todas, [$F, $G, $H]) as $k) { @unlink(wabot_conv_path($k)); @unlink(wabot_historial_path($k)); }
 foreach ([wabot_revision_dir(), $tmp . '/uso'] as $d) { foreach (glob($d . '/*') ?: [] as $f) @unlink($f); foreach (glob($d . '/.*') ?: [] as $f) if (is_file($f)) @unlink($f); @rmdir($d); }

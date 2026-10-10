@@ -23,8 +23,8 @@
  * Cada tramo se revisa una vez: data/revision/estado.json guarda hasta dónde se
  * revisó cada charla. Una charla con movimiento en los últimos 2 minutos (el
  * bot puede estar mandando la segunda parte del turno) queda para la pasada
- * siguiente, igual que lo que no entra por el tope de charlas por pasada o de
- * gasto por día (Ajustes → revision_tope_usd_dia).
+ * siguiente, igual que lo que no entra por el tope de charlas por pasada o,
+ * si Pablo lo pone, de gasto por día (Ajustes → revision_gasto_max_usd).
  */
 
 require_once __DIR__ . '/redactor.php';   // el motor y comercial.php (reglas, info, cotización)
@@ -34,7 +34,6 @@ const WABOT_REVISION_QUIETA_SEG = 120;          // movimiento más reciente que 
 const WABOT_REVISION_MAX_CHARLAS = 15;          // por pasada; el resto queda pendiente
 const WABOT_REVISION_PRIMERA_VEZ_SEG = 6 * 3600; // la primera pasada mira las últimas 6 horas
 const WABOT_REVISION_MAX_ATRAS_SEG = 2 * 86400; // con el cron parado días, no revisa todo lo viejo
-const WABOT_REVISION_TOPE_USD_DIA = 3.0;
 const WABOT_REVISION_MAX_SEG = 20 * 60;         // una pasada no se pisa con la siguiente
 const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo tramo antes de soltarlo
 /* El criterio de las instrucciones. Al cambiarlo, lo revisado hoy con el
@@ -58,9 +57,14 @@ function wabot_revision_activa($cfg) {
     return !is_array($cfg) || !array_key_exists('revision_activa', $cfg) || !empty($cfg['revision_activa']);
 }
 
+/**
+ * El gasto máximo por día en US$, o 0 = sin tope (Pablo, 10-oct: "sin tope").
+ * Es un ajuste nuevo a propósito: el viejo (revision_tope_usd_dia) quedó
+ * guardado en 3, el de fábrica, cada vez que se grabaron los Ajustes, y ya no se lee.
+ */
 function wabot_revision_tope_usd($cfg) {
-    $v = is_array($cfg) ? ($cfg['revision_tope_usd_dia'] ?? null) : null;
-    return is_numeric($v) && (float)$v > 0 ? min(50.0, (float)$v) : WABOT_REVISION_TOPE_USD_DIA;
+    $v = is_array($cfg) ? ($cfg['revision_gasto_max_usd'] ?? null) : null;
+    return is_numeric($v) && (float)$v > 0 ? min(50.0, (float)$v) : 0.0;
 }
 
 function wabot_revision_estado_leer() {
@@ -573,8 +577,9 @@ function wabot_revision_correr($cfg, $opciones = []) {
         foreach ($porRevisar as $c) {
             $clave = $c['clave'];
             $tramo = $c['tramo'];
-            if ($res['revisadas'] + $res['fallidas'] >= WABOT_REVISION_MAX_CHARLAS || $gastoHoy >= $tope || microtime(true) - $inicio > WABOT_REVISION_MAX_SEG) {
-                if ($gastoHoy >= $tope) $res['tope'] = true;
+            $enTope = $tope > 0 && $gastoHoy >= $tope;
+            if ($res['revisadas'] + $res['fallidas'] >= WABOT_REVISION_MAX_CHARLAS || $enTope || microtime(true) - $inicio > WABOT_REVISION_MAX_SEG) {
+                if ($enTope) $res['tope'] = true;
                 $estado['convs'][$clave] = $tramo['desde'];
                 $estado['pendientes'][$clave] = (int)($pendientesAntes[$clave] ?? 0);
                 continue;

@@ -866,6 +866,30 @@ $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['mantenimiento', 'que_es_hosting']])]);
 $r = turno('Y el mantenimiento por mes, renovación de hosting y dominio, no sé qué vendría a ser eso', $c, $cfg);
 caso('mantenimiento + qué es el hosting → las dos respuestas oficiales', $r === [$cfg['info']['mantenimiento'], $cfg['info']['que_es_hosting']], json_encode($r, JSON_UNESCAPED_UNICODE));
+// Las respuestas de Pablo a lo que el bot no sabía (10-oct).
+$infoTxt = wabot_comercial_info($cfg);
+$insNuevas = wabot_comercial_instrucciones_comportamiento();
+foreach (['cambios_extra' => '$10.000', 'traspaso' => 'no tiene costo', 'pasar_pago_unico' => 'no se descuenta', 'medios_pago' => 'transferencia',
+          'videos' => 'videos', 'horarios_entrega' => 'franjas horarias', 'logo_version' => 'blanco y negro', 'banners_publicidad' => 'plan con panel'] as $k => $frase) {
+    caso("respuesta oficial $k (Pablo, 10-oct): corta, ofrecida al modelo y nombrada en las instrucciones", mb_stripos((string)($cfg['info'][$k] ?? ''), $frase) !== false
+        && mb_strlen((string)$cfg['info'][$k]) <= 260 && in_array($k, wabot_comercial_info_claves($cfg), true) && strpos($infoTxt, "- $k:") !== false
+        && strpos($insNuevas, $k) !== false && wabot_consultas_ejemplos($k, 3));
+}
+caso('cambios extra: $10.000 por mes por 3 cambios, $60.000 más en el anual', strpos($cfg['info']['cambios_extra'], '$10.000 por mes') !== false
+    && strpos($cfg['info']['cambios_extra'], '3 cambios') !== false && strpos($cfg['info']['cambios_extra'], '$60.000') !== false);
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['traspaso', 'pasar_pago_unico']])]);
+$r = turno('Y después de los 18 meses cuánto debería abonar para que me hagan el traspaso? Y puedo pasarme al pago único?', $c, $cfg);
+caso('el traspaso dice el mantenimiento de la charla y el pago único su monto (marcadores completados)', count($r) === 2 && strpos($r[0], '$15.000 por mes') !== false
+    && strpos($r[1], 'pago único, de $') !== false && strpos(implode(' ', $r), '{') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('los banners ya no son "fuera de lista" (con panel, sí); el portal sigue siendo para Pablo', mb_stripos($infoTxt, 'noticias o banners') === false
+    && mb_stripos($insNuevas, 'noticias, banners') === false && mb_stripos($infoTxt, 'portales con fichas de profesionales') !== false);
+caso('instrucciones: "te hago el pago ya" / el link de pago lo sigue Pablo; preguntar cómo se paga es una duda',
+    mb_stripos($insNuevas, 'te hago el pago ya') !== false && mb_stripos($insNuevas, 'es una duda (medios_pago o pago)') !== false);
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'intencion' => 'acepta', 'motivo' => 'Quiere pagar el anual ya'])]);
+$r = turno('Va a ser anual. Te hago el pago ya para todo el año', $c, $cfg);
+caso('"te hago el pago ya" → no sale nada y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && ($c['comercial_motivo'] ?? '') === 'Quiere pagar el anual ya', json_encode($r, JSON_UNESCAPED_UNICODE));
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);

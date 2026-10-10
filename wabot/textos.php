@@ -300,6 +300,21 @@ function wabot_textos_default() {
         'alternativas' => 'Son alternativas, elegís una sola: no se suman. Las dos incluyen el mantenimiento.',
         'plataformas' => 'No usamos Tiendanube, Shopify ni WordPress: te hacemos tu propia web a medida, con funciones parecidas (panel, carrito, Mercado Pago), y la armamos nosotros.',
         'recomendar_plan' => 'Si querés arrancar con poca inversión, el mensual; si preferís pagar una vez por año, el anual, que sale menos que doce meses.',
+        /* Las que faltaban en las dudas reales del 4 al 10-oct, con las respuestas
+         * de Pablo (10-oct): cambios extra "10.000 por mes para 3 cambios
+         * mensuales, y en anual 60 mil más"; el traspaso "no cuesta, puede seguir
+         * pagando el mantenimiento y renovación de hosting y dominio"; pasarse al
+         * pago único "se puede y no se descuenta"; el anual "transferencia,
+         * tarjeta, mercadopago"; videos y horarios de entrega, sí; el logo en otra
+         * versión "lo tienen que dar ellos"; publicidad en la web, con panel. */
+        'cambios_extra' => 'Sí: sumando $10.000 por mes tenés 3 cambios por mes. En el plan anual son $60.000 más por año.',
+        'traspaso' => 'El traspaso no tiene costo: cuando se cumple el plazo de tu plan, el código pasa a tu nombre sin pagar nada extra. Después podés seguir con el mantenimiento y la renovación del hosting y el dominio por {mantenimiento_mes}.',
+        'pasar_pago_unico' => 'Sí, cuando quieras podés pasarte al pago único{precio_web_propia}. Lo que ya pagaste del plan no se descuenta.',
+        'medios_pago' => 'El anual lo podés pagar por transferencia, con tarjeta o por Mercado Pago. El mensual es una suscripción de Mercado Pago, con cualquier tarjeta.',
+        'videos' => 'Sí, se pueden poner videos en la web.',
+        'horarios_entrega' => 'Sí, en la tienda se pueden poner las franjas horarias de entrega que quieras, y el cliente elige una al comprar.',
+        'logo_version' => 'La versión del logo (por ejemplo en blanco y negro) nos la tenés que pasar vos: usamos el logo tal como nos lo mandás.',
+        'banners_publicidad' => 'Sí, con el plan con panel podés tener espacios de publicidad en la web y cambiar los banners vos mismo desde el panel.',
     ],
     'leer_imagenes' => true,
     /* Atención automática posterior al precio (postprecio.php, 1-oct). El 2-oct

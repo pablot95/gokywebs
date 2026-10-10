@@ -707,6 +707,45 @@ return [
         'cual seria el link de mi pagina?',
         'como la encuentran en internet?',
     ],
+    // Las dudas reales del 4 al 10-oct que el bot le pasaba a Pablo por no tener respuesta.
+    'cambios_extra' => [
+        'Y en caso de querer hacer más modificaciones x mes se podría realizar abonando algún monto?',
+        'si necesito más de un cambio por mes?',
+        'cuánto sale un cambio extra?',
+    ],
+    'traspaso' => [
+        'Y después de los 18 meses cuánto debería abonar para que me hagan el traspaso?',
+        'el traspaso del código tiene algún costo?',
+        'cuando la web pasa a ser mía qué tengo que pagar?',
+    ],
+    'pasar_pago_unico' => [
+        'Después puedo pasarme al pago único?',
+        'si arranco con el mensual después puedo comprarla?',
+        'lo que pagué de mensual se descuenta si después quiero el pago único?',
+    ],
+    'medios_pago' => [
+        'Cuáles son los métodos de pago?',
+        'Puede ser débito o mercado pago?',
+        'se puede pagar por transferencia?',
+        'el anual cómo se paga?',
+    ],
+    'videos' => [
+        '¿Algún videíto también se puede colgar en esas páginas? Supongo que sí, ¿no?',
+        'se pueden subir videos?',
+    ],
+    'horarios_entrega' => [
+        'y la idea de horarios de entrega es mejor si se puede poner 3 opciones',
+        'el cliente puede elegir el horario de entrega?',
+    ],
+    'logo_version' => [
+        'el logo mio se puede poner en color blanco y negro?',
+        'me pueden pasar el logo a otro color?',
+    ],
+    'banners_publicidad' => [
+        'vamos a vender pequeñas publicidades, como para que la página se sustente sola',
+        'se pueden poner banners de sponsors?',
+        'puedo vender espacios de publicidad en la web?',
+    ],
     'que_es_hosting' => [
         'el tema del mantenimiento por mes, renovación de hosting y dominio, perdón por la ignorancia, pero nunca tuve, no sé qué vendría a ser eso',
         'qué es el hosting?',

@@ -182,8 +182,8 @@ function wabot_ajustes_claves() {
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
-            // La revisión de las charlas cada media hora (revision.php, 9-oct).
-            'revision_activa', 'revision_tope_usd_dia'],
+            // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
+            'revision_activa', 'revision_gasto_max_usd'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
 }
