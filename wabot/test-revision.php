@@ -104,6 +104,15 @@ caso('… los textos fijos aprobados (oferta de la demo, formulario)',
     strpos($ins, (string)$cfg['comercial']['oferta_demo']) !== false && strpos($ins, 'Formulario de la demo') !== false);
 caso('… y las reglas del bot y la información comercial, tal cual',
     strpos($ins, wabot_comercial_instrucciones_comportamiento()) !== false && strpos($ins, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false);
+caso('… los avisos automáticos con su regla, y que salen aunque la charla la atienda Pablo',
+    strpos($ins, 'AVISOS AUTOMÁTICOS') !== false && strpos($ins, 'marcó como favoritas') !== false
+    && strpos($ins, (string)$cfg['plantillas']['seguimiento_interesado']['texto']) !== false
+    && strpos($ins, 'Que un aviso automático o una plantilla salga en una charla que atiende Pablo') !== false);
+$cvCliente = conv_nueva('5491100000299TEST', ['cliente_id' => 'abc', 'favorito' => true, 'control_manual' => true]);
+$ctx = wabot_revision_contexto($cvCliente, [['q' => 'bot', 't' => 'Era para consultarte si querías continuar', 'ts' => $t0]], ['desde' => $t0 - 1, 'hasta' => $t0], $cfg);
+caso('el estado distingue al que ya es cliente, la favorita y el control manual (con los avisos permitidos)',
+    strpos($ctx, 'Ya es cliente de Gokywebs') !== false && strpos($ctx, 'Avisó que pagó') === false
+    && strpos($ctx, 'marcó como favorita') !== false && strpos($ctx, 'siguen saliendo (está bien)') !== false, $ctx);
 caso('el esquema ofrece los mismos tipos que muestra el panel',
     wabot_revision_esquema()['schema']['properties']['problemas']['items']['properties']['tipo']['enum'] === array_keys(wabot_revision_tipos()));
 
@@ -201,6 +210,20 @@ flock($lock, LOCK_EX);
 caso('si otra pasada está corriendo, no arranca otra', (wabot_revision_correr($cfg, ['ahora' => $t0 + 5400])['estado'] ?? '') === 'ya_corriendo' && count(pedidos_rev()) === 0);
 flock($lock, LOCK_UN);
 fclose($lock);
+
+echo "Cambio de criterio\n";
+caso('cada revisión anota con qué criterio se hizo', (int)(wabot_revision_leer(2)[0]['v'] ?? 0) === WABOT_REVISION_V && (int)(estado_rev()['v'] ?? 0) === WABOT_REVISION_V);
+$e = estado_rev();
+$e['v'] = WABOT_REVISION_V - 1;
+wabot_revision_estado_guardar($e);
+$hoyRev = wabot_revision_dir() . '/' . date('Y-m-d', $t0 + 6000);
+file_put_contents($hoyRev . '.jsonl', json_encode(['ts' => $t0 + 5900, 'clave' => 'VIEJA', 'ok' => false, 'problemas' => [['tipo' => 'otro']]]) . "\n", FILE_APPEND);
+oa_revision([]);
+$rv = wabot_revision_correr($cfg, ['ahora' => $t0 + 6000]);
+$vieja = array_filter(wabot_revision_leer(1), function ($f) { return ($f['clave'] ?? '') === 'VIEJA'; });
+caso('con instrucciones nuevas, lo de hoy queda aparte y las últimas 6 horas se revisan de nuevo',
+    !$vieja && is_file($hoyRev . '.v' . (WABOT_REVISION_V - 1) . '.jsonl') && (int)(estado_rev()['v'] ?? 0) === WABOT_REVISION_V
+    && count(pedidos_rev()) === 2 && ($rv['revisadas'] ?? 0) === 2, json_encode($rv));
 
 echo "Errores técnicos del log\n";
 $GLOBALS['WABOT_TEST_LOGS'] = true;

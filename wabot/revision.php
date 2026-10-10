@@ -37,6 +37,11 @@ const WABOT_REVISION_MAX_ATRAS_SEG = 2 * 86400; // con el cron parado días, no 
 const WABOT_REVISION_TOPE_USD_DIA = 3.0;
 const WABOT_REVISION_MAX_SEG = 20 * 60;         // una pasada no se pisa con la siguiente
 const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo tramo antes de soltarlo
+/* El criterio de las instrucciones. Al cambiarlo, lo revisado hoy con el
+ * anterior queda aparte (AAAA-MM-DD.vN.jsonl, no se muestra) y las últimas 6
+ * horas se vuelven a revisar. v2 (9-oct, 23 h): la v1 marcaba como fuera de
+ * lugar los avisos automáticos de las charlas que atiende Pablo. */
+const WABOT_REVISION_V = 2;
 
 /* ─────────────────────────────── Ajustes y archivos ─────────────────────────────── */
 
@@ -181,7 +186,7 @@ Marcá un problema solo si es claro y Pablo lo corregiría:
 - inventa: afirma funciones, plazos, condiciones, medios de pago o datos que no están en la información comercial.
 - promete: promete clientes, ventas, consultas o alcance.
 - repite: repite lo que ya se dijo (los planes otra vez sin que los pida, la bienvenida dos veces, el mismo mensaje dos veces seguidas, la misma pregunta que ya contestó).
-- aviso_fuera_de_lugar: un aviso automático (recordatorio del formulario, última llamada, seguimiento) que no correspondía con lo que pasaba en la charla: ya había contestado, ya completó el formulario, ya pagó, dijo que no le interesa o Pablo lo estaba atendiendo.
+- aviso_fuera_de_lugar: un aviso automático o una plantilla que no correspondía con lo que pasaba en la charla: el cliente ya dijo que no le interesa, ya completó el formulario, avisó que pagó o ya es cliente, el aviso contradice algo que se le dijo, o le llegó un aviso genérico cuando había preguntado algo y esperaba la respuesta.
 - tecnico: un mensaje cortado, vacío, con {marcadores} sin completar, con etiquetas o texto interno, en otro idioma, o el mismo mensaje mandado dos veces.
 - tono: suena a robot o a frase de manual, es seco o cortante, o asume el género del cliente.
 - otro: cualquier otra cosa que Pablo no mandaría.
@@ -190,6 +195,7 @@ No marques:
 - Lo que cumple LAS REGLAS DEL BOT (van más abajo): son decisiones de Pablo, aunque vos lo harías distinto. Por ejemplo: a quien vende productos se le cotiza una tienda sin preguntarle si quiere vender online o solo mostrar; los cursos van siempre con el plan con panel; el precio sale en tres mensajes (propuesta breve, planes y oferta de la demo); los dos precios (sin reservas y con reservas) van sin la oferta de la demo, que sale cuando elige.
 - La redacción de los TEXTOS FIJOS APROBADOS ni de las respuestas oficiales: son de Pablo y van tal cual. Sí marcalos si no correspondían en ese momento o contestan otra pregunta.
 - Que el bot se quede callado o lo pase a Pablo sin contestar: eso Pablo ya lo ve en el panel. Solo si antes le dijo algo equivocado.
+- Que un aviso automático o una plantilla salga en una charla que atiende Pablo a mano o que él marcó como favorita: están hechos para eso. Tampoco el momento en que salió, si cumple la regla de ese aviso (está en TEXTOS FIJOS APROBADOS; las horas se cuentan desde el último mensaje del cliente, no desde nuestro último mensaje).
 - Lo que escribió Pablo a mano, ni lo que el cliente todavía no tuvo tiempo de contestar.
 - Devolver el saludo al cliente que saluda (la bienvenida automática del principio no cuenta como saludo).
 - Detalles menores de estilo, signos de puntuación o la falta de punto final. Ante la duda, no es un problema.
@@ -238,17 +244,28 @@ function wabot_revision_textos_fijos($cfg) {
         'Los dos precios, sin y con reservas (si pide el precio sin contestar lo de los turnos)' => trim((string)($c['dos_planes_intro'] ?? '')) === '' ? ''
             : trim((string)$c['dos_planes_intro']) . ' / ' . trim((string)($c['sin_reservas'] ?? '')) . ' (y los planes del plan informativa) / ' . trim((string)($c['con_reservas'] ?? '')),
         'Formulario de la demo (cuando acepta la demo)' => $cfg['prediseno_link'] ?? '',
-        'Recordatorio del formulario (aviso automático, horas después del link, si no lo completó)' => $cfg['form_recordatorio'] ?? '',
-        'Última llamada (aviso automático cerca de las 24 h del último mensaje del cliente, si vio el precio y no pidió la demo)' => $cfg['ultima_llamada'] ?? '',
-        'Seguimiento sin precio (aviso automático cerca de las 24 h, si escribió y no llegó al precio)' => $cfg['seguimiento_sin_precio'] ?? '',
-        'Seguimiento de la oferta (aviso automático cerca de las 24 h, si lo último fue la oferta de la demo y no contestó)' => $cfg['oferta_entrega_seguimiento'] ?? '',
+    ];
+    $p = (array)($cfg['plantillas'] ?? []);
+    // Los avisos automáticos, con la regla de cada uno tal como la aplica el cron (lib.php).
+    $avisos = [
+        'Recordatorio del formulario: una vez, 12 h o más después de mandarle el link, si no lo completó' => $cfg['form_recordatorio'] ?? '',
+        'Última llamada: una vez, cerca de las 23 h del último mensaje del cliente (antes de que se cierre la ventana de 24 h de WhatsApp), al que vio el precio, siguió hablando y no pidió la demo' => $cfg['ultima_llamada'] ?? '',
+        'Seguimiento sin precio: igual que la última llamada, al que escribió y no llegó al precio' => $cfg['seguimiento_sin_precio'] ?? '',
+        'Seguimiento de la oferta: una vez, cerca de las 23 h del último mensaje del cliente, si después de ese mensaje le mandamos (el bot o Pablo) la oferta de la demo o de la primera entrega gratis y no contestó; sale también en las charlas que atiende Pablo' => $cfg['oferta_entrega_seguimiento'] ?? '',
+        'Plantilla de seguimiento al interesado: a las 18 h, a las charlas que Pablo marcó como favoritas, 4 días después del último mensaje de cualquiera de los dos (son charlas que atiende Pablo)' => $p['seguimiento_interesado']['texto'] ?? '',
+        'Plantilla de seguimiento de la demo: a las 18 h, 72 h después de presentarle la demo si no contestó' => $p['confirmacion_demo_48h']['texto'] ?? '',
     ];
     $l = [];
     foreach ($fijos as $nombre => $t) {
         $t = trim(preg_replace('/\s+/u', ' ', (string)$t));
         if ($t !== '') $l[] = "- $nombre: «" . $t . '»';
     }
-    $l[] = '- Los avisos automáticos salen en horario de contacto, una sola vez por charla, y nunca dos al mismo cliente con menos de 12 h. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") y las plantillas de WhatsApp también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
+    $l[] = "\nAVISOS AUTOMÁTICOS (los manda el sistema solo, con su regla; salen aunque la charla la atienda Pablo):";
+    foreach ($avisos as $nombre => $t) {
+        $t = trim(preg_replace('/\s+/u', ' ', (string)$t));
+        if ($t !== '') $l[] = "- $nombre: «" . $t . '»';
+    }
+    $l[] = '- Todos salen en horario de contacto (de 8 a 20): si la marca de las 23 h cae de noche, el aviso se adelanta y puede salir varias horas antes (16 o 18 h después del último mensaje del cliente está bien). Nunca dos al mismo cliente con menos de 12 h, y no salen si el cliente avisó que pagó, dijo que no le interesa o la charla está archivada. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
     return implode("\n", $l);
 }
 
@@ -316,11 +333,13 @@ function wabot_revision_contexto($cv, array $lineas, array $tramo, $cfg) {
     if (!empty($cv['link_form_enviado']) || !empty($cv['form_link_mandado_ts'])) $c[] = '- Ya se le mandó el link del formulario.';
     if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])) $c[] = '- Ya completó el formulario.';
     if (!empty($cv['presentado_ts'])) $c[] = '- Ya se le presentó la demo.';
-    if (!empty($cv['pago_avisado_ts']) || !empty($cv['cliente_id'])) $c[] = '- Avisó que pagó o ya es cliente.';
+    if (!empty($cv['pago_avisado_ts'])) $c[] = '- Avisó que pagó.';
+    if (!empty($cv['cliente_id'])) $c[] = '- Ya es cliente de Gokywebs (tiene su ficha en Clientes).';
     $estado = wabot_comercial_estado($cv);
     if ($estado === 'humano') $c[] = '- El bot se lo pasó a Pablo. Motivo: ' . trim((string)($cv['comercial_motivo'] ?? 'caso especial'));
     if ($estado === 'rechazo') $c[] = '- El cliente no quiso avanzar.';
-    if (!empty($cv['control_manual'])) $c[] = '- Pablo tomó la charla a mano (el bot ya no le contesta).';
+    if (!empty($cv['favorito'])) $c[] = '- Pablo la marcó como favorita (un interesado que sigue él).';
+    if (!empty($cv['control_manual'])) $c[] = '- Pablo tomó la charla a mano: el bot ya no conversa, pero los avisos automáticos y las plantillas siguen saliendo (está bien).';
     if (!empty($cv['contexto_consulta'])) $c[] = '- No es una consulta de venta: ' . str_replace('_', ' ', (string)$cv['contexto_consulta']);
     $u = (array)($cv['comercial_ultimo'] ?? []);
     if (!empty($u['accion'])) {
@@ -466,6 +485,15 @@ function wabot_revision_correr($cfg, $opciones = []) {
 
     try {
         $estado = wabot_revision_estado_leer();
+        $vAntes = (int)($estado['v'] ?? 1);
+        if ($vAntes !== WABOT_REVISION_V) {
+            $hoy = $dir . '/' . date('Y-m-d', $ahora);
+            if (is_file($hoy . '.jsonl')) @rename($hoy . '.jsonl', $hoy . '.v' . $vAntes . '.jsonl');
+            $estado['convs'] = [];
+            $estado['pendientes'] = [];
+            $estado['ultima_ts'] = 0;
+            $estado['v'] = WABOT_REVISION_V;
+        }
         $base = $estado['ultima_ts'] > 0 ? $estado['ultima_ts'] : $ahora - WABOT_REVISION_PRIMERA_VEZ_SEG;
         $base = max($base, $ahora - WABOT_REVISION_MAX_ATRAS_SEG);
         $dia = date('Y-m-d', $ahora);
@@ -512,7 +540,7 @@ function wabot_revision_correr($cfg, $opciones = []) {
             $r = wabot_revision_charla($c['cv'], $c['lineas'], $tramo, $cfg);
             $gastoHoy += $r['costo_usd'];
             $res['costo_usd'] += $r['costo_usd'];
-            $fila = ['ts' => $ahora, 'clave' => $clave, 'nombre' => wabot_revision_nombre($c['cv']), 'canal' => wabot_canal($c['cv']),
+            $fila = ['ts' => $ahora, 'v' => WABOT_REVISION_V, 'clave' => (string)$clave, 'nombre' => wabot_revision_nombre($c['cv']), 'canal' => wabot_canal($c['cv']),
                      'desde' => $tramo['desde'], 'hasta' => $tramo['hasta'], 'mensajes' => $tramo['mensajes'], 'costo_usd' => round($r['costo_usd'], 6)];
             if (!$r['llamada_ok']) {
                 $intentos = (int)($pendientesAntes[$clave] ?? 0) + 1;
