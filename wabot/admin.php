@@ -2093,6 +2093,7 @@ function burbujaCita(t, chat) {
         <div class="card">
             <h2 style="margin-top:0">Por anuncio</h2>
             <p class="meta">De qué anuncio vino cada persona (Meta lo manda con el primer mensaje después del clic) y hasta dónde llegó. Cada charla cuenta en la fecha del clic; los porcentajes son sobre los que escribieron desde ese anuncio. Las de las últimas semanas todavía pueden avanzar.</p>
+            <p class="meta" style="margin-top:4px">Hay datos desde el 24-ago. Hasta el 25-sep el anuncio sale del registro del servidor: solo el id, sin título ni imagen (si el anuncio siguió activo después, toma el título de esas charlas). La imagen y el texto, desde el 9-oct. Los que escriben por Instagram cuentan como sin anuncio.</p>
             <form method="get" action="admin.php" class="fila" style="gap:10px;margin-top:10px">
                 <input type="hidden" name="tab" value="cohortes">
                 <input type="hidden" name="desde" value="<?= $e(date('Y-m-d', $cohDesde)) ?>">

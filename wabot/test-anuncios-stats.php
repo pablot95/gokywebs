@@ -82,6 +82,32 @@ caso('cuenta por la fecha del clic: lo de antes del rango no entra',
 $r3 = wabot_anuncios_stats(time() - 45 * 86400, time() - 35 * 86400);
 caso('el clic de hace 40 días entra en su rango', ($r3['anuncios']['A1']['etapas']['contactos'] ?? 0) === 1 && !isset($r3['anuncios']['B']));
 
+echo "Clics que solo quedaron en el log (24-ago al 25-sep)\n";
+$logDir = sys_get_temp_dir() . '/wabot-test-anuncios-log-' . getmypid();
+@mkdir($logDir, 0755, true);
+$GLOBALS['WABOT_TEST_ANUNCIOS_LOG_DIR'] = $logDir;
+$clic = strtotime('2026-09-10 15:00:00');
+file_put_contents($logDir . '/2026-09-10.jsonl', implode("\n", [
+    json_encode(['ts' => date('c', $clic - 3600), 'tipo' => 'msg', 'tel' => '5491100000309TEST']),
+    json_encode(['ts' => date('c', $clic), 'tipo' => 'anuncio_referral', 'tel' => '5491100000309TEST', 'anuncio' => 'A1']),
+    json_encode(['ts' => date('c', $clic + 60), 'tipo' => 'anuncio_referral', 'tel' => '5491100000310TEST', 'anuncio' => '']),
+]) . "\n");
+// Del 10-sep: la charla no guardó el anuncio (el bug), pero el log sí.
+charla_ad('5491100000309TEST', ['form_link_mandado_ts' => $clic + 600], [['q' => 'cliente', 't' => 'Hola', 'ts' => $clic]]);
+charla_ad('5491100000310TEST', [], [['q' => 'cliente', 't' => 'Hola', 'ts' => $clic + 60]]);
+$GLOBALS['WABOT_TEST_ANUNCIOS_CLAVES'] = ['5491100000309TEST', '5491100000310TEST', '5491100000301TEST'];
+$r4 = wabot_anuncios_stats(strtotime('2026-09-01 00:00:00'), strtotime('2026-09-30 23:59:59'));
+caso('la charla del 10-sep se atribuye al anuncio del log, con su embudo',
+    ($r4['anuncios']['A1']['etapas']['contactos'] ?? 0) === 1 && ($r4['anuncios']['A1']['etapas']['formulario'] ?? 0) === 1
+    && ($r4['anuncios']['A1']['contactos_detalle'][0]['clave'] ?? '') === '5491100000309TEST', json_encode(array_keys($r4['anuncios'])));
+caso('el clic del log sin id va a "sin id"; ninguna queda como orgánica',
+    ($r4['anuncios']['sin_id']['etapas']['contactos'] ?? 0) === 1 && $r4['organico']['etapas']['contactos'] === 0);
+caso('fuera del 24-ago al 25-sep no se lee el log', wabot_anuncios_clics_del_log(strtotime('2026-10-01'), time()) === []
+    && wabot_anuncios_clics_del_log(strtotime('2026-08-01'), strtotime('2026-08-20')) === []);
+@unlink($logDir . '/2026-09-10.jsonl');
+@rmdir($logDir);
+unset($GLOBALS['WABOT_TEST_ANUNCIOS_LOG_DIR']);
+
 foreach ($claves as $k) @unlink(wabot_conv_path($k));
 unset($GLOBALS['WABOT_TEST_ANUNCIOS_CLAVES']);
 todo_ok();
