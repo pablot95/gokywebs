@@ -894,6 +894,11 @@ textarea:focus {
 .ingcal-stats .stat-item:nth-child(1) .stat-value { color: #60A5FA; }
 .ingcal-stats .stat-item:nth-child(4) .stat-value { color: var(--text); }
 .ingcal-stat-sub { display: block; font-size: 12px; margin-top: 4px; }
+.inv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.inv-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.inv-card-titulo { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.inv-card-valor { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+.inv-card-detalle { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 .ingcal-stat-linea { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-top: 3px; }
 .ingcal-stat-nota { display: block; font-size: 12px; font-weight: 400; margin-top: 5px; }
 .ingcal-leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }

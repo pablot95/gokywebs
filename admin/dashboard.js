@@ -788,6 +788,32 @@ function renderInversion() {
             </tr>`;
         }).join("");
 
+        // Los números de costo de la semana, en cuadritos (Pablo, 10-oct).
+        const tarjeta = (titulo, valor, detalle, color = "") =>
+            `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor"${color ? ` style="color:${color}"` : ""}>${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
+        const verde = "var(--accent-green,#4ade80)";
+        const nMensuales = `${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"}`;
+        const tarjetas = [];
+        if (gasto > 0) {
+            tarjetas.push(tarjeta("Por suscriptor · según lo cobrado (seña)",
+                suscriptores.length ? fmtMoney(costoPorSuscriptor) : "—",
+                (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
+                    + (suscriptores.length ? ` ÷ ${nMensuales}` : ` · sin suscriptores mensuales todavía`), verde));
+            if (sumaVentaTotal > sumaPagoUnico) {
+                tarjetas.push(tarjeta("Por suscriptor · según el total de la venta",
+                    suscriptores.length ? fmtMoney(costoPorSuscriptorTotal) : "—",
+                    `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
+                        + (suscriptores.length ? ` ÷ ${nMensuales}` : ` · sin suscriptores mensuales todavía`), verde));
+            }
+        }
+        if (convertidos.length) {
+            tarjetas.push(tarjeta("Costo por cliente", fmtMoney(costoCliente),
+                `${gasto > 0 ? `${fmtMoney(gastoPorCliente)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} por la página hecha`));
+            tarjetas.push(tarjeta("Total de la semana", fmtMoney(costoTotalSemana),
+                `${gasto > 0 ? `${fmtMoney(gasto)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"}`));
+        }
+        const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
+
         const div = document.createElement("div");
         div.className = "panel";
         div.style.marginBottom = "14px";
@@ -802,23 +828,8 @@ function renderInversion() {
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
                            data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
                 </label>
-                ${gasto > 0 ? `<span class="muted">
-                    ${sumaPagoUnico > 0 ? `Según lo cobrado (seña): se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}. ` : ""}
-                    ${suscriptores.length
-                        ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptor)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
-                        : `Sin suscriptores mensuales esta semana todavía.`}
-                </span>
-                ${sumaVentaTotal > sumaPagoUnico ? `<span class="muted">
-                    Según el total de la venta: se restan ${fmtMoney(sumaVentaTotal)} → costo neto ${fmtMoney(costoNetoTotal)}.
-                    ${suscriptores.length
-                        ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptorTotal)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
-                        : ""}
-                </span>` : ""}` : ""}
-                ${convertidos.length ? `<span class="muted">
-                    Costo por cliente: <strong>${fmtMoney(costoCliente)}</strong>
-                    (${gasto > 0 ? `${fmtMoney(gastoPorCliente)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} por la página hecha) · total de la semana ${fmtMoney(costoTotalSemana)}
-                </span>` : ""}
             </div>
+            ${tarjetasCosto}
             ${convertidos.length ? `
             <div class="table-wrapper">
                 <table class="clients-table">
