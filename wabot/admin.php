@@ -11,6 +11,7 @@ require_once __DIR__ . '/redactor.php';
 require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/revision.php';
+require_once __DIR__ . '/anuncios-stats.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -1802,7 +1803,13 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
         width: max-content; max-width: min(78vw, calc(100vw - 24px)); flex-direction: column; align-items: stretch;
         background: var(--card); border: 1px solid var(--line); border-radius: 10px;
         padding: 8px; box-shadow: 0 10px 26px rgba(0,0,0,.5);
+        /* Con todas las acciones no entra en la pantalla y la página no
+           scrollea: Resetear y Eliminar quedaban fuera de alcance (Pablo,
+           9-oct). Scrollea el menú; el alto exacto lo pone el JS al abrirlo. */
+        max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;   /* .fila envuelve: con alto máximo armaba una segunda columna en vez de scrollear */
     }
+    .conv-acciones-wrap.abierto > .conv-acciones > * { flex-shrink: 0; }
     /* Con el "⋯" en la mitad izquierda de la pantalla (así queda en el celular,
        debajo de la ficha), el menú abre hacia la derecha: alineado a la derecha
        del botón se salía de la pantalla y se cortaban los textos (Pablo, 27-sep). */
@@ -2046,7 +2053,99 @@ function burbujaCita(t, chat) {
             $semanas = [];
             $cohError = $err->getMessage();
         }
+        /* Por anuncio (9-oct): el embudo de cada anuncio por su id, en el rango
+         * de fechas del clic (anuncios-stats.php). De fábrica, los últimos 30 días. */
+        $fechaOk = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) === 1; };
+        $adDesdeTxt = $fechaOk($_GET['ad_desde'] ?? null) ? $_GET['ad_desde'] : date('Y-m-d', strtotime('-29 days'));
+        $adHastaTxt = $fechaOk($_GET['ad_hasta'] ?? null) ? $_GET['ad_hasta'] : date('Y-m-d');
+        $adDesde = strtotime($adDesdeTxt . ' 00:00:00');
+        $adHasta = strtotime($adHastaTxt . ' 23:59:59');
+        if (!$adDesde || !$adHasta || $adDesde > $adHasta) { $adHasta = time(); $adDesde = strtotime(date('Y-m-d', strtotime('-29 days')) . ' 00:00:00'); }
+        $adStats = wabot_anuncios_stats($adDesde, $adHasta);
+        $adEtapas = wabot_anuncios_etapas();
+        $adFilas = $adStats['anuncios'];
+        if ($adStats['organico']['etapas']['contactos'] > 0) $adFilas['organico'] = $adStats['organico'] + ['_organico' => true];
+        $adFilas['total'] = $adStats['total'] + ['_total' => true];
     ?>
+        <style>
+            .ad-scroll { overflow-x:auto; margin-top:12px }
+            .ad-tabla { width:100%; border-collapse:collapse; font-size:.9rem }
+            .ad-tabla th { font-size:.78rem; font-weight:600; color:var(--dim) }
+            .ad-tabla th, .ad-tabla td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top }
+            .ad-tabla td.n, .ad-tabla th.n { text-align:right; white-space:nowrap }
+            .ad-tabla td.n .meta { display:block }
+            .ad-tabla tr.ad-total td { font-weight:700; border-top:1px solid var(--line-fuerte) }
+            .ad-anuncio { display:flex; gap:10px; align-items:flex-start; min-width:220px }
+            .ad-anuncio img { width:52px; height:52px; object-fit:cover; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
+            .ad-anuncio .ad-sin-img { width:52px; height:52px; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
+            .ad-texto { font-size:.8rem; color:var(--dim); margin-top:2px; overflow-wrap:anywhere }
+            .ad-contactos { list-style:none; padding:0; margin:6px 0 0 }
+            .ad-contactos li { padding:4px 0; border-bottom:1px solid var(--line); font-size:.88rem }
+            @media (max-width:720px) {
+                .ad-tabla td[data-label]::before { content:attr(data-label) ': '; color:var(--dim); font-size:12px; font-weight:400 }
+                .ad-tabla td.n { text-align:left }
+                .ad-tabla td.n .meta { display:inline; margin-left:4px }
+                .ad-anuncio { min-width:0 }
+                .ad-tabla tr.ad-cab { display:none }   /* cada celda ya dice qué es */
+                .ad-tabla td:first-child { font-size:inherit; font-weight:400 }
+            }
+        </style>
+        <div class="card">
+            <h2 style="margin-top:0">Por anuncio</h2>
+            <p class="meta">De qué anuncio vino cada persona (Meta lo manda con el primer mensaje después del clic) y hasta dónde llegó. Cada charla cuenta en la fecha del clic; los porcentajes son sobre los que escribieron desde ese anuncio. Las de las últimas semanas todavía pueden avanzar.</p>
+            <form method="get" action="admin.php" class="fila" style="gap:10px;margin-top:10px">
+                <input type="hidden" name="tab" value="cohortes">
+                <input type="hidden" name="desde" value="<?= $e(date('Y-m-d', $cohDesde)) ?>">
+                <label style="margin:0">Desde <input type="date" name="ad_desde" value="<?= $e(date('Y-m-d', $adDesde)) ?>" style="width:auto"></label>
+                <label style="margin:0">Hasta <input type="date" name="ad_hasta" value="<?= $e(date('Y-m-d', $adHasta)) ?>" style="width:auto"></label>
+                <button type="submit" class="sec">Ver</button>
+            </form>
+            <?php if (!$adStats['anuncios']): ?>
+                <p class="meta" style="margin-top:10px">Nadie escribió desde un anuncio en esas fechas.</p>
+            <?php endif; ?>
+            <div class="ad-scroll"><table class="ad-tabla">
+                <tr class="ad-cab"><th>Anuncio</th><?php foreach ($adEtapas as $etiqueta): ?><th class="n"><?= $e($etiqueta) ?></th><?php endforeach; ?></tr>
+                <?php foreach ($adFilas as $idAd => $fila):
+                    $base = (int)$fila['etapas']['contactos'];
+                    $esOrg = !empty($fila['_organico']); $esTotal = !empty($fila['_total']); ?>
+                    <tr class="<?= $esTotal ? 'ad-total' : '' ?>">
+                        <td>
+                            <?php if ($esOrg || $esTotal): ?>
+                                <?= $esTotal ? 'Total' : 'Sin anuncio' ?><?php if ($esOrg): ?><div class="ad-texto">Escribieron directo (el número, Instagram, la web)</div><?php endif; ?>
+                            <?php else: ?>
+                                <div class="ad-anuncio">
+                                    <?php if (!empty($fila['imagen'])): ?>
+                                        <img src="admin.php?accion=media&amp;tel=<?= urlencode((string)$fila['imagen']['clave']) ?>&amp;archivo=<?= urlencode((string)$fila['imagen']['archivo']) ?>&amp;modo=ver" alt="" loading="lazy">
+                                    <?php else: ?><span class="ad-sin-img" aria-hidden="true"></span><?php endif; ?>
+                                    <div>
+                                        <strong><?= $e($fila['titular'] !== '' ? $fila['titular'] : 'Sin título') ?></strong>
+                                        <div class="ad-texto"><?= $idAd === 'sin_id' ? 'Meta no mandó el id del anuncio' : 'id ' . $e($idAd) ?></div>
+                                        <?php $textoAd = $fila['cuerpo'] !== '' ? $fila['cuerpo'] : $fila['descripcion']; if ($textoAd !== ''): ?>
+                                            <div class="ad-texto" title="<?= $e($textoAd) ?>"><?= $e(mb_strlen($textoAd) > 110 ? mb_substr($textoAd, 0, 108) . '…' : $textoAd) ?></div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        </td>
+                        <?php foreach ($adEtapas as $k => $etiqueta): $n = (int)$fila['etapas'][$k]; ?>
+                            <td class="n" data-label="<?= $e($etiqueta) ?>"><?= $n ?><?php if ($k !== 'contactos' && $base > 0): ?><span class="meta"><?= round(100 * $n / $base) ?>%</span><?php endif; ?></td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </table></div>
+            <?php foreach ($adFilas as $idAd => $fila): if (!empty($fila['_total']) || !$fila['contactos_detalle']) continue; ?>
+                <details style="margin-top:8px">
+                    <summary class="meta" style="cursor:pointer"><?= count($fila['contactos_detalle']) === 1 ? 'El contacto' : 'Los ' . count($fila['contactos_detalle']) . ' contactos' ?> de<?= $e(!empty($fila['_organico']) ? 'los que escribieron sin anuncio' : ($fila['titular'] !== '' ? $fila['titular'] : 'id ' . $idAd) . ($idAd !== 'sin_id' && empty($fila['_organico']) ? ' (' . $idAd . ')' : '')) ?></summary>
+                    <ul class="ad-contactos">
+                        <?php foreach (array_slice($fila['contactos_detalle'], 0, 300) as $d): ?>
+                            <li><a href="admin.php?tab=conversaciones&amp;ver=<?= urlencode((string)$d['clave']) ?>"><?= $e(trim((string)$d['nombre']) !== '' ? $d['nombre'] : $d['clave']) ?></a>
+                                <span class="meta"><?= $e(date('d/m H:i', (int)$d['ts'])) ?><?= $d['canal'] === 'instagram' ? ' · Instagram' : '' ?> · llegó hasta: <?= $e($d['llego']) ?></span></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </details>
+            <?php endforeach; ?>
+        </div>
+
         <div class="card">
             <h2 style="margin-top:0">Inversión en Meta vs. prospectos</h2>
             <p class="meta">
@@ -2057,6 +2156,8 @@ function burbujaCita(t, chat) {
             </p>
             <form method="get" action="admin.php" class="fila" style="gap:10px;margin-top:10px">
                 <input type="hidden" name="tab" value="cohortes">
+                <input type="hidden" name="ad_desde" value="<?= $e(date('Y-m-d', $adDesde)) ?>">
+                <input type="hidden" name="ad_hasta" value="<?= $e(date('Y-m-d', $adHasta)) ?>">
                 <label style="margin:0">Desde
                     <input type="date" name="desde" value="<?= $e(date('Y-m-d', $cohDesde)) ?>" style="width:auto">
                 </label>
@@ -4543,6 +4644,12 @@ function burbujaCita(t, chat) {
                 accionesWrap.classList.toggle('hacia-derecha', r.left + r.width / 2 < window.innerWidth / 2);
                 const abierto = accionesWrap.classList.toggle('abierto');
                 accionesBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                // Que termine dentro de la pantalla: lo que no entra se alcanza scrolleando el menú.
+                const menu = accionesWrap.querySelector('.conv-acciones');
+                if (menu) {
+                    menu.style.maxHeight = abierto ? Math.max(180, (window.visualViewport ? window.visualViewport.height : window.innerHeight) - r.bottom - 18) + 'px' : '';
+                    menu.scrollTop = 0;
+                }
             });
             document.addEventListener('click', ev => {
                 if (!accionesWrap.contains(ev.target)) {
