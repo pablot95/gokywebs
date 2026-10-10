@@ -1,7 +1,7 @@
 <?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
- * Pestañas: Conversaciones · Conversaciones live · Respuestas rápidas · Ajustes · Estado.
+ * Pestañas: Conversaciones · Conversaciones live · Revisión · Respuestas rápidas · Ajustes · Estado.
  * Los textos del bot viven en código (textos.php): el panel ya no los edita.
  * Auth: normalmente entra por el login de Firebase del admin (ver auth.php);
  * la clave de WABOT_ADMIN_PASS queda como respaldo para acceso directo.
@@ -10,6 +10,7 @@
 require_once __DIR__ . '/redactor.php';
 require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/revision.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -41,6 +42,7 @@ $respuestasRapidas = wabot_respuestas_rapidas_load();
 $NAV_TABS = [
     'conversaciones' => 'Conversaciones',
     'live'           => 'Conversaciones live',
+    'revision'       => 'Revisión',
     'respuestas'     => 'Respuestas rápidas',
     'ajustes'        => 'Ajustes',
     'ia'             => 'IA',
@@ -428,6 +430,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['postprecio_config_presente'])) $cfg['solo_bienvenida'] = !empty($_POST['solo_bienvenida']);
         // El flujo comercial unificado (9-oct): off, sugerencias o auto.
         if (in_array($_POST['flujo_comercial'] ?? '', ['off', 'sugerencias', 'auto'], true)) $cfg['flujo_comercial'] = (string)$_POST['flujo_comercial'];
+        // La revisión de las charlas cada media hora (revision.php, 9-oct).
+        if (isset($_POST['revision_tope_usd_dia'])) {
+            $cfg['revision_activa'] = !empty($_POST['revision_activa']);
+            $topeRevision = str_replace(',', '.', trim((string)$_POST['revision_tope_usd_dia']));
+            $cfg['revision_tope_usd_dia'] = is_numeric($topeRevision) && (float)$topeRevision > 0 ? min(50.0, (float)$topeRevision) : WABOT_REVISION_TOPE_USD_DIA;
+        }
         $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
         if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
         if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
@@ -2238,7 +2246,8 @@ function burbujaCita(t, chat) {
         $nombresTarea = ['conversacion' => 'Conversación antes del precio', 'clasificador' => 'Clasificar mensajes',
                          'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex',
                          'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel',
-                         'bienvenida_rubro' => '¿El primer mensaje ya dice el rubro? (bienvenida)'];
+                         'bienvenida_rubro' => '¿El primer mensaje ya dice el rubro? (bienvenida)',
+                         'revision' => 'Revisión de las charlas cada media hora'];
         $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
     ?>
         <style>
@@ -2284,7 +2293,7 @@ function burbujaCita(t, chat) {
                         <tr><td><?= $e($nombresTarea[$t] ?? $t) ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $num($v['entrada']) ?></td><td class="n"><?= $num($v['salida']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                     <?php foreach ($iaUso['por_modo'] as $m => $v): ?>
-                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, en modo prueba (no se mandó)' : 'de eso, respuestas reales' ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, en modo prueba (no se mandó)' : ($m === 'revision' ? 'de eso, la revisión de las charlas (no se manda nada)' : 'de eso, respuestas reales') ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                 </table>
                 <h3 style="margin:16px 0 4px">Las conversaciones que más gastaron</h3>
@@ -2355,6 +2364,157 @@ function burbujaCita(t, chat) {
                 </div>
             <?php endforeach; ?>
         </div>
+
+    <?php elseif ($tab === 'revision'):
+        /* Pestaña Revisión (9-oct): lo que encontró la revisión de cada media
+         * hora (revision.php). Primero las charlas con algo para mirar, la más
+         * nueva arriba; después las que salieron bien y los errores técnicos. */
+        $revDias = (int)($_GET['dias'] ?? 1);
+        if (!in_array($revDias, [1, 3, 7], true)) $revDias = 1;
+        $revFilas = wabot_revision_leer($revDias, 600);
+        $revEstado = wabot_revision_estado_leer();
+        $revDesdeTs = strtotime(date('Y-m-d', strtotime('-' . ($revDias - 1) . ' day')) . ' 00:00:00');
+        $revCorridas = array_values(array_filter(array_reverse($revEstado['corridas']), function ($c) use ($revDesdeTs) { return (int)($c['ts'] ?? 0) >= $revDesdeTs; }));
+        $revUltimaTs = (int)$revEstado['ultima_ts'];
+        $revUltima = array_reverse($revEstado['corridas'])[0] ?? null;
+        $revTipos = wabot_revision_tipos();
+        $revMirar = array_values(array_filter($revFilas, function ($f) { return !empty($f['problemas']); }));
+        $revBien = array_values(array_filter($revFilas, function ($f) { return ($f['ok'] ?? null) === true; }));
+        $revFallidas = array_values(array_filter($revFilas, function ($f) { return ($f['ok'] ?? null) === null; }));
+        $revUsd = function ($v) { return 'US$ ' . number_format((float)$v, 2, ',', '.'); };
+        $revHace = function ($ts) { $m = (int)floor((time() - $ts) / 60); return $m < 1 ? 'recién' : ($m < 60 ? "hace $m min" : ($m < 1440 ? 'hace ' . floor($m / 60) . ' h' : 'hace ' . floor($m / 1440) . ' días')); };
+        $revErrores = [];
+        foreach ($revCorridas as $c) foreach ((array)($c['errores_log']['por_tipo'] ?? []) as $t => $n) $revErrores[$t] = ($revErrores[$t] ?? 0) + (int)$n;
+        arsort($revErrores);
+    ?>
+        <style>
+            .rev-item { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px }
+            .rev-item.grave { border-color:var(--bad) }
+            .rev-cab { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center }
+            .rev-cab a { color:var(--tx); font-weight:600 }
+            .rev-cab a:hover { color:var(--ac) }
+            .rev-prob { margin-top:10px; padding-left:10px; border-left:3px solid var(--warn) }
+            .rev-prob.grave { border-left-color:var(--bad) }
+            .rev-cita { white-space:pre-wrap; background:var(--bg); border-radius:6px; padding:6px 8px; margin:6px 0; font-size:.88rem; color:var(--dim) }
+            .pill.rev-grave { background:var(--bad-tenue); color:var(--bad) }
+            .pill.rev-leve { background:var(--warn-tenue); color:var(--warn) }
+            .rev-lista { list-style:none; padding:0; margin:8px 0 0 }
+            .rev-lista li { padding:6px 0; border-bottom:1px solid var(--line); font-size:.9rem }
+            .rev-tabla { width:100%; border-collapse:collapse; margin-top:10px; font-size:.88rem }
+            .rev-tabla th, .rev-tabla td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line) }
+            .rev-tabla td.n, .rev-tabla th.n { text-align:right }
+        </style>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;gap:10px">
+                <h2 style="margin:0">Revisión de las charlas del bot</h2>
+                <div class="fila" style="gap:6px">
+                    <?php foreach ([1 => 'Hoy', 3 => '3 días', 7 => '7 días'] as $d => $l): ?>
+                        <a href="admin.php?tab=revision&dias=<?= $d ?>"><button type="button" class="<?= $revDias === $d ? '' : 'sec' ?>"><?= $l ?></button></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <p class="meta" style="margin-top:6px">A las y cuarto y menos cuarto, GPT (<?= $e(wabot_openai_modelo($cfg)) ?>) lee las charlas donde el bot escribió algo nuevo, con las mismas reglas y precios que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie. Si encuentra algo grave, te suena el celular.</p>
+            <?php if (!wabot_revision_activa($cfg)): ?>
+                <p class="meta" style="color:var(--warn);margin-top:6px">Está apagada: se prende en <a href="admin.php?tab=ajustes">Ajustes</a> → Revisión de las charlas.</p>
+            <?php elseif ($revUltimaTs <= 0): ?>
+                <p class="meta" style="margin-top:6px">Todavía no corrió ninguna pasada: la primera revisa las últimas 6 horas.</p>
+            <?php else: ?>
+                <p class="meta" style="margin-top:6px">Última pasada: <?= $e($revHace($revUltimaTs)) ?> (<?= $e(date('d/m H:i', $revUltimaTs)) ?>)<?php if ($revUltima): ?>
+                    — revisó <?= (int)$revUltima['revisadas'] ?>, <?= (int)$revUltima['con_problemas'] ?> con algo para mirar<?= (int)($revUltima['pendientes'] ?? 0) ? ', ' . (int)$revUltima['pendientes'] . ' para la próxima' : '' ?><?php endif; ?>.
+                    Gasto de hoy: <?= $revUsd($revEstado['gasto'][date('Y-m-d')] ?? 0) ?> de <?= $revUsd(wabot_revision_tope_usd($cfg)) ?>.</p>
+                <?php if (time() - $revUltimaTs > 50 * 60): ?>
+                    <p class="meta" style="color:var(--warn);margin-top:4px">Hace más de media hora que no corre: revisá el cron de <code>wabot/revisar.php</code> en Hostinger.</p>
+                <?php endif; ?>
+                <?php if (!empty($revUltima['tope'])): ?>
+                    <p class="meta" style="color:var(--warn);margin-top:4px">Se llegó al gasto máximo del día: lo que falta se revisa mañana (o subí el tope en Ajustes).</p>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Para mirar (<?= count($revMirar) ?>)</h2>
+            <?php if (!$revMirar): ?>
+                <p class="meta"><?= $revFilas ? 'En las charlas revisadas el bot no se equivocó.' : 'Todavía no hay charlas revisadas en estos días.' ?></p>
+            <?php endif; ?>
+            <?php foreach ($revMirar as $f):
+                $probs = (array)$f['problemas'];
+                $hayGrave = (bool)array_filter($probs, function ($p) { return ($p['gravedad'] ?? '') === 'grave'; }); ?>
+                <div class="rev-item <?= $hayGrave ? 'grave' : '' ?>">
+                    <div class="rev-cab">
+                        <a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$f['clave']) ?>"><?= $e($f['nombre'] ?? $f['clave']) ?></a>
+                        <span class="meta"><?= $e(date('d/m H:i', (int)($f['hasta'] ?? $f['ts']))) ?> · <?= (int)($f['mensajes'] ?? 0) ?> mensaje<?= (int)($f['mensajes'] ?? 0) === 1 ? '' : 's' ?> del bot<?= ($f['canal'] ?? '') === 'instagram' ? ' · Instagram' : '' ?></span>
+                        <span class="pill <?= $hayGrave ? 'rev-grave' : 'rev-leve' ?>"><?= $hayGrave ? 'grave' : 'leve' ?></span>
+                        <?php if (!empty($f['intervenir'])): ?><span class="pill rev-grave" title="Conviene que le escribas vos para arreglarlo">⚠ escribile</span><?php endif; ?>
+                    </div>
+                    <?php if (!empty($f['resumen'])): ?><p class="meta" style="margin-top:6px"><?= $e($f['resumen']) ?></p><?php endif; ?>
+                    <?php foreach ($probs as $p): ?>
+                        <div class="rev-prob <?= ($p['gravedad'] ?? '') === 'grave' ? 'grave' : '' ?>">
+                            <strong><?= $e($revTipos[$p['tipo'] ?? 'otro'] ?? 'Otro') ?></strong>
+                            <?php if (trim((string)($p['mensaje'] ?? '')) !== ''): ?><div class="rev-cita">«<?= $e($p['mensaje']) ?>»</div><?php endif; ?>
+                            <div style="font-size:.92rem"><?= $e($p['detalle'] ?? '') ?></div>
+                            <?php if (trim((string)($p['sugerencia'] ?? '')) !== ''): ?><div class="meta" style="margin-top:4px">Lo que correspondía: <?= $e($p['sugerencia']) ?></div><?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="card">
+            <details>
+                <summary style="cursor:pointer"><strong>Revisadas sin problemas (<?= count($revBien) ?>)</strong></summary>
+                <ul class="rev-lista">
+                    <?php foreach ($revBien as $f): ?>
+                        <li><a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$f['clave']) ?>"><?= $e($f['nombre'] ?? $f['clave']) ?></a>
+                            <span class="meta"><?= $e(date('d/m H:i', (int)($f['hasta'] ?? $f['ts']))) ?></span>
+                            <?php if (!empty($f['resumen'])): ?><div class="meta"><?= $e($f['resumen']) ?></div><?php endif; ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </details>
+            <?php if ($revFallidas): ?>
+                <p class="meta" style="margin-top:10px;color:var(--warn)">No se pudieron revisar (OpenAI no contestó tres veces):
+                    <?php foreach ($revFallidas as $i => $f): ?><?= $i ? ', ' : '' ?><a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$f['clave']) ?>"><?= $e($f['nombre'] ?? $f['clave']) ?></a><?php endforeach; ?></p>
+            <?php endif; ?>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Errores técnicos del bot</h2>
+            <p class="meta">Del log del server en las pasadas de <?= $revDias === 1 ? 'hoy' : "los últimos $revDias días" ?>: lo que falló aunque el cliente no lo vea (OpenAI sin responder, envíos rechazados por WhatsApp, Firestore).</p>
+            <?php if (!$revErrores): ?>
+                <p class="meta" style="margin-top:6px">Sin errores técnicos.</p>
+            <?php else: ?>
+                <table class="rev-tabla">
+                    <tr><th>Qué</th><th class="n">Veces</th></tr>
+                    <?php foreach ($revErrores as $t => $n): ?><tr><td><?= $e($t) ?></td><td class="n"><?= (int)$n ?></td></tr><?php endforeach; ?>
+                </table>
+                <?php $ejemplos = []; foreach ($revCorridas as $c) foreach ((array)($c['errores_log']['ejemplos'] ?? []) as $x) $ejemplos[] = $x; ?>
+                <?php if ($ejemplos): ?>
+                    <details style="margin-top:8px"><summary class="meta" style="cursor:pointer">Ejemplos</summary>
+                        <ul class="rev-lista">
+                            <?php foreach (array_slice($ejemplos, 0, 30) as $x): ?>
+                                <li><span class="meta"><?= $e(date('d/m H:i', (int)$x['ts'])) ?></span> <?= $e($x['tipo']) ?>
+                                    <?php if (($x['tel'] ?? '') !== ''): ?> · <a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$x['tel']) ?>"><?= $e($x['tel']) ?></a><?php endif; ?>
+                                    <?php if (($x['msg'] ?? '') !== ''): ?><div class="meta"><?= $e($x['msg']) ?></div><?php endif; ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </details>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($revCorridas): ?>
+            <div class="card">
+                <details>
+                    <summary style="cursor:pointer"><strong>Pasadas (<?= count($revCorridas) ?>)</strong></summary>
+                    <table class="rev-tabla">
+                        <tr><th>Hora</th><th class="n">Revisadas</th><th class="n">Para mirar</th><th class="n">Graves</th><th class="n">Para la próxima</th><th class="n">Costo</th></tr>
+                        <?php foreach ($revCorridas as $c): ?>
+                            <tr><td><?= $e(date('d/m H:i', (int)$c['ts'])) ?></td><td class="n"><?= (int)$c['revisadas'] ?></td><td class="n"><?= (int)$c['con_problemas'] ?></td>
+                                <td class="n"><?= (int)$c['graves'] ?></td><td class="n"><?= (int)($c['pendientes'] ?? 0) ?></td><td class="n"><?= $revUsd($c['costo_usd'] ?? 0) ?></td></tr>
+                        <?php endforeach; ?>
+                    </table>
+                </details>
+            </div>
+        <?php endif; ?>
 
     <?php elseif ($tab === 'ajustes'): ?>
         <?php /* Un solo formulario con lo único de bot-config.json que se toca
@@ -2442,6 +2602,19 @@ function burbujaCita(t, chat) {
                     </label>
                 <?php endforeach; ?>
             </div>
+
+            <h3 style="margin:18px 0 6px">Revisión de las charlas</h3>
+            <div class="fila" style="gap:18px;align-items:flex-end">
+                <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
+                    <input type="checkbox" name="revision_activa" value="1" <?= wabot_revision_activa($cfg) ? 'checked' : '' ?> style="width:auto">
+                    Revisar cada media hora lo que contestó el bot
+                </label>
+                <div>
+                    <label>Gasto máximo por día (US$)</label>
+                    <input type="number" name="revision_tope_usd_dia" min="0.5" max="50" step="0.5" value="<?= $e((string)wabot_revision_tope_usd($cfg)) ?>" style="width:90px">
+                </div>
+            </div>
+            <p class="meta" style="margin-top:6px">A las y cuarto y menos cuarto, GPT lee las charlas donde el bot escribió algo nuevo, con las mismas reglas que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie: lo que encuentra está en la pestaña <a href="admin.php?tab=revision">Revisión</a> y, si es grave, te suena el celular. Si se llega al gasto del día, lo que falta se revisa al día siguiente.</p>
             <p class="meta" style="margin-top:10px">Key de OpenAI:
                 <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
             </p>

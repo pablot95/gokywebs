@@ -284,7 +284,8 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
         if (!isset($GLOBALS['WABOT_TEST_OPENAI_HTTP'])) usleep((int)($espera * 1000000));
     }
     wabot_log('error', ['donde' => 'openai', 'tarea' => $tarea, 'http' => $http, 'modelo' => $modelo, 'msg' => mb_substr($error, 0, 200)]);
-    wabot_openai_circuito_abrir($http);
+    // La revisión de charlas (revision.php) no frena al bot: su timeout largo no dice que OpenAI esté caído.
+    if (empty($opciones['sin_circuito'])) wabot_openai_circuito_abrir($http);
     return $falla($error, $http);
 }
 

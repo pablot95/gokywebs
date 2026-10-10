@@ -1,7 +1,7 @@
 Options -Indexes
 
 # Solo los .php de esta carpeta son puntos de entrada (webhook, admin, auth,
-# form-lead, seguimiento). Todo lo demás son DATOS y no se sirve por HTTP.
+# form-lead, seguimiento, revisar). Todo lo demás son DATOS y no se sirve por HTTP.
 #
 # bot-config.json estaba descargándose desde gokywebs.com/wabot/bot-config.json
 # sin ninguna protección: adentro van el CBU, el alias, el titular, el CUIT y

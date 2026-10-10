@@ -181,7 +181,9 @@ function wabot_ajustes_claves() {
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
-            'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas'],
+            'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
+            // La revisión de las charlas cada media hora (revision.php, 9-oct).
+            'revision_activa', 'revision_tope_usd_dia'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
 }
