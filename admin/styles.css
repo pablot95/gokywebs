@@ -892,8 +892,10 @@ textarea:focus {
 .ingcal-stats { margin-bottom: 12px; }
 .ingcal-stats .stat-item { flex: 1 1 200px; }
 .ingcal-stats .stat-item:nth-child(1) .stat-value { color: #60A5FA; }
-.ingcal-stats .stat-item:nth-child(3) .stat-value { color: var(--text); }
+.ingcal-stats .stat-item:nth-child(4) .stat-value { color: var(--text); }
 .ingcal-stat-sub { display: block; font-size: 12px; margin-top: 4px; }
+.ingcal-stat-linea { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-top: 3px; }
+.ingcal-stat-nota { display: block; font-size: 12px; font-weight: 400; margin-top: 5px; }
 .ingcal-leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
 .ingcal-punto { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .ingcal-punto--subs { background: #60A5FA; }

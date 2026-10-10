@@ -230,6 +230,7 @@ function fechaCortaJs(d) {
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
+const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
 
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
@@ -759,6 +760,13 @@ function renderInversion() {
         const costoNeto = Math.max(0, gasto - sumaPagoUnico);
         const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
 
+        // Costo de cada cliente (Pablo, 10-oct): su parte del gasto en publicidad
+        // de la semana (repartido entre los que pasaron a Cliente) + $10.000 por
+        // la página hecha, una por cliente.
+        const gastoPorCliente = convertidos.length ? gasto / convertidos.length : 0;
+        const costoCliente = gastoPorCliente + COSTO_POR_PAGINA;
+        const costoTotalSemana = gasto + COSTO_POR_PAGINA * convertidos.length;
+
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
             const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : pagoUnicoDe(c._clienteDoc).cobrado;
@@ -771,6 +779,7 @@ function renderInversion() {
                 <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
                 <td>${escapeHtml(modLabel)}</td>
                 <td>${paga ? fmtMoney(paga) : "—"}</td>
+                <td>${fmtMoney(costoCliente)}</td>
             </tr>`;
         }).join("");
 
@@ -794,11 +803,15 @@ function renderInversion() {
                         ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptor)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
                         : `Sin suscriptores mensuales esta semana todavía.`}
                 </span>` : ""}
+                ${convertidos.length ? `<span class="muted">
+                    Costo por cliente: <strong>${fmtMoney(costoCliente)}</strong>
+                    (${gasto > 0 ? `${fmtMoney(gastoPorCliente)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} por la página hecha) · total de la semana ${fmtMoney(costoTotalSemana)}
+                </span>` : ""}
             </div>
             ${convertidos.length ? `
             <div class="table-wrapper">
                 <table class="clients-table">
-                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th><th>Costo</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
             </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
@@ -1115,7 +1128,7 @@ function ingresosPorDia(hastaYmd) {
     }
     // Ya entró: otros pagos (señas, saldos, cobros anuales, ajustes).
     for (const k of cobrosAnualesYUnicos()) {
-        agregar(_diaDe(k.fecha), { monto: k.monto, clase: "otros", tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, cobrado: true, aprox: k.aprox });
+        agregar(_diaDe(k.fecha), { monto: k.monto, clase: "otros", tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, cobrado: true, aprox: k.aprox, anual: k.tipo === "anual" });
     }
 
     // Falta cobrar: suscripciones de Mercado Pago, el próximo cobro y uno por mes después.
@@ -1204,11 +1217,14 @@ function renderIngresos() {
     const maxMes = _mesMas(mesHoy, 12);
 
     // Números del mes.
-    let subsCobrado = 0, subsFalta = 0, otros = 0, nOtros = 0;
+    let subsCobrado = 0, subsFalta = 0, otros = 0, nOtros = 0, anuales = 0, nAnuales = 0;
     for (const [ymd, items] of dias) {
         if (ymd.slice(0, 7) !== calMes) continue;
         for (const it of items) {
-            if (it.clase === "otros") { otros += it.monto; nOtros++; }
+            if (it.clase === "otros") {
+                if (it.anual) { anuales += it.monto; nAnuales++; }
+                else { otros += it.monto; nOtros++; }
+            }
             else if (it.cobrado) subsCobrado += it.monto;
             else subsFalta += it.monto;
         }
@@ -1216,14 +1232,41 @@ function renderIngresos() {
     const subsTotal = subsCobrado + subsFalta;
     const esPasado = calMes < mesHoy;
     const esFuturo = calMes > mesHoy;
+
+    // Falta cobrar de los otros pagos (Pablo, 10-oct). Saldos: lo que resta de las
+    // webs con seña, que se cobra al entregar (sin fecha, así que solo cuenta en el
+    // mes actual). Anuales: las renovaciones que vencen en el mes; en el mes actual
+    // entran también las vencidas.
+    let saldosFalta = 0, nSaldos = 0, anualFalta = 0, nAnualFalta = 0;
+    if (!esPasado) {
+        for (const c of (clients || [])) {
+            if (getEstado(c) !== "cliente") continue;
+            if (!esFuturo && !webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio) {
+                const saldo = pagoUnicoDe(c).saldo;
+                if (saldo > 0) { saldosFalta += saldo; nSaldos++; }
+            }
+            const ren = renovacionAnualDe(c);
+            if (ren && !ren.legado && ren.monto > 0 && ren.proximo) {
+                const ymd = _diaDe(ren.proximo);
+                if (ymd.slice(0, 7) === calMes || (!esFuturo && ymd < hoy)) { anualFalta += ren.monto; nAnualFalta++; }
+            }
+        }
+    }
+    const lineasSub = (entro, falta, nota = "") =>
+        `<span class="ingcal-stat-linea">${fmtMoney(entro)} ya entró</span><span class="ingcal-stat-linea">${fmtMoney(falta)} falta cobrar</span>${nota ? `<span class="muted ingcal-stat-nota">${nota}</span>` : ""}`;
     const subSubs = esPasado ? "todo cobrado"
         : esFuturo ? "a cobrar (estimado)"
-        : `${fmtMoney(subsCobrado)} ya entró · ${fmtMoney(subsFalta)} falta cobrar`;
-    const subOtros = esFuturo ? "todavía no entró nada"
-        : nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas, saldos y cobros anuales` : "ningún pago este mes";
+        : lineasSub(subsCobrado, subsFalta);
+    const subOtros = esFuturo ? "todavía no entró nada · el saldo se cobra al entregar"
+        : esPasado ? (nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes")
+        : lineasSub(otros, saldosFalta, `${nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes"}${nSaldos ? ` · saldo de ${nSaldos} web${nSaldos === 1 ? "" : "s"} por entregar` : ""}`);
+    const subAnuales = esPasado
+        ? (nAnuales ? `${nAnuales} cobro${nAnuales === 1 ? "" : "s"} anual${nAnuales === 1 ? "" : "es"}` : "ningún cobro anual este mes")
+        : lineasSub(anuales, anualFalta, `${nAnuales ? `${nAnuales} cobrado${nAnuales === 1 ? "" : "s"}` : "ninguno cobrado"}${nAnualFalta ? ` · ${nAnualFalta} por cobrar` : ""}`);
+    const faltaTotal = subsFalta + saldosFalta + anualFalta;
     const subTotal = esPasado ? "todo cobrado"
-        : esFuturo ? "suscripciones a cobrar"
-        : `${fmtMoney(subsCobrado + otros)} ya entró · ${fmtMoney(subsFalta)} falta cobrar`;
+        : esFuturo ? "a cobrar (estimado)"
+        : lineasSub(subsCobrado + otros + anuales, faltaTotal);
 
     // Grilla: semanas de lunes a domingo.
     const primero = `${calMes}-01`;
@@ -1278,8 +1321,9 @@ function renderIngresos() {
         ${_avisoMp()}
         <div class="stats-box stats-box--periods ingcal-stats">
             <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
-            <div class="stat-item"><span class="stat-label">💵 Otros pagos (ya entró)</span><span class="stat-value">${fmtMoney(otros)}</span><span class="muted ingcal-stat-sub">${subOtros}</span></div>
-            <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
+            <div class="stat-item"><span class="stat-label">💵 Otros pagos (señas y saldos)</span><span class="stat-value">${fmtMoney(otros + saldosFalta)}</span><span class="muted ingcal-stat-sub">${subOtros}</span></div>
+            <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
+            <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros + anuales + saldosFalta + anualFalta)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
         <div class="ingcal-leyenda">
             <span><span class="ingcal-punto ingcal-punto--subs"></span>Suscripción que ya entró</span>

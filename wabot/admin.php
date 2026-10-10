@@ -4085,10 +4085,10 @@ function burbujaCita(t, chat) {
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($140.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
+            rrInsertar('Te paso el plan anual del sitio profesional, con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($190.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria, con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
