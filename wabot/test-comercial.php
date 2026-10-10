@@ -108,7 +108,7 @@ $info = wabot_comercial_info($cfg);
 caso('la descripción de las soluciones y planes no trae montos', strpos((string)strstr($info, 'RESPUESTAS OFICIALES', true), '$') === false);
 caso('y lista las respuestas oficiales (incluido el descuento) con cómo las preguntan', strpos($info, '- descuento:') !== false && strpos($info, '- pago_antes_demo:') !== false && strpos($info, 'lo preguntan así') !== false);
 caso('el descuento y "pagar antes?" se pueden pedir por clave', in_array('descuento', wabot_comercial_info_claves($cfg), true) && in_array('pago_antes_demo', wabot_comercial_info_claves($cfg), true));
-caso('el esquema exige todos los campos', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
+caso('el esquema exige todos los campos (con la segunda web, 10-oct)', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
 
 echo "— 2. La secuencia de la cotización: tres mensajes —\n";
 $c = cv();
@@ -284,10 +284,36 @@ oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta
 $r = turno('Dale, y que se sincronice con Mercado Libre', $c, $cfg);
 caso('una conexión no aprobada frena el formulario aunque acepte la demo', $r === [] && empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'Mercado Libre') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Dos webs (Pablo, 10-oct): juntas con $10.000 menos por mes y $50.000 menos por año sobre la suma.
+foreach ([['informativa', 'informativa', '$230.000', '$30.000'], ['informativa', 'tienda', '$280.000', '$40.000'], ['tienda', 'reservas', '$330.000', '$50.000'],
+          ['cursos', 'informativa_panel', '$330.000', '$50.000']] as [$a, $b, $anual, $mensual]) {
+    $m = wabot_comercial_dos_webs_montos($a, $b, $cfg);
+    caso("dos webs $a + $b → $anual anual y $mensual mensual por las dos", ($m['anual'] ?? '') === $anual && ($m['mensual'] ?? '') === $mensual, json_encode($m));
+}
+caso('dos webs con un CRM o sin solución no se cotizan', wabot_comercial_dos_webs_montos('tienda', 'crm', $cfg) === null && wabot_comercial_dos_webs_montos('tienda', 'sin_definir', $cfg) === null);
 $c = cv();
-oa([dc(['accion' => 'humano', 'solucion' => 'sin_definir', 'motivo' => 'Pide dos webs: una para la agencia y otra para la pañalera'])]);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'segunda_solucion' => 'tienda',
+        'mensajes' => ['Buenísimo. Podemos armarte una web para la agencia de viajes y una tienda online para la pañalera'],
+        'ficha' => ['rubro' => 'tu agencia de viajes y la pañalera']])]);
 $r = turno('Necesito dos webs, una para mi agencia de viajes y otra para la pañalera de mi hija', $c, $cfg);
-caso('dos webs → para Pablo con el motivo (sin inventar descuento)', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'dos webs') !== false);
+caso('pide dos webs de entrada → propuesta, el precio de las dos con descuento y la oferta (antes iba a Pablo)',
+    count($r) === 3 && mb_stripos($r[0], 'agencia de viajes') !== false
+    && strpos($r[1], 'Por las dos webs (web informativa y tienda online)') === 0 && strpos($r[1], '$280.000 por las dos (en vez de $330.000)') !== false
+    && strpos($r[1], '$40.000 por mes por las dos (en vez de $50.000)') !== false && $r[2] === OFERTA
+    && ($c['comercial_dos_webs']['mensual'] ?? '') === '$40.000' && ($c['comercial_cotizacion']['plan'] ?? '') === 'informativa' && !empty($c['comercial_oferta_ts']),
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('y después el modelo sabe que ya se le pasó el precio de las dos', strpos(wabot_comercial_contexto('y cuánto tardan?', $c, $cfg), 'YA LE PASAMOS EL PRECIO DE LAS DOS WEBS') !== false);
+// 10-oct 01:00, en vivo: "Si dale, y me gustaría otra web para venta de productos" → el bot se calló.
+$c = cv_cotizada();
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'segunda_solucion' => 'tienda', 'intencion' => 'acepta', 'mensajes' => ['Buenísimo, la otra tienda también te la armamos']])]);
+$r = turno('Si dale, y me gustaría otra web para venta de productos', $c, $cfg);
+caso('acepta la demo y pide otra web en el mismo mensaje → el precio de las dos y el formulario (no se calla)',
+    count($r) === 3 && strpos($r[1], 'Por las dos webs (las dos son tienda online)') === 0 && strpos($r[1], '$50.000 por mes por las dos') !== false
+    && con_form([$r[2]]) && !empty($c['link_form_enviado']) && ($c['comercial_dos_webs']['anual'] ?? '') === '$330.000', json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'segunda_solucion' => 'crm'])]);
+$r = turno('Y aparte quiero un sistema para manejar los clientes', $c, $cfg);
+caso('la otra es un sistema de gestión → para Pablo, con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'sistema de gestión') !== false);
 
 $c = cv_cotizada();
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'No puede abrir el formulario'])]);

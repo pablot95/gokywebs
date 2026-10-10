@@ -380,6 +380,11 @@ function wabot_textos_default() {
         'dos_planes_intro' => 'Es otro plan si incluye reservas',
         'sin_reservas' => 'Sin reservas',
         'con_reservas' => "Con reservas quedaría en:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}",
+        /* Dos webs distintas para el mismo cliente (Pablo, 10-oct): la suma de las
+         * dos con $10.000 menos por mes y $50.000 menos por año (20+20 → 30,
+         * 20+30 → 40, 30+30 → 50; 140+140 → 230, 140+190 → 280, 190+190 → 330). */
+        'dos_webs_descuento' => ['mensual' => 10000, 'anual' => 50000],
+        'dos_webs_planes' => "Por las dos webs ({webs}) quedaría en:\n\n1) Plan anual: {anual} por las dos (en vez de {anual_lista})\n2) Plan mensual: {mensual} por mes por las dos (en vez de {mensual_lista})\n\nCada una incluye todo lo de su plan: desarrollo completo, preparada para Google, un cambio por mes, renovación de hosting y dominio, actualizaciones y soporte técnico",
         // Cuántos mensajes recientes ve el modelo y el tope de mensajes propios por turno.
         'historial' => 30,
         'max_mensajes' => 2,

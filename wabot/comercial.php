@@ -312,6 +312,7 @@ function wabot_comercial_info($cfg) {
     $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: el sistema usa el plan internacional, con sus montos. Una web que solo se ve desde otros países sin cobrar no es internacional.';
     $l[] = '- Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.';
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, hasta 3 idiomas, pixel de Meta y Analytics.';
+    $l[] = '- Dos webs distintas para el mismo cliente (dos negocios o dos sitios separados): se cotizan juntas con descuento sobre la suma de los dos planes. Marcá solucion (una) y segunda_solucion (la otra): el sistema arma el precio de las dos. Vos nunca escribís esos montos.';
     $l[] = '- Tecnología: desarrollo a medida (HTML, CSS y JavaScript), no WordPress, Tiendanube ni Wix. Se puede tomar una web de referencia visual.';
     $l[] = "\nLO QUE NO HACEMOS O NO ES DE LISTA (accion humano, sin contestar): publicidad, redes sociales y marketing (eso es aparte: la web complementa las redes); diseño de logos; registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales, filtros, noticias o banners; apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
     $l[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema con los montos de esta charla). Pedilas en info_claves; nunca las copies ni las parafrasees:";
@@ -378,6 +379,11 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
     } else {
         $c[] = '- Todavía no le pasamos el precio.';
     }
+    $dosWebs = is_array($conv['comercial_dos_webs'] ?? null) ? $conv['comercial_dos_webs'] : null;
+    if ($dosWebs) {
+        $c[] = '- YA LE PASAMOS EL PRECIO DE LAS DOS WEBS (' . implode(' y ', (array)$dosWebs['soluciones']) . '): anual ' . $dosWebs['anual'] . ' y mensual '
+            . $dosWebs['mensual'] . ' por las dos. Se mantiene: si lo vuelve a pedir, accion cotizar con las mismas solucion y segunda_solucion.';
+    }
     if (wabot_comercial_estado($conv) === 'atencion') {
         $c[] = wabot_comercial_oferta_hecha($conv, $cfg)
             ? '- Ya le ofrecimos la demo gratis y todavía no la aceptó: si este mensaje la acepta (aunque sea con otras palabras), accion formulario.'
@@ -425,15 +431,17 @@ function wabot_comercial_esquema($cfg) {
     $texto = function () { return ['type' => ['string', 'null']]; };
     return [
         'type' => 'json_schema',
-        'name' => 'turno_comercial_v2',
+        'name' => 'turno_comercial_v3',
         'strict' => true,
         'schema' => [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['accion', 'solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'],
+            'required' => ['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'],
             'properties' => [
                 'accion' => ['type' => 'string', 'enum' => ['responder', 'cotizar', 'formulario', 'humano', 'esperar']],
                 'solucion' => ['type' => 'string', 'enum' => array_keys(wabot_comercial_soluciones())],
+                // La otra web, si pide dos distintas (Pablo, 10-oct): se cotizan juntas con descuento.
+                'segunda_solucion' => ['type' => 'string', 'enum' => array_merge(array_keys(wabot_comercial_soluciones()), ['ninguna'])],
                 'intencion' => ['type' => 'string', 'enum' => ['acepta', 'posterga', 'rechaza', 'condiciona', 'ninguna']],
                 'pago_unico' => ['type' => 'boolean'],
                 'internacional' => ['type' => 'boolean'],
@@ -481,9 +489,11 @@ function wabot_comercial_normalizar($d, $cfg) {
         return ($v === '' || strtolower($v) === 'null') ? null : mb_substr($v, 0, $max);
     };
     $solucion = (string)($d['solucion'] ?? 'sin_definir');
+    $segunda = (string)($d['segunda_solucion'] ?? 'ninguna');
     return [
         'accion' => $accion,
         'solucion' => array_key_exists($solucion, wabot_comercial_soluciones()) ? $solucion : 'sin_definir',
+        'segunda_solucion' => array_key_exists($segunda, wabot_comercial_soluciones()) && $segunda !== 'sin_definir' ? $segunda : null,
         'intencion' => in_array($d['intencion'] ?? '', ['acepta', 'posterga', 'rechaza', 'condiciona', 'ninguna'], true) ? $d['intencion'] : 'ninguna',
         'pago_unico' => !empty($d['pago_unico']),
         'internacional' => !empty($d['internacional']),
@@ -936,6 +946,18 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $d['motivo'] = $d['motivo'] ?: 'Pide un sistema de gestión / CRM';
         $ajustes[] = 'crm_humano';
     }
+    /* Dos webs (10-oct) se cotizan juntas con descuento, salvo que la otra sea un
+     * sistema de gestión o que cobre en el exterior: eso lo ve Pablo. */
+    $seg = (string)($d['segunda_solucion'] ?? '');
+    if ($seg !== '' && in_array($d['accion'], ['cotizar', 'formulario'], true)) {
+        if ($seg === 'crm' || !empty($d['internacional'])) {
+            $d['accion'] = 'humano';
+            $d['motivo'] = $seg === 'crm' ? 'Pide una web y además un sistema de gestión' : 'Pide dos webs con cobros internacionales';
+            $ajustes[] = 'dos_webs_humano';
+        } elseif (!wabot_comercial_solucion_estandar($seg)) {
+            $d['segunda_solucion'] = null;
+        }
+    }
     // Lo que la ficha ya marcó como fuera de lista (Mercado Libre, 500 productos…) frena la cotización y el formulario.
     $fuera = wabot_comercial_fuera_de_lista($conv, $cfg);
     if ($fuera !== '' && in_array($d['accion'], ['cotizar', 'formulario'], true)) {
@@ -1084,6 +1106,53 @@ function wabot_comercial_planes_texto($solucion, $cotizacion, $cfg, $conPagoUnic
     return $texto;
 }
 
+/**
+ * El precio de dos webs juntas (Pablo, 10-oct): la suma de los montos de lista
+ * de cada una menos el descuento de comercial.dos_webs_descuento. Devuelve
+ * [anual, mensual, anual_lista, mensual_lista] como "$330.000", o null si falta
+ * algún monto o alguna no es una solución que cotizamos.
+ */
+function wabot_comercial_dos_webs_montos($solA, $solB, $cfg) {
+    $sols = wabot_comercial_soluciones();
+    if (empty($sols[$solA]['plan']) || empty($sols[$solB]['plan'])) return null;
+    $num = function ($m) { return (int)preg_replace('/\D/', '', (string)$m); };
+    $fmt = function ($n) { return '$' . number_format($n, 0, ',', '.'); };
+    $a = wabot_comercial_montos_lista($sols[$solA]['plan'], $cfg);
+    $b = wabot_comercial_montos_lista($sols[$solB]['plan'], $cfg);
+    $mensual = $num($a['mensual']) + $num($b['mensual']);
+    $anual = $num($a['anual']) + $num($b['anual']);
+    if ($num($a['mensual']) <= 0 || $num($b['mensual']) <= 0 || $num($a['anual']) <= 0 || $num($b['anual']) <= 0) return null;
+    $desc = (array)($cfg['comercial']['dos_webs_descuento'] ?? []);
+    return ['anual' => $fmt(max(0, $anual - (int)($desc['anual'] ?? 0))), 'mensual' => $fmt(max(0, $mensual - (int)($desc['mensual'] ?? 0))),
+            'anual_lista' => $fmt($anual), 'mensual_lista' => $fmt($mensual)];
+}
+
+/**
+ * Las dos webs de esta decisión, o null: la primera es la solución del turno o,
+ * si no la repitió, la que ya se había definido en la charla. Devuelve
+ * ['texto' => el bloque, 'resumen' => lo que queda en comercial_dos_webs].
+ */
+function wabot_comercial_dos_webs_armar(array $d, $sol, $conv, $cfg) {
+    $seg = (string)($d['segunda_solucion'] ?? '');
+    if ($seg === '' || !wabot_comercial_solucion_estandar($seg)) return null;
+    $primera = wabot_comercial_solucion_estandar($sol) ? $sol : (string)($conv['comercial_solucion'] ?? '');
+    if (!wabot_comercial_solucion_estandar($primera)) return null;
+    $montos = wabot_comercial_dos_webs_montos($primera, $seg, $cfg);
+    $texto = $montos ? wabot_comercial_dos_webs_texto($primera, $seg, $montos, $cfg) : '';
+    if ($texto === '') return null;
+    return ['texto' => $texto, 'resumen' => ['soluciones' => [$primera, $seg], 'ts' => time()] + $montos];
+}
+
+/** El bloque con el precio de las dos webs, o '' si no se puede armar. */
+function wabot_comercial_dos_webs_texto($solA, $solB, array $montos, $cfg) {
+    $plantilla = trim((string)($cfg['comercial']['dos_webs_planes'] ?? ''));
+    if ($plantilla === '') return '';
+    $sols = wabot_comercial_soluciones();
+    $webs = $solA === $solB ? 'las dos son ' . $sols[$solA]['nombre'] : $sols[$solA]['nombre'] . ' y ' . $sols[$solB]['nombre'];
+    return strtr($plantilla, ['{webs}' => $webs, '{anual}' => $montos['anual'], '{mensual}' => $montos['mensual'],
+                              '{anual_lista}' => $montos['anual_lista'], '{mensual_lista}' => $montos['mensual_lista']]);
+}
+
 /** ¿Vuelve a pedir el precio o los planes? ("cuánto era?", "pasame los precios de nuevo") */
 function wabot_comercial_pide_precio_otra_vez($texto) {
     $t = wabot_normalizar_frase((string)$texto);
@@ -1181,6 +1250,30 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                     break;
                 }
             }
+            /* Dos webs distintas (Pablo, 10-oct): las dos juntas con el descuento. Si la
+             * primera todavía no estaba cotizada, se congela su plan (panel, boceto,
+             * respuestas rápidas) sin mandar su bloque: el precio que ve es el de las dos. */
+            if ($dos = wabot_comercial_dos_webs_armar($d, $sol, $c, $cfg)) {
+                if ($cot) {
+                    $resumen['cotizacion'] = $cot;
+                } else {
+                    $plan1 = wabot_comercial_soluciones()[$sol]['plan'];
+                    $lista1 = wabot_comercial_montos_lista($plan1, $cfg);
+                    $resumen['cotizacion'] = ['origen' => 'bot', 'plan' => $plan1, 'anual' => $lista1['anual'], 'mensual' => $lista1['mensual'], 'unico' => $lista1['unico'], 'ts' => time()];
+                    $resumen['congelar_sin_planes'] = true;
+                }
+                $resumen['dos_webs'] = $dos['resumen'];
+                $propuesta = trim((string)preg_replace('/[\s,]*(pod[eé]s|podr[ií]as) elegir entre (los |estos )?dos planes\s*:?\s*$/iu', '', trim((string)($d['mensajes'][0] ?? ''))));
+                if ($propuesta !== '' && !wabot_comercial_es_solo_saludo($propuesta) && wabot_comercial_mensaje_problema($propuesta) === null) {
+                    $msgs[] = ['t' => $propuesta, 'efecto' => $cot ? 'texto' : 'propuesta'];
+                }
+                $msgs[] = ['t' => $dos['texto'], 'efecto' => 'dos_webs'];
+                if (!wabot_comercial_oferta_hecha($c, $cfg)) {
+                    $oferta = trim((string)($cfg['comercial']['oferta_demo'] ?? ''));
+                    if ($oferta !== '') $msgs[] = ['t' => $oferta, 'efecto' => 'oferta'];
+                }
+                break;
+            }
             $plan = wabot_comercial_soluciones()[$sol]['plan'];
             // Cobros a clientes del exterior: plan internacional (9-oct, noche), si sus montos están cargados.
             if ($d['internacional'] && wabot_comercial_montos_lista('internacional', $cfg)['mensual'] !== '') $plan = 'internacional';
@@ -1277,6 +1370,11 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
         case 'formulario':
             foreach (wabot_comercial_info_textos($d['info_claves'], $c, $cfg, $cot === null) as $t) $msgs[] = ['t' => $t, 'efecto' => 'info'];
             foreach ($d['mensajes'] as $m) $msgs[] = ['t' => $m, 'efecto' => 'texto'];
+            // Acepta la demo y pide otra web en el mismo mensaje (Pablo, 10-oct): el precio de las dos y el formulario.
+            if ($dos = wabot_comercial_dos_webs_armar($d, $sol, $c, $cfg)) {
+                $resumen['dos_webs'] = $dos['resumen'];
+                $msgs[] = ['t' => $dos['texto'], 'efecto' => 'dos_webs'];
+            }
             $copiaLink = $c;
             if ($tipoFuturo !== null && $tipoFuturo !== 'sistema' && empty($copiaLink['tipo'])) $copiaLink['tipo'] = $tipoFuturo;
             $form = wabot_oferta_diseno_form_texto($copiaLink, $cfg);
@@ -1391,6 +1489,11 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         } elseif ($efecto === 'alternativa') {
             // Le pasamos los dos precios (sin reservas / con reservas): falta que elija.
             $conv['comercial_dos_planes_ts'] = $ahora;
+        } elseif ($efecto === 'dos_webs' && is_array($resumen['dos_webs'] ?? null)) {
+            // El precio de las dos webs juntas (10-oct): lo ven el modelo, el panel y la revisión.
+            $conv['comercial_dos_webs'] = $resumen['dos_webs'];
+            $conv['precio_dado'] = true;
+            wabot_evento_sesion($conv, 'comercial_dos_webs', ['soluciones' => implode('+', (array)$resumen['dos_webs']['soluciones'])]);
         } elseif ($efecto === 'oferta') {
             $conv['comercial_oferta_ts'] = $ahora;
             $conv['fase'] = 'prediseno';
@@ -1440,7 +1543,7 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
 /** Qué etiqueta le ponemos a cada mensaje en el panel. */
 function wabot_comercial_etiqueta($efecto) {
     return ['propuesta' => 'Propuesta', 'planes' => 'Planes', 'oferta' => 'Oferta de demo', 'formulario' => 'Formulario',
-            'info' => 'Respuesta oficial', 'texto' => 'Mensaje', 'alternativa' => 'Planes con reservas'][(string)$efecto] ?? 'Mensaje';
+            'info' => 'Respuesta oficial', 'texto' => 'Mensaje', 'alternativa' => 'Planes con reservas', 'dos_webs' => 'Planes de las dos webs'][(string)$efecto] ?? 'Mensaje';
 }
 
 /**

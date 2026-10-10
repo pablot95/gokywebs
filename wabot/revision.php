@@ -230,6 +230,14 @@ function wabot_revision_precios_texto($cfg) {
             . ($m['unico'] !== '' ? ", pago único {$m['unico']} (solo si pidió comprar la web o no tener suscripción)" : '')
             . ($m['sena'] !== '' && $plan !== 'internacional' ? ", seña del anual {$m['sena']}" : '');
     }
+    // Dos webs juntas (10-oct): la suma con descuento, como la calcula el bot.
+    $combos = [];
+    foreach ([['informativa', 'informativa'], ['informativa', 'tienda'], ['tienda', 'tienda']] as [$a, $b]) {
+        $m = wabot_comercial_dos_webs_montos($a, $b, $cfg);
+        if ($m) $combos[] = ($a === $b ? ($a === 'informativa' ? 'dos sin panel' : 'dos con panel') : 'una sin panel y una con panel')
+            . ": anual {$m['anual']} (en vez de {$m['anual_lista']}), mensual {$m['mensual']} (en vez de {$m['mensual_lista']})";
+    }
+    if ($combos) $l[] = '- Dos webs distintas para el mismo cliente se cotizan juntas con descuento: ' . implode('; ', $combos) . '.';
     $l[] = '- Una charla cotizada antes de un cambio de precios conserva los montos que ya se le pasaron (el estado dice cuáles).';
     return implode("\n", $l);
 }
@@ -248,6 +256,7 @@ function wabot_revision_textos_fijos($cfg) {
         'Los dos precios, sin y con reservas (si pide el precio sin contestar lo de los turnos)' => trim((string)($c['dos_planes_intro'] ?? '')) === '' ? ''
             : trim((string)$c['dos_planes_intro']) . ' / ' . trim((string)($c['sin_reservas'] ?? '')) . ' (y los planes del plan informativa) / ' . trim((string)($c['con_reservas'] ?? '')),
         'Formulario de la demo (cuando acepta la demo)' => $cfg['prediseno_link'] ?? '',
+        'Planes de las dos webs (si pide dos webs distintas; {webs} y los montos los completa el sistema)' => $c['dos_webs_planes'] ?? '',
     ];
     $p = (array)($cfg['plantillas'] ?? []);
     // Los avisos automáticos, con la regla de cada uno tal como la aplica el cron (lib.php).
@@ -345,6 +354,10 @@ function wabot_revision_contexto($cv, array $lineas, array $tramo, $cfg) {
         ? '- Precio que se le pasó: plan ' . ($cot['plan'] === 'informativa' ? 'informativa' : ($cot['plan'] === 'internacional' ? 'internacional' : 'con panel'))
           . ', anual ' . $cot['anual'] . ', mensual ' . $cot['mensual'] . (($cot['origen'] ?? '') === 'chat' ? ' (leído de la charla)' : '')
         : '- Todavía no se le había pasado el precio (salvo que figure en la charla).';
+    $dosWebs = is_array($cv['comercial_dos_webs'] ?? null) ? $cv['comercial_dos_webs'] : null;
+    if ($dosWebs && $yaEstaba($dosWebs['ts'] ?? 0)) {
+        $c[] = '- Precio de las dos webs (' . implode(' y ', (array)$dosWebs['soluciones']) . '): anual ' . $dosWebs['anual'] . ', mensual ' . $dosWebs['mensual'] . ' por las dos.';
+    }
     $oferta = false;
     foreach ($sel as $l) if (in_array(($l['q'] ?? ''), ['bot', 'humano'], true) && wabot_comercial_texto_es_oferta((string)($l['t'] ?? ''), $cfg)) { $oferta = true; break; }
     $c[] = '- Oferta de la demo: ' . ($oferta ? 'ya se le había hecho' : 'todavía no');
