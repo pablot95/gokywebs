@@ -818,7 +818,14 @@ function wabot_comercial_contesta_turnos($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     // Un sí o un no corto contesta la pregunta de Pablo ("querés que también puedan reservar turnos?" → "Si").
     if (preg_match('/^(si+|sip|no|nop|dale|claro|obvio|exacto|tal cual|ok|okey|bueno|perfecto|joya)( (si+|no|dale|claro|gracias|porfa|por favor))?$/u', $t)) return true;
+    /* Un sí corto con la palabra de la opción que elige ("Directamente si", 10-oct:
+     * contestaba "…o que puedan reservarlos directamente desde la página?", no se
+     * reconocía y el bot le repetía la pregunta hasta que el revisor la frenaba y
+     * la charla quedaba sin el precio). Sin preguntar otra cosa ni el precio. */
+    if (count(explode(' ', $t)) <= 5 && strpos((string)$texto, '?') === false && !wabot_comercial_pregunta_costo($texto)
+        && preg_match('/^(si+|sip|claro|obvio|dale|exacto)\b|\b(si+|claro|obvio|dale)$/u', $t)) return true;
     return (bool)preg_match('/\b(whats\w*|wsp|wpp|wapp|guasap|reserv\w*|online|on line|en linea|agenda\w*|calendario|turnero|sistema de turnos'
+        . '|directamente|directo|ellos mismos|solos|solas|autom\w*|las 2|los 2|esa opcion'
         . '|desde la (web|pagina)|por la (web|pagina)|en la (web|pagina)|la primera|la segunda|lo primero|lo segundo|(primera|segunda) opcion'
         . '|las dos|los dos|ambas|ambos|cualquiera|da igual|da lo mismo|recomend\w*|no se|nose|como (vos|quieras|te parezca)|lo que (vos|sea|me)'
         . '|(decime|decidi|elegi) vos|personal\w*|coordin\w*|por mensaje|por telefono|llam\w*|contact\w*|escrib\w*|informacion|mostrar)\b/u', $t);

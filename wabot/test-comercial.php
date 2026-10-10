@@ -633,6 +633,19 @@ wabot_conv_transcript($c, 'bot', "Buenísimo. Podemos armarte una web para mostr
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu gabinete de estética']])]);
 $r = turno('Si', $c, $cfg);
 caso('"Si" a "querés que también puedan reservar turnos?" contesta la pregunta → se cotiza con reservas', count($r) === 2 && strpos($r[0], '$30.000') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+// 10-oct, en vivo: "Directamente si" no contaba como respuesta y el bot repetía la pregunta (el revisor la frenó: sin precio).
+foreach (['Directamente si' => true, 'Si, directamente' => true, 'Directo desde la página' => true, 'Que reserven ellos solos' => true,
+          'Obvio que si' => true, 'Las 2' => true, 'Y tardan mucho?' => false, 'Y si tardan mucho' => false, 'Si, cuánto sale' => false,
+          'Y hacen logos también?' => false] as $m => $esperado) {
+    caso("¿contesta la pregunta de los turnos? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_contesta_turnos($m) === $esperado);
+}
+$c = cv('5491100009006TEST');
+wabot_conv_transcript($c, 'cliente', 'Soy psicologo');
+wabot_conv_transcript($c, 'bot', "Podemos armarte una web para presentar tu trabajo en psicología y facilitar el contacto\n\nQuerés que te escriban por WhatsApp para coordinar turnos o que puedan reservarlos directamente desde la página?");
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu trabajo en psicología']])]);
+$r = turno('Directamente si', $c, $cfg);
+caso('"Directamente si" a la pregunta de los turnos → se cotiza con reservas (planes con panel + oferta), no se repregunta',
+    count($r) === 2 && $r[0] === 'Perfecto, entonces p' . mb_substr(planes('panel', '$190.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Lo que salió de los chats de Pablo del 9-oct.
 foreach (['medios_pago_tienda' => 'billetera virtual', 'mp_nombre_negocio' => 'nombre del negocio'] as $k => $frase) {
