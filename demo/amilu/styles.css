@@ -3273,7 +3273,7 @@ html {
   background: var(--gw-modelos-bg);
   color: #fff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .24);
-  transition: transform .25s ease-out, opacity .25s ease-out;
+  transition: opacity .3s ease;
 }
 
 .gw-modelos__btn {
@@ -3319,7 +3319,6 @@ body.no-scroll .gw-modelos {
 }
 
 .gw-modelos.gw-modelos--scrolling {
-  transform: translate(-50%, calc(100% + 24px));
   opacity: 0;
   pointer-events: none;
 }
@@ -3338,10 +3337,6 @@ body.no-scroll .gw-modelos {
   .gw-modelos {
     left: 12px;
     transform: none;
-  }
-
-  .gw-modelos.gw-modelos--scrolling {
-    transform: translateY(calc(100% + 24px));
   }
 }
 

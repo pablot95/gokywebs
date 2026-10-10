@@ -908,7 +908,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   max-width: calc(100vw - 16px); padding: 4px;
   border-radius: 999px; background: var(--gw-modelos-bg); color: #fff;
   box-shadow: 0 10px 30px rgba(0,0,0,.24);
-  transition: transform .25s ease-out, opacity .25s ease-out;
+  transition: opacity .3s ease;
 }
 .gw-modelos__btn {
   flex: 0 1 116px; min-height: 34px; padding: 9px 14px;
@@ -924,11 +924,10 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 .gw-modelos__btn[aria-current="page"] { pointer-events: none; }
 .gw-modelos__btn:focus-visible { outline: 3px solid var(--gw-modelos-active-bg); outline-offset: 3px; }
 body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
-.gw-modelos.gw-modelos--scrolling { transform: translate(-50%, calc(100% + 24px)); opacity: 0; pointer-events: none; }
+.gw-modelos.gw-modelos--scrolling { opacity: 0; pointer-events: none; }
 .toast-wrap { margin-bottom: 64px; }
 .site-footer::after { content: ""; display: block; height: 64px; }
 @media (max-width: 359px) {
   .gw-modelos { left: 12px; transform: none; }
-  .gw-modelos.gw-modelos--scrolling { transform: translateY(calc(100% + 24px)); }
 }
 @media (prefers-reduced-motion: reduce) { .gw-modelos, .gw-modelos__btn { transition: none; } }
