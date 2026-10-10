@@ -231,6 +231,8 @@ let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
 const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
+let inversionSumaPaginas = false;    // el "+": suma COSTO_POR_PAGINA por cliente al total de la semana
+try { inversionSumaPaginas = localStorage.getItem("inversionSumaPaginas") === "1"; } catch (e) { /* sin storage */ }
 
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
@@ -757,12 +759,16 @@ function renderInversion() {
         const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
         const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
         const gasto = gastoAdsPorSemana.get(key) || 0;
-        const costoNeto = Math.max(0, gasto - sumaPagoUnico);
+        // El "+" de al lado del gasto (Pablo, 10-oct) suma $10.000 por cada cliente
+        // de la semana al total que se reparte.
+        const extraPaginas = inversionSumaPaginas ? COSTO_POR_PAGINA * convertidos.length : 0;
+        const gastoTotal = gasto + extraPaginas;
+        const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
         const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
         // Lo mismo, pero restando el total de cada venta anual/única y no solo lo
         // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
         const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
-        const costoNetoTotal = Math.max(0, gasto - sumaVentaTotal);
+        const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
         const costoPorSuscriptorTotal = suscriptores.length ? costoNetoTotal / suscriptores.length : null;
 
         // Costo de cada cliente (Pablo, 10-oct): su parte del gasto en publicidad
@@ -770,7 +776,6 @@ function renderInversion() {
         // la página hecha, una por cliente.
         const gastoPorCliente = convertidos.length ? gasto / convertidos.length : 0;
         const costoCliente = gastoPorCliente + COSTO_POR_PAGINA;
-        const costoTotalSemana = gasto + COSTO_POR_PAGINA * convertidos.length;
 
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
@@ -794,7 +799,7 @@ function renderInversion() {
         const verde = "var(--accent-green,#4ade80)";
         const nMensuales = `${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"}`;
         const tarjetas = [];
-        if (gasto > 0) {
+        if (gastoTotal > 0) {
             tarjetas.push(tarjeta("Por suscriptor · según lo cobrado (seña)",
                 suscriptores.length ? fmtMoney(costoPorSuscriptor) : "—",
                 (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
@@ -805,12 +810,6 @@ function renderInversion() {
                     `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
                         + (suscriptores.length ? ` ÷ ${nMensuales}` : ` · sin suscriptores mensuales todavía`), verde));
             }
-        }
-        if (convertidos.length) {
-            tarjetas.push(tarjeta("Costo por cliente", fmtMoney(costoCliente),
-                `${gasto > 0 ? `${fmtMoney(gastoPorCliente)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} por la página hecha`));
-            tarjetas.push(tarjeta("Total de la semana", fmtMoney(costoTotalSemana),
-                `${gasto > 0 ? `${fmtMoney(gasto)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"}`));
         }
         const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
 
@@ -828,6 +827,11 @@ function renderInversion() {
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
                            data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
                 </label>
+                <button type="button" class="btn-ghost inv-mas${inversionSumaPaginas ? " activo" : ""}" aria-pressed="${inversionSumaPaginas}"
+                        title="Suma ${fmtMoney(COSTO_POR_PAGINA)} por cada cliente de la semana (${convertidos.length}) al total que se reparte">
+                    + ${fmtMoney(COSTO_POR_PAGINA)} por cliente
+                </button>
+                ${inversionSumaPaginas ? `<span class="muted">${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · total ${fmtMoney(gastoTotal)}</span>` : ""}
             </div>
             ${tarjetasCosto}
             ${convertidos.length ? `
@@ -841,6 +845,11 @@ function renderInversion() {
 
         const inputGasto = div.querySelector(".gasto-input");
         inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));
+        div.querySelector(".inv-mas").addEventListener("click", () => {
+            inversionSumaPaginas = !inversionSumaPaginas;
+            try { localStorage.setItem("inversionSumaPaginas", inversionSumaPaginas ? "1" : "0"); } catch (e) { /* sin storage: queda solo en esta carga */ }
+            renderInversion();
+        });
     }
 }
 
