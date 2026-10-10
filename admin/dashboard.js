@@ -759,6 +759,11 @@ function renderInversion() {
         const gasto = gastoAdsPorSemana.get(key) || 0;
         const costoNeto = Math.max(0, gasto - sumaPagoUnico);
         const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
+        // Lo mismo, pero restando el total de cada venta anual/única y no solo lo
+        // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
+        const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
+        const costoNetoTotal = Math.max(0, gasto - sumaVentaTotal);
+        const costoPorSuscriptorTotal = suscriptores.length ? costoNetoTotal / suscriptores.length : null;
 
         // Costo de cada cliente (Pablo, 10-oct): su parte del gasto en publicidad
         // de la semana (repartido entre los que pasaron a Cliente) + $10.000 por
@@ -798,11 +803,17 @@ function renderInversion() {
                            data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
                 </label>
                 ${gasto > 0 ? `<span class="muted">
-                    ${sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}. ` : ""}
+                    ${sumaPagoUnico > 0 ? `Según lo cobrado (seña): se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}. ` : ""}
                     ${suscriptores.length
                         ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptor)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
                         : `Sin suscriptores mensuales esta semana todavía.`}
-                </span>` : ""}
+                </span>
+                ${sumaVentaTotal > sumaPagoUnico ? `<span class="muted">
+                    Según el total de la venta: se restan ${fmtMoney(sumaVentaTotal)} → costo neto ${fmtMoney(costoNetoTotal)}.
+                    ${suscriptores.length
+                        ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptorTotal)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
+                        : ""}
+                </span>` : ""}` : ""}
                 ${convertidos.length ? `<span class="muted">
                     Costo por cliente: <strong>${fmtMoney(costoCliente)}</strong>
                     (${gasto > 0 ? `${fmtMoney(gastoPorCliente)} de publicidad + ` : ""}${fmtMoney(COSTO_POR_PAGINA)} por la página hecha) · total de la semana ${fmtMoney(costoTotalSemana)}
