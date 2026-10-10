@@ -5243,8 +5243,10 @@ document.getElementById("mantLinks")?.addEventListener("click", async (e) => {
     if (!btn) return;
     try {
         await writeTextToClipboard(btn.dataset.mantLink);
+        const monto = btn.dataset.monto || (btn.dataset.monto = btn.textContent);
         btn.textContent = "Copiado";
-        setTimeout(() => { btn.textContent = "Copiar"; }, 1400);
+        btn.classList.add("copiado");
+        setTimeout(() => { btn.textContent = monto; btn.classList.remove("copiado"); }, 1400);
     } catch (err) {
         console.error(err);
         alert("No se pudo copiar el link.");
