@@ -196,7 +196,7 @@ Marcá un problema solo si es claro y Pablo lo corregiría:
 - otro: cualquier otra cosa que Pablo no mandaría.
 
 No marques:
-- Lo que cumple LAS REGLAS DEL BOT (van más abajo): son decisiones de Pablo, aunque vos lo harías distinto. Por ejemplo: a quien vende productos se le cotiza una tienda sin preguntarle si quiere vender online o solo mostrar; los cursos van siempre con el plan con panel; el precio sale en tres mensajes (propuesta breve, planes y oferta de la demo); los dos precios (sin reservas y con reservas) van sin la oferta de la demo, que sale cuando elige.
+- Lo que cumple LAS REGLAS DEL BOT (van más abajo): son decisiones de Pablo, aunque vos lo harías distinto. Por ejemplo: a quien vende productos se le cotiza una tienda sin preguntarle si quiere vender online o solo mostrar; los cursos van siempre con el plan con panel; el precio sale en tres mensajes (propuesta breve, planes y oferta de la demo); los dos precios (sin reservas y con reservas) van sin la oferta de la demo, que sale cuando elige; y cuando elige, NO se le repiten los planes (ya vio los dos montos): sale la confirmación y la oferta.
 - La redacción de los TEXTOS FIJOS APROBADOS ni de las respuestas oficiales: son de Pablo y van tal cual. Sí marcalos si no correspondían en ese momento o contestan otra pregunta.
 - Que el bot se quede callado o lo pase a Pablo sin contestar: eso Pablo ya lo ve en el panel. Solo si antes le dijo algo equivocado.
 - Que un aviso automático o una plantilla salga en una charla que atiende Pablo a mano o que él marcó como favorita: están hechos para eso. Tampoco el momento en que salió, si cumple la regla de ese aviso (está en TEXTOS FIJOS APROBADOS; las horas se cuentan desde el último mensaje del cliente, no desde nuestro último mensaje).

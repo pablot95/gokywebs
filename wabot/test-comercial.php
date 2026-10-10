@@ -634,9 +634,21 @@ caso('y la oferta pegada se reconoce: "Dale" → el formulario', con_form($r), j
 $c = $cDos;
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu peluquería']])]);
 $r = turno('Con reservas', $c, $cfg);
-caso('elige con reservas → "Perfecto, entonces podés elegir entre dos planes:" con panel y la oferta, como Pablo',
-    count($r) === 2 && $r[0] === 'Perfecto, entonces p' . mb_substr(planes('panel', '$190.000', '$30.000'), 1) && $r[1] === OFERTA
-    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000', json_encode($r, JSON_UNESCAPED_UNICODE));
+// Pablo, 10-oct: "dio dos veces el precio": los montos con reservas ya los vio en "Con reservas quedaría en".
+caso('elige con reservas → "Perfecto, entonces" pegado a la oferta, sin repetir los planes, y queda congelado el plan con panel',
+    count($r) === 1 && $r[0] === 'Perfecto, entonces si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?'
+    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && ($c['precio_cotizado'] ?? '') === '$190.000'
+    && !empty($c['comercial_oferta_ts']) && !empty($c['landing_con_panel']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = $cDos;
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces la web de la clínica va con reservas para que los pacientes elijan día y horario desde la página'], 'ficha' => ['rubro' => 'tu clínica']])]);
+$r = turno('Ok me sirve con reservas', $c, $cfg);
+caso('elige con reservas con una confirmación más larga → la confirmación y la oferta (como pasó el 10-oct, sin el bloque de planes)',
+    count($r) === 2 && mb_stripos($r[0], 'va con reservas') !== false && $r[1] === OFERTA && strpos(implode(' ', $r), '$190.000') === false
+    && ($c['mensualidad_cotizada'] ?? '') === '$30.000', json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => [], 'ficha' => ['rubro' => 'tu clínica']])]);
+$r = turno('Cuánto era con reservas?', $c, $cfg);
+caso('y si después pide el precio, se le repiten los planes con reservas (los congelados)', count($r) >= 1 && strpos(implode(' ', $r), '$190.000') !== false && strpos(implode(' ', $r), '$140.000') === false,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv('5491100009004TEST');
 wabot_conv_transcript($c, 'cliente', 'Soy masajista');
 wabot_conv_transcript($c, 'bot', "Buenísimo. Podemos armarte una web para mostrar los tipos de masajes que ofrecés, precios, horarios y contacto directo\n\nTe consulto: querés que la gente solamente te escriba por WhatsApp o también que pueda reservar turnos desde la página?");

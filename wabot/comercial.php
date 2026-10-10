@@ -1209,6 +1209,28 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 if ($confirma !== '') $msgs[] = ['t' => $confirma, 'efecto' => 'texto'];
                 break;
             }
+            /* Eligió "con reservas" después de los dos precios: esos montos ya los vio
+             * ("Con reservas quedaría en…"). Pablo, 10-oct: "dio dos veces el precio".
+             * Se congela el plan con panel sin repetir el bloque y sale la oferta,
+             * igual que cuando elige sin reservas. */
+            if ($cot && $plan === 'panel' && ($cot['plan'] ?? '') === 'informativa' && !empty($c['comercial_dos_planes_ts'])
+                && !wabot_comercial_oferta_hecha($c, $cfg) && !wabot_comercial_pide_precio_otra_vez($texto)) {
+                $panel = wabot_comercial_montos_lista('panel', $cfg);
+                if ($panel['anual'] !== '' && $panel['mensual'] !== '') {
+                    $resumen['cotizacion'] = ['origen' => 'bot', 'plan' => 'panel', 'anual' => $panel['anual'], 'mensual' => $panel['mensual'], 'unico' => $panel['unico'], 'ts' => time()];
+                    $resumen['congelar_sin_planes'] = true;
+                    $confirma = '';
+                    foreach ($d['mensajes'] as $m) {
+                        if (wabot_comercial_es_solo_saludo($m) || wabot_comercial_mensaje_problema($m) !== null) continue;
+                        if (count($d['mensajes']) === 1 && wabot_comercial_es_confirmacion_corta($m)) { $confirma = $m; continue; }
+                        $m = trim((string)preg_replace('/[\s,]*(pod[eé]s|podr[ií]as) elegir entre (los |estos )?dos planes\s*:?\s*$/iu', '', $m));
+                        if ($m !== '') $msgs[] = ['t' => $m, 'efecto' => 'texto'];
+                    }
+                    $oferta = trim((string)($cfg['comercial']['oferta_demo'] ?? ''));
+                    if ($oferta !== '') $msgs[] = ['t' => $confirma !== '' ? wabot_comercial_pegar_confirmacion($confirma, $oferta) : $oferta, 'efecto' => 'oferta'];
+                    break;
+                }
+            }
             if ($cot && $cot['plan'] === $plan) {
                 // Ya cotizado: se repiten los mismos planes (los montos de antes), sin propuesta ni oferta de nuevo.
                 $resumen['cotizacion'] = $cot;
@@ -1317,6 +1339,40 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     $conv['comercial_ultimo'] = ['ts' => $ahora, 'accion' => (string)($resumen['accion'] ?? ''), 'motivo' => (string)($resumen['motivo'] ?? '')];
     if (($conv['fase'] ?? 'nuevo') === 'nuevo') $conv['fase'] = 'menu';
 
+    /* Congela el precio que vio el cliente: con el bloque de planes o, si eligió
+     * "con reservas" después de los dos precios, sin repetirlo (congelar_sin_planes). */
+    $congelar = function (array $cot) use (&$conv, $sol, $cfg, $ahora) {
+        if (trim((string)($cot['anual'] ?? '')) === '' || trim((string)($cot['mensual'] ?? '')) === '') return;
+        // Ya congelada con los mismos montos (no cuenta lo leído de la charla: puede ser este mismo mensaje recién anotado).
+        $previa = is_array($conv['comercial_cotizacion'] ?? null) ? $conv['comercial_cotizacion'] : null;
+        if ($previa && ($previa['plan'] ?? '') === ($cot['plan'] ?? '') && ($previa['anual'] ?? '') === $cot['anual'] && ($previa['mensual'] ?? '') === $cot['mensual']) return;
+        $cot['origen'] = (string)($cot['origen'] ?? 'bot');
+        $cot['ts'] = $ahora;
+        $cot['plan'] = (string)($cot['plan'] ?? 'panel');
+        $conv['comercial_cotizacion'] = $cot;
+        // Los campos de siempre, para el panel, las respuestas rápidas y el boceto.
+        $tipo = wabot_comercial_soluciones()[$sol]['tipo'] ?? wabot_comercial_plan_tipo($cot['plan']);
+        if ($tipo === null || $tipo === 'sistema') $tipo = wabot_comercial_plan_tipo($cot['plan']);
+        $lista = wabot_comercial_montos_lista($cot['plan'], $cfg);
+        $conv['tipo'] = $tipo;
+        // Una informativa cotizada con el plan con panel (reservas, informativa con panel) sí tiene panel (9-oct).
+        $conv['landing_con_panel'] = $tipo === 'landing' && $cot['plan'] !== 'informativa';
+        $conv['precio_cotizado'] = $cot['anual'];
+        $conv['mensualidad_cotizada'] = $cot['mensual'];
+        $conv['precio_unico_cotizado'] = (string)($cot['unico'] ?? $lista['unico']);
+        $conv['sena_cotizada'] = $lista['sena'];
+        $conv['precio_modelo'] = 'anual';
+        $conv['precio_cotizado_ts'] = $ahora;
+        $conv['precio_dado'] = true;
+        $conv['precio_turnos_desde'] = 0;
+        $conv['precio_cta_pendiente'] = false;
+        $conv['reconocimiento_hecho'] = true;
+        if (empty($conv['comercial_oferta_ts'])) $conv['fase'] = 'precio';
+        wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
+        wabot_evento_sesion($conv, 'comercial_cotizado', ['solucion' => $sol]);
+    };
+    if (!empty($resumen['congelar_sin_planes']) && is_array($resumen['cotizacion'] ?? null)) $congelar($resumen['cotizacion']);
+
     foreach ($mensajes as $m) {
         $efecto = (string)($m['efecto'] ?? 'texto');
         $t = (string)($m['t'] ?? '');
@@ -1331,34 +1387,7 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
             $visto = wabot_comercial_montos_de_texto($t);
             if ($cot === null) $cot = ['plan' => wabot_comercial_soluciones()[$sol]['plan'] ?? 'panel'];
             foreach (['anual', 'mensual', 'unico'] as $k) if ($visto[$k] !== '') $cot[$k] = $visto[$k];
-            if (trim((string)($cot['anual'] ?? '')) === '' || trim((string)($cot['mensual'] ?? '')) === '') continue;
-            // Ya congelada con los mismos montos (no cuenta lo leído de la charla: puede ser este mismo mensaje recién anotado).
-            $previa = is_array($conv['comercial_cotizacion'] ?? null) ? $conv['comercial_cotizacion'] : null;
-            if ($previa && ($previa['plan'] ?? '') === ($cot['plan'] ?? '') && ($previa['anual'] ?? '') === $cot['anual'] && ($previa['mensual'] ?? '') === $cot['mensual']) continue;
-            $cot['origen'] = (string)($cot['origen'] ?? 'bot');
-            $cot['ts'] = $ahora;
-            $cot['plan'] = (string)($cot['plan'] ?? 'panel');
-            $conv['comercial_cotizacion'] = $cot;
-            // Los campos de siempre, para el panel, las respuestas rápidas y el boceto.
-            $tipo = wabot_comercial_soluciones()[$sol]['tipo'] ?? wabot_comercial_plan_tipo($cot['plan']);
-            if ($tipo === null || $tipo === 'sistema') $tipo = wabot_comercial_plan_tipo($cot['plan']);
-            $lista = wabot_comercial_montos_lista($cot['plan'], $cfg);
-            $conv['tipo'] = $tipo;
-            // Una informativa cotizada con el plan con panel (reservas, informativa con panel) sí tiene panel (9-oct).
-            $conv['landing_con_panel'] = $tipo === 'landing' && $cot['plan'] !== 'informativa';
-            $conv['precio_cotizado'] = $cot['anual'];
-            $conv['mensualidad_cotizada'] = $cot['mensual'];
-            $conv['precio_unico_cotizado'] = (string)($cot['unico'] ?? $lista['unico']);
-            $conv['sena_cotizada'] = $lista['sena'];
-            $conv['precio_modelo'] = 'anual';
-            $conv['precio_cotizado_ts'] = $ahora;
-            $conv['precio_dado'] = true;
-            $conv['precio_turnos_desde'] = 0;
-            $conv['precio_cta_pendiente'] = false;
-            $conv['reconocimiento_hecho'] = true;
-            if (empty($conv['comercial_oferta_ts'])) $conv['fase'] = 'precio';
-            wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
-            wabot_evento_sesion($conv, 'comercial_cotizado', ['solucion' => $sol]);
+            $congelar($cot);
         } elseif ($efecto === 'alternativa') {
             // Le pasamos los dos precios (sin reservas / con reservas): falta que elija.
             $conv['comercial_dos_planes_ts'] = $ahora;

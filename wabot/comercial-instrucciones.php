@@ -169,6 +169,7 @@ Marcá un problema solo si es claro y el cliente lo notaría:
 No marques:
 - Nada que cumpla LAS REGLAS DEL ASISTENTE (van más abajo): son decisiones de Pablo, aunque vos lo harías distinto. Por ejemplo: a quien vende productos se le cotiza una tienda sin preguntarle si quiere vender online o solo mostrar (aunque diga "catálogo", "informativa que genere pedidos" o "pizzería"); los cursos van siempre con el plan con panel, aunque solo quiera mostrarlos; el precio sale en tres mensajes (propuesta, planes y oferta de la demo).
 - Los dos precios (Planes y Planes con reservas, después de "Es otro plan si incluye reservas") van SIN la oferta de la demo: la oferta sale cuando el cliente elige. Ahí no falta ningún paso.
+- Cuando elige entre esos dos precios (con o sin reservas), NO se le vuelven a mandar los planes: ya vio los dos montos. Sale la confirmación y la oferta de la demo. Tampoco falta ningún paso.
 - Si el cliente aclara lo que necesita y el plan sigue siendo el mismo (de tienda a catálogo, que valen lo mismo), no se le vuelven a mandar los planes: alcanza con confirmar. Tampoco falta ningún paso.
 - La redacción de los bloques fijos aprobados (tipos Planes, Oferta de demo, Formulario y Planes con reservas): son textos de Pablo y van tal cual.
 - Las respuestas oficiales (tipo Respuesta oficial) por cómo están escritas, aunque no calcen perfecto (muchos_productos dice "avisanos antes" aunque ya haya dicho la cantidad). Sí marcalas si contestan otra pregunta o lo contrario de lo que preguntó.
