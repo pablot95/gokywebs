@@ -2221,6 +2221,10 @@ html { scroll-padding-top: calc(var(--gw-modelos-h, 0px) + var(--header-h)); }
 .gw-modelos__btn:focus-visible { outline: 3px solid var(--gw-modelos-active-bg); outline-offset: 3px; }
 body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
 .gw-modelos.gw-modelos--scrolling { opacity: 0; pointer-events: none; }
+html body .gw-modelos { transition: opacity .3s ease; }
+html body .gw-modelos.gw-modelos--scrolling { transform: translateX(-50%); }
+@media (max-width: 359px) { html body .gw-modelos.gw-modelos--scrolling { transform: none; } }
+@media (prefers-reduced-motion: reduce) { html body .gw-modelos { transition: none; } }
 .toast-wrap { margin-bottom: 64px; }
 .site-footer::after { content: ""; display: block; height: 64px; }
 @media (max-width: 359px) {

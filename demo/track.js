@@ -17,8 +17,8 @@
 
     var style = document.createElement("style");
     style.textContent =
-      ".gw-modelos{transition:transform .16s ease-out,opacity .14s ease-out}" +
-      ".gw-modelos.gw-modelos--scrolling{transform:translateY(calc(-100% - 2px));opacity:0;pointer-events:none}" +
+      ".gw-modelos{transition:opacity .3s ease}" +
+      ".gw-modelos.gw-modelos--scrolling{opacity:0;pointer-events:none}" +
       "@media(prefers-reduced-motion:reduce){.gw-modelos{transition:none}}";
     document.head.appendChild(style);
 
