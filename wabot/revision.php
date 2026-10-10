@@ -40,8 +40,9 @@ const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo
 /* El criterio de las instrucciones. Al cambiarlo, lo revisado hoy con el
  * anterior queda aparte (AAAA-MM-DD.vN.jsonl, no se muestra) y las últimas 6
  * horas se vuelven a revisar. v2 (9-oct, 23 h): la v1 marcaba como fuera de
- * lugar los avisos automáticos de las charlas que atiende Pablo. */
-const WABOT_REVISION_V = 2;
+ * lugar los avisos automáticos de las charlas que atiende Pablo. v3: el estado
+ * de la charla es el del momento del aviso, no el de ahora. */
+const WABOT_REVISION_V = 3;
 
 /* ─────────────────────────────── Ajustes y archivos ─────────────────────────────── */
 
@@ -317,32 +318,50 @@ function wabot_revision_contexto($cv, array $lineas, array $tramo, $cfg) {
         $c[] = ($nuevo ? '★ ' : '') . '[' . date('d/m H:i', $ts) . '] ' . $quien . ': ' . $cita . $t;
     }
 
+    /* El estado al momento del último mensaje revisado, no el de ahora: un
+     * aviso que salió a las 19 se juzga con lo que había a las 19 (9-oct: la
+     * v2 marcó el seguimiento de Kassu porque el formulario se lo mandaron
+     * después, como respuesta a ese mismo aviso). Lo que no tiene fecha vale
+     * como está. */
+    $hasta = (int)$tramo['hasta'];
+    $yaEstaba = function ($ts) use ($hasta) { $ts = (int)$ts; return $ts > 0 && $ts <= $hasta; };
+    $sinFecha = function ($campo) use ($cv) { return (int)($cv[$campo] ?? 0) <= 0; };
+    $despues = 0;
+    foreach ($lineas as $l) if ((int)($l['ts'] ?? 0) > $hasta && in_array(($l['q'] ?? ''), ['cliente', 'bot', 'humano'], true)) $despues++;
+
     $c[] = '';
-    $c[] = 'ESTADO QUE GUARDÓ EL SISTEMA (al momento de esta revisión)';
+    $c[] = 'ESTADO QUE GUARDÓ EL SISTEMA (al momento del último mensaje ★)';
     $f = wabot_ficha($cv);
     $dato = function ($v) { $v = is_array($v) ? implode(', ', array_filter(array_map('strval', $v))) : trim((string)$v); return $v === '' ? '(no lo dijo)' : $v; };
     $c[] = '- Rubro: ' . $dato($f['rubro']) . ' · Qué vende u ofrece: ' . $dato($f['que_vende']);
     $sol = (string)($cv['comercial_solucion'] ?? '');
     if ($sol !== '') $c[] = '- Solución que definió el bot: ' . $sol;
     $cot = wabot_comercial_cotizacion($cv, $cfg);
+    if ($cot && (int)($cot['ts'] ?? 0) > $hasta) $cot = null;
     $c[] = $cot
         ? '- Precio que se le pasó: plan ' . ($cot['plan'] === 'informativa' ? 'informativa' : ($cot['plan'] === 'internacional' ? 'internacional' : 'con panel'))
           . ', anual ' . $cot['anual'] . ', mensual ' . $cot['mensual'] . (($cot['origen'] ?? '') === 'chat' ? ' (leído de la charla)' : '')
-        : '- Todavía no se le pasó el precio.';
-    $c[] = '- Oferta de la demo: ' . (wabot_comercial_oferta_hecha($cv, $cfg) ? 'ya se le hizo' : 'todavía no');
-    if (!empty($cv['link_form_enviado']) || !empty($cv['form_link_mandado_ts'])) $c[] = '- Ya se le mandó el link del formulario.';
-    if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])) $c[] = '- Ya completó el formulario.';
-    if (!empty($cv['presentado_ts'])) $c[] = '- Ya se le presentó la demo.';
-    if (!empty($cv['pago_avisado_ts'])) $c[] = '- Avisó que pagó.';
+        : '- Todavía no se le había pasado el precio (salvo que figure en la charla).';
+    $oferta = false;
+    foreach ($sel as $l) if (in_array(($l['q'] ?? ''), ['bot', 'humano'], true) && wabot_comercial_texto_es_oferta((string)($l['t'] ?? ''), $cfg)) { $oferta = true; break; }
+    $c[] = '- Oferta de la demo: ' . ($oferta ? 'ya se le había hecho' : 'todavía no');
+    if ($yaEstaba($cv['form_link_mandado_ts'] ?? 0) || (!empty($cv['link_form_enviado']) && $sinFecha('form_link_mandado_ts'))) $c[] = '- Ya se le había mandado el link del formulario.';
+    if ($yaEstaba($cv['form_completado_ts'] ?? 0) || (!empty($cv['lead_creado']) && $sinFecha('form_completado_ts'))) $c[] = '- Ya había completado el formulario.';
+    if ($yaEstaba($cv['presentado_ts'] ?? 0)) $c[] = '- Ya se le había presentado la demo.';
+    if ($yaEstaba($cv['pago_avisado_ts'] ?? 0)) $c[] = '- Ya había avisado que pagó.';
     if (!empty($cv['cliente_id'])) $c[] = '- Ya es cliente de Gokywebs (tiene su ficha en Clientes).';
     $estado = wabot_comercial_estado($cv);
-    if ($estado === 'humano') $c[] = '- El bot se lo pasó a Pablo. Motivo: ' . trim((string)($cv['comercial_motivo'] ?? 'caso especial'));
-    if ($estado === 'rechazo') $c[] = '- El cliente no quiso avanzar.';
+    $pausaAntes = $yaEstaba($cv['comercial_pausa_ts'] ?? 0);
+    if ($estado === 'humano' && $pausaAntes) $c[] = '- El bot se lo había pasado a Pablo. Motivo: ' . trim((string)($cv['comercial_motivo'] ?? 'caso especial'));
+    if ($estado === 'rechazo' && $pausaAntes) $c[] = '- El cliente no había querido avanzar.';
     if (!empty($cv['favorito'])) $c[] = '- Pablo la marcó como favorita (un interesado que sigue él).';
-    if (!empty($cv['control_manual'])) $c[] = '- Pablo tomó la charla a mano: el bot ya no conversa, pero los avisos automáticos y las plantillas siguen saliendo (está bien).';
+    if (!empty($cv['control_manual']) && ($sinFecha('control_manual_ts') || $yaEstaba($cv['control_manual_ts']))) {
+        $c[] = '- Pablo había tomado la charla a mano: el bot ya no conversa, pero los avisos automáticos y las plantillas siguen saliendo (está bien).';
+    }
     if (!empty($cv['contexto_consulta'])) $c[] = '- No es una consulta de venta: ' . str_replace('_', ' ', (string)$cv['contexto_consulta']);
+    if ($despues) $c[] = "- Después del último mensaje ★ la charla siguió ($despues mensaje" . ($despues === 1 ? '' : 's') . ' más): eso se revisa en otra pasada.';
     $u = (array)($cv['comercial_ultimo'] ?? []);
-    if (!empty($u['accion'])) {
+    if (!empty($u['accion']) && (int)($u['ts'] ?? 0) <= $hasta) {
         $rev = (array)($u['revision'] ?? []);
         $c[] = '- Última decisión del bot: ' . (string)$u['accion'] . (!empty($u['motivo']) ? ' (' . mb_substr((string)$u['motivo'], 0, 200) . ')' : '')
             . (in_array($rev['estado'] ?? '', ['corregida', 'dudosa', 'frenada'], true) ? '. Su revisor interno la marcó: ' . $rev['estado'] : '');

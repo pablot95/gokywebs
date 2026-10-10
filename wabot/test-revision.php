@@ -113,6 +113,15 @@ $ctx = wabot_revision_contexto($cvCliente, [['q' => 'bot', 't' => 'Era para cons
 caso('el estado distingue al que ya es cliente, la favorita y el control manual (con los avisos permitidos)',
     strpos($ctx, 'Ya es cliente de Gokywebs') !== false && strpos($ctx, 'Avisó que pagó') === false
     && strpos($ctx, 'marcó como favorita') !== false && strpos($ctx, 'siguen saliendo (está bien)') !== false, $ctx);
+$lin = [['q' => 'humano', 't' => (string)$cfg['comercial']['oferta_demo'], 'ts' => $t0 - 900], ['q' => 'bot', 't' => 'Buenas, avisame si te interesa', 'ts' => $t0 - 600],
+        ['q' => 'cliente', 't' => 'Si', 'ts' => $t0 - 500], ['q' => 'humano', 't' => 'Para hacer la demo… gokywebs.com/form/?c=XS', 'ts' => $t0 - 400]];
+$cvTarde = conv_nueva('5491100000298TEST', ['link_form_enviado' => true, 'form_link_mandado_ts' => $t0 - 400, 'control_manual' => true, 'control_manual_ts' => $t0 - 900, 'transcript' => $lin]);
+$ctx = wabot_revision_contexto($cvTarde, $lin, ['desde' => $t0 - 601, 'hasta' => $t0 - 600], $cfg);
+$ctxDespues = wabot_revision_contexto($cvTarde, $lin, ['desde' => $t0 - 401, 'hasta' => $t0 - 400], $cfg);
+caso('el estado es el del momento del aviso: el formulario que se mandó después no figura, y se avisa que la charla siguió',
+    strpos($ctx, 'link del formulario') === false && strpos($ctx, 'la charla siguió (2 mensajes más)') !== false
+    && strpos($ctx, 'Oferta de la demo: ya se le había hecho') !== false && strpos($ctx, 'Pablo había tomado la charla') !== false
+    && strpos($ctxDespues, 'Ya se le había mandado el link del formulario') !== false && strpos($ctxDespues, 'la charla siguió') === false, $ctx);
 caso('el esquema ofrece los mismos tipos que muestra el panel',
     wabot_revision_esquema()['schema']['properties']['problemas']['items']['properties']['tipo']['enum'] === array_keys(wabot_revision_tipos()));
 
