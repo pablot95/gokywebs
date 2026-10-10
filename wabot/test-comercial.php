@@ -833,6 +833,40 @@ $fila = wabot_lista_item($telLive);
 caso('la fila de la lista dice si la tiene el bot (para no abrir cada charla en cada refresco)', !empty($fila['bot_tiene']) && array_key_exists('bot_salio', $fila) && $fila['bot_salio'] === null);
 @unlink(wabot_conv_path($telLive));
 
+echo "— 17. Las dudas del archivo de Pablo (10-oct): que no se quede callado —\n";
+// "Esto además de organizarme mejor aumenta las ventas???": la respuesta honesta lo niega y la red la frenaba dos veces.
+foreach (['La web sola no te garantiza más ventas: depende de la gente que llegue', 'No podemos prometerte que vas a vender más',
+          'Por sí sola no trae más clientes, la difusión es aparte', 'Nunca te vamos a garantizar ventas',
+          'Te ayuda a ordenar las ventas, pero no aumenta las ventas por sí sola'] as $m) {
+    caso("red: «{$m}» lo niega, no es una promesa", wabot_comercial_mensaje_problema($m) === null, (string)wabot_comercial_mensaje_problema($m));
+}
+foreach (['No te preocupes, vas a vender más', 'No solo vas a vender más, también te vas a organizar', 'Te garantizamos ventas',
+          'No tenés que hacer nada y vas a conseguir más clientes', 'Ya no vas a perder pedidos. Vas a tener más ventas'] as $m) {
+    caso("red: «{$m}» sigue siendo una promesa", str_starts_with((string)wabot_comercial_mensaje_problema($m), 'promete resultados'), (string)wabot_comercial_mensaje_problema($m));
+}
+// "Cuánto sale una web para artes marciales? Cómo es el tema?": el revisor pedía también el proceso y frenaba el precio.
+$revFalta = ['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'Preguntó cómo es el proceso y no se le contesta']], 'falta_contestar' => ['cómo es el tema']];
+$decCotiza = dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Buenísimo. Podemos armarte una web para presentar la escuela de artes marciales, las clases, horarios y contacto por WhatsApp'],
+                 'ficha' => ['rubro' => 'tu escuela de artes marciales', 'que_vende' => 'clases de artes marciales']]);
+$c = cv();
+oa([$decCotiza, $decCotiza], [$revFalta, $revFalta]);
+$r = turno('Cuánto sale hacer una web para una entidad de artes marciales? Cómo es el tema?', $c, $cfg);
+caso('cotizando, que falte contestar una parte no frena el precio (sale y queda dudosa)', count($r) === 3 && empty($c['comercial_pausa']) && !empty($c['precio_dado'])
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([$decMal, $decMal], [$revFalta, $revFalta]);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+caso('contestando una duda, lo que queda sin contestar sí la frena (lo ve Pablo)', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
+// "Renovación de hosting y dominio, no sé qué vendría a ser eso": respuesta oficial con las dos cosas.
+caso('respuesta oficial que_es_hosting: hosting y dominio, incluidos, corta y ofrecida al modelo', mb_stripos((string)($cfg['info']['que_es_hosting'] ?? ''), 'servidor') !== false
+    && mb_stripos((string)$cfg['info']['que_es_hosting'], 'dominio') !== false && mb_strlen((string)$cfg['info']['que_es_hosting']) <= 260
+    && in_array('que_es_hosting', wabot_comercial_info_claves($cfg), true) && strpos(wabot_comercial_info($cfg), '- que_es_hosting:') !== false
+    && mb_stripos(wabot_comercial_instrucciones_comportamiento(), 'que_es_hosting') !== false);
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['mantenimiento', 'que_es_hosting']])]);
+$r = turno('Y el mantenimiento por mes, renovación de hosting y dominio, no sé qué vendría a ser eso', $c, $cfg);
+caso('mantenimiento + qué es el hosting → las dos respuestas oficiales', $r === [$cfg['info']['mantenimiento'], $cfg['info']['que_es_hosting']], json_encode($r, JSON_UNESCAPED_UNICODE));
+
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);
 todo_ok();

@@ -539,14 +539,25 @@ function wabot_comercial_mensaje_problema($m) {
  * ¿Promete que la web sola trae clientes, ventas o alcance? (Pablo, 9-oct: la
  * web es una herramienta; "sin prometer que la web sola trae clientes"). "Si
  * tenés más consultas…" o "si vendés más de un rubro…" no son promesas.
+ * Negarlo tampoco ("la web sola no te garantiza más ventas"): con "¿esto
+ * aumenta las ventas?" la red frenaba la respuesta honesta dos veces y el
+ * cliente se quedaba sin nada (10-oct). "No solo vas a vender más" sí promete.
  */
 function wabot_comercial_promete_resultados($texto) {
     $t = mb_strtolower((string)$texto);
-    return (bool)preg_match('/\bm[aá]s (clientes|ventas|p[uú]blico|alcance|seguidores|visitas|compradores)\b'
+    if (!preg_match_all('/\bm[aá]s (clientes|ventas|p[uú]blico|alcance|seguidores|visitas|compradores)\b'
         . '|\b(llegar|llegues|llegue|lleguen|llegás|alcanzar|alcances|alcance|alcancen) a m[aá]s (gente|personas|p[uú]blico|clientes)\b'
         . '|\bvend(er|és|es|e|as|a|an|en|erás|erías|ería|amos)? m[aá]s\b(?! (de|f[aá]cil|r[aá]pido|c[oó]modo|simple|ordenad\w*))'
         . '|\b(atraer|atraiga|atraigas|atrae|atraés|conseguir|consigas|consiga|traer|traiga|traigas|trae|traen|captar|captes|capte|capta) (m[aá]s |nuevos |muchos )?(clientes|ventas|consultas|compradores)\b'
-        . '|\b(aument\w*|multiplic\w*|duplic\w*) (tus |las |sus )?(ventas|clientes|consultas)\b|\bgarantiz\w*/u', $t);
+        . '|\b(aument\w*|multiplic\w*|duplic\w*) (tus |las |sus )?(ventas|clientes|consultas)\b|\bgarantiz\w*/u', $t, $hallados, PREG_OFFSET_CAPTURE)) return false;
+    foreach ($hallados[0] as [, $pos]) {
+        // Las 6 palabras anteriores, sin pasar la coma o el punto: "No te preocupes, vas a vender más" promete.
+        $antes = preg_split('/[.,;:!?\n]/u', substr($t, 0, $pos));
+        $palabras = preg_split('/\s+/u', trim((string)end($antes)), -1, PREG_SPLIT_NO_EMPTY);
+        $frase = implode(' ', array_slice($palabras, -6));
+        if (!preg_match('/\b(no|ni|nunca)\b/u', $frase) || preg_match('/\bno s[oó]lo\b/u', $frase)) return true;
+    }
+    return false;
 }
 
 function wabot_comercial_problemas($d) {
@@ -753,7 +764,12 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
             if ($finales) {
                 $revision['estado'] = 'dudosa';
                 $revision['problemas_finales'] = $finales;
-                $graves = array_values(array_filter($finales, function ($p) { return in_array($p['tipo'], wabot_comercial_revision_graves(), true); }));
+                /* Con el precio saliendo, que falte contestar una parte no lo frena: "cuánto sale una web
+                 * para artes marciales? cómo es el tema?" se quedaba sin nada porque faltaba el proceso (10-oct). */
+                $cotiza = $d['accion'] === 'cotizar';
+                $graves = array_values(array_filter($finales, function ($p) use ($cotiza) {
+                    return in_array($p['tipo'], wabot_comercial_revision_graves(), true) && !($cotiza && $p['tipo'] === 'no_contesta');
+                }));
                 if ($graves && $modo !== 'sugerencia') {
                     // En automático no sale algo que el revisor sigue viendo mal: lo contesta Pablo, con el motivo.
                     $d['accion'] = 'humano';

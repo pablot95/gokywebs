@@ -707,6 +707,12 @@ return [
         'cual seria el link de mi pagina?',
         'como la encuentran en internet?',
     ],
+    'que_es_hosting' => [
+        'el tema del mantenimiento por mes, renovación de hosting y dominio, perdón por la ignorancia, pero nunca tuve, no sé qué vendría a ser eso',
+        'qué es el hosting?',
+        'que significa hosting y dominio?',
+        'no entiendo eso del hosting',
+    ],
     'demo_gratis' => [
         'La prueba tiene costo?',
         'Esto es solo presupuesto no? No tengo q abonar nada, solo llenar los datos',

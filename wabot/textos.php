@@ -294,6 +294,8 @@ function wabot_textos_default() {
         // Pablo, 9-oct (noche): se transfiere con el primer pago.
         'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: te lo transferimos con el primer pago.',
         'que_es_dominio' => 'El dominio es la dirección de tu web, por ejemplo www.tunegocio.com.ar. Va incluido y el nombre lo elegís vos.',
+        // "Renovación de hosting y dominio, no sé qué vendría a ser eso" (10-oct: el bot explicaba el dominio y no el hosting, y se callaba).
+        'que_es_hosting' => 'El hosting es el servidor donde se guarda tu web para que esté online todo el día, y el dominio es su dirección (por ejemplo tunegocio.com.ar). Los dos van incluidos en el plan y los renovamos nosotros.',
         'demo_gratis' => 'No tiene costo ni compromiso: es un primer diseño para que veas cómo quedaría tu web antes de decidir.',
         'alternativas' => 'Son alternativas, elegís una sola: no se suman. Las dos incluyen el mantenimiento.',
         'plataformas' => 'No usamos Tiendanube, Shopify ni WordPress: te hacemos tu propia web a medida, con funciones parecidas (panel, carrito, Mercado Pago), y la armamos nosotros.',
