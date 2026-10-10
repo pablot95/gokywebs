@@ -123,6 +123,31 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
+ * Estadísticas por anuncio para Inversión → Por anuncio del admin principal
+ * (Pablo, 10-oct: la buscaba ahí). El embudo de anuncios-stats.php por rango
+ * de fechas del clic (?desde=&hasta=, AAAA-MM-DD; de fábrica, 30 días) y, por
+ * contacto, los teléfonos y la ficha: el admin los cruza con `clientes` igual
+ * que en Contactos y clientes.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'anuncios_json') {
+    $fechaJson = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) === 1; };
+    $desdeJson = $fechaJson($_GET['desde'] ?? null) ? strtotime($_GET['desde'] . ' 00:00:00') : strtotime(date('Y-m-d', strtotime('-29 days')) . ' 00:00:00');
+    $hastaJson = $fechaJson($_GET['hasta'] ?? null) ? strtotime($_GET['hasta'] . ' 23:59:59') : time();
+    $statsJson = wabot_anuncios_stats($desdeJson, $hastaJson);
+    $fila = function ($f) {
+        $img = $f['imagen'] ?? null;
+        return ['id' => (string)$f['id'], 'titular' => (string)$f['titular'], 'texto' => (string)($f['cuerpo'] !== '' ? $f['cuerpo'] : $f['descripcion']),
+                'imagen' => $img ? 'admin.php?accion=media&tel=' . rawurlencode((string)$img['clave']) . '&archivo=' . rawurlencode((string)$img['archivo']) . '&modo=ver' : '',
+                'etapas' => $f['etapas'], 'contactos' => $f['contactos_detalle']];
+    };
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['desde' => date('Y-m-d', $desdeJson), 'hasta' => date('Y-m-d', $hastaJson), 'etapas' => wabot_anuncios_etapas(),
+                      'anuncios' => array_values(array_map($fila, $statsJson['anuncios'])),
+                      'organico' => $fila($statsJson['organico']), 'total' => $fila($statsJson['total'])], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
  * TODAS las imágenes que mandó el cliente, en un solo archivo.
  *
  * El botón del boceto bajaba una sola foto —la que el bot eligió como logo— y

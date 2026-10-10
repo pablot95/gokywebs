@@ -185,8 +185,12 @@ function wabot_anuncios_stats($desde, $hasta) {
             $r['total']['etapas'][$k]++;
             $llego = $k;
         }
+        // Los teléfonos y la ficha, para que el admin principal los cruce con `clientes` (como Contactos y clientes).
+        $telWsp = trim((string)($cv['telefono_wsp'] ?? ''));
         $fila['contactos_detalle'][] = ['clave' => $clave, 'nombre' => function_exists('wabot_nombre_agenda') ? (string)wabot_nombre_agenda($cv) : (string)($cv['nombre'] ?? ''),
-                                        'ts' => $ts, 'canal' => wabot_canal($cv), 'llego' => $etiquetas[$llego]];
+                                        'ts' => $ts, 'canal' => wabot_canal($cv), 'llego' => $etiquetas[$llego],
+                                        'tel' => (string)($cv['channel_user_id'] ?? $clave), 'tel_whatsapp' => $telWsp !== '' ? $telWsp : (string)($cv['channel_user_id'] ?? $clave),
+                                        'cliente_id' => (string)($cv['cliente_id'] ?? '')];
         unset($fila);
     }
     uasort($r['anuncios'], function ($x, $y) { return $y['etapas']['contactos'] <=> $x['etapas']['contactos'] ?: strcmp($x['id'], $y['id']); });

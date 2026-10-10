@@ -116,7 +116,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
             });
         }
         if (activeTab === "mantenimiento") renderMantenimiento();
-        if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); if (inversionVista !== "contactos") cargarIngresosMp(); }
+        if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); if (inversionVista === "ingresos") cargarIngresosMp(); }
         if (activeTab === "errores") cargarErrores();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
@@ -272,7 +272,8 @@ async function abrirInversion() {
 }
 document.getElementById("inversionRecargarBtn")?.addEventListener("click", () => {
     abrirInversion();
-    if (inversionVista !== "contactos") cargarIngresosMp(true);
+    if (inversionVista === "ingresos") cargarIngresosMp(true);
+    if (inversionVista === "anuncios") cargarAnuncios(true);
 });
 
 /* ── Errores de las webs (pestaña Errores) ──
@@ -668,15 +669,17 @@ Deja de aparecer en la lista y no suma al contador. Podés volver a mostrarla de
     }
 });
 
-function renderInversion() {
-    const chips = document.getElementById("inversionSemanas");
-    const cont = document.getElementById("inversionContent");
-    if (!chips || !cont) return;
-    if (!inversionContactos) { cont.innerHTML = '<p class="muted">Cargando…</p>'; return; }
-
-    // Clientes reales (no solo prospecto en seguimiento) por teléfono
-    // normalizado, para poder cruzar contra el tel crudo de wabot y sacar
-    // también la fecha de conversión de cada uno.
+/* La ficha de Clientes de un contacto de wabot, o null. La comparten
+   Contactos y clientes y Por anuncio, así "pasaron a Cliente" da lo mismo en
+   las dos. Clientes reales (no prospectos en seguimiento), por teléfono
+   normalizado contra el tel crudo de wabot.
+   En Instagram, tel es el ID de la cuenta (podía tener 16 dígitos), no un
+   teléfono: cruzar eso nunca matcheaba. tel_whatsapp es el WhatsApp real si lo
+   dejó (o el mismo tel, en whatsapp). Pablo, 9-oct: "Suan Baby no aparece en
+   Inversión". El WhatsApp que dejó en el form no era el del chat, y solo se
+   probaba ese. Ahora va primero la ficha a la que se le presentó la demo
+   (cliente_id) y después los dos teléfonos. */
+function buscadorClienteDeContacto() {
     const clientePorTel = new Map();
     const clientePorId = new Map();
     for (const c of (clients || [])) {
@@ -685,23 +688,27 @@ function renderInversion() {
         const t = cleanArgPhone(c.telefono);
         if (t.length >= 8 && !clientePorTel.has(t)) clientePorTel.set(t, c);
     }
+    return (k) => {
+        const tels = [k.tel_whatsapp, k.canal === "instagram" ? "" : k.tel]
+            .map(cleanArgPhone).filter(t => t.length >= 8);
+        return (k.cliente_id && clientePorId.get(k.cliente_id))
+            || tels.map(t => clientePorTel.get(t)).find(Boolean) || null;
+    };
+}
 
+function renderInversion() {
+    const chips = document.getElementById("inversionSemanas");
+    const cont = document.getElementById("inversionContent");
+    if (!chips || !cont) return;
+    if (!inversionContactos) { cont.innerHTML = '<p class="muted">Cargando…</p>'; return; }
+
+    const clienteDe = buscadorClienteDeContacto();
     const semanas = new Map();
     for (const c of inversionContactos) {
         const key = semanaClave(c.inicio_ts);
         if (!semanas.has(key)) semanas.set(key, { desde: key, hasta: ymdAgregarDias(key, 6), contactos: [], clientesN: 0 });
         const s = semanas.get(key);
-        // En Instagram, c.tel es el ID de la cuenta (podía tener 16 dígitos),
-        // no un teléfono: cruzar eso nunca matcheaba. tel_whatsapp es el
-        // WhatsApp real si lo dejó (o el mismo tel, en whatsapp).
-        // Pablo, 9-oct: "Suan Baby no aparece en Inversión". El WhatsApp que
-        // dejó en el form no era el del chat, y solo se probaba ese. Ahora va
-        // primero la ficha a la que se le presentó la demo (cliente_id) y
-        // después los dos teléfonos.
-        const tels = [c.tel_whatsapp, c.canal === "instagram" ? "" : c.tel]
-            .map(cleanArgPhone).filter(t => t.length >= 8);
-        const clienteMatch = (c.cliente_id && clientePorId.get(c.cliente_id))
-            || tels.map(t => clientePorTel.get(t)).find(Boolean) || null;
+        const clienteMatch = clienteDe(c);
         c._esCliente = !!clienteMatch;
         c._clienteDoc = clienteMatch || null;
         c._clienteDesde = clienteMatch ? fechaPasoACliente(clienteMatch) : null;
@@ -797,6 +804,151 @@ function renderInversion() {
         const inputGasto = div.querySelector(".gasto-input");
         inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));
     }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   Inversión → Por anuncio (Pablo, 9/10-oct: "¿es posible llevar estadísticas
+   separadas según el anuncio del que viene la persona?", y la buscó acá). El
+   embudo de cada anuncio lo arma el bot (wabot/anuncios-stats.php, por id de
+   anuncio y fecha del clic, con lo del log del 24-ago al 25-sep); "Pasaron a
+   Cliente" se cruza acá con `clientes`, igual que en Contactos y clientes.
+   ══════════════════════════════════════════════════════════════════════ */
+let anunciosDatos = null;        // respuesta de anuncios_json (null = no se pidió)
+let anunciosError = "";
+let anunciosCargando = false;
+let anunciosRango = null;        // { desde, hasta } "YYYY-MM-DD"
+const anunciosAbiertos = new Set();
+
+function anunciosUltimosDias(dias) {
+    const hoy = _diaDe(new Date());
+    return { desde: ymdAgregarDias(hoy, -(dias - 1)), hasta: hoy };
+}
+
+async function cargarAnuncios(forzar = false) {
+    if (!currentUser || anunciosCargando) return;
+    if (!anunciosRango) anunciosRango = anunciosUltimosDias(30);
+    const r = anunciosRango;
+    if (!forzar && anunciosDatos && anunciosDatos.desde === r.desde && anunciosDatos.hasta === r.hasta) { renderAnuncios(); return; }
+    anunciosCargando = true;
+    anunciosError = "";
+    renderAnuncios();
+    try {
+        try { await wabotAuthHandshake(); } catch (e) { /* el fetch de abajo falla con un error claro */ }
+        const q = new URLSearchParams({ accion: "anuncios_json", desde: r.desde, hasta: r.hasta });
+        const res = await fetch("../wabot/admin.php?" + q, { credentials: "same-origin" });
+        if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
+        anunciosDatos = await res.json();
+    } catch (e) {
+        console.error(e);
+        anunciosError = e.message || "error";
+    } finally {
+        anunciosCargando = false;
+    }
+    renderAnuncios();
+}
+
+function renderAnuncios() {
+    const cont = document.getElementById("invVistaAnuncios");
+    if (!cont) return;
+    if (!anunciosRango) anunciosRango = anunciosUltimosDias(30);
+    const r = anunciosRango;
+    const rapidos = [["7 días", anunciosUltimosDias(7)], ["30 días", anunciosUltimosDias(30)], ["90 días", anunciosUltimosDias(90)],
+                     ["Desde el 24-ago", { desde: "2026-08-24", hasta: _diaDe(new Date()) }]];
+    let html = `
+        <p class="muted">De qué anuncio vino cada persona (Meta manda el id del anuncio con el primer mensaje después del clic) y hasta dónde llegó. Cada una cuenta en la fecha del clic, y los porcentajes son sobre las que escribieron desde ese anuncio. "Pasaron a Cliente" es el mismo cruce que en Contactos y clientes. Tocá un anuncio para ver sus contactos.</p>
+        <div class="anu-rango">
+            <label class="muted">Desde <input type="date" data-anu-desde value="${r.desde}" max="${r.hasta}"></label>
+            <label class="muted">Hasta <input type="date" data-anu-hasta value="${r.hasta}" min="${r.desde}"></label>
+            ${rapidos.map(([l, x]) => `<button type="button" class="seg-chip${x.desde === r.desde && x.hasta === r.hasta ? " active" : ""}" data-anu-rapido="${x.desde}|${x.hasta}">${l}</button>`).join("")}
+            ${anunciosCargando ? '<span class="muted">Cargando…</span>' : ""}
+        </div>`;
+    if (anunciosError) html += `<p class="muted">No se pudo cargar: ${escapeHtml(anunciosError)}</p>`;
+
+    const d = anunciosDatos;
+    if (d && d.desde === r.desde && d.hasta === r.hasta) {
+        const clienteDe = buscadorClienteDeContacto();
+        // La última etapa del bot ("Pagaron / clientes") se reemplaza por el cruce con Clientes.
+        const etapas = Object.entries(d.etapas || {}).filter(([k]) => k !== "clientes");
+        const filas = d.anuncios.map(a => ({ ...a, _tipo: "anuncio" }));
+        if (d.organico?.etapas?.contactos) filas.push({ ...d.organico, _tipo: "organico" });
+        let clientesTotal = 0;
+        for (const f of filas) {
+            f._clientes = (f.contactos || []).filter(k => (k._cliente = clienteDe(k)));
+            clientesTotal += f._clientes.length;
+        }
+        const pct = (n, base) => base ? `<span class="anu-pct">${Math.round(100 * n / base)}%</span>` : "";
+        const celdas = (f, clientesN) => {
+            const base = f.etapas.contactos || 0;
+            return etapas.map(([k], i) => `<td class="num">${f.etapas[k] || 0}${i ? pct(f.etapas[k] || 0, base) : ""}</td>`).join("")
+                + `<td class="num anu-clientes">${clientesN}${pct(clientesN, base)}</td>`;
+        };
+        const cabecera = `<tr><th>Anuncio</th>${etapas.map(([, l]) => `<th class="num">${escapeHtml(l)}</th>`).join("")}<th class="num">Pasaron a Cliente</th></tr>`;
+        const cuerpo = filas.map(f => {
+            const id = f._tipo === "organico" ? "organico" : f.id;
+            const abierto = anunciosAbiertos.has(id);
+            const anuncio = f._tipo === "organico"
+                ? `<div class="anu-ad"><span class="anu-img anu-img--vacia" aria-hidden="true"></span><div><strong>Sin anuncio</strong><div class="anu-sub">Escribieron directo: el número, Instagram, la web</div></div></div>`
+                : `<div class="anu-ad">
+                        ${f.imagen ? `<img class="anu-img" src="../wabot/${escapeHtml(f.imagen)}" alt="" loading="lazy">` : `<span class="anu-img anu-img--vacia" aria-hidden="true"></span>`}
+                        <div><strong>${escapeHtml(f.titular || "Sin título")}</strong>
+                            <div class="anu-sub">${f.id === "sin_id" ? "Meta no mandó el id del anuncio" : "id " + escapeHtml(f.id)}</div>
+                            ${f.texto ? `<div class="anu-sub" title="${escapeHtml(f.texto)}">${escapeHtml(f.texto.length > 110 ? f.texto.slice(0, 108) + "…" : f.texto)}</div>` : ""}
+                        </div></div>`;
+            const contactos = (f.contactos || []).map(k => {
+                const cli = k._cliente;
+                const mod = cli ? modalidadDe(cli) : "";
+                const paga = cli ? (mod === "mensual" ? _num(cli.montoMensual) : pagoUnicoDe(cli).cobrado) : 0;
+                const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Pago único" : mod === "unico" ? "Anual" : "";
+                return `<li>
+                    <span>${escapeHtml(k.nombre || k.tel || k.clave)}</span>
+                    <span class="muted">${escapeHtml(fechaHoraContacto(k.ts))}${k.canal === "instagram" ? " · Instagram" : ""} · llegó hasta: ${escapeHtml(k.llego)}</span>
+                    ${cli ? `<span class="anu-cliente">✓ Cliente${modLabel ? " · " + modLabel : ""}${paga ? " · " + fmtMoney(paga) : ""}</span>` : ""}
+                    <button type="button" class="btn-ghost anu-chat" data-chat-tel="${escapeHtml(k.clave)}" data-chat-titulo="${escapeHtml(k.nombre || k.tel || k.clave)}">Ver chat</button>
+                </li>`;
+            }).join("");
+            return `<tr class="anu-fila${abierto ? " abierta" : ""}" data-anu-id="${escapeHtml(id)}" tabindex="0" aria-expanded="${abierto}"><td>${anuncio}</td>${celdas(f, f._clientes.length)}</tr>
+                <tr class="anu-detalle"${abierto ? "" : " hidden"}><td colspan="${etapas.length + 2}"><ul class="anu-contactos">${contactos || '<li class="muted">Sin contactos.</li>'}</ul></td></tr>`;
+        }).join("");
+        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdas(d.total, clientesTotal)}</tr>` : "";
+        html += d.anuncios.length || d.organico?.etapas?.contactos
+            ? `<div class="table-wrapper"><table class="clients-table anu-tabla"><thead>${cabecera}</thead><tbody>${cuerpo}${total}</tbody></table></div>`
+            : `<p class="muted">Nadie escribió en esas fechas.</p>`;
+        html += `<p class="muted anu-nota">Hay datos desde el 24-ago. Hasta el 25-sep el anuncio sale del registro del servidor: solo el id, sin título ni imagen (si el anuncio siguió activo después, toma el título de esas charlas). La imagen y el texto, desde el 9-oct. Los que escriben por Instagram cuentan como sin anuncio.</p>`;
+    } else if (!anunciosError) {
+        html += '<p class="muted">Cargando…</p>';
+    }
+    cont.innerHTML = html;
+
+    const desdeIn = cont.querySelector("[data-anu-desde]");
+    const hastaIn = cont.querySelector("[data-anu-hasta]");
+    const cambiarRango = () => {
+        if (!desdeIn.value || !hastaIn.value || desdeIn.value > hastaIn.value) return;
+        anunciosRango = { desde: desdeIn.value, hasta: hastaIn.value };
+        cargarAnuncios();
+    };
+    desdeIn?.addEventListener("change", cambiarRango);
+    hastaIn?.addEventListener("change", cambiarRango);
+    cont.querySelectorAll("[data-anu-rapido]").forEach(b => b.addEventListener("click", () => {
+        const [desde, hasta] = b.dataset.anuRapido.split("|");
+        anunciosRango = { desde, hasta };
+        cargarAnuncios();
+    }));
+    cont.querySelectorAll(".anu-fila").forEach(tr => {
+        const alternar = () => {
+            const id = tr.dataset.anuId;
+            if (anunciosAbiertos.has(id)) anunciosAbiertos.delete(id); else anunciosAbiertos.add(id);
+            const abierto = anunciosAbiertos.has(id);
+            tr.classList.toggle("abierta", abierto);
+            tr.setAttribute("aria-expanded", String(abierto));
+            tr.nextElementSibling.hidden = !abierto;
+        };
+        tr.addEventListener("click", alternar);
+        tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(); } });
+    });
+    cont.querySelectorAll(".anu-chat").forEach(b => b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        abrirChatModal(b.dataset.chatTel, b.dataset.chatTitulo);
+    }));
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1141,18 +1293,19 @@ function renderIngresos() {
 
 function renderInversionVista() {
     document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
-    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos" };
+    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos", anuncios: "invVistaAnuncios" };
     for (const [clave, id] of Object.entries(vistas)) {
         const el = document.getElementById(id);
         if (el) el.hidden = clave !== inversionVista;
     }
     if (inversionVista === "ingresos") renderIngresos();
+    if (inversionVista === "anuncios") cargarAnuncios();
 }
 
 document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {
     inversionVista = b.dataset.inv;
     renderInversionVista();
-    if (inversionVista !== "contactos") cargarIngresosMp();
+    if (inversionVista === "ingresos") cargarIngresosMp();
 }));
 
 // Flechas de mes y clic en un día (abre el detalle abajo; otro clic lo cierra).
@@ -2499,6 +2652,8 @@ function initRealtime() {
         if (activeTab === "calendario") renderCal();
         if (enMetrica("stats")) renderStats();
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
+        // Por anuncio cruza los contactos con estos clientes: un cliente nuevo cambia "Pasaron a Cliente".
+        if (activeTab === "inversion" && inversionVista === "anuncios" && anunciosDatos) renderAnuncios();
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
