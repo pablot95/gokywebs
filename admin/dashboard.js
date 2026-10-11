@@ -1055,6 +1055,12 @@ function cobrosDeCliente(c) {
     return out;
 }
 
+/* Plan anual de hoy (modalidad 'unico' desde el 19-sep): sus señas, saldos y renovaciones
+   van en la tarjeta "Pagos anuales" de Ingresos; el pago único anterior y la web propia, en "Otros pagos". */
+function _esPlanAnual(c) {
+    return modalidadDe(c) === "unico" && !_pagoUnicoAnterior(c);
+}
+
 /* Todos los cobros de anual y pago único, de clientes y de completados viejos sin cliente. */
 function cobrosAnualesYUnicos() {
     const lista = [];
@@ -1062,12 +1068,15 @@ function cobrosAnualesYUnicos() {
     // El negocio primero (9-oct): Pablo busca "Suan Baby", no a la persona.
     for (const c of (clients || [])) {
         ids.add(c.id);
-        for (const k of cobrosDeCliente(c)) lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente" });
+        const anual = _esPlanAnual(c);
+        for (const k of cobrosDeCliente(c)) lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente", planAnual: anual || k.tipo === "anual" });
     }
     for (const c of (completados || [])) {
         if (c.clienteId && ids.has(c.clienteId)) continue;
-        for (const k of cobrosDeCliente({ ...c, entregadoAt: c.entregadoAt || c.completadoAt })) {
-            lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente" });
+        const completo = { ...c, entregadoAt: c.entregadoAt || c.completadoAt };
+        const anual = _esPlanAnual(completo);
+        for (const k of cobrosDeCliente(completo)) {
+            lista.push({ ...k, nombre: c.proyecto || c.nombre || "Cliente", planAnual: anual || k.tipo === "anual" });
         }
     }
     return lista;
@@ -1147,7 +1156,7 @@ function ingresosPorDia(hastaYmd) {
     }
     // Ya entró: otros pagos (señas, saldos, cobros anuales, ajustes).
     for (const k of cobrosAnualesYUnicos()) {
-        agregar(_diaDe(k.fecha), { monto: k.monto, clase: "otros", tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, cobrado: true, aprox: k.aprox, anual: k.tipo === "anual" });
+        agregar(_diaDe(k.fecha), { monto: k.monto, clase: "otros", tipo: TIPO_COBRO_LABEL[k.tipo] || "Cobro", nombre: k.nombre, cobrado: true, aprox: k.aprox, anual: !!k.planAnual });
     }
 
     // Falta cobrar: suscripciones de Mercado Pago, el próximo cobro y uno por mes después.
@@ -1252,22 +1261,25 @@ function renderIngresos() {
     const esPasado = calMes < mesHoy;
     const esFuturo = calMes > mesHoy;
 
-    // Falta cobrar de los otros pagos (Pablo, 10-oct). Saldos: lo que resta de las
-    // webs con seña, que se cobra al entregar (sin fecha, así que solo cuenta en el
-    // mes actual). Anuales: las renovaciones que vencen en el mes; en el mes actual
-    // entran también las vencidas.
-    let saldosFalta = 0, nSaldos = 0, anualFalta = 0, nAnualFalta = 0;
+    // Falta cobrar (Pablo, 10-oct). Saldos: lo que resta de las webs con seña, que se
+    // cobra al entregar (sin fecha, así que solo cuenta en el mes actual); los del plan
+    // anual van en "Pagos anuales" y el resto en "Otros pagos". Anuales también: las
+    // renovaciones que vencen en el mes; en el mes actual entran además las vencidas.
+    let saldosFalta = 0, nSaldos = 0, anualFalta = 0, nAnualSaldo = 0, nAnualRenov = 0;
     if (!esPasado) {
         for (const c of (clients || [])) {
             if (getEstado(c) !== "cliente") continue;
             if (!esFuturo && !webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio) {
                 const saldo = pagoUnicoDe(c).saldo;
-                if (saldo > 0) { saldosFalta += saldo; nSaldos++; }
+                if (saldo > 0) {
+                    if (_esPlanAnual(c)) { anualFalta += saldo; nAnualSaldo++; }
+                    else { saldosFalta += saldo; nSaldos++; }
+                }
             }
             const ren = renovacionAnualDe(c);
             if (ren && !ren.legado && ren.monto > 0 && ren.proximo) {
                 const ymd = _diaDe(ren.proximo);
-                if (ymd.slice(0, 7) === calMes || (!esFuturo && ymd < hoy)) { anualFalta += ren.monto; nAnualFalta++; }
+                if (ymd.slice(0, 7) === calMes || (!esFuturo && ymd < hoy)) { anualFalta += ren.monto; nAnualRenov++; }
             }
         }
     }
@@ -1279,9 +1291,10 @@ function renderIngresos() {
     const subOtros = esFuturo ? "todavía no entró nada · el saldo se cobra al entregar"
         : esPasado ? (nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes")
         : lineasSub(otros, saldosFalta, `${nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes"}${nSaldos ? ` · saldo de ${nSaldos} web${nSaldos === 1 ? "" : "s"} por entregar` : ""}`);
-    const subAnuales = esPasado
-        ? (nAnuales ? `${nAnuales} cobro${nAnuales === 1 ? "" : "s"} anual${nAnuales === 1 ? "" : "es"}` : "ningún cobro anual este mes")
-        : lineasSub(anuales, anualFalta, `${nAnuales ? `${nAnuales} cobrado${nAnuales === 1 ? "" : "s"}` : "ninguno cobrado"}${nAnualFalta ? ` · ${nAnualFalta} por cobrar` : ""}`);
+    const notaAnuales = `${nAnuales ? `${nAnuales} pago${nAnuales === 1 ? "" : "s"}: señas, saldos y renovaciones` : "ningún pago anual este mes"}`;
+    const subAnuales = esFuturo ? `${notaAnuales} · el saldo se cobra al entregar`
+        : esPasado ? notaAnuales
+        : lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por entregar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} por cobrar` : ""}`);
     const faltaTotal = subsFalta + saldosFalta + anualFalta;
     const subTotal = esPasado ? "todo cobrado"
         : esFuturo ? "a cobrar (estimado)"
