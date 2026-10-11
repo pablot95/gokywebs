@@ -667,7 +667,7 @@ $salenSolos = [$cfg['tipos']['landing']['precio_ideal'], $cfg['msg_precio'], $cf
 caso('ningún texto que sale solo nombra cuándo se reclama el código',
     count(array_filter($salenSolos, function ($t) { return preg_match('/12 meses|2 años|reclamar el código/iu', (string)$t); })) === 0);
 caso('si preguntan, la propiedad del código se contesta con sus plazos (20-sep)',
-    mb_stripos($cfg['info']['entrega_codigo'], 'al pagar el segundo año') !== false
+    mb_stripos($cfg['info']['entrega_codigo'], 'con el tercer pago (a los 2 años de contratar)') !== false
     && mb_stripos($cfg['info']['entrega_codigo'], 'a los 18 meses') !== false
     && mb_stripos($cfg['info']['entrega_codigo'], 'al abonar el total') !== false, $cfg['info']['entrega_codigo']);
 $cuentaMp = wabot_texto_info('cuenta_mercado_pago', $cfg);

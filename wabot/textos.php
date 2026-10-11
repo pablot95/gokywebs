@@ -24,7 +24,7 @@
  *   para autogestionar contenido, SSL y preparada para Google.
  * - La propiedad del código SÍ se contesta (Pablo, 20-sep; el 19-sep el bot se
  *   callaba y era peor): pasa a ser del cliente cuando abona el total del pago
- *   único, al pagar el segundo año del plan anual o a los 18 meses del
+ *   único, con el tercer pago del plan anual (a los 2 años) o a los 18 meses del
  *   mensual. Antes de eso es de Gokywebs. Lo dicen info.titularidad,
  *   info.entrega_codigo, info.licencias y info.baja_del_plan.
  * - El turno del precio son dos mensajes: la propuesta con las 3 modalidades y
@@ -221,9 +221,9 @@ function wabot_textos_default() {
         /* La propiedad del código, con sus plazos (Pablo, 20-sep). El 19-sep
          * el bot se callaba con estas preguntas y era peor: cortaba la venta. */
         'accesos' => 'El hosting y el dominio los manejamos nosotros, en Hostinger: no tenés que configurar nada. Si necesitás un acceso puntual, lo vemos.',
-        'titularidad' => 'El código pasa a ser tuyo con el pago único al abonar el total, con el anual al pagar el segundo año y con el mensual a los 18 meses. Hasta ahí es de Gokywebs.',
+        'titularidad' => 'El código pasa a ser tuyo con el pago único al abonar el total, con el anual con el tercer pago (a los 2 años de contratar) y con el mensual a los 18 meses. Hasta ahí es de Gokywebs.',
         'emails' => 'No incluye casillas de correo con tu dominio. Se pueden sumar aparte, contratadas a tu nombre.',
-        'entrega_codigo' => 'Sí: con el pago único es tuyo al abonar el total, con el anual al pagar el segundo año y con el mensual a los 18 meses.',
+        'entrega_codigo' => 'Sí: con el pago único es tuyo al abonar el total, con el anual con el tercer pago (a los 2 años de contratar) y con el mensual a los 18 meses.',
         'licencias' => 'Las licencias de plugins y librerías son de terceros y no quedan a tu nombre. El código de tu web sí, cuando se cumple el plazo de tu plan.',
         'manual' => 'No hace falta manual: el panel es muy simple, y cuando la web esté lista te mostramos cómo se usa.',
         'bilingue' => 'Sí, está incluido: la web se puede traducir hasta a 3 idiomas, sin costo aparte.',

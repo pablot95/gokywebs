@@ -92,7 +92,7 @@ Antes de salir, cada respuesta pasa por el revisor (sección 6).
 - **Pago único**: una vez; el código queda del cliente al abonar el total. Seña y saldo al
   entregar. Mantenimiento aparte y opcional: $15.000 por mes (`tipos[].mantenimiento`).
   Hosting y dominio incluidos el primer año; a nombre del cliente, aparte (`hosting_pago_unico`).
-- **Propiedad del código**: pago único al abonar el total; anual al pagar el segundo año; mensual a
+- **Propiedad del código**: pago único al abonar el total; anual con el tercer pago (a los 2 años de contratar); mensual a
   los 18 meses (`titularidad`, `entrega_codigo`). Licencias de terceros no se transfieren (`licencias`).
 - **Mantenimiento**: actualizaciones, seguridad, arreglos, soporte y un cambio por mes; incluido en
   mensual y anual (`mantenimiento`, `cambios_plan`). Los textos e imágenes los cambia el cliente desde

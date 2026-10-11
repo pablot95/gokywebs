@@ -2713,7 +2713,7 @@ caso('los correos aclaran que no son transferibles',
     stripos((string)$cfg['info']['emails'], 'no son transferibles') !== false);
 caso('la titularidad dice los tres plazos del código (Pablo, 20-sep)',
     mb_stripos($cfg['info']['titularidad'], 'Pago único: cuando abonás el total') !== false
-    && mb_stripos($cfg['info']['titularidad'], 'al pagar el segundo año') !== false
+    && mb_stripos($cfg['info']['titularidad'], 'con el tercer pago (a los 2 años de contratar)') !== false
     && mb_stripos($cfg['info']['titularidad'], 'a los 18 meses') !== false
     && mb_stripos($cfg['info']['titularidad'], 'es de Gokywebs') !== false, (string)$cfg['info']['titularidad']);
 

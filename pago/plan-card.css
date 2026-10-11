@@ -124,6 +124,11 @@ main {
     font-weight: 800;
 }
 
+/* Las condiciones del plan, en letra un poco más chica (Pablo, 11-oct). */
+.plan-condiciones .plan-check-list { gap: .5rem; }
+.plan-condiciones .plan-check-list li { font-size: .8rem; line-height: 1.45; }
+.plan-condiciones .plan-check-list li::before { top: -.1rem; }
+
 .plan-note {
     margin-top: 1.4rem;
     padding-top: 1.2rem;

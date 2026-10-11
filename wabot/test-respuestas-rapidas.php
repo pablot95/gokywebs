@@ -209,7 +209,7 @@ caso('el panel aparte de $25.000 pasa al cambio por mes de los planes, sin el pl
     && mb_stripos(WABOT_RR_CAMBIOS_PLAN, 'con cambios') === false && mb_strpos(WABOT_RR_CAMBIOS_PLAN, 'un cambio por mes') !== false, implode("\n", $planes21));
 caso('el código "a los 2 años" pasa a los plazos de cada plan',
     count(array_filter($pagos21, fn($t) => mb_strpos($t, 'Luego de los 2 años') === 0)) === 0
-    && count(array_filter($pagos21, fn($t) => mb_strpos($t, 'al pagar el segundo año') !== false && mb_strpos($t, 'a los 18 meses') !== false)) === 1, implode("\n", $pagos21));
+    && count(array_filter($pagos21, fn($t) => mb_strpos($t, 'con el tercer pago (a los 2 años de contratar)') !== false && mb_strpos($t, 'a los 18 meses') !== false)) === 1, implode("\n", $pagos21));
 caso('la suscripción de $25.000 pasa al plan mensual con sus dos montos',
     count(array_filter($pagos21, fn($t) => mb_strpos($t, 'Abonás $25.000 por mes') !== false)) === 0
     && count(array_filter($pagos21, fn($t) => mb_strpos($t, 'El plan mensual no tiene permanencia') === 0

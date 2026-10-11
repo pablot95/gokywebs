@@ -377,7 +377,7 @@ function wabot_respuestas_rapidas_textos_21sep($categorias) {
         'En el sitio profesional los cambios los hacemos nosotros. Si querés cambiar vos los textos y las imágenes, le sumamos un panel de administración y el plan mensual pasa a $25.000.'
             => WABOT_RR_CAMBIOS_PLAN,
         'Luego de los 2 años, si deseas continuar con otra persona, te entregamos el código de la página'
-            => 'El código de la web pasa a ser tuyo según el plan: con el pago único, cuando abonás el total; con el plan anual, al pagar el segundo año; con el plan mensual, a los 18 meses. Hasta ese momento el código es nuestro.',
+            => 'El código de la web pasa a ser tuyo según el plan: con el pago único, cuando abonás el total; con el plan anual, con el tercer pago (a los 2 años de contratar); con el plan mensual, a los 18 meses. Hasta ese momento el código es nuestro.',
         'La suscripción no tiene una duración fija. Es mensual y se mantiene activa mientras quieras seguir usando el servicio. Abonás $25.000 por mes e incluye la web, hosting, dominio, mantenimiento y soporte'
             => 'El plan mensual no tiene permanencia: se mantiene activo mientras quieras seguir usando el servicio. Son '
                 . $monto('landing', 'mensualidad') . ' por mes el sitio profesional y ' . $monto('ecommerce', 'mensualidad')
