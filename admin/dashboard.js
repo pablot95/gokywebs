@@ -7758,6 +7758,22 @@ function _bindDominioMant(tbody) {
     });
 }
 
+/* Cuándo se cumple el año del mantenimiento (Pablo, 11-oct-2026): el aniversario
+   del alta (la suscripción, o la fecha desde la que corre el plan). Si ya pasó el
+   primer año, el del año que viene, con los años que cumple. En ámbar cuando
+   faltan DIAS_AVISO_RENOVACION días o menos. */
+function _anioMantHTML(desde) {
+    if (!desde) return "";
+    const hoy = new Date();
+    const hoy12 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 12);
+    let anios = 1;
+    let fecha = _sumarAnios(desde, anios);
+    while (fecha < hoy12) fecha = _sumarAnios(desde, ++anios);
+    const dias = Math.round((fecha - hoy12) / 86400000);
+    const color = dias <= DIAS_AVISO_RENOVACION ? "#F59E0B" : "";
+    return `<div class="mant-anio${color ? " mant-anio--cerca" : ""}" style="font-size:11px;white-space:nowrap" title="El aniversario del alta del ${mantLongDate(desde)}">🗓 Cumple ${anios === 1 ? "el año" : `${anios} años`} el ${mantLongDate(fecha)} · ${dias === 0 ? "hoy" : `en ${dias} ${dias === 1 ? "día" : "días"}`}</div>`;
+}
+
 function _mantFilaClienteHTML(c) {
     const s = suscripcionDe(c);
     const contacto = _mantContactoHTML(c);
@@ -7772,7 +7788,8 @@ function _mantFilaClienteHTML(c) {
     return `<tr class="client-row" data-row-id="${escapeHtml(c.id)}">
         <td><div style="font-weight:700;font-size:15px">${escapeHtml(proyecto || c.nombre || "—")}</div>
             ${proyecto && c.nombre && proyecto.toLowerCase() !== String(c.nombre).trim().toLowerCase() ? `<div class="muted" style="font-size:11px">${escapeHtml(c.nombre)}</div>` : ""}
-            <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div></td>
+            <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div>
+            ${s.estado === "baja" ? "" : _anioMantHTML(s.desde || mantToDate(c.entregadoAt))}</td>
         <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div></td>
         <td class="col-telefono">${contacto.telefono}</td><td>${contacto.dominio}</td>
         <td class="center"><span style="color:${color};font-weight:700">● ${estado}</span>${s.desde ? `<div class="muted" style="font-size:11px">desde ${mantLongDate(s.desde)}</div>` : ""}</td>
@@ -8449,6 +8466,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
                     ${proyectoCliente && m.nombre ? `<div class="muted" style="font-size:11px">${escapeHtml(m.nombre)}</div>` : ""}
                     <div class="muted" style="font-size:11px">${escapeHtml(m.email || "")}</div>
                     ${alta ? `<div class="muted" style="font-size:11px">Alta ${mantLongDate(alta)}</div>` : ""}
+                    ${fila.clave === "baja" ? "" : _anioMantHTML(alta)}
                     ${clienteLink}
                 </td>
                 <td>
