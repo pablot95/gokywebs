@@ -8,7 +8,8 @@
  *
  * - POST { tipo:"ping" }  -> una vez por día por web: `errores_pings/{dominio}` = "esta web está viva".
  * - POST { tipo, nivel, msg, src, line, col, stack, url, detalle? } -> un error en `errores_web`
- *   (detalle: en un fetch 5xx de la propia web, el campo "error" del JSON que respondió).
+ *   (detalle: en un fetch 5xx de la propia web, el campo "error" del JSON que respondió; en un
+ *   script/CSS propio que no cargó, "HTTP 404" si err.js confirmó que no está en el servidor).
  *
  * Se ignoran localhost, IPs y los dominios de prueba/preview (vercel.app, etc.): una web
  * cuenta cuando está en su dominio real. Topes por IP y por día para que nadie pueda
@@ -74,9 +75,16 @@ $stack = limpiar($in['stack'] ?? '', 1200);
 $url   = limpiar($in['url'] ?? '', 200);
 $line  = max(0, min(1000000, (int)($in['line'] ?? 0)));
 $col   = max(0, min(1000000, (int)($in['col'] ?? 0)));
-// El motivo de un 5xx (el campo "error" del JSON que respondió la web). Solo en los fetch.
-$detalle = $tipo === 'fetch' ? trim(preg_replace('/\s+/', ' ', limpiar($in['detalle'] ?? '', 200))) : '';
+// El motivo de un 5xx (el campo "error" del JSON que respondió la web) en los fetch, o el código
+// ("HTTP 404") de un script/CSS propio que no cargó y err.js confirmó que falta en el servidor.
+$detalle = in_array($tipo, ['fetch', 'recurso'], true) ? trim(preg_replace('/\s+/', ' ', limpiar($in['detalle'] ?? '', 200))) : '';
 if (!$esPing && ($msg === '' || $msg === 'Script error.')) exit;
+// Bots y navegadores automatizados: lo que les falla no le pasa a ninguna persona. El err.js nuevo
+// ya no los manda; esto frena a las copias viejas que quedan en caché (el CDN lo guarda 7 días).
+// Misma lista que err.js y que erroresEsBot (admin/dashboard.js). Cubot es una marca de celulares.
+$uaVisitante = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
+if (!$esPing && preg_match('#bot\b|crawl|spider|slurp|facebookexternalhit|meta-externalagent|meta-webindexer|headless|lighthouse|pagespeed|inspectiontool|curl/|wget#i', $uaVisitante)
+    && !preg_match('/cubot/i', $uaVisitante)) exit;
 // Un error de JS de un script que no vino por http(s) no es de la web: extensiones, el navegador
 // interno de Instagram/Facebook en Android (iabjs://), etc. Lo filtra también err.js, pero así
 // tampoco entra desde una copia vieja cacheada. (En los fetch, src puede ser una ruta relativa.)

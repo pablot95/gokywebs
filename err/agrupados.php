@@ -8,7 +8,8 @@
  *
  * - data/agrupados.json  { hash: { site, tipo, nivel, msg, src, line, col, stack, url, ua,
  *                                  detalle, primera, ultima, veces, visitantes[], urls[] } }
- *                         (detalle: el último motivo de un fetch 5xx, "" si no hubo)
+ *                         (detalle: el último motivo de un fetch 5xx, o "HTTP 404" de un
+ *                          script/CSS propio que falta en el servidor; "" si no hubo)
  * - data/estados.json    { hash: { estado, nota, rama, at } }  (lo escribe la rutina)
  *
  * Los dos viven en err/data/ (gitignored, con .htaccess que niega todo).

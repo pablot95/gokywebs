@@ -280,12 +280,13 @@ document.getElementById("inversionRecargarBtn")?.addEventListener("click", () =>
 /* ── Errores de las webs (pestaña Errores) ──
    Cada web manda sus errores con err/err.js → err/log.php → Firestore `errores_web`.
    La lista de webs sale de err/sitios.php (una línea por web nueva). Acá se
-   agrupan por error, se cuentan solo los IMPORTANTES (nivel "alto") y se arma el
+   agrupan por error, se cuentan solo los CRÍTICOS (erroresEsCritico) y se arma el
    mensaje para el cliente. "Resueltos" = `errores_sitios/{web}.resueltoHasta`:
    lo anterior a esa fecha ya no cuenta como pendiente. */
 let erroresDatos = null;     // { sitios: [...], docs: [...], resueltos: Map(id -> Date) }
 let erroresMes = null;       // "YYYY-MM" elegido
 const erroresAbiertos = new Set();
+const erroresMenoresAbiertos = new Set();   // webs con los avisos menores desplegados
 let erroresIrA = null;       // web a mostrar al llegar desde Mantenimiento
 
 function erroresMesActual() {
@@ -357,6 +358,83 @@ function erroresNorm(s) {
     return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/* Qué es CRÍTICO (Pablo, 11-oct-2026: "quiero que lleguen los errores críticos que hay
+   que solucionar sí o sí"). Antes contaba como importante cualquier cosa "alta" y la
+   mayoría era ruido: bots (AhrefsBot, bingbot, el indexador de Meta), celulares con
+   navegadores viejos, scripts que no cargaron porque se cortó la conexión. Ahora solo
+   cuenta, se pinta de rojo y pide "Marcar resueltos" lo que rompe la web para una
+   persona de verdad:
+   - fetch/XHR: el servidor de la propia web respondió 5xx (err.js lo manda "alto").
+   - recurso: un script o CSS propio que err.js confirmó que no está en el servidor
+     (detalle "HTTP 404"). Sin confirmar es la conexión del visitante o un bloqueador.
+   - error/promesa: salió de un archivo de la propia web, en un navegador actual; o
+     Firestore sin cuota o sin permisos, que deja la web sin datos.
+   El resto es aviso menor: plegado y sin contar. Los bots ni aparecen (log.php ya no
+   los guarda; esto es por los que entraron antes). Se calcula acá, al leer, así vale
+   también para lo que ya había llegado y para las copias viejas de err.js. */
+function erroresEsBot(ua) {
+    // Misma lista que err/err.js y err/log.php. Cubot es una marca de celulares.
+    ua = String(ua || "");
+    return /bot\b|crawl|spider|slurp|facebookexternalhit|meta-externalagent|meta-webindexer|headless|lighthouse|pagespeed|inspectiontool|curl\/|wget/i.test(ua) && !/cubot/i.test(ua);
+}
+
+// Un motor que no entiende ?. ni ?? (Chrome < 80, Firefox < 74, Safari < 13.1, iOS < 13.4):
+// cualquier script actual le da "Unexpected token ?" o "." (sin comillas: así lo dicen los
+// motores viejos, aunque el navegador diga ser un Chrome nuevo).
+function erroresNavegadorViejo(ua, msg) {
+    if (/SyntaxError: Unexpected token [?.]$/.test(String(msg || ""))) return true;
+    ua = String(ua || "");
+    const chrome = ua.match(/Chrom(?:e|ium)\/(\d+)/);
+    if (chrome) return +chrome[1] < 80;
+    const firefox = ua.match(/Firefox\/(\d+)/);
+    if (firefox) return +firefox[1] < 74;
+    const ios = ua.match(/OS (\d+)_(\d+)\S* like Mac OS X/);
+    if (ios) return +ios[1] < 13 || (+ios[1] === 13 && +ios[2] < 4);
+    const safari = ua.match(/Version\/(\d+)\.(\d+)\S* (?:Mobile\/\S+ )?Safari\//);
+    if (safari) return +safari[1] < 13 || (+safari[1] === 13 && +safari[2] < 1);
+    return false;
+}
+
+// ¿Salió de un archivo de la propia web? Por el archivo del error o, si no hay (las
+// promesas), por el stack.
+function erroresDeLaWeb(d) {
+    const site = String(d.site || "").toLowerCase();
+    if (!site) return false;
+    if (/^https?:/i.test(d.src || "")) {
+        const dom = erroresDominio(d.src);
+        return dom === site || dom.endsWith("." + site);
+    }
+    const stack = String(d.stack || "").toLowerCase();
+    return stack.includes("//" + site + "/") || stack.includes("." + site + "/");
+}
+
+const ERRORES_FIRESTORE = /missing or insufficient permissions|quota exceeded|resource[-_ ]exhausted/i;
+
+function erroresEsCritico(d) {
+    if (d.nivel !== "alto" || erroresEsBot(d.ua)) return false;
+    if (d.tipo === "fetch") return true;
+    if (d.tipo === "recurso") return /^HTTP \d{3}$/.test(String(d.detalle || ""));
+    if (erroresNavegadorViejo(d.ua, d.msg)) return false;
+    return erroresDeLaWeb(d) || ERRORES_FIRESTORE.test(String(d.msg || ""));
+}
+
+// Qué es, en criollo, para la lista (un crítico) o por qué no cuenta (un aviso menor).
+function erroresQueEs(d) {
+    if (d.tipo === "fetch") return "falla el servidor de la web";
+    if (d.tipo === "recurso") return "falta el archivo en el servidor";
+    return ERRORES_FIRESTORE.test(String(d.msg || "")) ? "Firestore sin cuota o sin permisos" : "error en el código de la web";
+}
+function erroresPorQueMenor(d) {
+    if ((d.tipo === "error" || d.tipo === "promesa") && erroresNavegadorViejo(d.ua, d.msg)) return "navegador viejo";
+    if (d.tipo === "recurso") {
+        const propio = /^https?:/i.test(d.src || "") && erroresDeLaWeb(d);
+        if (!propio) return "de un servicio externo";
+        return /^No cargó img/.test(d.msg || "") ? "imagen que no cargó en ese momento" : "no cargó en ese momento (conexión o bloqueador)";
+    }
+    if (d.tipo === "fetch") return "falló un servicio externo";
+    return "no viene del código de la web";
+}
+
 function erroresNombreCliente(c) {
     const empresa = String(c.proyecto || "").trim();
     const persona = String(c.nombre || "").trim();
@@ -367,7 +445,7 @@ function erroresNombreCliente(c) {
     };
 }
 
-// Resumen por web: errores agrupados, cuántos importantes quedan sin resolver.
+// Resumen por web: errores agrupados, cuántos críticos quedan sin resolver.
 // Las webs esperadas salen de los dominios cargados en clientes, completados y mantenimiento.
 // Si una web que avisa no coincide con ningún dominio, se busca el cliente por nombre
 // (autoserviciohudson.com.ar -> "Autoservicio Hudson"), porque muchas fichas no tienen el dominio cargado.
@@ -429,26 +507,31 @@ function erroresResumen(datos = erroresDatos) {
         const w = porWeb.get(claveDe(d.site));
         const at = d.at?.toDate ? d.at.toDate() : new Date(0);
         if (!w.senal || at > w.senal) w.senal = at;
+        // Lo de un bot dice que la web está viva, pero no le pasó a ninguna persona.
+        if (erroresEsBot(d.ua)) continue;
         const pendiente = !resueltos.has(w.id) || at > resueltos.get(w.id);
+        const critico = erroresEsCritico(d);
         let g = w.grupos.get(d.hash);
-        if (!g) { g = { msg: d.msg, tipo: d.tipo, nivel: d.nivel, url: d.url, src: d.src, line: d.line, count: 0, pend: 0, last: at, detalle: "", detalleAt: null }; w.grupos.set(d.hash, g); }
+        if (!g) { g = { msg: d.msg, tipo: d.tipo, url: d.url, src: d.src, line: d.line, count: 0, criticos: 0, critPend: 0, que: "", porQue: "", last: at, detalle: "", detalleAt: null }; w.grupos.set(d.hash, g); }
         g.count++;
-        if (pendiente) g.pend++;
+        // Un mismo error puede venir de un navegador viejo y de uno actual: es crítico si lo es una vez.
+        if (critico) { g.criticos++; if (pendiente) g.critPend++; g.que = g.que || erroresQueEs(d); }
+        else g.porQue = g.porQue || erroresPorQueMenor(d);
         if (at > g.last) g.last = at;
         // El motivo de un 5xx (lo que respondió la web en "error"): se muestra el último.
         if (d.detalle && (!g.detalleAt || at > g.detalleAt)) { g.detalle = d.detalle; g.detalleAt = at; }
     }
     return [...porWeb.values()].map(w => {
         const grupos = [...w.grupos.values()].sort((a, b) => b.last - a.last);
-        const altos = grupos.filter(g => g.nivel === "alto");
+        const criticos = grupos.filter(g => g.criticos > 0);
         return {
             ...w, grupos,
             oculto: ocultos.has(w.id),
-            altos: altos.length,
-            altosPend: altos.filter(g => g.pend > 0).length,
-            menores: grupos.length - altos.length,
+            criticos: criticos.length,
+            criticosPend: criticos.filter(g => g.critPend > 0).length,
+            menores: grupos.length - criticos.length,
         };
-    }).sort((a, b) => b.altosPend - a.altosPend || String(a.nombre).localeCompare(String(b.nombre), "es"));
+    }).sort((a, b) => b.criticosPend - a.criticosPend || String(a.nombre).localeCompare(String(b.nombre), "es"));
 }
 
 // Los dominios de los clientes llegan por snapshots aparte: cuando cambian, se reagrupa lo de Errores.
@@ -463,7 +546,7 @@ function actualizarBadgeErrores() {
     const el = document.getElementById("countErrores");
     const datos = erroresVivo || (erroresMes === erroresMesActual() ? erroresDatos : null);
     if (!el || !datos) return;
-    const n = erroresResumen(datos).filter(w => !w.oculto).reduce((t, w) => t + w.altosPend, 0);
+    const n = erroresResumen(datos).filter(w => !w.oculto).reduce((t, w) => t + w.criticosPend, 0);
     el.textContent = n;
     el.hidden = n === 0;
 }
@@ -518,44 +601,64 @@ function escucharErrores() {
 // Al cambiar de mes, la escucha pasa al mes nuevo.
 setInterval(() => { if (currentUser) escucharErrores(); }, 60 * 60 * 1000);
 
-// Mensaje para mandarle al cliente. Solo existe si no queda nada importante sin resolver:
+// Mensaje para mandarle al cliente. Solo existe si no queda nada crítico sin resolver:
 // no se puede copiar un "ya fue solucionado" mientras haya algo pendiente.
 function erroresMensajeCliente(w) {
     const mes = erroresMesNombre(erroresMes);
     const donde = w.dominio ? " (" + w.dominio + ")" : "";
-    if (w.altos === 0) {
+    if (w.criticos === 0) {
         return "Hola! Te cuento que durante " + mes + " no se registraron errores en tu web" + donde + ". Todo funcionó con normalidad y seguimos monitoreándola para que siga así. Cualquier cosa que notes o quieras cambiar, escribime.";
     }
-    const uno = w.altos === 1;
-    return "Hola! Te cuento que durante " + mes + " detectamos " + (uno ? "un inconveniente puntual" : w.altos + " inconvenientes puntuales") + " en tu web" + donde + ", pero " + (uno ? "ya fue solucionado" : "ya fueron solucionados") + " a tiempo. Seguimos monitoreándola para que todo siga en orden. Cualquier duda, escribime.";
+    const uno = w.criticos === 1;
+    return "Hola! Te cuento que durante " + mes + " detectamos " + (uno ? "un inconveniente puntual" : w.criticos + " inconvenientes puntuales") + " en tu web" + donde + ", pero " + (uno ? "ya fue solucionado" : "ya fueron solucionados") + " a tiempo. Seguimos monitoreándola para que todo siga en orden. Cualquier duda, escribime.";
 }
 
 function erroresHtmlWeb(w) {
     const fechaHora = (d) => d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     const sinSenal = !w.senal;   // ni un ping ni un error: el script todavía no llegó a esta web
-    const estado = w.altosPend > 0 ? "alerta" : (sinSenal ? "sinsenal" : "ok");
-    const titulo = w.altosPend > 0
-        ? w.altosPend + (w.altosPend === 1 ? " error importante sin resolver" : " errores importantes sin resolver")
-        : (sinSenal ? "Sin señal todavía" : (w.altos > 0 ? "Todo resuelto" : "Sin errores"));
-    const nota = w.altosPend === 0 && w.altos > 0 ? w.altos + (w.altos === 1 ? " solucionado" : " solucionados") : "";
+    const estado = w.criticosPend > 0 ? "alerta" : (sinSenal ? "sinsenal" : "ok");
+    const titulo = w.criticosPend > 0
+        ? w.criticosPend + (w.criticosPend === 1 ? " error crítico sin resolver" : " errores críticos sin resolver")
+        : (sinSenal ? "Sin señal todavía" : (w.criticos > 0 ? "Todo resuelto" : (w.menores ? "Sin errores críticos" : "Sin errores")));
+    const nota = w.criticosPend === 0 && w.criticos > 0 ? w.criticos + (w.criticos === 1 ? " solucionado" : " solucionados") : "";
     const abierto = erroresAbiertos.has(w.id);
-    const filas = w.grupos.map(g => (
-        '<li class="err-item err-item--' + escapeHtml(g.nivel) + (g.pend === 0 ? " err-item--resuelto" : "") + '">' +
+    // El archivo y la línea donde saltó un error de código: por dónde empezar a arreglarlo.
+    const dondeSalto = (g) => {
+        if ((g.tipo !== "error" && g.tipo !== "promesa") || !/^https?:/i.test(g.src || "")) return "";
+        const archivo = String(g.src).split(/[?#]/)[0].split("/").pop();
+        return archivo ? " · " + escapeHtml(archivo) + (g.line ? ":" + g.line : "") : "";
+    };
+    const veces = (g) => g.count + (g.count === 1 ? " vez" : " veces") + " · última " + fechaHora(g.last) + (g.url ? " · " + escapeHtml(g.url) : "");
+    const criticos = w.grupos.filter(g => g.criticos > 0);
+    const menores = w.grupos.filter(g => g.criticos === 0);
+    const filas = criticos.map(g => (
+        '<li class="err-item err-item--alto' + (g.critPend === 0 ? " err-item--resuelto" : "") + '">' +
           '<div class="err-item-msg">' + escapeHtml(g.msg) + '</div>' +
           (g.detalle ? '<div class="err-item-motivo">Respondió: ' + escapeHtml(g.detalle) + '</div>' : "") +
-          '<div class="err-item-meta">' +
-            (g.nivel === "alto" ? "Importante" : "Menor") + " · " + escapeHtml(g.tipo) + " · " +
-            g.count + (g.count === 1 ? " vez" : " veces") + " · última " + fechaHora(g.last) +
-            (g.url ? " · " + escapeHtml(g.url) : "") + (g.pend === 0 ? " · resuelto" : "") +
-          '</div></li>'
+          '<div class="err-item-meta">Crítico · ' + escapeHtml(g.que) + ' · ' + veces(g) + dondeSalto(g) + (g.critPend === 0 ? " · resuelto" : "") + '</div>' +
+        '</li>'
     )).join("");
+    const filasMenores = menores.map(g => (
+        '<li class="err-item err-item--bajo">' +
+          '<div class="err-item-msg">' + escapeHtml(g.msg) + '</div>' +
+          '<div class="err-item-meta">Menor · ' + escapeHtml(g.porQue) + ' · ' + veces(g) + '</div>' +
+        '</li>'
+    )).join("");
+    const listaMenores = filasMenores
+        ? '<details class="err-menores"' + (erroresMenoresAbiertos.has(w.id) ? " open" : "") + '><summary>' + menores.length + (menores.length === 1 ? " aviso menor" : " avisos menores") +
+          ' <small>· no cuentan: navegadores viejos, conexiones que se cortan, imágenes, servicios externos</small></summary>' +
+          '<ul class="err-lista">' + filasMenores + '</ul></details>'
+        : "";
+    const cuerpo = filas
+        ? '<ul class="err-lista">' + filas + '</ul>' + listaMenores
+        : (filasMenores ? '<p class="err-ninguno">Ningún error crítico en ' + escapeHtml(erroresMesNombre(erroresMes)) + '.</p>' + listaMenores : "");
     const vacio = sinSenal && w.propia
         ? '<p class="muted">Todavía nadie abrió las páginas de gokywebs.com con el monitoreo puesto (inicio, formulario, presupuestos, pagos y planes). Aparece apenas entre alguien.</p>'
         : sinSenal
         ? '<p class="muted">Esta web todavía no avisó nunca. Pegá <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code> en su &lt;head&gt; y entrá una vez a la web; los sitios de prueba (vercel.app, localhost) no cuentan, tiene que estar en su dominio.</p>'
         : '<p class="muted">Ningún error registrado en ' + escapeHtml(erroresMesNombre(erroresMes)) + '.</p>';
-    const copiarOff = w.altosPend > 0 || sinSenal;
-    const copiarMotivo = w.altosPend > 0 ? "Marcá los errores como resueltos antes de avisarle al cliente" : "Todavía no hay señal de esta web";
+    const copiarOff = w.criticosPend > 0 || sinSenal;
+    const copiarMotivo = w.criticosPend > 0 ? "Marcá los errores como resueltos antes de avisarle al cliente" : "Todavía no hay señal de esta web";
     return '<div class="err-site err-site--' + estado + '" data-web="' + escapeHtml(w.id) + '">' +
       '<div class="err-head">' +
         '<button type="button" class="err-toggle" data-err-toggle aria-expanded="' + abierto + '">' +
@@ -566,14 +669,14 @@ function erroresHtmlWeb(w) {
         '</button>' +
         '<div class="err-acciones">' +
           (w.oculto ? '<button type="button" class="btn-ghost" data-err-mostrar>Volver a mostrar</button>' : "") +
-          (!w.oculto && w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
+          (!w.oculto && w.criticosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
           (!w.oculto && !w.propia ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
           (!w.oculto ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista">Ocultar</button>' : "") +
         '</div>' +
       '</div>' +
       '<div class="err-detalle"' + (abierto ? "" : " hidden") + '>' +
         (w.senal ? '<p class="err-senal">Última señal: ' + fechaHora(w.senal) + '</p>' : "") +
-        (filas ? '<ul class="err-lista">' + filas + '</ul>' : vacio) +
+        (cuerpo || vacio) +
       '</div></div>';
 }
 
@@ -589,6 +692,12 @@ function renderErrores() {
         return;
     }
     const ocultasAbiertas = !!cont.querySelector(".err-ocultas")?.open;
+    // Los avisos menores que estaban desplegados siguen así (la lista se redibuja sola en vivo).
+    cont.querySelectorAll(".err-site").forEach(b => {
+        const menores = b.querySelector(".err-menores");
+        if (menores?.open) erroresMenoresAbiertos.add(b.dataset.web);
+        else if (menores) erroresMenoresAbiertos.delete(b.dataset.web);
+    });
     cont.innerHTML =
         (webs.length ? webs.map(erroresHtmlWeb).join("") : '<p class="muted">Todas las webs están ocultas.</p>') +
         (ocultas.length
@@ -7705,10 +7814,10 @@ function _erroresWebDe(c, m, dominio) {
 function _mantErroresHTML(c, m, dominio) {
     const w = _erroresWebDe(c, m, dominio);
     if (!w || w.oculto) return "";
-    const [texto, clase] = w.altosPend > 0
-        ? [`⚠ ${w.altosPend} error${w.altosPend === 1 ? "" : "es"} sin resolver`, "mant-err--alerta"]
+    const [texto, clase] = w.criticosPend > 0
+        ? [`⚠ ${w.criticosPend} error${w.criticosPend === 1 ? "" : "es"} crítico${w.criticosPend === 1 ? "" : "s"}`, "mant-err--alerta"]
         : !w.senal ? ["Sin monitoreo (falta err.js)", "mant-err--sinsenal"]
-        : ["✓ Sin errores este mes", "mant-err--ok"];
+        : ["✓ Sin errores críticos", "mant-err--ok"];
     return `<div><button type="button" class="mant-err ${clase}" data-ir-errores="${escapeHtml(w.id)}" title="Ver esta web en Errores">${texto}</button></div>`;
 }
 

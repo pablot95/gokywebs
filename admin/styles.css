@@ -2924,11 +2924,17 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .err-item-motivo { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; margin-top: 2px; word-break: break-word; }
 .err-item--resuelto .err-item-motivo { color: var(--text-muted); }
 .err-item-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+/* Avisos menores (11-oct): plegados debajo de los críticos, sin contar. */
+.err-ninguno { color: var(--text-muted); font-size: 13px; margin-top: 12px; }
+.err-menores { margin-top: 14px; }
+.err-menores > summary { cursor: pointer; color: var(--text-muted); font-size: 13px; padding: 4px 0; }
+.err-menores > summary small { font-size: 12px; }
+.err-item--bajo .err-item-msg { color: var(--text-muted); }
 @media (max-width: 768px) {
     .err-head { flex-wrap: wrap; }
     .err-toggle { flex-basis: 100%; flex-wrap: wrap; }
     .err-estado { margin-left: 22px; text-align: left; flex-basis: 100%; }
-    .err-acciones { padding: 0 8px 10px 22px; }
+    .err-acciones { padding: 0 8px 10px 22px; flex: 1 1 100%; min-width: 0; flex-wrap: wrap; }
     .err-detalle { padding-left: 16px; }
 }
 .err-site--sinsenal .err-dot { background: var(--text-muted); opacity: .6; }

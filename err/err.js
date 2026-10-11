@@ -7,9 +7,10 @@
  * En localhost y en dominios de prueba (vercel.app, etc.) no manda nada.
  *
  * Reporta:  errores de JavaScript, promesas rechazadas, scripts/CSS que no cargan
- *           y pedidos fetch que devuelven 5xx (si son de la propia web y responden
- *           JSON, con el motivo: el campo "error").  Ignora lo que no es de la web
- *           (extensiones, navegadores internos de apps, "Script error." de terceros, etc.).
+ *           y pedidos fetch o XMLHttpRequest que devuelven 5xx (si son de la propia web
+ *           y responden JSON, con el motivo: el campo "error").  Ignora lo que no es de
+ *           la web (extensiones, navegadores internos de apps, "Script error." de terceros,
+ *           bots, etc.).  Qué es crítico lo decide el panel (erroresCritico en dashboard.js).
  * No toca nada de la página y nunca tira un error propio.
  */
 (function () {
@@ -69,6 +70,33 @@
       }
     } catch (_) {}
 
+    // Bots y navegadores automatizados (buscadores, vistas previas de links, pruebas): lo que
+    // les falla no le pasa a ninguna persona. Mandan la señal de vida y nada más.
+    // (Cubot es una marca de celulares: "CUBOT P30" no es un bot.)
+    var ua = String(navigator.userAgent || "");
+    if (navigator.webdriver === true ||
+        (/bot\b|crawl|spider|slurp|facebookexternalhit|meta-externalagent|meta-webindexer|headless|lighthouse|pagespeed|inspectiontool|curl\/|wget/i.test(ua) && !/cubot/i.test(ua))) return;
+
+    // Un script o CSS propio que no cargó casi siempre es la conexión del visitante o un
+    // bloqueador de anuncios (stats.js, visitas.js). Se le pregunta al servidor si el archivo
+    // está: solo un 4xx/5xx es un problema de la web (falta el archivo o el servidor falla),
+    // y viaja como "alto" con el código en detalle. Si está, va como aviso menor.
+    function chequearArchivo(url, r) {
+      if (!nativeFetch) { enviar(r); return; }
+      var listo = false;
+      var mandar = function (status) {
+        if (listo) return;
+        listo = true;
+        if (status >= 400) { r.nivel = "alto"; r.detalle = "HTTP " + status; }
+        enviar(r);
+      };
+      setTimeout(function () { mandar(0); }, 5000);
+      try {
+        nativeFetch.call(window, url, { method: "HEAD", cache: "no-store", credentials: "same-origin" })
+          .then(function (res) { mandar(res ? res.status : 0); }, function () { mandar(0); });
+      } catch (_) { mandar(0); }
+    }
+
     // Errores de JS y recursos que no cargan (los de recursos no burbujean: capture=true).
     window.addEventListener("error", function (e) {
       try {
@@ -77,8 +105,11 @@
           var tag = t.tagName.toLowerCase();
           var url = t.src || t.href || "";
           if (!url || (tag !== "script" && tag !== "link" && tag !== "img")) return;
-          var critico = mismoOrigen(url) && (tag === "script" || (tag === "link" && t.rel === "stylesheet"));
-          enviar({ tipo: "recurso", nivel: critico ? "alto" : "bajo", msg: "No cargó " + tag + ": " + url, src: url, line: 0, col: 0, stack: "" });
+          // <img src=""> (o con la dirección de la página): todavía no tiene foto, no es un archivo.
+          if (tag === "img" && url.split("#")[0] === location.href.split("#")[0]) return;
+          var r = { tipo: "recurso", nivel: "bajo", msg: "No cargó " + tag + ": " + url, src: url, line: 0, col: 0, stack: "" };
+          if (mismoOrigen(url) && (tag === "script" || (tag === "link" && t.rel === "stylesheet"))) chequearArchivo(url, r);
+          else enviar(r);
           return;
         }
         if (esRuido(e.message, e.filename)) return;
@@ -145,6 +176,41 @@
           }
         } catch (_) {}
         return p;
+      };
+    }
+
+    // Lo mismo con XMLHttpRequest: las subidas con barra de progreso de los paneles
+    // (admin-upload.php) no pasan por fetch, y un 500 ahí también es la web que falla.
+    var XHR = window.XMLHttpRequest;
+    if (XHR && XHR.prototype && XHR.prototype.open && XHR.prototype.send) {
+      var xhrAbrir = XHR.prototype.open;
+      var xhrMandar = XHR.prototype.send;
+      XHR.prototype.open = function (metodo, u) {
+        try { this.__gwErrUrl = String(u || ""); } catch (_) {}
+        return xhrAbrir.apply(this, arguments);
+      };
+      XHR.prototype.send = function () {
+        try {
+          var xhr = this;
+          var u = xhr.__gwErrUrl || "";
+          if (u && u.indexOf(ENDPOINT) !== 0) {
+            xhr.addEventListener("loadend", function () {
+              try {
+                if (xhr.status < 500) return;
+                var limpio = u.split("?")[0];
+                var r = { tipo: "fetch", nivel: mismoOrigen(u) ? "alto" : "bajo", msg: "HTTP " + xhr.status + " en " + limpio, src: limpio, line: 0, col: 0, stack: "" };
+                if (mismoOrigen(u) && /json/i.test(xhr.getResponseHeader("content-type") || "")) {
+                  var motivo = "";
+                  if (xhr.responseType === "" || xhr.responseType === "text") motivo = motivoDe(xhr.responseText);
+                  else if (xhr.responseType === "json" && xhr.response && typeof xhr.response.error === "string") motivo = xhr.response.error.replace(/\s+/g, " ").trim().slice(0, 200);
+                  if (motivo) r.detalle = motivo;
+                }
+                enviar(r);
+              } catch (_) {}
+            });
+          }
+        } catch (_) {}
+        return xhrMandar.apply(this, arguments);
       };
     }
   } catch (_) {}

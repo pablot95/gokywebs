@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261011-anio">
+    <link rel="stylesheet" href="styles.css?v=20261011-criticos">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -511,13 +511,14 @@
         </section>
 
         <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
-             un error importante sin resolver. Los errores los manda err/err.js (una
-             línea en el <head> de cada web) a err/log.php → Firestore `errores_web`. -->
+             un error CRÍTICO sin resolver (erroresEsCritico en dashboard.js). Los errores
+             los manda err/err.js (una línea en el <head> de cada web) a err/log.php →
+             Firestore `errores_web`. -->
         <section class="panel tab-panel" id="tabErrores" hidden>
             <div class="panel-header">
                 <div>
                     <h1>Errores</h1>
-                    <p class="muted">Cada web avisa sola cuando algo falla. Acá ves solo lo importante; abrí una web para ver el detalle. "Marcar resueltos" deja el contador en cero y habilita el mensaje para el cliente.</p>
+                    <p class="muted">Cada web avisa sola cuando algo falla. Solo cuentan los errores críticos, los que hay que arreglar sí o sí: el servidor de la web que falla, un error en su código o un archivo que falta. Lo demás (bots, navegadores viejos, conexiones que se cortan, imágenes, servicios externos) queda plegado como aviso menor. "Marcar resueltos" deja el contador en cero y habilita el mensaje para el cliente.</p>
                 </div>
                 <div class="err-controles">
                     <select id="erroresMes" class="mes-select" aria-label="Mes"></select>
@@ -1230,6 +1231,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261011-anio"></script>
+    <script type="module" src="dashboard.js?v=20261011-criticos"></script>
 </body>
 </html>
