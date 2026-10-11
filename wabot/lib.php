@@ -6453,6 +6453,12 @@ function wabot_form_lead_procesar($payload, $cfg) {
     } else {
         wabot_handoff_marcar($conv, 'prediseno');
     }
+    /* Con el formulario completo el bot se apaga en ese chat (Pablo, 10-oct): de
+     * ahí en adelante contesta él. Es el mismo apagado del panel (bot_off): el
+     * handoff queda pendiente para que lo vea, y solo se lo devuelve al bot a
+     * mano (wabot_conv_encender_manual). */
+    $conv['bot_off'] = true;
+    wabot_log('bot_off_form', ['tel' => $clave]);
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);

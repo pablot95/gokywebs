@@ -379,6 +379,8 @@ caso('el negocio, la descripción y los colores quedan anotados',
     $conv['nombre_negocio'] === 'Carla Deco' && $conv['descripcion'] === 'Vendo objetos de decoración hechos a mano' && $conv['colores'] === 'Beige y dorado');
 caso('queda marcado el origen y el boceto se cierra igual que por chat',
     $conv['origen_prediseno'] === 'form' && $conv['fase'] === 'derivado' && !empty($conv['lead_creado']));
+// 10-oct (Pablo): "cuando el cliente llena el form, el bot se deshabilita en ese chat".
+caso('al completar el formulario el bot queda apagado en ese chat y el handoff pendiente', !empty($conv['bot_off']) && !empty($conv['handoff_pendiente']));
 caso('el brief NO queda vacío', !empty($conv['brief']) && $conv['brief']['marca'] === 'Carla Deco');
 caso('queda una sola línea de transcript, de sistema', count($conv['transcript']) === 1 && $conv['transcript'][0]['q'] === 'sistema');
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
