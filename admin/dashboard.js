@@ -2403,7 +2403,8 @@ function planDe(src, extra = null) {
     if (guardado === null) {
         for (const f of [s, s.propuestaSnapshot, extra]) {
             if (!f) continue;
-            key = [f.tipoDetectado, f.tipoDetectadoLabel, f.tipo_web, f.siteType].map(planKeyDeTipo).find(Boolean) || null;
+            // tipoWeb: lo que marca el bot al armar el prospecto (wabot_lead_tipo_web, 11-oct).
+            key = [f.tipoWeb, f.tipoDetectado, f.tipoDetectadoLabel, f.tipo_web, f.siteType].map(planKeyDeTipo).find(Boolean) || null;
             if (key) break;
         }
     }
@@ -3690,7 +3691,33 @@ document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
 /* Un pendiente de la web: { id, texto, hecho, por: 'pablo' | 'claude', at }. Los
    que no tienen lista todavía muestran la de su tipo (sembrarPendientes la guarda). */
 function pendientesDe(c) {
-    return Array.isArray(c.pendientes) ? c.pendientes : pendientesIniciales(planDe(c, propuestaDeCliente(c)).key, c.tareas);
+    return Array.isArray(c.pendientes) ? c.pendientes : pendientesIniciales(tipoPendientesDe(c), c.tareas);
+}
+
+/* La lista de pendientes que le toca a una web: la del plan del cliente (planDe;
+   al pasar a Cliente guarda el que marcó el bot en el prospecto, `tipoWeb`, y
+   Pablo lo puede cambiar en el modal). Si el bot marcó que la segunda web de un
+   "dos webs" es una tienda, o que es ecommerce y el plan no se pudo deducir, va la
+   de la tienda, que incluye lo de las demás. */
+function tipoPendientesDe(c) {
+    const p = propuestaDeCliente(c);
+    const key = planDe(c, p).key;
+    const marcas = [c, c.propuestaSnapshot, p].filter(Boolean);
+    if (key !== "ecommerce" && marcas.some(f => f.segundaWeb === "ecommerce" || (!key && f.esEcommerce === true))) return "ecommerce";
+    return key;
+}
+
+/* Si el tipo de la web cambió después de sembrar (Pablo cambió el plan, el bot lo corrigió), la lista
+   se acomoda al tipo nuevo: lo hecho y lo que él agregó se queda; lo sin tocar de la lista vieja se reemplaza. */
+function _reconciliarPendientes(c, clave) {
+    const nuevos = pendientesIniciales(clave, c.tareas);
+    const idsNuevos = new Set(nuevos.map(p => p.id));
+    const idsCatalogoViejo = new Set(pendientesIniciales(c.pendientesTipo === "generico" ? null : c.pendientesTipo).map(p => p.id));
+    const porId = new Map(c.pendientes.map(p => [p.id, p]));
+    return [
+        ...nuevos.map(p => porId.get(p.id) || p),
+        ...c.pendientes.filter(p => !idsNuevos.has(p.id) && (p.hecho || !idsCatalogoViejo.has(p.id))),
+    ];
 }
 
 const _sembrando = new Set();
@@ -3698,10 +3725,16 @@ function sembrarPendientes() {
     // El tipo de web sale del boceto: hasta que cargan los bocetos no se sabe cuál lista corresponde.
     if (!clientesCargados || !propuestasCargadas || !presupuestosCargados) return;
     for (const c of clients) {
-        if (getEstado(c) !== "cliente" || webEntregada(c) || Array.isArray(c.pendientes) || _sembrando.has(c.id)) continue;
-        _sembrando.add(c.id);
-        updateDoc(doc(db, "clientes", c.id), { pendientes: pendientesDe(c) })
-            .catch(err => { _sembrando.delete(c.id); console.error("No se pudieron guardar los pendientes:", err); });
+        if (getEstado(c) !== "cliente" || webEntregada(c)) continue;
+        const clave = tipoPendientesDe(c);
+        const marca = clave || "generico";
+        const nueva = !Array.isArray(c.pendientes);
+        if (!nueva && (typeof c.pendientesTipo !== "string" || c.pendientesTipo === marca)) continue;
+        const llave = `${c.id}:${marca}`;
+        if (_sembrando.has(llave)) continue;
+        _sembrando.add(llave);
+        updateDoc(doc(db, "clientes", c.id), { pendientes: nueva ? pendientesIniciales(clave, c.tareas) : _reconciliarPendientes(c, clave), pendientesTipo: marca })
+            .catch(err => { _sembrando.delete(llave); console.error("No se pudieron guardar los pendientes:", err); });
     }
 }
 

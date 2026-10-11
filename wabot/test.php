@@ -1058,6 +1058,16 @@ caso('los colores en hex van en sus tres campos',
     $valor('color_principal') === '#000000' && $valor('color_secundario') === '#00AA00' && $valor('color_fondos') === '#FFFFFF');
 caso('el teléfono va formateado y legible', $valor('telefono') === '+54 9 11 3333-4444');
 caso('la etiqueta del tipo es la de la tienda', $valor('tipoDetectadoLabel') === 'Ecommerce');
+caso('el bot marca la tienda para los pendientes del admin (11-oct)',
+    $valor('tipoWeb') === 'ecommerce' && $valor('esEcommerce') === true && $valor('soloCatalogo') === false && $valor('segundaWeb') === '');
+$tw = function ($extra) use ($cLead) { return wabot_lead_tipo_web(array_merge($cLead, $extra)); };
+caso('tienda + cursos también se marca como tienda', $tw(['combo_cursos' => true])['esEcommerce'] === true);
+caso('el catálogo con pedidos es ecommerce pero se marca solo catálogo', ($r = $tw(['comercial_solucion' => 'catalogo'])) && $r['esEcommerce'] === true && $r['soloCatalogo'] === true);
+caso('una informativa es sitio profesional y no tienda', ($r = $tw(['tipo' => 'landing', 'comercial_solucion' => 'informativa'])) && $r['tipoWeb'] === 'profesional' && $r['esEcommerce'] === false);
+caso('cursos e inmobiliaria con la clave del panel', $tw(['tipo' => 'elearning'])['tipoWeb'] === 'cursos' && $tw(['tipo' => 'inmobiliaria'])['tipoWeb'] === 'inmobiliaria');
+caso('un sistema de gestión no marca tipo de web', $tw(['tipo' => 'sistema'])['tipoWeb'] === '');
+caso('sin tipo, la solución cotizada decide', $tw(['tipo' => '', 'comercial_solucion' => 'tienda'])['tipoWeb'] === 'ecommerce');
+caso('dos webs: la segunda se marca aparte', $tw(['tipo' => 'landing', 'comercial_solucion' => 'informativa', 'comercial_dos_webs' => ['soluciones' => ['informativa', 'tienda']]])['segundaWeb'] === 'ecommerce');
 caso('un boceto normal queda marcado como muestra confirmada, no como sistema',
     $valor('confirmoMuestra') === true && $valor('solicitoSistema') === false);
 

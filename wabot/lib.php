@@ -6090,8 +6090,33 @@ function wabot_transcript_texto($conv, $maxChars = 12000) {
     return "[...charla recortada...]\n" . mb_substr($texto, -$maxChars);
 }
 
+/**
+ * El tipo de web que el bot entendió, marcado en el prospecto con las claves del
+ * admin (PLANES de dashboard.js: ecommerce, cursos, inmobiliaria, profesional).
+ * Pablo, 11-oct: "el bot tiene que marcar si es ecommerce o tienda online", porque
+ * los pendientes de cada cliente (tienda, email de pedidos, Firebase…) dependen de
+ * eso. `tipo` manda (es el de la etiqueta del boceto); si falta, la solución que
+ * cotizó el flujo comercial. Tienda y catálogo con pedidos son ecommerce; el
+ * catálogo se distingue en soloCatalogo. La segunda web de un "dos webs" va aparte.
+ */
+function wabot_lead_tipo_web($conv) {
+    $porTipo = ['landing' => 'profesional', 'ecommerce' => 'ecommerce', 'elearning' => 'cursos', 'inmobiliaria' => 'inmobiliaria'];
+    $porSolucion = ['informativa' => 'profesional', 'informativa_panel' => 'profesional', 'reservas' => 'profesional',
+        'tienda' => 'ecommerce', 'catalogo' => 'ecommerce', 'cursos' => 'cursos', 'inmobiliaria' => 'inmobiliaria'];
+    $solucion = (string)($conv['comercial_solucion'] ?? '');
+    $tipo = (string)($conv['tipo'] ?? '');
+    $clave = $porTipo[$tipo] ?? ($tipo === 'sistema' ? '' : ($porSolucion[$solucion] ?? ''));
+    if (!empty($conv['combo_cursos'])) $clave = 'ecommerce';   // tienda + cursos: se arma como tienda
+    $ficha = function_exists('wabot_ficha') ? (array)wabot_ficha($conv) : [];
+    $soloCatalogo = $clave === 'ecommerce' && ($solucion === 'catalogo' || (!empty($ficha['catalogo_explicito']) && $solucion !== 'tienda'));
+    $dos = is_array($conv['comercial_dos_webs'] ?? null) ? array_values((array)($conv['comercial_dos_webs']['soluciones'] ?? [])) : [];
+    $segunda = isset($dos[1]) ? ($porSolucion[(string)$dos[1]] ?? '') : '';
+    return ['tipoWeb' => $clave, 'esEcommerce' => $clave === 'ecommerce', 'soloCatalogo' => $soloCatalogo, 'segundaWeb' => $segunda];
+}
+
 function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $tipo  = $conv['tipo'] ?? '';
+    $tipoWeb = wabot_lead_tipo_web($conv);
     $label = wabot_tipo_label($tipo, $cfg);
     if ($tipo === 'ecommerce' && !empty($conv['combo_cursos'])) $label .= ' + cursos online';
     if ($tipo === 'landing' && !empty($conv['catalogo'])) $label .= ' con catálogo';
@@ -6184,6 +6209,11 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'color_fondos'       => ['stringValue' => (string)($conv['colores_hex']['fondos']     ?? '')],
         'tipoDetectado'      => ['stringValue' => $tipo],
         'tipoDetectadoLabel' => ['stringValue' => $label],
+        // Lo que el bot marca para los pendientes del admin (11-oct): tipo de web con las claves del panel, tienda sí/no y catálogo sin venta.
+        'tipoWeb'            => ['stringValue' => $tipoWeb['tipoWeb']],
+        'esEcommerce'        => ['booleanValue' => $tipoWeb['esEcommerce']],
+        'soloCatalogo'       => ['booleanValue' => $tipoWeb['soloCatalogo']],
+        'segundaWeb'         => ['stringValue' => $tipoWeb['segundaWeb']],
         'productos_cantidad' => ['integerValue' => (string)$productos],
         'imagenes_recibidas' => ['integerValue' => (string)((int)($conv['imagenes_recibidas'] ?? 0))],
         // Mismos nombres que usa el formulario web, así el botón "Descargar
