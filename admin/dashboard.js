@@ -20,6 +20,8 @@ import {
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { pendientesIniciales, ayudaDePendiente } from "./pendientes-catalogo.js?v=20261011-pendientes";
+
 const TYPE_LABELS = { landing: 'Landing Page', 'web-completa': 'Web Completa', ecommerce: 'E-commerce', inmobiliaria: 'Inmobiliaria' };
 
 // --- Checklist de entrega (solo clientes confirmados) ---
@@ -96,7 +98,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.getElementById("tabMantenimiento").hidden = activeTab !== "mantenimiento";
         document.getElementById("tabInversion").hidden     = activeTab !== "inversion";
         document.getElementById("tabErrores").hidden       = activeTab !== "errores";
-        if (activeTab === "calendario") renderCal();
+        if (activeTab === "calendario") { renderCal(); cargarIngresosMp(); }
         if (activeTab === "propuestas") sincronizarAvisosBoceto();
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
         if (activeTab === "completados") renderCompletados();
@@ -116,7 +118,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
             });
         }
         if (activeTab === "mantenimiento") renderMantenimiento();
-        if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); if (inversionVista === "ingresos") cargarIngresosMp(); }
+        if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); }
         if (activeTab === "errores") cargarErrores();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
@@ -272,7 +274,6 @@ async function abrirInversion() {
 }
 document.getElementById("inversionRecargarBtn")?.addEventListener("click", () => {
     abrirInversion();
-    if (inversionVista === "ingresos") cargarIngresosMp(true);
     if (inversionVista === "anuncios") cargarAnuncios(true);
 });
 
@@ -1091,7 +1092,7 @@ async function cargarIngresosMp(forzar = false) {
     if (ingresosMpCargando || (ingresosMp && !forzar)) return;
     ingresosMpCargando = true;
     ingresosMpError = "";
-    renderInversionVista();
+    if (activeTab === "calendario") renderCal();
     try {
         ingresosMp = await llamarFacturacion("lista", null, { desde: INGRESOS_DESDE }, "ingresos.php");
     } catch (err) {
@@ -1099,7 +1100,7 @@ async function cargarIngresosMp(forzar = false) {
         ingresosMpError = err.message;
     } finally {
         ingresosMpCargando = false;
-        renderInversionVista();
+        if (activeTab === "calendario") renderCal();
     }
 }
 
@@ -1109,9 +1110,6 @@ function _avisoMp() {
     return "";
 }
 
-/* Mes que se está mirando ("YYYY-MM") y día abierto abajo del calendario ("YYYY-MM-DD"). */
-let calMes = null;
-let calDia = null;
 const MESES_AR = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const DIAS_AR = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
 
@@ -1226,23 +1224,19 @@ function _mensualesSinMercadoPago() {
     return out;
 }
 
-function renderIngresos() {
-    const cont = document.getElementById("invVistaIngresos");
-    if (!cont) return;
+/* Cobros del mes que se mira en la pestaña Calendario (Pablo, 11-oct-2026: "los
+   cobros por días mejor los ponemos en el Calendario, el original"; antes eran
+   la vista "Calendario de ingresos" de Inversión). renderCal los pinta: los
+   números del mes arriba, un renglón por tipo de cobro en cada día y el detalle
+   en el modal del día. */
+function _ymCal() {
+    return `${calYear}-${String(calMonth + 1).padStart(2, "0")}`;
+}
+
+/* Las tarjetas de arriba: lo que entró y lo que falta cobrar del mes `calMes` ("YYYY-MM"). */
+function _cobrosResumenHTML(calMes, dias) {
     const hoy = _diaDe(new Date());
     const mesHoy = hoy.slice(0, 7);
-    if (!calMes) {
-        calMes = mesHoy;
-        calDia = hoy;
-    }
-    const [y, m] = calMes.split("-").map(Number);
-    const finMes = _ymdDelMes(y, m - 1, 31);
-    const dias = ingresosPorDia(finMes);
-
-    // Hasta dónde se puede ir: atrás, el primer mes con algo cobrado; adelante, un año.
-    const primerMes = [...dias.keys()].sort()[0]?.slice(0, 7) || mesHoy;
-    const minMes = primerMes < INGRESOS_DESDE.slice(0, 7) ? primerMes : INGRESOS_DESDE.slice(0, 7);
-    const maxMes = _mesMas(mesHoy, 12);
 
     // Números del mes.
     let subsCobrado = 0, subsFalta = 0, otros = 0, nOtros = 0, anuales = 0, nAnuales = 0;
@@ -1300,56 +1294,7 @@ function renderIngresos() {
         : esFuturo ? "a cobrar (estimado)"
         : lineasSub(subsCobrado + otros + anuales, faltaTotal);
 
-    // Grilla: semanas de lunes a domingo.
-    const primero = `${calMes}-01`;
-    const offset = (ymdDiaSemana(primero) + 6) % 7;
-    const celdas = [];
-    for (let i = 0; i < offset; i++) celdas.push(`<div class="ingcal-celda ingcal-celda--fuera"></div>`);
-    for (let ymd = primero; ymd <= finMes; ymd = ymdAgregarDias(ymd, 1)) {
-        const items = dias.get(ymd) || [];
-        const subsOk = items.filter(it => it.clase === "subs" && it.cobrado).reduce((a, it) => a + it.monto, 0);
-        const subsPend = items.filter(it => it.clase === "subs" && !it.cobrado).reduce((a, it) => a + it.monto, 0);
-        const otr = items.filter(it => it.clase === "otros").reduce((a, it) => a + it.monto, 0);
-        const total = subsOk + subsPend + otr;
-        const clases = ["ingcal-celda"];
-        if (ymd === hoy) clases.push("ingcal-celda--hoy");
-        if (ymd === calDia) clases.push("ingcal-celda--sel");
-        if (ymd < hoy) clases.push("ingcal-celda--pasado");
-        if (!total) clases.push("ingcal-celda--vacia");
-        celdas.push(`
-            <button type="button" class="${clases.join(" ")}" data-dia="${ymd}" title="${total ? fmtMoney(total) : "Sin ingresos"}">
-                <span class="ingcal-num">${Number(ymd.slice(8))}</span>
-                ${subsOk ? `<span class="ingcal-mov ingcal-mov--subs">${_montoCorto(subsOk)}</span>` : ""}
-                ${subsPend ? `<span class="ingcal-mov ingcal-mov--falta">${_montoCorto(subsPend)}</span>` : ""}
-                ${otr ? `<span class="ingcal-mov ingcal-mov--otros">${_montoCorto(otr)}</span>` : ""}
-            </button>`);
-    }
-
-    // Detalle del día tocado.
-    let detalle = `<p class="muted">Tocá un día para ver de quién es cada ingreso.</p>`;
-    if (calDia && calDia.slice(0, 7) === calMes) {
-        const items = [...(dias.get(calDia) || [])].sort((a, b) => (a.clase === b.clase ? b.monto - a.monto : a.clase === "subs" ? -1 : 1));
-        const [, dm, dd] = calDia.split("-").map(Number);
-        const titulo = `${DIAS_AR[ymdDiaSemana(calDia)]} ${dd} de ${MESES_AR[dm - 1]}${calDia === hoy ? " (hoy)" : ""}`;
-        const total = items.reduce((a, it) => a + it.monto, 0);
-        detalle = `
-            <p class="mant-subtitulo ingcal-detalle-titulo">${escapeHtml(titulo)}${total ? ` · ${fmtMoney(total)}` : ""}</p>
-            ${items.length ? `<div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${items.map(it => `
-                <tr>
-                    <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${escapeHtml(it.nombre)}</td>
-                    <td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
-                    <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}</td>
-                    <td class="num">${fmtMoney(it.monto)}</td>
-                </tr>`).join("")}</tbody></table></div>` : `<p class="muted">Este día no entró ni entra nada.</p>`}`;
-    }
-
-    cont.innerHTML = `
-        <div class="ingcal-cabecera">
-            <button type="button" class="btn-ghost ingcal-flecha" data-cal-mes="-1" ${calMes <= minMes ? "disabled" : ""} aria-label="Mes anterior">‹</button>
-            <h2 class="ingcal-titulo">${MESES_AR[m - 1]} ${y}</h2>
-            <button type="button" class="btn-ghost ingcal-flecha" data-cal-mes="1" ${calMes >= maxMes ? "disabled" : ""} aria-label="Mes siguiente">›</button>
-            ${calMes !== mesHoy ? `<button type="button" class="btn-ghost ingcal-hoy" data-cal-mes="0">Volver a este mes</button>` : ""}
-        </div>
+    return `
         ${_avisoMp()}
         <div class="stats-box stats-box--periods ingcal-stats">
             <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
@@ -1357,53 +1302,59 @@ function renderIngresos() {
             <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
             <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros + anuales + saldosFalta + anualFalta)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
-        <div class="ingcal-leyenda">
-            <span><span class="ingcal-punto ingcal-punto--subs"></span>Suscripción que ya entró</span>
-            <span><span class="ingcal-punto ingcal-punto--falta"></span>Suscripción que falta cobrar</span>
-            <span><span class="ingcal-punto ingcal-punto--otros"></span>Otro pago (seña, saldo, anual)</span>
-        </div>
-        <div class="ingcal-grilla">
-            ${["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(d => `<div class="ingcal-dia-semana">${d}</div>`).join("")}
-            ${celdas.join("")}
-        </div>
-        <div class="ingcal-detalle">${detalle}</div>
         <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
 }
 
+/* Los renglones de plata de la celda de un día (montos cortos, uno por tipo). */
+function _cobrosCeldaHTML(items) {
+    if (!items?.length) return "";
+    const subsOk = items.filter(it => it.clase === "subs" && it.cobrado).reduce((a, it) => a + it.monto, 0);
+    const subsPend = items.filter(it => it.clase === "subs" && !it.cobrado).reduce((a, it) => a + it.monto, 0);
+    const otr = items.filter(it => it.clase === "otros").reduce((a, it) => a + it.monto, 0);
+    if (!(subsOk + subsPend + otr)) return "";
+    return `<div class="cal-cell-cobros">
+        ${subsOk ? `<span class="ingcal-mov ingcal-mov--subs">${_montoCorto(subsOk)}</span>` : ""}
+        ${subsPend ? `<span class="ingcal-mov ingcal-mov--falta">${_montoCorto(subsPend)}</span>` : ""}
+        ${otr ? `<span class="ingcal-mov ingcal-mov--otros">${_montoCorto(otr)}</span>` : ""}
+    </div>`;
+}
+
+/* La sección "Cobros" del modal de un día: de quién es cada ingreso. */
+function _cobrosDetalleHTML(items) {
+    if (!items?.length) return "";
+    const orden = [...items].sort((a, b) => (a.clase === b.clase ? b.monto - a.monto : a.clase === "subs" ? -1 : 1));
+    const total = orden.reduce((a, it) => a + it.monto, 0);
+    return `
+        <div class="day-section ingcal-detalle">
+            <div class="day-section-header">
+                <span class="day-section-title">💰 Cobros · ${fmtMoney(total)}</span>
+            </div>
+            <div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${orden.map(it => `
+                <tr>
+                    <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${escapeHtml(it.nombre)}</td>
+                    <td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
+                    <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}</td>
+                    <td class="num">${fmtMoney(it.monto)}</td>
+                </tr>`).join("")}</tbody></table></div>
+        </div>`;
+}
+
+/* Inversión: Contactos y clientes · Por anuncio (los cobros por día pasaron a Calendario). */
 function renderInversionVista() {
     document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
-    const vistas = { contactos: "invVistaContactos", ingresos: "invVistaIngresos", anuncios: "invVistaAnuncios" };
+    const vistas = { contactos: "invVistaContactos", anuncios: "invVistaAnuncios" };
     for (const [clave, id] of Object.entries(vistas)) {
         const el = document.getElementById(id);
         if (el) el.hidden = clave !== inversionVista;
     }
-    if (inversionVista === "ingresos") renderIngresos();
     if (inversionVista === "anuncios") cargarAnuncios();
 }
 
 document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {
     inversionVista = b.dataset.inv;
     renderInversionVista();
-    if (inversionVista === "ingresos") cargarIngresosMp();
 }));
 
-// Flechas de mes y clic en un día (abre el detalle abajo; otro clic lo cierra).
-document.getElementById("invVistaIngresos")?.addEventListener("click", (e) => {
-    const flecha = e.target.closest("[data-cal-mes]");
-    if (flecha) {
-        const paso = Number(flecha.dataset.calMes);
-        const mesHoy = _diaDe(new Date()).slice(0, 7);
-        calMes = paso ? _mesMas(calMes || mesHoy, paso) : mesHoy;
-        calDia = calMes === mesHoy ? _diaDe(new Date()) : null;
-        renderIngresos();
-        return;
-    }
-    const celda = e.target.closest("[data-dia]");
-    if (celda) {
-        calDia = calDia === celda.dataset.dia ? null : celda.dataset.dia;
-        renderIngresos();
-    }
-});
 
 /* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
    de la pestaña. Mismo panel embebido que la pestaña WhatsApp (mismo iframe,
@@ -2215,6 +2166,7 @@ let propuestas = [];
 let propuestasCargadas = false;   // hasta el primer snapshot, Clientes muestra "Cargando..."
 let propuestasListaVisible = [];  // lo que renderPropuestas() dejó filtrado; lo usa "Copiar carpetas"
 let presupuestos = [];
+let presupuestosCargados = false;
 let leads = [];
 let completados = [];
 let tareas = [];
@@ -2725,6 +2677,7 @@ function initRealtime() {
         clientesCargados = true;
         refrescarErroresPorClientes();
         render();
+        sembrarPendientes();
         // Mantenimiento lista las webs entregadas y cruza las suscripciones con los clientes.
         renderMantenimiento();
         if (activeTab === "seguimientos") renderSeg();
@@ -2755,6 +2708,7 @@ function initRealtime() {
         renderPropuestas();
         renderLeads(); // actualizar badges de bocetos en la tabla de presupuestos
         if (activeTab === "clientes") render();
+        sembrarPendientes();
         if (activeTab === "completados") renderCompletados();
         if (enMetrica("stats")) renderStats();
         if (enMetrica("embudo")) renderEmbudoPresupuesto();
@@ -2783,6 +2737,8 @@ function initRealtime() {
     const qPres = query(collection(db, "presupuestos"), orderBy("createdAt", "desc"));
     onSnapshot(qPres, (snap) => {
         presupuestos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        presupuestosCargados = true;
+        sembrarPendientes();
 
         // Separar los que pagaron y los leads del mismo array
         // Pagaron: clientes reales que pagaron via Mercado Pago → SIEMPRE tienen paymentStatus
@@ -2925,6 +2881,17 @@ function _updateClientCounters() {
     const nSB = clients.filter(c => getEstado(c) === "standby").length;
 
     document.getElementById("countClientesTab").textContent = nClientes;
+    const porCobrarLista = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c) && esPorCobrar(c));
+    const cp1 = document.getElementById("cliCountProceso"); if (cp1) cp1.textContent = nClientes - porCobrarLista.length;
+    const cp2 = document.getElementById("cliCountCobrar"); if (cp2) cp2.textContent = porCobrarLista.length;
+    const resumenCobrar = document.getElementById("clientesCobrarResumen");
+    if (resumenCobrar) {
+        // Pago único: el saldo que falta; plan mensual: la mensualidad de los que todavía no se suscribieron.
+        const saldos = porCobrarLista.filter(c => modalidadDe(c) === "propia" && !c.sinPrecio).reduce((a, c) => a + pagoUnicoDe(c).saldo, 0);
+        const mensuales = porCobrarLista.filter(c => modalidadDe(c) !== "propia" && suscripcionDe(c).estado !== "activa").reduce((a, c) => a + suscripcionDe(c).mensual, 0);
+        resumenCobrar.hidden = clientesVista !== "cobrar" || !porCobrarLista.length;
+        resumenCobrar.textContent = `Falta cobrar ${fmtMoney(saldos)} de saldos de pago único y ${fmtMoney(mensuales)} por mes de planes mensuales sin suscripción activa.`;
+    }
     const seg1El = document.getElementById("countSeg1");
     if (seg1El) seg1El.textContent = nSeg;
     const totalSegEl = document.getElementById("totalSeguimientos");
@@ -2979,6 +2946,21 @@ function _bindTableListeners(tbodyEl) {
     });
     tbodyEl.querySelectorAll("[data-terminada-id]").forEach(btn => {
         btn.addEventListener("click", () => marcarWebTerminada(btn.dataset.terminadaId));
+    });
+    tbodyEl.querySelectorAll("[data-completada-id]").forEach(btn => {
+        btn.addEventListener("click", () => marcarWebCompletada(btn.dataset.completadaId));
+    });
+    tbodyEl.querySelectorAll("[data-reabrir-id]").forEach(btn => {
+        btn.addEventListener("click", () => reabrirWebCompletada(btn.dataset.reabrirId));
+    });
+    tbodyEl.querySelectorAll("[data-pend-id]").forEach(btn => {
+        btn.addEventListener("click", () => togglePendiente(btn.dataset.pendCli, btn.dataset.pendId));
+    });
+    tbodyEl.querySelectorAll("[data-pend-add]").forEach(btn => {
+        btn.addEventListener("click", () => agregarPendiente(btn.dataset.pendAdd));
+    });
+    tbodyEl.querySelectorAll("[data-pend-del]").forEach(btn => {
+        btn.addEventListener("click", () => quitarPendiente(btn.dataset.pendDelCli, btn.dataset.pendDel));
     });
     tbodyEl.querySelectorAll("[data-iniciar-plan]").forEach(btn => {
         btn.addEventListener("click", () => iniciarPlanAnual(btn.dataset.iniciarPlan));
@@ -3150,9 +3132,19 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
        plan mensual o anual a Mantenimiento —la web propia sigue saliendo por
        el tacho, que factura y la deja en Completados— y "iniciar plan" fija
        desde cuándo corre el año del plan anual, con su próximo cobro. */
-    const terminada = (!entregada && modalidad !== 'propia')
+    // 11-oct-2026: el pago único y el plan mensual pasan primero por Por cobrar (✓ "completada");
+    // el mensual sale de ahí a Mantenimiento con el ✓ de siempre, el pago único con el tacho (factura).
+    const porCobrar = !entregada && esPorCobrar(c);
+    const completada = (!entregada && !porCobrar && modalidad !== 'unico')
+        ? `<button class="icon-btn btn-terminada" data-completada-id="${c.id}" title="Marcar la web como completada: pasa a Por cobrar">✓</button>`
+        : '';
+    const reabrir = porCobrar
+        ? `<button class="icon-btn" data-reabrir-id="${c.id}" title="Volver a En proceso">↩</button>`
+        : '';
+    const terminada = (!entregada && modalidad !== 'propia' && (modalidad === 'unico' || porCobrar))
         ? `<button class="icon-btn btn-terminada" data-terminada-id="${c.id}" title="Marcar la web como terminada: pasa a Mantenimiento con su plan">✓</button>`
         : '';
+    const webCompletada = porCobrar ? mantToDate(c.webCompletadaAt) : null;
     const iniciarPlan = modalidad === 'unico' && !r?.legado
         ? `<button class="icon-btn btn-iniciar-plan" data-iniciar-plan="${c.id}" title="${r?.proximo ? `Cambiar desde cuándo corre el plan anual (próximo cobro: ${mantLongDate(r.proximo)})` : 'Marcar desde cuándo corre el plan anual: el próximo cobro queda un año después'}">▶</button>`
         : '';
@@ -3167,7 +3159,9 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
                     ${/* Pablo, 9-oct: también desde Clientes (y el plan anual de Mantenimiento, que usa esta fila). */ _botonVerChat(c)}
                     ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
                     ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
+                    ${porCobrar ? `<small style="font-size:11px;color:#4ade80">✓ Web completada${webCompletada ? ` el ${mantLongDate(webCompletada)}` : ""}</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
+                    ${!entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
                 </div>
             </td>
             <td>
@@ -3186,7 +3180,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
             <td>${_conSena(modalidad) ? pagoUnico + renovacion : suscripcion}</td>
             ${sinCambios ? "" : `<td class="center">${cambios}</td>`}
             <td class="actions-col">
-                ${terminada}${iniciarPlan}
+                ${completada}${terminada}${reabrir}${iniciarPlan}
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
                 <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo el saldo o una mensualidad (no marca la web como entregada)">🧾</button>
                 <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
@@ -3655,7 +3649,8 @@ function render() {
     const term = searchInput.value.trim().toLowerCase();
     const termPhone = cleanArgPhone(term);
     // Solo las webs en desarrollo: las entregadas están en Mantenimiento (19-sep-2026).
-    const clientesBase = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c));
+    // En proceso (se están armando) o Por cobrar (completadas del pago único y del plan mensual).
+    const clientesBase = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c) && esPorCobrar(c) === (clientesVista === "cobrar"));
     let list = clientesBase;
     if (term) list = list.filter(c =>
         (c.nombre || "").toLowerCase().includes(term) ||
@@ -3668,10 +3663,122 @@ function render() {
 
     tbody.innerHTML = ordered.length
         ? ordered.map(_clientRow).join("")
-        : `<tr class="empty-row"><td colspan="5">No hay webs en desarrollo${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        : `<tr class="empty-row"><td colspan="5">${clientesVista === "cobrar" ? "No hay webs por cobrar" : "No hay webs en desarrollo"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
+}
+
+/* En proceso / Por cobrar (Pablo, 11-oct-2026). Por cobrar son las webs ya
+   completadas (`webCompletadaAt`, el ✓ de En proceso) del pago único y del plan
+   mensual, que esperan el cobro: el saldo, o que el cliente se suscriba. El plan
+   anual no pasa por acá: sigue en En proceso hasta marcarlo como terminado. */
+let clientesVista = "proceso";
+function esPorCobrar(c) {
+    if (!c?.webCompletadaAt || webEntregada(c)) return false;
+    const m = modalidadDe(c);
+    return m === "mensual" || m === "propia" || m === "";
+}
+document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
+    b.addEventListener("click", () => {
+        clientesVista = b.dataset.clientesview;
+        document.querySelectorAll("#clientesViews .seg-chip").forEach(x => x.classList.toggle("active", x === b));
+        render();
+    });
+});
+
+/* Un pendiente de la web: { id, texto, hecho, por: 'pablo' | 'claude', at }. Los
+   que no tienen lista todavía muestran la de su tipo (sembrarPendientes la guarda). */
+function pendientesDe(c) {
+    return Array.isArray(c.pendientes) ? c.pendientes : pendientesIniciales(planDe(c, propuestaDeCliente(c)).key, c.tareas);
+}
+
+const _sembrando = new Set();
+function sembrarPendientes() {
+    // El tipo de web sale del boceto: hasta que cargan los bocetos no se sabe cuál lista corresponde.
+    if (!clientesCargados || !propuestasCargadas || !presupuestosCargados) return;
+    for (const c of clients) {
+        if (getEstado(c) !== "cliente" || webEntregada(c) || Array.isArray(c.pendientes) || _sembrando.has(c.id)) continue;
+        _sembrando.add(c.id);
+        updateDoc(doc(db, "clientes", c.id), { pendientes: pendientesDe(c) })
+            .catch(err => { _sembrando.delete(c.id); console.error("No se pudieron guardar los pendientes:", err); });
+    }
+}
+
+async function guardarPendientes(id, lista) {
+    try {
+        await updateDoc(doc(db, "clientes", id), { pendientes: lista });
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar el pendiente: " + err.message);
+    }
+}
+
+function togglePendiente(id, pid) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const lista = pendientesDe(c).map(p => p.id !== pid ? p
+        : p.hecho ? { ...p, hecho: false, por: "", at: "" } : { ...p, hecho: true, por: "pablo", at: new Date().toISOString() });
+    guardarPendientes(id, lista);
+}
+
+function agregarPendiente(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const texto = (prompt(`Nuevo pendiente para "${c.proyecto || c.nombre || "este cliente"}":`) || "").trim();
+    if (!texto) return;
+    guardarPendientes(id, [...pendientesDe(c), { id: "p" + Date.now().toString(36), texto, hecho: false, por: "", at: "" }]);
+}
+
+function quitarPendiente(id, pid) {
+    const c = clients.find(x => x.id === id);
+    const p = c && pendientesDe(c).find(x => x.id === pid);
+    if (!p || !confirm(`¿Quitar "${p.texto}" de los pendientes de ${c.proyecto || c.nombre || "este cliente"}?`)) return;
+    guardarPendientes(id, pendientesDe(c).filter(x => x.id !== pid));
+}
+
+/* Los botoncitos de pendientes debajo del nombre del cliente. */
+function _pendientesHTML(c) {
+    const lista = pendientesDe(c);
+    const hechos = lista.filter(p => p.hecho).length;
+    const chips = lista.map(p => {
+        const ayuda = ayudaDePendiente(p.id);
+        const cuando = p.at ? new Date(p.at).toLocaleDateString("es-AR", { day: "numeric", month: "numeric" }) : "";
+        const titulo = p.hecho
+            ? `Hecho${p.por === "claude" ? " por Claude" : ""}${cuando ? ` el ${cuando}` : ""}. Clic para desmarcar`
+            : `${ayuda ? ayuda + ". " : ""}Clic para marcar como hecho`;
+        return `<span class="pend-chip-wrap">
+            <button type="button" class="pend-chip${p.hecho ? " pend-chip--hecho" : ""}" data-pend-cli="${c.id}" data-pend-id="${escapeHtml(p.id)}" title="${escapeHtml(titulo)}">${p.hecho ? "✓" : "○"} ${escapeHtml(p.texto)}${p.hecho && p.por === "claude" ? " 🤖" : ""}</button><button type="button" class="pend-del" data-pend-del-cli="${c.id}" data-pend-del="${escapeHtml(p.id)}" title="Quitar este pendiente" aria-label="Quitar ${escapeHtml(p.texto)}">×</button>
+        </span>`;
+    }).join("");
+    return `<div class="pend-lista" aria-label="Pendientes de la web">
+        <span class="pend-cuenta" title="Pendientes hechos">${hechos}/${lista.length}</span>${chips}<button type="button" class="pend-add" data-pend-add="${c.id}" title="Agregar un pendiente">+</button>
+    </div>`;
+}
+
+async function marcarWebCompletada(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const faltan = pendientesDe(c).filter(p => !p.hecho);
+    const nombre = c.proyecto || c.nombre || "este cliente";
+    if (!confirm(`¿Marcar la web de "${nombre}" como completada?\n\nPasa a Por cobrar.${faltan.length ? `\n\nTodavía quedan ${faltan.length} pendiente${faltan.length === 1 ? "" : "s"} sin marcar: ${faltan.map(p => p.texto).join(", ")}.` : ""}`)) return;
+    try {
+        await updateDoc(doc(db, "clientes", id), { webCompletadaAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    } catch (err) {
+        console.error(err);
+        alert("Error al marcarla como completada: " + err.message);
+    }
+}
+
+async function reabrirWebCompletada(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c || !confirm(`¿Volver "${c.proyecto || c.nombre || "este cliente"}" a En proceso?`)) return;
+    try {
+        await updateDoc(doc(db, "clientes", id), { webCompletadaAt: null, updatedAt: serverTimestamp() });
+    } catch (err) {
+        console.error(err);
+        alert("Error al volverla a En proceso: " + err.message);
+    }
 }
 
 // --- Viñetas de Seguimientos ---
@@ -4190,7 +4297,10 @@ let modalTareas = {};
 function toggleTareasSection() {
     const sel = document.getElementById("estadoCliente");
     const isClient = sel.value === "cliente";
-    document.getElementById("tareasSection").style.display = isClient ? "" : "none";
+    // 11-oct-2026: el checklist de entrega pasó a los pendientes de cada fila de Clientes
+    // (clientes.pendientes, pendientes-catalogo.js). `tareas` se sigue guardando tal cual
+    // y sembrarPendientes lo toma para no perder lo que ya estaba tildado.
+    document.getElementById("tareasSection").style.display = "none";
     document.getElementById("hablarleElDiaField").style.display = isClient ? "none" : "";
     // La suscripción y la fecha de la seña dependen además de la modalidad.
     sincronizarModalidadModal();
@@ -6430,6 +6540,12 @@ function renderCal() {
     const todayM = today.getMonth();
     const todayD = today.getDate();
 
+    // Cobros del mes (11-oct-2026): suscripciones, señas, saldos y cobros anuales por día.
+    const calMes = _ymCal();
+    const dias = ingresosPorDia(`${calMes}-31`);
+    const resumen = document.getElementById("calResumen");
+    if (resumen) resumen.innerHTML = _cobrosResumenHTML(calMes, dias);
+
     let html = `<div class="cal-day-names">
         <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
     </div><div class="cal-days">`;
@@ -6455,6 +6571,7 @@ function renderCal() {
         html += `<div class="${cls}" data-date="${dateStr}">
             <span class="cal-day-num">${d}</span>
             <div class="cal-cell-badges">${badges}</div>
+            ${_cobrosCeldaHTML(dias.get(dateStr))}
         </div>`;
     }
 
@@ -6500,7 +6617,7 @@ function openDayModal(dateStr) {
             }
         </div>`;
 
-    dayModalBody.innerHTML = tareasHtml;
+    dayModalBody.innerHTML = tareasHtml + _cobrosDetalleHTML(ingresosPorDia(dateStr).get(dateStr));
 
     dayModalBody.querySelector(".btn-add-tarea-day")?.addEventListener("click", () => {
         dayModal.hidden = true;

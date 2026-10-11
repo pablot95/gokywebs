@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261010-costo-fijo">
+    <link rel="stylesheet" href="styles.css?v=20261011-pendientes">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -39,6 +39,14 @@
                 </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
             </div>
+
+            <!-- 11-oct-2026: En proceso (webs que se están armando) y Por cobrar (web completada del pago único y
+                 del plan mensual: falta cobrar el saldo o que se suscriba). dashboard.js: clientesVista. -->
+            <div class="seg-views" id="clientesViews">
+                <button type="button" class="seg-chip active" data-clientesview="proceso">En proceso <span class="seg-chip-count" id="cliCountProceso">0</span></button>
+                <button type="button" class="seg-chip" data-clientesview="cobrar">Por cobrar <span class="seg-chip-count" id="cliCountCobrar">0</span></button>
+            </div>
+            <p class="muted" id="clientesCobrarResumen" hidden></p>
 
             <div class="search-row">
                 <input type="search" id="searchInput" placeholder="Buscar por nombre, proyecto o teléfono...">
@@ -488,11 +496,9 @@
                 </div>
                 <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
             </div>
-            <!-- 5-oct-2026: Calendario de ingresos (antes "Ingresos por semana" y "Planificador"):
-                 cada día lo que entró y lo que falta cobrar, y los números del mes. dashboard.js: renderIngresos. -->
+            <!-- 11-oct-2026: el calendario de ingresos (cobros por día) pasó a la pestaña Calendario. dashboard.js: renderCal / ingresosPorDia. -->
             <nav class="subtab-nav" id="inversionNav">
                 <button type="button" class="subtab-btn active" data-inv="contactos">👥 Contactos y clientes</button>
-                <button type="button" class="subtab-btn" data-inv="ingresos">📅 Calendario de ingresos</button>
                 <!-- 10-oct-2026: el embudo de cada anuncio (wabot/anuncios-stats.php) cruzado con Clientes. dashboard.js: renderAnuncios. -->
                 <button type="button" class="subtab-btn" data-inv="anuncios">📣 Por anuncio</button>
             </nav>
@@ -501,7 +507,6 @@
                 <div class="seg-views" id="inversionSemanas"></div>
                 <div id="inversionContent"><p class="muted">Cargando…</p></div>
             </div>
-            <div id="invVistaIngresos" hidden></div>
             <div id="invVistaAnuncios" hidden></div>
         </section>
 
@@ -587,6 +592,8 @@
 
         <!-- Tab: Calendario -->
         <section class="panel tab-panel" id="tabCalendario" hidden>
+            <!-- 11-oct-2026: los cobros por día (antes en Inversión) viven acá, junto a las tareas. dashboard.js: renderCal. -->
+            <div id="calResumen"></div>
             <div class="cal-layout">
                 <aside class="cal-sidebar">
                     <div class="cal-nav">
@@ -597,6 +604,9 @@
                     <div class="cal-leyenda">
                         <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Importancia 1</span>
                         <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Importancia 2</span>
+                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--subs"></span> Suscripción que ya entró</span>
+                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--falta"></span> Suscripción que falta cobrar</span>
+                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--otros"></span> Otro pago (seña, saldo, anual)</span>
                     </div>
                     <button class="btn-primary cal-add-btn" id="addTareaHoyBtn">+ Agregar tarea hoy</button>
                 </aside>
@@ -1220,6 +1230,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261010-anuales-plan"></script>
+    <script type="module" src="dashboard.js?v=20261011-pendientes"></script>
 </body>
 </html>

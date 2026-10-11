@@ -725,6 +725,31 @@ textarea:focus {
 .clients-table .center { text-align: center; }
 
 .client-name-cell { display: flex; flex-direction: column; gap: 2px; }
+
+/* Pendientes de la web (11-oct-2026): botoncitos que marca Pablo o Claude. */
+.pend-lista { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; max-width: 360px; }
+.pend-cuenta { font-size: 11px; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 2px; }
+.pend-chip-wrap { position: relative; display: inline-flex; }
+.pend-chip {
+    font: inherit; font-size: 11px; font-weight: 600; line-height: 1.2; white-space: nowrap;
+    color: var(--text-muted); background: transparent; border: 1px solid var(--border-strong, var(--border));
+    border-radius: 999px; padding: 3px 9px; cursor: pointer;
+    transition: color .15s, border-color .15s, background .15s;
+}
+.pend-chip:hover { color: var(--text); border-color: var(--text-muted); }
+.pend-chip--hecho { color: #4ade80; background: rgba(34, 197, 94, .12); border-color: rgba(34, 197, 94, .4); text-decoration: line-through; text-decoration-color: rgba(74, 222, 128, .5); }
+.pend-del {
+    position: absolute; top: -6px; right: -4px; width: 15px; height: 15px; padding: 0;
+    display: none; place-items: center; font-size: 11px; line-height: 1; cursor: pointer;
+    color: #fff; background: var(--danger, #ef4444); border: 0; border-radius: 50%;
+}
+.pend-chip-wrap:hover .pend-del, .pend-del:focus-visible { display: grid; }
+.pend-add {
+    font: inherit; font-size: 13px; font-weight: 700; line-height: 1; width: 22px; height: 22px; padding: 0;
+    color: var(--text-muted); background: transparent; border: 1px dashed var(--border-strong, var(--border)); border-radius: 50%; cursor: pointer;
+}
+.pend-add:hover { color: var(--text); border-color: var(--text-muted); }
+
 .sketch-slot { color: var(--text-muted); font-size: 11px; font-weight: 500; white-space: nowrap; }
 
 /* ===== ESTADÍSTICAS DE BOCETO (día / horario) ===== */
@@ -1678,7 +1703,7 @@ body.modal-open { overflow: hidden; }
 
 .cal-day-names {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
     margin-bottom: 6px;
 }
@@ -1695,7 +1720,7 @@ body.modal-open { overflow: hidden; }
 
 .cal-days {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 4px;
 }
 
@@ -2268,6 +2293,15 @@ body.modal-open { overflow: hidden; }
     gap: 3px;
     margin-top: 4px;
 }
+
+/* Cobros del día en la celda del calendario (11-oct-2026). */
+.cal-cell-cobros { display: flex; flex-direction: column; gap: 3px; width: 100%; min-width: 0; margin-top: auto; }
+.cal-cell-cobros .ingcal-mov { text-align: center; }
+#calResumen { margin-bottom: 18px; }
+#clientesCobrarResumen { margin: 12px 0 0; font-size: 13px; }
+.cal-leyenda .cal-leyenda-item .ingcal-punto { margin-right: 0; }
+.modal--day .ingcal-detalle { margin-top: 0; }
+.modal--day .ing-detalle-tabla td { padding: 7px 8px; font-size: 13px; }
 
 .badge-imp1 { background: rgba(234,179,8,.85); min-width: 16px; }
 .badge-imp2 { background: rgba(239,68,68,.85); min-width: 16px; }
