@@ -233,6 +233,9 @@ let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
 const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
+// Pablo tipea el gasto de la semana sin impuestos; lo que cuenta es ese número × 1,23
+// (Pablo, 11-oct). Se guarda lo tipeado y el recargo se aplica al calcular.
+const RECARGO_PUBLICIDAD = 1.23;
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
    (el domingo). Vive en Firestore, no en wabot: es un número que Pablo tipea,
@@ -865,7 +868,8 @@ function renderInversion() {
         const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
         const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
         const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
-        const gasto = gastoAdsPorSemana.get(key) || 0;
+        const gastoIngresado = gastoAdsPorSemana.get(key) || 0;
+        const gasto = Math.round(gastoIngresado * RECARGO_PUBLICIDAD);   // el que cuenta en todas las cuentas
         // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
         // van siempre sumados al gasto, y el costo se reparte sobre ese total
         // (Pablo, 10-oct).
@@ -940,8 +944,9 @@ function renderInversion() {
                 <label class="muted" style="display:flex;align-items:center;gap:8px;margin:0">
                     Gasto en publicidad esa semana
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
-                           data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
+                           data-semana="${key}" value="${gastoIngresado || ""}" placeholder="0" style="width:120px">
                 </label>
+                ${gastoIngresado ? `<span class="muted">× 1,23 = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>` : ""}
                 ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong></span>` : ""}
             </div>
             ${tarjetasCosto}
