@@ -232,6 +232,7 @@ function fechaCortaJs(d) {
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> { ingresado, total, recargo }
+const INGRESO_MENSUAL_BASE = 26500;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor
 const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
 /* Desde el 11-oct Pablo tipea el gasto de la semana sin impuestos y lo que cuenta es
    ese número × 1,23. Se guarda lo tipeado con `recargo: 1.23` y el recargo se aplica
@@ -885,12 +886,16 @@ function renderInversion() {
         const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
         const gastoTotal = gasto + extraPaginas;
         const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
-        const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
+        // El costo ya no se reparte por suscriptor sino por cada $26.500 de ingreso
+        // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 26.500) (Pablo, 12-oct).
+        const ingresoMensual = suscriptores.reduce((acc, c) => acc + _num(c._clienteDoc.montoMensual), 0);
+        const tramos = ingresoMensual / INGRESO_MENSUAL_BASE;
+        const costoPorSuscriptor = tramos > 0 ? costoNeto / tramos : null;
         // Lo mismo, pero restando el total de cada venta anual/única y no solo lo
         // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
         const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
         const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
-        const costoPorSuscriptorTotal = suscriptores.length ? costoNetoTotal / suscriptores.length : null;
+        const costoPorSuscriptorTotal = tramos > 0 ? costoNetoTotal / tramos : null;
 
         // La columna Costo de cada cliente se sacó (Pablo, 11-oct): el costo queda en los cuadritos.
         const filas = convertidos.map(c => {
@@ -919,18 +924,21 @@ function renderInversion() {
         const tarjeta = (titulo, valor, detalle, color = "") =>
             `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor"${color ? ` style="color:${color}"` : ""}>${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
         const verde = "var(--accent-green,#4ade80)";
-        const nMensuales = `${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"}`;
+        const divisor = tramos > 0
+            ? ` ÷ ${String(Math.round(tramos * 100) / 100).replace(".", ",")} (${fmtMoney(ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})`
+            : ` · sin ingreso mensual todavía`;
+        const porIngreso = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
         const tarjetas = [];
         if (gastoTotal > 0) {
-            tarjetas.push(tarjeta("Por suscriptor · según lo cobrado (seña)",
-                suscriptores.length ? fmtMoney(costoPorSuscriptor) : "—",
+            tarjetas.push(tarjeta(`${porIngreso} · según lo cobrado (seña)`,
+                tramos > 0 ? fmtMoney(costoPorSuscriptor) : "—",
                 (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
-                    + (suscriptores.length ? ` ÷ ${nMensuales}` : ` · sin suscriptores mensuales todavía`), verde));
+                    + divisor, verde));
             if (sumaVentaTotal > sumaPagoUnico) {
-                tarjetas.push(tarjeta("Por suscriptor · según el total de la venta",
-                    suscriptores.length ? fmtMoney(costoPorSuscriptorTotal) : "—",
+                tarjetas.push(tarjeta(`${porIngreso} · según el total de la venta`,
+                    tramos > 0 ? fmtMoney(costoPorSuscriptorTotal) : "—",
                     `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
-                        + (suscriptores.length ? ` ÷ ${nMensuales}` : ` · sin suscriptores mensuales todavía`), verde));
+                        + divisor, verde));
             }
         }
         const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
