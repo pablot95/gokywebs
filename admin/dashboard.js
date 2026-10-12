@@ -892,21 +892,16 @@ function renderInversion() {
         const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
         const costoPorSuscriptorTotal = suscriptores.length ? costoNetoTotal / suscriptores.length : null;
 
-        // Costo de cada cliente (Pablo, 10-oct): su parte del gasto en publicidad
-        // de la semana (repartido entre los que pasaron a Cliente) + $10.000 por
-        // la página hecha, una por cliente.
-        const gastoPorCliente = convertidos.length ? gasto / convertidos.length : 0;
-        const costoCliente = gastoPorCliente + COSTO_POR_PAGINA;
-
+        // La columna Costo de cada cliente se sacó (Pablo, 11-oct): el costo queda en los cuadritos.
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
-            // El plan anual muestra el total del plan, no la seña: para comparar lo que deja
-            // cada cliente con lo que costó hay que ver la venta entera (Pablo, 11-oct). Lo
+            // El plan anual y el pago único muestran el total de la venta, no la seña: para
+            // comparar lo que deja cada cliente hay que ver la venta entera (Pablo, 11-oct). Lo
             // cobrado hasta ahora va abajo, chiquito.
             const pu = pagoUnicoDe(c._clienteDoc);
-            const anualTotal = mod === "unico" ? Math.max(pu.precio, pu.cobrado) : 0;
-            const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : anualTotal || pu.cobrado;
-            const pagaDetalle = anualTotal && pu.cobrado < anualTotal
+            const ventaTotal = mod === "unico" || mod === "propia" ? Math.max(pu.precio, pu.cobrado) : 0;
+            const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : ventaTotal || pu.cobrado;
+            const pagaDetalle = ventaTotal && pu.cobrado < ventaTotal
                 ? `<div class="muted" style="font-size:11.5px">${pu.cobrado ? `cobrado ${fmtMoney(pu.cobrado)}` : "sin cobrar todavía"}</div>` : "";
             const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Pago único" : mod === "unico" ? "Anual" : "—";
             return `
@@ -917,7 +912,6 @@ function renderInversion() {
                 <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
                 <td>${escapeHtml(modLabel)}</td>
                 <td>${paga ? fmtMoney(paga) : "—"}${pagaDetalle}</td>
-                <td>${fmtMoney(costoCliente)}</td>
             </tr>`;
         }).join("");
 
@@ -964,7 +958,7 @@ function renderInversion() {
             ${convertidos.length ? `
             <div class="table-wrapper">
                 <table class="clients-table">
-                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th><th>Costo</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
             </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
