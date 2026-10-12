@@ -1292,10 +1292,10 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .tabs-nav a { border-color:var(--line); padding:4px 9px; border-radius:7px; font-size:11.5px; }
 .tabs-nav a.tabs-aparte { border:0; padding:0 2px; }
 @media (min-width: 1181px) and (hover: hover) {
-  body.conv-full .tabs-nav { position:fixed; z-index:60; top:8px; right:10px; width:190px;
+  body.conv-full .tabs-nav { position:fixed; z-index:60; top:8px; right:8px; width:122px;
       margin:0; flex-direction:column; align-items:stretch; gap:3px; }
   body.conv-full .tabs-nav a { padding:3px 8px; font-size:10.5px; line-height:17px; text-align:left; white-space:nowrap; }
-  body.conv-full .live-bar, body.conv-full .live-board { margin-right:190px; }
+  body.conv-full .live-bar, body.conv-full .live-board { margin-right:130px; }
 }
 @media (max-width: 700px) {
   .tabs-nav { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
@@ -1672,7 +1672,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
 /* La franja derecha del escritorio ahora es solo de la navegación (.tabs-nav). */
 @media (min-width: 1181px) and (hover: hover) {
-  body.conv-full .conv-main { margin-right:190px; }
+  body.conv-full .conv-main { margin-right:130px; }
 }
 /* Celular (4-oct): 🔍 y las categorías en UNA fila deslizable de ~40 px, para
    que el editor no quede fuera de la pantalla. La lista de una categoría sube
@@ -1726,8 +1726,9 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
   .rr-admin-cat-cab .rr-admin-visible { grid-column:1 / -1; justify-self:start; }
   .rr-admin-cat-cab .rr-admin-borrar { grid-column:1 / -1; justify-self:end; }
 }
-.conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
-.conv-demo-link { display:inline-flex; align-items:center; margin-top:7px; padding:5px 10px; border:1px solid #315aa0; border-radius:7px; color:#bfdbfe; font-size:12px; font-weight:700; text-decoration:none; }
+.conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; padding-bottom:8px; border-bottom:1px solid var(--line); margin-bottom:8px; font-size:12.5px; }
+.conv-head > div > strong { font-size:14.5px; }
+.conv-demo-link { display:inline-flex; align-items:center; margin-top:5px; padding:4px 8px; border:1px solid #315aa0; border-radius:7px; color:#bfdbfe; font-size:11px; font-weight:700; text-decoration:none; }
 .conv-demo-link:hover { background:#19365f; color:#fff; }
 .conv-head form { display:inline; }
 /* "Ver info": lo que llenó en el formulario (5-oct). */
@@ -1742,7 +1743,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .form-info dd { margin:3px 0 0; white-space:normal; overflow-wrap:anywhere; }
 .form-info dd a { color:var(--info); }
 .conv-acciones { gap:6px; flex-shrink:0; }
-.conv-acciones button { padding:5px 10px; font-size:12px; font-weight:500; border-radius:6px; }
+.conv-acciones button { padding:4px 8px; font-size:11px; font-weight:500; border-radius:6px; }
 /* Resetear y Eliminar no se pueden deshacer, así que dejan de verse como los
    demás: quedan tenues y sin borde hasta que pasás por encima. En rojo fijo
    competían por la atención con Archivar, que es inofensivo. */
@@ -1752,7 +1753,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 /* "Te hablo el martes" (11-oct): la pausa de los avisos automáticos. */
 .conv-retomar { color:var(--warn); }
 .conv-head form.conv-retomar-form { display:inline-flex; gap:4px; align-items:center; }
-.conv-retomar-form input[type=date] { background:var(--bg); color:var(--tx); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; font-size:12px; color-scheme:dark; }
+.conv-retomar-form input[type=date] { background:var(--bg); color:var(--tx); border:1px solid var(--line); border-radius:6px; padding:3px 5px; font:inherit; font-size:11px; color-scheme:dark; }
 /* En pantalla grande las acciones están siempre a la vista; el botón "⋯" solo
    existe para plegarlas en el celular, donde ocupaban 90px de alto y le comían
    el espacio al chat. Antes esto era un <details>, que en desktop se tragaba
