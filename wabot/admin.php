@@ -1441,7 +1441,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .burb-edit-aviso { font-size:10.5px; color:var(--dim); flex:1 1 140px; min-width:0; }
 
 /* ===== CONVERSACIONES: tres listas a la izquierda, chat a la derecha ===== */
-.conv-split { display:grid; grid-template-columns: minmax(0,420px) minmax(430px,1fr); gap:14px; align-items:stretch; }
+.conv-split { display:grid; grid-template-columns: minmax(0,336px) minmax(430px,1fr); gap:14px; align-items:stretch; }
 .conv-nav { display:flex; flex-direction:column; gap:3px; min-width:0; overflow-y:auto; scrollbar-width:thin; }
 /* Sin caja ni borde: nueve cajas apiladas eran nueve rectángulos compitiendo.
    La seleccionada se marca con fondo y una barra a la izquierda, como una
@@ -1771,11 +1771,11 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
    scrollea, pero el chat sigue a la derecha. Nunca se va abajo del todo. */
 /* Sin lugar para cuatro al lado, se acomodan en dos filas de dos. */
 @media (max-width: 1650px) {
-    .conv-split { grid-template-columns: minmax(0,380px) minmax(0,1fr); }
+    .conv-split { grid-template-columns: minmax(0,304px) minmax(0,1fr); }
 }
 
 @media (max-width: 1150px) {
-    .conv-split { grid-template-columns: minmax(0,320px) minmax(0,1fr); }
+    .conv-split { grid-template-columns: minmax(0,256px) minmax(0,1fr); }
 }
 
 /* Sin hover no hay forma de descubrir el lápiz: en touch va siempre visible. */
