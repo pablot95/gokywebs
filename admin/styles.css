@@ -726,6 +726,15 @@ textarea:focus {
 
 .client-name-cell { display: flex; flex-direction: column; gap: 2px; }
 
+/* Clientes (12-oct-2026): con los pendientes la fila quedaba muy alta y a lo ancho sobraba lugar.
+   La primera columna toma más ancho: nombre, negocio, teléfono y Ver chat van en una sola línea y
+   los pendientes se acomodan abajo, a lo ancho de la columna (2 renglones en vez de 4 o 5). */
+#tabClientes .clients-table th:first-child { width: 55%; }
+#tabClientes .clients-table td { padding-top: 10px; padding-bottom: 10px; }
+#clientsTbody .client-name-cell { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 3px; }
+#clientsTbody .client-name-cell > div > .btn-ghost { margin-top: 0 !important; }
+#clientsTbody .client-name-cell > .pend-lista { flex: 1 0 100%; max-width: none; margin-top: 3px; }
+
 /* Pendientes de la web (11-oct-2026): botoncitos que marca Pablo o Claude. */
 .pend-lista { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; max-width: 360px; }
 .pend-cuenta { font-size: 11px; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 2px; }
