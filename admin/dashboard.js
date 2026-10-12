@@ -887,7 +887,14 @@ function renderInversion() {
 
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
-            const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : pagoUnicoDe(c._clienteDoc).cobrado;
+            // El plan anual muestra el total del plan, no la seña: para comparar lo que deja
+            // cada cliente con lo que costó hay que ver la venta entera (Pablo, 11-oct). Lo
+            // cobrado hasta ahora va abajo, chiquito.
+            const pu = pagoUnicoDe(c._clienteDoc);
+            const anualTotal = mod === "unico" ? Math.max(pu.precio, pu.cobrado) : 0;
+            const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : anualTotal || pu.cobrado;
+            const pagaDetalle = anualTotal && pu.cobrado < anualTotal
+                ? `<div class="muted" style="font-size:11.5px">${pu.cobrado ? `cobrado ${fmtMoney(pu.cobrado)}` : "sin cobrar todavía"}</div>` : "";
             const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Pago único" : mod === "unico" ? "Anual" : "—";
             return `
             <tr>
@@ -896,7 +903,7 @@ function renderInversion() {
                 <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
                 <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
                 <td>${escapeHtml(modLabel)}</td>
-                <td>${paga ? fmtMoney(paga) : "—"}</td>
+                <td>${paga ? fmtMoney(paga) : "—"}${pagaDetalle}</td>
                 <td>${fmtMoney(costoCliente)}</td>
             </tr>`;
         }).join("");
