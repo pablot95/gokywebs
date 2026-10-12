@@ -1201,6 +1201,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
     }
+    /* "Te hablo el martes" a mano (11-oct): para lo que el cliente dijo por el otro
+     * WhatsApp, que el bot no ve. Los avisos automáticos vuelven dos días después
+     * de esa fecha (wabot_retomar_fijar); "quitar" la deja con las reglas de siempre. */
+    if ($a === 'conv_retomar' && !empty($_POST['tel'])) {
+        $conv = wabot_conv_load($_POST['tel']);
+        $dia = !empty($_POST['quitar']) ? '' : trim((string)($_POST['dia'] ?? ''));
+        if ($dia !== '' && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dia) || $dia < gmdate('Y-m-d', time() - 3 * 3600))) $dia = '';
+        wabot_retomar_fijar($conv, $dia, 'panel');
+        wabot_conv_save($conv);
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
+    }
     if ($a === 'conv_archivar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['archivado'] = empty($conv['archivado']);
@@ -1738,6 +1749,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-acciones button.bad { color:var(--tenue); border-color:transparent; }
 .conv-acciones button.bad:hover, .conv-acciones button.bad:focus-visible { color:var(--bad); border-color:var(--bad); }
 .conv-acciones-sep { width:1px; align-self:stretch; margin:2px 3px; background:var(--line); flex-shrink:0; }
+/* "Te hablo el martes" (11-oct): la pausa de los avisos automáticos. */
+.conv-retomar { color:var(--warn); }
+.conv-head form.conv-retomar-form { display:inline-flex; gap:4px; align-items:center; }
+.conv-retomar-form input[type=date] { background:var(--bg); color:var(--tx); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; font-size:12px; color-scheme:dark; }
 /* En pantalla grande las acciones están siempre a la vista; el botón "⋯" solo
    existe para plegarlas en el celular, donde ocupaban 90px de alto y le comían
    el espacio al chat. Antes esto era un <details>, que en desktop se tragaba
@@ -1841,6 +1856,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
        del botón se salía de la pantalla y se cortaban los textos (Pablo, 27-sep). */
     .conv-acciones-wrap.hacia-derecha.abierto > .conv-acciones { right: auto; left: 0; }
     .conv-acciones-wrap > .conv-acciones button { width: 100%; }
+    /* La pausa de avisos en el menú: la fecha arriba, los botones abajo. */
+    .conv-head form.conv-retomar-form { display: flex; flex-wrap: wrap; }
+    .conv-retomar-form input[type=date] { flex: 1 1 100%; min-height: 42px; font-size: 16px; }
+    .conv-retomar-form button { flex: 1 1 0; }
 
     .conv-head { align-items: center; gap: 8px; padding-bottom: 7px; margin-bottom: 7px; }
     .conv-head .meta { display: block; font-size: 11px; }
@@ -2954,7 +2973,7 @@ function burbujaCita(t, chat) {
                                 <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="rta">Ya contestaste (RTA)</button>
-                                <button type="button" class="conv-chip-item" data-grupo="retomar">Retomar</button>
+                                <button type="button" class="conv-chip-item" data-grupo="retomar" title="Dijeron cuándo siguen («te hablo el martes») o les pusiste la fecha a mano: no les sale ningún aviso automático hasta dos días después de esa fecha.">Retomar</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
                                 <button type="button" class="conv-chip-item" data-grupo="whatsapp">Solo WhatsApp</button>
@@ -2976,6 +2995,15 @@ function burbujaCita(t, chat) {
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
                         <?php if (($conv['comercial_pausa'] ?? '') === 'humano'): ?><span class="meta" style="color:var(--warn)">Pendiente para Pablo: <?= $e((string)($conv['comercial_motivo'] ?? 'caso especial')) ?></span><?php endif; ?>
                         <?php if (!empty($conv['postprecio_derivacion'])): ?><span class="meta">Pendiente para Pablo: <?= $e($conv['postprecio_derivacion']) ?></span><?php elseif (!empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
+                        <?php /* "Te hablo el martes" (11-oct): mientras tanto no le sale ningún aviso automático. */
+                              if (wabot_retomar_activo($conv)):
+                                  $retOrigen = (string)($conv['retomar_origen'] ?? '');
+                                  $retTexto = (string)($conv['retomar_texto'] ?? ''); ?>
+                        <span class="meta conv-retomar" title="Hasta ese día no le sale ningún aviso automático: recordatorio del formulario, última llamada, seguimiento de la oferta ni las plantillas de las 18 h. Si es favorito y no volvió a escribir, ese día a las 18 h sale el seguimiento. Se cambia o se quita desde las acciones.">⏸ Fecha prometida: <?= $e(wabot_retomar_dia_corto($conv['retomar_dia'] ?? '')) ?> · los avisos vuelven el <?= $e(wabot_retomar_dia_corto(wabot_retomar_vuelve_dia($conv))) ?><?php
+                            if ($retOrigen === 'cliente' && $retTexto !== ''): ?> · dijo «<?= $e($retTexto) ?>»<?php
+                            elseif ($retOrigen === 'humano' && $retTexto !== ''): ?> · le escribiste «<?= $e($retTexto) ?>»<?php
+                            elseif ($retOrigen === 'panel'): ?> · puesta a mano<?php endif; ?></span>
+                        <?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
                         <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
                               $fichaResumen = function_exists('wabot_ficha_resumen') ? wabot_ficha_resumen($conv, $cfg) : '';
@@ -2986,6 +3014,14 @@ function burbujaCita(t, chat) {
                     <div class="fila conv-acciones">
                         <form method="post"><input type="hidden" name="accion" value="conv_favorito"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['favorito']) ? '★ Quitar favorito' : '☆ Marcar favorito' ?></button></form>
+                        <?php /* "Te hablo el martes" a mano (11-oct): para lo que te dicen por el otro WhatsApp. */
+                              $retomarActivo = wabot_retomar_activo($conv); ?>
+                        <form method="post" class="conv-retomar-form" title="Para cuando te dicen «te hablo el martes»: poné ese día. Los avisos automáticos vuelven dos días después y, si es favorito, ese día a las 18 h sale el seguimiento. Si lo dicen en este chat, se pone solo.">
+                            <input type="hidden" name="accion" value="conv_retomar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <input type="date" name="dia" required min="<?= $e(gmdate('Y-m-d', time() - 3 * 3600)) ?>" value="<?= $retomarActivo ? $e((string)($conv['retomar_dia'] ?? '')) : '' ?>" aria-label="Fecha que prometió">
+                            <button class="sec"><?= $retomarActivo ? 'Cambiar fecha' : '⏸ Fecha prometida' ?></button>
+                            <?php if ($retomarActivo): ?><button class="sec" name="quitar" value="1" formnovalidate>Quitar pausa</button><?php endif; ?>
+                        </form>
                         <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['presentado_ts'])):
                             $template72Enviado = !empty($conv['confirmacion_demo_enviada']);
                             $template72Activo = wabot_plantilla_config('confirmacion_demo_48h', $cfg) !== null;
@@ -3369,6 +3405,8 @@ function burbujaCita(t, chat) {
             // Lo que va contestando el bot (9-oct): charlas donde conversó en la última semana, o con una sugerencia lista.
             if (filtro === 'bot') return it.grupo !== 'archivado' && (!!it.sugerencia || Number(it.bot_conversa_ts || 0) >= EMBUDO_DESDE_TS);
             if (filtro === 'favorito') return !!it.favorito;
+            // Dijeron "te hablo el martes" (o le pusiste fecha a mano): sin avisos automáticos hasta ese día.
+            if (filtro === 'retomar') return it.grupo !== 'archivado' && Number(it.retomar_ts || 0) * 1000 > Date.now();
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
             if (filtro === 'rta') return esRTA(it);

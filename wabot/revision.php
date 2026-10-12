@@ -269,7 +269,8 @@ function wabot_revision_textos_fijos($cfg) {
         'Última llamada: una vez, cerca de las 23 h del último mensaje del cliente (antes de que se cierre la ventana de 24 h de WhatsApp), al que vio el precio, siguió hablando y no pidió la demo' => $cfg['ultima_llamada'] ?? '',
         'Seguimiento sin precio: igual que la última llamada, al que escribió y no llegó al precio' => $cfg['seguimiento_sin_precio'] ?? '',
         'Seguimiento de la oferta: una vez, cerca de las 23 h del último mensaje del cliente, si después de ese mensaje le mandamos (el bot o Pablo) la oferta de la demo o de la primera entrega gratis y no contestó; sale también en las charlas que atiende Pablo' => $cfg['oferta_entrega_seguimiento'] ?? '',
-        'Plantilla de seguimiento al interesado: a las 18 h, a las charlas que Pablo marcó como favoritas, 4 días después del último mensaje de cualquiera de los dos (son charlas que atiende Pablo)' => $p['seguimiento_interesado']['texto'] ?? '',
+        // La fecha prometida (11-oct) se sumó sin subir WABOT_REVISION_V: es una regla nueva, no hay nada ya revisado que cambie.
+        'Plantilla de seguimiento al interesado: a las 18 h, a las charlas que Pablo marcó como favoritas, 4 días después del último mensaje de cualquiera de los dos (son charlas que atiende Pablo). Si se puso una fecha para seguir («te hablo el martes») y el cliente no volvió a escribir, sale a las 18 h del segundo día después de esa fecha, aunque no hayan pasado los 4 días' => $p['seguimiento_interesado']['texto'] ?? '',
         'Plantilla de seguimiento de la demo: a las 18 h, 72 h después de presentarle la demo si no contestó' => $p['confirmacion_demo_48h']['texto'] ?? '',
     ];
     $l = [];
@@ -282,7 +283,7 @@ function wabot_revision_textos_fijos($cfg) {
         $t = trim(preg_replace('/\s+/u', ' ', (string)$t));
         if ($t !== '') $l[] = "- $nombre: «" . $t . '»';
     }
-    $l[] = '- Todos salen en horario de contacto (de 8 a 20): si la marca de las 23 h cae fuera de ese horario, el aviso se adelanta a la última hora de contacto ANTES de esa marca. Por eso puede salir bastante antes: si el cliente escribió a las 8 de la mañana, las 23 h caen a las 7 del día siguiente y el aviso sale a las 19 o 20 del mismo día, unas 11 o 12 h después. Eso está bien: no lo marques por el horario. Nunca dos al mismo cliente con menos de 12 h, y no salen si el cliente avisó que pagó, dijo que no le interesa o la charla está archivada. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
+    $l[] = '- Todos salen en horario de contacto (de 8 a 20): si la marca de las 23 h cae fuera de ese horario, el aviso se adelanta a la última hora de contacto ANTES de esa marca. Por eso puede salir bastante antes: si el cliente escribió a las 8 de la mañana, las 23 h caen a las 7 del día siguiente y el aviso sale a las 19 o 20 del mismo día, unas 11 o 12 h después. Eso está bien: no lo marques por el horario. Nunca dos al mismo cliente con menos de 12 h, y no salen si el cliente avisó que pagó, dijo que no le interesa o la charla está archivada. Si el cliente o Pablo pusieron una fecha para seguir la charla («te hablo el martes», «el lunes te confirmo»), ninguno sale antes del segundo día después de esa fecha. Los mensajes con los que Pablo presenta la demo desde el panel ("ya está lista la demo…") también son fijos. {saludo}, {nombre} y {link} los completa el sistema.';
     return implode("\n", $l);
 }
 

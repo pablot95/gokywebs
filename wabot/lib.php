@@ -1705,6 +1705,14 @@ function wabot_conv_load($clave) {
         // "Lo consulto y te aviso": el cliente prometió avisar él. El
         // seguimiento automático no lo persigue ese mismo día.
         'aviso_prometido_ts'     => 0,
+        // "Te hablo el martes" (11-oct): hasta cuándo no sale ningún aviso automático.
+        // retomar_dia = el día que se dijo (Y-m-d); retomar_ts = las 00:00 de dos días
+        // después; origen = cliente, humano (Pablo en el panel) o panel (a mano).
+        'retomar_ts'             => 0,
+        'retomar_dia'            => '',
+        'retomar_origen'         => '',
+        'retomar_texto'          => '',
+        'retomar_marcado_ts'     => 0,
         // Entró pidiendo la demo: el precio no la vuelve a ofrecer, va directo
         // a pedir los datos.
         'demo_pedida_entrada'    => false,
@@ -1897,6 +1905,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['ultima_llamada_enviada'] = false;
     $conv['ultima_llamada_ts'] = 0;
     $conv['aviso_prometido_ts'] = 0;
+    wabot_retomar_fijar($conv, '', '');
     $conv['demo_pedida_entrada'] = false;
     $conv['cliente_id'] = null;
     $conv['espera_avisada'] = false;
@@ -2221,6 +2230,11 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
     if (($quien === 'bot' || $quien === 'humano') && empty($conv['form_link_mandado_ts'])
         && wabot_texto_tiene_link_form($texto)) {
         $conv['form_link_mandado_ts'] = $fila['ts'];
+    }
+    // "Te hablo el martes" (del cliente, o de Pablo desde el panel): ningún aviso
+    // automático sale antes de esa fecha (wabot_retomar_activo, 11-oct).
+    if (($quien === 'cliente' || $quien === 'humano') && is_string($texto)) {
+        wabot_retomar_detectar($conv, $texto, $fila['ts'], $quien);
     }
     $conv['transcript'][] = $fila;
 }
@@ -3403,6 +3417,9 @@ function wabot_lista_item($tel) {
             // Le contestaste por fuera del sistema: no está ni en SL ni en RTA.
             'contestado' => wabot_conv_contestada($cv),
             'favorito' => !empty($cv['favorito']),
+            // "Te hablo el martes" (11-oct): sin avisos automáticos hasta retomar_ts. El filtro "Retomar".
+            'retomar_ts' => (int)($cv['retomar_ts'] ?? 0),
+            'retomar_dia' => (string)($cv['retomar_dia'] ?? ''),
             'demo_url' => wabot_demo_url($cv),
             'form_recibido' => wabot_conv_form_recibido($cv),
             'sin_respuesta_bienvenida' => wabot_conv_sin_respuesta_a_bienvenida($cv),
@@ -5573,6 +5590,152 @@ function wabot_auto_reciente($cv, $ahora) {
     return (int)($cv['auto_ultimo_ts'] ?? 0) > $ahora - 12 * 3600;
 }
 
+/* ──────────── "Te hablo el martes" (Pablo, 11-oct) ────────────
+ *
+ * "Los clientes me dicen «te hablo el martes» y quizás el mensaje se manda
+ * antes" y "que se mande dos días después de la fecha prometida". Cuando el
+ * cliente —o Pablo desde el panel— pone una fecha para seguir la charla, ningún
+ * aviso automático (recordatorio del formulario, seguimiento de la oferta,
+ * última llamada, plantillas de las 18 h) sale hasta dos días después:
+ * retomar_ts son las 00:00 del segundo día después de la fecha ("el martes" →
+ * jueves 00:00). Si el cliente no volvió a escribir, el seguimiento del
+ * favorito sale ese jueves a las 18 h, sin esperar los 4 días
+ * (wabot_seguimiento_interesado_corresponde). Lo que se dice por el otro
+ * WhatsApp de Pablo no pasa por acá: para eso está la fecha a mano en el panel
+ * (accion conv_retomar). La fecha más nueva es la que vale.
+ */
+const WABOT_RETOMAR_MAX_DIAS = 45;   // una fecha más lejana que esto no se toma (casi seguro no es una cita)
+const WABOT_RETOMAR_DIAS_DESPUES = 2; // los avisos vuelven a los 2 días de la fecha prometida (Pablo, 11-oct)
+
+function wabot_retomar_activo($cv, $ahora = null) {
+    return (int)($cv['retomar_ts'] ?? 0) > ($ahora ?? time());
+}
+
+/** Minúsculas, sin tildes y sin puntuación, pero con la barra de "15/10". Es de lib.php: no depende de engine. */
+function wabot_retomar_normalizar($texto) {
+    $t = mb_strtolower(trim((string)$texto));
+    $t = strtr($t, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+    $t = preg_replace('~[^\p{L}\p{N}\s/]+~u', ' ', $t);
+    return trim(preg_replace('/\s+/', ' ', $t));
+}
+
+/**
+ * El día (Y-m-d, hora argentina) en que el texto promete seguir la charla, o ''.
+ * Hace falta una fecha Y un "te hablo / te aviso / lo vemos / arrancamos…": una
+ * fecha suelta ("abro de lunes a viernes", "hoy vi tu anuncio") no es una cita.
+ * Si nombra varias ("el lunes lo hablo con mi socio y el miércoles te confirmo"),
+ * vale la última.
+ */
+function wabot_fecha_prometida($texto, $ts = null) {
+    $ts = $ts ?? time();
+    $t = wabot_retomar_normalizar($texto);
+    if ($t === '') return '';
+    $verbo = '/\b(te|le|les)\s+((lo|la|los|las)\s+)?(hablo|escribo|aviso|confirmo|digo|contesto|respondo|llamo|mando|paso|transfiero|pago|deposito|comento|cuento|consulto)\b'
+           . '|\b(hablamos|vemos|seguimos|arrancamos|avanzamos|retomamos|charlamos|definimos|coordinamos|confirmamos|empezamos|cerramos)\b'
+           . '|\b(lo|la|los|las)\s+(veo|vemos|reviso|miro|pienso|defino|charlo|hablo|hablamos|consulto|confirmo|hacemos)\b'
+           . '|\b(escribime|hablame|contactame|llamame|avisame)\b|\bvuelvo a (escribir|hablar)\b|\bnos (hablamos|vemos|escribimos)\b'
+           . '|\b(cobro|cobre|cobramos|me pagan|me depositan)\b/u';
+    if (!preg_match($verbo, $t)) return '';
+
+    // El día del cliente arranca a las 3 AM (como en wabot_entrega_cuando): "mañana" a la 1 AM es el día que ya empezó.
+    $hoy = (int)floor(($ts - 6 * 3600) / 86400);   // días desde 1970, hora argentina menos 3 h
+    $dow = (int)gmdate('N', $hoy * 86400);          // 1 = lunes … 7 = domingo
+    $dom = (int)gmdate('j', $hoy * 86400);
+    $mes = (int)gmdate('n', $hoy * 86400);
+    $anio = (int)gmdate('Y', $hoy * 86400);
+    $diaDe = function ($y, $m, $d) { return checkdate($m, $d, $y) ? (int)floor(gmmktime(12, 0, 0, $m, $d, $y) / 86400) : null; };
+    // El próximo día N del mes (hoy incluido): este mes o, si ya pasó, el que viene.
+    $proximoDiaDelMes = function ($d) use ($dom, $mes, $anio, $diaDe) {
+        if ($d < 1 || $d > 31) return null;
+        if ($d >= $dom && ($x = $diaDe($anio, $mes, $d)) !== null) return $x;
+        return $diaDe($mes === 12 ? $anio + 1 : $anio, $mes === 12 ? 1 : $mes + 1, $d);
+    };
+    $meses = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7, 'agosto' => 8,
+              'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
+    $c = [];
+
+    // Días de la semana, menos los horarios ("de lunes a viernes", "los sábados").
+    $sinRangos = preg_replace('/\b(de\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\s+(a|al|y)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\b|\b(todos\s+)?los\s+(lunes|martes|miercoles|jueves|viernes|sabados|domingos)\b/u', ' ', $t);
+    $nDia = ['lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'domingo' => 7];
+    if (preg_match_all('/\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/u', $sinRangos, $m)) {
+        foreach ($m[1] as $nombre) { $delta = ($nDia[$nombre] - $dow + 7) % 7; $c[] = $hoy + ($delta === 0 ? 7 : $delta); }
+    }
+    // "mañana" (no "a la mañana") y "pasado mañana".
+    $sinManana = preg_replace('/\b((a|por|de|en)\s+)?la manana\b|\besta manana\b/u', ' ', $t);
+    if (preg_match('/\bpasado manana\b/u', $sinManana)) $c[] = $hoy + 2;
+    elseif (preg_match('/\bmanana\b/u', $sinManana)) $c[] = $hoy + 1;
+    if (preg_match('/\b(hoy|esta noche|a la noche|esta tarde|a la tarde|mas tarde|en un rato|al rato|al mediodia)\b/u', $t)) $c[] = $hoy;
+    // "La semana que viene" = hasta el viernes de la semana que viene.
+    if (preg_match('/\b(la semana que viene|la proxima semana|la otra semana|semana proxima)\b/u', $t)) $c[] = $hoy + (8 - $dow) + 4;
+    if (preg_match('/\b(fin de semana|finde)\b/u', $t)) { $delta = 7 - $dow; $c[] = $hoy + ($delta === 0 ? 7 : $delta); }
+    // "En 3 días", "dentro de una semana", "en un par de semanas", "en un mes".
+    $cant = ['un' => 1, 'una' => 1, 'dos' => 2, 'tres' => 3, 'cuatro' => 4, 'cinco' => 5, 'seis' => 6, 'siete' => 7, 'ocho' => 8,
+             'diez' => 10, 'quince' => 15, 'veinte' => 20, 'treinta' => 30, 'un par de' => 2, 'unos' => 3, 'unas' => 3, 'algunos' => 3, 'algunas' => 3];
+    if (preg_match_all('/\b(en|dentro de)\s+(\d{1,2}|un par de|unos|unas|algunos|algunas|un|una|dos|tres|cuatro|cinco|seis|siete|ocho|diez|quince|veinte|treinta)\s+(dias?|semanas?|mes|meses)\b/u', $t, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) {
+            $n = ctype_digit($x[2]) ? (int)$x[2] : $cant[$x[2]];
+            $c[] = $hoy + $n * (strpos($x[3], 'semana') === 0 ? 7 : (strpos($x[3], 'mes') === 0 ? 30 : 1));
+        }
+    }
+    if (preg_match('/\b(a |para )?(fin|fines|finales) de(l)? mes\b/u', $t)) $c[] = $diaDe($anio, $mes, (int)gmdate('t', $hoy * 86400));
+    $mesQueViene = function ($d) use ($mes, $anio, $diaDe) { return $diaDe($mes === 12 ? $anio + 1 : $anio, $mes === 12 ? 1 : $mes + 1, $d); };
+    if (preg_match('/\bprincipios? de(l)? mes\b/u', $t)) $c[] = $mesQueViene(5);
+    elseif (preg_match('/\b(el mes que viene|el proximo mes|el otro mes)\b/u', $t)) $c[] = $mesQueViene(10);
+    // "El 20 de octubre", "15/10".
+    if (preg_match_all('/\b(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/u', $t, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) { $d = $diaDe($anio, $meses[$x[2]], (int)$x[1]); if ($d !== null && $d < $hoy) $d = $diaDe($anio + 1, $meses[$x[2]], (int)$x[1]); $c[] = $d; }
+    }
+    if (preg_match_all('~\b(\d{1,2})/(\d{1,2})\b(?!/\d{3,4})~u', $t, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) { $d = $diaDe($anio, (int)$x[2], (int)$x[1]); if ($d !== null && $d < $hoy) $d = $diaDe($anio + 1, (int)$x[2], (int)$x[1]); $c[] = $d; }
+    }
+    // "El día 20", "después del 15", "cobro el 10". Un "el 2" pelado no: es el modelo 2.
+    if (preg_match_all('/\b(el dia|despues del dia|despues del|a partir del dia|a partir del|para el dia|antes del|cobro el|cobre el|cobramos el|me pagan el|me depositan el)\s+(\d{1,2})\b(?!\s*(por ciento|mil|pesos|productos))/u', $t, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) $c[] = $proximoDiaDelMes((int)$x[2]);
+    }
+
+    $c = array_filter($c, function ($d) use ($hoy) { return $d !== null && $d >= $hoy && $d - $hoy <= WABOT_RETOMAR_MAX_DIAS; });
+    return $c ? gmdate('Y-m-d', max($c) * 86400) : '';
+}
+
+/** $dia es la fecha prometida (Y-m-d, hora argentina): sin avisos automáticos hasta dos días después. '' la libera. */
+function wabot_retomar_fijar(&$conv, $dia, $origen, $texto = '', $ts = null) {
+    if ($dia === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dia)) {
+        $conv['retomar_ts'] = 0;
+        $conv['retomar_dia'] = '';
+        $conv['retomar_origen'] = '';
+        $conv['retomar_texto'] = '';
+        $conv['retomar_marcado_ts'] = 0;
+        return;
+    }
+    $conv['retomar_ts'] = (int)strtotime($dia . ' 00:00:00 -03:00') + WABOT_RETOMAR_DIAS_DESPUES * 86400;
+    $conv['retomar_dia'] = $dia;
+    $conv['retomar_origen'] = $origen;
+    $conv['retomar_texto'] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$texto)), 0, 140);
+    // Cuándo se prometió: si el cliente escribe después, ya no manda la fecha sino las reglas de siempre.
+    $conv['retomar_marcado_ts'] = (int)($ts ?? time());
+}
+
+/** El día en que vuelven los avisos (Y-m-d): dos días después de la fecha prometida. */
+function wabot_retomar_vuelve_dia($cv) {
+    $ts = (int)($cv['retomar_ts'] ?? 0);
+    return $ts > 0 ? gmdate('Y-m-d', $ts - 3 * 3600) : '';
+}
+
+/** "2026-10-14" → "mar 14/10", para el panel. */
+function wabot_retomar_dia_corto($dia) {
+    if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', (string)$dia, $m)) return '';
+    $nombres = [1 => 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
+    return $nombres[(int)gmdate('N', gmmktime(12, 0, 0, (int)$m[2], (int)$m[3], (int)$m[1]))] . ' ' . (int)$m[3] . '/' . (int)$m[2];
+}
+
+/** Si el mensaje pone una fecha para seguir la charla, la anota (la más nueva manda). */
+function wabot_retomar_detectar(&$conv, $texto, $ts, $quien) {
+    $dia = wabot_fecha_prometida($texto, $ts);
+    if ($dia === '') return false;
+    wabot_retomar_fijar($conv, $dia, $quien, $texto, $ts);
+    return true;
+}
+
 /* ──────────── Recordatorio del formulario (Pablo, 4-oct) ────────────
  *
  * "Si después de 12 horas que se le envió el enlace del form, se mande un
@@ -5591,7 +5754,7 @@ function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
         || !empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
     if (!empty($cv['archivado']) || !empty($cv['seguimiento_bloqueado']) || !empty($cv['contexto_consulta'])) return false;
     if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
     $horas = max(1, (float)($cfg['form_recordatorio_horas'] ?? 12));
     if ($ahora - $link < $horas * 3600) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
@@ -5684,7 +5847,7 @@ function wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora = null) 
     if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
     if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])
         || !empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
     // Lo último de la charla es nuestro y, desde que escribió el cliente, le
     // mandamos la oferta (puede venir después de la propuesta y el precio).
     $hayOferta = false;
@@ -5748,7 +5911,7 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     if (empty($cfg['activo']) || empty($cfg['ultima_llamada_activa'])) return false;
     if (!empty($cv['ultima_llamada_enviada']) || !empty($cv['seguimiento_bloqueado'])) return false;
     if (!empty($cv['bot_off']) || !empty($cv['archivado'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
     // Con una duda esperando a Pablo, o un "te aviso" del mismo día, este
     // aviso también es perseguir: mismas reglas que el seguimiento común.
     if (!empty($cv['handoff_pendiente'])) return false;
@@ -5878,7 +6041,7 @@ function wabot_plantillas_auto_contacto_ok($cv, $ahora) {
     if (wabot_canal($cv) !== 'whatsapp' || !empty($cv['archivado'])) return false;
     if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
     if (!empty($cv['contexto_consulta']) || !empty($cv['pago_avisado_ts'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || (int)($cv['retomar_ts'] ?? 0) > $ahora) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
     return true;
 }
 
@@ -5918,6 +6081,17 @@ function wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora = null) {
     if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
     $ultimo = wabot_ultimo_mensaje_ts($cv);
+    /* Prometió una fecha ("te hablo el martes") y no volvió a escribir: sale a los
+     * dos días de esa fecha, aunque no hayan pasado los 4 (Pablo, 11-oct). Si el
+     * cliente escribió después de la promesa, o Pablo le volvió a escribir más
+     * tarde (no el "dale, quedo atento" de ese rato), vuelven los 4 días desde el
+     * último mensaje. Antes de los dos días no sale nada en ningún caso
+     * (wabot_plantillas_auto_contacto_ok). */
+    $retomar = (int)($cv['retomar_ts'] ?? 0);
+    $marcado = (int)($cv['retomar_marcado_ts'] ?? 0);
+    if ($retomar > 0 && $marcado > 0 && wabot_ultimo_cliente_ts($cv) <= $marcado + 120 && $ultimo <= $marcado + 12 * 3600) {
+        return $ahora >= $retomar;
+    }
     return $ultimo > 0 && $ahora - $ultimo >= 4 * 86400;
 }
 
