@@ -729,7 +729,7 @@ textarea:focus {
 /* Clientes (12-oct-2026): con los pendientes la fila quedaba muy alta y a lo ancho sobraba lugar.
    La primera columna toma más ancho: nombre, negocio, teléfono y Ver chat van en una sola línea y
    los pendientes se acomodan abajo, a lo ancho de la columna (2 renglones en vez de 4 o 5). */
-#tabClientes .clients-table th:first-child { width: 55%; }
+#tabClientes .clients-table th:first-child { width: 58%; }
 #tabClientes .clients-table td { padding-top: 10px; padding-bottom: 10px; }
 #clientsTbody .client-name-cell { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 12px; row-gap: 3px; }
 #clientsTbody .client-name-cell > div > .btn-ghost { margin-top: 0 !important; }

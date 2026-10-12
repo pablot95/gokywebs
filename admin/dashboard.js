@@ -3000,7 +3000,7 @@ function initRealtime() {
         if (activeTab === "inversion" && inversionVista === "anuncios" && anunciosDatos) renderAnuncios();
     }, (err) => {
         console.error(err);
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="4">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
     });
 
     // ── Gasto en publicidad por semana (pestaña Inversión) ──
@@ -3997,8 +3997,8 @@ function render() {
     const ordered = [...list].sort(_compareClientesPorPaso);
 
     tbody.innerHTML = ordered.length
-        ? ordered.map(_clientRow).join("")
-        : `<tr class="empty-row"><td colspan="5">${clientesVista === "cobrar" ? "No hay webs por cobrar" : "No hay webs en desarrollo"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        ? ordered.map(c => _clientRow(c, { sinCambios: true })).join("")   // 12-oct: sin la columna "Cambios del mes"
+        : `<tr class="empty-row"><td colspan="4">${clientesVista === "cobrar" ? "No hay webs por cobrar" : "No hay webs en desarrollo"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
