@@ -2668,6 +2668,25 @@ body.propuestas-tab .tab-nav {
    entera; el resto del admin queda centrado como siempre. */
 body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right: 14px; }
 
+/* ===== FINANZAS (12-oct-2026) ===== */
+.fin-cards { margin-bottom: 18px; }
+.fin-cards .stat-item { flex: 1 1 260px; }
+.fin-cards .stat-value { font-size: 28px; }
+.fin-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.fin-bloque { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
+.fin-bloque-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.fin-bloque-cab h2 { font-size: 15px; margin: 0; }
+.fin-form { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.fin-form input { flex: 1 1 120px; min-width: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 10px; font-size: 13px; color-scheme: dark; }
+.fin-form input[name="nombre"] { flex: 2 1 160px; }
+.fin-form .btn-primary { width: auto; margin: 0; padding: 8px 14px; }
+.fin-lista { list-style: none; margin: 0; padding: 0; }
+.fin-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); font-size: 13.5px; }
+.fin-item-nombre { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fin-item-monto { background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.fin-item-monto:hover { background: var(--bg-card); }
+.fin-vacio { padding: 8px 0; font-size: 13px; }
+
 /* Navegación vertical a la izquierda (12-oct-2026, Pablo): en compu las pestañas
    dejan de ir arriba y quedan fijas en una columna, con Completados y Salir al
    fondo. Así el panel del bot gana todo el alto que antes ocupaba la barra.

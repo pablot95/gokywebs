@@ -11,6 +11,8 @@ service cloud.firestore {
     // Gasto en publicidad por semana, cargado a mano en la pestaña Inversión
     // (26-sep-2026): un doc por semana, id = el domingo ("YYYY-MM-DD").
     match /gastoPublicidad/{doc} { allow read, write: if isAdmin(); }
+    // Gastos fijos (mensuales) y adicionales de la pestaña Finanzas (12-oct-2026).
+    match /finanzasGastos/{doc} { allow read, write: if isAdmin(); }
     match /propuestas/{doc}    {
       allow create: if true;           // formulario /form escribe sin login
       allow read, delete: if isAdmin();

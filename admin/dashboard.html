@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261012-navizq2">
+    <link rel="stylesheet" href="styles.css?v=20261012-finanzas">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -20,6 +20,7 @@
             <button class="tab-btn" data-tab="metricas" hidden style="display:none">📊 Métricas</button>
             <button class="tab-btn" data-tab="mantenimiento"><span class="tab-ico">🔧</span>Mantenimiento <span class="pill-count" id="countMantenimiento">0</span></button>
             <button class="tab-btn" data-tab="inversion"><span class="tab-ico">💰</span>Inversión</button>
+            <button class="tab-btn" data-tab="finanzas"><span class="tab-ico">💼</span>Finanzas</button>
             <button class="tab-btn" data-tab="errores"><span class="tab-ico">🐞</span>Errores <span class="pill-count pill-count--alerta" id="countErrores" hidden>0</span></button>
             <div class="tab-spacer"></div>
             <button class="tab-btn tab-btn--secondary tab-btn--completados" data-tab="completados"><span class="tab-ico">✅</span>Completados <span class="pill-count" id="countCompletados">0</span></button>
@@ -514,6 +515,41 @@
              un error CRÍTICO sin resolver (erroresEsCritico en dashboard.js). Los errores
              los manda err/err.js (una línea en el <head> de cada web) a err/log.php →
              Firestore `errores_web`. -->
+        <!-- Finanzas (12-oct-2026): ganancia del mes = lo cobrado y lo que se espera cobrar, menos los gastos fijos y adicionales.
+             dashboard.js: renderFinanzas / finanzasMes. Gastos en Firestore: colección finanzasGastos (firestore.rules). -->
+        <section class="panel tab-panel" id="tabFinanzas" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Finanzas</h1>
+                    <p class="muted">La ganancia del mes: lo que ya se cobró y lo que se espera cobrar, menos los gastos.</p>
+                </div>
+                <select id="finMes" class="mes-select" aria-label="Mes"></select>
+            </div>
+            <div id="finAviso"></div>
+            <div class="stats-box stats-box--periods fin-cards" id="finCards"></div>
+            <div class="fin-cols">
+                <div class="fin-bloque">
+                    <div class="fin-bloque-cab"><h2>Gastos fijos <span class="muted">(todos los meses)</span></h2><strong id="finFijosTotal"></strong></div>
+                    <form class="fin-form" id="finFijoForm">
+                        <input type="text" name="nombre" placeholder="Ej: Hosting, dominio, IA…" maxlength="80" required>
+                        <input type="number" name="monto" placeholder="Monto por mes" min="1" step="1" inputmode="numeric" required>
+                        <button type="submit" class="btn-primary">Agregar</button>
+                    </form>
+                    <ul class="fin-lista" id="finFijosLista"></ul>
+                </div>
+                <div class="fin-bloque">
+                    <div class="fin-bloque-cab"><h2>Gastos adicionales <span class="muted">(del mes)</span></h2><strong id="finAdicTotal"></strong></div>
+                    <form class="fin-form" id="finAdicForm">
+                        <input type="text" name="nombre" placeholder="Ej: Dominio nuevo, curso…" maxlength="80" required>
+                        <input type="number" name="monto" placeholder="Monto" min="1" step="1" inputmode="numeric" required>
+                        <input type="date" name="fecha" required>
+                        <button type="submit" class="btn-primary">Agregar</button>
+                    </form>
+                    <ul class="fin-lista" id="finAdicLista"></ul>
+                </div>
+            </div>
+        </section>
+
         <section class="panel tab-panel" id="tabErrores" hidden>
             <div class="panel-header">
                 <div>
@@ -1231,6 +1267,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261012-orden-paso"></script>
+    <script type="module" src="dashboard.js?v=20261012-finanzas"></script>
 </body>
 </html>

@@ -98,6 +98,8 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.getElementById("tabMantenimiento").hidden = activeTab !== "mantenimiento";
         document.getElementById("tabInversion").hidden     = activeTab !== "inversion";
         document.getElementById("tabErrores").hidden       = activeTab !== "errores";
+        document.getElementById("tabFinanzas").hidden      = activeTab !== "finanzas";
+        if (activeTab === "finanzas") { renderFinanzas(); cargarIngresosMp(); }
         if (activeTab === "calendario") { renderCal(); cargarIngresosMp(); }
         if (activeTab === "propuestas") sincronizarAvisosBoceto();
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
@@ -1227,6 +1229,7 @@ async function cargarIngresosMp(forzar = false) {
     ingresosMpCargando = true;
     ingresosMpError = "";
     if (activeTab === "calendario") renderCal();
+    if (activeTab === "finanzas") renderFinanzas();
     try {
         ingresosMp = await llamarFacturacion("lista", null, { desde: INGRESOS_DESDE }, "ingresos.php");
     } catch (err) {
@@ -1235,6 +1238,7 @@ async function cargarIngresosMp(forzar = false) {
     } finally {
         ingresosMpCargando = false;
         if (activeTab === "calendario") renderCal();
+        if (activeTab === "finanzas") renderFinanzas();
     }
 }
 
@@ -1472,6 +1476,178 @@ function _cobrosDetalleHTML(items) {
                 </tr>`).join("")}</tbody></table></div>
         </div>`;
 }
+
+/* ── Finanzas (Pablo, 12-oct-2026) ──
+   Ganancia del mes en dos cuadros: lo ya cobrado y lo que se espera cobrar, menos los gastos.
+   Gastos en `finanzasGastos`: { tipo: "fijo", nombre, monto, desde: "YYYY-MM" } (cuenta todos los meses
+   desde el que se cargó) o { tipo: "adicional", nombre, monto, fecha: "YYYY-MM-DD" } (cuenta en su mes).
+   Lo esperado se calcula por atrás, sin listarlo: las suscripciones que faltan del mes, las
+   renovaciones anuales y el saldo de las webs con seña, que se supone cobrado a los
+   DIAS_COBRO_SALDO de la seña (si ya pasó, hoy): si cae este mes cuenta acá, si no, en el siguiente. */
+const DIAS_COBRO_SALDO = 10;
+let finGastos = [];
+let finGastosError = "";
+let finMes = "";
+
+function _finMesesDisponibles() {
+    const hoy = _diaDe(new Date()).slice(0, 7);
+    const lista = [];
+    for (let ym = _mesMas(hoy, 1); ym >= INGRESOS_DESDE.slice(0, 7); ym = _mesMas(ym, -1)) lista.push(ym);
+    return lista;
+}
+
+function _finNombreMes(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    return `${MESES_AR[m - 1][0].toUpperCase()}${MESES_AR[m - 1].slice(1)} ${y}`;
+}
+
+/* Lo cobrado y lo que falta cobrar del mes `ym` ("YYYY-MM"). */
+function finanzasMes(ym) {
+    const hoy = _diaDe(new Date());
+    const mesHoy = hoy.slice(0, 7);
+    const dias = ingresosPorDia(_ymdDelMes(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1, 31));
+    let cobrado = 0, esperado = 0;
+    for (const [ymd, items] of dias) {
+        if (ymd.slice(0, 7) !== ym) continue;
+        for (const it of items) {
+            if (it.cobrado) cobrado += it.monto;
+            else if (ym >= mesHoy) esperado += it.monto;
+        }
+    }
+    if (ym >= mesHoy) {
+        for (const c of (clients || [])) {
+            if (getEstado(c) !== "cliente") continue;
+            // Saldo de una web con seña: se espera cobrado DIAS_COBRO_SALDO después de la seña (o ya, si pasó).
+            if (!webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio) {
+                const saldo = pagoUnicoDe(c).saldo;
+                const base = mantToDate(c.senaAt) || mantToDate(c.clienteDesdeAt) || fechaPasoACliente(c);
+                if (saldo > 0 && base) {
+                    let ymd = _diaDe(new Date(base.getTime() + DIAS_COBRO_SALDO * 86400000));
+                    if (ymd < hoy) ymd = hoy;
+                    if (ymd.slice(0, 7) === ym) esperado += saldo;
+                }
+            }
+            // Renovación anual: la del mes y, en el mes actual, las vencidas.
+            const ren = renovacionAnualDe(c);
+            if (ren && !ren.legado && ren.monto > 0 && ren.proximo) {
+                const ymd = _diaDe(ren.proximo);
+                if (ymd.slice(0, 7) === ym || (ym === mesHoy && ymd < hoy)) esperado += ren.monto;
+            }
+        }
+    }
+    return { cobrado, esperado };
+}
+
+function finanzasGastosMes(ym) {
+    const fijos = finGastos.filter(g => g.tipo === "fijo" && (g.desde || "0000-00") <= ym);
+    const adicionales = finGastos.filter(g => g.tipo === "adicional" && String(g.fecha || "").slice(0, 7) === ym)
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+    const suma = l => l.reduce((a, g) => a + (Number(g.monto) || 0), 0);
+    return { fijos, adicionales, totalFijos: suma(fijos), totalAdicionales: suma(adicionales) };
+}
+
+function renderFinanzas() {
+    const cards = document.getElementById("finCards");
+    if (!cards) return;
+    const sel = document.getElementById("finMes");
+    const meses = _finMesesDisponibles();
+    const mesHoy = _diaDe(new Date()).slice(0, 7);
+    if (!finMes || !meses.includes(finMes)) finMes = mesHoy;
+    if (sel.options.length !== meses.length) {
+        sel.innerHTML = meses.map(ym => `<option value="${ym}">${_finNombreMes(ym)}${ym === mesHoy ? " (este mes)" : ""}</option>`).join("");
+    }
+    sel.value = finMes;
+
+    const { cobrado, esperado } = finanzasMes(finMes);
+    const g = finanzasGastosMes(finMes);
+    const gastos = g.totalFijos + g.totalAdicionales;
+    const gananciaCobrada = cobrado - gastos;
+    const gananciaEstimada = cobrado + esperado - gastos;
+    const rojo = n => n < 0 ? ' style="color:var(--danger,#f87171)"' : "";
+    const esPasado = finMes < mesHoy;
+
+    document.getElementById("finAviso").innerHTML = (finGastosError
+        ? `<div class="factura-error">No se pueden leer ni guardar los gastos: ${escapeHtml(finGastosError)}. Falta publicar firestore.rules (colección finanzasGastos).</div>` : "") + _avisoMp();
+
+    cards.innerHTML = `
+        <div class="stat-item">
+            <span class="stat-label">✅ Cobrado</span>
+            <span class="stat-value"${rojo(gananciaCobrada)}>${fmtMoney(gananciaCobrada)}</span>
+            <span class="muted ingcal-stat-sub">Ganancia hasta ahora · entró ${fmtMoney(cobrado)} − gastos ${fmtMoney(gastos)}</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">⏳ Esperado a cobrar</span>
+            <span class="stat-value">${esPasado ? "—" : fmtMoney(esperado)}</span>
+            <span class="muted ingcal-stat-sub">${esPasado ? "Mes cerrado" : `Ganancia estimada del mes: <strong${rojo(gananciaEstimada)}>${fmtMoney(gananciaEstimada)}</strong>`}</span>
+        </div>`;
+
+    document.getElementById("finFijosTotal").textContent = fmtMoney(g.totalFijos);
+    document.getElementById("finAdicTotal").textContent = fmtMoney(g.totalAdicionales);
+    const fila = (x, detalle) => `<li class="fin-item">
+            <span class="fin-item-nombre">${escapeHtml(x.nombre || "Gasto")}${detalle ? ` <small class="muted">${detalle}</small>` : ""}</span>
+            <button type="button" class="fin-item-monto" data-fin-editar="${escapeHtml(x.id)}" title="Cambiar el monto">${fmtMoney(Number(x.monto) || 0)}</button>
+            <button type="button" class="icon-btn" data-fin-borrar="${escapeHtml(x.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(x.nombre || "gasto")}">×</button>
+        </li>`;
+    document.getElementById("finFijosLista").innerHTML = g.fijos.length
+        ? g.fijos.map(x => fila(x, "")).join("") : `<li class="muted fin-vacio">Todavía no cargaste gastos fijos.</li>`;
+    document.getElementById("finAdicLista").innerHTML = g.adicionales.length
+        ? g.adicionales.map(x => fila(x, mantShortDate(new Date(`${x.fecha}T12:00:00`)))).join("") : `<li class="muted fin-vacio">Sin gastos adicionales en este mes.</li>`;
+}
+
+document.getElementById("finMes")?.addEventListener("change", e => { finMes = e.target.value; renderFinanzas(); });
+
+async function finGuardarGasto(datos) {
+    try {
+        await addDoc(collection(db, "finanzasGastos"), { ...datos, createdAt: serverTimestamp() });
+        return true;
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo guardar el gasto: " + err.message);
+        return false;
+    }
+}
+
+document.getElementById("finFijoForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target;
+    const monto = Math.round(Number(f.monto.value));
+    if (!(monto > 0)) return;
+    // Cuenta desde el mes que se está mirando (hasta el actual: un gasto fijo no empieza en el futuro por error).
+    const desde = finMes && finMes <= _diaDe(new Date()).slice(0, 7) ? finMes : _diaDe(new Date()).slice(0, 7);
+    if (await finGuardarGasto({ tipo: "fijo", nombre: f.nombre.value.trim(), monto, desde })) f.reset();
+});
+
+document.getElementById("finAdicForm")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target;
+    const monto = Math.round(Number(f.monto.value));
+    if (!(monto > 0) || !f.fecha.value) return;
+    if (await finGuardarGasto({ tipo: "adicional", nombre: f.nombre.value.trim(), monto, fecha: f.fecha.value })) {
+        finMes = f.fecha.value.slice(0, 7);   // salta al mes del gasto para verlo
+        f.reset();
+        renderFinanzas();
+    }
+});
+
+document.getElementById("tabFinanzas")?.addEventListener("click", async e => {
+    const borrar = e.target.closest("[data-fin-borrar]");
+    const editar = e.target.closest("[data-fin-editar]");
+    const g = finGastos.find(x => x.id === (borrar || editar)?.dataset[borrar ? "finBorrar" : "finEditar"]);
+    if (!g) return;
+    try {
+        if (borrar) {
+            if (!confirm(`¿Borrar el gasto "${g.nombre}"?${g.tipo === "fijo" ? "\n\nDeja de contar en todos los meses." : ""}`)) return;
+            await deleteDoc(doc(db, "finanzasGastos", g.id));
+        } else {
+            const r = prompt(`Nuevo monto de "${g.nombre}":`, String(g.monto));
+            const monto = r === null ? 0 : Math.round(Number(String(r).replace(/\D/g, "")));
+            if (monto > 0 && monto !== g.monto) await updateDoc(doc(db, "finanzasGastos", g.id), { monto });
+        }
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo guardar el cambio: " + err.message);
+    }
+});
 
 /* Inversión: Contactos y clientes · Por anuncio (los cobros por día pasaron a Calendario). */
 function renderInversionVista() {
@@ -2817,6 +2993,7 @@ function initRealtime() {
         renderMantenimiento();
         if (activeTab === "seguimientos") renderSeg();
         if (activeTab === "calendario") renderCal();
+        if (activeTab === "finanzas") renderFinanzas();
         if (enMetrica("stats")) renderStats();
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
         // Por anuncio cruza los contactos con estos clientes: un cliente nuevo cambia "Pasaron a Cliente".
@@ -2832,6 +3009,17 @@ function initRealtime() {
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
     }, (err) => {
         console.error("Gasto publicidad error:", err);
+    });
+
+    // ── Gastos fijos y adicionales (pestaña Finanzas) ──
+    onSnapshot(collection(db, "finanzasGastos"), (snap) => {
+        finGastos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        finGastosError = "";
+        if (activeTab === "finanzas") renderFinanzas();
+    }, (err) => {
+        console.error("Gastos (Finanzas) error:", err);
+        finGastosError = err.message;
+        if (activeTab === "finanzas") renderFinanzas();
     });
 
     // ── Propuestas realtime (Bocetos) ──
