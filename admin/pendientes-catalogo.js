@@ -14,14 +14,17 @@ const ACCESOS = { id: "accesos", texto: "Mandar los accesos", ayuda: "Enviarle a
 const EMAIL_NOTIF = { id: "email", texto: "Cargar el email de notificaciones", ayuda: "El email que recibe los avisos de pedidos y consultas", legado: "mail" };
 const FIREBASE = { id: "firebase", texto: "Firebase", ayuda: "Crear el proyecto de Firebase y conectarlo a la web", legado: "firebase" };
 
+// Solo tiendas y cursos (12-oct, Pablo). Las webs ya sembradas lo reciben una vez (sembrarPendientes, marca `pendientesHostinger`).
+export const HOSTINGER = { id: "hostinger", texto: "Subir los archivos a Hostinger", ayuda: "Subir los archivos de la web al hosting del cliente" };
+
 const POR_TIPO = {
     ecommerce: [
         { id: "tienda", texto: "Completar la tienda", ayuda: "Productos, precios, fotos y categorías", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, GOOGLE, ACCESOS,
+        EMAIL_NOTIF, DOMINIO, FIREBASE, HOSTINGER, GOOGLE, ACCESOS,
     ],
     cursos: [
         { id: "contenido", texto: "Cargar los cursos", ayuda: "Cursos, módulos y contenido", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, GOOGLE, ACCESOS,
+        EMAIL_NOTIF, DOMINIO, FIREBASE, HOSTINGER, GOOGLE, ACCESOS,
     ],
     inmobiliaria: [
         { id: "contenido", texto: "Cargar las propiedades", ayuda: "Propiedades, fotos y datos", legado: "ecommerce" },

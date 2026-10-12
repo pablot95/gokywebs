@@ -20,7 +20,7 @@ import {
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { pendientesIniciales, ayudaDePendiente } from "./pendientes-catalogo.js?v=20261011-pendientes";
+import { pendientesIniciales, ayudaDePendiente, HOSTINGER } from "./pendientes-catalogo.js?v=20261012-hostinger";
 
 const TYPE_LABELS = { landing: 'Landing Page', 'web-completa': 'Web Completa', ecommerce: 'E-commerce', inmobiliaria: 'Inmobiliaria' };
 
@@ -3021,11 +3021,11 @@ function _updateClientCounters() {
     const cp2 = document.getElementById("cliCountCobrar"); if (cp2) cp2.textContent = porCobrarLista.length;
     const resumenCobrar = document.getElementById("clientesCobrarResumen");
     if (resumenCobrar) {
-        // Pago único: el saldo que falta; plan mensual: la mensualidad de los que todavía no se suscribieron.
+        // Pago único: el saldo que falta; modalidad sin definir: la mensualidad de los que todavía no se suscribieron.
         const saldos = porCobrarLista.filter(c => modalidadDe(c) === "propia" && !c.sinPrecio).reduce((a, c) => a + pagoUnicoDe(c).saldo, 0);
         const mensuales = porCobrarLista.filter(c => modalidadDe(c) !== "propia" && suscripcionDe(c).estado !== "activa").reduce((a, c) => a + suscripcionDe(c).mensual, 0);
         resumenCobrar.hidden = clientesVista !== "cobrar" || !porCobrarLista.length;
-        resumenCobrar.textContent = `Falta cobrar ${fmtMoney(saldos)} de saldos de pago único y ${fmtMoney(mensuales)} por mes de planes mensuales sin suscripción activa.`;
+        resumenCobrar.textContent = `Falta cobrar ${fmtMoney(saldos)} de saldos de pago único${mensuales ? ` y ${fmtMoney(mensuales)} por mes de planes sin definir sin suscripción activa` : ""}.`;
     }
     const seg1El = document.getElementById("countSeg1");
     if (seg1El) seg1El.textContent = nSeg;
@@ -3267,16 +3267,16 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
        plan mensual o anual a Mantenimiento —la web propia sigue saliendo por
        el tacho, que factura y la deja en Completados— y "iniciar plan" fija
        desde cuándo corre el año del plan anual, con su próximo cobro. */
-    // 11-oct-2026: el pago único y el plan mensual pasan primero por Por cobrar (✓ "completada");
-    // el mensual sale de ahí a Mantenimiento con el ✓ de siempre, el pago único con el tacho (factura).
+    // 11-oct-2026: el pago único pasa primero por Por cobrar (✓ "completada") y sale con el tacho (factura).
+    // 12-oct: el plan mensual no pasa por Por cobrar: su ✓ lo manda directo a Mantenimiento.
     const porCobrar = !entregada && esPorCobrar(c);
-    const completada = (!entregada && !porCobrar && modalidad !== 'unico')
+    const completada = (!entregada && !porCobrar && modalidad !== 'unico' && modalidad !== 'mensual')
         ? `<button class="icon-btn btn-terminada" data-completada-id="${c.id}" title="Marcar la web como completada: pasa a Por cobrar">✓</button>`
         : '';
     const reabrir = porCobrar
         ? `<button class="icon-btn" data-reabrir-id="${c.id}" title="Volver a En proceso">↩</button>`
         : '';
-    const terminada = (!entregada && modalidad !== 'propia' && (modalidad === 'unico' || porCobrar))
+    const terminada = (!entregada && modalidad !== 'propia' && (modalidad === 'unico' || modalidad === 'mensual' || porCobrar))
         ? `<button class="icon-btn btn-terminada" data-terminada-id="${c.id}" title="Marcar la web como terminada: pasa a Mantenimiento con su plan">✓</button>`
         : '';
     const webCompletada = porCobrar ? mantToDate(c.webCompletadaAt) : null;
@@ -3766,6 +3766,18 @@ function _compareClientsInWeek(a, b) {
     return (a.nombre || "").localeCompare(b.nombre || "", "es");
 }
 
+/* Cuándo pasó a Cliente: `clienteDesdeAt` (se guarda al pasar a Cliente desde el 12-oct) o,
+   en los anteriores, la misma fecha que usa Inversión (seña, primer pago, suscripción o alta). */
+function _fechaClienteDesde(c) {
+    return mantToDate(c.clienteDesdeAt) || fechaPasoACliente(c);
+}
+function _compareClientesPorPaso(a, b) {
+    const da = _fechaClienteDesde(a)?.getTime() || 0;
+    const db = _fechaClienteDesde(b)?.getTime() || 0;
+    if (da !== db) return db - da;
+    return (a.nombre || "").localeCompare(b.nombre || "", "es");
+}
+
 function _weekSeparatorRow(group, colspan = 7) {
     const count = group.items.length;
     const weekTotal = group.items.reduce((sum, client) => sum + (Number(client.valorTotal) || 0), 0);
@@ -3793,8 +3805,8 @@ function render() {
         (c.telefono || "").toLowerCase().includes(term) ||
         (termPhone && cleanArgPhone(c.telefono).includes(termPhone)));
 
-    // Lista plana, el más reciente primero (los que no tienen fecha de boceto quedan al final).
-    const ordered = [...list].sort(_compareClientsInWeek);
+    // Lista plana, el último en pasar a Cliente primero (12-oct, Pablo).
+    const ordered = [...list].sort(_compareClientesPorPaso);
 
     tbody.innerHTML = ordered.length
         ? ordered.map(_clientRow).join("")
@@ -3805,14 +3817,14 @@ function render() {
 }
 
 /* En proceso / Por cobrar (Pablo, 11-oct-2026). Por cobrar son las webs ya
-   completadas (`webCompletadaAt`, el ✓ de En proceso) del pago único y del plan
-   mensual, que esperan el cobro: el saldo, o que el cliente se suscriba. El plan
-   anual no pasa por acá: sigue en En proceso hasta marcarlo como terminado. */
+   completadas (`webCompletadaAt`, el ✓ de En proceso) del pago único, que esperan
+   el cobro del saldo. El plan mensual y el anual no pasan por acá: su ✓ las manda
+   directo a Mantenimiento (Pablo, 12-oct). */
 let clientesVista = "proceso";
 function esPorCobrar(c) {
     if (!c?.webCompletadaAt || webEntregada(c)) return false;
     const m = modalidadDe(c);
-    return m === "mensual" || m === "propia" || m === "";
+    return m === "propia" || m === "";
 }
 document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
     b.addEventListener("click", () => {
@@ -3863,11 +3875,29 @@ function sembrarPendientes() {
         const clave = tipoPendientesDe(c);
         const marca = clave || "generico";
         const nueva = !Array.isArray(c.pendientes);
-        if (!nueva && (typeof c.pendientesTipo !== "string" || c.pendientesTipo === marca)) continue;
+        const conHostinger = clave === "ecommerce" || clave === "cursos";
+        if (!nueva && (typeof c.pendientesTipo !== "string" || c.pendientesTipo === marca)) {
+            // "Subir los archivos a Hostinger" (12-oct): a las tiendas y cursos ya sembrados se les suma una sola
+            // vez (después de Firebase); si Pablo lo saca, la marca evita que vuelva.
+            if (typeof c.pendientesTipo === "string" && conHostinger && !c.pendientesHostinger) {
+                const llaveH = `${c.id}:hostinger`;
+                if (!_sembrando.has(llaveH)) {
+                    _sembrando.add(llaveH);
+                    const lista = c.pendientes.some(p => p.id === HOSTINGER.id) ? c.pendientes : (() => {
+                        const i = c.pendientes.findIndex(p => p.id === "firebase");
+                        const item = { id: HOSTINGER.id, texto: HOSTINGER.texto, hecho: false, por: "", at: "" };
+                        return i < 0 ? [...c.pendientes, item] : [...c.pendientes.slice(0, i + 1), item, ...c.pendientes.slice(i + 1)];
+                    })();
+                    updateDoc(doc(db, "clientes", c.id), { pendientes: lista, pendientesHostinger: true })
+                        .catch(err => { _sembrando.delete(llaveH); console.error("No se pudo sumar el pendiente de Hostinger:", err); });
+                }
+            }
+            continue;
+        }
         const llave = `${c.id}:${marca}`;
         if (_sembrando.has(llave)) continue;
         _sembrando.add(llave);
-        updateDoc(doc(db, "clientes", c.id), { pendientes: nueva ? pendientesIniciales(clave, c.tareas) : _reconciliarPendientes(c, clave), pendientesTipo: marca })
+        updateDoc(doc(db, "clientes", c.id), { pendientes: nueva ? pendientesIniciales(clave, c.tareas) : _reconciliarPendientes(c, clave), pendientesTipo: marca, ...(conHostinger ? { pendientesHostinger: true } : {}) })
             .catch(err => { _sembrando.delete(llave); console.error("No se pudieron guardar los pendientes:", err); });
     }
 }
@@ -4232,6 +4262,7 @@ async function setStatus(id, value) {
                 if (!modalidad) alert("Escribí 1 para el plan mensual, 2 para el plan anual o 3 para el pago único.");
             }
             updateData.modalidad = modalidad;
+            updateData.clienteDesdeAt = serverTimestamp();
             if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
             if (_conSena(modalidad)) {
                 const precio = modalidad === "propia" ? plan.propia : plan.unico;
@@ -4707,6 +4738,8 @@ form.addEventListener("submit", async (e) => {
         tareas: { ...modalTareas },
         updatedAt: serverTimestamp()
     };
+    // Cuándo pasó a Cliente: ordena la lista de Clientes (12-oct).
+    if (estadoCliente === "cliente" && (!actual || getEstado(actual) !== "cliente")) data.clienteDesdeAt = serverTimestamp();
     if (_conSena(modalidad)) {
         /* Plan anual o web propia: el precio, lo cobrado y la fecha de la seña. La
            fecha se escribe solo si cambió; una seña recién cargada y sin fecha queda
