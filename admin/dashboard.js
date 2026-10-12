@@ -231,11 +231,18 @@ function fechaCortaJs(d) {
 
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
-let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
+let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> { ingresado, total, recargo }
 const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
-// Pablo tipea el gasto de la semana sin impuestos; lo que cuenta es ese número × 1,23
-// (Pablo, 11-oct). Se guarda lo tipeado y el recargo se aplica al calcular.
+/* Desde el 11-oct Pablo tipea el gasto de la semana sin impuestos y lo que cuenta es
+   ese número × 1,23. Se guarda lo tipeado con `recargo: 1.23` y el recargo se aplica
+   al calcular. Lo cargado antes (sin `recargo`) ya incluía los impuestos: cuenta tal
+   cual. Si se cambia una semana vieja, el número nuevo se toma sin impuestos. */
 const RECARGO_PUBLICIDAD = 1.23;
+function gastoDeSemana(data) {
+    const ingresado = Number(data?.monto) || 0;
+    const recargo = Number(data?.recargo) > 0 ? Number(data.recargo) : 0;
+    return { ingresado, recargo, total: recargo ? Math.round(ingresado * recargo) : ingresado };
+}
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
    (el domingo). Vive en Firestore, no en wabot: es un número que Pablo tipea,
@@ -245,6 +252,7 @@ async function guardarGastoSemana(key, monto) {
     try {
         await setDoc(doc(db, "gastoPublicidad", key), {
             monto: Number.isFinite(valor) && valor >= 0 ? valor : 0,
+            recargo: RECARGO_PUBLICIDAD,   // lo tipeado es sin impuestos (ver gastoDeSemana)
             updatedAt: serverTimestamp(),
         }, { merge: true });
     } catch (e) {
@@ -868,8 +876,9 @@ function renderInversion() {
         const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
         const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
         const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
-        const gastoIngresado = gastoAdsPorSemana.get(key) || 0;
-        const gasto = Math.round(gastoIngresado * RECARGO_PUBLICIDAD);   // el que cuenta en todas las cuentas
+        const gastoSemana = gastoAdsPorSemana.get(key) || gastoDeSemana(null);
+        const gastoIngresado = gastoSemana.ingresado;
+        const gasto = gastoSemana.total;   // el que cuenta en todas las cuentas
         // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
         // van siempre sumados al gasto, y el costo se reparte sobre ese total
         // (Pablo, 10-oct).
@@ -946,7 +955,9 @@ function renderInversion() {
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
                            data-semana="${key}" value="${gastoIngresado || ""}" placeholder="0" style="width:120px">
                 </label>
-                ${gastoIngresado ? `<span class="muted">× 1,23 = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>` : ""}
+                ${!gastoIngresado ? "" : gastoSemana.recargo
+                    ? `<span class="muted">× ${String(gastoSemana.recargo).replace(".", ",")} = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>`
+                    : `<span class="muted" title="Se cargó con los impuestos incluidos. Si lo cambiás, el número nuevo se toma sin impuestos (× 1,23).">ya incluye impuestos</span>`}
                 ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong></span>` : ""}
             </div>
             ${tarjetasCosto}
@@ -2815,7 +2826,7 @@ function initRealtime() {
 
     // ── Gasto en publicidad por semana (pestaña Inversión) ──
     onSnapshot(collection(db, "gastoPublicidad"), (snap) => {
-        gastoAdsPorSemana = new Map(snap.docs.map(d => [d.id, Number(d.data().monto) || 0]));
+        gastoAdsPorSemana = new Map(snap.docs.map(d => [d.id, gastoDeSemana(d.data())]));
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
     }, (err) => {
         console.error("Gasto publicidad error:", err);
