@@ -34,57 +34,64 @@ const TONOS = [
 
 const PRECIOS = [
   { id: 'hasta10', nombre: 'Hasta $10.000', min: 0, max: 10000 },
-  { id: '10a25', nombre: '$10.000 a $25.000', min: 10000, max: 25000 },
-  { id: '25a50', nombre: '$25.000 a $50.000', min: 25000, max: 50000 },
-  { id: 'mas50', nombre: 'Más de $50.000', min: 50000, max: Infinity },
+  { id: '10a20', nombre: '$10.000 a $20.000', min: 10000, max: 20000 },
+  { id: '20a40', nombre: '$20.000 a $40.000', min: 20000, max: 40000 },
+  { id: 'mas40', nombre: 'Más de $40.000', min: 40000, max: Infinity },
 ];
+
+const REINTEGRO_DNI = 20;
 
 const PRODUCTOS = [
-  { id: 'caja-lino', nombre: 'Caja organizadora de lino con tapa', cat: 'organizacion', precio: 18900, descuento: 0, stock: 12, tono: 'natural', escena: 'decoracion-hogar', destacado: true, desc: 'Caja rígida forrada en tela símil lino, con tapa y portaetiqueta metálico. Sirve para el placard, los estantes o debajo de la cama.', tags: ['caja', 'placard', 'guardado', 'orden'] },
-  { id: 'cajas-forradas', nombre: 'Set de 2 cajas forradas negra y lino', cat: 'organizacion', precio: 24500, descuento: 0, stock: 8, tono: 'negro', escena: 'banner-organizacion', nuevo: true, desc: 'Dos cajas apilables con tapa, una negra y una en tono lino, para ordenar papeles, cables o accesorios a la vista.', tags: ['caja', 'apilable', 'escritorio', 'orden'] },
-  { id: 'canastos-rect', nombre: 'Canasto organizador de fibra rectangular', cat: 'organizacion', precio: 21900, descuento: 0, stock: 10, tono: 'natural', escena: 'banner-organizacion', desc: 'Canasto tejido en fibra natural con agarraderas caladas. Entra justo en estantes y bibliotecas.', tags: ['canasto', 'estante', 'fibra', 'mimbre'] },
-  { id: 'canasto-bicolor', nombre: 'Canasto de fibra bicolor con asas', cat: 'organizacion', precio: 32900, descuento: 10, stock: 6, tono: 'natural', escena: 'decoracion-hogar', destacado: true, desc: 'Canasto alto de fibra trenzada con base negra y asas. Para mantas, juguetes o la ropa para lavar.', tags: ['canasto', 'cesto', 'fibra', 'mimbre', 'ropa'] },
-  { id: 'joyero', nombre: 'Joyero de viaje de terciopelo', cat: 'organizacion', precio: 15900, descuento: 0, stock: 3, tono: 'negro', escena: 'belleza', desc: 'Estuche rígido de terciopelo negro con cierre dorado. Guarda anillos, aros y cadenitas sin que se enreden.', tags: ['joyas', 'joyero', 'estuche', 'viaje'] },
+  { id: 'caja-lino', nombre: 'Caja organizadora de lino con tapa', cat: 'organizacion', precio: 12990, descuento: 0, stock: 12, tono: 'natural', escena: 'decoracion-hogar', destacado: true, desc: 'Caja rígida forrada en tela símil lino, con tapa y portaetiqueta metálico. Sirve para el placard, los estantes o debajo de la cama.', tags: ['caja', 'placard', 'guardado', 'orden'] },
+  { id: 'cajas-forradas', nombre: 'Set de 2 cajas forradas negra y lino', cat: 'organizacion', precio: 15990, descuento: 0, stock: 8, tono: 'negro', escena: 'banner-organizacion', nuevo: true, desc: 'Dos cajas apilables con tapa, una negra y una en tono lino, para ordenar papeles, cables o accesorios a la vista.', tags: ['caja', 'apilable', 'escritorio', 'orden'] },
+  { id: 'canastos-rect', nombre: 'Canasto organizador de fibra rectangular', cat: 'organizacion', precio: 14990, descuento: 0, stock: 10, tono: 'natural', escena: 'banner-organizacion', desc: 'Canasto tejido en fibra natural con agarraderas caladas. Entra justo en estantes y bibliotecas.', tags: ['canasto', 'estante', 'fibra', 'mimbre'] },
+  { id: 'canasto-bicolor', nombre: 'Canasto de fibra bicolor con asas', cat: 'organizacion', precio: 16990, antes: 19990, descuento: 0, stock: 6, tono: 'natural', escena: 'decoracion-hogar', destacado: true, desc: 'Canasto alto de fibra trenzada con base negra y asas. Para mantas, juguetes o la ropa para lavar.', tags: ['canasto', 'cesto', 'fibra', 'mimbre', 'ropa'] },
+  { id: 'joyero', nombre: 'Joyero de viaje de terciopelo', cat: 'organizacion', precio: 9990, descuento: 0, stock: 3, tono: 'negro', escena: 'belleza', desc: 'Estuche rígido de terciopelo negro con cierre dorado. Guarda anillos, aros y cadenitas sin que se enreden.', tags: ['joyas', 'joyero', 'estuche', 'viaje'] },
 
-  { id: 'frascos-bambu', nombre: 'Frasco hermético de vidrio con tapa de bambú', cat: 'bazar', precio: 9900, descuento: 0, stock: 24, tono: 'natural', escena: 'bazar-cocina', nuevo: true, desc: 'Frasco de vidrio con tapa de bambú y burlete. Para café, avena, legumbres o frutos secos.', tags: ['frasco', 'vidrio', 'alacena', 'cocina'] },
-  { id: 'tazas-ceramica', nombre: 'Set de 2 tazas de cerámica pintadas', cat: 'bazar', precio: 16900, descuento: 10, stock: 9, tono: 'blanco', escena: 'bazar-cocina', destacado: true, desc: 'Una taza a rayas y otra a lunares, en cerámica blanca con borde negro.', tags: ['taza', 'mug', 'desayuno', 'cerámica'] },
-  { id: 'bandeja-madera', nombre: 'Bandeja de madera con asas de hierro', cat: 'bazar', precio: 27900, descuento: 0, stock: 7, tono: 'natural', escena: 'bazar-cocina', nuevo: true, desc: 'Bandeja rectangular de madera con marco y asas de hierro negro. Para desayunos, la mesa ratona o el baño.', tags: ['bandeja', 'desayuno', 'madera'] },
-  { id: 'utensilios-silicona', nombre: 'Set de utensilios de silicona y madera', cat: 'bazar', precio: 19900, descuento: 0, stock: 14, tono: 'negro', escena: 'bazar-cocina', desc: 'Cuchara, espátula calada y cuchara para pastas en silicona negra con mango de madera, con su porta utensilios de cerámica.', tags: ['utensilios', 'cocina', 'espátula', 'silicona'] },
-  { id: 'bowl-negro', nombre: 'Bowl de cerámica negro mate', cat: 'bazar', precio: 7900, descuento: 0, stock: 20, tono: 'negro', escena: 'bazar-cocina', desc: 'Bowl chico de cerámica con terminación mate. Para snacks, salsas o frutos secos.', tags: ['bowl', 'compotera', 'cerámica', 'cocina'] },
-  { id: 'pote-ceramica', nombre: 'Pote de cerámica con tapa de bambú', cat: 'bazar', precio: 11900, descuento: 0, stock: 2, tono: 'blanco', escena: 'bazar-cocina', desc: 'Pote blanco con tapa de bambú para azúcar, yerba o sal.', tags: ['pote', 'azucarera', 'yerbera', 'cocina'] },
+  { id: 'frascos-bambu', nombre: 'Frasco hermético de vidrio con tapa de bambú', cat: 'bazar', precio: 6990, descuento: 0, stock: 24, tono: 'natural', escena: 'bazar-cocina', nuevo: true, desc: 'Frasco de vidrio con tapa de bambú y burlete. Para café, avena, legumbres o frutos secos.', tags: ['frasco', 'vidrio', 'alacena', 'cocina'] },
+  { id: 'tazas-ceramica', nombre: 'Set de 2 tazas de cerámica pintadas', cat: 'bazar', precio: 12990, antes: 14990, descuento: 0, stock: 9, tono: 'blanco', escena: 'bazar-cocina', destacado: true, desc: 'Una taza a rayas y otra a lunares, en cerámica blanca con borde negro.', tags: ['taza', 'mug', 'desayuno', 'cerámica'] },
+  { id: 'bandeja-madera', nombre: 'Bandeja de madera con asas de hierro', cat: 'bazar', precio: 17990, descuento: 0, stock: 7, tono: 'natural', escena: 'bazar-cocina', nuevo: true, desc: 'Bandeja rectangular de madera con marco y asas de hierro negro. Para desayunos, la mesa ratona o el baño.', tags: ['bandeja', 'desayuno', 'madera'] },
+  { id: 'utensilios-silicona', nombre: 'Set de utensilios de silicona y madera', cat: 'bazar', precio: 13990, descuento: 0, stock: 14, tono: 'negro', escena: 'bazar-cocina', desc: 'Cuchara, espátula calada y cuchara para pastas en silicona negra con mango de madera, con su porta utensilios de cerámica.', tags: ['utensilios', 'cocina', 'espátula', 'silicona'] },
+  { id: 'bowl-negro', nombre: 'Bowl de cerámica negro mate', cat: 'bazar', precio: 4990, descuento: 0, stock: 20, tono: 'negro', escena: 'bazar-cocina', desc: 'Bowl chico de cerámica con terminación mate. Para snacks, salsas o frutos secos.', tags: ['bowl', 'compotera', 'cerámica', 'cocina'] },
+  { id: 'pote-ceramica', nombre: 'Pote de cerámica con tapa de bambú', cat: 'bazar', precio: 7990, descuento: 0, stock: 2, tono: 'blanco', escena: 'bazar-cocina', desc: 'Pote blanco con tapa de bambú para azúcar, yerba o sal.', tags: ['pote', 'azucarera', 'yerbera', 'cocina'] },
 
-  { id: 'florero-ceramica', nombre: 'Florero de cerámica arena', cat: 'deco', precio: 17900, descuento: 0, stock: 11, tono: 'blanco', escena: 'decoracion-hogar', destacado: true, desc: 'Florero de cerámica con terminación arenada, ideal para ramas secas o eucalipto.', tags: ['florero', 'jarrón', 'cerámica', 'living'] },
-  { id: 'florero-acanalado', nombre: 'Florero acanalado negro', cat: 'deco', precio: 15900, descuento: 0, stock: 8, tono: 'negro', escena: 'banner-organizacion', desc: 'Florero alto con textura acanalada en negro mate.', tags: ['florero', 'jarrón', 'living'] },
-  { id: 'vela-vaso', nombre: 'Vela aromática en vaso de vidrio', cat: 'deco', precio: 8900, descuento: 0, stock: 30, tono: 'blanco', escena: 'decoracion-hogar', desc: 'Vela de cera en vaso de vidrio transparente, de aroma suave, para el living o el dormitorio.', tags: ['vela', 'aroma', 'regalo'] },
-  { id: 'bandeja-redonda', nombre: 'Bandeja redonda de metal negro', cat: 'deco', precio: 19900, descuento: 0, stock: 9, tono: 'negro', escena: 'decoracion-hogar', desc: 'Bandeja de metal con borde alto y asas caladas. Ordena velas, llaves o perfumes sobre una mesa o una cómoda.', tags: ['bandeja', 'metal', 'mesa'] },
-  { id: 'manta-rayada', nombre: 'Manta tejida a rayas', cat: 'deco', precio: 29900, descuento: 20, stock: 5, tono: 'blanco', escena: 'decoracion-hogar', nuevo: true, desc: 'Manta de algodón tejido, cruda con rayas negras, para el sillón o los pies de la cama.', tags: ['manta', 'pie de cama', 'sillón', 'textil'] },
-  { id: 'lampara-mesa', nombre: 'Lámpara de mesa hongo negra', cat: 'deco', precio: 45900, descuento: 0, stock: 4, tono: 'negro', escena: 'banner-organizacion', nuevo: true, desc: 'Lámpara de mesa con pantalla tipo hongo en metal negro. Luz cálida para la mesa de luz o el escritorio.', tags: ['lámpara', 'velador', 'luz', 'escritorio'] },
-  { id: 'vela-labrada', nombre: 'Vela en vaso labrado rosa', cat: 'deco', precio: 12900, descuento: 0, stock: 0, tono: 'rosa', escena: 'belleza', desc: 'Vela en vaso de vidrio rosa con relieve de rombos.', tags: ['vela', 'aroma', 'regalo'] },
+  { id: 'florero-ceramica', nombre: 'Florero de cerámica arena', cat: 'deco', precio: 11990, descuento: 0, stock: 11, tono: 'blanco', escena: 'decoracion-hogar', destacado: true, desc: 'Florero de cerámica con terminación arenada, ideal para ramas secas o eucalipto.', tags: ['florero', 'jarrón', 'cerámica', 'living'] },
+  { id: 'florero-acanalado', nombre: 'Florero acanalado negro', cat: 'deco', precio: 10990, descuento: 0, stock: 8, tono: 'negro', escena: 'banner-organizacion', desc: 'Florero alto con textura acanalada en negro mate.', tags: ['florero', 'jarrón', 'living'] },
+  { id: 'vela-vaso', nombre: 'Vela aromática en vaso de vidrio', cat: 'deco', precio: 5990, descuento: 0, stock: 30, tono: 'blanco', escena: 'decoracion-hogar', desc: 'Vela de cera en vaso de vidrio transparente, de aroma suave, para el living o el dormitorio.', tags: ['vela', 'aroma', 'regalo'] },
+  { id: 'bandeja-redonda', nombre: 'Bandeja redonda de metal negro', cat: 'deco', precio: 12990, descuento: 0, stock: 9, tono: 'negro', escena: 'decoracion-hogar', desc: 'Bandeja de metal con borde alto y asas caladas. Ordena velas, llaves o perfumes sobre una mesa o una cómoda.', tags: ['bandeja', 'metal', 'mesa'] },
+  { id: 'manta-rayada', nombre: 'Manta tejida a rayas', cat: 'deco', precio: 22990, antes: 27990, descuento: 0, stock: 5, tono: 'blanco', escena: 'decoracion-hogar', nuevo: true, desc: 'Manta de algodón tejido, cruda con rayas negras, para el sillón o los pies de la cama.', tags: ['manta', 'pie de cama', 'sillón', 'textil'] },
+  { id: 'lampara-mesa', nombre: 'Lámpara de mesa hongo negra', cat: 'deco', precio: 28990, descuento: 0, stock: 4, tono: 'negro', escena: 'banner-organizacion', nuevo: true, desc: 'Lámpara de mesa con pantalla tipo hongo en metal negro. Luz cálida para la mesa de luz o el escritorio.', tags: ['lámpara', 'velador', 'luz', 'escritorio'] },
+  { id: 'vela-labrada', nombre: 'Vela en vaso labrado rosa', cat: 'deco', precio: 8990, descuento: 0, stock: 0, tono: 'rosa', escena: 'belleza', desc: 'Vela en vaso de vidrio rosa con relieve de rombos.', tags: ['vela', 'aroma', 'regalo'] },
 
-  { id: 'mochila-urbana', nombre: 'Mochila urbana con compartimento para notebook', cat: 'viaje', precio: 64900, descuento: 0, stock: 8, tono: 'negro', escena: 'portada-viajes', destacado: true, portada: true, desc: 'Mochila negra con bolsillo frontal con cierre, laterales con hebillas y compartimento acolchado para la notebook. Para la facu, el trabajo o un viaje corto.', tags: ['mochila', 'notebook', 'facultad', 'urbana'] },
-  { id: 'bolso-duffel', nombre: 'Bolso de viaje duffel negro', cat: 'viaje', precio: 54900, descuento: 0, stock: 6, tono: 'negro', escena: 'accesorios-viaje', destacado: true, desc: 'Bolso amplio con manijas, correa regulable y bolsillo frontal con cierre. Para escapadas de fin de semana o el gimnasio.', tags: ['bolso', 'duffel', 'gimnasio', 'escapada'] },
-  { id: 'set-cubos', nombre: 'Set de 3 cubos organizadores de valija', cat: 'viaje', precio: 28900, descuento: 15, stock: 15, tono: 'negro', escena: 'accesorios-viaje', destacado: true, desc: 'Tres cubos de distintos tamaños con frente de red y doble cierre. Separan la ropa y aprovechan cada rincón de la valija.', tags: ['cubos', 'organizador', 'valija', 'packing'] },
-  { id: 'organizadores-valija', nombre: 'Organizadores de valija con frente de red x2', cat: 'viaje', precio: 21900, descuento: 0, stock: 10, tono: 'negro', escena: 'portada-viajes', desc: 'Dos organizadores con frente de red para ver qué hay adentro sin abrirlos.', tags: ['organizador', 'valija', 'packing', 'red'] },
-  { id: 'neceser-organizador', nombre: 'Organizador de cosméticos con frascos de viaje', cat: 'viaje', precio: 18900, descuento: 0, stock: 7, tono: 'negro', escena: 'accesorios-viaje', desc: 'Estuche con tapa de red y elásticos internos, con frascos rellenables para shampoo, crema y perfume.', tags: ['neceser', 'frascos', 'cosméticos', 'viaje'] },
-  { id: 'neceser-negro', nombre: 'Neceser de viaje negro', cat: 'viaje', precio: 13900, descuento: 0, stock: 12, tono: 'negro', escena: 'accesorios-viaje', desc: 'Neceser de tela con cierre y manija lateral para el cepillo, el desodorante y lo de todos los días.', tags: ['neceser', 'baño', 'viaje'] },
-  { id: 'almohada-viaje', nombre: 'Almohada de viaje viscoelástica', cat: 'viaje', precio: 16900, descuento: 0, stock: 9, tono: 'negro', escena: 'portada-viajes', nuevo: true, desc: 'Almohada cervical de espuma viscoelástica con funda suave y broche. Para el micro, el avión o el auto.', tags: ['almohada', 'cervical', 'avión', 'micro'] },
-  { id: 'antifaz-negro', nombre: 'Antifaz para dormir', cat: 'viaje', precio: 5900, descuento: 0, stock: 25, tono: 'negro', escena: 'accesorios-viaje', desc: 'Antifaz negro con elástico regulable para dormir en viajes largos.', tags: ['antifaz', 'dormir', 'avión'] },
-  { id: 'etiquetas-valija', nombre: 'Etiquetas para valija x2', cat: 'viaje', precio: 7900, descuento: 0, stock: 18, tono: 'negro', escena: 'accesorios-viaje', desc: 'Dos etiquetas de cuero sintético con correa y hebilla, para reconocer tu valija en la cinta.', tags: ['etiqueta', 'valija', 'equipaje'] },
-  { id: 'porta-pasaporte', nombre: 'Porta pasaporte de cuero sintético', cat: 'viaje', precio: 12900, descuento: 0, stock: 0, tono: 'negro', escena: 'portada-viajes', desc: 'Funda negra para el pasaporte y la tarjeta de embarque.', tags: ['pasaporte', 'documentos', 'viaje'] },
-  { id: 'botella-termica', nombre: 'Botella térmica de acero 750 ml', cat: 'viaje', precio: 22900, descuento: 0, stock: 13, tono: 'negro', escena: 'portada-viajes', desc: 'Botella de acero inoxidable negro mate con tapa a rosca.', tags: ['botella', 'térmica', 'agua', 'acero'] },
+  { id: 'mochila-urbana', nombre: 'Mochila urbana con compartimento para notebook', cat: 'viaje', precio: 16990, descuento: 0, stock: 8, tono: 'negro', escena: 'portada-viajes', destacado: true, portada: true, reingreso: true, desc: 'Mochila negra con bolsillo frontal con cierre, laterales con hebillas y compartimento acolchado para la notebook. Para la facu, el trabajo o un viaje corto.', tags: ['mochila', 'notebook', 'facultad', 'urbana'] },
+  { id: 'bolso-duffel', nombre: 'Bolso de viaje duffel negro', cat: 'viaje', precio: 24990, descuento: 0, stock: 6, tono: 'negro', escena: 'accesorios-viaje', destacado: true, desc: 'Bolso amplio con manijas, correa regulable y bolsillo frontal con cierre. Para escapadas de fin de semana o el gimnasio.', tags: ['bolso', 'duffel', 'gimnasio', 'escapada'] },
+  { id: 'set-cubos', nombre: 'Set de organizadores de valija', cat: 'viaje', precio: 17990, antes: 19990, descuento: 0, stock: 15, tono: 'negro', escena: 'accesorios-viaje', destacado: true, desc: 'Tres cubos de distintos tamaños con frente de red y doble cierre. Separan la ropa y aprovechan cada rincón de la valija.', tags: ['cubos', 'organizador', 'valija', 'packing'] },
+  { id: 'organizadores-valija', nombre: 'Organizadores de valija con frente de red x2', cat: 'viaje', precio: 12990, descuento: 0, stock: 10, tono: 'negro', escena: 'portada-viajes', desc: 'Dos organizadores con frente de red para ver qué hay adentro sin abrirlos.', tags: ['organizador', 'valija', 'packing', 'red'] },
+  { id: 'neceser-organizador', nombre: 'Organizador de cosméticos con frascos de viaje', cat: 'viaje', precio: 11990, descuento: 0, stock: 7, tono: 'negro', escena: 'accesorios-viaje', desc: 'Estuche con tapa de red y elásticos internos, con frascos rellenables para shampoo, crema y perfume.', tags: ['neceser', 'frascos', 'cosméticos', 'viaje'] },
+  { id: 'neceser-negro', nombre: 'Neceser de viaje negro', cat: 'viaje', precio: 8990, descuento: 0, stock: 12, tono: 'negro', escena: 'accesorios-viaje', desc: 'Neceser de tela con cierre y manija lateral para el cepillo, el desodorante y lo de todos los días.', tags: ['neceser', 'baño', 'viaje'] },
+  { id: 'almohada-viaje', nombre: 'Almohada de viaje viscoelástica', cat: 'viaje', precio: 9990, descuento: 0, stock: 9, tono: 'negro', escena: 'portada-viajes', nuevo: true, desc: 'Almohada cervical de espuma viscoelástica con funda suave y broche. Para el micro, el avión o el auto.', tags: ['almohada', 'cervical', 'avión', 'micro'] },
+  { id: 'antifaz-negro', nombre: 'Antifaz para dormir', cat: 'viaje', precio: 3990, descuento: 0, stock: 25, tono: 'negro', escena: 'accesorios-viaje', desc: 'Antifaz negro con elástico regulable para dormir en viajes largos.', tags: ['antifaz', 'dormir', 'avión'] },
+  { id: 'etiquetas-valija', nombre: 'Etiquetas para valija x2', cat: 'viaje', precio: 4990, descuento: 0, stock: 18, tono: 'negro', escena: 'accesorios-viaje', desc: 'Dos etiquetas de cuero sintético con correa y hebilla, para reconocer tu valija en la cinta.', tags: ['etiqueta', 'valija', 'equipaje'] },
+  { id: 'porta-pasaporte', nombre: 'Porta pasaporte de cuero sintético', cat: 'viaje', precio: 7990, descuento: 0, stock: 0, tono: 'negro', escena: 'portada-viajes', desc: 'Funda negra para el pasaporte y la tarjeta de embarque.', tags: ['pasaporte', 'documentos', 'viaje'] },
+  { id: 'botella-termica', nombre: 'Botella térmica de acero 750 ml', cat: 'viaje', precio: 14990, descuento: 0, stock: 13, tono: 'negro', escena: 'portada-viajes', desc: 'Botella de acero inoxidable negro mate con tapa a rosca.', tags: ['botella', 'térmica', 'agua', 'acero'] },
 
-  { id: 'neceser-rosa', nombre: "Neceser acolchado rosa Victoria's Secret", cat: 'vs', marca: "Victoria's Secret", precio: 39900, descuento: 0, stock: 5, tono: 'rosa', escena: 'belleza', nuevo: true, desc: 'Neceser grande acolchado en rosa con detalles negros y cierre dorado.', tags: ['neceser', 'cosmetiquero', 'regalo'] },
-  { id: 'body-mist', nombre: "Body mist Victoria's Secret 250 ml", cat: 'vs', marca: "Victoria's Secret", precio: 36900, descuento: 0, stock: 10, tono: 'rosa', escena: 'belleza', destacado: true, desc: 'Bruma corporal perfumada para usar durante el día. Consultanos por WhatsApp las fragancias disponibles.', tags: ['body mist', 'bruma', 'fragancia', 'perfume'] },
-  { id: 'locion-corporal', nombre: "Loción corporal Victoria's Secret 236 ml", cat: 'vs', marca: "Victoria's Secret", precio: 34900, descuento: 0, stock: 8, tono: 'rosa', escena: 'belleza', desc: 'Loción hidratante perfumada para el cuerpo.', tags: ['crema', 'loción', 'hidratante'] },
-  { id: 'eau-parfum', nombre: "Eau de parfum Victoria's Secret 50 ml", cat: 'vs', marca: "Victoria's Secret", precio: 89900, descuento: 0, stock: 3, tono: 'rosa', escena: 'belleza', nuevo: true, desc: 'Perfume en frasco de vidrio facetado. Consultanos por WhatsApp las fragancias disponibles.', tags: ['perfume', 'fragancia', 'regalo'] },
-  { id: 'crema-pomo', nombre: "Crema corporal en pomo Victoria's Secret", cat: 'vs', marca: "Victoria's Secret", precio: 24900, descuento: 0, stock: 9, tono: 'rosa', escena: 'belleza', desc: 'Crema corporal en pomo, práctica para llevar en la cartera.', tags: ['crema', 'manos', 'cuerpo'] },
-  { id: 'scrunchie', nombre: 'Scrunchie de satén rosa', cat: 'vs', precio: 6900, descuento: 0, stock: 20, tono: 'rosa', escena: 'belleza', desc: 'Colita de satén que no marca el pelo.', tags: ['scrunchie', 'colita', 'pelo', 'accesorio'] },
+  { id: 'neceser-rosa', nombre: "Neceser acolchado rosa Victoria's Secret", cat: 'vs', marca: "Victoria's Secret", precio: 39990, descuento: 0, stock: 5, tono: 'rosa', escena: 'belleza', nuevo: true, desc: 'Neceser grande acolchado en rosa con detalles negros y cierre dorado.', tags: ['neceser', 'cosmetiquero', 'regalo'] },
+  { id: 'body-mist', nombre: "Body mist Victoria's Secret 250 ml", cat: 'vs', marca: "Victoria's Secret", precio: 36990, descuento: 0, stock: 10, tono: 'rosa', escena: 'belleza', destacado: true, desc: 'Bruma corporal perfumada para usar durante el día. Consultanos por WhatsApp las fragancias disponibles.', tags: ['body mist', 'bruma', 'fragancia', 'perfume'] },
+  { id: 'locion-corporal', nombre: "Loción corporal Victoria's Secret 236 ml", cat: 'vs', marca: "Victoria's Secret", precio: 34990, descuento: 0, stock: 8, tono: 'rosa', escena: 'belleza', desc: 'Loción hidratante perfumada para el cuerpo.', tags: ['crema', 'loción', 'hidratante'] },
+  { id: 'eau-parfum', nombre: "Eau de parfum Victoria's Secret 50 ml", cat: 'vs', marca: "Victoria's Secret", precio: 89990, descuento: 0, stock: 3, tono: 'rosa', escena: 'belleza', nuevo: true, desc: 'Perfume en frasco de vidrio facetado. Consultanos por WhatsApp las fragancias disponibles.', tags: ['perfume', 'fragancia', 'regalo'] },
+  { id: 'crema-pomo', nombre: "Crema corporal en pomo Victoria's Secret", cat: 'vs', marca: "Victoria's Secret", precio: 24990, descuento: 0, stock: 9, tono: 'rosa', escena: 'belleza', desc: 'Crema corporal en pomo, práctica para llevar en la cartera.', tags: ['crema', 'manos', 'cuerpo'] },
+  { id: 'scrunchie', nombre: 'Scrunchie de satén rosa', cat: 'vs', precio: 4990, descuento: 0, stock: 20, tono: 'rosa', escena: 'belleza', desc: 'Colita de satén que no marca el pelo.', tags: ['scrunchie', 'colita', 'pelo', 'accesorio'] },
 ];
+
+PRODUCTOS.forEach(p => {
+  if (p.antes > p.precio) { p.descuento = (1 - p.precio / p.antes) * 100; p.precio = p.antes; }
+});
 
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
 const precioFinal = p => p.descuento > 0 ? Math.round(p.precio * (1 - p.descuento / 100)) : p.precio;
 const getProducto = id => PRODUCTOS.find(p => p.id === id);
+const conDNI = n => Math.round(n * (1 - REINTEGRO_DNI / 100));
 const getCategoria = id => CATEGORIAS.find(c => c.id === id);
 const imgProducto = p => `images/p-${p.id}.webp`;
 
@@ -166,13 +173,15 @@ const ANIM = {
 const ICON_MAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const ICON_MENOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14"/></svg>';
 const ICON_FLECHA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+const ICON_CARRITO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>';
+const ICON_X ='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
 function badgesHTML(p) {
   const b = [];
   if (p.stock <= 0) b.push('<span class="badge badge--agotado">Sin stock</span>');
-  else if (p.descuento > 0) b.push(`<span class="badge badge--off">-${p.descuento}%</span>`);
-  else if (p.nuevo) b.push('<span class="badge">Nuevo</span>');
+  else if (p.descuento > 0) b.push(`<span class="badge badge--off">-${Math.round(p.descuento)}%</span>`);
+  else if (p.reingreso) b.push('<span class="badge badge--cinta">Reingreso</span>');
+  else if (p.nuevo) b.push('<span class="badge badge--cinta">Nuevo ingreso</span>');
   else if (p.stock <= 3) b.push('<span class="badge badge--ultimas">Últimas unidades</span>');
   return b.length ? `<span class="badges">${b.join('')}</span>` : '';
 }
@@ -183,10 +192,14 @@ function precioHTML(p) {
     : `<span class="precio">${formatearPrecio(p.precio)}</span>`;
 }
 
+function dniHTML(p, clase = '') {
+  return `<p class="precio-dni ${clase}"><span class="dni-largo">Con Cuenta DNI te queda</span><span class="dni-corto">Cuenta DNI</span> <strong>${formatearPrecio(conDNI(precioFinal(p)))}</strong></p>`;
+}
+
 function cardHTML(p, animar = true, compacta = false) {
   const cat = getCategoria(p.cat);
   const agotado = p.stock <= 0;
-  const agregar = `Agregar<span class="add-extra"> al carrito</span>`;
+  const agregar = `${ICON_CARRITO}<span class="add-txt">Agregar<span class="add-extra"> al carrito</span></span>`;
   return `<article class="prod${agotado ? ' prod--agotado' : ''}" data-id="${esc(p.id)}" ${animar ? ANIM.subir : ''}>
     <button class="prod__media" type="button" data-quick="${esc(p.id)}" aria-label="Ver detalle: ${esc(p.nombre)}">
       <span class="recorte"><img src="${imgProducto(p)}" alt="${esc(p.nombre)}" width="800" height="800"></span>
@@ -196,13 +209,14 @@ function cardHTML(p, animar = true, compacta = false) {
       <p class="prod__cat">${esc(cat?.nombre)}</p>
       <h3 class="prod__nombre"><button type="button" data-quick="${esc(p.id)}">${esc(p.nombre)}</button></h3>
       <p class="prod__precio">${precioHTML(p)}</p>
+      ${dniHTML(p)}
       ${agotado
         ? `<a class="btn btn--line prod-aviso" href="https://wa.me/${WSP}?text=${encodeURIComponent('Hola! ¿Cuándo vuelve a entrar: ' + p.nombre + '?')}" target="_blank" rel="noopener">Avisame cuando vuelva</a>`
         : compacta
         ? `<div class="prod-actions"><button class="btn btn--cta prod-add" type="button" data-add="${esc(p.id)}">Agregar al carrito</button></div>`
         : `<div class="prod-actions">
         <div class="stepper"><button type="button" data-step="-1" aria-label="Restar uno">${ICON_MENOS}</button><input type="number" value="1" min="1" max="${p.stock}" inputmode="numeric" aria-label="Cantidad de ${esc(p.nombre)}"><button type="button" data-step="1" aria-label="Sumar uno">${ICON_MAS}</button></div>
-        <button class="btn btn--cta prod-add" type="button" data-add="${esc(p.id)}">${agregar}</button>
+        <button class="btn btn--cta prod-add" type="button" data-add="${esc(p.id)}" aria-label="Agregar ${esc(p.nombre)} al carrito">${agregar}</button>
       </div>
       <button class="prod-buy" type="button" data-buy="${esc(p.id)}">Comprar ahora</button>`}
     </div>
@@ -220,6 +234,7 @@ function miniHTML(p, anim = 'der') {
       <p class="mini__cat">${esc(getCategoria(p.cat)?.nombre)}</p>
       <h3 class="mini__nombre"><button type="button" data-quick="${esc(p.id)}">${esc(p.nombre)}</button></h3>
       <p class="mini__precio">${precioHTML(p)}</p>
+      ${dniHTML(p)}
     </div>
     ${agotado ? '' : `<button class="mini__add" type="button" data-add="${esc(p.id)}" aria-label="Agregar ${esc(p.nombre)} al carrito">${ICON_MAS}</button>`}
   </article>`;
@@ -554,6 +569,8 @@ function renderCart() {
   }).join('');
   const total = document.getElementById('cartTotal');
   if (total) total.textContent = formatearPrecio(Cart.total());
+  const totalDNI = document.getElementById('cartTotalDNI');
+  if (totalDNI) totalDNI.textContent = formatearPrecio(conDNI(Cart.total()));
 }
 
 function openCartDrawer() {
@@ -623,7 +640,8 @@ function abrirQuickView(id, desdeURL = false) {
       <p class="etiqueta etiqueta--mini">${esc(cat?.nombre)}</p>
       <p class="qv__titulo">${esc(p.nombre)}</p>
       ${p.marca ? `<p class="qv__marca">${esc(p.marca)}</p>` : ''}
-      <p class="qv__precio">${precioHTML(p)}${p.descuento > 0 ? `<span class="badge badge--off">-${p.descuento}%</span>` : ''}</p>
+      <p class="qv__precio">${precioHTML(p)}${p.descuento > 0 ? `<span class="badge badge--off">-${Math.round(p.descuento)}%</span>` : ''}</p>
+      ${dniHTML(p, 'precio-dni--grande')}
       <p class="qv__desc">${esc(p.desc)}</p>
       <p class="qv__stock">${agotado ? 'Sin stock por ahora' : p.stock <= 3 ? `Quedan ${p.stock} unidades` : 'En stock'}</p>
       <div class="qv__compra">
@@ -632,7 +650,7 @@ function abrirQuickView(id, desdeURL = false) {
         <button class="btn btn--cta" type="button" data-add="${esc(p.id)}">Agregar al carrito</button>
         <button class="btn btn--line" type="button" data-buy="${esc(p.id)}">Comprar ahora</button>`}
       </div>
-      <p class="qv__dni"><span class="etiqueta etiqueta--mini">Cuenta DNI</span> Pagá con Cuenta DNI y recibí el reintegro de Banco Provincia.</p>
+      <p class="qv__dni">El ${REINTEGRO_DNI}% te lo devuelve Banco Provincia en tu Cuenta DNI, con el tope de la promo vigente.</p>
       ${relacionados.length ? `<div class="qv__rel"><p class="qv__rel-titulo">También te puede interesar</p><div class="qv__rel-grid">${relacionados.map(r => `<button type="button" class="qv__rel-item" data-quick="${esc(r.id)}"><img src="${imgProducto(r)}" alt="" width="800" height="800"><span>${esc(r.nombre)}</span><strong>${formatearPrecio(precioFinal(r))}</strong></button>`).join('')}</div></div>` : ''}
     </div>`;
   const ld = document.getElementById('ldProducto');

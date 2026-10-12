@@ -15,11 +15,12 @@
 <meta property="og:url" content="https://gokywebs.com/demo/conondaurbana/catalogo.html">
 <meta property="og:image" content="https://gokywebs.com/demo/conondaurbana/images/banner-organizacion.webp">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='38' fill='%23fff'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="images/logo.jpg" type="image/jpeg">
+<link rel="apple-touch-icon" href="images/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
 <script type="application/ld+json" id="ldProducto">{}</script>
 </head>
@@ -29,14 +30,14 @@
   <a class="gw-modelos__btn" href="catalogo-2.html" data-modelo="2">Modelo 2</a>
 </nav>
 
-<p class="aviso"><span class="etiqueta etiqueta--clara etiqueta--mini">Cuenta DNI</span> Pagá con Cuenta DNI y recibí reintegro <span class="aviso__sep" aria-hidden="true">·</span> <a href="./#reintegro">Ver cómo funciona</a></p>
+<p class="aviso"><span class="etiqueta etiqueta--clara etiqueta--mini">Cuenta DNI</span> Con Cuenta DNI te queda un 20% menos <span class="aviso__sep" aria-hidden="true">·</span> <a href="./#reintegro">Ver cómo funciona</a></p>
 
 <header class="site-header site-header--tienda" id="top">
   <div class="container header-inner">
     <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
-    <a class="brand" href="./" aria-label="Con onda urbana, inicio"><span class="wordmark" aria-hidden="true"><span>Con onda</span><span>urbana</span></span></a>
+    <a class="brand" href="./"><img class="brand__logo" src="images/logo.jpg" alt="Con onda urbana, inicio" width="150" height="150"></a>
     <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
       <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -141,7 +142,7 @@
 <footer class="site-footer">
   <div class="container footer__grid">
     <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
-      <a class="brand brand--footer" href="./" aria-label="Con onda urbana, inicio"><span class="wordmark" aria-hidden="true"><span>Con onda</span><span>urbana</span></span></a>
+      <a class="brand brand--footer" href="./"><img class="brand__logo" src="images/logo.jpg" alt="Con onda urbana, inicio" width="150" height="150"></a>
       <p>Organizadores, bazar, deco, mochilas, viaje y Victoria's Secret en una sola tienda.</p>
     </div>
     <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(48px)">
@@ -161,7 +162,7 @@
       <ul>
         <li><a href="https://wa.me/5492216179696?text=Hola!%20Vi%20la%20tienda%20online%20de%20Con%20onda%20urbana%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">WhatsApp 221 617-9696</a></li>
         <li><a href="https://www.instagram.com/conondaurbanalp/" target="_blank" rel="noopener">Instagram @conondaurbanalp</a></li>
-        <li>La Plata, Buenos Aires</li>
+        <li>La Plata · Envíos</li>
       </ul>
     </div>
   </div>
@@ -189,7 +190,7 @@
   </div>
   <div class="drawer__body" id="cartItems"></div>
   <div class="drawer__foot" id="cartFoot" hidden>
-    <p class="drawer__dni"><span class="etiqueta etiqueta--mini">Cuenta DNI</span> Pagá con Cuenta DNI y recibí el reintegro de Banco Provincia.</p>
+    <p class="drawer__dni"><span class="etiqueta etiqueta--mini">Cuenta DNI</span> Con Cuenta DNI te queda <strong id="cartTotalDNI">$0</strong></p>
     <p class="drawer__total"><span>Total</span><strong id="cartTotal">$0</strong></p>
     <button type="button" class="btn btn--cta btn--block" id="checkoutBtn">Finalizar compra</button>
   </div>
@@ -205,7 +206,7 @@
 
 <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-<script src="script.js?v=1"></script>
+<script src="script.js?v=2"></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>
