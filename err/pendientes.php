@@ -47,6 +47,7 @@ const ERR_REPOS = [
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
     'asesoratesancorsalud.com.ar'      => 'pablot95/sancorsalud',
     'spstoreandservice.com.ar'         => 'pablot95/spstoreandservice',
+    'territoriosinvisibles.com.ar'     => 'pablot95/territoriosinvisibles',
     'thetraveledit.com.ar'             => 'pablot95/thetraveledit',
     'tramaoperativa.com.ar'            => 'pablot95/tramaoperativa',
     'valuhcatyarte.com.ar'             => 'pablot95/valuhcatyarte',
