@@ -17,3 +17,4 @@
 @media(max-width:380px){.gw-modelos{left:12px;transform:none}.brand-word{font-size:1.2rem}.brand img{width:50px;height:50px}.product-title{font-size:.8rem}.prod-add{font-size:.7rem}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}[data-animate] img{scale:1!important}}
 .hero-split .hero-photo img{position:absolute;inset:0}
+.m2 .catalog-intro-grid p:last-child{color:#d6e4ec}
