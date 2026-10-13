@@ -1652,12 +1652,123 @@ document.getElementById("tabFinanzas")?.addEventListener("click", async e => {
 /* Inversión: Contactos y clientes · Por anuncio (los cobros por día pasaron a Calendario). */
 function renderInversionVista() {
     document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
-    const vistas = { contactos: "invVistaContactos", anuncios: "invVistaAnuncios" };
+    const vistas = { contactos: "invVistaContactos", anuncios: "invVistaAnuncios", autores: "invVistaAutores" };
     for (const [clave, id] of Object.entries(vistas)) {
         const el = document.getElementById(id);
         if (el) el.hidden = clave !== inversionVista;
     }
     if (inversionVista === "anuncios") cargarAnuncios();
+    if (inversionVista === "autores") renderAutores();
+}
+
+/* ── Quién hizo cada demo: Claude o ChatGPT (Pablo, 13-oct-2026, desde el 4-oct) ──
+   De fábrica sale del historial de git (admin/demos-autor.mjs → demos-autor.json: el commit que
+   creó la carpeta demo/<slug>/ con "Co-Authored-By: Claude" es de Claude, el resto de ChatGPT).
+   Se corrige a mano: en Bocetos y prospectos (campo `demoPor` del boceto, que pasa al cliente en su
+   snapshot) y en esta misma vista (campo `demoPor` del cliente). La demo y el cliente se cruzan
+   por el nombre del negocio (slugNegocio), igual que el link "Ver demo". */
+const AUTOR_LABEL = { claude: "Claude", chatgpt: "ChatGPT" };
+const DEMOS_AUTOR_DESDE = "2026-10-04";
+let demosAutor = {};
+fetch("demos-autor.json?v=" + Math.floor(Date.now() / 600000))
+    .then(r => (r.ok ? r.json() : {}))
+    .then(j => { demosAutor = j && typeof j === "object" ? j : {}; if (inversionVista === "autores" && activeTab === "inversion") renderAutores(); if (activeTab === "propuestas") renderPropuestas(); })
+    .catch(() => {});
+
+/* Del boceto: { por: "claude" | "chatgpt" | "", manual }. */
+/* El desplegable de "Demo hecha por" de la fila de un boceto (desde el 4-oct). El valor vacío deja el automático. */
+function _selectorAutorDemo(p) {
+    const creado = _parseSketchDate(p.createdAt);
+    if (!creado || creado < new Date(`${DEMOS_AUTOR_DESDE}T00:00:00-03:00`)) return "";
+    const a = demoAutorDeBoceto(p);
+    const auto = a.manual ? "" : a.por;
+    return `<div style="margin-top:5px"><select class="prop-type-input prop-por-select" data-prop-por="${p.id}" aria-label="Quién hizo la demo de ${escapeHtml(getPropuestaNegocioFields(p).nombreNegocio || "este boceto")}" title="Quién hizo la demo: sale del historial de git y se puede corregir">
+        <option value="">${AUTOR_LABEL[auto] ? `Demo: ${AUTOR_LABEL[auto]} (auto)` : "Demo: sin identificar"}</option>
+        ${Object.entries(AUTOR_LABEL).map(([k, v]) => `<option value="${k}"${p.demoPor === k ? " selected" : ""}>Demo: ${v}</option>`).join("")}
+    </select></div>`;
+}
+
+function demoAutorDeBoceto(p) {
+    if (AUTOR_LABEL[p?.demoPor]) return { por: p.demoPor, manual: true };
+    const slug = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
+    return { por: demosAutor[slug]?.por || "", manual: false };
+}
+
+/* Del cliente (o de un completado): lo marcado a mano en el cliente o en su boceto, y si no, la demo de su negocio. */
+function demoAutorDeCliente(c) {
+    const snap = c.propuestaSnapshot || {};
+    const manual = [c.demoPor, snap.demoPor].find(v => AUTOR_LABEL[v]);
+    if (manual) return { por: manual, manual: true };
+    const slugs = [c.proyecto, snap.nombre_negocio, getPropuestaNegocioFields(snap).nombreNegocio].map(slugNegocio).filter(Boolean);
+    const hit = slugs.find(s => demosAutor[s]);
+    return { por: hit ? demosAutor[hit].por : "", manual: false, demo: hit ? demosAutor[hit] : null };
+}
+
+function renderAutores() {
+    const cont = document.getElementById("invVistaAutores");
+    if (!cont) return;
+    const desde = new Date(`${DEMOS_AUTOR_DESDE}T00:00:00-03:00`);
+
+    // Los clientes (y las entregas que ya salieron de Clientes) que vienen de una demo hecha desde el 4-oct.
+    const ids = new Set((clients || []).map(c => c.id));
+    const filas = [];
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente") continue;
+        const a = demoAutorDeCliente(c);
+        const paso = fechaPasoACliente(c);
+        // Sin demo identificada, solo si pasó a Cliente desde el 4-oct (lo anterior no se registraba).
+        if (!a.por && !(paso && paso >= desde)) continue;
+        filas.push({ c, a, paso, tipo: "cliente" });
+    }
+    for (const c of (completados || [])) {
+        if (c.clienteId && ids.has(c.clienteId)) continue;
+        const a = demoAutorDeCliente(c);
+        if (!a.por) continue;
+        filas.push({ c, a, paso: mantToDate(c.completadoAt), tipo: "entregado" });
+    }
+    filas.sort((x, y) => (y.paso?.getTime() || 0) - (x.paso?.getTime() || 0));
+
+    const demosPorAutor = { claude: 0, chatgpt: 0 };
+    for (const d of Object.values(demosAutor)) if (d.por in demosPorAutor && d.fecha >= DEMOS_AUTOR_DESDE) demosPorAutor[d.por]++;
+    const nClientes = por => filas.filter(f => f.a.por === por).length;
+
+    const tarjeta = (titulo, por, color) => {
+        const n = nClientes(por);
+        const demos = demosPorAutor[por] || 0;
+        const pct = demos ? ` · ${Math.round(n / demos * 100)}% de las demos` : "";
+        return `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor" style="color:${color}">${n} cliente${n === 1 ? "" : "s"}</span><span class="inv-card-detalle">${demos ? `de ${demos} demo${demos === 1 ? "" : "s"} hechas${pct}` : ""}</span></div>`;
+    };
+    const sinId = nClientes("");
+
+    const opciones = actual => `<option value=""${!actual ? " selected" : ""}>Sin identificar</option>`
+        + Object.entries(AUTOR_LABEL).map(([k, v]) => `<option value="${k}"${actual === k ? " selected" : ""}>${v}</option>`).join("");
+    const modLabel = c => ({ mensual: "Mensual", unico: "Anual", propia: "Pago único" })[modalidadDe(c)] || "—";
+
+    cont.innerHTML = `
+        <p class="muted">Desde el ${DEMOS_AUTOR_DESDE.split("-").reverse().join("/")}. Quién hizo cada demo sale del historial de git (la carpeta que creó cada commit: con firma de Claude es de Claude, sin ella se toma como ChatGPT); si alguna está mal, se corrige acá o en Bocetos y prospectos. Después de cada demo nueva hay que volver a correr <code>node admin/demos-autor.mjs</code>.</p>
+        <div class="inv-cards">
+            ${tarjeta("🟠 Hechas por Claude", "claude", "#fb923c")}
+            ${tarjeta("🟢 Hechas por ChatGPT", "chatgpt", "#4ade80")}
+            ${sinId ? `<div class="inv-card"><span class="inv-card-titulo">Sin identificar</span><span class="inv-card-valor">${sinId} cliente${sinId === 1 ? "" : "s"}</span><span class="inv-card-detalle">No se encontró la carpeta de su demo: elegí quién la hizo en la lista de abajo.</span></div>` : ""}
+        </div>
+        ${filas.length ? `<div class="table-wrapper"><table class="clients-table">
+            <thead><tr><th>Cliente</th><th>Plan</th><th>Pasó a Cliente</th><th>Demo hecha por</th></tr></thead>
+            <tbody>${filas.map(f => `<tr>
+                <td>${escapeHtml(f.c.proyecto || f.c.nombre || "—")}${f.c.proyecto && f.c.nombre ? `<div class="muted" style="font-size:12px">${escapeHtml(f.c.nombre)}</div>` : ""}${f.tipo === "entregado" ? `<div class="muted" style="font-size:11px">entregado (en Completados)</div>` : ""}</td>
+                <td>${escapeHtml(modLabel(f.c))}</td>
+                <td>${escapeHtml(fechaCortaJs(f.paso))}</td>
+                <td><select class="prop-type-input" data-autor-cliente="${escapeHtml(f.c.id)}" data-autor-tipo="${f.tipo}" aria-label="Quién hizo la demo de ${escapeHtml(f.c.proyecto || f.c.nombre || "este cliente")}">${opciones(f.a.por)}</select>${f.a.manual ? ` <small class="muted" title="Marcado a mano">✎</small>` : ""}</td>
+            </tr>`).join("")}</tbody></table></div>` : `<p class="muted">Todavía no hay clientes de demos hechas desde esa fecha.</p>`}`;
+
+    cont.querySelectorAll("[data-autor-cliente]").forEach(sel => sel.addEventListener("change", async () => {
+        const coleccion = sel.dataset.autorTipo === "entregado" ? "completados" : "clientes";
+        try {
+            await updateDoc(doc(db, coleccion, sel.dataset.autorCliente), { demoPor: sel.value });
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo guardar: " + err.message);
+        }
+    }));
 }
 
 document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {
@@ -2998,6 +3109,7 @@ function initRealtime() {
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
         // Por anuncio cruza los contactos con estos clientes: un cliente nuevo cambia "Pasaron a Cliente".
         if (activeTab === "inversion" && inversionVista === "anuncios" && anunciosDatos) renderAnuncios();
+        if (activeTab === "inversion" && inversionVista === "autores") renderAutores();
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="4">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
@@ -5290,6 +5402,7 @@ function renderPropuestas() {
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
+                    ${_selectorAutorDemo(p)}
                     ${p.confirmoMuestra === false
                         ? `<div style="margin-top:5px"><span style="background:rgba(245,158,11,.13);color:#F59E0B;border:1px solid rgba(245,158,11,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Vio el precio pero no confirmó — priorizá los verdes">Solo vio precio</span></div>`
                         : ""}
@@ -5347,6 +5460,18 @@ function renderPropuestas() {
     });
     tbody.querySelectorAll("[data-prop-img6]").forEach(btn => {
         btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propImg6, btn));
+    });
+    tbody.querySelectorAll("[data-prop-por]").forEach(sel => {
+        sel.addEventListener("pointerdown", (e) => e.stopPropagation());
+        sel.addEventListener("click", (e) => e.stopPropagation());
+        sel.addEventListener("change", async () => {
+            try {
+                await updateDoc(doc(db, "propuestas", sel.dataset.propPor), { demoPor: sel.value, updatedAt: serverTimestamp() });
+            } catch (err) {
+                console.error(err);
+                alert("No se pudo guardar quién hizo la demo: " + err.message);
+            }
+        });
     });
     tbody.querySelectorAll("[data-prop-type-id]").forEach(input => {
         input.addEventListener("pointerdown", (e) => e.stopPropagation());

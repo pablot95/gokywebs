@@ -2677,6 +2677,14 @@ body.propuestas-tab .tab-nav {
    entera; el resto del admin queda centrado como siempre. */
 body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right: 14px; }
 
+/* Bocetos y prospectos (13-oct-2026): con la barra lateral la tabla ya no entraba y los botones de
+   Detalle quedaban cortados. Los botones pasan a varias líneas dentro de su celda y el relleno baja. */
+#tabPropuestas .clients-table th,
+#tabPropuestas .clients-table td { padding-left: 10px; padding-right: 10px; }
+#tabPropuestas .actions-col { white-space: normal; width: 250px; min-width: 220px; }
+#tabPropuestas .actions-col > * { margin: 2px 0 2px 4px; }
+.prop-por-select { max-width: 100%; font-size: 11px; padding: 3px 6px; }
+
 /* ===== FINANZAS (12-oct-2026) ===== */
 .fin-cards { margin-bottom: 18px; }
 .fin-cards .stat-item { flex: 1 1 260px; }

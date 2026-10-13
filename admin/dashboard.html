@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261012-filas2">
+    <link rel="stylesheet" href="styles.css?v=20261013-prospectos">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -501,6 +501,8 @@
                 <button type="button" class="subtab-btn active" data-inv="contactos">👥 Contactos y clientes</button>
                 <!-- 10-oct-2026: el embudo de cada anuncio (wabot/anuncios-stats.php) cruzado con Clientes. dashboard.js: renderAnuncios. -->
                 <button type="button" class="subtab-btn" data-inv="anuncios">📣 Por anuncio</button>
+                <!-- 13-oct-2026: clientes según quién hizo su demo, Claude o ChatGPT (desde el 4-oct). dashboard.js: renderAutores. -->
+                <button type="button" class="subtab-btn" data-inv="autores">🤖 Claude vs ChatGPT</button>
             </nav>
             <div id="invVistaContactos">
                 <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta Ads Manager (no hay integración con esa API, se mira aparte), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
@@ -508,6 +510,7 @@
                 <div id="inversionContent"><p class="muted">Cargando…</p></div>
             </div>
             <div id="invVistaAnuncios" hidden></div>
+            <div id="invVistaAutores" hidden></div>
         </section>
 
         <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
@@ -1266,6 +1269,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261012-sin-cambios"></script>
+    <script type="module" src="dashboard.js?v=20261013-autores"></script>
 </body>
 </html>
