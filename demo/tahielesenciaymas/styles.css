@@ -360,7 +360,8 @@ h3{line-height:1.2}
   .footer-bottom a{display:block;margin-top:7px}
   .catalog-intro-grid{grid-template-columns:1fr}
   .catalog-intro-grid img{display:none}
-  .catalog-layout{grid-template-columns:1fr;gap:20px}
+  .catalog-layout{grid-template-columns:minmax(0,1fr);gap:20px}
+  .catalog-results,.catalog-filters{min-width:0}
   .catalog-filters{position:static;padding:14px}
   .filter-options{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin}
   .filter-options label{flex:none;padding:8px 10px;border:1px solid var(--line)}

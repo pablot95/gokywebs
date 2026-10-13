@@ -208,7 +208,7 @@
       document.querySelector('[data-empty]')?.toggleAttribute('hidden', catalogState.visible > 0);
       if (more) more.hidden = !catalogState.hasMore && catalogState.matches.length <= catalogState.visible;
       const counter = document.querySelector('[data-result-count]');
-      if (counter) counter.textContent = catalogState.visible + (catalogState.hasMore ? '+ productos' : ' productos');
+      if (counter) counter.textContent = catalogState.visible + (catalogState.hasMore ? '+ productos' : catalogState.visible === 1 ? ' producto' : ' productos');
       if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
     } catch (_) { toast('No pudimos cargar los productos. Intentá de nuevo.'); }
     finally {
@@ -342,7 +342,7 @@
         state.visible = Math.min(target, state.matches.length);
         grid.innerHTML = state.matches.slice(0, state.visible).map(product => `<li><img src="${imageUrl(product)}" alt="" width="58" height="58"><div><strong>${safe(product.name)}</strong><small>${safe(categoryName(product.category))} · ${safe(product.presentation)}</small></div><b>${money(product.price)}</b></li>`).join('') || '<li>No hay coincidencias. Probá con otra palabra.</li>';
         more.hidden = !state.hasMore && state.matches.length <= state.visible;
-        counter.textContent = `${state.visible}${state.hasMore ? '+' : ''} productos visibles`;
+        counter.textContent = `${state.visible}${state.hasMore ? '+' : ''} ${state.visible === 1 && !state.hasMore ? 'producto visible' : 'productos visibles'}`;
       } catch (_) { counter.textContent = 'No se pudo cargar la lista'; }
       finally { state.busy = false; more.disabled = false; if (state.generation !== generation) render(10); }
     }
