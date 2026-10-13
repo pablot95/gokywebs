@@ -3112,7 +3112,7 @@ function initRealtime() {
         if (activeTab === "inversion" && inversionVista === "autores") renderAutores();
     }, (err) => {
         console.error(err);
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="4">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
     });
 
     // ── Gasto en publicidad por semana (pestaña Inversión) ──
@@ -3489,7 +3489,7 @@ const ESTADO_SUSCRIPCION_HTML = {
 /* Fila de un cliente: en Clientes (webs en desarrollo) y en Mantenimiento
    (entregadas). `sinCambios` saca la columna "Cambios del mes", que el plan
    anual de Mantenimiento no lleva. */
-function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
+function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendientes = false } = {}) {
     // "" (sin definir) se ve como el plan mensual, igual que antes del 15-sep-2026.
     const modalidad = modalidadDe(c);
     const s = suscripcionDe(c);
@@ -3596,9 +3596,11 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
                     ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
                     ${porCobrar ? `<small style="font-size:11px;color:#4ade80">✓ Web completada${webCompletada ? ` el ${mantLongDate(webCompletada)}` : ""}</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
-                    ${!entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
+                    ${!conPendientes && !entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
                 </div>
             </td>
+            ${/* 13-oct: en Clientes los pendientes van en su propia columna. */ conPendientes
+                ? `<td class="pend-col">${!entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}</td>` : ""}
             <td>
                 <div>${escapeHtml(s.plan.label || "Plan sin definir")}</div>
                 ${modalidad === "unico" && r?.legado
@@ -4109,8 +4111,8 @@ function render() {
     const ordered = [...list].sort(_compareClientesPorPaso);
 
     tbody.innerHTML = ordered.length
-        ? ordered.map(c => _clientRow(c, { sinCambios: true })).join("")   // 12-oct: sin la columna "Cambios del mes"
-        : `<tr class="empty-row"><td colspan="4">${clientesVista === "cobrar" ? "No hay webs por cobrar" : "No hay webs en desarrollo"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        ? ordered.map(c => _clientRow(c, { sinCambios: true, conPendientes: true })).join("")   // 12-oct: sin "Cambios del mes"; 13-oct: pendientes en su columna
+        : `<tr class="empty-row"><td colspan="5">${clientesVista === "cobrar" ? "No hay webs por cobrar" : "No hay webs en desarrollo"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
