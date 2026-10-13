@@ -12,6 +12,7 @@ require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
+require_once __DIR__ . '/meta-gasto.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -140,10 +141,29 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
                 'imagen' => $img ? 'admin.php?accion=media&tel=' . rawurlencode((string)$img['clave']) . '&archivo=' . rawurlencode((string)$img['archivo']) . '&modo=ver' : '',
                 'etapas' => $f['etapas'], 'contactos' => $f['contactos_detalle']];
     };
+    // Lo que gastó cada anuncio en esas fechas, leído de Meta (meta-gasto.php, 13-oct).
+    $metaJson = wabot_meta_gasto_anuncios(date('Y-m-d', $desdeJson), date('Y-m-d', $hastaJson), $cfg, !empty($_GET['forzar']));
+    $metaJson['anuncios'] = (object)$metaJson['anuncios'];
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['desde' => date('Y-m-d', $desdeJson), 'hasta' => date('Y-m-d', $hastaJson), 'etapas' => wabot_anuncios_etapas(),
                       'anuncios' => array_values(array_map($fila, $statsJson['anuncios'])),
-                      'organico' => $fila($statsJson['organico']), 'total' => $fila($statsJson['total'])], JSON_UNESCAPED_UNICODE);
+                      'organico' => $fila($statsJson['organico']), 'total' => $fila($statsJson['total']),
+                      'meta' => $metaJson], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * El gasto en publicidad por semana, leído de Meta, para Inversión del admin
+ * principal (Pablo, 13-oct: "¿no podríamos agregar en Inversión el gasto
+ * semanal de publicidad automáticamente?"). Sin impuestos: el admin le aplica
+ * el × 1,23. ?forzar=1 lo vuelve a pedir aunque sea de hace menos de media hora.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'meta_gasto_json') {
+    $metaGasto = wabot_meta_gasto($cfg, !empty($_GET['forzar']));
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['configurado' => $metaGasto['configurado'], 'error' => $metaGasto['error'],
+                      'actualizado' => $metaGasto['actualizado'], 'hoy' => date('Y-m-d'),
+                      'semanas' => (object)wabot_meta_gasto_semanas($metaGasto['dias'])], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -487,6 +507,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // vacío a propósito para no dejar la credencial a la vista en el HTML.
         if (trim((string)($_POST['capi_token'] ?? '')) !== '') $cfg['capi_token'] = trim((string)$_POST['capi_token']);
 
+        // El gasto de Meta para Inversión (meta-gasto.php): mismo criterio con el token.
+        $metaAntes = wabot_meta_ads_cuenta($cfg) . '|' . wabot_meta_ads_token($cfg);
+        if (isset($_POST['meta_ads_cuenta'])) $cfg['meta_ads_cuenta'] = preg_replace('/\D+/', '', (string)$_POST['meta_ads_cuenta']);
+        if (trim((string)($_POST['meta_ads_token'] ?? '')) !== '') $cfg['meta_ads_token'] = trim((string)$_POST['meta_ads_token']);
+        $metaCambio = $metaAntes !== wabot_meta_ads_cuenta($cfg) . '|' . wabot_meta_ads_token($cfg);
+
         if (isset($_POST['ultima_llamada_horas'])) $cfg['ultima_llamada_horas'] = max(1, min(23, (float)$_POST['ultima_llamada_horas']));
         if (isset($_POST['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = max(1, min(720, (float)$_POST['presentadas_sin_respuesta_horas']));
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
@@ -501,6 +527,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             if (isset($_POST["plantilla_{$clavePlant}_texto"])) $cfg['plantillas'][$clavePlant]['texto'] = trim((string)$_POST["plantilla_{$clavePlant}_texto"]);
         }
         wabot_config_save($cfg);
+        // Token o cuenta nuevos: se prueban ya, así el estado de la tarjeta dice si anda.
+        if ($metaCambio && wabot_meta_ads_configurado($cfg)) wabot_meta_gasto($cfg, 'ahora');
         header('Location: admin.php?tab=ajustes&ok=1'); exit;
     }
     if ($a === 'enviar_template_72h' && !empty($_POST['tel'])) {
@@ -2836,6 +2864,36 @@ function burbujaCita(t, chat) {
                 </label>
             </div>
             <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '') ? 'activo' : 'sin configurar (no se manda nada)' ?></strong></p>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Gasto en publicidad (API de Marketing)</h2>
+            <p class="meta" style="margin-top:0">Lee de Meta lo que se gastó cada día y lo pone solo en <strong>Inversión</strong> del admin, semana por semana (× 1,23 por los impuestos, igual que lo que cargás a mano), y el gasto de cada anuncio en <strong>Por anuncio</strong>. Una semana que cargaste a mano queda con tu número.</p>
+            <p class="meta">El token de la API de conversiones no sirve para esto: hace falta uno con el permiso <strong>ads_read</strong>. Se saca en <strong>business.facebook.com → Configuración del negocio → Usuarios del sistema</strong>: al usuario del sistema le asignás la cuenta publicitaria (ver rendimiento) y generás un token con <strong>ads_read</strong> que no venza.</p>
+            <div class="fila" style="margin-top:12px;gap:14px;flex-wrap:wrap">
+                <label style="flex:1 1 220px">Cuenta publicitaria
+                    <input type="text" name="meta_ads_cuenta" value="<?= $e(wabot_meta_ads_cuenta($cfg)) ?>" placeholder="Solo números" inputmode="numeric">
+                </label>
+                <label style="flex:1 1 260px">Token con ads_read
+                    <input type="password" name="meta_ads_token" value="" placeholder="<?= wabot_meta_ads_configurado($cfg) ? 'Ya cargado — escribí uno nuevo para cambiarlo' : 'Pegá el token acá' ?>" autocomplete="off">
+                </label>
+            </div>
+            <?php
+                $metaCache = wabot_meta_gasto_leer_cache();
+                $metaEstado = 'sin token (Inversión sigue con lo que cargás a mano)';
+                if (wabot_meta_ads_configurado($cfg)) {
+                    if (!empty($metaCache['error'])) {
+                        $metaEstado = '⚠ ' . $metaCache['error'];
+                    } elseif (!empty($metaCache['actualizado'])) {
+                        $metaSemanas = wabot_meta_gasto_semanas((array)($metaCache['dias'] ?? []));
+                        $metaEstaSemana = $metaSemanas[wabot_meta_gasto_domingo(date('Y-m-d'))] ?? 0;
+                        $metaEstado = 'anda · leído el ' . date('d/m H:i', (int)$metaCache['actualizado'])
+                            . ' · esta semana va $' . number_format($metaEstaSemana, 0, ',', '.') . ' sin impuestos';
+                    } else {
+                        $metaEstado = 'cargado, se lee la próxima vez que abras Inversión';
+                    }
+                }
+            ?>
+            <p class="meta" style="margin-top:8px">Estado: <strong><?= $e($metaEstado) ?></strong></p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Avisos automáticos</h2>

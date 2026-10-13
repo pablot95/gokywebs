@@ -933,6 +933,11 @@ textarea:focus {
 .inv-card-titulo { font-size: 12px; font-weight: 500; color: var(--text-muted); }
 .inv-card-valor { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
 .inv-card-detalle { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+/* El gasto que vino de Meta (13-oct). */
+.inv-meta-estado { font-size: 12.5px; margin: 0 0 12px; }
+.inv-meta-estado--error { color: var(--warning); }
+.inv-meta-tag { font-size: 12px; font-weight: 600; color: #60A5FA; background: rgba(96, 165, 250, .12); border: 1px solid rgba(96, 165, 250, .35); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+.inv-usar-meta { font-size: 12px; padding: 4px 10px; }
 .ingcal-stat-linea { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-top: 3px; }
 .ingcal-stat-nota { display: block; font-size: 12px; font-weight: 400; margin-top: 5px; }
 .ingcal-leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }

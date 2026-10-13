@@ -246,13 +246,55 @@ function gastoDeSemana(data) {
     const recargo = Number(data?.recargo) > 0 ? Number(data.recargo) : 0;
     return { ingresado, recargo, total: recargo ? Math.round(ingresado * recargo) : ingresado };
 }
+/* El gasto de cada semana leído de Meta (wabot/meta-gasto.php, Pablo 13-oct: "¿no
+   podríamos agregar en Inversión el gasto semanal de publicidad automáticamente?").
+   Meta lo da sin impuestos, así que lleva el mismo × 1,23 que lo tipeado. Una semana
+   cargada a mano en `gastoPublicidad` gana: lo de Meta se muestra al lado. Vaciar el
+   campo borra el número a mano y vuelve el de Meta. */
+let gastoMeta = null;   // { configurado, semanas: { domingo: gasto sin impuestos }, actualizado, error, hoy }
+let gastoMetaError = "";
+async function cargarGastoMeta(forzar = false) {
+    try {
+        const res = await fetch("../wabot/admin.php?accion=meta_gasto_json" + (forzar ? "&forzar=1" : ""), { credentials: "same-origin" });
+        if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
+        gastoMeta = await res.json();
+        gastoMetaError = "";
+    } catch (e) {
+        console.error(e);
+        gastoMetaError = e.message || "error";
+    }
+    if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
+}
+function gastoSemanaInversion(key) {
+    const crudo = gastoMeta?.semanas?.[key];
+    const meta = crudo != null && Number.isFinite(Number(crudo)) ? Number(crudo) : null;
+    const manual = gastoAdsPorSemana.get(key);
+    if (manual) return { ...manual, origen: "manual", meta };
+    if (meta !== null) return { ingresado: meta, recargo: RECARGO_PUBLICIDAD, total: Math.round(meta * RECARGO_PUBLICIDAD), origen: "meta", meta };
+    return { ...gastoDeSemana(null), origen: "", meta: null };
+}
+function gastoMetaEstadoHtml() {
+    if (gastoMetaError) return `<p class="muted inv-meta-estado">No se pudo leer el gasto de Meta: ${escapeHtml(gastoMetaError)}.</p>`;
+    if (!gastoMeta) return "";
+    if (!gastoMeta.configurado) return `<p class="muted inv-meta-estado">El gasto de cada semana se puede llenar solo desde Meta: cargá un token con <strong>ads_read</strong> en el panel del bot → Ajustes → Gasto en publicidad. Mientras tanto, cargalo a mano.</p>`;
+    const leido = gastoMeta.actualizado ? new Date(gastoMeta.actualizado * 1000).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    if (gastoMeta.error) return `<p class="muted inv-meta-estado inv-meta-estado--error">⚠ Meta: ${escapeHtml(gastoMeta.error)}${leido ? ` Se muestra lo último que se leyó (${escapeHtml(leido)}).` : ""}</p>`;
+    return `<p class="muted inv-meta-estado">El gasto de las semanas sin número a mano viene de Meta${leido ? ` (leído el ${escapeHtml(leido)})` : ""}. Si escribís uno, gana el tuyo; si lo borrás, vuelve el de Meta.</p>`;
+}
+
 /* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
    semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
    (el domingo). Vive en Firestore, no en wabot: es un número que Pablo tipea,
-   nada que el bot sepa. */
+   nada que el bot sepa. Vacío = se borra y la semana vuelve al gasto de Meta. */
 async function guardarGastoSemana(key, monto) {
     const valor = Number(monto);
     try {
+        if (String(monto ?? "").trim() === "") {
+            await deleteDoc(doc(db, "gastoPublicidad", key));
+            // Si no había doc, el snapshot no avisa: se redibuja igual para que vuelva el de Meta.
+            if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
+            return;
+        }
         await setDoc(doc(db, "gastoPublicidad", key), {
             monto: Number.isFinite(valor) && valor >= 0 ? valor : 0,
             recargo: RECARGO_PUBLICIDAD,   // lo tipeado es sin impuestos (ver gastoDeSemana)
@@ -264,7 +306,7 @@ async function guardarGastoSemana(key, monto) {
     }
 }
 
-async function abrirInversion() {
+async function abrirInversion(forzar = false) {
     // Se pide de nuevo CADA VEZ que se entra a la pestaña (no solo la primera):
     // wabot no avisa en vivo cuando entra un contacto nuevo, así que si el
     // admin queda abierto todo el día, la lista se quedaba pegada en la foto
@@ -276,6 +318,7 @@ async function abrirInversion() {
     if (!habiaAlgo && cont) cont.innerHTML = '<p class="muted">Cargando…</p>';
     try {
         try { await wabotAuthHandshake(); } catch (e) { /* sigue igual: el fetch de abajo va a fallar con un 401/403 claro */ }
+        cargarGastoMeta(forzar);   // en paralelo: si Meta tarda, la semana se redibuja cuando llega
         const res = await fetch("../wabot/admin.php?accion=cohortes_json", { credentials: "same-origin" });
         if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
         inversionContactos = await res.json();
@@ -287,7 +330,7 @@ async function abrirInversion() {
     renderInversion();
 }
 document.getElementById("inversionRecargarBtn")?.addEventListener("click", () => {
-    abrirInversion();
+    abrirInversion(true);
     if (inversionVista === "anuncios") cargarAnuncios(true);
 });
 
@@ -865,7 +908,7 @@ function renderInversion() {
     }
 
     const aMostrar = inversionSemanaSel === "todas" ? claves : claves.filter(k => k === inversionSemanaSel);
-    cont.innerHTML = "";
+    cont.innerHTML = gastoMetaEstadoHtml();
     for (const key of aMostrar) {
         const s = semanas.get(key);
         const convertidos = s.contactos.filter(c => c._esCliente)
@@ -879,7 +922,7 @@ function renderInversion() {
         const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
         const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
         const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
-        const gastoSemana = gastoAdsPorSemana.get(key) || gastoDeSemana(null);
+        const gastoSemana = gastoSemanaInversion(key);
         const gastoIngresado = gastoSemana.ingresado;
         const gasto = gastoSemana.total;   // el que cuenta en todas las cuentas
         // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
@@ -945,6 +988,16 @@ function renderInversion() {
         }
         const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
 
+        // De dónde sale el gasto: Meta (solo) o a mano, con lo de Meta al lado para comparar.
+        const esSemanaActual = gastoMeta?.hoy && key === ymdAgregarDias(gastoMeta.hoy, -ymdDiaSemana(gastoMeta.hoy));
+        let origenGasto = "";
+        if (gastoSemana.origen === "meta") {
+            origenGasto = `<span class="inv-meta-tag" title="Leído de Meta Ads, sin impuestos. Si escribís otro número, queda el tuyo.">de Meta${esSemanaActual ? " · va hasta hoy" : ""}</span>`;
+        } else if (gastoSemana.origen === "manual" && gastoSemana.meta !== null && Math.abs(gastoSemana.meta - gastoIngresado) >= 1) {
+            origenGasto = `<span class="muted">Meta: ${fmtMoney(gastoSemana.meta)} sin imp. (${fmtMoney(gastoSemana.meta * RECARGO_PUBLICIDAD)} con imp.)</span>
+                <button type="button" class="btn-ghost inv-usar-meta" data-semana="${key}" title="Borra el número cargado a mano y usa el de Meta">Usar el de Meta</button>`;
+        }
+
         const div = document.createElement("div");
         div.className = "panel";
         div.style.marginBottom = "14px";
@@ -957,8 +1010,9 @@ function renderInversion() {
                 <label class="muted" style="display:flex;align-items:center;gap:8px;margin:0">
                     Gasto en publicidad esa semana
                     <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
-                           data-semana="${key}" value="${gastoIngresado || ""}" placeholder="0" style="width:120px">
+                           data-semana="${key}" value="${gastoIngresado ? Math.round(gastoIngresado) : ""}" placeholder="0" style="width:120px">
                 </label>
+                ${origenGasto}
                 ${!gastoIngresado ? "" : gastoSemana.recargo
                     ? `<span class="muted">× ${String(gastoSemana.recargo).replace(".", ",")} = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>`
                     : `<span class="muted" title="Se cargó con los impuestos incluidos. Si lo cambiás, el número nuevo se toma sin impuestos (× 1,23).">ya incluye impuestos</span>`}
@@ -975,7 +1029,13 @@ function renderInversion() {
         cont.appendChild(div);
 
         const inputGasto = div.querySelector(".gasto-input");
-        inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));    }
+        inputGasto.addEventListener("change", () => {
+            // Tocar el campo de una semana de Meta sin cambiar el número no la pasa a mano.
+            if (gastoSemana.origen === "meta" && Number(inputGasto.value) === Math.round(gastoIngresado)) return;
+            guardarGastoSemana(key, inputGasto.value);
+        });
+        div.querySelector(".inv-usar-meta")?.addEventListener("click", () => guardarGastoSemana(key, ""));
+    }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1007,6 +1067,7 @@ async function cargarAnuncios(forzar = false) {
     try {
         try { await wabotAuthHandshake(); } catch (e) { /* el fetch de abajo falla con un error claro */ }
         const q = new URLSearchParams({ accion: "anuncios_json", desde: r.desde, hasta: r.hasta });
+        if (forzar) q.set("forzar", "1");   // el gasto de Meta también, aunque sea de hace menos de media hora
         const res = await fetch("../wabot/admin.php?" + q, { credentials: "same-origin" });
         if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
         anunciosDatos = await res.json();
@@ -1041,12 +1102,23 @@ function renderAnuncios() {
         const clienteDe = buscadorClienteDeContacto();
         // La última etapa del bot ("Pagaron / clientes") se reemplaza por el cruce con Clientes.
         const etapas = Object.entries(d.etapas || {}).filter(([k]) => k !== "clientes");
+        // Lo que gastó cada anuncio, leído de Meta (wabot/meta-gasto.php, 13-oct), con el × 1,23.
+        const meta = d.meta || {};
+        const metaAnuncios = meta.anuncios && typeof meta.anuncios === "object" && !Array.isArray(meta.anuncios) ? meta.anuncios : {};
+        const hayGasto = !!meta.configurado && (Object.keys(metaAnuncios).length > 0 || Number(meta.total) > 0);
         const filas = d.anuncios.map(a => ({ ...a, _tipo: "anuncio" }));
+        // Los anuncios que gastaron y no trajeron a nadie en esas fechas también van: es lo que más importa ver.
+        const conContactos = new Set(d.anuncios.map(a => String(a.id)));
+        Object.entries(metaAnuncios)
+            .filter(([id]) => !conContactos.has(id))
+            .sort((a, b) => b[1].gasto - a[1].gasto)
+            .forEach(([id, m]) => filas.push({ id, titular: m.nombre || "Sin nombre", texto: "", imagen: "", etapas: {}, contactos: [], _tipo: "anuncio" }));
         if (d.organico?.etapas?.contactos) filas.push({ ...d.organico, _tipo: "organico" });
-        let clientesTotal = 0;
+        let clientesTotal = 0, clientesAnuncios = 0, contactosAnuncios = 0;
         for (const f of filas) {
             f._clientes = (f.contactos || []).filter(k => (k._cliente = clienteDe(k)));
             clientesTotal += f._clientes.length;
+            if (f._tipo === "anuncio") { clientesAnuncios += f._clientes.length; contactosAnuncios += f.etapas.contactos || 0; }
         }
         const pct = (n, base) => base ? `<span class="anu-pct">${Math.round(100 * n / base)}%</span>` : "";
         const celdas = (f, clientesN) => {
@@ -1054,7 +1126,16 @@ function renderAnuncios() {
             return etapas.map(([k], i) => `<td class="num">${f.etapas[k] || 0}${i ? pct(f.etapas[k] || 0, base) : ""}</td>`).join("")
                 + `<td class="num anu-clientes">${clientesN}${pct(clientesN, base)}</td>`;
         };
-        const cabecera = `<tr><th>Anuncio</th>${etapas.map(([, l]) => `<th class="num">${escapeHtml(l)}</th>`).join("")}<th class="num">Pasaron a Cliente</th></tr>`;
+        const celdaGasto = (gastoSinImp, contactosN, clientesN) => {
+            if (!hayGasto) return "";
+            if (gastoSinImp === null) return `<td class="num"><span class="muted">—</span></td>`;
+            const g = gastoSinImp * RECARGO_PUBLICIDAD;
+            if (!g) return `<td class="num"><span class="muted">$ 0</span></td>`;
+            return `<td class="num">${fmtMoney(g)}<span class="anu-pct">${contactosN ? fmtMoney(g / contactosN) + " c/contacto" : "nadie escribió"}</span>`
+                + `${clientesN ? `<span class="anu-pct">${fmtMoney(g / clientesN)} c/cliente</span>` : ""}</td>`;
+        };
+        const gastoDeFila = (f) => f._tipo !== "anuncio" || f.id === "sin_id" ? null : Number(metaAnuncios[f.id]?.gasto) || 0;
+        const cabecera = `<tr><th>Anuncio</th>${hayGasto ? '<th class="num" title="Lo que cobró Meta en esas fechas, con impuestos (× 1,23)">Gasto</th>' : ""}${etapas.map(([, l]) => `<th class="num">${escapeHtml(l)}</th>`).join("")}<th class="num">Pasaron a Cliente</th></tr>`;
         const cuerpo = filas.map(f => {
             const id = f._tipo === "organico" ? "organico" : f.id;
             const abierto = anunciosAbiertos.has(id);
@@ -1063,7 +1144,7 @@ function renderAnuncios() {
                 : `<div class="anu-ad">
                         ${f.imagen ? `<img class="anu-img" src="../wabot/${escapeHtml(f.imagen)}" alt="" loading="lazy">` : `<span class="anu-img anu-img--vacia" aria-hidden="true"></span>`}
                         <div><strong>${escapeHtml(f.titular || "Sin título")}</strong>
-                            <div class="anu-sub">${f.id === "sin_id" ? "Meta no mandó el id del anuncio" : "id " + escapeHtml(f.id)}</div>
+                            <div class="anu-sub">${f.id === "sin_id" ? "Meta no mandó el id del anuncio" : "id " + escapeHtml(f.id)}${metaAnuncios[f.id]?.nombre && metaAnuncios[f.id].nombre !== f.titular ? " · en Meta: " + escapeHtml(metaAnuncios[f.id].nombre) : ""}</div>
                             ${f.texto ? `<div class="anu-sub" title="${escapeHtml(f.texto)}">${escapeHtml(f.texto.length > 110 ? f.texto.slice(0, 108) + "…" : f.texto)}</div>` : ""}
                         </div></div>`;
             const contactos = (f.contactos || []).map(k => {
@@ -1078,14 +1159,19 @@ function renderAnuncios() {
                     <button type="button" class="btn-ghost anu-chat" data-chat-tel="${escapeHtml(k.clave)}" data-chat-titulo="${escapeHtml(k.nombre || k.tel || k.clave)}">Ver chat</button>
                 </li>`;
             }).join("");
-            return `<tr class="anu-fila${abierto ? " abierta" : ""}" data-anu-id="${escapeHtml(id)}" tabindex="0" aria-expanded="${abierto}"><td>${anuncio}</td>${celdas(f, f._clientes.length)}</tr>
-                <tr class="anu-detalle"${abierto ? "" : " hidden"}><td colspan="${etapas.length + 2}"><ul class="anu-contactos">${contactos || '<li class="muted">Sin contactos.</li>'}</ul></td></tr>`;
+            return `<tr class="anu-fila${abierto ? " abierta" : ""}" data-anu-id="${escapeHtml(id)}" tabindex="0" aria-expanded="${abierto}"><td>${anuncio}</td>${celdaGasto(gastoDeFila(f), f.etapas.contactos || 0, f._clientes.length)}${celdas(f, f._clientes.length)}</tr>
+                <tr class="anu-detalle"${abierto ? "" : " hidden"}><td colspan="${etapas.length + 2 + (hayGasto ? 1 : 0)}"><ul class="anu-contactos">${contactos || '<li class="muted">Sin contactos.</li>'}</ul></td></tr>`;
         }).join("");
-        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdas(d.total, clientesTotal)}</tr>` : "";
-        html += d.anuncios.length || d.organico?.etapas?.contactos
+        // En el total, el gasto se reparte solo entre los que vinieron de un anuncio.
+        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdaGasto(Number(meta.total) || 0, contactosAnuncios, clientesAnuncios)}${celdas(d.total, clientesTotal)}</tr>` : "";
+        if (meta.error) html += `<p class="muted">⚠ Gasto de Meta: ${escapeHtml(meta.error)}</p>`;
+        html += filas.length
             ? `<div class="table-wrapper"><table class="clients-table anu-tabla"><thead>${cabecera}</thead><tbody>${cuerpo}${total}</tbody></table></div>`
             : `<p class="muted">Nadie escribió en esas fechas.</p>`;
         html += `<p class="muted anu-nota">Hay datos desde el 24-ago. Hasta el 25-sep el anuncio sale del registro del servidor: solo el id, sin título ni imagen (si el anuncio siguió activo después, toma el título de esas charlas). La imagen y el texto, desde el 9-oct. Los que escriben por Instagram cuentan como sin anuncio.</p>`;
+        html += hayGasto
+            ? `<p class="muted anu-nota">El gasto es lo que cobró Meta en esas fechas, con impuestos (× 1,23). El del total incluye anuncios que Meta ya no lista (borrados o archivados), y en el total el costo por contacto y por cliente es sobre los que vinieron de un anuncio. Los que llegan por Instagram no traen el anuncio: en un anuncio que también lleva a Instagram, el costo por contacto sale más alto de lo que es.</p>`
+            : meta.configurado === false ? `<p class="muted anu-nota">Para ver cuánto gastó cada anuncio, cargá un token con ads_read en el panel del bot → Ajustes → Gasto en publicidad.</p>` : "";
     } else if (!anunciosError) {
         html += '<p class="muted">Cargando…</p>';
     }

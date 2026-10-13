@@ -41,6 +41,12 @@ el mismo bloque `allow read, write: if request.auth != null;` que tiene
 `clientes`, si no, guardar el gasto de una semana falla en silencio salvo
 por el alert() del panel.
 
+Desde el 13-oct-2026 las semanas sin doc en `gastoPublicidad` toman el gasto
+de Meta: `wabot/admin.php?accion=meta_gasto_json` (wabot/meta-gasto.php, con el
+token de ads_read que se carga en Ajustes del panel del bot) lo da por semana y
+sin impuestos, y Inversión le aplica el × 1,23. No se escribe en Firestore: un
+doc de la semana (cargado a mano) gana, y vaciar el campo lo borra.
+
 ## Modelo de datos (`clientes`)
 
 > **1-oct-2026: 3 modalidades** (montos del 3-oct-2026), en el orden de las imágenes del bot: plan mensual (`mensual`: $20.000 el sitio profesional, $30.000 el resto), plan anual (`unico`: $140.000 / $190.000 por año desde el 9-oct-2026 a la noche (saldos $80.000 / $130.000); el 9-oct a la mañana subió a $160.000 / $240.000, del 7 al 9-oct $120.000 / $190.000, antes $140.000 / $220.000, seña de $60.000, el resto al entregar y el cobro cada año) y pago único (`propia`: $220.000 / $330.000, seña de $60.000 y el resto al entregar, con el primer año de hosting y dominio; el mantenimiento va aparte, $15.000 por mes para los dos desde el 9-oct-2026 a la noche). Desde el 3-oct-2026 el pago único ya no se ofrece al público (presupuestos y /pago/ muestran solo mensual y anual): es para quien pide la titularidad del código y lo maneja Pablo a mano. Pasar a Cliente pregunta 1, 2 o 3 en ese orden. Los montos están en `PLANES` (dashboard.js) y en el bot (wabot/textos.php). Lo de abajo describe los modelos anteriores, que el panel sigue leyendo en los docs viejos.

@@ -171,7 +171,7 @@ function wabot_gemini_modelo($cfg = null) {
  * Los textos del bot viven en textos.php (wabot_textos_default): se editan en
  * el código y se publican con el deploy. bot-config.json guarda SOLO los
  * ajustes que se tocan desde el panel (tiempos de respuesta, modelo de Gemini,
- * CAPI y plantilla manual de seguimiento). Cualquier otra clave que haya quedado en ese
+ * CAPI, el token de Meta Ads y plantilla manual de seguimiento). Cualquier otra clave que haya quedado en ese
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
@@ -184,7 +184,9 @@ function wabot_ajustes_claves() {
             'form_confirmacion_activo', 'form_confirmacion_minutos',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
             // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
-            'revision_activa', 'revision_gasto_max_usd'],
+            'revision_activa', 'revision_gasto_max_usd',
+            // El gasto en publicidad leído de Meta para Inversión (meta-gasto.php, 13-oct).
+            'meta_ads_token', 'meta_ads_cuenta'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
 }
