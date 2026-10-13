@@ -1,0 +1,19 @@
+[
+  {"id":"pizza-muzzarella","name":"Pizza muzzarella","category":"pizzas","description":"La clásica para compartir, con salsa de tomate y muzzarella.","image":"03_LO_DE_BASIM_Pizzas_1x1.png","featured":true},
+  {"id":"pizza-napolitana","name":"Pizza napolitana","category":"pizzas","description":"Muzzarella, tomate y un toque de albahaca.","image":"03_LO_DE_BASIM_Pizzas_1x1.png","featured":true},
+  {"id":"pizza-jamon","name":"Pizza de jamón","category":"pizzas","description":"Una favorita de siempre para tener lista en casa.","image":"01_LO_DE_BASIM_Hero_9x16.png","featured":true},
+  {"id":"pizza-especial","name":"Pizza especial","category":"pizzas","description":"Para cuando la pizza es la protagonista de la mesa.","image":"02_LO_DE_BASIM_Banner_16x9.png","featured":false},
+  {"id":"pizzeta-muzzarella","name":"Pizzeta de muzzarella","category":"pizzetas","description":"Formato individual, práctico y listo para terminar en casa.","image":"03_LO_DE_BASIM_Pizzas_1x1.png","featured":true},
+  {"id":"pizzeta-napolitana","name":"Pizzeta napolitana","category":"pizzetas","description":"Pizzeta con muzzarella y tomate.","image":"01_LO_DE_BASIM_Hero_9x16.png","featured":false},
+  {"id":"empanada-osobuco","name":"Empanadas de osobuco","category":"empanadas","description":"Empanadas prelistas con relleno de osobuco.","image":"04_LO_DE_BASIM_Empanadas_1x1.png","featured":true},
+  {"id":"empanada-bondiola","name":"Empanadas de bondiola","category":"empanadas","description":"Empanadas prelistas con relleno de bondiola.","image":"04_LO_DE_BASIM_Empanadas_1x1.png","featured":true},
+  {"id":"empanada-carne","name":"Empanadas de carne","category":"empanadas","description":"Una opción clásica para sumar a cualquier pedido.","image":"04_LO_DE_BASIM_Empanadas_1x1.png","featured":false},
+  {"id":"empanada-jamon-queso","name":"Empanadas de jamón y queso","category":"empanadas","description":"Un clásico de la carta, listo para disfrutar.","image":"04_LO_DE_BASIM_Empanadas_1x1.png","featured":false},
+  {"id":"pernil-salsas-panes","name":"Pernil con salsas y panes","category":"pernil","description":"Una opción para reuniones, con salsas y panes.","image":"05_LO_DE_BASIM_Pernil_1x1.png","featured":true},
+  {"id":"pernil","name":"Pernil","category":"pernil","description":"Consultanos por opciones y cantidades para tu encuentro.","image":"05_LO_DE_BASIM_Pernil_1x1.png","featured":false},
+  {"id":"matambre","name":"Matambre","category":"matambres","description":"Una propuesta de cocina casera para compartir.","image":"06_LO_DE_BASIM_Matambre_Postres_1x1.png","featured":true},
+  {"id":"matambre-relleno","name":"Matambre relleno","category":"matambres","description":"Consultanos por disponibilidad y presentaciones.","image":"06_LO_DE_BASIM_Matambre_Postres_1x1.png","featured":false},
+  {"id":"postre-flan","name":"Flan","category":"postres","description":"Un cierre dulce para la mesa.","image":"06_LO_DE_BASIM_Matambre_Postres_1x1.png","featured":false},
+  {"id":"postre-vasito","name":"Postre en vasito","category":"postres","description":"Consultanos por las variedades disponibles.","image":"06_LO_DE_BASIM_Matambre_Postres_1x1.png","featured":false},
+  {"id":"postre-variado","name":"Postres variados","category":"postres","description":"Opciones dulces para completar tu pedido.","image":"02_LO_DE_BASIM_Banner_16x9.png","featured":false}
+]
