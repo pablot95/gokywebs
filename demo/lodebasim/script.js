@@ -19,7 +19,7 @@
   const cart = {
     get() { try { const items = JSON.parse(localStorage.getItem(storeKey)); return Array.isArray(items) ? items : []; } catch { return []; } },
     save(items) { localStorage.setItem(storeKey, JSON.stringify(items)); updateCart(); },
-    add(p) { const items = this.get(); const current = items.find(item => item.id === p.id); if (current) current.qty = Math.min(99, current.qty + 1); else items.push({ id: p.id, name: p.name, image: p.image, qty: 1 }); this.save(items); toast(`${p.name} se sumó al pedido`); },
+    add(p, quantity = 1) { const items = this.get(); const amount = Math.max(1, Math.min(99, Number(quantity) || 1)); const current = items.find(item => item.id === p.id); if (current) current.qty = Math.min(99, current.qty + amount); else items.push({ id: p.id, name: p.name, image: p.image, qty: amount }); this.save(items); toast(`${amount} ${amount === 1 ? 'unidad' : 'unidades'} de ${p.name} ${amount === 1 ? 'se sumó' : 'se sumaron'} al pedido`); },
     count() { return this.get().reduce((total, item) => total + item.qty, 0); }
   };
   const knownProducts = new Map();
@@ -153,9 +153,36 @@
     if (order) { const message = items.length ? `Hola Laura, quiero consultar por este pedido de LO DE BASIM:\n${items.map(item => `• ${item.qty} × ${item.name}`).join('\n')}\n¿Me confirmás precio y disponibilidad?` : 'Hola Laura, quiero consultar por los productos de LO DE BASIM'; order.href = `https://wa.me/5491165426864?text=${encodeURIComponent(message)}`; }
     syncFloats();
   };
-  const openQuick = p => { quick.innerHTML = `<button class="quick-close" type="button" data-close-overlay aria-label="Cerrar detalle">×</button><img src="${img(p.image)}" alt="${esc(p.name)}" width="600" height="600"><div class="quick-body"><p class="eyebrow">${esc(categoryName(p.category))}</p><h2>${esc(p.name)}</h2><p>${esc(p.description)}</p><p><strong>Precio y disponibilidad: a consultar.</strong></p><button class="btn btn-red" type="button" data-add="${esc(p.id)}">Sumar al pedido +</button></div>`; openOverlay(quick); };
+  const openQuick = p => {
+    quick.innerHTML = `
+      <button class="quick-close" type="button" data-close-overlay aria-label="Cerrar detalle">×</button>
+      <div class="quick-visual">
+        <img src="${img(p.image)}" alt="${esc(p.name)} de LO DE BASIM" width="700" height="800">
+        <span class="quick-photo-label">Hecho para compartir <span aria-hidden="true">✳</span></span>
+      </div>
+      <div class="quick-body">
+        <div class="quick-topline"><span>LO DE BASIM</span><span>MENÚ / ${esc(categoryName(p.category))}</span></div>
+        <div class="quick-main">
+          <p class="quick-category">${esc(categoryName(p.category))} <span aria-hidden="true">↗</span></p>
+          <h2 id="quick-product-title">${esc(p.name)}</h2>
+          <p class="quick-description">${esc(p.description)}</p>
+          <div class="quick-facts"><span>Materia prima de calidad</span><span>Venta mayorista y minorista</span></div>
+        </div>
+        <div class="quick-order">
+          <div class="quick-price"><span>PRECIO Y DISPONIBILIDAD</span><strong>A consultar</strong></div>
+          <div class="quick-order-row">
+            <div class="quick-quantity" aria-label="Cantidad"><button type="button" data-quick-qty="-1" aria-label="Restar una unidad">−</button><output data-quick-count>1</output><button type="button" data-quick-qty="1" aria-label="Sumar una unidad">+</button></div>
+            <button class="quick-add" type="button" data-add="${esc(p.id)}">Sumar al pedido <span aria-hidden="true">↗</span></button>
+          </div>
+          <a class="quick-consult" href="https://wa.me/5491165426864?text=${encodeURIComponent(`Hola Laura, quiero consultar por ${p.name} de LO DE BASIM.`)}" target="_blank" rel="noopener noreferrer">Consultar este producto por WhatsApp <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>`;
+    quick.setAttribute('aria-labelledby', 'quick-product-title');
+    openOverlay(quick);
+  };
   document.addEventListener('click', e => {
-    const add = e.target.closest('[data-add]'); if (add) { const p = knownProducts.get(add.dataset.add); if (p) cart.add(p); return; }
+    const quickQty = e.target.closest('[data-quick-qty]'); if (quickQty) { const count = quick.querySelector('[data-quick-count]'); count.value = String(Math.max(1, Math.min(99, Number(count.value) + Number(quickQty.dataset.quickQty)))); return; }
+    const add = e.target.closest('[data-add]'); if (add) { const p = knownProducts.get(add.dataset.add); if (p) cart.add(p, add.closest('.quick-modal')?.querySelector('[data-quick-count]')?.value || 1); return; }
     const detail = e.target.closest('[data-quick]'); if (detail) { const p = knownProducts.get(detail.dataset.quick); if (p) openQuick(p); return; }
     if (e.target.closest('[data-open-cart]')) { updateCart(); openOverlay(drawer); return; }
     if (e.target.closest('[data-close-overlay]')) { closeOverlays(); return; }
