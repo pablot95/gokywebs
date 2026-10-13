@@ -672,6 +672,11 @@ function wabot_textos_default() {
     'oferta_entrega_seguimiento_activo' => true,
     'oferta_entrega_seguimiento_horas' => 23,
     'oferta_entrega_seguimiento' => 'Buenas, avisame si te interesa la idea de que te armemos una primera entrega gratis',
+    /* Confirmación del formulario (Pablo, 12-oct): a los 5 minutos de que lo completa, si no
+     * escribió nada más ni nadie le contestó, el bot le confirma que llegó. */
+    'form_confirmacion_activo' => true,
+    'form_confirmacion_minutos' => 5,
+    'form_confirmacion' => '{saludo}, ya recibimos tu formulario. Con esos datos preparamos la demo. Estará lista para {entrega}.',
     'form_recordatorio_activo' => true,
     'form_recordatorio_horas' => 12,
     'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.',

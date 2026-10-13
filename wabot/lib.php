@@ -181,6 +181,7 @@ function wabot_ajustes_claves() {
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
+            'form_confirmacion_activo', 'form_confirmacion_minutos',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
             // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
             'revision_activa', 'revision_gasto_max_usd'],
@@ -5814,6 +5815,85 @@ function wabot_form_recordatorio_correr($cfg, $ahora = null) {
             }
             wabot_conv_save($cv);
             wabot_log('form_recordatorio', ['clave' => $clave, 'enviado' => $texto !== '']);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
+/* ──────────── Confirmación del formulario (Pablo, 12-oct) ────────────
+ *
+ * "Cuando un cliente llene el formulario, a los 5 minutos (si es que el cliente no
+ * mandó ni un mensaje extra) el bot mande un mensaje de confirmación del form".
+ * Sale una vez por formulario completado (form_completado_ts), cuando pasaron
+ * form_confirmacion_minutos y desde entonces no escribió el cliente ni le contestó
+ * el bot o Pablo (si ya hubo respuesta, ya está confirmado). Es una respuesta a lo
+ * que él acaba de hacer, así que no espera el horario de contacto ni se frena por
+ * otro automático reciente; sí necesita la ventana de 24 h abierta (texto libre) y
+ * que el formulario sea de hace poco (si el cron estuvo caído, no llega horas tarde).
+ * El form_recibido_confirmado que ya usa el motor ("ya lo completé" → "Sí, ya lo
+ * tengo") queda marcado, para que no se confirme dos veces.
+ */
+function wabot_form_confirmacion_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || empty($cfg['form_confirmacion_activo'])) return false;
+    $completado = (int)($cv['form_completado_ts'] ?? 0);
+    if ($completado <= 0 || (int)($cv['form_confirmacion_auto_ts'] ?? 0) >= $completado) return false;
+    $minutos = max(1, (float)($cfg['form_confirmacion_minutos'] ?? 5));
+    if ($ahora - $completado < $minutos * 60) return false;
+    if ($ahora - $completado > 6 * 3600) return false;
+    if (!empty($cv['archivado']) || !empty($cv['contexto_consulta'])) return false;
+    if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
+    if (!empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts']) || !empty($cv['form_recibido_confirmado'])) return false;
+    // Algo después del formulario: un mensaje del cliente, del bot o de Pablo.
+    if (wabot_ultimo_cliente_ts($cv) > $completado) return false;
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if ((int)($fila['ts'] ?? 0) <= $completado) break;
+        if (in_array(($fila['q'] ?? ''), ['cliente', 'bot', 'humano'], true)) return false;
+    }
+    return wabot_ventana_restante($cv, $ahora) >= 600;
+}
+
+function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
+    $plantilla = (string)($cfg['form_confirmacion'] ?? '');
+    $h = wabot_hora_local($ahora);
+    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    /* {entrega} acá es propio (Pablo, 12-oct): antes de las 14 h "Estará lista para hoy a la tarde" y
+     * después, "para mañana". De madrugada (antes de las 3) sigue siendo "mañana": para el cliente el
+     * día todavía no empezó (mismo corte que wabot_dia_entrega). Se resuelve ya, así el transcript
+     * guarda lo que leyó el cliente. */
+    $entrega = ($h >= 3 && $h < 14) ? 'hoy a la tarde' : 'mañana';
+    return trim(wabot_personalizar(strtr($plantilla, ['{saludo}' => $saludo, '{entrega}' => $entrega]), $cv));
+}
+
+function wabot_form_confirmacion_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (!wabot_form_confirmacion_corresponde($cv, $cfg, $ahora)) continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_form_confirmacion_corresponde($cv, $cfg, $ahora)) continue;
+            $texto = wabot_form_confirmacion_texto($cv, $cfg, $ahora);
+            // Una sola vez por formulario, salga o no: un rechazo de Meta no se reintenta.
+            $cv['form_confirmacion_auto_ts'] = $ahora;
+            if ($texto !== '' && wabot_enviar($cv, $texto)) {
+                $cv['auto_ultimo_ts'] = $ahora;
+                $cv['form_recibido_confirmado'] = true;
+                wabot_conv_transcript($cv, 'bot', $texto);
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('form_confirmacion', ['clave' => $clave, 'enviado' => $texto !== '']);
         } finally {
             wabot_lock_soltar($lock);
         }

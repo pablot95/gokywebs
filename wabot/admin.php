@@ -431,6 +431,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['leer_imagenes']       = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios']     = !empty($_POST['escuchar_audios']);
         $cfg['ultima_llamada_activa'] = !empty($_POST['ultima_llamada_activa']);
+        if (isset($_POST['form_confirmacion_minutos'])) {
+            $cfg['form_confirmacion_activo'] = !empty($_POST['form_confirmacion_activo']);
+            $cfg['form_confirmacion_minutos'] = max(1, min(60, (float)$_POST['form_confirmacion_minutos']));
+        }
         if (isset($_POST['form_recordatorio_horas'])) {
             $cfg['form_recordatorio_activo'] = !empty($_POST['form_recordatorio_activo']);
             $cfg['oferta_entrega_seguimiento_activo'] = !empty($_POST['oferta_entrega_seguimiento_activo']);
@@ -2845,6 +2849,17 @@ function burbujaCita(t, chat) {
                     <input type="number" name="ultima_llamada_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['ultima_llamada_horas'] ?? 23)) ?>" style="width:100px">
                 </div>
             </div>
+            <div class="fila" style="gap:18px;align-items:flex-end;margin-top:12px">
+                <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
+                    <input type="checkbox" name="form_confirmacion_activo" value="1" <?= !empty($cfg['form_confirmacion_activo']) ? 'checked' : '' ?> style="width:auto">
+                    Confirmar que llegó el formulario
+                </label>
+                <div>
+                    <label>Minutos desde que lo completa</label>
+                    <input type="number" name="form_confirmacion_minutos" min="1" max="60" step="1" value="<?= $e((string)($cfg['form_confirmacion_minutos'] ?? 5)) ?>" style="width:100px">
+                </div>
+            </div>
+            <p class="meta" style="margin-top:8px">"<?= $e((string)($cfg['form_confirmacion'] ?? '')) ?>" — una vez por formulario, solo si en ese tiempo el cliente no escribió nada más y nadie le contestó, con la ventana de 24 h abierta.</p>
             <div class="fila" style="gap:18px;align-items:flex-end;margin-top:12px">
                 <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
                     <input type="checkbox" name="form_recordatorio_activo" value="1" <?= !empty($cfg['form_recordatorio_activo']) ? 'checked' : '' ?> style="width:auto">

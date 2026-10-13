@@ -1,6 +1,7 @@
 <?php
 /**
  * wabot/seguimiento.php — automatismos por cron:
+ *   - la confirmación del formulario, a los 5 minutos de que lo completa;
  *   - la "última llamada" antes de que cierre la ventana de Meta;
  *   - seguimiento_demo_72h, a las 18 h tras 72 h sin respuesta;
  *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes.
@@ -35,6 +36,7 @@ $cfg = wabot_config_load();
 // En este orden: el recordatorio del formulario (más temprano en la charla),
 // la última llamada y las plantillas. Cada uno respeta wabot_auto_reciente(),
 // así que en la misma pasada nunca salen dos al mismo cliente.
+$confirmacion = wabot_form_confirmacion_correr($cfg);
 $recordatorio = wabot_form_recordatorio_correr($cfg);
 $ofertaEntrega = wabot_oferta_entrega_seguimiento_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
@@ -47,6 +49,7 @@ echo json_encode([
         'detalle'   => $ultima['detalle'],
     ],
     'plantillas' => $plantillas,
+    'form_confirmacion' => $confirmacion,
     'form_recordatorio' => $recordatorio,
     'oferta_entrega' => $ofertaEntrega,
 ], JSON_UNESCAPED_UNICODE) . "\n";
