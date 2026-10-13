@@ -889,6 +889,62 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         exit;
     }
+    /* Enviar una imagen desde el chat (Pablo, 13-oct: "en wabot no puedo enviar imágenes"). El
+     * navegador la pasa a JPEG (o PNG) de hasta 5 MB, que es lo que acepta WhatsApp; el texto del
+     * recuadro va como epígrafe. Solo WhatsApp y con la ventana de 24 h abierta, igual que las
+     * notas de voz. Enviar a mano toma el control: el bot se calla en ese chat. */
+    if ($a === 'responder_imagen' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $subida = $_FILES['imagen'] ?? null;
+        if (!$subida || ($subida['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($subida['tmp_name'])) {
+            echo json_encode(['error' => 'No llegó la imagen. Probá elegirla de nuevo.']);
+            exit;
+        }
+        if ((int)$subida['size'] > WABOT_IMAGEN_MAX_BYTES) {
+            echo json_encode(['error' => 'La imagen pesa más de 5 MB, que es el máximo que acepta WhatsApp.']);
+            exit;
+        }
+
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_canal($conv) === 'instagram') {
+            echo json_encode(['error' => 'Por ahora las imágenes solo salen por WhatsApp. En Instagram escribile por texto.']);
+            exit;
+        }
+        if (wabot_ventana_restante($conv) <= 0) {
+            echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.']);
+            exit;
+        }
+
+        $bytes = (string)@file_get_contents($subida['tmp_name']);
+        if ($bytes === '') { echo json_encode(['error' => 'La imagen llegó vacía.']); exit; }
+        // El tipo se mira en los bytes, no en lo que declaró el navegador.
+        $mime = wabot_imagen_mime($bytes);
+        if ($mime === '') {
+            echo json_encode(['error' => 'WhatsApp solo acepta imágenes JPEG o PNG.']);
+            exit;
+        }
+
+        $caption = mb_substr(trim((string)($_POST['caption'] ?? '')), 0, 1024);
+        $mediaId = wabot_wa_media_subir($bytes, $mime, 'imagen.' . ($mime === 'image/png' ? 'png' : 'jpg'));
+        if (!$mediaId) {
+            echo json_encode(['error' => 'WhatsApp no aceptó la imagen al subirla. Revisá el log en wabot/data/log/.']);
+            exit;
+        }
+        if (!wabot_wa_send_image(wabot_channel_user_id($conv), $mediaId, $caption)) {
+            echo json_encode(['error' => 'La imagen se subió pero WhatsApp rechazó el envío. Revisá el log en wabot/data/log/.']);
+            exit;
+        }
+
+        $guardado = wabot_media_guardar(wabot_conversation_key($conv), $bytes, $mime, 'imagen');
+        wabot_conv_tomar_control($conv);
+        wabot_conv_transcript($conv, 'humano', $caption !== '' ? $caption : '[imagen]', $guardado);
+        wabot_conv_save($conv);
+        wabot_log('respuesta_panel_imagen', ['tel' => $conv['tel'], 'mime' => $mime, 'bytes' => strlen($bytes), 'con_texto' => $caption !== '']);
+
+        echo json_encode(['ok' => true, 'bot_off' => true]);
+        exit;
+    }
     if ($a === 'transcript' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $conv = wabot_conv_load($_POST['tel']);
@@ -1433,6 +1489,15 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .grabando #grabandoTiempo { font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
 .grabando button { padding:7px 14px; font-size:13px; }
 .grabando-hint { flex:1 1 auto; font-size:12.5px; color:var(--dim); }
+/* Imágenes por enviar (13-oct): miniaturas con su ×, y Cancelar / Enviar a la derecha. */
+.adjuntando { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:9px; padding:9px 12px; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; }
+.adjuntando[hidden] { display:none; }
+.adjuntando-lista { display:flex; gap:8px; flex-wrap:wrap; }
+.adj-item { position:relative; }
+.adj-item img { display:block; width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+.adj-item button { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; border-radius:50%; font-size:12px; line-height:1; }
+.adjuntando button { padding:7px 14px; font-size:13px; }
+.adjuntando #adjuntarEnviar { margin-left:auto; }
 .grabando #grabarEnviar { margin-left:auto; }
 /* Grabando: el micrófono queda en rojo mientras la nota sigue abierta. */
 #respGrabar.apretado { background:var(--bad); border-color:var(--bad); color:#fff; }
@@ -3262,9 +3327,17 @@ function burbujaCita(t, chat) {
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
+                        <button id="respAdjuntar" class="sec" type="button" title="Enviar una imagen (también podés pegarla con Ctrl+V)" aria-label="Enviar una imagen">📎</button>
+                        <input type="file" id="respArchivo" accept="image/*" multiple hidden>
                         <button id="respGrabar" class="sec" type="button" title="Grabar una nota de voz" aria-label="Grabar una nota de voz">🎤</button>
                         <?php endif; ?>
                         <button id="respEnviar">Enviar</button>
+                    </div>
+                    <div id="adjuntando" class="adjuntando" hidden>
+                        <div id="adjuntandoLista" class="adjuntando-lista"></div>
+                        <span class="grabando-hint" id="adjuntandoHint">Lo que escribas arriba va como texto de la primera imagen.</span>
+                        <button type="button" id="adjuntarCancelar" class="sec" title="Descartar las imágenes">Cancelar</button>
+                        <button type="button" id="adjuntarEnviar" title="Enviar las imágenes">Enviar imagen</button>
                     </div>
                     <div id="grabando" class="grabando" hidden>
                         <span class="grabando-punto"></span>
@@ -4728,6 +4801,8 @@ function burbujaCita(t, chat) {
         }
         async function enviar() {
             if (enviando) return;
+            // Con imágenes elegidas, Enviar las manda (con el texto como epígrafe de la primera).
+            if (typeof adjuntos !== 'undefined' && adjuntos.length) return enviarAdjuntos();
             const t = txt.value.trim(); if (!t) return;
             if (!envioId || t !== envioTexto) { envioId = nuevoEnvioId(); envioTexto = t; }
             enviando = true;
@@ -5000,6 +5075,107 @@ function burbujaCita(t, chat) {
             btnGrabCancel.onclick = () => pararGrabacion(false);
             btnGrabEnviar.onclick = () => pararGrabacion(true);
         }
+        /* ── Imágenes (Pablo, 13-oct: "en wabot no puedo enviar imágenes") ──
+           El 📎 abre el selector (o se pega con Ctrl+V): las miniaturas quedan en una barra con
+           Cancelar / Enviar, y lo que esté escrito arriba va como texto de la primera. Cada imagen
+           se pasa ACÁ a JPEG de hasta 1600 px (WhatsApp acepta JPEG y PNG de hasta 5 MB; un
+           WebP, un HEIC o una foto de 12 MB no llegarían) y sale como un mensaje aparte. */
+        const btnAdjuntar = document.getElementById('respAdjuntar');
+        const inputArchivo = document.getElementById('respArchivo');
+        const cajaAdj = document.getElementById('adjuntando');
+        const listaAdj = document.getElementById('adjuntandoLista');
+        const ADJ_MAX = 6;
+        let adjuntos = [];      // [{ file, url }]
+
+        function pintarAdjuntos() {
+            listaAdj.innerHTML = '';
+            adjuntos.forEach((a, i) => {
+                const it = document.createElement('div'); it.className = 'adj-item';
+                const img = document.createElement('img'); img.src = a.url; img.alt = 'Imagen por enviar';
+                const x = document.createElement('button'); x.type = 'button'; x.className = 'sec'; x.textContent = '×';
+                x.title = 'Sacar esta imagen'; x.setAttribute('aria-label', 'Sacar esta imagen');
+                x.addEventListener('click', () => { URL.revokeObjectURL(a.url); adjuntos.splice(i, 1); pintarAdjuntos(); });
+                it.append(img, x); listaAdj.appendChild(it);
+            });
+            cajaAdj.hidden = adjuntos.length === 0;
+            document.getElementById('adjuntarEnviar').textContent = adjuntos.length > 1 ? 'Enviar ' + adjuntos.length + ' imágenes' : 'Enviar imagen';
+        }
+        function agregarAdjuntos(files) {
+            const imgs = Array.from(files || []).filter(f => f && /^image\//.test(f.type));
+            if (!imgs.length) { avisar('Elegí un archivo de imagen.', true); return; }
+            for (const f of imgs) {
+                if (adjuntos.length >= ADJ_MAX) { avisar('Hasta ' + ADJ_MAX + ' imágenes por vez.', true); break; }
+                adjuntos.push({ file: f, url: URL.createObjectURL(f) });
+            }
+            pintarAdjuntos();
+            if (ventana <= 0) avisar('Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.', true);
+        }
+        function limpiarAdjuntos() {
+            adjuntos.forEach(a => URL.revokeObjectURL(a.url));
+            adjuntos = []; pintarAdjuntos();
+        }
+        /* JPEG de hasta 1600 px por lado (fondo blanco si traía transparencia). Un JPEG chico se manda tal cual. */
+        async function imagenAJpeg(file) {
+            if (file.type === 'image/jpeg' && file.size <= 1500 * 1024) return file;
+            const bmp = await createImageBitmap(file);
+            const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+            const g = c.getContext('2d');
+            g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+            g.drawImage(bmp, 0, 0, c.width, c.height);
+            if (bmp.close) bmp.close();
+            const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.88));
+            if (!blob) throw new Error('no se pudo convertir');
+            return blob;
+        }
+        async function enviarAdjuntos() {
+            if (enviando || !adjuntos.length) return;
+            enviando = true; btn.disabled = true;
+            const total = adjuntos.length;
+            let enviadas = 0;
+            try {
+                while (adjuntos.length) {
+                    avisar('Enviando imagen ' + (enviadas + 1) + ' de ' + total + '…', false);
+                    const a = adjuntos[0];
+                    let blob;
+                    try { blob = await imagenAJpeg(a.file); }
+                    catch (e) { avisar('No se pudo leer "' + (a.file.name || 'la imagen') + '": probá con una foto JPEG o PNG.', true); break; }
+                    const fd = new FormData();
+                    fd.append('accion', 'responder_imagen');
+                    fd.append('tel', TEL);
+                    if (enviadas === 0) fd.append('caption', txt.value.trim());   // el texto va con la primera
+                    fd.append('imagen', blob, 'imagen.jpg');
+                    const r = await fetch('admin.php', { method: 'POST', body: fd });
+                    const j = await r.json();
+                    if (!j.ok) { avisar(j.error || 'No se pudo enviar la imagen.', true); break; }
+                    if (enviadas === 0 && txt.value.trim()) { txt.value = ''; txt.dispatchEvent(new Event('input', { bubbles: true })); }
+                    URL.revokeObjectURL(a.url); adjuntos.shift(); enviadas++;
+                    pintarAdjuntos();
+                    document.getElementById('handoffPill')?.remove();
+                }
+                if (enviadas) {
+                    await refrescar(); await refrescarLista();
+                    if (!adjuntos.length) avisar((enviadas > 1 ? enviadas + ' imágenes enviadas' : 'Imagen enviada') + '. El bot queda en silencio en este chat.', false);
+                }
+            } catch (e) {
+                avisar('Error de red al enviar la imagen: ' + e + (enviadas ? ' Ya salieron ' + enviadas + '.' : ''), true);
+            }
+            enviando = false;
+            btn.disabled = ventana <= 0;
+        }
+        if (btnAdjuntar && inputArchivo) {
+            btnAdjuntar.addEventListener('click', () => inputArchivo.click());
+            inputArchivo.addEventListener('change', () => { agregarAdjuntos(inputArchivo.files); inputArchivo.value = ''; });
+            document.getElementById('adjuntarCancelar').onclick = () => { limpiarAdjuntos(); avisar('', false); };
+            document.getElementById('adjuntarEnviar').onclick = enviarAdjuntos;
+            // Ctrl+V con una imagen en el portapapeles (una captura, una foto copiada).
+            txt.addEventListener('paste', ev => {
+                const files = Array.from((ev.clipboardData && ev.clipboardData.files) || []).filter(f => /^image\//.test(f.type));
+                if (files.length) { ev.preventDefault(); agregarAdjuntos(files); }
+            });
+        }
+
         pintar(<?= json_encode(array_values(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv))), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();

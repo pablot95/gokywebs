@@ -4190,6 +4190,16 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
 
 define('WABOT_AUDIO_MIMES_OK', ['audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/amr']);
 define('WABOT_AUDIO_MAX_BYTES', 16 * 1024 * 1024);
+// Imágenes que salen del panel (13-oct): WhatsApp acepta JPEG y PNG de hasta 5 MB.
+define('WABOT_IMAGEN_MAX_BYTES', 5 * 1024 * 1024);
+
+/** 'image/jpeg' o 'image/png' según la firma de los bytes; '' si no es ninguno de los dos. */
+function wabot_imagen_mime($bytes) {
+    $b = (string)$bytes;
+    if (substr($b, 0, 3) === "\xFF\xD8\xFF") return 'image/jpeg';
+    if (substr($b, 0, 8) === "\x89PNG\r\n\x1A\n") return 'image/png';
+    return '';
+}
 
 /**
  * WhatsApp valida el CONTENEDOR y el CODEC, no solo el contenedor.
@@ -4460,21 +4470,25 @@ function wabot_es_marcador_imagen_precio($mensaje) {
 }
 
 /** El cuerpo del mensaje de imagen, igual de simple que el de audio. */
-function wabot_wa_image_body($tel, $mediaId) {
+function wabot_wa_image_body($tel, $mediaId, $caption = '') {
+    $image = ['id' => $mediaId];
+    // El texto que acompaña a la foto (13-oct): máx. 1024 caracteres en WhatsApp.
+    $caption = trim((string)$caption);
+    if ($caption !== '') $image['caption'] = mb_substr($caption, 0, 1024);
     return [
         'messaging_product' => 'whatsapp',
         'to'    => $tel,
         'type'  => 'image',
-        'image' => ['id' => $mediaId],
+        'image' => $image,
     ];
 }
 
-function wabot_wa_send_image($tel, $mediaId) {
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, '[imagen]']; return true; }
+function wabot_wa_send_image($tel, $mediaId, $caption = '') {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, '[imagen]' . ($caption !== '' ? ' ' . $caption : '')]; return true; }
     if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') return false;
 
     $url = 'https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . WABOT_PHONE_NUMBER_ID . '/messages';
-    $body = json_encode(wabot_wa_image_body($tel, $mediaId));
+    $body = json_encode(wabot_wa_image_body($tel, $mediaId, $caption), JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
