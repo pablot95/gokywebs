@@ -4209,7 +4209,7 @@ function burbujaCita(t, chat) {
             rrInsertar('Te paso el pago único del sitio profesional ($220.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico220');
         });
         document.getElementById('btnUnico360')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($330.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($270.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330');
+            rrInsertar('Te paso el pago único ($330.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($270.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330');
         });
 
         function rrElegir(indice) {
