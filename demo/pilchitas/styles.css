@@ -8,3 +8,4 @@
 @media(max-width:600px){.hero-photo:after{background:linear-gradient(90deg,#42233bc9,#42233b54)}}
 html, body { -webkit-user-select: none; -moz-user-select: none; user-select: none; } input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; } img { -webkit-user-drag: none; pointer-events: auto; }
 h1{font-size:clamp(3.2rem,5.8vw,5.6rem)}.hero:not(.hero-2) .hero-copy{padding-block:55px}
+.model-switch{left:auto;right:88px}@media(max-width:600px){.model-switch{left:auto;right:70px}}

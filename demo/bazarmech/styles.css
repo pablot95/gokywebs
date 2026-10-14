@@ -8,3 +8,4 @@
 @media(max-width:1100px){.header-search{display:none}}
 @media(max-width:600px){.hero-photo:after{background:linear-gradient(90deg,#102634d9,#1026347a)}}
 html, body { -webkit-user-select: none; -moz-user-select: none; user-select: none; } input, textarea, [contenteditable] { -webkit-user-select: text; user-select: text; } img { -webkit-user-drag: none; pointer-events: auto; }
+.model-switch{left:auto;right:88px}@media(max-width:600px){.model-switch{left:auto;right:70px}}
