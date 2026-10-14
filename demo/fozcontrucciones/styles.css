@@ -63,7 +63,7 @@ html {
   -webkit-text-size-adjust: 100%;
   overflow-x: clip;
   max-width: 100vw;
-  scroll-padding-top: var(--header-h);
+  scroll-padding-top: 0;
 }
 
 body {
@@ -201,8 +201,7 @@ section { padding-block: var(--section-pad-y); position: relative; }
 }
 
 .site-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 15;
   background: var(--color-surface);
   border-bottom: 1px solid transparent;

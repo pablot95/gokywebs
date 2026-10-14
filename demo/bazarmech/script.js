@@ -197,3 +197,24 @@
   if(page==='admin')initAdmin();
   if(page!=='admin'){renderCart();const requested=new URLSearchParams(location.search).get('producto');if(requested)openProduct(requested);}
 })();
+
+function initModelBarScroll() {
+  const bar = document.querySelector('.gw-modelos');
+  if (!bar) return;
+  let showTimer = 0;
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    if (window.scrollY <= 8) {
+      bar.classList.remove('gw-modelos--scrolling');
+      return;
+    }
+    bar.classList.add('gw-modelos--scrolling');
+    clearTimeout(showTimer);
+    showTimer = setTimeout(() => bar.classList.remove('gw-modelos--scrolling'), 120);
+  };
+  window.addEventListener('scroll', () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  }, { passive: true });
+}
+initModelBarScroll();

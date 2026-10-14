@@ -28,6 +28,7 @@ if (menuButton && menu) {
     menu.classList.toggle('open', open);
     menuButton.setAttribute('aria-expanded', String(open));
     menuButton.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    if (open) window.scrollTo({ top: 0, behavior: 'instant' });
     document.body.classList.toggle('no-scroll', open);
   });
   menu.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));

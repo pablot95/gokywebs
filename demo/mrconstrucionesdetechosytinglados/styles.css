@@ -43,7 +43,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { overflow-x: clip; max-width: 100vw; scroll-padding-top: var(--header-h); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html { overflow-x: clip; max-width: 100vw; scroll-padding-top: 0; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; overflow-x: clip; max-width: 100vw; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body); font-size: var(--fs-body); line-height: 1.65; -webkit-font-smoothing: antialiased; }
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-decoration: none; }
@@ -89,7 +89,7 @@ h3 { font-weight: 600; font-size: var(--fs-h3); line-height: 1.25; }
 .sec-head__lead { max-width: 40ch; color: var(--color-text-muted); }
 
 /* header */
-.site-header { position: sticky; top: 0; z-index: 15; background: #fff; border-bottom: 1px solid var(--color-line); }
+.site-header { position: relative; z-index: 15; background: #fff; border-bottom: 1px solid var(--color-line); }
 .header-inner { height: var(--header-h); display: flex; align-items: center; gap: 1.5rem; }
 .brand { position: relative; z-index: 100; overflow: visible; display: block; flex: none; border-radius: 50%; }
 .brand img { width: 80px; height: 80px; border-radius: 50%; }
@@ -316,7 +316,7 @@ body.m2 .servicios { padding-top: calc(var(--section-pad-y) + 4rem); }
 .serv-fila__link .ico { width: 20px; height: 20px; }
 .serv-fila.is-on .serv-fila__num, .serv-fila.is-on h3 { color: var(--color-primary); }
 .serv-fila.is-on .serv-fila__link, .serv-fila__link:hover { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-.serv-visual { position: sticky; top: calc(var(--header-h) + 24px); }
+.serv-visual { position: sticky; top: 24px; }
 .serv-visual__marco { position: relative; aspect-ratio: 4 / 5; width: 100%; overflow: hidden; border-radius: var(--radius); background: var(--color-graphite); }
 .serv-visual__marco img { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; clip-path: inset(0 0 100% 0); transition: clip-path .75s var(--ease) .35s; }
 .serv-visual__marco img.is-on { z-index: 2; clip-path: inset(0 0 0 0); transition: clip-path .75s var(--ease); }

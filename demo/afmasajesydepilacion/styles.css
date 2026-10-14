@@ -38,7 +38,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; overflow-x: clip; max-width: 100vw; scroll-padding-top: calc(var(--header-h) + 12px); }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; max-width: 100vw; scroll-padding-top: 12px; }
 html:has(body.m2) { scroll-padding-top: 16px; }
 body {
   margin: 0; background: var(--color-bg); color: var(--color-text);
@@ -95,7 +95,7 @@ h1 em, h2 em { font-style: italic; color: var(--color-primary); }
 }
 .link-wa:hover { color: var(--color-primary-deep); }
 
-.site-header { position: sticky; top: 0; z-index: 15; background: var(--color-bg); border-bottom: 1px solid var(--color-line); }
+.site-header { position: relative; z-index: 15; background: var(--color-bg); border-bottom: 1px solid var(--color-line); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-height: var(--header-h); }
 .brand { position: relative; z-index: 100; overflow: visible; display: inline-flex; align-items: center; gap: .8rem; min-height: 48px; }
 .brand__af { font-family: var(--font-display); font-size: clamp(2.35rem, 3.3vw, 3rem); line-height: 1; letter-spacing: -.02em; }

@@ -4,9 +4,9 @@
   --gutter:clamp(20px,4.4vw,72px);--sans:"DM Sans",Arial,sans-serif;--serif:"Bodoni Moda",Georgia,serif
 }
 *{box-sizing:border-box}
-html{scroll-padding-top:173px}
+html{scroll-padding-top:0}
 body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--sans);line-height:1.5;overflow-x:clip}
-body:not(.admin-demo){padding-top:161px}
+
 body.no-scroll{overflow:hidden}
 [hidden]{display:none!important}
 a{color:inherit;text-decoration:none}
@@ -35,10 +35,10 @@ h3{line-height:1.2}
 .text-link:hover{color:var(--gold-deep)}
 .sample-note{font-size:.72rem;color:var(--muted)}
 .center-action{text-align:center;margin-top:34px}
-.announcement{position:fixed;top:0;left:0;right:0;z-index:51;height:33px;background:#17130f;color:#f5efe5;font-size:.62rem;font-weight:700;letter-spacing:.04em}
+.announcement{position:relative;z-index:51;height:33px;background:#17130f;color:#f5efe5;font-size:.62rem;font-weight:700;letter-spacing:.04em}
 .announcement .shell{height:100%;display:flex;align-items:center;justify-content:space-between;gap:15px}
 .announcement a:hover{color:var(--gold)}
-.site-header{position:fixed;top:33px;left:0;right:0;z-index:50;background:rgba(250,250,248,.98);border-bottom:1px solid var(--line);backdrop-filter:blur(15px)}
+.site-header{position:relative;z-index:50;background:rgba(250,250,248,.98);border-bottom:1px solid var(--line);backdrop-filter:blur(15px)}
 .header-inner{height:81px;display:flex;align-items:center;justify-content:space-between;gap:25px}
 .brand{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;line-height:1}
 .brand-mark{font-family:var(--serif);font-size:3.5rem;line-height:.5;color:var(--gold-deep);transform:rotate(-20deg);display:inline-block}
@@ -63,10 +63,6 @@ h3{line-height:1.2}
 .category-menu-panel a{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid #f2eee8;font-size:.73rem}
 .category-menu-panel a:last-child{border-bottom:0}
 .category-menu-panel small{font-size:.61rem;color:var(--gold-deep)}
-.gw-modelos{position:fixed;z-index:110;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:2px;padding:4px;border-radius:50px;background:#1b1712;color:#fff;box-shadow:0 9px 30px rgba(0,0,0,.22);transition:opacity .25s,translate .25s}
-.gw-modelos--scrolling{opacity:0;translate:0 80px;pointer-events:none}
-.gw-modelos__btn{padding:8px 18px;border-radius:30px;font-size:.72rem;font-weight:700;white-space:nowrap}
-.gw-modelos__btn[aria-current=page]{background:#f9f5ec;color:#1e1811}
 .hero{overflow:hidden}
 .hero-collage{display:grid;grid-template-columns:minmax(0,3.2fr) minmax(230px,1.2fr);height:min(660px,calc(100svh - 160px));min-height:510px;background:#272019}
 .hero-main,.hero-side{position:relative;overflow:hidden}
@@ -237,7 +233,7 @@ h3{line-height:1.2}
 .catalog-toolbar p:last-child{font-size:.76rem;color:var(--muted);margin-top:8px}
 .catalog-toolbar>span{font-size:.7rem;white-space:nowrap;color:var(--muted)}
 .catalog-layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:34px}
-.catalog-filters{align-self:start;position:sticky;top:176px;border:1px solid var(--line);padding:20px}
+.catalog-filters{align-self:start;position:sticky;top:20px;border:1px solid var(--line);padding:20px}
 .filter-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
 .filter-head h3{font-size:.75rem}
 .filter-head button{border:0;background:none;color:var(--gold-deep);font-size:.66rem;font-weight:700}
@@ -303,11 +299,11 @@ h3{line-height:1.2}
   .main-nav{gap:25px}
 }
 @media(max-width:700px){
-  html{scroll-padding-top:108px}
-  body:not(.admin-demo){padding-top:98px}
+  html{scroll-padding-top:0}
+  
   .announcement{height:27px;min-height:27px}
   .announcement .shell{justify-content:center;min-height:27px;font-size:.55rem}
-  .site-header{top:27px}
+  
   .announcement span:nth-child(2),.announcement a{display:none}
   .header-inner{height:70px}
   .brand-word{font-size:1.85rem}
@@ -385,8 +381,7 @@ h3{line-height:1.2}
 }
 @media(max-width:380px){
   .brand-word{font-size:1.6rem}
-  .gw-modelos{left:12px;transform:none}
-  .product-title{font-size:.73rem}
+    .product-title{font-size:.73rem}
   .prod-add{font-size:.62rem}
   .admin-list li{gap:7px;padding:8px}
   .admin-list b{font-size:.7rem}
@@ -412,9 +407,6 @@ h3{line-height:1.2}
 .header-search input::placeholder{color:#a28799}
 .cart-trigger b,.cart-float b{color:#261227}
 .category-menu-panel a{border-color:#f5eaf1}
-.gw-modelos{z-index:80;background:#2e1c2d;transition:opacity .25s}
-.gw-modelos--scrolling{opacity:0;translate:none;pointer-events:none}
-.gw-modelos__btn[aria-current=page]{background:#fff2f8;color:#76204f}
 .hero-collage{background:#f2e8ef;grid-template-columns:minmax(0,3.55fr) minmax(240px,1fr)}
 .hero-main>img{object-position:center 58%}
 .hero-shade{background:linear-gradient(90deg,rgba(254,247,251,.97) 0%,rgba(254,247,251,.88) 34%,rgba(254,247,251,.18) 78%,transparent 100%)}
@@ -503,3 +495,40 @@ h3{line-height:1.2}
   .brand-mark{font-size:1.9rem}
   .category-card figure,.m2 .category-card:nth-child(n) figure{height:150px}
 }
+
+/* ===== Barra de modelos (flotante abajo al centro) — borrar entero en producción ===== */
+:root {
+  --gw-modelos-bg: #1b1712;
+  --gw-modelos-active-bg: #f9f5ec;
+  --gw-modelos-active-ink: #1e1811;
+}
+.gw-modelos {
+  position: fixed; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%; z-index: 95;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 3px;
+  max-width: calc(100vw - 16px); padding: 4px;
+  border-radius: 999px; background: var(--gw-modelos-bg); color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,.24);
+  transition: opacity .3s ease;
+}
+.gw-modelos__btn {
+  flex: 0 1 116px; min-height: 34px; padding: 9px 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px; color: inherit;
+  font: 800 12px/1 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  text-decoration: none; white-space: nowrap;
+  transition: background-color .2s, color .2s, transform .15s;
+}
+.gw-modelos__btn:hover { background: rgba(255,255,255,.16); }
+.gw-modelos__btn:active { transform: scale(.97); }
+.gw-modelos__btn[aria-current] { background: var(--gw-modelos-active-bg); color: var(--gw-modelos-active-ink); }
+.gw-modelos__btn[aria-current="page"] { pointer-events: none; }
+.gw-modelos__btn:focus-visible { outline: 3px solid var(--gw-modelos-active-bg); outline-offset: 3px; }
+body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
+.gw-modelos.gw-modelos--scrolling { opacity: 0; pointer-events: none; }
+html body .gw-modelos { transition: opacity .3s ease; transform: translateX(-50%); }
+@media (max-width: 359px) {
+  .gw-modelos, html body .gw-modelos { left: 12px; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .gw-modelos, .gw-modelos__btn { transition: none; } }
+body.m2 { --gw-modelos-bg: #2e1c2d; }
