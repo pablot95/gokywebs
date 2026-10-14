@@ -45,6 +45,7 @@ const ERR_REPOS = [
     'regalartejuguetes.com.ar'         => 'pablot95/regalarte',
     'suanbaby.com.ar'                  => 'pablot95/suanbaby',
     'dcreparaciones.com.ar'            => 'pablot95/dcreparaciones',
+    'fozconstrucciones.com.ar'         => 'pablot95/fozconstrucciones',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
     'asesoratesancorsalud.com.ar'      => 'pablot95/sancorsalud',
