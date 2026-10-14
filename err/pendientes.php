@@ -47,6 +47,7 @@ const ERR_REPOS = [
     'ecopiscinaschaco.com.ar'          => 'pablot95/ecopiscinas',
     'dcreparaciones.com.ar'            => 'pablot95/dcreparaciones',
     'fozconstrucciones.com.ar'         => 'pablot95/fozconstrucciones',
+    'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
     'asesoratesancorsalud.com.ar'      => 'pablot95/sancorsalud',
