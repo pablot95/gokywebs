@@ -100,6 +100,29 @@ function wabot_log($tipo, $datos) {
 }
 
 /**
+ * Trabajo que nadie espera (el revisor en sombra, 14-oct): corre cuando termina
+ * el pedido, después de mandarle la respuesta al cliente. Si el panel todavía
+ * no cerró la página, la cierra antes para no hacer esperar a Pablo. En los
+ * tests corre al toque con WABOT_TEST_DESPUES_AL_TOQUE.
+ */
+function wabot_despues(callable $fn) {
+    if (!empty($GLOBALS['WABOT_TEST_DESPUES_AL_TOQUE'])) { $fn(); return; }
+    if (!isset($GLOBALS['WABOT_DESPUES'])) {
+        $GLOBALS['WABOT_DESPUES'] = [];
+        register_shutdown_function(function () {
+            if (!$GLOBALS['WABOT_DESPUES']) return;
+            if (function_exists('litespeed_finish_request')) litespeed_finish_request();
+            elseif (function_exists('fastcgi_finish_request')) fastcgi_finish_request();
+            while ($GLOBALS['WABOT_DESPUES']) {
+                $f = array_shift($GLOBALS['WABOT_DESPUES']);
+                try { $f(); } catch (Throwable $e) { wabot_log('error', ['donde' => 'despues', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
+            }
+        });
+    }
+    $GLOBALS['WABOT_DESPUES'][] = $fn;
+}
+
+/**
  * Las claves con las que Meta firma los webhooks. Son dos: la de la app de Meta
  * (WhatsApp) y la de la app de Instagram, y cada canal usa la suya. Se cargan
  * separadas por coma en WABOT_APP_SECRET.

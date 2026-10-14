@@ -27,7 +27,7 @@ require_once __DIR__ . '/ia-instrucciones.php';
 
 /** Lo que se toca desde Ajustes (se suman a wabot_ajustes_claves). */
 function wabot_ia_ajustes_claves() {
-    return ['ia_proveedor', 'openai_modelo', 'openai_esfuerzo', 'openai_max_tokens', 'openai_timeout',
+    return ['ia_proveedor', 'openai_modelo', 'openai_modelo_revisor', 'openai_revisor_sombra', 'openai_esfuerzo', 'openai_max_tokens', 'openai_timeout',
             'ia_historial', 'ia_max_mensajes', 'openai_precio_entrada', 'openai_precio_cache', 'openai_precio_salida'];
 }
 
@@ -76,17 +76,22 @@ function wabot_openai_key() {
 
 /**
  * Precios oficiales por millón de tokens en dólares (developers.openai.com/api/docs/pricing,
- * 27-sep-2026): [entrada, entrada en caché, salida]. Solo sirven para estimar el
- * costo en el panel; si OpenAI los cambia o se usa otro modelo, se cargan en Ajustes.
+ * 27-sep-2026; revisados el 14-oct): [entrada, entrada en caché, salida, escritura de caché].
+ * Desde GPT-5.6 escribir la caché cuesta 1,25 veces la entrada: pasa la primera vez
+ * que llega un prefijo y cada vez que vence (30 minutos sin uso). En los modelos
+ * anteriores no hay recargo y la escritura vale lo mismo que la entrada. Solo
+ * sirven para estimar el costo en el panel; si OpenAI los cambia o se usa otro
+ * modelo, se cargan en Ajustes.
  */
 function wabot_openai_precios() {
     return [
-        'gpt-6-astra'   => [10.00, 1.00, 50.00],
-        'gpt-6-sol'     => [2.00, 0.20, 10.00],
-        'gpt-6-luna'    => [0.10, 0.01, 0.50],
-        'gpt-5.6-sol'   => [4.00, 0.40, 20.00],
-        'gpt-5.6-terra' => [2.00, 0.20, 12.00],
-        'gpt-5.6-luna'  => [0.20, 0.02, 1.20],
+        'gpt-6-astra'   => [10.00, 1.00, 50.00, 12.50],
+        'gpt-6.1-sol'   => [2.00, 0.10, 10.00, 2.50],
+        'gpt-6-sol'     => [2.00, 0.20, 10.00, 2.50],
+        'gpt-6-luna'    => [0.10, 0.01, 0.50, 0.125],
+        'gpt-5.6-sol'   => [4.00, 0.40, 20.00, 5.00],
+        'gpt-5.6-terra' => [2.00, 0.20, 12.00, 2.50],
+        'gpt-5.6-luna'  => [0.20, 0.02, 1.20, 0.25],
         'gpt-5.5'       => [5.00, 0.50, 30.00],
         'gpt-5.4'       => [2.50, 0.25, 15.00],
         'gpt-5.4-mini'  => [0.75, 0.075, 4.50],
@@ -100,6 +105,7 @@ function wabot_openai_precios() {
 function wabot_openai_modelos_sugeridos() {
     return [
         'gpt-6-sol'   => 'GPT-6 Sol — recomendado: entiende bien y cuesta poco por mensaje',
+        'gpt-6.1-sol' => 'GPT-6.1 Sol — como Sol, con la caché a mitad de precio',
         'gpt-6-luna'  => 'GPT-6 Luna — el más barato, para mucho volumen',
         'gpt-6-astra' => 'GPT-6 Astra — el más capaz, bastante más caro',
     ];
@@ -209,10 +215,11 @@ function wabot_openai_texto_de($json) {
  *   - respuesta cortada por el tope de tokens: una vez más con un tope mayor;
  *   - JSON roto: una vez más.
  * Devuelve ['ok', 'datos' (JSON decodificado), 'texto', 'uso', 'modelo', 'http', 'error'].
- * Nunca devuelve ni loguea la key.
+ * Nunca devuelve ni loguea la key. $opciones['modelo'] usa otro modelo que el
+ * del panel solo para esta llamada (el revisor y su sombra, 14-oct).
  */
 function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = null, $opciones = []) {
-    $modelo = wabot_openai_modelo($cfg);
+    $modelo = wabot_openai_modelo_valido($opciones['modelo'] ?? null) ? trim((string)$opciones['modelo']) : wabot_openai_modelo($cfg);
     $falla = function ($error, $http = 0) use ($modelo) {
         return ['ok' => false, 'datos' => null, 'texto' => '', 'uso' => null, 'modelo' => $modelo, 'http' => $http, 'error' => $error];
     };
@@ -308,8 +315,12 @@ function wabot_ia_uso_dir() {
     return (string)($GLOBALS['WABOT_TEST_IA_USO_DIR'] ?? (WABOT_DATA . '/ia-uso'));
 }
 
-/** Costo estimado en dólares, o null si el modelo no tiene precio cargado. */
-function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null) {
+/**
+ * Costo estimado en dólares, o null si el modelo no tiene precio cargado.
+ * $escritura: los tokens de entrada que se escribieron en la caché (vienen
+ * aparte en el uso de OpenAI y se cobran con su precio, no como entrada común).
+ */
+function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null, $escritura = 0) {
     $precios = wabot_openai_precios();
     $p = null;
     foreach ($precios as $nombre => $valores) {
@@ -321,8 +332,9 @@ function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null) {
         $p = [(float)$manual[0], is_numeric($manual[1]) ? (float)$manual[1] : (float)$manual[0], (float)$manual[2]];
     }
     if ($p === null) return null;
-    $sinCache = max(0, $entrada - $cache);
-    return round(($sinCache * $p[0] + $cache * $p[1] + $salida * $p[2]) / 1000000, 6);
+    $escritura = max(0, min((int)$escritura, $entrada - $cache));
+    $sinCache = max(0, $entrada - $cache - $escritura);
+    return round(($sinCache * $p[0] + $cache * $p[1] + $escritura * ($p[3] ?? $p[0]) + $salida * $p[2]) / 1000000, 6);
 }
 
 /**
@@ -333,13 +345,14 @@ function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null) {
 function wabot_ia_uso_registrar($tarea, $modelo, $uso, $opciones = []) {
     $entrada = (int)($uso['input_tokens'] ?? 0);
     $cache   = (int)($uso['input_tokens_details']['cached_tokens'] ?? 0);
+    $escrito = (int)($uso['input_tokens_details']['cache_write_tokens'] ?? 0);
     $salida  = (int)($uso['output_tokens'] ?? 0);
     $razon   = (int)($uso['output_tokens_details']['reasoning_tokens'] ?? 0);
-    $costo   = wabot_openai_costo($modelo, $entrada, $cache, $salida);
+    $costo   = wabot_openai_costo($modelo, $entrada, $cache, $salida, null, $escrito);
     $fila = [
         'ts' => date('c'), 'tarea' => $tarea, 'modo' => (string)($opciones['modo'] ?? 'real'), 'modelo' => $modelo,
         'conv' => (string)($opciones['usuario'] ?? ($GLOBALS['WABOT_IA_CLAVE'] ?? '')),
-        'entrada' => $entrada, 'cache' => $cache, 'salida' => $salida, 'razonamiento' => $razon, 'costo_usd' => $costo,
+        'entrada' => $entrada, 'cache' => $cache, 'escritura' => $escrito, 'salida' => $salida, 'razonamiento' => $razon, 'costo_usd' => $costo,
     ];
     if (empty($GLOBALS['WABOT_TEST_SIN_RED']) || isset($GLOBALS['WABOT_TEST_IA_USO_DIR'])) {
         $dir = wabot_ia_uso_dir();
@@ -355,7 +368,7 @@ function wabot_ia_uso_registrar($tarea, $modelo, $uso, $opciones = []) {
  */
 function wabot_ia_uso_resumen($mes = null) {
     $mes = $mes ?: date('Y-m');
-    $vacio = ['llamadas' => 0, 'entrada' => 0, 'cache' => 0, 'salida' => 0, 'costo_usd' => 0.0];
+    $vacio = ['llamadas' => 0, 'entrada' => 0, 'cache' => 0, 'escritura' => 0, 'salida' => 0, 'costo_usd' => 0.0];
     $r = ['mes' => $mes, 'total' => $vacio, 'por_tarea' => [], 'por_modo' => [], 'por_modelo' => [], 'por_conv' => [], 'sin_precio' => 0];
     $archivo = wabot_ia_uso_dir() . '/' . preg_replace('/[^0-9-]/', '', $mes) . '.jsonl';
     $h = @fopen($archivo, 'r');
@@ -363,7 +376,7 @@ function wabot_ia_uso_resumen($mes = null) {
     $sumar = function (&$dest, $f) use ($vacio) {
         if (!$dest) $dest = $vacio;
         $dest['llamadas']++;
-        foreach (['entrada', 'cache', 'salida'] as $k) $dest[$k] += (int)($f[$k] ?? 0);
+        foreach (['entrada', 'cache', 'escritura', 'salida'] as $k) $dest[$k] += (int)($f[$k] ?? 0);
         $dest['costo_usd'] += (float)($f['costo_usd'] ?? 0);
     };
     while (($linea = fgets($h)) !== false) {

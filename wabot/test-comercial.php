@@ -48,14 +48,25 @@ function dc(array $d = []) {
 /**
  * Carga lo que contesta la API, en orden (solo para la tarea comercial; la de
  * la bienvenida contesta sola). $revisor: lo que contesta el revisor, en orden;
- * si no hay nada cargado, aprueba. 'falla' simula que no contesta.
+ * si no hay nada cargado, aprueba. 'falla' simula que no contesta. $sombra: lo
+ * mismo para el revisor en sombra (14-oct).
  */
-function oa(array $cola, array $revisor = []) {
+function oa(array $cola, array $revisor = [], array $sombra = []) {
     $GLOBALS['OA_COLA'] = $cola;
     $GLOBALS['OA_PEDIDOS'] = [];
     $GLOBALS['OA_REVISOR'] = $revisor;
     $GLOBALS['OA_REVISIONES'] = [];
+    $GLOBALS['OA_SOMBRA'] = $sombra;
+    $GLOBALS['OA_SOMBRAS'] = [];
     $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) {
+        if (str_ends_with((string)($payload['prompt_cache_key'] ?? ''), 'comercial_revisor_sombra')) {
+            $GLOBALS['OA_SOMBRAS'][] = $payload;
+            $rev = array_shift($GLOBALS['OA_SOMBRA']) ?? ['ok' => true, 'problemas' => [], 'falta_contestar' => []];
+            if ($rev === 'falla') return [400, '{"error":{"message":"simulada"}}', 0];
+            return [200, json_encode(['id' => 'resp_sombra', 'model' => (string)$payload['model'], 'status' => 'completed',
+                'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode($rev, JSON_UNESCAPED_UNICODE)]]]],
+                'usage' => ['input_tokens' => 4000, 'input_tokens_details' => ['cached_tokens' => 3500], 'output_tokens' => 30, 'total_tokens' => 4030]], JSON_UNESCAPED_UNICODE)];
+        }
         if (str_ends_with((string)($payload['prompt_cache_key'] ?? ''), 'comercial_revisor')) {
             $GLOBALS['OA_REVISIONES'][] = $payload;
             $rev = array_shift($GLOBALS['OA_REVISOR']) ?? ['ok' => true, 'problemas' => [], 'falta_contestar' => []];
@@ -795,6 +806,66 @@ $insRev = wabot_comercial_instrucciones_revisor();
 foreach (['no_contesta', 'contradice', 'decide_por_cliente', 'se_saltea_paso', 'repite', 'inventa', 'promete', 'Ante la duda, ok = true'] as $p) {
     caso("las instrucciones del revisor hablan de «{$p}»", mb_stripos($insRev, $p) !== false);
 }
+
+echo "— 15b. El revisor con su propio modelo y en sombra (14-oct: bajar el gasto) —\n";
+$cfgRev = $cfg;
+$cfgRev['openai_modelo_revisor'] = 'gpt-6-luna';
+$c = cv_cotizada('tienda');
+oa([$decBien]);
+$r = turno('Y hacen envíos al interior?', $c, $cfgRev);
+caso('el revisor puede usar otro modelo que el asistente', $r === [$cfg['info']['envios']] && ($GLOBALS['OA_REVISIONES'][0]['model'] ?? '') === 'gpt-6-luna'
+    && (pedidos()[0]['model'] ?? '') === wabot_openai_modelo($cfg), json_encode([$GLOBALS['OA_REVISIONES'][0]['model'] ?? null, pedidos()[0]['model'] ?? null]));
+$cfgRev['openai_modelo_revisor'] = '';
+caso('vacío = el mismo modelo del asistente', wabot_comercial_revisor_modelo($cfgRev) === wabot_openai_modelo($cfgRev));
+caso('el modelo del revisor y la sombra se guardan desde el panel', in_array('openai_modelo_revisor', wabot_ajustes_claves(), true) && in_array('openai_revisor_sombra', wabot_ajustes_claves(), true));
+
+caso('en los tests y las simulaciones la sombra no corre sola', wabot_comercial_revisor_sombra_modelo($cfg) === '');
+$httpAntes = $GLOBALS['WABOT_TEST_OPENAI_HTTP'];
+unset($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $GLOBALS['WABOT_TEST_SIN_RED']);
+$sinClave = $cfg;
+unset($sinClave['openai_revisor_sombra']);
+$sombraDef = wabot_comercial_revisor_sombra_modelo($sinClave);
+$sombraOff = wabot_comercial_revisor_sombra_modelo(['openai_revisor_sombra' => ''] + $cfg);
+$sombraIgual = wabot_comercial_revisor_sombra_modelo(['openai_revisor_sombra' => 'gpt-6-sol', 'openai_modelo' => 'gpt-6-sol', 'openai_modelo_revisor' => ''] + $cfg);
+$GLOBALS['WABOT_TEST_OPENAI_HTTP'] = $httpAntes;
+$GLOBALS['WABOT_TEST_SIN_RED'] = true;
+caso('de fábrica la sombra es gpt-6-luna; vacía, apagada; igual al revisor, no corre', $sombraDef === 'gpt-6-luna' && $sombraOff === '' && $sombraIgual === '',
+    json_encode([$sombraDef, $sombraOff, $sombraIgual]));
+
+$c = cv_cotizada('tienda');
+$GLOBALS['WABOT_TEST_SOMBRA_DIR'] = $tmp . '/sombra';
+$GLOBALS['WABOT_TEST_DESPUES_AL_TOQUE'] = true;
+$GLOBALS['WABOT_TEST_REVISOR_SOMBRA'] = 'gpt-6-luna';
+oa([$decBien], [], [['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'No dice si llegan al interior']], 'falta_contestar' => []]]);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+$s0 = $GLOBALS['OA_SOMBRAS'][0] ?? [];
+$r0 = $GLOBALS['OA_REVISIONES'][0] ?? [];
+caso('la sombra revisa exactamente lo mismo, con su modelo, y no cambia la respuesta', $r === [$cfg['info']['envios']] && count($GLOBALS['OA_REVISIONES']) === 1
+    && count($GLOBALS['OA_SOMBRAS']) === 1 && ($s0['model'] ?? '') === 'gpt-6-luna' && ($s0['input'] ?? null) === ($r0['input'] ?? false)
+    && ($s0['instructions'] ?? null) === ($r0['instructions'] ?? false) && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'ok' && empty($c['comercial_pausa']),
+    json_encode([$r, count($GLOBALS['OA_SOMBRAS']), $s0['model'] ?? null], JSON_UNESCAPED_UNICODE));
+$filasSombra = @file($tmp . '/sombra/' . date('Y-m') . '.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+$fs = json_decode((string)end($filasSombra), true) ?: [];
+caso('se anota la comparación: el revisor aprobó y la sombra frenaba', count($filasSombra) === 1 && ($fs['real']['ok'] ?? null) === true && ($fs['sombra']['ok'] ?? null) === false
+    && ($fs['modelo_sombra'] ?? '') === 'gpt-6-luna' && ($fs['cliente'] ?? '') === 'Y hacen envíos al interior?' && strpos((string)($fs['borrador'] ?? ''), 'Respuesta oficial') !== false,
+    json_encode($fs, JSON_UNESCAPED_UNICODE));
+$resSombra = wabot_comercial_sombra_resumen(1);
+caso('el resumen cuenta lo que coincide y lo que no', $resSombra['comparadas'] === 1 && $resSombra['coinciden'] === 0 && $resSombra['n_de_mas'] === 1 && $resSombra['n_de_menos'] === 0
+    && $resSombra['modelo_sombra'] === 'gpt-6-luna', json_encode(array_diff_key($resSombra, ['de_mas' => 1, 'de_menos' => 1])));
+$usoSombra = wabot_ia_uso_resumen();
+caso('su costo se anota aparte, como sombra', isset($usoSombra['por_tarea']['comercial_revisor_sombra']) && isset($usoSombra['por_modo']['sombra']));
+$c = cv_cotizada('tienda');
+oa([$decBien], [], ['falla']);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+caso('si la sombra falla, el cliente recibe lo mismo y no cuenta como comparación', $r === [$cfg['info']['envios']] && count($GLOBALS['OA_SOMBRAS']) === 1
+    && wabot_comercial_sombra_resumen(1)['fallas'] === 1);
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pide conectar con Mercado Libre'])]);
+turno('Se puede conectar con Mercado Libre?', $c, $cfg);
+caso('sin revisión no hay sombra (pasarlo a Pablo no gasta)', count($GLOBALS['OA_SOMBRAS']) === 0);
+unset($GLOBALS['WABOT_TEST_REVISOR_SOMBRA'], $GLOBALS['WABOT_TEST_DESPUES_AL_TOQUE']);
+foreach ((array)glob($tmp . '/sombra/*') as $f) @unlink($f);
+@rmdir($tmp . '/sombra');
 
 echo "— 16. Conversaciones live: solo las que tiene el bot (Pablo, 9-oct) —\n";
 $c = cv('5491100009010TEST');
