@@ -57,7 +57,7 @@ while (($line = fgets($handle)) !== false) {
     $product = json_decode($line, true);
     if (!is_array($product) || !isset($product['id'])) continue;
     if ($id !== '') {
-        if ($product['id'] === $id && ($view === 'admin' || !empty($product['visible']))) {
+        if ($product['id'] === $id && !empty($product['visible'])) {
             $found = $product;
             break;
         }
@@ -67,7 +67,7 @@ while (($line = fgets($handle)) !== false) {
         if ($product['id'] === $cursor) $afterCursor = true;
         continue;
     }
-    if ($view !== 'admin' && empty($product['visible'])) continue;
+    if (empty($product['visible'])) continue;
     if ($category !== '' && $product['category'] !== $category) continue;
     if ($query !== '') {
         $haystack = fold(($product['name'] ?? '') . ' ' . ($product['description'] ?? '') . ' ' . ($categoryTitles[$product['category']] ?? ''));
