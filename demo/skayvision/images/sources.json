@@ -1,0 +1,19 @@
+{
+  "nota": "Fotos extra de Pexels (licencia de Pexels) sumadas a las 6 de Pablo para que cada armazón del catálogo tenga su foto. Reemplazar por fotos reales de los productos de skay.vision.",
+  "fotos": [
+    { "archivo": "p-mia.webp", "fuente": "https://www.pexels.com/photo/4226865/", "slot": "producto: Armazón Mía" },
+    { "archivo": "p-dora.webp", "fuente": "https://www.pexels.com/photo/4226870/", "slot": "producto: Armazón Dora" },
+    { "archivo": "p-noa.webp", "fuente": "https://www.pexels.com/photo/26682029/", "slot": "producto: Armazón Noa" },
+    { "archivo": "p-clara.webp", "fuente": "https://www.pexels.com/photo/29274469/", "slot": "producto: Armazón Clara" },
+    { "archivo": "p-tilo.webp", "fuente": "https://www.pexels.com/photo/6143506/", "slot": "producto: Armazón Tilo" },
+    { "archivo": "p-gala.webp", "fuente": "https://www.pexels.com/photo/5752242/", "slot": "producto: Armazón Gala" },
+    { "archivo": "p-bruno.webp", "fuente": "https://www.pexels.com/photo/33129356/", "slot": "producto: Armazón Bruno" },
+    { "archivo": "p-piloto.webp", "fuente": "https://www.pexels.com/photo/32398468/", "slot": "producto: Armazón Piloto" },
+    { "archivo": "p-roma.webp", "fuente": "https://www.pexels.com/photo/29538703/", "slot": "producto: Anteojos de sol Roma" },
+    { "archivo": "p-nina.webp", "fuente": "https://www.pexels.com/photo/29538709/", "slot": "producto: Anteojos de sol Nina" },
+    { "archivo": "p-costa.webp", "fuente": "https://www.pexels.com/photo/26575039/", "slot": "producto: Anteojos de sol Costa" },
+    { "archivo": "p-urbano.webp", "fuente": "https://www.pexels.com/photo/8360292/", "slot": "producto: Anteojos de sol Urbano" },
+    { "archivo": "g-flores.webp", "fuente": "https://www.pexels.com/photo/4439427/", "slot": "galería de trabajos" },
+    { "archivo": "g-marmol.webp", "fuente": "https://www.pexels.com/photo/5677349/", "slot": "galería de trabajos" }
+  ]
+}
