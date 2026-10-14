@@ -3,7 +3,7 @@
  * wabot/test-comercial-simular-vivo.php — charlas simuladas de punta a punta contra GPT Sol REAL,
  * con el flujo comercial en AUTOMÁTICO, como contestaría en producción (9-oct-2026).
  *
- *   php wabot/test-comercial-simular-vivo.php [wabot/test-comercial-simulaciones.json] [--ids=01,05] [--md=salida.md]
+ *   php wabot/test-comercial-simular-vivo.php [wabot/test-comercial-simulaciones.json] [--ids=01,05] [--md=salida.md] [--modelo=gpt-6.1-sol]
  *
  * Cada charla tiene los turnos del cliente (escritos a partir de comportamientos reales de los
  * exports). Un turno con "si": "oferta" solo se manda si el bot ya ofreció la demo (si no, se
@@ -33,14 +33,16 @@ $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) {
 
 $args = array_slice($argv, 1);
 $archivo = __DIR__ . '/test-comercial-simulaciones.json';
-$ids = []; $md = '';
+$ids = []; $md = ''; $modelo = '';
 foreach ($args as $a) {
     if (str_starts_with($a, '--ids=')) $ids = array_filter(explode(',', substr($a, 6)));
     elseif (str_starts_with($a, '--md=')) $md = substr($a, 5);
+    elseif (str_starts_with($a, '--modelo=')) $modelo = substr($a, 9);   // comparar modelos sin tocar Ajustes (14-oct)
     else $archivo = $a;
 }
 if (wabot_openai_key() === '') { fwrite(STDERR, "Falta la key de OpenAI.\n"); exit(2); }
 $cfg = wabot_config_load();
+if ($modelo !== '') $cfg['openai_modelo'] = $modelo;
 $cfg['activo'] = true;
 $cfg['form_activo'] = true;
 $escenarios = json_decode((string)file_get_contents($archivo), true);

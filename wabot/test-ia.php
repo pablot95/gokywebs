@@ -295,6 +295,28 @@ caso('un modelo sin precio no inventa un costo', wabot_openai_costo('modelo-nuev
 caso('y se puede cargar el precio a mano', wabot_openai_costo('modelo-nuevo', 1000000, 0, 0, ['openai_precio_entrada' => 3, 'openai_precio_salida' => 9]) === 3.0);
 caso('el costo se puede ver por conversación', (wabot_ia_uso_conversacion('5491100000001TEST')['llamadas'] ?? 0) === 1, json_encode(wabot_ia_uso_conversacion('5491100000001TEST')));
 caso('y por tarea', isset($uso['por_tarea']['conversacion']));
+// 14-oct: desde GPT-5.6 escribir la caché cuesta 1,25× la entrada, y gpt-6.1-sol lee la caché a mitad de precio.
+caso('la escritura de caché se cobra a 1,25× la entrada', abs(wabot_openai_costo('gpt-6-sol', 17000, 0, 200, null, 16500) - 0.04425) < 0.0000001);
+caso('gpt-6.1-sol tiene precio y la caché sale la mitad que en gpt-6-sol', abs(wabot_openai_costo('gpt-6.1-sol', 17000, 16800, 200) - 0.00408) < 0.0000001
+    && wabot_openai_costo('gpt-6.1-sol', 17000, 16800, 200) < wabot_openai_costo('gpt-6-sol', 17000, 16800, 200));
+caso('la escritura no puede pasar de lo que no vino de la caché', abs(wabot_openai_costo('gpt-6-sol', 1000, 900, 0, null, 500) - 0.00043) < 0.0000001);
+caso('un modelo sin recargo de escritura la cobra como entrada', abs(wabot_openai_costo('gpt-5.4', 1000, 0, 0, null, 1000) - 0.0025) < 0.0000001);
+$filaEscrita = wabot_ia_uso_registrar('prueba_escritura', 'gpt-6-sol', ['input_tokens' => 17000, 'input_tokens_details' => ['cached_tokens' => 0, 'cache_write_tokens' => 16500], 'output_tokens' => 200], ['usuario' => 'escrituraTEST']);
+caso('el uso anota los tokens escritos en la caché y los cobra', $filaEscrita['escritura'] === 16500 && abs($filaEscrita['costo_usd'] - 0.04425) < 0.0000001, json_encode($filaEscrita));
+caso('y el resumen del mes los suma', wabot_ia_uso_resumen()['total']['escritura'] >= 16500 && (wabot_ia_uso_resumen()['por_tarea']['prueba_escritura']['escritura'] ?? 0) === 16500);
+caso('una llamada puede usar otro modelo que el del panel (el revisor y su sombra)', (function () {
+    $antes = $GLOBALS['WABOT_TEST_OPENAI_HTTP'] ?? null;
+    $modeloPedido = null;
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) use (&$modeloPedido) {
+        $modeloPedido = $payload['model'];
+        return [200, json_encode(['model' => $payload['model'], 'status' => 'completed', 'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => '{"ok":true}']]]],
+            'usage' => ['input_tokens' => 10, 'output_tokens' => 2]])];
+    };
+    $r = wabot_openai_llamar('prueba_modelo', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6-sol'], ['modelo' => 'gpt-6-luna']);
+    $r2 = wabot_openai_llamar('prueba_modelo', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6-sol'], ['modelo' => 'no vale!']);
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = $antes;
+    return $r['ok'] && $r['modelo'] === 'gpt-6-luna' && $r2['modelo'] === 'gpt-6-sol' && $modeloPedido === 'gpt-6-sol';
+})());
 
 echo "— 9. Modo shadow: contesta Gemini, OpenAI solo se anota —\n";
 

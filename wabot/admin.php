@@ -490,6 +490,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
         if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
         if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
+        // El revisor del flujo comercial y su sombra (14-oct): vacío = el mismo modelo / sombra apagada.
+        foreach (['openai_modelo_revisor', 'openai_revisor_sombra'] as $claveModelo) {
+            if (!isset($_POST[$claveModelo])) continue;
+            $valorModelo = trim((string)$_POST[$claveModelo]);
+            if ($valorModelo === '' || wabot_openai_modelo_valido($valorModelo)) $cfg[$claveModelo] = $valorModelo;
+        }
         if (in_array($_POST['openai_esfuerzo'] ?? '', ['none', 'low', 'medium', 'high'], true)) $cfg['openai_esfuerzo'] = (string)$_POST['openai_esfuerzo'];
         if (isset($_POST['ia_max_mensajes']))   $cfg['ia_max_mensajes']   = max(1, min(3, (int)$_POST['ia_max_mensajes']));
         if (isset($_POST['ia_historial']))      $cfg['ia_historial']      = max(4, min(60, (int)$_POST['ia_historial']));
@@ -2485,6 +2491,7 @@ function burbujaCita(t, chat) {
         $iaDias = in_array((int)($_GET['dias'] ?? 7), [1, 7, 30], true) ? (int)$_GET['dias'] : 7;
         $iaUso = wabot_ia_uso_resumen($iaMes);
         $iaSombras = wabot_ia_sombra_leer($iaDias, 150);
+        $revSombra = wabot_comercial_sombra_resumen($iaDias, 30);
         $iaModo = wabot_ia_proveedor($cfg);
         $usd = function ($v) { return 'US$ ' . number_format((float)$v, (float)$v < 1 ? 4 : 2, ',', '.'); };
         $num = function ($v) { return number_format((int)$v, 0, ',', '.'); };
@@ -2492,7 +2499,9 @@ function burbujaCita(t, chat) {
                          'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex',
                          'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel',
                          'bienvenida_rubro' => '¿El primer mensaje ya dice el rubro? (bienvenida)',
-                         'revision' => 'Revisión de las charlas cada media hora'];
+                         'revision' => 'Revisión de las charlas cada media hora',
+                         'comercial' => 'Flujo comercial (cada respuesta)', 'comercial_revisor' => 'Revisor de cada respuesta',
+                         'comercial_revisor_sombra' => 'Revisor en sombra (solo compara)', 'postprecio' => 'Consultas después del precio'];
         $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
     ?>
         <style>
@@ -2526,10 +2535,10 @@ function burbujaCita(t, chat) {
             <div class="ia-num">
                 <div><span class="meta">Costo estimado</span><strong><?= $usd($iaUso['total']['costo_usd']) ?></strong></div>
                 <div><span class="meta">Llamadas</span><strong><?= $num($iaUso['total']['llamadas']) ?></strong></div>
-                <div><span class="meta">Tokens de entrada</span><strong><?= $num($iaUso['total']['entrada']) ?></strong><span class="meta"><?= $num($iaUso['total']['cache']) ?> en caché</span></div>
+                <div><span class="meta">Tokens de entrada</span><strong><?= $num($iaUso['total']['entrada']) ?></strong><span class="meta"><?= $num($iaUso['total']['cache']) ?> en caché<?= $iaUso['total']['escritura'] ? ' · ' . $num($iaUso['total']['escritura']) . ' escritos en caché' : '' ?></span></div>
                 <div><span class="meta">Tokens de salida</span><strong><?= $num($iaUso['total']['salida']) ?></strong></div>
             </div>
-            <p class="meta">Es una estimación con los precios por millón de tokens de cada modelo. Lo que te cobra OpenAI de verdad está en <strong>platform.openai.com → Usage</strong>.
+            <p class="meta">Es una estimación con los precios por millón de tokens de cada modelo (desde el 14-oct suma también la escritura de la caché, que cuesta 1,25 veces la entrada). Lo que te cobra OpenAI de verdad está en <strong>platform.openai.com → Usage</strong>.
                 <?= $iaUso['sin_precio'] ? '<span style="color:var(--warn)">' . (int)$iaUso['sin_precio'] . ' llamada(s) de un modelo sin precio cargado no suman al costo: cargalo en Ajustes.</span>' : '' ?></p>
             <?php if ($iaUso['total']['llamadas'] > 0): ?>
                 <table class="ia-tabla">
@@ -2538,7 +2547,7 @@ function burbujaCita(t, chat) {
                         <tr><td><?= $e($nombresTarea[$t] ?? $t) ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $num($v['entrada']) ?></td><td class="n"><?= $num($v['salida']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                     <?php foreach ($iaUso['por_modo'] as $m => $v): ?>
-                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, en modo prueba (no se mandó)' : ($m === 'revision' ? 'de eso, la revisión de las charlas (no se manda nada)' : 'de eso, respuestas reales') ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, pruebas en sombra (no se mandó ni decidió nada)' :($m === 'revision' ? 'de eso, la revisión de las charlas (no se manda nada)' : 'de eso, respuestas reales') ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                 </table>
                 <h3 style="margin:16px 0 4px">Las conversaciones que más gastaron</h3>
@@ -2551,6 +2560,58 @@ function burbujaCita(t, chat) {
                 <?php $conversacionesMes = count($iaUso['por_conv']); if ($conversacionesMes > 0): ?>
                     <p class="meta" style="margin-top:8px">Promedio: <?= $usd($iaUso['total']['costo_usd'] / $conversacionesMes) ?> por conversación (<?= $num($conversacionesMes) ?> conversaciones este mes).</p>
                 <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <?php
+            /* Revisor en sombra (14-oct): ¿un modelo más barato revisa igual? */
+            $sombraModelo = wabot_comercial_revisor_sombra_modelo($cfg);
+            $veredicto = function ($v) use ($e) {
+                if (($v['ok'] ?? null) === true) return '<p class="meta" style="color:var(--ac)">La aprobaba.</p>';
+                $h = '';
+                foreach ((array)($v['problemas'] ?? []) as $p) $h .= '<div class="ia-msg"><strong>' . $e((string)($p['tipo'] ?? '')) . ':</strong> ' . $e((string)($p['detalle'] ?? '')) . '</div>';
+                return $h !== '' ? $h : '<p class="meta">La frenaba, sin detalle.</p>';
+            };
+        ?>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <h2 style="margin:0">Revisor en sombra</h2>
+                <div class="fila" style="gap:6px">
+                    <?php foreach ([1 => 'Hoy', 7 => '7 días', 30 => '30 días'] as $d => $l): ?>
+                        <a href="admin.php?tab=ia&dias=<?= $d ?>"><button type="button" class="<?= $iaDias === $d ? '' : 'sec' ?>"><?= $l ?></button></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <p class="meta">Cuando el cliente ya tiene su respuesta, <?= $sombraModelo !== '' ? '<code>' . $e($sombraModelo) . '</code>' : 'otro modelo' ?> revisa lo mismo que el revisor de verdad (<code><?= $e(wabot_comercial_revisor_modelo($cfg)) ?></code>), sin decidir nada. Si coinciden casi siempre, el revisor se puede pasar al modelo barato en <a href="admin.php?tab=ajustes">Ajustes</a>.
+                <?= $sombraModelo === '' ? '<span style="color:var(--warn)">Ahora está apagada: se prende en Ajustes → Revisor en sombra.</span>' : '' ?></p>
+            <?php if ($revSombra['comparadas'] === 0): ?>
+                <p class="meta">Todavía no hay comparaciones en estos días: aparecen cuando el bot contesta con el flujo comercial.</p>
+            <?php else: ?>
+                <div class="ia-num">
+                    <div><span class="meta">Comparadas</span><strong><?= $num($revSombra['comparadas']) ?></strong></div>
+                    <div><span class="meta">Coinciden</span><strong><?= round(100 * $revSombra['coinciden'] / $revSombra['comparadas']) ?>%</strong></div>
+                    <div><span class="meta">Frenaba de más</span><strong><?= $num($revSombra['n_de_mas']) ?></strong><span class="meta">el revisor la aprobó</span></div>
+                    <div><span class="meta">Dejaba pasar</span><strong><?= $num($revSombra['n_de_menos']) ?></strong><span class="meta">el revisor la frenó</span></div>
+                    <div><span class="meta">Costo de la sombra</span><strong><?= $usd($revSombra['costo_sombra']) ?></strong><span class="meta">el revisor: <?= $usd($revSombra['costo_real']) ?></span></div>
+                </div>
+                <?php if ($revSombra['fallas']): ?><p class="meta"><?= $num($revSombra['fallas']) ?> vez/veces la sombra no contestó (no cuentan).</p><?php endif; ?>
+                <?php foreach (['de_menos' => 'Dejaba pasar (lo importante)', 'de_mas' => 'Frenaba de más'] as $grupo => $tituloGrupo): ?>
+                    <?php if ($revSombra[$grupo]): ?>
+                        <h3 style="margin:16px 0 4px"><?= $tituloGrupo ?></h3>
+                        <?php foreach ($revSombra[$grupo] as $fila): ?>
+                            <div class="ia-comp">
+                                <div class="meta"><?= $e(date('d/m H:i', (int)$fila['ts'])) ?> ·
+                                    <a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$fila['conv']) ?>"><?= $e((string)$fila['conv']) ?></a> · <?= $e((string)$fila['modo']) ?></div>
+                                <div class="ia-cliente"><strong>Cliente:</strong> <?= $e((string)$fila['cliente']) ?></div>
+                                <details><summary class="meta" style="cursor:pointer">Lo que iba a recibir</summary><div class="ia-msg"><?= $e((string)$fila['borrador']) ?></div></details>
+                                <div class="ia-cols" style="margin-top:8px">
+                                    <div class="ia-col"><strong>Revisor (<?= $e((string)$fila['modelo']) ?>)</strong><?= $veredicto($fila['real'] ?? []) ?></div>
+                                    <div class="ia-col"><strong>Sombra (<?= $e((string)$fila['modelo_sombra']) ?>)</strong><?= $veredicto($fila['sombra'] ?? []) ?></div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             <?php endif; ?>
         </div>
 
@@ -2890,6 +2951,12 @@ function burbujaCita(t, chat) {
                     </select>
                 </div>
             </div>
+            <?php $sombraGuardada = $cfg['openai_revisor_sombra'] ?? null; ?>
+            <div class="fila" style="gap:14px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
+                <div><label>Modelo del revisor de cada respuesta</label><input type="text" name="openai_modelo_revisor" value="<?= $e((string)($cfg['openai_modelo_revisor'] ?? '')) ?>" placeholder="el mismo" style="width:170px" autocomplete="off"></div>
+                <div><label>Revisor en sombra (solo compara)</label><input type="text" name="openai_revisor_sombra" value="<?= $e($sombraGuardada === null ? 'gpt-6-luna' : (string)$sombraGuardada) ?>" placeholder="apagado" style="width:170px" autocomplete="off"></div>
+            </div>
+            <p class="meta" style="margin-top:6px">El revisor lee cada respuesta del flujo comercial antes de que salga. Vacío = el mismo modelo de arriba. La sombra revisa lo mismo con otro modelo cuando el cliente ya tiene su respuesta, sin decidir nada, para comparar en la pestaña <a href="admin.php?tab=ia">IA</a> si un modelo más barato alcanza. Vacío = apagada.</p>
             <div class="fila" style="gap:14px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
                 <div><label>Mensajes por respuesta (máx.)</label><input type="number" name="ia_max_mensajes" min="1" max="3" value="<?= (int)wabot_ia_numero($cfg, 'ia_max_mensajes', 2, 1, 3) ?>" style="width:90px"></div>
                 <div><label>Mensajes de la charla que lee</label><input type="number" name="ia_historial" min="4" max="60" value="<?= (int)wabot_ia_numero($cfg, 'ia_historial', 16, 4, 60) ?>" style="width:90px"></div>
@@ -2899,7 +2966,7 @@ function burbujaCita(t, chat) {
             <p class="meta" style="margin-top:8px">Lo más viejo de la charla no se manda entero: va resumido con lo que dijo el cliente, más la ficha (rubro, qué vende, qué quiere lograr). Así no crece el costo en charlas largas y no se le vuelve a preguntar lo que ya dijo.</p>
             <details style="margin-top:8px">
                 <summary class="meta" style="cursor:pointer">Precios para estimar el costo (dólares por millón de tokens)</summary>
-                <p class="meta">Vacío = los precios oficiales que trae el bot para ese modelo<?php $pOf = wabot_openai_precios()[$modeloOpenaiActual] ?? null; echo $pOf ? " (para $modeloOpenaiActual: entrada {$pOf[0]}, en caché {$pOf[1]}, salida {$pOf[2]})" : ''; ?>. Cargalos a mano solo si OpenAI los cambia o usás otro modelo.</p>
+                <p class="meta">Vacío = los precios oficiales que trae el bot para ese modelo<?php $pOf = wabot_openai_precios()[$modeloOpenaiActual] ?? null; echo $pOf ? " (para $modeloOpenaiActual: entrada {$pOf[0]}, en caché {$pOf[1]}, escritura de caché " . ($pOf[3] ?? $pOf[0]) . ", salida {$pOf[2]})" : ''; ?>. Cargalos a mano solo si OpenAI los cambia o usás otro modelo.</p>
                 <div class="fila" style="gap:14px;flex-wrap:wrap">
                     <div><label>Entrada</label><input type="text" name="openai_precio_entrada" value="<?= $e((string)($cfg['openai_precio_entrada'] ?? '')) ?>" style="width:90px"></div>
                     <div><label>Entrada en caché</label><input type="text" name="openai_precio_cache" value="<?= $e((string)($cfg['openai_precio_cache'] ?? '')) ?>" style="width:90px"></div>

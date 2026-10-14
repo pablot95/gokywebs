@@ -683,11 +683,29 @@ function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') 
         . "\n\nLAS REGLAS DEL ASISTENTE (lo que recibió el asistente, tal cual; son para él: vos las usás para saber qué está bien y no marcarlo)\n<<<\n"
         . wabot_comercial_instrucciones_comportamiento() . "\n>>>\n\n" . wabot_comercial_info($cfg);
     $motivo = trim((string)($b['motivo'] ?? ''));
+    $borrador = wabot_comercial_borrador_texto((array)($b['mensajes'] ?? []));
     $entrada = wabot_comercial_contexto($texto, $conv, $cfg)
         . "\n\nDECISIÓN DEL ASISTENTE: accion=" . (string)($b['accion'] ?? '') . ', solucion=' . (string)($b['solucion'] ?? '') . ($motivo !== '' ? ', motivo=' . $motivo : '')
-        . "\n\nRESPUESTA PROPUESTA (lo que va a recibir el cliente, en orden):\n" . wabot_comercial_borrador_texto((array)($b['mensajes'] ?? []));
+        . "\n\nRESPUESTA PROPUESTA (lo que va a recibir el cliente, en orden):\n" . $borrador;
+    $clave = (string)wabot_conversation_key($conv);
+    $opciones = ['usuario' => $clave, 'max_tokens' => 1800, 'esfuerzo' => 'low'];
     $r = wabot_openai_llamar('comercial_revisor', $instrucciones, [['role' => 'user', 'content' => $entrada]], wabot_comercial_revision_esquema(), $cfg,
-        ['usuario' => (string)wabot_conversation_key($conv), 'modo' => $modo, 'max_tokens' => 1800, 'esfuerzo' => 'low']);
+        $opciones + ['modo' => $modo, 'modelo' => wabot_comercial_revisor_modelo($cfg)]);
+    $res = wabot_comercial_revision_leer($r);
+
+    // La sombra revisa lo mismo con otro modelo, cuando el cliente ya tiene su respuesta.
+    $sombra = wabot_comercial_revisor_sombra_modelo($cfg);
+    if ($sombra !== '' && $modo !== 'prueba' && $res['ok'] !== null) {
+        $datos = ['conv' => $clave, 'modo' => $modo, 'modelo' => (string)($r['modelo'] ?? ''), 'cliente' => (string)$texto, 'borrador' => $borrador];
+        wabot_despues(function () use ($sombra, $instrucciones, $entrada, $cfg, $opciones, $res, $datos) {
+            wabot_comercial_revisor_sombra_correr($sombra, $instrucciones, $entrada, $cfg, $opciones, $res, $datos);
+        });
+    }
+    return $res;
+}
+
+/** Lo que contestó el revisor (o su sombra), ya validado: ok, problemas, falta, gastado. */
+function wabot_comercial_revision_leer(array $r) {
     $gastado = ['llamadas' => $r['ok'] ? 1 : 0, 'costo_usd' => (float)($r['uso']['costo_usd'] ?? 0)];
     if (!$r['ok'] || !is_array($r['datos'])) {
         return ['ok' => null, 'problemas' => [], 'falta' => [], 'error' => (string)($r['error'] ?? 'sin_datos'), 'gastado' => $gastado];
@@ -705,6 +723,96 @@ function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') 
     if ($falta && !in_array('no_contesta', array_column($problemas, 'tipo'), true)) $problemas[] = ['tipo' => 'no_contesta', 'detalle' => 'Queda sin contestar: ' . implode(' / ', $falta)];
     if (!$ok && !$problemas) $ok = true;
     return ['ok' => $ok, 'problemas' => $ok ? [] : $problemas, 'falta' => $ok ? [] : $falta, 'error' => null, 'gastado' => $gastado];
+}
+
+/* ─────────────────────────── El revisor en sombra (Pablo, 14-oct) ───────────────────────────
+ * El revisor lee las mismas ~17k fichas de reglas que el asistente para contestar
+ * casi siempre "ok", y era un 40% del gasto del flujo comercial. Antes de pasarlo a
+ * un modelo más barato, ese modelo revisa en sombra: lee exactamente lo mismo que
+ * el revisor de verdad, no decide nada, y se anota qué habría dicho en
+ * data/revisor-sombra/ para comparar en la pestaña IA. */
+
+/** El modelo del revisor: el de Ajustes para él o, vacío, el mismo del asistente. */
+function wabot_comercial_revisor_modelo($cfg) {
+    $m = trim((string)wabot_ia_ajuste($cfg, 'openai_modelo_revisor'));
+    return wabot_openai_modelo_valido($m) ? $m : wabot_openai_modelo($cfg);
+}
+
+/**
+ * El modelo que revisa en sombra, o '' si está apagada. De fábrica gpt-6-luna;
+ * vacío en Ajustes la apaga. Los tests y las simulaciones (API simulada o sin
+ * red) no la corren salvo que la pidan con WABOT_TEST_REVISOR_SOMBRA.
+ */
+function wabot_comercial_revisor_sombra_modelo($cfg) {
+    if (array_key_exists('WABOT_TEST_REVISOR_SOMBRA', $GLOBALS)) {
+        $m = (string)$GLOBALS['WABOT_TEST_REVISOR_SOMBRA'];
+    } elseif (isset($GLOBALS['WABOT_TEST_OPENAI_HTTP']) || !empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        return '';
+    } else {
+        $guardado = wabot_ia_ajuste($cfg, 'openai_revisor_sombra');
+        $m = $guardado === null ? 'gpt-6-luna' : (string)$guardado;
+    }
+    $m = trim($m);
+    return wabot_openai_modelo_valido($m) && $m !== wabot_comercial_revisor_modelo($cfg) ? $m : '';
+}
+
+function wabot_comercial_sombra_dir() {
+    return (string)($GLOBALS['WABOT_TEST_SOMBRA_DIR'] ?? (WABOT_DATA . '/revisor-sombra'));
+}
+
+/**
+ * Revisa en sombra y anota la comparación. No cambia nada de la charla ni
+ * frena al bot si OpenAI falla (sin_circuito).
+ */
+function wabot_comercial_revisor_sombra_correr($modelo, $instrucciones, $entrada, $cfg, array $opciones, array $real, array $datos) {
+    $r = wabot_openai_llamar('comercial_revisor_sombra', $instrucciones, [['role' => 'user', 'content' => $entrada]], wabot_comercial_revision_esquema(), $cfg,
+        $opciones + ['modo' => 'sombra', 'modelo' => $modelo, 'sin_circuito' => true]);
+    $s = wabot_comercial_revision_leer($r);
+    $resumir = function (array $v) {
+        return ['ok' => $v['ok'], 'problemas' => (array)$v['problemas'], 'falta' => (array)$v['falta']];
+    };
+    $fila = ['ts' => time(), 'conv' => (string)$datos['conv'], 'modo' => (string)$datos['modo'],
+             'modelo' => (string)$datos['modelo'], 'modelo_sombra' => (string)($r['modelo'] ?? $modelo),
+             'cliente' => mb_substr((string)$datos['cliente'], 0, 600), 'borrador' => mb_substr((string)$datos['borrador'], 0, 1500),
+             'real' => $resumir($real), 'sombra' => $resumir($s) + ['error' => $s['ok'] === null ? (string)($r['error'] ?? 'sin_datos') : null],
+             'costo_real' => (float)($real['gastado']['costo_usd'] ?? 0), 'costo_sombra' => (float)($s['gastado']['costo_usd'] ?? 0)];
+    $dir = wabot_comercial_sombra_dir();
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    @file_put_contents($dir . '/' . date('Y-m') . '.jsonl', json_encode($fila, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+    return $fila;
+}
+
+/**
+ * Las comparaciones de los últimos $dias y cuánto coinciden. "De más": la sombra
+ * frenaba lo que el revisor aprobó. "De menos": aprobaba lo que el revisor frenó.
+ */
+function wabot_comercial_sombra_resumen($dias = 7, $limite = 40) {
+    $desde = time() - max(1, (int)$dias) * 86400;
+    $r = ['comparadas' => 0, 'coinciden' => 0, 'de_mas' => [], 'de_menos' => [], 'fallas' => 0,
+          'costo_real' => 0.0, 'costo_sombra' => 0.0, 'modelo_sombra' => ''];
+    $meses = array_unique([date('Y-m', $desde), date('Y-m')]);
+    foreach ($meses as $mes) {
+        foreach (@file(wabot_comercial_sombra_dir() . '/' . $mes . '.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $linea) {
+            $f = json_decode($linea, true);
+            if (!is_array($f) || (int)($f['ts'] ?? 0) < $desde) continue;
+            $okReal = $f['real']['ok'] ?? null;
+            $okSombra = $f['sombra']['ok'] ?? null;
+            if ($okSombra === null) { $r['fallas']++; continue; }
+            $r['comparadas']++;
+            $r['costo_real'] += (float)($f['costo_real'] ?? 0);
+            $r['costo_sombra'] += (float)($f['costo_sombra'] ?? 0);
+            $r['modelo_sombra'] = (string)($f['modelo_sombra'] ?? '');
+            if ($okReal === $okSombra) $r['coinciden']++;
+            elseif ($okReal === true) $r['de_mas'][] = $f;
+            else $r['de_menos'][] = $f;
+        }
+    }
+    foreach (['de_mas', 'de_menos'] as $k) {
+        usort($r[$k], function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
+        $r['n_' . $k] = count($r[$k]);
+        $r[$k] = array_slice($r[$k], 0, $limite);
+    }
+    return $r;
 }
 
 /** Conserva las dudas hasta que una revisión confirme que quedaron contestadas. */
