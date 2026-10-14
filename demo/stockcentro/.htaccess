@@ -1,0 +1,3 @@
+<FilesMatch "^productos(?:-precio-(?:asc|desc))?\.jsonl$">
+  Require all denied
+</FilesMatch>
