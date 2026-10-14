@@ -1,0 +1,21 @@
+{"id":"vino-blend","name":"Blend tinto","category":"vinos","price":17900,"image":"03_vinos_1x1.webp","description":"Un tinto para descubrir distintas expresiones del vino.","visible":true}
+{"id":"vino-cabernet","name":"Vino tinto Cabernet Sauvignon","category":"vinos","price":16500,"image":"03_vinos_1x1.webp","description":"Otra forma de recorrer los sabores del vino cuyano.","visible":true}
+{"id":"vino-torrontes","name":"Vino blanco Torrontés","category":"vinos","price":15200,"image":"03_vinos_1x1.webp","description":"Una opción de vino blanco para explorar la selección cuyana.","visible":true}
+{"id":"vino-malbec","name":"Vino tinto Malbec","category":"vinos","price":14900,"image":"03_vinos_1x1.webp","description":"Un tinto para acompañar encuentros y comidas compartidas.","visible":true}
+{"id":"vino-bonarda","name":"Vino tinto Bonarda","category":"vinos","price":13900,"image":"03_vinos_1x1.webp","description":"Un vino tinto más para explorar la selección regional.","visible":true}
+{"id":"aceite-oliva-500","name":"Aceite de oliva 500 ml","category":"oliva","price":12900,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Aceite de oliva para sumar sabor a la mesa de todos los días.","visible":true}
+{"id":"almendras","name":"Almendras","category":"frutos","price":10900,"image":"05_frutos_secos_1x1.webp","description":"Almendras para picadas, colaciones o recetas.","visible":true}
+{"id":"nueces","name":"Nueces seleccionadas","category":"frutos","price":9600,"image":"05_frutos_secos_1x1.webp","description":"Nueces para tener a mano en la cocina o compartir.","visible":true}
+{"id":"mix-frutos-secos","name":"Mix de frutos secos","category":"frutos","price":8900,"image":"05_frutos_secos_1x1.webp","description":"Una selección de frutos secos para picadas y momentos de pausa.","visible":true}
+{"id":"damascos-secos","name":"Damascos secos","category":"frutos","price":8800,"image":"05_frutos_secos_1x1.webp","description":"Fruta seca para combinar con otros sabores de la despensa.","visible":true}
+{"id":"aceitunas-negras","name":"Aceitunas negras","category":"oliva","price":8200,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Para acompañar aperitivos, ensaladas y picadas.","visible":true}
+{"id":"tomates-secos","name":"Tomates secos","category":"despensa","price":7900,"image":"06_condimentos_1x1.webp","description":"Un ingrediente para sumar intensidad a platos y picadas.","visible":true}
+{"id":"aceite-oliva-250","name":"Aceite de oliva 250 ml","category":"oliva","price":7900,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Formato pequeño para tener aceite de oliva siempre a mano.","visible":true}
+{"id":"aceitunas-verdes","name":"Aceitunas verdes","category":"oliva","price":7800,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Una opción clásica para aperitivos y picadas.","visible":true}
+{"id":"pasta-aceitunas-negras","name":"Pasta de aceitunas negras","category":"oliva","price":7400,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Para servir sobre tostadas o sumar a preparaciones.","visible":true}
+{"id":"pasta-aceitunas-verdes","name":"Pasta de aceitunas verdes","category":"oliva","price":7200,"image":"04_aceites_y_aceitunas_1x1.webp","description":"Ideal para untar, acompañar panes o sumar a una picada.","visible":true}
+{"id":"condimentos-regionales","name":"Selección de condimentos","category":"despensa","price":6900,"image":"06_condimentos_1x1.webp","description":"Sabores para descubrir nuevas combinaciones en la cocina.","visible":true}
+{"id":"mix-especias","name":"Mix de especias","category":"despensa","price":6200,"image":"06_condimentos_1x1.webp","description":"Una selección de especias para usar en distintas recetas.","visible":true}
+{"id":"pasas-uva","name":"Pasas de uva","category":"frutos","price":5900,"image":"05_frutos_secos_1x1.webp","description":"Una opción para preparar recetas o disfrutar sola.","visible":true}
+{"id":"sal-hierbas","name":"Sal con hierbas","category":"despensa","price":5400,"image":"06_condimentos_1x1.webp","description":"Una mezcla para terminar platos y probar otros sabores.","visible":true}
+{"id":"aji-molido","name":"Ají molido","category":"despensa","price":4800,"image":"06_condimentos_1x1.webp","description":"Un condimento clásico para sumar carácter a tus comidas.","visible":true}
