@@ -136,7 +136,7 @@
       const qty = e.target.closest('[data-detail-qty]');
       if (qty) { detailQty = Math.max(1, Math.min(99, detailQty + Number(qty.dataset.detailQty))); productDialog.querySelector('[data-detail-qty-value]').textContent = detailQty; return; }
       if (e.target.closest('[data-detail-add]') && currentProduct) { addCart(currentProduct.id, detailQty); return; }
-      if (e.target.closest('[data-detail-buy]') && currentProduct) { addCart(currentProduct.id, detailQty); closeProduct(); openCart(); return; }
+      if (e.target.closest('[data-detail-buy]') && currentProduct) { closeProduct(); openCart(); return; }
       const cartQty = e.target.closest('[data-cart-qty]');
       if (cartQty) { setCartQty(cartQty.dataset.id, (cart[cartQty.dataset.id] || 0) + Number(cartQty.dataset.cartQty)); return; }
       const remove = e.target.closest('[data-cart-remove]');
@@ -175,7 +175,8 @@
         current.target = target;
         grid.innerHTML = current.items.slice(0, target).map(renderItem).join('');
         empty?.toggleAttribute('hidden', current.items.length !== 0);
-        count.textContent = `${Math.min(current.items.length, target)} ${view === 'admin' ? 'productos en pantalla' : 'productos visibles'}`;
+        const visibleCount = Math.min(current.items.length, target);
+        count.textContent = `${visibleCount} ${view === 'admin' ? (visibleCount === 1 ? 'producto en pantalla' : 'productos en pantalla') : (visibleCount === 1 ? 'producto visible' : 'productos visibles')}`;
         moreButton.hidden = !current.hasMore && current.items.length <= target;
         if (current.items.length > target) moreButton.hidden = false;
       } catch (error) {
