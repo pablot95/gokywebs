@@ -1483,11 +1483,13 @@ function _cobrosResumenHTML(calMes, dias) {
     // cobra al entregar (sin fecha, así que solo cuenta en el mes actual); los del plan
     // anual van en "Pagos anuales" y el resto en "Otros pagos". Anuales también: las
     // renovaciones que vencen en el mes; en el mes actual entran además las vencidas.
+    // 14-oct (Pablo): el saldo cuenta mientras no se cobre, aunque la web ya figure entregada
+    // (marcarla terminada con saldo pendiente hacía desaparecer plata que todavía falta).
     let saldosFalta = 0, nSaldos = 0, anualFalta = 0, nAnualSaldo = 0, nAnualRenov = 0;
     if (!esPasado) {
         for (const c of (clients || [])) {
             if (getEstado(c) !== "cliente") continue;
-            if (!esFuturo && !webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio) {
+            if (!esFuturo && _conSena(modalidadDe(c)) && !c.sinPrecio) {
                 const saldo = pagoUnicoDe(c).saldo;
                 if (saldo > 0) {
                     if (_esPlanAnual(c)) { anualFalta += saldo; nAnualSaldo++; }
@@ -1508,11 +1510,11 @@ function _cobrosResumenHTML(calMes, dias) {
         : lineasSub(subsCobrado, subsFalta);
     const subOtros = esFuturo ? "todavía no entró nada · el saldo se cobra al entregar"
         : esPasado ? (nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes")
-        : lineasSub(otros, saldosFalta, `${nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes"}${nSaldos ? ` · saldo de ${nSaldos} web${nSaldos === 1 ? "" : "s"} por entregar` : ""}`);
+        : lineasSub(otros, saldosFalta, `${nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes"}${nSaldos ? ` · saldo de ${nSaldos} web${nSaldos === 1 ? "" : "s"} por cobrar` : ""}`);
     const notaAnuales = `${nAnuales ? `${nAnuales} pago${nAnuales === 1 ? "" : "s"}: señas, saldos y renovaciones` : "ningún pago anual este mes"}`;
     const subAnuales = esFuturo ? `${notaAnuales} · el saldo se cobra al entregar`
         : esPasado ? notaAnuales
-        : lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por entregar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} por cobrar` : ""}`);
+        : lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por cobrar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} por cobrar` : ""}`);
     const faltaTotal = subsFalta + saldosFalta + anualFalta;
     const subTotal = esPasado ? "todo cobrado"
         : esFuturo ? "a cobrar (estimado)"
@@ -1604,9 +1606,9 @@ function finanzasMes(ym) {
         for (const c of (clients || [])) {
             if (getEstado(c) !== "cliente") continue;
             // Saldo de una web con seña: se espera cobrado DIAS_COBRO_SALDO después de la seña (o ya, si pasó).
-            if (!webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio) {
+            if (_conSena(modalidadDe(c)) && !c.sinPrecio) {   // también si ya figura entregada y falta cobrar
                 const saldo = pagoUnicoDe(c).saldo;
-                const base = mantToDate(c.senaAt) || mantToDate(c.clienteDesdeAt) || fechaPasoACliente(c);
+                const base =mantToDate(c.senaAt) || mantToDate(c.clienteDesdeAt) || fechaPasoACliente(c);
                 if (saldo > 0 && base) {
                     let ymd = _diaDe(new Date(base.getTime() + DIAS_COBRO_SALDO * 86400000));
                     if (ymd < hoy) ymd = hoy;
