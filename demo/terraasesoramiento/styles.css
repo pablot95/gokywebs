@@ -2,3 +2,4 @@
 /* Keep the required marker beside its label while controls occupy a new line. */
 .form-panel label{display:block}
 .form-panel input,.form-panel select,.form-panel textarea{display:block;margin-top:8px}
+@media(max-width:359px){.service-card{grid-template-columns:36% minmax(0,1fr)}.service-card h3{font-size:1.28rem;overflow-wrap:anywhere}.service-card p{font-size:.7rem;overflow-wrap:anywhere}.detail-row{grid-template-columns:minmax(0,1fr)}.detail-photo,.detail-copy{min-width:0}.detail-copy h2{font-size:2.45rem;overflow-wrap:anywhere}}
