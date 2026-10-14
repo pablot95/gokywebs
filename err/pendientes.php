@@ -25,6 +25,7 @@ const ERR_ESTADO_DIAS    = 7;       // lo que la rutina ya atendió no vuelve en
 const ERR_REPOS = [
     'autoserviciohudson.com.ar'        => 'pablot95/autoserviciohudson',
     'libreriajd.com.ar'                => 'pablot95/libreriajd',
+    'micoloridomundo.com.ar'           => 'pablot95/micoloridomundo',
     'meencantoperfumes.com.ar'         => 'pablot95/meencanto',
     'institutoemmanuel.com.ar'         => 'pablot95/iglesiacentroderestauracionemmanuel',
     'vicenzabricokits.com.ar'          => 'pablot95/vicenza',
