@@ -1,0 +1,20 @@
+{
+  "base": {
+    "fachada.webp": "01_fachada_residencial_9x16.jpg (cargada por Pablo)",
+    "obra-seco.webp": "02_construccion_en_seco_16x9.jpg (cargada por Pablo)",
+    "metalurgia.webp": "03_metalurgia_1x1.jpg (cargada por Pablo)",
+    "electricidad.webp": "04_electricidad_1x1.jpg (cargada por Pablo)",
+    "cocina-cielorraso.webp": "05_interior_terminado_1x1.jpg (cargada por Pablo)",
+    "pergola.webp": "06_estructura_metalica_1x1.jpg (cargada por Pablo)",
+    "logo-mm.webp": "foto de perfil de instagram.com/m_mconstrucciones18 (150x150, la única resolución pública)"
+  },
+  "extra": [
+    { "archivo": "t-ladrillos.webp", "fuente": "https://www.pexels.com/photo/19688828/", "slot": "Servicios: construcción tradicional" },
+    { "archivo": "t-ampliacion.webp", "fuente": "https://www.pexels.com/photo/4692281/", "slot": "Trabajos: ampliación de mampostería" },
+    { "archivo": "t-placas.webp", "fuente": "https://www.pexels.com/photo/11427405/", "slot": "Trabajos: corte de placas" },
+    { "archivo": "t-steel-frame.webp", "fuente": "https://www.pexels.com/photo/40252144/", "slot": "Trabajos: steel frame" },
+    { "archivo": "t-escalera.webp", "fuente": "https://www.pexels.com/photo/7078723/", "slot": "Trabajos: escalera metálica" },
+    { "archivo": "t-llaves.webp", "fuente": "https://www.pexels.com/photo/5691589/", "slot": "Trabajos: llaves y tomas" }
+  ],
+  "licencia": "Pexels License (uso libre, sin atribución obligatoria)"
+}
