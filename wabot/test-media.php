@@ -27,6 +27,14 @@ caso('Gemini no entiende el archivo → null (el bot pide texto)',
 
 caso('sin bytes → ni intenta', wabot_media_a_texto('', 'audio/ogg', 'audio') === null);
 
+// 14-oct: el CDN de Meta devolvió "Atualize seu navegador" en vez de un audio de Instagram y se guardó como .html.
+caso('la página "actualizá tu navegador" de Meta no pasa por un audio ni por una foto',
+    wabot_media_es_pagina_html("<!DOCTYPE html>\n<html lang=\"pt\" id=\"facebook\">", 'text/html; charset="utf-8"')
+    && wabot_media_es_pagina_html("  <html><head><title>Atualize seu navegador</title>", 'application/octet-stream')
+    && wabot_media_es_pagina_html('cualquier cosa', 'text/html'));
+caso('un audio o una foto de verdad sí pasan', !wabot_media_es_pagina_html("OggS\x00\x02", 'audio/ogg')
+    && !wabot_media_es_pagina_html("\xFF\xD8\xFF\xE0", 'image/jpeg') && !wabot_media_es_pagina_html("\x00\x00\x00\x1Cftypmp4", 'audio/mp4'));
+
 echo "— El texto del audio entra al motor como un mensaje normal —\n";
 
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function ($texto) {

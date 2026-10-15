@@ -4086,6 +4086,18 @@ function wabot_ig_post($payload, $donde) {
 }
 
 /**
+ * ¿Lo que bajó es una página web en vez del archivo? El CDN de Meta contesta
+ * 200 con "Actualizá tu navegador" cuando no reconoce al que pide (14-oct: un
+ * audio de Instagram quedó guardado como .html, sin poder escucharse ni
+ * transcribirse).
+ */
+function wabot_media_es_pagina_html($bytes, $mime) {
+    if (stripos(trim((string)$mime), 'text/html') === 0) return true;
+    $inicio = ltrim(substr((string)$bytes, 0, 512));
+    return stripos($inicio, '<!doctype html') === 0 || stripos($inicio, '<html') === 0;
+}
+
+/**
  * Instagram manda la media como URL directa, no en dos pasos como WhatsApp.
  * Devuelve el mismo shape que wabot_wa_media_bajar para que el pipeline de
  * fotos y audios no se entere de por qué canal llegó.
@@ -4100,6 +4112,8 @@ function wabot_ig_media_bajar($url) {
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_TIMEOUT => 30,
         CURLOPT_MAXFILESIZE => 12 * 1024 * 1024,
+        // Sin un navegador conocido, el CDN de Meta devuelve su página "Actualizá tu navegador" en vez del archivo.
+        CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
     ]);
     $bytes = curl_exec($ch);
     $code  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -4108,6 +4122,11 @@ function wabot_ig_media_bajar($url) {
 
     if ($code < 200 || $code >= 300 || !$bytes || strlen($bytes) > 12 * 1024 * 1024) {
         wabot_log('error', ['donde' => 'ig_media', 'http' => $code]);
+        return null;
+    }
+    // Una página en vez del audio o la foto no se guarda como si fuera el archivo: queda el error a la vista.
+    if (wabot_media_es_pagina_html($bytes, $mime)) {
+        wabot_log('error', ['donde' => 'ig_media', 'http' => $code, 'msg' => 'Instagram devolvió una página web en vez del archivo']);
         return null;
     }
     return ['bytes' => $bytes, 'mime' => trim(explode(';', (string)$mime)[0])];
