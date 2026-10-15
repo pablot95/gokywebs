@@ -52,6 +52,7 @@ const ERR_REPOS = [
     'xn--avanzams-fza.com.ar'          => 'pablot95/avanzamas',      // avanzamás.com.ar
     'tintamorenabelleza.com.ar'        => 'pablot95/tintamorena',
     'electrolift.com.ar'               => 'pablot95/electrolift',
+    'afmasajesydepilacion.com.ar'      => 'pablot95/afmasajesydepilacion',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
