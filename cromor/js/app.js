@@ -1502,7 +1502,7 @@ function renderCompletedTasks(uid) {
                 data-restore-project="${id}"
                 role="button"
                 tabindex="0"
-                title="Volver a poner en progreso"
+                title="${escHtml(name)} — click para volver a poner en progreso"
             >
                 <span>${escHtml(name)}</span>
                 <strong>${formatTime(getProjectDisplaySeconds(id))}</strong>
