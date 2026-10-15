@@ -49,6 +49,7 @@ const ERR_REPOS = [
     'dcreparaciones.com.ar'            => 'pablot95/dcreparaciones',
     'fozconstrucciones.com.ar'         => 'pablot95/fozconstrucciones',
     'adumircarpinteria.com.ar'         => 'pablot95/adumircarpinteria',
+    'electrolift.com.ar'               => 'pablot95/electrolift',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
