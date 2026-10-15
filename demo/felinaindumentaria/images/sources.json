@@ -1,0 +1,15 @@
+{
+  "p-remera-blanca.webp": {
+    "fuente": "Pexels",
+    "id": 7319172,
+    "url": "https://www.pexels.com/photo/7319172/",
+    "uso": "Producto: Remera básica blanca (categoría remeras)"
+  },
+  "p-remera-arena.webp": {
+    "fuente": "Pexels",
+    "id": 11671275,
+    "url": "https://www.pexels.com/photo/11671275/",
+    "uso": "Producto: Remera de algodón arena (categoría remeras)"
+  },
+  "resto": "Recortes y conversiones a WebP de las fotos 01-06 cargadas por Pablo (los originales .jpg/.png no se tocaron)"
+}
