@@ -6,45 +6,51 @@
    El panel siembra la lista (pendientesIniciales) la primera vez que ve una web
    en desarrollo sin `pendientes`; después cada web puede sumar o sacar las suyas.
    `legado` es la clave del checklist anterior (`clientes.tareas`), para no
-   perder lo que ya estaba tildado. */
+   perder lo que ya estaba tildado.
+   15-oct: solo quedan Comprar dominio, Cargar email, Completar tienda, Subir a host,
+   Google Search y Mandar acc. (Firebase salió; sembrarPendientes lo saca de las webs ya sembradas). */
 
 const GOOGLE = { id: "google", texto: "Google Search", ayuda: "Dar de alta el sitio en Search Console, enviar el sitemap y pedir la indexación" };
-const DOMINIO = { id: "dominio", texto: "Cargar el dominio", legado: "dominio" };
-const ACCESOS = { id: "accesos", texto: "Mandar los accesos", ayuda: "Enviarle al cliente los accesos a su web y a su panel" };
-const EMAIL_NOTIF = { id: "email", texto: "Cargar el email de notificaciones", ayuda: "El email que recibe los avisos de pedidos y consultas", legado: "mail" };
-const FIREBASE = { id: "firebase", texto: "Firebase", ayuda: "Crear el proyecto de Firebase y conectarlo a la web", legado: "firebase" };
+const DOMINIO = { id: "dominio", texto: "Comprar dominio", ayuda: "Comprar y cargar el dominio de la web", legado: "dominio" };
+const ACCESOS = { id: "accesos", texto: "Mandar acc.", ayuda: "Enviarle al cliente los accesos a su web y a su panel" };
+const EMAIL_NOTIF = { id: "email", texto: "Cargar email", ayuda: "El email que recibe los avisos de pedidos y consultas", legado: "mail" };
 
 // Solo tiendas y cursos (12-oct, Pablo). Las webs ya sembradas lo reciben una vez (sembrarPendientes, marca `pendientesHostinger`).
-export const HOSTINGER = { id: "hostinger", texto: "Subir los archivos a Hostinger", ayuda: "Subir los archivos de la web al hosting del cliente" };
+export const HOSTINGER = { id: "hostinger", texto: "Subir a host", ayuda: "Subir los archivos de la web al hosting del cliente" };
 
 const POR_TIPO = {
     ecommerce: [
-        { id: "tienda", texto: "Completar la tienda", ayuda: "Productos, precios, fotos y categorías", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, HOSTINGER, GOOGLE, ACCESOS,
+        DOMINIO, EMAIL_NOTIF,
+        { id: "tienda", texto: "Completar tienda", ayuda: "Productos, precios, fotos y categorías", legado: "ecommerce" },
+        HOSTINGER, GOOGLE, ACCESOS,
     ],
     cursos: [
+        DOMINIO, EMAIL_NOTIF,
         { id: "contenido", texto: "Cargar los cursos", ayuda: "Cursos, módulos y contenido", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, HOSTINGER, GOOGLE, ACCESOS,
+        HOSTINGER, GOOGLE, ACCESOS,
     ],
     inmobiliaria: [
+        DOMINIO, EMAIL_NOTIF,
         { id: "contenido", texto: "Cargar las propiedades", ayuda: "Propiedades, fotos y datos", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, GOOGLE, ACCESOS,
+        GOOGLE, ACCESOS,
     ],
     noticias: [
+        DOMINIO, EMAIL_NOTIF,
         { id: "contenido", texto: "Cargar las notas", ayuda: "Notas, secciones y portada", legado: "ecommerce" },
-        EMAIL_NOTIF, DOMINIO, FIREBASE, GOOGLE, ACCESOS,
+        GOOGLE, ACCESOS,
     ],
     profesional: [
+        DOMINIO, EMAIL_NOTIF,
         { id: "contenido", texto: "Completar textos y fotos", ayuda: "Lo que el cliente mandó para su sitio" },
-        { ...EMAIL_NOTIF, texto: "Cargar el email del formulario", ayuda: "El email que recibe las consultas del formulario de contacto" },
-        DOMINIO, GOOGLE, ACCESOS,
+        GOOGLE, ACCESOS,
     ],
 };
 // Tipo que no se reconoce: lo común a todas.
-const GENERICO = [
-    { ...EMAIL_NOTIF, texto: "Cargar el email del formulario", ayuda: "El email que recibe las consultas del formulario de contacto" },
-    DOMINIO, GOOGLE, ACCESOS,
-];
+const GENERICO = [DOMINIO, EMAIL_NOTIF, GOOGLE, ACCESOS];
+
+// Los ids que ya no existen (se sacan de las webs ya sembradas) y los textos nuevos de los que quedan.
+export const PENDIENTES_SACADOS = ["firebase"];
+export const TEXTOS_NUEVOS = { dominio: DOMINIO.texto, email: EMAIL_NOTIF.texto, tienda: "Completar tienda", google: GOOGLE.texto, hostinger: HOSTINGER.texto, accesos: ACCESOS.texto };
 
 /* La lista de arranque de una web según su tipo (clave de PLANES: ecommerce,
    cursos, inmobiliaria, noticias, profesional o null). `tareasViejas` es el

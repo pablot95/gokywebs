@@ -20,7 +20,7 @@ import {
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { pendientesIniciales, ayudaDePendiente, HOSTINGER } from "./pendientes-catalogo.js?v=20261012-hostinger";
+import { pendientesIniciales, ayudaDePendiente, HOSTINGER, PENDIENTES_SACADOS, TEXTOS_NUEVOS } from "./pendientes-catalogo.js?v=20261015-botones";
 
 const TYPE_LABELS = { landing: 'Landing Page', 'web-completa': 'Web Completa', ecommerce: 'E-commerce', inmobiliaria: 'Inmobiliaria' };
 
@@ -4227,7 +4227,15 @@ document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
 /* Un pendiente de la web: { id, texto, hecho, por: 'pablo' | 'claude', at }. Los
    que no tienen lista todavía muestran la de su tipo (sembrarPendientes la guarda). */
 function pendientesDe(c) {
-    return Array.isArray(c.pendientes) ? c.pendientes : pendientesIniciales(tipoPendientesDe(c), c.tareas);
+    return Array.isArray(c.pendientes) ? _limpiarPendientes(c.pendientes) : pendientesIniciales(tipoPendientesDe(c), c.tareas);
+}
+
+/* 15-oct: Google y Firebase ya no son pendientes, y los que quedan tienen nombre corto
+   (Comprar dominio, Cargar email, Completar tienda, Subir a host, Mandar acc.). */
+function _limpiarPendientes(lista) {
+    return lista
+        .filter(p => !PENDIENTES_SACADOS.includes(p.id))
+        .map(p => TEXTOS_NUEVOS[p.id] && p.texto !== TEXTOS_NUEVOS[p.id] ? { ...p, texto: TEXTOS_NUEVOS[p.id] } : p);
 }
 
 /* La lista de pendientes que le toca a una web: la del plan del cliente (planDe;
@@ -4266,6 +4274,16 @@ function sembrarPendientes() {
         const marca = clave || "generico";
         const nueva = !Array.isArray(c.pendientes);
         const conHostinger = clave === "ecommerce" || clave === "cursos";
+        if (!nueva) {
+            // 15-oct: se guarda la lista ya sin Google/Firebase y con los nombres cortos.
+            const limpia = _limpiarPendientes(c.pendientes);
+            const llaveL = `${c.id}:limpieza`;
+            if (JSON.stringify(limpia) !== JSON.stringify(c.pendientes) && !_sembrando.has(llaveL)) {
+                _sembrando.add(llaveL);
+                updateDoc(doc(db, "clientes", c.id), { pendientes: limpia })
+                    .catch(err => { _sembrando.delete(llaveL); console.error("No se pudo limpiar los pendientes:", err); });
+            }
+        }
         if (!nueva && (typeof c.pendientesTipo !== "string" || c.pendientesTipo === marca)) {
             // "Subir los archivos a Hostinger" (12-oct): a las tiendas y cursos ya sembrados se les suma una sola
             // vez (después de Firebase); si Pablo lo saca, la marca evita que vuelva.
