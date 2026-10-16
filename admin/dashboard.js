@@ -3894,7 +3894,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
                     ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
                     ${porCobrar ? `<small style="font-size:11px;color:#4ade80">✓ Web ${modalidad === "unico" ? "terminada" : "completada"}${webCompletada ? ` el ${mantLongDate(webCompletada)}` : ""}</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
-                    ${!conPendientes && !entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
+                    ${/* En Mantenimiento (marcarDesarrollo) no van los pendientes: son de Clientes. */ !conPendientes && !marcarDesarrollo && !entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
                 </div>
             </td>
             ${/* 13-oct: en Clientes los pendientes van en su propia columna. */ conPendientes
@@ -4880,8 +4880,9 @@ async function setStatus(id, value) {
              registra una sola vez, con la fecha de hoy. El cobro anual se cuenta desde
              la seña.
            - Plan mensual: se fija la mensualidad (del boceto o del tipo de web) y la
-             suscripción queda pendiente hasta que se suscribe en Mercado Pago. Un precio
-             que solo estaba cotizado, sin nada cobrado, vuelve a 0.
+             suscripción queda activa desde hoy (Pablo, 16-oct: "si lo paso a cliente es
+             porque ya está dado de alta"; antes quedaba pendiente hasta "Ya se suscribió").
+             Un precio que solo estaba cotizado, sin nada cobrado, vuelve a 0.
            Lo que el doc ya tenga del modelo anterior (primerPago, primerPagoAt y lo
            cobrado) no se toca. */
         if (value === "cliente" && prevEstado !== "cliente" && c) {
@@ -4927,7 +4928,10 @@ async function setStatus(id, value) {
                 }
             } else {
                 if (!_num(c.montoMensual)) updateData.montoMensual = plan.mensual;
-                if (!c.estadoSuscripcion) updateData.estadoSuscripcion = "pendiente";
+                if (modalidad === "mensual") {
+                    updateData.estadoSuscripcion = "activa";
+                    if (!mantToDate(c.suscripcionDesde)) updateData.suscripcionDesde = _fechaDeInput(mantDateKey(new Date()));
+                } else if (!c.estadoSuscripcion) updateData.estadoSuscripcion = "pendiente";
                 if (typeof c.preapprovalId !== "string") updateData.preapprovalId = "";
                 if (_cotizacionSinCobro(c)) updateData.valorTotal = 0;
             }
@@ -5184,6 +5188,9 @@ function renderTareasChecklist() {
 document.getElementById("estadoCliente").addEventListener("change", () => {
     syncEstadoSelect();
     toggleTareasSection();
+    // Pasar a Cliente con el plan mensual = ya se suscribió (Pablo, 16-oct): la suscripción se propone activa.
+    const susc = document.getElementById("estadoSuscripcion");
+    if (document.getElementById("estadoCliente").value === "cliente" && susc.value === "pendiente") susc.value = "activa";
 });
 
 // ── Plan y modalidad en el modal de cliente (plan mensual, plan anual o pago único, 26-sep-2026) ──
@@ -5435,6 +5442,11 @@ form.addEventListener("submit", async (e) => {
             : pasaACliente || !_num(actual[campo]) || _num(actual[campo]) === _num(actual.primerPago));
         if (reflejaPrimerPago("valorTotal")) data.valorTotal = primerPago;
         if (reflejaPrimerPago("abono")) data.abono = primerPagoAt ? primerPago : 0;
+        // Pasar a Cliente con el plan mensual = ya se suscribió (Pablo, 16-oct): el select se pone en activa al
+        // elegir Cliente (listener de estadoCliente) y, si no se cargó la fecha, corre desde hoy.
+        if (pasaACliente && data.estadoSuscripcion === "activa" && !_fechaDeInput(desdeEl.value) && !mantToDate(actual?.suscripcionDesde)) {
+            data.suscripcionDesde = primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : _fechaDeInput(mantDateKey(new Date()));
+        }
     }
 
     const saveBtn = document.getElementById("saveBtn");
@@ -8490,10 +8502,14 @@ async function removeAvisoMant(id) {
 /* Las webs entregadas, por plan (Pablo, 19-sep-2026). El plan anual lleva
    también los pagos únicos anteriores al 19-sep, con su año de mantenimiento
    incluido; la web propia no lleva mantenimiento (queda en Completados). ""
-   (modalidad sin definir) cuenta como mensual, igual que en Clientes. */
+   (modalidad sin definir) cuenta como mensual, igual que en Clientes.
+   Desde el 16-oct (Pablo: "quiero que ya figuren desde que los paso a cliente") el
+   plan anual entra desde que pasa a Cliente, con la web todavía en desarrollo, como el
+   mensual: ese queda con la suscripción activa al pasar a Cliente (setStatus). */
 function _clientesEnMantenimiento() {
     const activos = clients.filter(c => getEstado(c) === "cliente");
     const entregados = activos.filter(c => webEntregada(c));
+    const anualEnDesarrollo = activos.filter(c => !webEntregada(c) && modalidadDe(c) === "unico" && !_pagoUnicoAnterior(c));
     /* El que ya está pagando entra a Mantenimiento aunque la web siga en
        desarrollo (Pablo, 21-sep: "ya se suscribieron pero no figuran en
        mantenimiento"). Las suscripciones de Mercado Pago ya aparecían así en la
@@ -8501,7 +8517,7 @@ function _clientesEnMantenimiento() {
     const pagando = activos.filter(c => !webEntregada(c) && !_conSena(modalidadDe(c))
         && suscripcionDe(c).estado === "activa");
     return {
-        anual: entregados.filter(c => modalidadDe(c) === "unico"),
+        anual: [...entregados.filter(c => modalidadDe(c) === "unico"), ...anualEnDesarrollo],
         mensual: [...entregados.filter(c => !_conSena(modalidadDe(c))), ...pagando],
     };
 }
@@ -8804,8 +8820,8 @@ function _renderMantAnual(anual, term) {
     const list = (term ? anual.filter(c => _clienteCoincide(c, term)) : anual)
         .slice().sort((a, b) => orden(a) - orden(b));
     tb.innerHTML = list.length
-        ? list.map(c => _clientRow(c, { sinCambios: true })).join("")
-        : `<tr class="empty-row"><td colspan="4">${term ? "No hay webs del plan anual para esa búsqueda." : "Todavía no hay webs entregadas con el plan anual."}</td></tr>`;
+        ? list.map(c => _clientRow(c, { sinCambios: true, marcarDesarrollo: true })).join("")
+        : `<tr class="empty-row"><td colspan="4">${term ? "No hay clientes del plan anual para esa búsqueda." : "Todavía no hay clientes con el plan anual."}</td></tr>`;
     _bindTableListeners(tb);
 }
 
