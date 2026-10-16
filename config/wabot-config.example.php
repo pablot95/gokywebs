@@ -36,6 +36,12 @@ define('WABOT_FIREBASE_API_KEY', 'COMPLETAR');
 define('WABOT_FIREBASE_PROJECT', 'COMPLETAR');
 define('WABOT_ADMIN_PASS', 'COMPLETAR');
 
+/* Correo que activa la tarea de ChatGPT web al aparecer un prospecto nuevo.
+   El destinatario debe ser la cuenta Gmail conectada a ChatGPT. El remitente
+   debe pertenecer al dominio del hosting para mejorar la entrega. */
+define('GOKY_PROSPECTO_MAIL_TO', 'gokywebs@gmail.com');
+define('GOKY_PROSPECTO_MAIL_FROM', 'no-reply@gokywebs.com');
+
 /* Notificaciones push al celular y a la compu cuando entra un mensaje que el
    bot no contesto (ver wabot/push.php). Es la clave PUBLICA del par que
    genera Firebase en: Configuracion del proyecto -> Cloud Messaging ->

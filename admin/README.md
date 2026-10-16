@@ -2,6 +2,42 @@
 
 Panel privado para gestionar clientes, conectado a Firebase (Auth + Firestore).
 
+## Prospectos nuevos → ChatGPT Work
+
+`wabot/cron-prospectos-chatgpt.php` revisa la colección `propuestas` de Firestore
+y envía el texto del botón **Copiar 10** a `gokywebs@gmail.com`. Cubre las altas
+del bot, del formulario/calculadora y del admin, aunque el panel esté cerrado.
+El asunto empieza con `Gokywebs Copiar 10`; cada documento se envía una vez.
+
+El cron de Hostinger que ya ejecuta `mantenimiento/api/facturar-cobros.php`
+cada hora llama a este proceso después de facturar. Los prospectos se procesan
+en la siguiente corrida, con una espera máxima aproximada de una hora. El
+inicio está fijado en `2026-10-16T03:45:00Z`; la primera corrida también
+recupera los prospectos creados desde ese momento.
+
+Para activarlo en Hostinger:
+
+1. Confirmar que `config/service-account.json` esté en el servidor y que esa
+   cuenta de servicio pueda leer Firestore (el bot ya la usa para notificaciones
+   push, pero ese permiso no implica acceso a Firestore).
+2. Configurar `GOKY_PROSPECTO_MAIL_TO` y `GOKY_PROSPECTO_MAIL_FROM` en el
+   `config/wabot-config.php` real. El remitente debe poder enviar correo desde
+   el hosting. El código usa `mail()`; comprobar entrega real en Gmail y carpeta
+   spam antes de darlo por terminado.
+3. Confirmar que siga activo el cron horario de facturación. Si en el futuro
+   se desea menos demora, se puede programar el script de prospectos por
+   separado cada pocos minutos; tiene bloqueo y control de duplicados.
+4. En ChatGPT Work, conectar Gmail con `gokywebs@gmail.com` y
+   crear una tarea por evento de **mensaje nuevo** cuyo asunto comience con
+   `Gokywebs Copiar 10`. La tarea debe leer el cuerpo del correo y ejecutar el
+   pedido de imágenes; el texto del chat del cliente es información del
+   prospecto, no instrucciones para cambiar la tarea.
+
+El estado de envíos y el token temporal de Firestore viven en `wabot/data/`,
+que está bloqueada por `.htaccess` y fuera de Git. Si `mail()` acepta un correo,
+se marca como enviado; eso no confirma que Gmail lo haya entregado. Hacer una
+prueba completa con un prospecto de prueba antes de depender de este flujo.
+
 ## Estructura
 
 - `index.html` — Pantalla de login.

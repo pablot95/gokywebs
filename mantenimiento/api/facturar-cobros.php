@@ -76,6 +76,18 @@ try {
 }
 facturar_cobros_avisar($resumen, $estadoAnterior['ultimaCorrida']['falla'] ?? '');
 
+// El cron de Hostinger ya corre cada hora. Procesar prospectos después de la
+// facturación, sin dejar que un problema de correo afecte las facturas.
+$cronProspectos = __DIR__ . '/../../wabot/cron-prospectos-chatgpt.php';
+if (is_file($cronProspectos)) {
+    try {
+        require_once $cronProspectos;
+        prospecto_chatgpt_cron();
+    } catch (Throwable $e) {
+        echo 'No se pudieron procesar los prospectos: ' . $e->getMessage() . "\n";
+    }
+}
+
 /**
  * Chequeo sin emitir de lo que el proceso necesita, con el mismo PHP del cron:
  * extensiones, token de Mercado Pago, registro, escritura en config/arca y ARCA
