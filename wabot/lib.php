@@ -1005,7 +1005,7 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     // Se aclara al presentarlas para que el cliente no pase por alto el selector.
     // Desde el 5-oct el texto de Pablo ya la trae: no se repite.
     if (stripos($texto, 'dos modelos') === false) {
-        $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.";
+        $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.";
     }
 
     $textos = [$texto];

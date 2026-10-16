@@ -3199,8 +3199,7 @@ function burbujaCita(t, chat) {
                         <strong><?= $e(wabot_nombre_agenda($conv)) ?: 'Sin nombre' ?></strong>
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
-                        <?php if (($conv['comercial_pausa'] ?? '') === 'humano'): ?><span class="meta" style="color:var(--warn)">Pendiente para Pablo: <?= $e((string)($conv['comercial_motivo'] ?? 'caso especial')) ?></span><?php endif; ?>
-                        <?php if (!empty($conv['postprecio_derivacion'])): ?><span class="meta">Pendiente para Pablo: <?= $e($conv['postprecio_derivacion']) ?></span><?php elseif (!empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
+                        <?php if (empty($conv['postprecio_derivacion']) && !empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
                         <?php /* "Te hablo el martes" (11-oct): mientras tanto no le sale ningún aviso automático. */
                               if (wabot_retomar_activo($conv)):
                                   $retOrigen = (string)($conv['retomar_origen'] ?? '');
@@ -3211,9 +3210,12 @@ function burbujaCita(t, chat) {
                             elseif ($retOrigen === 'panel'): ?> · puesta a mano<?php endif; ?></span>
                         <?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
-                        <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
-                              $fichaResumen = function_exists('wabot_ficha_resumen') ? wabot_ficha_resumen($conv, $cfg) : '';
-                              if ($fichaResumen !== ''): ?><span class="meta" title="Lo que el cliente fue contando, ordenado por el bot">📋 <?= $e($fichaResumen) ?></span><?php endif; ?>
+                        <?php // Solo el plan que eligió y el tipo de web (16-oct): el resto de la ficha se ve en "Ver info".
+                              $cabModalidad = (string)($conv['modalidad_elegida'] ?? '');
+                              $cabPlan = $cabModalidad !== '' ? (['unico' => 'Plan anual', 'propia' => 'Pago único'][$cabModalidad] ?? 'Plan mensual') : '';
+                              $cabTipo = wabot_tipo_label((string)($conv['tipo'] ?? ''), $cfg);
+                              $cabPartes = array_filter([$cabPlan !== '' ? 'Eligió: ' . $cabPlan : '', $cabTipo !== '' ? 'Web: ' . $cabTipo : '']);
+                              if ($cabPartes): ?><span class="meta">📋 <?= $e(implode(' · ', $cabPartes)) ?></span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>

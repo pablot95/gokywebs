@@ -3993,7 +3993,7 @@ $demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'l
 caso('es el texto de Pablo, con el negocio y el link',
     $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\n\nPodés verla acá:\ngokywebs.com/demo/yfprevencion\n\n"
         . "Mirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\n"
-        . "Hay dos modelos de web para elegir. En la parte superior podés cambiar de modelo", $demoTextos[0]);
+        . "Hay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.", $demoTextos[0]);
 caso('la aclaración de los dos modelos va una sola vez', substr_count($demoTextos[0], 'dos modelos') === 1);
 caso('es un solo mensaje', count($demoTextos) === 1);
 
