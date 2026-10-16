@@ -1231,6 +1231,7 @@ let ingresosMp = null;            // respuesta de ingresos.php (null = no se pid
 let ingresosMpError = "";
 let ingresosMpCargando = false;
 const INGRESOS_DESDE = "2026-07-01";
+const UNICOS_DESDE = "2026-09-01";   // la tarjeta de pagos únicos del Calendario cuenta desde acá (Pablo, 16-oct)
 const TIPO_COBRO_LABEL = { sena: "Seña", saldo: "Saldo", anual: "Cobro anual", ajuste: "Ajuste", primerPago: "Primer pago", cobro: "Cobro" };
 
 function _cobrosRegistrados(c, nuevo) {
@@ -1517,14 +1518,27 @@ function _cobrosResumenHTML(calMes, dias) {
             }
         }
     }
+    /* Pagos únicos (Pablo, 16-oct): en total, sin depender del mes que se mira, desde el 1-sep
+       (lo anterior no cuenta). Lo cobrado de las webs que no son del plan anual (pago único de hoy
+       y el anterior al plan anual), sin el primer pago del modelo mensual del 10 al 14-sep; y el
+       saldo que todavía deben. "Total del mes" sigue contando solo lo del mes. */
+    let unicosEntro = 0, nUnicos = 0, unicosFalta = 0, nUnicosSaldo = 0;
+    for (const [ymd, items] of dias) {
+        if (ymd < UNICOS_DESDE || ymd > hoy) continue;
+        for (const it of items) {
+            if (it.clase === "otros" && !it.anual && it.tipo !== TIPO_COBRO_LABEL.primerPago) { unicosEntro += it.monto; nUnicos++; }
+        }
+    }
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente" || !_conSena(modalidadDe(c)) || _esPlanAnual(c) || c.sinPrecio) continue;
+        const saldo = pagoUnicoDe(c).saldo;
+        if (saldo > 0) { unicosFalta += saldo; nUnicosSaldo++; }
+    }
     const lineasSub = (entro, falta, nota = "") =>
         `<span class="ingcal-stat-linea">${fmtMoney(entro)} ya entró</span><span class="ingcal-stat-linea">${fmtMoney(falta)} falta cobrar</span>${nota ? `<span class="muted ingcal-stat-nota">${nota}</span>` : ""}`;
     const subSubs = esPasado ? "todo cobrado"
         : esFuturo ? "a cobrar (estimado)"
         : lineasSub(subsCobrado, subsFalta);
-    const subOtros = esFuturo ? "todavía no entró nada · el saldo se cobra al entregar"
-        : esPasado ? (nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes")
-        : lineasSub(otros, saldosFalta, `${nOtros ? `${nOtros} pago${nOtros === 1 ? "" : "s"}: señas y saldos` : "ningún pago este mes"}${nSaldos ? ` · saldo de ${nSaldos} web${nSaldos === 1 ? "" : "s"} por cobrar` : ""}`);
     const notaAnuales = `${nAnuales ? `${nAnuales} pago${nAnuales === 1 ? "" : "s"}: señas, saldos y renovaciones` : "ningún pago anual este mes"}`;
     const subAnuales = esFuturo ? `${notaAnuales} · el saldo se cobra al entregar`
         : esPasado ? notaAnuales
@@ -1538,7 +1552,7 @@ function _cobrosResumenHTML(calMes, dias) {
         ${_avisoMp()}
         <div class="stats-box stats-box--periods ingcal-stats">
             <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
-            <div class="stat-item"><span class="stat-label">💵 Otros pagos (señas y saldos)</span><span class="stat-value">${fmtMoney(otros + saldosFalta)}</span><span class="muted ingcal-stat-sub">${subOtros}</span></div>
+            <div class="stat-item"><span class="stat-label">💵 Pagos únicos (total desde septiembre)</span><span class="stat-value">${fmtMoney(unicosEntro + unicosFalta)}</span><span class="muted ingcal-stat-sub">${lineasSub(unicosEntro, unicosFalta, `${nUnicos} pago${nUnicos === 1 ? "" : "s"}: señas y saldos${nUnicosSaldo ? ` · saldo de ${nUnicosSaldo} web${nUnicosSaldo === 1 ? "" : "s"} por cobrar` : ""} · no cambia con el mes`)}</span></div>
             <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
             <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros + anuales + saldosFalta + anualFalta)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
