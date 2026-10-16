@@ -53,6 +53,7 @@ const ERR_REPOS = [
     'tintamorenabelleza.com.ar'        => 'pablot95/tintamorena',
     'electrolift.com.ar'               => 'pablot95/electrolift',
     'afmasajesydepilacion.com.ar'      => 'pablot95/afmasajesydepilacion',
+    'lxfparquetpisosdemadera.com.ar'   => 'pablot95/lxfparquetpisosdemadera',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
