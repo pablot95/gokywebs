@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pilin Bikers — Repuestos para todos los rodados y taller</title>
+<meta name="description" content="Bicicletería y taller en Santiago del Estero: repuestos para todos los rodados, bicis eléctricas y service. Comprá online o pedí por WhatsApp.">
+<meta name="theme-color" content="#25352D">
+<link rel="canonical" href="https://gokywebs.com/demo/bicicleteriapilinbikers/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Pilin Bikers">
+<meta property="og:title" content="Pilin Bikers — Bicicletería y taller">
+<meta property="og:description" content="Bicicletería y taller en Santiago del Estero: repuestos para todos los rodados, bicis eléctricas y service. Comprá online o pedí por WhatsApp.">
+<meta property="og:url" content="https://gokywebs.com/demo/bicicleteriapilinbikers/">
+<meta property="og:image" content="https://gokywebs.com/demo/bicicleteriapilinbikers/images/h-tienda.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2325352D'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23CCD95E' stroke-width='3'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-weight='800' font-size='28' text-anchor='middle' fill='%23F4F7E6'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,700..800&amp;family=Figtree:wght@400;600&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BikeStore", "name": "Pilin Bikers", "alternateName": "Bicicletería Pilin Bikers", "description": "Bicicletería y taller: bicis, bicis eléctricas, repuestos para todos los rodados y service.", "url": "https://gokywebs.com/demo/bicicleteriapilinbikers/", "image": "https://gokywebs.com/demo/bicicleteriapilinbikers/images/h-tienda.webp", "telephone": "+5493855011309", "priceRange": "$$", "address": {"@type": "PostalAddress", "addressLocality": "Santiago del Estero", "addressRegion": "Santiago del Estero", "addressCountry": "AR"}}</script>
+</head>
+<body class="m1" data-pagina="home" data-catalogo="catalogo.html" data-home="./">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+
+<header class="site-header site-header--m1" id="top">
+  <div class="container header-in">
+    <a class="brand" href="./" aria-label="Pilin Bikers, inicio"><span class="wm">Pilin <b>Bikers</b></span></a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div class="nav-cats" data-menu-cats>
+        <button type="button" class="nav-cats__btn" aria-expanded="false" aria-haspopup="true" aria-controls="navCatsPanel">Categorías<svg class="ico ico--chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-cats__panel" id="navCatsPanel"></div>
+      </div>
+      <a href="catalogo.html?cat=bicis">Bicicletas</a>
+      <a href="#taller">Taller</a>
+      <a href="#trabajos">Trabajos</a>
+      <a href="#ubicaciones">Ubicaciones</a>
+    </nav>
+    <div class="header-actions">
+      <form class="hsearch" action="catalogo.html" role="search">
+        <input type="search" name="q" placeholder="Buscar repuestos" aria-label="Buscar repuestos" autocomplete="off">
+        <button type="submit" aria-label="Buscar"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      </form>
+      <a class="icon-btn hs-link" href="catalogo.html?foco=buscar" aria-label="Buscar en el catálogo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+      <button type="button" class="icon-btn cart-btn" data-open-cart aria-label="Abrir el carrito"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg><span class="cart-badge" data-cart-count hidden>0</span></button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+<section class="hero hero--m1" aria-labelledby="heroTitulo">
+  <div class="container hero__grid">
+    <div class="hero__card">
+      <p class="hero-eyebrow">Bicicletería y taller · Santiago del Estero</p>
+      <h1 id="heroTitulo">Repuestos para todos los rodados y taller para tu bici</h1>
+      <p class="hero-lead">Rodá hacia tu próxima aventura: bicis, eléctricas, repuestos y service. Comprá online o pedilo por WhatsApp.</p>
+      <div class="hero-ctas"><a class="btn btn-cta" href="catalogo.html">Ver repuestos<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><a class="btn btn-ghost" href="#turno">Pedir turno al taller</a></div>
+    </div>
+    <figure class="hero__foto"><img data-hero-img src="images/h-tienda.webp" alt="Interior de la bicicletería con bicis exhibidas, el mostrador y el taller al fondo" width="1600" height="900" fetchpriority="high"></figure>
+    <div class="sello">
+      <svg class="sello__giro" viewBox="0 0 200 200" aria-hidden="true"><defs><path id="selloCirc" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs><text><textPath href="#selloCirc" textLength="500" lengthAdjust="spacing">PILIN BIKERS · TODOS LOS RODADOS · </textPath></text></svg>
+      <span class="sello__centro" aria-hidden="true"><b>12</b><i>a</i><b>29</b></span>
+    </div>
+  </div>
+</section>
+
+<section class="seccion productos" id="productos" aria-labelledby="prodTitulo">
+  <div class="container">
+    <div class="sec-head"><h2 id="prodTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Productos y servicios</h2></div>
+    <div class="productos__grid">
+      <ul class="tiles">
+        <li class="tiles__item" data-animate="subir" style="opacity:0;transform:translateY(48px)"><a class="tile" href="catalogo.html?cat=bicis"><span class="recorte tile__foto"><img src="images/p-bici-urbana.webp" alt="Bicicleta urbana verde oliva exhibida en el local" width="1000" height="1000"></span><span class="tile__txt"><strong>Bicicletas</strong><small>Urbanas y eléctricas</small></span><span class="tile__ir"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+        <li class="tiles__item" data-animate="subir" style="opacity:0;transform:translateY(48px)"><a class="tile" href="catalogo.html?electrica=1"><span class="recorte tile__foto"><img src="images/p-bici-electrica.webp" alt="Bicicleta eléctrica gris con batería en el cuadro" width="1000" height="1000"></span><span class="tile__txt"><strong>Eléctricas</strong><small>Bicis, baterías y repuestos</small></span><span class="tile__ir"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+        <li class="tiles__item" data-animate="subir" style="opacity:0;transform:translateY(48px)"><a class="tile" href="#taller"><span class="recorte tile__foto"><img src="images/h-taller.webp" alt="Mecánico regulando los cambios de una bici en el taller" width="1000" height="1000"></span><span class="tile__txt"><strong>Taller</strong><small>Service y reparaciones</small></span><span class="tile__ir"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a></li>
+      </ul>
+      <div class="prod-aside" data-animate="der" style="opacity:0;transform:translateX(56px)">
+        <p class="prod-aside__t">Repuestos por sección</p>
+        <ul class="secciones"><li><a href="catalogo.html?cat=ruedas"><span>Ruedas y cubiertas</span><small data-cuenta="ruedas"></small></a></li><li><a href="catalogo.html?cat=transmision"><span>Transmisión</span><small data-cuenta="transmision"></small></a></li><li><a href="catalogo.html?cat=frenos"><span>Frenos</span><small data-cuenta="frenos"></small></a></li><li><a href="catalogo.html?cat=accesorios"><span>Accesorios</span><small data-cuenta="accesorios"></small></a></li></ul>
+        <p class="prod-aside__t">Contacto</p>
+        <a class="wa-num" href="https://wa.me/5493855011309?text=Hola%2C%20Pilin%20Bikers.%20Quer%C3%ADa%20hacer%20una%20consulta." target="_blank" rel="noopener"><svg class="ico wa-glifo" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>+54 9 385 501-1309</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion rail-sec" id="destacados" aria-labelledby="destTitulo">
+  <div class="container sec-head sec-head--fila">
+    <h2 id="destTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Lo que más sale del mostrador</h2>
+    <div class="rail-ctrl" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
+      <a class="link-flecha" href="catalogo.html">Ver todo<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <button type="button" class="rail-btn" data-rail-prev aria-label="Ver anteriores"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button type="button" class="rail-btn" data-rail-next aria-label="Ver siguientes"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+  </div>
+  <div class="rail-vp"><ul class="rail-track" id="railDestacados"></ul></div>
+</section>
+
+<section class="seccion taller" id="taller" aria-labelledby="tallerTitulo">
+  <div class="container taller__grid">
+    <div class="taller__foto-wrap">
+      <figure class="taller__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img data-parallax="3" src="images/h-mecanico.webp" alt="Mecánico ajustando la transmisión de una bici de montaña verde en el soporte del taller" width="900" height="1600"></figure>
+    </div>
+    <div class="taller__txt">
+      <p class="eyebrow eyebrow--claro" data-animate="subir" style="opacity:0;transform:translateY(24px)">Taller</p>
+      <h2 id="tallerTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Service, ajustes y reparaciones para cualquier bici</h2>
+      <p class="sec-lead" data-animate="subir" style="opacity:0;transform:translateY(24px)">Desde una cámara pinchada hasta un service completo, en bicis comunes y eléctricas.</p>
+      <ol class="servicios">
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">01</span><div><h3>Service completo</h3><p>Limpieza y lubricación de la transmisión, ajuste de cambios y frenos, y control de ruedas.</p></div></li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">02</span><div><h3>Cambios</h3><p>Regulamos el descarrilador y cambiamos cables, fundas o la cadena si están gastados.</p></div></li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">03</span><div><h3>Frenos</h3><p>Regulación de V-brake y de disco, cambio de pastillas y purga de frenos hidráulicos.</p></div></li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">04</span><div><h3>Ruedas</h3><p>Centrado, cambio de rayos, cubiertas y cámaras, para cualquier rodado.</p></div></li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">05</span><div><h3>Armado y repuestos</h3><p>Armamos tu bici nueva y colocamos los repuestos que comprás acá.</p></div></li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(48px)"><span class="servicios__n">06</span><div><h3>Bici eléctrica</h3><p>Revisión de conexiones, batería y motor, además de frenos y transmisión.</p></div></li>
+      </ol>
+      <div class="taller__ctas" data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn-lima" href="#turno">Pedir turno<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion preview" id="repuestos" aria-labelledby="repTitulo">
+  <div class="container">
+    <div class="sec-head sec-head--fila">
+      <h2 id="repTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Repuestos y accesorios</h2>
+      <nav class="rodados-links" aria-label="Ver repuestos por rodado" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span>Por rodado</span><a href="catalogo.html?rodado=12">12</a><a href="catalogo.html?rodado=16">16</a><a href="catalogo.html?rodado=20">20</a><a href="catalogo.html?rodado=24">24</a><a href="catalogo.html?rodado=26">26</a><a href="catalogo.html?rodado=27.5">27,5</a><a href="catalogo.html?rodado=28">28</a><a href="catalogo.html?rodado=29">29</a></nav>
+    </div>
+    <div class="catalogo-grid grid-prev" id="gridPreview"></div>
+    <div class="preview__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn-cta" href="catalogo.html">Ver todo el catálogo<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+  </div>
+</section>
+
+<section class="seccion trabajos" id="trabajos" aria-labelledby="trabTitulo">
+  <div class="container">
+    <div class="sec-head sec-head--fila">
+      <div>
+        <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)">Trabajos del taller</p>
+        <h2 id="trabTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Así sale una bici del taller</h2>
+      </div>
+      <p class="sec-lead" data-animate="subir" style="opacity:0;transform:translateY(24px)">Tocá cada trabajo para verlo en grande y pedirlo por WhatsApp.</p>
+    </div>
+    <ul class="trabajos__grid" id="trabajosGrid"></ul>
+  </div>
+</section>
+
+<section class="seccion cierre" id="turno" aria-labelledby="turnoTitulo">
+  <div class="container cierre__grid">
+    <div class="turno-card">
+      <span class="turno-card__sello" data-animate="cortina" style="clip-path:inset(0 100% 0 0)">Turnos por WhatsApp</span>
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)">Taller</p>
+      <h2 id="turnoTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Contanos qué le pasa a tu bici</h2>
+      <div class="turno-card__form" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+        <div class="turno" id="turnoForm">
+          <fieldset class="turno__grupo">
+            <legend>¿Qué necesita tu bici?</legend>
+            <div class="turno__chips"><label class="chip-check"><input type="checkbox" data-f="servicio" value="Service completo"><span>Service completo</span></label><label class="chip-check"><input type="checkbox" data-f="servicio" value="Cambios"><span>Cambios</span></label><label class="chip-check"><input type="checkbox" data-f="servicio" value="Frenos"><span>Frenos</span></label><label class="chip-check"><input type="checkbox" data-f="servicio" value="Ruedas"><span>Ruedas</span></label><label class="chip-check"><input type="checkbox" data-f="servicio" value="Armado y repuestos"><span>Armado y repuestos</span></label><label class="chip-check"><input type="checkbox" data-f="servicio" value="Bici eléctrica"><span>Bici eléctrica</span></label></div>
+          </fieldset>
+          <div class="turno__fila">
+            <label class="campo"><span>Tipo de bici</span><select id="turnoTipo"><option value="">Elegí</option><option value="urbana">Urbana</option><option value="de montaña">De montaña</option><option value="de ruta">De ruta</option><option value="infantil">Infantil</option><option value="eléctrica">Eléctrica</option></select></label>
+            <label class="campo"><span>Rodado</span><select id="turnoRodado"><option value="">No sé</option><option value="12">12</option><option value="16">16</option><option value="20">20</option><option value="24">24</option><option value="26">26</option><option value="27.5">27,5</option><option value="28">28</option><option value="29">29</option></select></label>
+          </div>
+          <label class="campo"><span>Contanos algo más <small>(opcional)</small></span><textarea id="turnoNota" rows="3" maxlength="300" placeholder="Ej.: hace ruido al cambiar y atrás frena poco"></textarea></label>
+          <div class="turno__pie">
+            <p class="turno__resumen" id="turnoResumen" aria-live="polite">Elegí uno o más trabajos</p>
+            <a class="btn btn-cta" id="turnoWa" href="https://wa.me/5493855011309?text=Hola%2C%20Pilin%20Bikers.%20Quiero%20pedir%20turno%20para%20el%20taller." target="_blank" rel="noopener"><svg class="ico wa-glifo" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Pedir turno por WhatsApp</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ubic" id="ubicaciones">
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)">Ubicaciones</p>
+      <h2 data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Dónde encontrarnos</h2>
+      <div class="ubic__cuerpo">
+        <div class="ubic__card" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+          <p class="ubic__tipo">Local y taller</p>
+          <h3 class="ubic__ciudad">Santiago del Estero</h3>
+          <p>Venta de bicis y repuestos, y taller. Escribinos y te pasamos la dirección exacta y el horario del día.</p>
+          <a class="btn btn-cta" href="https://wa.me/5493855011309?text=Hola%2C%20Pilin%20Bikers.%20%C2%BFMe%20pasan%20la%20direcci%C3%B3n%20y%20el%20horario%20del%20local%3F" target="_blank" rel="noopener"><svg class="ico wa-glifo" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Pedir la ubicación</span></a>
+        </div>
+        <div class="mapa-wrap" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><section class="mapa" id="mapa" aria-label="Mapa de Santiago del Estero con la zona del local"></section></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__top">
+    <p class="footer__wm" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)"><span class="wm wm--xl">Pilin <b>Bikers</b></span></p>
+    <p class="footer__slogan" data-animate="subir" style="opacity:0;transform:translateY(24px)">Rodá hacia tu próxima aventura.</p>
+  </div>
+  <div class="container footer__regla" data-animate="linea" style="transform:scaleX(0)"></div>
+  <div class="container footer__cols">
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+      <p class="footer__t">Tienda</p>
+      <ul><li><a href="catalogo.html">Catálogo completo</a></li><li><a href="catalogo.html?electrica=1">Para bici eléctrica</a></li></ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+      <p class="footer__t">Taller</p>
+      <ul><li><a href="#turno">Pedir turno</a></li><li><a href="#trabajos">Trabajos</a></li></ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+      <p class="footer__t">Contacto</p>
+      <ul><li><a class="footer__wa" href="https://wa.me/5493855011309?text=Hola%2C%20Pilin%20Bikers.%20Quer%C3%ADa%20hacer%20una%20consulta." target="_blank" rel="noopener"><svg class="ico wa-glifo" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>+54 9 385 501-1309</span></a></li><li>Santiago del Estero</li></ul>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <p>© 2026 Pilin Bikers</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5493855011309?text=Hola%2C%20Pilin%20Bikers.%20Quer%C3%ADa%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
