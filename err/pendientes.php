@@ -55,6 +55,7 @@ const ERR_REPOS = [
     'mdliving.com.ar'                  => 'pablot95/mdliving',
     'afmasajesydepilacion.com.ar'      => 'pablot95/afmasajesydepilacion',
     'lxfparquetpisosdemadera.com.ar'   => 'pablot95/lxfparquetpisosdemadera',
+    'julietaledesmaasesoracomercial.com.ar' => 'pablot95/julietaledesmaasesoracomercial',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
     'reynamidasholistica.com.ar'       => 'pablot95/reynamidasholistica',
