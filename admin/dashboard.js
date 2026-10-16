@@ -1680,6 +1680,183 @@ function renderFinanzas() {
         ? g.fijos.map(x => fila(x, "")).join("") : `<li class="muted fin-vacio">Todavía no cargaste gastos fijos.</li>`;
     document.getElementById("finAdicLista").innerHTML = g.adicionales.length
         ? g.adicionales.map(x => fila(x, mantShortDate(new Date(`${x.fecha}T12:00:00`)))).join("") : `<li class="muted fin-vacio">Sin gastos adicionales en este mes.</li>`;
+    renderFinanzasUsd();
+}
+
+/* ── Dólares (Pablo, 16-oct-2026) ──
+   Cada ingreso en dólares se reparte entre personas. Va en la misma colección que los gastos
+   (finanzasGastos, que las reglas ya permiten) con tipo "dolar":
+   { tipo: "dolar", nombre, usd: total, fecha: "YYYY-MM-DD", reparto: [{ persona, usd }] }.
+   Los gastos de arriba filtran por tipo, así que no cuentan estos documentos. Todo se suma en
+   centavos enteros para que los repartos cierren exactos. */
+const _centavos = n => Math.round((Number(n) || 0) * 100);
+const fmtUsd = c => `US$ ${new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format((Number(c) || 0) / 100)}`;
+const _personaKey = p => String(p || "").trim().toLowerCase();
+let finUsdEditId = "";
+
+function renderFinanzasUsd() {
+    const lista = document.getElementById("finUsdLista");
+    if (!lista) return;
+    const todos = finGastos.filter(g => g.tipo === "dolar");
+    const delMes = todos.filter(g => String(g.fecha || "").slice(0, 7) === finMes)
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+    const sumaPor = items => {
+        const m = new Map();   // clave en minúsculas → { nombre, c }
+        for (const g of items) for (const r of (g.reparto || [])) {
+            const k = _personaKey(r.persona);
+            if (!k) continue;
+            const x = m.get(k) || { nombre: String(r.persona).trim(), c: 0 };
+            x.c += _centavos(r.usd);
+            m.set(k, x);
+        }
+        return m;
+    };
+    const mes = sumaPor(delMes), hist = sumaPor(todos);
+    const totMes = delMes.reduce((a, g) => a + _centavos(g.usd), 0);
+    const totHist = todos.reduce((a, g) => a + _centavos(g.usd), 0);
+    document.getElementById("finUsdTotalMes").textContent = fmtUsd(totMes);
+
+    document.getElementById("finUsdSugeridas").innerHTML = [...hist.values()]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+        .map(x => `<option value="${escapeHtml(x.nombre)}"></option>`).join("");
+
+    document.getElementById("finUsdResumen").innerHTML = hist.size ? `
+        <table class="fin-usd-tabla">
+            <thead><tr><th>Persona</th><th class="num">Este mes</th><th class="num">Total acumulado</th></tr></thead>
+            <tbody>${[...hist.entries()].sort((a, b) => b[1].c - a[1].c).map(([k, x]) => `
+                <tr><td>${escapeHtml(x.nombre)}</td><td class="num">${fmtUsd(mes.get(k)?.c || 0)}</td><td class="num">${fmtUsd(x.c)}</td></tr>`).join("")}
+            </tbody>
+            <tfoot><tr><td>Total</td><td class="num">${fmtUsd(totMes)}</td><td class="num">${fmtUsd(totHist)}</td></tr></tfoot>
+        </table>` : "";
+
+    lista.innerHTML = delMes.length ? delMes.map(g => `<li class="fin-item fin-usd-item">
+            <span class="fin-item-nombre">${escapeHtml(g.nombre || "Ingreso en dólares")}
+                <small class="muted">${mantShortDate(new Date(`${g.fecha}T12:00:00`))}</small>
+                <small class="fin-usd-reparto-det">${(g.reparto || []).map(r => `${escapeHtml(r.persona)} ${fmtUsd(_centavos(r.usd))}`).join(" · ")}</small>
+            </span>
+            <strong class="fin-usd-monto">${fmtUsd(_centavos(g.usd))}</strong>
+            <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este ingreso" aria-label="Editar ${escapeHtml(g.nombre || "ingreso")}">✎</button>
+            <button type="button" class="icon-btn" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este ingreso" aria-label="Borrar ${escapeHtml(g.nombre || "ingreso")}">×</button>
+        </li>`).join("") : `<li class="muted fin-vacio">Sin ingresos en dólares en este mes.</li>`;
+}
+
+function finUsdFila(persona = "", usd = "") {
+    const d = document.createElement("div");
+    d.className = "fin-usd-fila";
+    d.innerHTML = `<input type="text" name="persona" list="finUsdSugeridas" placeholder="Persona" maxlength="60" value="${escapeHtml(persona)}">
+        <input type="number" name="usdp" placeholder="US$" min="0.01" step="0.01" inputmode="decimal" value="${escapeHtml(String(usd))}">
+        <button type="button" class="icon-btn" data-usd-quitar title="Sacar a esta persona" aria-label="Sacar a esta persona">×</button>`;
+    document.getElementById("finUsdFilas").append(d);
+}
+
+/* Lo que se ve en la línea de abajo del reparto: cuánto falta o sobra. */
+function finUsdChequeo() {
+    const f = document.getElementById("finUsdForm");
+    const el = document.getElementById("finUsdChequeo");
+    if (!f || !el) return;
+    const total = _centavos(f.usd.value);
+    const filas = [...f.querySelectorAll(".fin-usd-fila")];
+    const asignado = filas.reduce((a, r) => a + _centavos(r.querySelector('[name="usdp"]').value), 0);
+    const unaSola = filas.length === 1 && r0Vacia(filas[0]);
+    if (!(total > 0)) { el.textContent = ""; return; }
+    if (unaSola) { el.textContent = "Va entero a esa persona."; el.classList.remove("fin-usd-mal"); return; }
+    const dif = total - asignado;
+    el.textContent = dif === 0 ? "Repartido: cierra justo." : dif > 0 ? `Falta repartir ${fmtUsd(dif)}.` : `Te pasaste por ${fmtUsd(-dif)}.`;
+    el.classList.toggle("fin-usd-mal", dif !== 0);
+}
+const r0Vacia = fila => fila.querySelector('[name="usdp"]').value === "";
+
+function finUsdReset() {
+    finUsdEditId = "";
+    const f = document.getElementById("finUsdForm");
+    if (!f) return;
+    f.reset();
+    f.fecha.value = _diaDe(new Date());
+    document.getElementById("finUsdFilas").replaceChildren();
+    finUsdFila();
+    document.getElementById("finUsdGuardar").textContent = "Agregar ingreso";
+    document.getElementById("finUsdCancelar").hidden = true;
+    finUsdChequeo();
+}
+
+if (document.getElementById("finUsdForm")) {
+    finUsdReset();
+    const f = document.getElementById("finUsdForm");
+    f.addEventListener("input", finUsdChequeo);
+    document.getElementById("finUsdMasPersona").addEventListener("click", () => { finUsdFila(); finUsdChequeo(); });
+    document.getElementById("finUsdCancelar").addEventListener("click", finUsdReset);
+    f.addEventListener("click", e => {
+        const quitar = e.target.closest("[data-usd-quitar]");
+        if (!quitar) return;
+        quitar.closest(".fin-usd-fila").remove();
+        if (!f.querySelector(".fin-usd-fila")) finUsdFila();
+        finUsdChequeo();
+    });
+    // Parte iguales: reparte en centavos y los que sobran van de a uno a las primeras personas.
+    document.getElementById("finUsdIgual").addEventListener("click", () => {
+        const total = _centavos(f.usd.value);
+        const filas = [...f.querySelectorAll(".fin-usd-fila")];
+        if (!(total > 0)) { alert("Primero poné el total en dólares."); return; }
+        const base = Math.floor(total / filas.length), resto = total - base * filas.length;
+        filas.forEach((r, i) => { r.querySelector('[name="usdp"]').value = ((base + (i < resto ? 1 : 0)) / 100).toFixed(2); });
+        finUsdChequeo();
+    });
+    f.addEventListener("submit", async e => {
+        e.preventDefault();
+        const total = _centavos(f.usd.value);
+        if (!(total > 0) || !f.fecha.value) return;
+        const filas = [...f.querySelectorAll(".fin-usd-fila")].map(r => ({
+            persona: r.querySelector('[name="persona"]').value.trim(),
+            c: r0Vacia(r) ? null : _centavos(r.querySelector('[name="usdp"]').value),
+        })).filter(x => x.persona);
+        if (!filas.length) { alert("Poné al menos una persona."); return; }
+        if (filas.length === 1 && filas[0].c === null) filas[0].c = total;
+        if (filas.some(x => !(x.c > 0))) { alert("Falta el monto de alguna persona. Podés usar «Dividir en partes iguales»."); return; }
+        const claves = filas.map(x => _personaKey(x.persona));
+        if (new Set(claves).size !== claves.length) { alert("Hay una persona repetida en el reparto."); return; }
+        const suma = filas.reduce((a, x) => a + x.c, 0);
+        if (suma !== total) { alert(`Los montos de las personas suman ${fmtUsd(suma)} y el ingreso es de ${fmtUsd(total)}: ${suma < total ? "faltan" : "sobran"} ${fmtUsd(Math.abs(total - suma))}.`); return; }
+        const datos = {
+            tipo: "dolar", nombre: f.nombre.value.trim() || "Ingreso en dólares",
+            usd: total / 100, fecha: f.fecha.value,
+            reparto: filas.map(x => ({ persona: x.persona, usd: x.c / 100 })),
+        };
+        try {
+            if (finUsdEditId) await updateDoc(doc(db, "finanzasGastos", finUsdEditId), datos);
+            else await addDoc(collection(db, "finanzasGastos"), { ...datos, createdAt: serverTimestamp() });
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo guardar el ingreso: " + err.message);
+            return;
+        }
+        finMes = datos.fecha.slice(0, 7);   // salta al mes del ingreso para verlo
+        finUsdReset();
+        renderFinanzas();
+    });
+    document.getElementById("finUsdBloque").addEventListener("click", async e => {
+        const borrar = e.target.closest("[data-usd-borrar]");
+        const editar = e.target.closest("[data-usd-editar]");
+        if (!borrar && !editar) return;
+        const g = finGastos.find(x => x.id === (borrar || editar).dataset[borrar ? "usdBorrar" : "usdEditar"]);
+        if (!g) return;
+        if (borrar) {
+            if (!confirm(`¿Borrar el ingreso "${g.nombre}" de ${fmtUsd(_centavos(g.usd))}?`)) return;
+            try { await deleteDoc(doc(db, "finanzasGastos", g.id)); }
+            catch (err) { console.error(err); alert("No se pudo borrar: " + err.message); }
+            return;
+        }
+        finUsdEditId = g.id;
+        f.nombre.value = g.nombre || "";
+        f.usd.value = (_centavos(g.usd) / 100).toFixed(2);
+        f.fecha.value = g.fecha;
+        document.getElementById("finUsdFilas").replaceChildren();
+        (g.reparto || []).forEach(r => finUsdFila(r.persona, (_centavos(r.usd) / 100).toFixed(2)));
+        if (!f.querySelector(".fin-usd-fila")) finUsdFila();
+        document.getElementById("finUsdGuardar").textContent = "Guardar cambios";
+        document.getElementById("finUsdCancelar").hidden = false;
+        finUsdChequeo();
+        f.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
 }
 
 document.getElementById("finMes")?.addEventListener("change", e => { finMes = e.target.value; renderFinanzas(); });

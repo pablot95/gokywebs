@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261013-meta-gasto">
+    <link rel="stylesheet" href="styles.css?v=20261016-dolares">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -550,6 +550,34 @@
                     </form>
                     <ul class="fin-lista" id="finAdicLista"></ul>
                 </div>
+            </div>
+            <!-- Dólares (16-oct-2026): cada ingreso en dólares se reparte entre personas. Van en finanzasGastos con tipo "dolar". -->
+            <div class="fin-bloque fin-usd" id="finUsdBloque">
+                <div class="fin-bloque-cab"><h2>💵 Dólares <span class="muted">(ingresos del mes)</span></h2><strong id="finUsdTotalMes"></strong></div>
+                <form class="fin-usd-form" id="finUsdForm" autocomplete="off">
+                    <div class="fin-usd-fila-datos">
+                        <input type="text" name="nombre" placeholder="Concepto (ej: Web Lozano, cliente del exterior…)" maxlength="80">
+                        <input type="number" name="usd" placeholder="Total en US$" min="0.01" step="0.01" inputmode="decimal" required>
+                        <input type="date" name="fecha" required>
+                    </div>
+                    <div class="fin-usd-reparto">
+                        <div class="fin-usd-reparto-cab"><span>Repartir entre</span>
+                            <span class="fin-usd-acciones">
+                                <button type="button" class="btn-ghost" id="finUsdIgual">Dividir en partes iguales</button>
+                                <button type="button" class="btn-ghost" id="finUsdMasPersona">+ Persona</button>
+                            </span>
+                        </div>
+                        <div id="finUsdFilas"></div>
+                        <p class="muted fin-usd-chequeo" id="finUsdChequeo"></p>
+                    </div>
+                    <div class="fin-usd-botones">
+                        <button type="submit" class="btn-primary" id="finUsdGuardar">Agregar ingreso</button>
+                        <button type="button" class="btn-ghost" id="finUsdCancelar" hidden>Cancelar</button>
+                    </div>
+                </form>
+                <datalist id="finUsdSugeridas"></datalist>
+                <div id="finUsdResumen"></div>
+                <ul class="fin-lista" id="finUsdLista"></ul>
             </div>
         </section>
 
@@ -1270,6 +1298,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261016-presentar"></script>
+    <script type="module" src="dashboard.js?v=20261016-dolares"></script>
 </body>
 </html>

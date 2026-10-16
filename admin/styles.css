@@ -2703,6 +2703,31 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .fin-item-monto { background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
 .fin-item-monto:hover { background: var(--bg-card); }
 .fin-vacio { padding: 8px 0; font-size: 13px; }
+/* Dólares: ingreso repartido entre personas (16-oct-2026) */
+.fin-usd { margin-top: 16px; }
+.fin-usd-form { display: grid; gap: 10px; margin-bottom: 12px; }
+.fin-usd-fila-datos { display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-usd-fila-datos input, .fin-usd-fila input { flex: 1 1 120px; min-width: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 10px; font-size: 13px; color-scheme: dark; }
+.fin-usd-fila-datos input[name="nombre"] { flex: 3 1 220px; }
+.fin-usd-reparto { border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+.fin-usd-reparto-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+.fin-usd-acciones { display: flex; flex-wrap: wrap; gap: 6px; }
+.fin-usd-acciones .btn-ghost { width: auto; padding: 5px 10px; font-size: 12.5px; }
+.fin-usd-fila { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.fin-usd-fila input[name="persona"] { flex: 3 1 160px; }
+.fin-usd-fila input[name="usdp"] { flex: 1 1 100px; }
+.fin-usd-chequeo { margin: 4px 0 0; font-size: 12.5px; min-height: 1.2em; }
+.fin-usd-mal { color: var(--danger, #f87171); }
+.fin-usd-botones { display: flex; gap: 8px; }
+.fin-usd-botones .btn-primary, .fin-usd-botones .btn-ghost { width: auto; margin: 0; padding: 8px 14px; }
+.fin-usd-tabla { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 13.5px; }
+.fin-usd-tabla th, .fin-usd-tabla td { padding: 6px 4px; text-align: left; border-top: 1px solid var(--border); }
+.fin-usd-tabla th { font-size: 12px; font-weight: 600; color: var(--text-muted, var(--muted, inherit)); border-top: 0; }
+.fin-usd-tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+.fin-usd-tabla tfoot td { font-weight: 700; }
+.fin-usd-item { align-items: flex-start; }
+.fin-usd-reparto-det { display: block; margin-top: 2px; color: var(--text-muted, var(--muted, inherit)); }
+.fin-usd-monto { white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* ===== MOBILE: barra de pestañas scrolleable + iframe a pantalla ===== */
 @media (max-width: 768px) {
