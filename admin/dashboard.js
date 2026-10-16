@@ -5475,7 +5475,7 @@ document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) =
         alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
         return;
     }
-    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de la lista, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}`;
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de la lista, y agregale a cada una una subcarpeta 'images' adentro. En descargas hay zips con imagenes para cada una, cargalas y elimina los zips:\n\n${nombres.join("\n")}`;
     try {
         await writeTextToClipboard(texto);
         const prev = btn.textContent;
