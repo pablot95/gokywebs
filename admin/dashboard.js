@@ -5546,7 +5546,7 @@ function renderPropuestas() {
                 </td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-prop-copy="${p.id}" style="font-size:13px">Copiar</button>
-                    <button class="btn-ghost btn-image-prompt${p.imgLanCopiado ? ' active' : ''}" data-prop-img6="${p.id}" style="font-size:13px" title="Copiar el pedido de 6 imágenes (1 en 9:16, 1 en 16:9 y 4 en 1:1) y de un mock up de la web de 720 x 480 con esas imágenes, con la info de este boceto">Copiar 6</button>
+                    <button class="btn-ghost btn-image-prompt${p.imgLanCopiado ? ' active' : ''}" data-prop-img="${p.id}" style="font-size:13px" title="Copiar el pedido de 10 imágenes: 9 de contenido (1 en 9:16, 1 en 16:9 y 7 en 1:1) y un mock up de la web de 720 x 480 con esas imágenes, con la info de este boceto">Copiar 10</button>
                     <button class="btn-toggle-prop${p.bocetoHecho ? ' active' : ''}" data-prop-boceto="${p.id}" style="font-size:13px">Boceto hecho</button>
                     <button class="btn-presentada-prop" data-prop-presentada="${p.id}" style="font-size:13px">Presentar</button>
                     <button class="icon-btn" data-agenda-nombre="${escapeHtml(p.nombre || p.contacto_nombre || '')}" data-agenda-proyecto="${escapeHtml(p.nombre_negocio || p.rubro || '')}" title="Agregar al calendario">📅</button>
@@ -5566,8 +5566,8 @@ function renderPropuestas() {
     tbody.querySelectorAll("[data-prop-copy]").forEach(btn => {
         btn.addEventListener("click", () => copyPropuesta(btn.dataset.propCopy, btn));
     });
-    tbody.querySelectorAll("[data-prop-img6]").forEach(btn => {
-        btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propImg6, btn));
+    tbody.querySelectorAll("[data-prop-img]").forEach(btn => {
+        btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propImg, btn));
     });
     tbody.querySelectorAll("[data-prop-por]").forEach(sel => {
         sel.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -6084,9 +6084,10 @@ async function copyPropuesta(id, btn) {
 // Un solo pedido de imágenes por boceto (Pablo, 20-sep): 6 imágenes, 1 en 9:16,
 // 1 en 16:9 y 4 en 1:1, con la info del boceto al final.
 // 13-oct: arranca con "crea un mock up de la web 720 x 480 usando estas imágenes" (Pablo).
-const PROPUESTA_IMAGE_PROMPT = `Crea 6 imágenes y crea un mock up de la web 720 x 480 usando estas imágenes.
+// 16-oct: "Copiar 10" = 9 de contenido + el mock up; las 3 nuevas van en 1:1 (Pablo).
+const PROPUESTA_IMAGE_PROMPT = `Crea 9 imágenes y crea un mock up de la web 720 x 480 usando estas imágenes.
 
-Las 6 imágenes, todas juntas y sin textos: 1 tamaño 9:16 y otra tamaño 16:9. 4 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos. Que parezcan fotos reales, tomadas de la realidad: nada de ilustraciones, dibujos ni renders.
+Las 9 imágenes, todas juntas y sin textos: 1 tamaño 9:16 y otra tamaño 16:9. 7 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos. Que parezcan fotos reales, tomadas de la realidad: nada de ilustraciones, dibujos ni renders.
 
 La web es para:
 {{DATOS_PROYECTO}}`;
