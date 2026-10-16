@@ -124,13 +124,16 @@ function prospecto_chatgpt_enviar(string $id, array $prospecto): bool {
         throw new RuntimeException('El correo de destino o remitente no es válido.');
     }
     $asunto = PROSPECTO_CHATGPT_ASUNTO . ' | ' . $id;
+    // En base64: el chat trae líneas de más de 998 caracteres (el tope de SMTP)
+    // y con 8bit el servidor de correo las corta o rebota el mail.
     $encabezados = [
         'From: Gokywebs <' . $remitente . '>',
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Transfer-Encoding: base64',
     ];
-    return @mail($destino, $asunto, prospecto_chatgpt_prompt($prospecto), implode("\r\n", $encabezados));
+    $cuerpo = chunk_split(base64_encode(prospecto_chatgpt_prompt($prospecto)));
+    return @mail($destino, $asunto, $cuerpo, implode("\r\n", $encabezados));
 }
 
 function prospecto_chatgpt_cron(): void {
@@ -172,6 +175,11 @@ function prospecto_chatgpt_cron(): void {
             'inicio' => $estado['inicio'], 'ultimo' => $ahora, 'enviados' => $enviados,
         ])) throw new RuntimeException('No se pudo guardar el avance del monitoreo.');
         if ($fallo) throw new RuntimeException('Algunos correos no fueron aceptados; se reintentará en el próximo ciclo.');
+    } catch (Throwable $e) {
+        // Desde facturar-cobros.php el error solo se imprime en la salida del
+        // cron, que Hostinger pisa en cada corrida: queda también en el log.
+        wabot_log('error', ['donde' => 'prospecto_chatgpt_cron', 'msg' => $e->getMessage()]);
+        throw $e;
     } finally {
         flock($lock, LOCK_UN);
         fclose($lock);
@@ -187,7 +195,6 @@ if (realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
             prospecto_chatgpt_cron();
         }
     } catch (Throwable $e) {
-        wabot_log('error', ['donde' => 'prospecto_chatgpt_cron', 'msg' => $e->getMessage()]);
         fwrite(STDERR, $e->getMessage() . "\n");
         exit(1);
     }
