@@ -1,0 +1,41 @@
+{
+  "silleta-fachada.webp": {
+    "fuente": "Pexels",
+    "id": 35570308,
+    "url": "https://www.pexels.com/photo/35570308/",
+    "slot": "galeria",
+    "nota": "marca del balde desenfocada"
+  },
+  "silleta-edificio.webp": {
+    "fuente": "Pexels",
+    "id": 26918635,
+    "url": "https://www.pexels.com/photo/26918635/",
+    "slot": "galeria"
+  },
+  "cielorraso.webp": {
+    "fuente": "Pexels",
+    "id": 5493655,
+    "url": "https://www.pexels.com/photo/5493655/",
+    "slot": "galeria",
+    "nota": "recorte sin el balde de la izquierda"
+  },
+  "enduido.webp": {
+    "fuente": "Pexels",
+    "id": 5493658,
+    "url": "https://www.pexels.com/photo/5493658/",
+    "slot": "galeria"
+  },
+  "porcelanato.webp": {
+    "fuente": "Pexels",
+    "id": 11806482,
+    "url": "https://www.pexels.com/photo/11806482/",
+    "slot": "galeria",
+    "nota": "recorte sin el guante con logo"
+  },
+  "colocacion.webp": {
+    "fuente": "Pexels",
+    "id": 29181494,
+    "url": "https://www.pexels.com/photo/29181494/",
+    "slot": "servicio albanileria y colocaciones"
+  }
+}
