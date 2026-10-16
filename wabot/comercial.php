@@ -308,7 +308,7 @@ function wabot_comercial_info($cfg) {
     $l[] = "\nSOLUCIONES Y PLANES (los montos los pone el sistema; vos nunca los escribís):";
     $l[] = '- informativa → plan "informativa" (el más económico). Incluye el desarrollo completo de la web, adaptada para celular, preparada para Google, un cambio por mes (lo hacemos nosotros), hosting, dominio, actualizaciones y soporte técnico. NO tiene panel: el cliente no edita nada solo.';
     $l[] = '- informativa_panel → plan "con panel": la misma web informativa, pero con panel para que el cliente cambie él mismo textos, fotos y servicios. Corresponde si dice que quiere manejar o actualizar el contenido por su cuenta.';
-    $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas. Las reservas de turnos online son siempre del plan con panel.';
+    $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas (en la propuesta, solo lo que el cliente pidió). Las reservas de turnos online son siempre del plan con panel.';
     $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: el sistema usa el plan internacional, con sus montos. Una web que solo se ve desde otros países sin cobrar no es internacional.';
     $l[] = '- Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.';
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
@@ -1094,14 +1094,46 @@ function wabot_comercial_dijo_sin_cobro($texto) {
  */
 function wabot_comercial_dudas($d, $texto, $conv) {
     $dudas = [];
+    $cliente = [(string)$texto];
+    foreach ((array)($conv['transcript'] ?? []) as $fila) if (($fila['q'] ?? '') === 'cliente') $cliente[] = (string)($fila['t'] ?? '');
+    $cliente = implode("\n", $cliente);
     if ($d['accion'] === 'cotizar' && $d['solucion'] === 'catalogo') {
-        $cliente = [(string)$texto];
-        foreach ((array)($conv['transcript'] ?? []) as $fila) if (($fila['q'] ?? '') === 'cliente') $cliente[] = (string)($fila['t'] ?? '');
-        if (!wabot_comercial_dijo_sin_cobro(implode("\n", $cliente))) {
+        if (!wabot_comercial_dijo_sin_cobro($cliente)) {
             $dudas[] = 'elegiste catalogo, pero el cliente no dijo que no quiere cobrar por la web: si vende productos, asumí venta online (solucion tienda) y escribí la propuesta para una tienda';
         }
     }
+    if (in_array($d['accion'], ['responder', 'cotizar'], true) && $d['solucion'] === 'cursos') {
+        $agregadas = wabot_comercial_cursos_funciones_de_mas(implode("\n", $d['mensajes']), $cliente);
+        if ($agregadas) {
+            $dudas[] = 'la propuesta nombra ' . implode(', ', $agregadas) . ', pero el cliente no lo pidió: describí solo lo que contó (sus capacitaciones o cursos, la información de cada uno y el contacto) y el panel para cargarlos y actualizarlos, sin preguntarle por esas funciones';
+        }
+    }
     return $dudas;
+}
+
+/**
+ * Funciones de cursos que la propuesta agrega sin que el cliente las haya
+ * nombrado (Pablo, 16-oct: Roque dijo "doy capacitaciones" y la propuesta le
+ * ofreció un sistema para gestionar alumnos; Marcelo quería "algo simple").
+ * El plan con panel se mantiene: lo que se frena es describir de más.
+ */
+function wabot_comercial_cursos_funciones_de_mas($propuesta, $cliente) {
+    $p = mb_strtolower((string)$propuesta);
+    $c = mb_strtolower((string)$cliente);
+    // Si vende o cobra los cursos por la web, alumnos, inscripción y acceso vienen con eso.
+    $vende = '\b(pag\w*|cobr\w*|vend\w*|mercado ?pago)\b';
+    $funciones = [
+        'alumnos'              => ['/\b(alumn\w*|estudiantes?)\b/u', "/\\b(alumn\\w*|estudiantes?)\\b|$vende/u"],
+        'inscripción'          => ['/\binscri\w*/u', "/\\b(inscri\\w*|anot\\w*|matricul\\w*)|$vende/u"],
+        'pago online'          => ['/\b(pag\w*|cobr\w*)\b.{0,30}\b(online|en l[ií]nea|desde la (web|p[aá]gina))\b|\bmercado ?pago\b/u', "/$vende/u"],
+        'acceso a una plataforma' => ['/\b(acceso|campus|aula virtual|plataforma)\b/u', "/\\b(acceso|campus|aula|plataforma|virtual\\w*|videos?|grabad\\w*)\\b|$vende/u"],
+        'un sistema de gestión'   => ['/\bsistema\b/u', '/\bsistema\b|\bgestion\w*\b/u'],
+    ];
+    $de_mas = [];
+    foreach ($funciones as $nombre => [$enPropuesta, $loDijo]) {
+        if (preg_match($enPropuesta, $p) && !preg_match($loDijo, $c)) $de_mas[] = $nombre;
+    }
+    return $de_mas;
 }
 
 function wabot_comercial_validar($d, $texto, $conv, $cfg) {

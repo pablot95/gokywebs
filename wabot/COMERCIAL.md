@@ -137,7 +137,10 @@ Estándar (se cotiza y se contesta solo):
   carta (gastronomía), botón para pedir turno por WhatsApp. Gastronomía con pedidos desde la web
   es tienda (Pablo, pizzería del 9-oct).
 - Cursos: videos y material con acceso propio de cada alumno, cobro por Mercado Pago; o solo
-  mostrarlos e inscribirse por WhatsApp.
+  mostrarlos e inscribirse por WhatsApp. Siempre plan con panel, pero la propuesta describe solo lo
+  que pidió: alumnos, inscripción o pago online, campus o "sistema" únicamente si los nombró o si
+  vende/cobra los cursos (Pablo, 16-oct, por Roque y Marcelo; `wabot_comercial_cursos_funciones_de_mas`
+  pide una corrección).
 - Inmobiliaria: fichas con fotos y video, buscador por zona, tipo y precio, consultas por WhatsApp.
 - Reservas: turnos online donde el cliente elige día y horario.
 - Cualquier web: pixel de Meta, Analytics, SSL, hosting y dominio.

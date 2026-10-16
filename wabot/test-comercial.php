@@ -156,9 +156,11 @@ foreach (['reservas' => 'landing', 'cursos' => 'elearning', 'inmobiliaria' => 'i
     caso("$sol → plan con panel ($190.000 / $30.000), tipo $tipo", ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($c['tipo'] ?? '') === $tipo, json_encode($r, JSON_UNESCAPED_UNICODE));
 }
 $c = cv();
-oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Perfecto, te podemos armar una web con tus cursos de maquillaje y la inscripción desde ahí.'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']])]);
+// La inscripción no la pidió ("que me escriban"): una corrección (16-oct), y el plan sigue con panel.
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Perfecto, te podemos armar una web con tus cursos de maquillaje y la inscripción desde ahí.'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']]),
+    dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Perfecto, te podemos armar una web para mostrar tus cursos de maquillaje y que te escriban directo'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']])]);
 $r = turno('Dicto cursos de maquillaje presenciales, para mostrarlos y que me escriban', $c, $cfg);
-caso('cursos presenciales solo para mostrar → igual el plan con panel (no se rebajan a informativa)', ($r[1] ?? '') === planes('panel', '$190.000', '$30.000'), $r[1] ?? '');
+caso('cursos presenciales solo para mostrar → igual el plan con panel (no se rebajan a informativa)', ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && count(pedidos()) === 2 && mb_stripos($r[0] ?? '', 'inscrip') === false, $r[1] ?? '');
 
 echo "— 3. La propuesta: adaptada por el modelo, con red —\n";
 $c = cv();
@@ -750,6 +752,22 @@ $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'catalogo', 'mensajes' => ['Te armamos un catálogo con pedido por WhatsApp'], 'ficha' => ['que_vende' => 'suplementos']])]);
 turno('Vendo suplementos, solo quiero mostrarlos y que me pidan por WhatsApp', $c, $cfg);
 caso('catálogo pedido expresamente → sin corrección (una sola llamada)', count(pedidos()) === 1 && ($c['comercial_solucion'] ?? '') === 'catalogo');
+
+// Cursos: plan con panel siempre, pero sin agregar funciones que no pidió (Pablo, 16-oct: Roque y Marcelo).
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Podemos armarte una web para tus capacitaciones con un sistema para gestionar alumnos, inscripciones y pagos online'], 'ficha' => ['que_vende' => 'capacitaciones']]),
+    dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ["Buenísimo. Podemos armarte una web para mostrar tus capacitaciones, con la información de cada una y contacto directo\n\nDespués tendrías un panel para cargar y actualizar las capacitaciones cuando quieras"], 'ficha' => ['que_vende' => 'capacitaciones']])]);
+$r = turno('Doy capacitaciones', $c, $cfg);
+$correccion = (string)(pedidos()[1]['input'][2]['content'] ?? '');
+caso('"doy capacitaciones" con alumnos/inscripción/pagos/sistema en la propuesta → una corrección, sigue con panel', count(pedidos()) === 2 && ($c['comercial_solucion'] ?? '') === 'cursos'
+    && strpos($correccion, 'alumnos') !== false && strpos($correccion, 'inscripción') !== false && strpos($correccion, 'pago online') !== false && strpos($correccion, 'sistema') !== false
+    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && strpos($r[0] ?? '', 'alumnos') === false, json_encode([$r, $correccion], JSON_UNESCAPED_UNICODE));
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Podemos armarte una web de cursos online donde tus alumnos se inscriben y pagan desde la web'], 'ficha' => ['que_vende' => 'cursos de cocina']])]);
+turno('Doy cursos de cocina online y quiero que los alumnos se inscriban y paguen desde la web', $c, $cfg);
+caso('si los pidió, alumnos/inscripción/pago van sin corrección', count(pedidos()) === 1 && ($c['comercial_solucion'] ?? '') === 'cursos');
+caso('Marcelo: "Después tendrían un panel para actualizar las capacitaciones" no es de más',
+    wabot_comercial_cursos_funciones_de_mas("Podemos armarles una web simple para mostrar sus capacitaciones, con la información de cada una y una forma de contacto directo\n\nDespués tendrían un panel para actualizar las capacitaciones cuando lo necesiten", 'queremos hacer una página web..para que puedan contactarnos y ver nuestras capacitaciones.. tiene que ser simple') === []);
 
 echo "— 15. El revisor: se da cuenta antes de mandar (Pablo, 9-oct) —\n";
 $revMal = ['ok' => false, 'problemas' => [['tipo' => 'contradice', 'detalle' => 'Preguntó por los envíos y se le contesta sobre publicidad']], 'falta_contestar' => ['hacen envíos al interior?']];

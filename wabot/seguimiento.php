@@ -4,7 +4,8 @@
  *   - la confirmación del formulario, a los 5 minutos de que lo completa;
  *   - la "última llamada" antes de que cierre la ventana de Meta;
  *   - seguimiento_demo_72h, a las 18 h tras 72 h sin respuesta;
- *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes.
+ *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes;
+ *   - el re-aviso a Pablo (push) de las charlas que le tocan y siguen sin respuesta.
  *
  * Desde el hosting, cada 5-30 minutos (zona horaria argentina para las plantillas):
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
@@ -18,6 +19,7 @@
 // único de salida (wabot_salida_emisor_texto), que vive en engine. Con solo
 // lib.php cargado la función no existe y el cron moría con un fatal.
 require_once __DIR__ . '/engine.php';
+require_once __DIR__ . '/push.php';
 
 if (php_sapi_name() !== 'cli') {
     $auth = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');
@@ -41,6 +43,8 @@ $recordatorio = wabot_form_recordatorio_correr($cfg);
 $ofertaEntrega = wabot_oferta_entrega_seguimiento_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
 $plantillas = wabot_plantillas_auto_correr($cfg);
+// No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
+$reaviso = wabot_push_reaviso_correr();
 
 echo json_encode([
     'ultima_llamada' => [
@@ -52,4 +56,5 @@ echo json_encode([
     'form_confirmacion' => $confirmacion,
     'form_recordatorio' => $recordatorio,
     'oferta_entrega' => $ofertaEntrega,
+    'push_reaviso' => $reaviso,
 ], JSON_UNESCAPED_UNICODE) . "\n";

@@ -279,6 +279,9 @@ function wabot_push_avisar_si_corresponde($cv) {
     if (mb_strlen($cuerpo) > 1500) $cuerpo = '…' . mb_substr($cuerpo, -1499);
 
     $titulo = wabot_push_quien($cv);
+    // Quiere pagar, eligió un plan o se está impacientando: que se note (16-oct).
+    $urgencia = wabot_push_urgencia($cv);
+    if ($urgencia !== '') $titulo = '⚠ ' . $titulo . ' · ' . $urgencia;
     $clave  = (string)($cv['conversation_key'] ?? $cv['tel'] ?? '');
 
     $ok = wabot_push_enviar($titulo, $cuerpo, [
@@ -287,4 +290,153 @@ function wabot_push_avisar_si_corresponde($cv) {
     ]);
     if ($ok > 0) wabot_log('push', ['tel' => $clave, 'dispositivos' => $ok]);
     return $ok > 0;
+}
+
+/* ── Lo que sigue esperando (Pablo, 16-oct) ───────────────────────────────
+ *
+ * La auditoría de chats del 27-sep al 16-oct encontró charlas que el bot le
+ * pasó a Pablo y nadie contestó: Ainara (comparar landing con catálogo),
+ * Martín (SEO) y Javier, que aceptó el plan anual y después escribió "Si no me
+ * contestan los descarto". El push del primer mensaje se pierde entre los
+ * demás, así que:
+ *   - el push inmediato sale marcado ⚠ cuando quiere pagar, eligió un plan o
+ *     se impacienta (wabot_push_urgencia);
+ *   - el cron (seguimiento.php) vuelve a avisar lo que sigue sin respuesta a
+ *     las 2 h (1 h si es urgente), de 9 a 22, en UNA notificación con todas.
+ * Una vez por mensaje del cliente: si vuelve a escribir, cuenta de nuevo. Lo
+ * re-avisado se guarda aparte (data/push-reaviso.json), sin tocar la charla.
+ */
+
+define('WABOT_PUSH_REAVISO', WABOT_DATA . '/push-reaviso.json');
+
+/** Los mensajes del cliente desde lo último que se le contestó, en orden. */
+function wabot_push_textos_pendientes($cv) {
+    $textos = [];
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $linea) {
+        if (($linea['q'] ?? '') !== 'cliente') break;
+        $t = trim(preg_replace('/\s+/u', ' ', (string)($linea['t'] ?? '')));
+        if ($t !== '') array_unshift($textos, $t);
+    }
+    return $textos;
+}
+
+/**
+ * Por qué esta charla no puede esperar, o ''. Mira la columna del panel, el
+ * motivo con el que el bot la pasó y lo que escribió el cliente desde la
+ * última respuesta.
+ */
+function wabot_push_urgencia($cv) {
+    $grupo = wabot_conv_grupo($cv);
+    if ($grupo === 'pago') return 'avisó que pagó';
+    $t = mb_strtolower(implode("\n", wabot_push_textos_pendientes($cv)));
+    if (preg_match('/\b(te|les?) (hago|paso|mando|env[ií]o) (el |la )?(pago|transferencia|comprobante|se[nñ]a)\b|\bpas(a|á)me (el |tu )?(link|alias|cbu|cvu)\b|\ba (d[oó]nde|qu[eé] cuenta) (te |les? )?(transfiero|pago|deposito)\b|\b(quiero|queremos) (pagar|contratar|arrancar|avanzar)\b/u', $t)) return 'quiere pagar';
+    $motivo = mb_strtolower((string)($cv['comercial_motivo'] ?? ''));
+    if (preg_match('/\b(pag\w*|link de pago|transfer\w*|comprobante)\b/u', $motivo)) return 'quiere pagar';
+    if (preg_match('/\b(si no (me )?(contestan|responden|contest[aá]s|respond[eé]s)|nadie (me )?(contesta|responde)|sigo esperando|estoy esperando|no me (contestaron|respondieron|contestan|responden)|me (contestan|responden)\?|los descarto|busco (a )?otro|me voy con otro)/u', $t)) return 'se impacienta';
+    if ($grupo === 'prospecto') return 'eligió forma de pago';
+    if (preg_match('/\b(elijo|me quedo con|vamos con|voy con|prefiero|quiero|dale(,)? (con )?)\s*(el )?(plan )?(anual|mensual)\b/u', $t)) return 'eligió un plan';
+    return '';
+}
+
+/**
+ * ¿Hay que volver a avisar de esta charla? Le toca a Pablo (el mismo SL del
+ * panel), el último mensaje es del cliente, hace más de 2 h (1 h si es
+ * urgente) y menos de 3 días (lo más viejo ya tiene la ventana de Meta
+ * cerrada y vive en el panel), y todavía no se re-avisó por ese mensaje.
+ */
+function wabot_push_reaviso_corresponde($cv, $estado, $ahora) {
+    if (!wabot_push_debe_avisar($cv) || !wabot_conv_es_sl($cv)) return false;
+    $ult = (int)wabot_conv_ultimo_ts($cv);
+    $espera = $ahora - $ult;
+    $clave = (string)($cv['conversation_key'] ?? $cv['tel'] ?? '');
+    if ($ult <= 0 || $espera > 3 * 86400 || (int)($estado[$clave] ?? 0) >= $ult) return false;
+    return $espera >= (wabot_push_urgencia($cv) !== '' ? 1 : 2) * 3600;
+}
+
+/** Cuánto hace que espera, corto: "45 min", "3 h", "2 d". */
+function wabot_push_espera_texto($segundos) {
+    if ($segundos < 3600) return max(1, (int)floor($segundos / 60)) . ' min';
+    if ($segundos < 86400) return (int)floor($segundos / 3600) . ' h';
+    return (int)floor($segundos / 86400) . ' d';
+}
+
+/**
+ * Arma la notificación del re-aviso: una charla → su nombre y lo que escribió;
+ * varias → un renglón por charla, las urgentes primero. Devuelve
+ * [titulo, cuerpo, datos].
+ */
+function wabot_push_reaviso_mensaje($items, $ahora) {
+    usort($items, function ($a, $b) {
+        return [($a['urgencia'] === '') ? 1 : 0, $a['ult']] <=> [($b['urgencia'] === '') ? 1 : 0, $b['ult']];
+    });
+    $base = 'https://www.gokywebs.com/wabot/admin.php?tab=conversaciones';
+    if (count($items) === 1) {
+        $i = $items[0];
+        $titulo = ($i['urgencia'] !== '' ? '⚠ ' : '⏰ ') . $i['quien'] . ' · te espera hace ' . wabot_push_espera_texto($ahora - $i['ult']);
+        $l = [];
+        if ($i['urgencia'] !== '') $l[] = ucfirst($i['urgencia']);
+        if ($i['motivo'] !== '') $l[] = 'El bot te lo pasó: ' . $i['motivo'];
+        $l[] = implode("\n", array_slice($i['textos'], -3)) ?: 'Te escribió y espera respuesta.';
+        return [$titulo, mb_substr(implode("\n", $l), 0, 1500), ['tel' => $i['clave'], 'link' => $base . '&ver=' . rawurlencode($i['clave'])]];
+    }
+    $urgentes = count(array_filter($items, function ($i) { return $i['urgencia'] !== ''; }));
+    $titulo = ($urgentes ? '⚠ ' : '⏰ ') . count($items) . ' charlas te esperan' . ($urgentes ? " ($urgentes urgente" . ($urgentes > 1 ? 's' : '') . ')' : '');
+    $l = [];
+    foreach (array_slice($items, 0, 6) as $i) {
+        $ultimo = (string)(end($i['textos']) ?: '');
+        $ultimo = mb_strlen($ultimo) > 80 ? mb_substr($ultimo, 0, 79) . '…' : $ultimo;
+        $l[] = ($i['urgencia'] !== '' ? '⚠ ' : '') . $i['quien'] . ' (' . wabot_push_espera_texto($ahora - $i['ult']) . ')' . ($ultimo !== '' ? ': ' . $ultimo : '');
+    }
+    if (count($items) > 6) $l[] = 'y ' . (count($items) - 6) . ' más';
+    return [$titulo, implode("\n", $l), ['tel' => 'reaviso', 'link' => $base]];
+}
+
+/**
+ * La pasada del cron. $convs y $enviar solo los pasan las pruebas (charlas en
+ * memoria y un envío falso); en producción lee data/conv y manda por FCM.
+ */
+function wabot_push_reaviso_correr($ahora = null, $convs = null, $enviar = null) {
+    $ahora = $ahora ?? time();
+    $res = ['candidatas' => 0, 'enviado' => false];
+    $h = wabot_hora_local($ahora);
+    if ($h < 9 || $h >= 22) return $res + ['motivo' => 'fuera_de_horario'];
+    if ($enviar === null) {
+        if (!wabot_push_configurado()) return $res + ['motivo' => 'push_sin_configurar'];
+        $enviar = 'wabot_push_enviar';
+    }
+    $estado = is_file(WABOT_PUSH_REAVISO) ? (array)json_decode((string)@file_get_contents(WABOT_PUSH_REAVISO), true) : [];
+    if ($convs === null) {
+        $convs = [];
+        foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+            $clave = basename($f, '.json');
+            if (stripos($clave, 'TEST') !== false) continue;
+            $convs[] = wabot_conv_load($clave);
+        }
+    }
+    $items = [];
+    foreach ($convs as $cv) {
+        if (!wabot_push_reaviso_corresponde($cv, $estado, $ahora)) continue;
+        $items[] = [
+            'clave' => (string)($cv['conversation_key'] ?? $cv['tel'] ?? ''),
+            'quien' => wabot_push_quien($cv),
+            'ult' => (int)wabot_conv_ultimo_ts($cv),
+            'urgencia' => wabot_push_urgencia($cv),
+            'motivo' => trim((string)($cv['comercial_motivo'] ?? '')),
+            'textos' => wabot_push_textos_pendientes($cv),
+        ];
+    }
+    $res['candidatas'] = count($items);
+    if (!$items) return $res;
+
+    [$titulo, $cuerpo, $datos] = wabot_push_reaviso_mensaje($items, $ahora);
+    $n = (int)$enviar($titulo, $cuerpo, $datos);
+    if ($n <= 0) return $res + ['motivo' => 'sin_dispositivos'];
+    foreach ($items as $i) $estado[$i['clave']] = $ahora;
+    // Lo de más de una semana ya no puede volver a entrar (tope de 3 días).
+    $estado = array_filter($estado, function ($ts) use ($ahora) { return (int)$ts > $ahora - 7 * 86400; });
+    @file_put_contents(WABOT_PUSH_REAVISO, json_encode($estado), LOCK_EX);
+    wabot_log('push_reaviso', ['charlas' => array_column($items, 'clave'), 'dispositivos' => $n]);
+    $res['enviado'] = true;
+    $res['detalle'] = array_column($items, 'clave');
+    return $res;
 }
