@@ -8,136 +8,43 @@ document.addEventListener('keydown', e => {
 });
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const WSP = '5491167134135';
+const WSP = '5491164226441';
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const waLink = msg => `https://wa.me/${WSP}?text=${encodeURIComponent(msg)}`;
 
-const PLANES = [
-  {
-    id: 'acompanamiento',
-    nombre: 'Acompañamiento por horas',
-    resumen: 'Alguien que llega, sostiene la rutina del día y se queda las horas que hagan falta.',
-    incluye: [
-      'Compañía, conversación y juegos de mesa',
-      'Rutina sostenida: comidas a horario y siesta',
-      'Paseos por el barrio y salidas cortas',
-      'Recordatorio de la medicación del turno',
-    ],
-    regimen: ['3 a 6 horas por día', 'Los días que elijas', 'Mañana o tarde'],
-    perfil: { ayuda: ['autonomo'], cuando: ['horas', 'jornada'] },
+if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
+if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
+if (typeof ScrollTrigger !== 'undefined') window.addEventListener('load', () => ScrollTrigger.refresh());
+
+const SERVICIOS = {
+  cuidadoras: {
+    etiqueta: 'Todas las edades y patologías',
+    titulo: 'Cuidadoras domiciliarias 24 h',
+    texto: 'Acompañamiento en casa de día, de noche o las 24 horas, adaptado a la rutina de cada persona.',
+    puntos: ['Higiene, confort y cambio de ropa', 'Ayuda con las comidas y la hidratación', 'Movilidad dentro de la casa y acompañamiento en salidas', 'Recordatorio de la medicación indicada', 'Compañía, conversación y rutinas del día'],
+    img: 'images/acompanamiento.webp',
+    alt: 'Cuidadora con ambo celeste ayudando a un hombre con su medicación en el living',
+    consulta: 'Hola Cuidar+, quiero consultar por el servicio de cuidadoras domiciliarias.'
   },
-  {
-    id: 'asistido',
-    nombre: 'Cuidado asistido',
-    resumen: 'Para cuando ya no alcanza con la compañía y hace falta ayuda con el cuerpo.',
-    incluye: [
-      'Higiene, baño asistido y cambio de ropa',
-      'Traslados y movilidad dentro de la casa',
-      'Medicación en horario y control de presión',
-      'Comidas preparadas y acompañadas',
-    ],
-    regimen: ['6 a 8 horas por día', 'De lunes a lunes si hace falta', 'Libreta del día'],
-    perfil: { ayuda: ['asistido'], cuando: ['horas', 'jornada'] },
+  enfermeria: {
+    etiqueta: 'Personal matriculado',
+    titulo: 'Enfermería domiciliaria',
+    texto: 'Controles y procedimientos de salud en el domicilio, siguiendo las indicaciones del médico.',
+    puntos: ['Control de signos vitales: presión, temperatura y saturación', 'Aplicación de inyectables y medicación indicada', 'Curaciones y cuidado de heridas', 'Control de glucemia', 'Seguimiento después de una internación o cirugía'],
+    img: 'images/control-salud.webp',
+    alt: 'Enfermera con estetoscopio midiendo la saturación de una señora mayor',
+    consulta: 'Hola Cuidar+, quiero consultar por enfermería domiciliaria.'
   },
-  {
-    id: 'nocturno',
-    nombre: 'Cuidado nocturno',
-    resumen: 'Un cuidador que se queda a dormir para que la familia descanse de verdad.',
-    incluye: [
-      'Cuidador en la casa durante toda la noche',
-      'Acompañamiento en los despertares y al baño',
-      'Medicación de la noche y de la madrugada',
-      'Parte escrito de cómo pasó la noche',
-    ],
-    regimen: ['De 20 a 8', 'Noches sueltas o toda la semana', 'Fines de semana incluidos'],
-    perfil: { ayuda: ['autonomo', 'asistido'], cuando: ['noche'] },
-  },
-  {
-    id: 'integral',
-    nombre: 'Cuidado integral 24 horas',
-    resumen: 'Cobertura continua con turnos rotativos, para cuadros que no pueden quedar solos.',
-    incluye: [
-      'Cuidadores en turnos rotativos, las 24 horas',
-      'Cambios de posición y prevención de escaras',
-      'Higiene completa en cama y cuidado de la piel',
-      'Registro diario que la familia puede leer',
-    ],
-    regimen: ['24 horas', 'Turnos rotativos', 'Coordinadora asignada'],
-    perfil: { ayuda: ['cama'], cuando: ['horas', 'jornada', 'noche'] },
-  },
-];
-
-const SELECCION = { quien: 'madre-padre', ayuda: 'autonomo', cuando: 'horas' };
-const ETIQUETAS = {
-  quien: { 'madre-padre': 'tu mamá o tu papá', abuelo: 'un abuelo o abuela', mismo: 'vos' },
-  quienWsp: { 'madre-padre': 'mi mamá o mi papá', abuelo: 'un abuelo/a', mismo: 'mí' },
-  ayuda: { autonomo: 'se maneja bastante solo', asistido: 'necesita ayuda para casi todo', cama: 'está en cama' },
-  ayudaYo: { autonomo: 'me manejo bastante solo', asistido: 'necesito ayuda para casi todo', cama: 'estoy en cama' },
-  cuando: { horas: 'unas horas por día', jornada: 'jornada completa', noche: 'noches o 24 horas' },
-};
-
-function elegirPlan() {
-  const puntuar = p => {
-    let s = 0;
-    if (p.perfil.ayuda.includes(SELECCION.ayuda)) s += 3;
-    if (p.perfil.cuando.includes(SELECCION.cuando)) s += 2;
-    return s;
-  };
-  return PLANES.map((p, i) => ({ p, s: puntuar(p), i })).sort((a, b) => b.s - a.s || a.i - b.i)[0].p;
-}
-
-function renderPlan(conSwap) {
-  const cont = document.getElementById('plan');
-  if (!cont) return;
-  const plan = elegirPlan();
-  const enPrimera = SELECCION.quien === 'mismo';
-  const paraQuien = enPrimera ? 'Para vos' : 'Para ' + ETIQUETAS.quien[SELECCION.quien];
-  const situacion = (enPrimera ? ETIQUETAS.ayudaYo : ETIQUETAS.ayuda)[SELECCION.ayuda];
-  const momento = ETIQUETAS.cuando[SELECCION.cuando];
-  const msg = 'Hola Cuidar+, entré por la web y armé el cuidado. ' +
-    (enPrimera
-      ? 'Es para mí: ' + situacion + ' y lo necesito ' + momento + '.'
-      : 'Es para ' + ETIQUETAS.quienWsp[SELECCION.quien] + ', que ' + situacion + ', y lo necesito ' + momento + '.') +
-    ' Me sugirió el plan "' + plan.nombre + '". ¿Podemos coordinar una visita?';
-
-  const pintar = () => {
-    cont.innerHTML =
-      '<span class="plan-kicker">' + esc(paraQuien) + '</span>' +
-      '<h3>' + esc(plan.nombre) + '</h3>' +
-      '<p class="plan-por">Elegido por lo que nos contaste: ' + esc(situacion) + ' · ' + esc(momento) + '</p>' +
-      '<ul class="plan-incluye">' + plan.incluye.map(i =>
-        '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7"/></svg><span>' + esc(i) + '</span></li>'
-      ).join('') + '</ul>' +
-      '<div class="plan-regimen">' + plan.regimen.map(r => '<span class="plan-tag">' + esc(r) + '</span>').join('') + '</div>' +
-      '<div class="plan-cta">' +
-        '<a class="btn btn--cta" href="https://wa.me/' + WSP + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">' +
-          '<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>' +
-          'Pedir este cuidado' +
-        '</a>' +
-        '<a class="btn btn--linea" href="#servicios">Ver qué incluye cada uno</a>' +
-      '</div>';
-    cont.classList.remove('is-swapping');
-  };
-
-  if (conSwap && !reduceMotion) {
-    cont.classList.add('is-swapping');
-    setTimeout(pintar, 170);
-  } else {
-    pintar();
+  eventos: {
+    etiqueta: 'Sociales, deportivos y culturales',
+    titulo: 'Cobertura de eventos',
+    texto: 'Personal de salud en tu evento para asistir a quien lo necesite, de principio a fin.',
+    puntos: ['Eventos deportivos: carreras, torneos y encuentros', 'Eventos sociales y culturales: fiestas, recitales y ferias', 'Primeros auxilios y atención de lesiones menores', 'Presencia durante todo el evento', 'Coordinación con el servicio de emergencias si hace falta'],
+    img: 'images/eventos.webp',
+    alt: 'Enfermera vendando la rodilla de una corredora en un evento deportivo',
+    consulta: 'Hola Cuidar+, quiero consultar por la cobertura de un evento.'
   }
-}
-
-function initArmar() {
-  renderPlan(false);
-  document.querySelectorAll('.chips[data-grupo]').forEach(grupo => {
-    grupo.addEventListener('click', e => {
-      const chip = e.target.closest('.chip');
-      if (!chip) return;
-      grupo.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
-      SELECCION[grupo.dataset.grupo] = chip.dataset.valor;
-      renderPlan(true);
-    });
-  });
-}
+};
 
 function showToast(msg) {
   let wrap = document.querySelector('.toast-wrap');
@@ -145,27 +52,147 @@ function showToast(msg) {
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.setAttribute('role', 'status');
-  toast.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>' + esc(msg) + '</span>';
+  toast.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>${esc(msg)}</span>`;
   wrap.appendChild(toast);
   setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 220); }, 3200);
 }
 
-/* ------------------------------------------------------------- reveals --- */
-function initReveals() {
-  const items = document.querySelectorAll('[data-animate], [data-draw]');
-  if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = Math.min(i * 0.11, 0.66) + 's';
+function initModalServicios() {
+  const dlg = document.getElementById('servicioDialog');
+  const botones = document.querySelectorAll('.serv-card__mas[data-servicio]');
+  if (!dlg || !botones.length || typeof dlg.showModal !== 'function') return;
+  const img = document.getElementById('modalImg');
+  const etiqueta = document.getElementById('modalEtiqueta');
+  const titulo = document.getElementById('modalTitulo');
+  const texto = document.getElementById('modalTexto');
+  const puntos = document.getElementById('modalPuntos');
+  const wa = document.getElementById('modalWa');
+  let origen = null;
+  const abrir = id => {
+    const s = SERVICIOS[id];
+    if (!s) return;
+    if (img) { img.src = s.img; img.alt = s.alt; }
+    if (etiqueta) etiqueta.textContent = s.etiqueta;
+    if (titulo) titulo.textContent = s.titulo;
+    if (texto) texto.textContent = s.texto;
+    if (puntos) puntos.innerHTML = s.puntos.map(p => `<li>${esc(p)}</li>`).join('');
+    if (wa) wa.href = waLink(s.consulta);
+    dlg.setAttribute('aria-label', s.titulo);
+    document.body.classList.add('no-scroll');
+    dlg.showModal();
+    dlg.querySelector('.modal__caja')?.scrollTo(0, 0);
+  };
+  const limpiar = () => {
+    if (!document.body.classList.contains('no-scroll')) return;
+    document.body.classList.remove('no-scroll');
+    origen?.focus();
+  };
+  const cerrar = () => { if (dlg.open) dlg.close(); limpiar(); };
+  botones.forEach(b => b.addEventListener('click', () => { origen = b; abrir(b.dataset.servicio); }));
+  dlg.querySelector('.modal-cerrar')?.addEventListener('click', cerrar);
+  dlg.addEventListener('click', e => { if (e.target === dlg) cerrar(); });
+  dlg.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); cerrar(); } });
+  dlg.addEventListener('close', limpiar);
+}
+
+function initTabs() {
+  const tabs = [...document.querySelectorAll('.tab[data-servicio]')];
+  if (!tabs.length) return;
+  const lista = tabs[0].parentElement;
+  const mobile = window.matchMedia('(max-width: 760px)');
+  const activar = (tab, foco) => {
+    tabs.forEach(b => {
+      const on = b === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+      const panel = document.getElementById(b.getAttribute('aria-controls'));
+      if (!panel) return;
+      panel.hidden = !on;
+      if (on) {
+        panel.classList.remove('is-cambiando');
+        void panel.offsetWidth;
+        panel.classList.add('is-cambiando');
+      }
+    });
+    if (foco) tab.focus({ preventScroll: true });
+    if (mobile.matches && lista) lista.scrollTo({ left: Math.max(0, tab.offsetLeft - 16), behavior: reduceMotion ? 'auto' : 'smooth' });
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+  };
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => activar(b));
+    b.addEventListener('keydown', e => {
+      let j = null;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') j = 0;
+      else if (e.key === 'End') j = tabs.length - 1;
+      if (j !== null) { e.preventDefault(); activar(tabs[j], true); }
     });
   });
+  document.querySelectorAll('[data-ir-servicio]').forEach(a => a.addEventListener('click', () => {
+    const tab = tabs.find(t => t.dataset.servicio === a.dataset.irServicio);
+    if (tab) activar(tab);
+  }));
+}
+
+function initForm() {
+  const form = document.getElementById('consultaForm');
+  if (!form) return;
+  const nombre = form.querySelector('#cNombre');
+  const servicio = form.querySelector('#cServicio');
+  const horario = form.querySelector('#cHorario');
+  const zona = form.querySelector('#cZona');
+  const detalle = form.querySelector('#cDetalle');
+  if (!nombre || !servicio) return;
+  const marcar = (campo, idError, mal) => {
+    campo.setAttribute('aria-invalid', mal ? 'true' : 'false');
+    const error = document.getElementById(idError);
+    if (error) error.hidden = !mal;
+  };
+  const okNombre = () => nombre.value.trim().length >= 2;
+  const okServicio = () => Boolean(servicio.value);
+  nombre.addEventListener('input', () => { if (nombre.getAttribute('aria-invalid') === 'true') marcar(nombre, 'eNombre', !okNombre()); });
+  servicio.addEventListener('change', () => { if (servicio.getAttribute('aria-invalid') === 'true') marcar(servicio, 'eServicio', !okServicio()); });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const n = okNombre();
+    const s = okServicio();
+    marcar(nombre, 'eNombre', !n);
+    marcar(servicio, 'eServicio', !s);
+    if (!n || !s) {
+      (n ? servicio : nombre).focus();
+      showToast('Revisá los campos marcados y probá de nuevo.');
+      return;
+    }
+    const lineas = [`Hola Cuidar+, soy ${nombre.value.trim()}.`, `Quiero consultar por: ${servicio.value}.`];
+    if (horario?.value) lineas.push(`Horario o fecha: ${horario.value}.`);
+    if (zona?.value.trim()) lineas.push(`Zona: ${zona.value.trim()}.`);
+    if (detalle?.value.trim()) lineas.push(detalle.value.trim());
+    window.open(waLink(lineas.join('\n')), '_blank', 'noopener');
+    showToast('Listo: abrimos WhatsApp con tu consulta para que la envíes.');
+    form.reset();
+    marcar(nombre, 'eNombre', false);
+    marcar(servicio, 'eServicio', false);
+  });
+}
+
+function initReveals() {
+  const items = document.querySelectorAll('[data-animate]');
+  if (!items.length) return;
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -174,10 +201,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -186,24 +214,20 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
 }
 
-/* ----------------------------------------------------------------- nav --- */
 function initNav() {
   const toggle = document.getElementById('menuToggle');
   const nav = document.getElementById('mainNav');
   const closeBtn = document.getElementById('navClose');
   if (!toggle || !nav) return;
   let bd = document.querySelector('.nav-backdrop');
-  if (!bd) {
-    bd = document.createElement('div'); bd.className = 'nav-backdrop';
-    const header = document.querySelector('.site-header');
-    (header || document.body).appendChild(bd);
-  }
-  const desktopMq = window.matchMedia('(min-width: 861px)');
+  if (!bd) { bd = document.createElement('div'); bd.className = 'nav-backdrop'; (document.querySelector('.site-header') || document.body).appendChild(bd); }
+  const desktopMq = window.matchMedia('(min-width: 1100px)');
   const close = () => {
     nav.classList.remove('open'); bd.classList.remove('open');
     if (!desktopMq.matches) nav.setAttribute('inert', '');
@@ -227,61 +251,61 @@ function initNav() {
   syncInert();
 }
 
-/* ------------------------------------------------------ WhatsApp flotante --- */
 function initWspFloat() {
   const btn = document.getElementById('wsp-float');
   if (!btn) return;
-  const sync = () => btn.classList.toggle('visible', window.scrollY > 600);
-  window.addEventListener('scroll', sync, { passive: true });
-  sync();
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 600) btn.classList.add('visible'); else btn.classList.remove('visible');
+  }, { passive: true });
 }
 
-/* ------------------------------------------- la luz que avanza con el scroll --- */
-function initLuz() {
-  const luz = document.querySelector('.luz');
-  if (!luz || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || reduceMotion) return;
-  gsap.timeline({
-    scrollTrigger: { trigger: document.documentElement, start: 'top top', end: 'bottom bottom', scrub: .8, invalidateOnRefresh: true },
-  })
-    .to(luz, { backgroundColor: '#FAF3E4', ease: 'none' })
-    .to(luz, { backgroundColor: '#F4E7D2', ease: 'none' });
-}
-
-/* ----------------------------------------------------------------- hero --- */
-function initHero() {
-  if (typeof gsap === 'undefined' || reduceMotion) return;
-  const capas = ['.hero-sello', '.hero-nota'];
-  if (!document.querySelector('.hero-sello')) return;
-  const tl = gsap.timeline();
-  tl.from('.hero-sello', { scale: .72, rotate: -14, opacity: 0, duration: .9, ease: 'back.out(1.5)' }, .55)
-    .from('.hero-nota', { y: 22, opacity: 0, duration: .8, ease: 'expo.out' }, .72);
-  const limpiar = () => {
-    if (tl.progress() < 1) tl.progress(1);
-    tl.kill();
-    gsap.set(capas, { clearProps: 'all' });
+function initModelBarScroll() {
+  const bar = document.querySelector('.gw-modelos');
+  if (!bar) return;
+  let showTimer = 0;
+  let frame = 0;
+  const update = () => {
+    frame = 0;
+    if (window.scrollY <= 8) {
+      bar.classList.remove('gw-modelos--scrolling');
+      return;
+    }
+    bar.classList.add('gw-modelos--scrolling');
+    clearTimeout(showTimer);
+    showTimer = setTimeout(() => bar.classList.remove('gw-modelos--scrolling'), 120);
   };
-  tl.eventCallback('onComplete', limpiar);
-  setTimeout(limpiar, 2400);
-
-  if (matchMedia('(hover: hover) and (pointer: fine)').matches && typeof ScrollTrigger !== 'undefined') {
-    gsap.to('.hero-sello', { yPercent: -14, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .7 } });
-    gsap.to('.hero-nota', { yPercent: 18, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: .7 } });
-  }
+  window.addEventListener('scroll', () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  }, { passive: true });
 }
 
-/* ------------------------------------------------------------- parallax --- */
+function initHeroMotion() {
+  if (reduceMotion || typeof gsap === 'undefined') return;
+  const hero = document.querySelector('.hero');
+  if (!hero) return;
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  const paso = (sel, vars, t) => {
+    const els = hero.querySelectorAll(sel);
+    if (els.length) tl.from(els, vars, t);
+  };
+  paso('[data-hero-img]', { scale: 1.08, duration: 1.8, clearProps: 'transform' }, 0);
+  paso('.hero-eyebrow', { y: 16, opacity: 0, duration: 0.9 }, 0.1);
+  paso('h1', { y: 32, opacity: 0, filter: 'blur(8px)', duration: 1.2, clearProps: 'filter' }, 0.2);
+  paso('.hero-lead', { y: 22, opacity: 0, duration: 1 }, 0.42);
+  paso('.hero-ctas .btn', { y: 20, opacity: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform,opacity' }, 0.58);
+  paso('.hero-badges li', { y: 14, opacity: 0, duration: 0.8, stagger: 0.08, clearProps: 'transform,opacity' }, 0.75);
+  paso('.nota-marca, .ficha', { y: 24, opacity: 0, duration: 1.1, clearProps: 'transform,opacity' }, 0.7);
+}
+
 function initParallax() {
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || reduceMotion) return;
-  if (!matchMedia('(min-width: 861px)').matches) return;
-  document.querySelectorAll('.editorial-media img, .proceso-media img').forEach(img => {
-    gsap.fromTo(img, { yPercent: -4 }, {
-      yPercent: 4, ease: 'none',
-      scrollTrigger: { trigger: img.closest('figure'), start: 'top bottom', end: 'bottom top', scrub: .6, invalidateOnRefresh: true },
-    });
+  if (reduceMotion || typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+  document.querySelectorAll('[data-parallax]').forEach(fig => {
+    const img = fig.querySelector('img');
+    if (!img) return;
+    gsap.fromTo(img, { yPercent: -3 }, { yPercent: 3, ease: 'none', scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: true } });
   });
 }
 
-/* ------------------------------------------ texto que se lee con el scroll --- */
 function initLeeScroll() {
   const els = document.querySelectorAll('[data-lee]');
   if (!els.length) return;
@@ -305,114 +329,29 @@ function initLeeScroll() {
     const ws = el.querySelectorAll('.lee-w');
     if (!ws.length) return;
     ScrollTrigger.create({
-      trigger: el, start: 'top 82%', end: 'bottom 55%', scrub: .4, invalidateOnRefresh: true,
+      trigger: el, start: 'top 82%', end: 'bottom 55%', scrub: 0.4, invalidateOnRefresh: true,
       onUpdate: self => {
         const hasta = self.progress * ws.length;
         ws.forEach((w, i) => w.classList.toggle('on', i < hasta));
-      },
+      }
     });
   });
 }
 
-/* ------------------------------------------------------------ contadores --- */
-function initContadores() {
-  const els = document.querySelectorAll('[data-counter]');
-  if (!els.length) return;
-  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || reduceMotion) return;
-  els.forEach(el => {
-    const end = parseFloat(el.dataset.counter);
-    const obj = { v: 0 };
-    gsap.to(obj, {
-      v: end, duration: 1.6, ease: 'power1.out', snap: { v: 1 },
-      scrollTrigger: { trigger: el, start: 'top 88%', once: true },
-      onUpdate: () => { el.textContent = obj.v.toLocaleString('es-AR'); },
-    });
-  });
+function initDetalles() {
+  document.querySelectorAll('.faq-lista details').forEach(d => d.addEventListener('toggle', () => {
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+  }));
 }
 
-/* --------------------------------------------------- devolución de demo --- */
-const GKY_SLUG_ACENTOS = { 'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n', 'ü': 'u' };
-function gkySlugify(s) {
-  return String(s || '').toLowerCase()
-    .replace(/[áéíóúñü]/g, c => GKY_SLUG_ACENTOS[c] || c)
-    .replace(/[^a-z0-9]/g, '');
-}
-
-function initFeedbackFloat() {
-  const GKY_FEEDBACK_WHATSAPP = '5491125068578';
-  const btn = document.getElementById('feedback-float');
-  const backdrop = document.getElementById('feedback-modal-backdrop');
-  const closeBtn = document.getElementById('feedback-modal-close');
-  const coloresEl = document.getElementById('feedback-colores');
-  const contenidoEl = document.getElementById('feedback-contenido');
-  const otrosEl = document.getElementById('feedback-otros');
-  const submitBtn = document.getElementById('feedback-submit');
-  if (!btn || !backdrop) return;
-
-  const open = () => {
-    backdrop.hidden = false;
-    document.body.classList.add('no-scroll');
-    coloresEl?.focus();
-  };
-  const close = () => {
-    backdrop.hidden = true;
-    document.body.classList.remove('no-scroll');
-    btn.focus();
-  };
-  btn.addEventListener('click', open);
-  closeBtn.addEventListener('click', close);
-  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !backdrop.hidden) close(); });
-
-  submitBtn.addEventListener('click', () => {
-    const colores = coloresEl.value.trim();
-    const contenido = contenidoEl.value.trim();
-    const otros = otrosEl.value.trim();
-    if (!colores && !contenido && !otros) { coloresEl.focus(); return; }
-
-    const slugUrl = (location.pathname.match(/\/demo\/([^/]+)/) || [])[1] || document.title;
-    const slug = gkySlugify(slugUrl);
-    const negocio = (document.title.split(/\s[—|]\s|\s-\s/)[0] || document.title || '').trim();
-    const lineas = [
-      'Devolución de la demo' + (negocio ? ' — ' + negocio : ''),
-      colores ? 'Colores: ' + colores : null,
-      contenido ? 'Contenido: ' + contenido : null,
-      otros ? 'Otros: ' + otros : null,
-      location.href,
-    ].filter(Boolean);
-
-    window.open('https://wa.me/' + GKY_FEEDBACK_WHATSAPP + '?text=' + encodeURIComponent(lineas.join('\n')), '_blank', 'noopener');
-    window.__gkySendResena?.({ slug, negocio, colores, contenido, otros, url: location.href })
-      ?.catch(err => console.warn('No se pudo guardar la devolución en Firestore:', err));
-
-    if (typeof showToast === 'function') showToast('¡Gracias por tu devolución!'); else window.alert('¡Gracias por tu devolución!');
-    close();
-    coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
-  });
-}
-
-/* ------------------------------------------------------------- arranque --- */
-if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger);
-}
-if (typeof gsap === 'undefined') {
-  document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; el.style.clipPath = 'none'; el.style.filter = 'none'; });
-}
-
-initArmar();
+initModalServicios();
+initTabs();
+initForm();
 initReveals();
 initNav();
 initWspFloat();
-initLuz();
-initHero();
+initModelBarScroll();
+initHeroMotion();
 initParallax();
 initLeeScroll();
-initContadores();
-initFeedbackFloat();
-
-const anio = document.getElementById('anio');
-if (anio) anio.textContent = new Date().getFullYear();
-
-if (typeof ScrollTrigger !== 'undefined') {
-  window.addEventListener('load', () => ScrollTrigger.refresh());
-}
+initDetalles();
