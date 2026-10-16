@@ -2318,6 +2318,16 @@ body.modal-open { overflow: hidden; }
 .modal--day .ingcal-detalle { margin-top: 0; }
 .modal--day .ing-detalle-tabla td { padding: 7px 8px; font-size: 13px; }
 
+/* Mantenimiento: cómo se cobra cada mensualidad (Mercado Pago / por afuera, 16-oct-2026). */
+.mrr-detalle { display: block; font-size: 12px; margin-top: 4px; max-width: 320px; line-height: 1.4; }
+.mp-vinculo { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.mp-vinculo--falta { color: #F59E0B; }
+.mp-vinculo--fuera { color: #4ADE80; font-weight: 600; }
+.mp-vinculo-btn { font: inherit; font-size: 11px; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 8px; cursor: pointer; white-space: nowrap; }
+.mp-vinculo-btn:hover { border-color: var(--text-muted); }
+.mp-vinculo--fuera .mp-vinculo-btn { padding: 0 6px; }
+.mant-por-fuera { margin-top: 12px; font-size: 13px; }
+
 /* Sumar las suscripciones de varios días (16-oct-2026). */
 .cal-suma { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
 .cal-suma-titulo { font-size: 13px; font-weight: 700; }

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261016-sumardias">
+    <link rel="stylesheet" href="styles.css?v=20261016-porfuera">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -322,9 +322,11 @@
                     <p class="muted">Las webs entregadas, según su plan, y las que todavía se están armando pero ya tienen la suscripción cobrándose. Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y las webs del plan que todavía no tienen la suscripción registrada. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p>
                 </div>
                 <div class="stats-box stats-box--periods">
-                    <div class="stat-item" title="Lo que entra por mes: las suscripciones activas de Mercado Pago y las que se cargaron activas a mano en un cliente">
+                    <div class="stat-item" title="Lo que entra por mes: las suscripciones activas de Mercado Pago, los que pagan por afuera y los que se cargaron activos a mano en un cliente">
                         <span class="stat-label">Mensualidad activa</span>
                         <span class="stat-value" id="mrrActivo">$0</span>
+                        <!-- 16-oct-2026: cuánto es de Mercado Pago, cuánto paga por afuera y cuánto no se encontró. dashboard.js: _updateMantCounters. -->
+                        <span class="muted mrr-detalle" id="mrrDetalle" hidden></span>
                     </div>
                     <div class="stat-item" title="Webs entregadas con el plan mensual que todavía no tienen la suscripción de Mercado Pago">
                         <span class="stat-label">Por activar</span>
@@ -928,6 +930,12 @@
                         <option value="pausado">Pausado</option>
                     </select>
 
+                    <!-- 16-oct-2026: sin suscripción de Mercado Pago; el Calendario y Finanzas lo cuentan cobrado cada mes. -->
+                    <label class="nb-check mant-por-fuera"><input type="checkbox" id="mantPorFuera"> 💵 Paga por afuera (no tiene suscripción en Mercado Pago)</label>
+
+                    <label for="mantDiaCobro">Día del mes en que paga</label>
+                    <input type="number" id="mantDiaCobro" min="1" max="31" step="1" inputmode="numeric" placeholder="(opcional) si no, el día del alta">
+
                     <label for="mantNotas">Notas internas</label>
                     <textarea id="mantNotas" rows="2" maxlength="300" placeholder="(opcional)"></textarea>
                 </div>
@@ -1302,6 +1310,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261016-sumardias"></script>
+    <script type="module" src="dashboard.js?v=20261016-porfuera"></script>
 </body>
 </html>

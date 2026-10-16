@@ -119,7 +119,8 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
                 } catch (_) {}
             });
         }
-        if (activeTab === "mantenimiento") renderMantenimiento();
+        // 16-oct: Mantenimiento también cruza con Mercado Pago (quién paga por afuera, _mpVinculoHTML).
+        if (activeTab === "mantenimiento") { renderMantenimiento(); cargarIngresosMp(); }
         if (activeTab === "inversion") { abrirInversion(); renderInversionVista(); }
         if (activeTab === "errores") cargarErrores();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
@@ -1325,6 +1326,7 @@ async function cargarIngresosMp(forzar = false) {
         ingresosMpCargando = false;
         if (activeTab === "calendario") renderCal();
         if (activeTab === "finanzas") renderFinanzas();
+        if (activeTab === "mantenimiento") renderMantenimiento();
     }
 }
 
@@ -1398,54 +1400,66 @@ function ingresosPorDia(hastaYmd) {
             agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", nombre: s.nombre || "Suscriptor", cobrado: false });
         }
     }
-    // Falta cobrar: los mensuales que no cobra Mercado Pago (no están arriba).
-    for (const k of _mensualesSinMercadoPago()) {
-        const [y, m] = hoy.split("-").map(Number);
-        for (let i = 0; i < 36; i++) {
-            const ymd = _ymdDelMes(y, m - 1 + i, k.desde.getDate());
+    // Los mensuales que no cobra Mercado Pago (no están arriba), el día del mes del alta (o el que se cargó
+    // en el suscriptor, `diaCobro`):
+    // - "Paga por afuera" (Pablo, 16-oct): cobra por su cuenta todos los meses. Desde el alta, lo que
+    //   ya pasó cuenta como entrado y lo que viene, como falta cobrar.
+    // - Sin suscripción encontrada y sin la marca: no se sabe si pagó. El cobro de este mes que ya pasó va
+    //   hoy, como falta cobrar (antes desaparecía del mes: Electro lift, 16-oct); los meses anteriores no cuentan.
+    const [hy, hm] = hoy.split("-").map(Number);
+    const mesesDesdeHoy = ymd => { const [y, m] = ymd.split("-").map(Number); return (y - hy) * 12 + (m - hm); };
+    for (const k of _cruceMercadoPago()) {
+        if (k.porId || k.sub) continue;
+        const inicio = _diaDe(k.desde);
+        const primero = k.porFuera ? Math.max(mesesDesdeHoy(inicio), mesesDesdeHoy(INGRESOS_DESDE)) : Math.max(0, mesesDesdeHoy(inicio));
+        for (let i = primero; i < primero + 60; i++) {
+            let ymd = _ymdDelMes(hy, hm - 1 + i, k.dia || k.desde.getDate());
             if (ymd > hastaYmd) break;
-            if (ymd < hoy) continue;
-            agregar(ymd, { monto: k.monto, clase: "subs", tipo: "Mensualidad (a mano)", nombre: k.nombre, cobrado: false });
+            if (ymd < inicio) continue;
+            const yaPaso = ymd < hoy;
+            if (yaPaso && !k.porFuera) ymd = hoy;
+            agregar(ymd, { monto: k.monto, clase: "subs", tipo: k.porFuera ? "Paga por afuera" : "Mensualidad sin Mercado Pago", nombre: k.nombre, cobrado: k.porFuera && yaPaso });
         }
     }
     return dias;
 }
 
 /* Los mensuales activos que suma "Mensualidad activa" de Mantenimiento (los
-   suscriptores de Mantenimiento y los clientes del plan mensual sin suscriptor)
-   que NO son una suscripción de Mercado Pago. Muchos clientes figuran activos
+   suscriptores de Mantenimiento y los clientes del plan mensual sin suscriptor),
+   cada uno con su suscripción de Mercado Pago. Muchos clientes figuran activos
    sin el ID de su suscripción, y el 5-oct el calendario los contaba dos veces:
    una por Mercado Pago y otra a mano ($645.000 en vez de $360.000). Sin ID, se
    toma como suya la suscripción de Mercado Pago del mismo monto dada de alta
-   hasta 3 días antes o después; si no hay ninguna, se paga por otro lado. */
-function _mensualesSinMercadoPago() {
-    const subs = (ingresosMp?.suscripciones || []).map(s => ({ id: String(s.id), monto: Number(s.monto) || 0, alta: new Date(s.alta), usada: false }));
+   hasta 3 días antes o después. Los marcados "Paga por afuera" (`pagaPorFuera`,
+   16-oct) no se cruzan: no tienen suscripción y no le sacan la suya a otro.
+   [{ ref (el suscriptor o el cliente), esCliente, nombre, monto, desde, porFuera,
+   porId (tiene el ID de su suscripción), sub (la suscripción que le tocó, o null) }]. */
+function _cruceMercadoPago() {
+    const subs = (ingresosMp?.suscripciones || []).map(s => ({ id: String(s.id), nombre: s.nombre || "", monto: Number(s.monto) || 0, alta: new Date(s.alta), usada: false }));
     const candidatos = [];
     for (const m of (mantenimiento || [])) {
         if (avisoMantDe(m) || (m.estado || "activo") !== "activo") continue;
         const monto = Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0);
         const desde = mantToDate(m.createdAt);
-        if (monto > 0 && desde) candidatos.push({ pre: String(m.preapprovalId || "").trim(), monto, desde, nombre: m.nombre || "Suscriptor" });
+        if (monto > 0 && desde) candidatos.push({ ref: m, esCliente: false, pre: String(m.preapprovalId || "").trim(), monto, desde, dia: Number(m.diaCobro) || 0, nombre: m.nombre || "Suscriptor", porFuera: m.pagaPorFuera === true });
     }
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
         const sus = suscripcionDe(c);
         if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
-        candidatos.push({ pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, nombre: c.proyecto || c.nombre || "Cliente" });
+        candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true });
     }
-    const out = [];
     for (const k of candidatos.sort((a, b) => a.desde - b.desde)) {
+        k.porId = !!k.pre && !k.porFuera;
+        k.sub = null;
+        if (k.porFuera) continue;
         // Con ID es de Mercado Pago: si no está entre las activas, se dio de baja.
-        if (k.pre) {
-            const sub = subs.find(s => s.id === k.pre);
-            if (sub) sub.usada = true;
-            continue;
-        }
-        const sub = subs.find(s => !s.usada && s.monto === k.monto && Math.abs(s.alta - k.desde) <= 3 * 86400000);
-        if (sub) sub.usada = true;
-        else out.push(k);
+        const sub = k.pre
+            ? subs.find(s => s.id === k.pre)
+            : subs.find(s => !s.usada && s.monto === k.monto && Math.abs(s.alta - k.desde) <= 3 * 86400000);
+        if (sub) { sub.usada = true; k.sub = sub; }
     }
-    return out;
+    return candidatos;
 }
 
 /* Cobros del mes que se mira en la pestaña Calendario (Pablo, 11-oct-2026: "los
@@ -1528,7 +1542,7 @@ function _cobrosResumenHTML(calMes, dias) {
             <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
             <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros + anuales + saldosFalta + anualFalta)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
-        <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
+        <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
 }
 
 /* Los renglones de plata de la celda de un día (montos cortos, uno por tipo). */
@@ -8670,7 +8684,7 @@ function _mantFilaClienteHTML(c) {
             ${proyecto && c.nombre && proyecto.toLowerCase() !== String(c.nombre).trim().toLowerCase() ? `<div class="muted" style="font-size:11px">${escapeHtml(c.nombre)}</div>` : ""}
             <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div>
             ${s.estado === "baja" ? "" : _anioMantHTML(s.desde || mantToDate(c.entregadoAt))}</td>
-        <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div></td>
+        <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div>${_mpVinculoHTML(c, true)}</td>
         <td class="col-telefono">${contacto.telefono}</td><td>${contacto.dominio}</td>
         <td class="center"><span style="color:${color};font-weight:700">● ${estado}</span>${s.desde ? `<div class="muted" style="font-size:11px">desde ${mantLongDate(s.desde)}</div>` : ""}</td>
         <td class="center">${periodo && estado === "Activo" ? `<label title="Se habilita nuevamente el ${mantLongDate(periodo.next)}"><input type="checkbox" data-cli-cambio="${escapeHtml(c.id)}" ${pidio ? "checked" : ""}></label><div style="font-size:12px;color:#93b4e8">${mantShortDate(periodo.start)} al ${mantShortDate(periodo.next)}</div><div class="muted" style="font-size:11px">se renueva ${dias === 0 ? "hoy" : `en ${dias} días`}</div>` : `<span class="muted">—</span>`}</td>
@@ -8680,6 +8694,45 @@ function _mantFilaClienteHTML(c) {
             <button class="icon-btn delete" data-id="${escapeHtml(c.id)}" title="Eliminar cliente">🗑</button></td>
     </tr>`;
 }
+
+/* Debajo del plan, en Mantenimiento → Plan mensual: cómo se cobra esa mensualidad (Pablo, 16-oct:
+   "hay personas que di de alta en mantenimiento pero no están en suscripción de Mercado Pago, pagan
+   por afuera"). La suscripción que le tocó en el cruce (_cruceMercadoPago, por ID o por monto y fecha
+   de alta) o el aviso de que no aparece, con el botón para marcar que paga por afuera. La marca
+   (`pagaPorFuera`) va en el suscriptor o en el cliente, y la usan el Calendario y Finanzas. */
+let mantCruce = null;   // Map(suscriptor o cliente → resultado del cruce), una vez por render; null sin datos de MP
+
+function _mpVinculoHTML(ref, esCliente) {
+    const destino = `data-por-fuera="${esCliente ? "clientes" : "mantenimiento"}:${escapeHtml(ref.id)}"`;
+    if (ref.pagaPorFuera === true) {
+        return `<div class="mp-vinculo mp-vinculo--fuera">💵 Paga por afuera${Number(ref.diaCobro) ? ` · el día ${Number(ref.diaCobro)}` : ""} <button type="button" class="mp-vinculo-btn" ${destino} data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">×</button></div>`;
+    }
+    const k = mantCruce?.get(ref);
+    if (!k) return "";
+    if (k.porId) return k.sub ? `<div class="mp-vinculo">Mercado Pago: ${escapeHtml(k.sub.nombre || "suscripción")}</div>` : "";
+    const boton = `<button type="button" class="mp-vinculo-btn" ${destino} data-por-fuera-valor="1" title="No tiene suscripción en Mercado Pago y paga por su cuenta: el Calendario y Finanzas lo cuentan como cobrado cada mes, el día del alta">Paga por afuera</button>`;
+    return k.sub
+        ? `<div class="mp-vinculo" title="La suscripción de Mercado Pago que se le asignó por monto y fecha de alta. Si no es la suya, marcá al que paga por afuera">Mercado Pago: ${escapeHtml(k.sub.nombre || "suscripción")} ${boton}</div>`
+        : `<div class="mp-vinculo mp-vinculo--falta" title="No hay una suscripción activa de Mercado Pago de ese monto dada de alta cerca de esa fecha">⚠ No aparece en Mercado Pago ${boton}</div>`;
+}
+
+document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-por-fuera]");
+    if (!b) return;
+    const [coleccion, id] = b.dataset.porFuera.split(":");
+    const marcar = b.dataset.porFueraValor === "1";
+    const ref = (coleccion === "clientes" ? clients : mantenimiento).find(x => x.id === id);
+    const nombre = ref?.proyecto || ref?.nombre || "este cliente";
+    if (!confirm(marcar
+        ? `¿"${nombre}" paga por afuera, sin suscripción de Mercado Pago?\n\nEl Calendario y Finanzas van a contar su mensualidad como cobrada cada mes, el día del alta.`
+        : `¿Sacarle a "${nombre}" la marca de que paga por afuera?\n\nSe vuelve a buscar su suscripción en Mercado Pago.`)) return;
+    try {
+        await updateDoc(doc(db, coleccion, id), { pagaPorFuera: marcar, updatedAt: serverTimestamp() });
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
+    }
+});
 
 function _claveMantCliente(c) {
     const s = suscripcionDe(c);
@@ -8705,6 +8758,22 @@ function _updateMantCounters(filas, sinSusc) {
         .reduce((sum, s) => sum + s.mensual, 0);
     const mrrEl = document.getElementById("mrrActivo");
     if (mrrEl) mrrEl.textContent = fmtMoney(deMercadoPago + aMano);
+    // 16-oct: de dónde sale, con el cruce contra Mercado Pago (las diferencias con el Calendario se ven acá).
+    const detalleEl = document.getElementById("mrrDetalle");
+    if (detalleEl) {
+        const cruce = mantCruce ? [...mantCruce.values()] : [];
+        const suma = l => l.reduce((a, k) => a + k.monto, 0);
+        const conSub = cruce.filter(k => k.sub), porFuera = cruce.filter(k => k.porFuera), sinEncontrar = cruce.filter(k => !k.sub && !k.porFuera);
+        const asignadas = new Set(conSub.map(k => k.sub.id));
+        const libres = (ingresosMp?.suscripciones || []).filter(s => s.estado === "authorized" && !asignadas.has(String(s.id)));
+        detalleEl.hidden = !mantCruce;
+        detalleEl.textContent = !mantCruce ? "" : [
+            `${fmtMoney(suma(conSub))} por Mercado Pago`,
+            porFuera.length ? `${fmtMoney(suma(porFuera))} por afuera` : "",
+            sinEncontrar.length ? `${fmtMoney(suma(sinEncontrar))} sin encontrar en Mercado Pago (${sinEncontrar.length})` : "",
+            libres.length ? `${libres.length} suscripción${libres.length === 1 ? "" : "es"} de Mercado Pago sin cliente (${fmtMoney(libres.reduce((a, s) => a + (Number(s.monto) || 0), 0))})` : "",
+        ].filter(Boolean).join(" · ");
+    }
 
     const porActivar = sinSusc.map(suscripcionDe)
         .filter(s => s.estado === "pendiente" && (!s.desde || s.desde <= new Date())).length;
@@ -8749,7 +8818,8 @@ function renderMantenimiento() {
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
     const filas = _mantFilas();
     mantErroresWebs = erroresDatos && erroresMes === erroresMesActual() ? erroresResumen() : null;
-    const conteo = { todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: 0 };
+    mantCruce = ingresosMp ? new Map(_cruceMercadoPago().map(k => [k.ref, k])) : null;
+    const conteo ={ todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: 0 };
     sinSusc.forEach(c => { conteo[_claveMantCliente(c)]++; });
     filas.forEach(f => { conteo[f.clave]++; });
     Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja", sin_susc: "mantCountSinSusc" })
@@ -9352,6 +9422,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
                 <td>
                     <div>${escapeHtml(planLabel)}</div>
                     <div class="muted" style="font-size:12px">${fmtMoney(monto)}/mes · ${origen}</div>
+                    ${fila.clave === "activo" ? _mpVinculoHTML(m, false) : ""}
                 </td>
                 <td class="col-telefono">${contacto.telefono}</td>
                 <td>${contacto.dominio}</td>
@@ -9492,6 +9563,8 @@ function openMantModal(id) {
         ? Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0)
         : "";
     document.getElementById("mantEstado").value   = m?.estado   || "activo";
+    document.getElementById("mantPorFuera").checked = m?.pagaPorFuera === true;
+    document.getElementById("mantDiaCobro").value = m?.diaCobro || "";
     document.getElementById("mantNotas").value    = m?.notas    || "";
     mantModal.hidden = false;
     document.getElementById("mantForm").scrollTop = 0;
@@ -9522,6 +9595,7 @@ document.getElementById("mantForm")?.addEventListener("submit", async (e) => {
         return;
     }
     const registroActual = mantEditId ? mantenimiento.find(m => m.id === mantEditId) : null;
+    const diaCobro = Number(document.getElementById("mantDiaCobro").value);
     const data = {
         nombre:   document.getElementById("mantNombre").value.trim(),
         email:    document.getElementById("mantEmail").value.trim(),
@@ -9533,6 +9607,9 @@ document.getElementById("mantForm")?.addEventListener("submit", async (e) => {
         completadoId,
         origen:   completadoId ? "completados" : (registroActual?.origen || "manual"),
         estado:   document.getElementById("mantEstado").value,
+        pagaPorFuera: document.getElementById("mantPorFuera").checked,
+        // Día del mes en que cobra (el Calendario lo usa con los que pagan por afuera); vacío = el del alta.
+        diaCobro: Number.isInteger(diaCobro) && diaCobro >= 1 && diaCobro <= 31 ? diaCobro : null,
         notas:    document.getElementById("mantNotas").value.trim(),
         updatedAt: serverTimestamp()
     };
