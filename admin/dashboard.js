@@ -2830,6 +2830,19 @@ const dayModalTitle = document.getElementById("dayModalTitle");
 const dayModalBody = document.getElementById("dayModalBody");
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
+/* Sumar días (Pablo, 16-oct): con "Elegir días" los clics marcan días en vez de abrir
+   el día, la selección queda al pasar de mes y el recuadro de la izquierda suma las
+   suscripciones de esos días (_renderCalSuma). Shift + clic marca el rango. */
+let calEligiendo = false;
+const calSeleccion = new Set();   // "YYYY-MM-DD"
+let calUltimoElegido = "";
+document.getElementById("calSuma")?.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cal-suma]");
+    if (!b) return;
+    if (b.dataset.calSuma === "elegir") calEligiendo = !calEligiendo;
+    if (b.dataset.calSuma === "limpiar") { calSeleccion.clear(); calUltimoElegido = ""; }
+    renderCal();
+});
 
 document.getElementById("calPrev").addEventListener("click", () => {
     calMonth--;
@@ -3585,11 +3598,11 @@ function _updateClientCounters() {
     const cp2 = document.getElementById("cliCountCobrar"); if (cp2) cp2.textContent = porCobrarLista.length;
     const resumenCobrar = document.getElementById("clientesCobrarResumen");
     if (resumenCobrar) {
-        // Pago único: el saldo que falta; modalidad sin definir: la mensualidad de los que todavía no se suscribieron.
-        const saldos = porCobrarLista.filter(c => modalidadDe(c) === "propia" && !c.sinPrecio).reduce((a, c) => a + pagoUnicoDe(c).saldo, 0);
-        const mensuales = porCobrarLista.filter(c => modalidadDe(c) !== "propia" && suscripcionDe(c).estado !== "activa").reduce((a, c) => a + suscripcionDe(c).mensual, 0);
+        // Pago único y plan anual: el saldo que falta; modalidad sin definir: la mensualidad de los que todavía no se suscribieron.
+        const saldos = porCobrarLista.filter(c => _conSena(modalidadDe(c)) && !c.sinPrecio).reduce((a, c) => a + pagoUnicoDe(c).saldo, 0);
+        const mensuales = porCobrarLista.filter(c => !_conSena(modalidadDe(c)) && suscripcionDe(c).estado !== "activa").reduce((a, c) => a + suscripcionDe(c).mensual, 0);
         resumenCobrar.hidden = clientesVista !== "cobrar" || !porCobrarLista.length;
-        resumenCobrar.textContent = `Falta cobrar ${fmtMoney(saldos)} de saldos de pago único${mensuales ? ` y ${fmtMoney(mensuales)} por mes de planes sin definir sin suscripción activa` : ""}.`;
+        resumenCobrar.textContent = `Falta cobrar ${fmtMoney(saldos)} de saldos de pago único y plan anual${mensuales ? ` y ${fmtMoney(mensuales)} por mes de planes sin definir sin suscripción activa` : ""}.`;
     }
     const seg1El = document.getElementById("countSeg1");
     if (seg1El) seg1El.textContent = nSeg;
@@ -3651,6 +3664,9 @@ function _bindTableListeners(tbodyEl) {
     });
     tbodyEl.querySelectorAll("[data-reabrir-id]").forEach(btn => {
         btn.addEventListener("click", () => reabrirWebCompletada(btn.dataset.reabrirId));
+    });
+    tbodyEl.querySelectorAll("[data-pago-todo-id]").forEach(btn => {
+        btn.addEventListener("click", () => marcarPagoTodo(btn.dataset.pagoTodoId));
     });
     tbodyEl.querySelectorAll("[data-pend-id]").forEach(btn => {
         btn.addEventListener("click", () => togglePendiente(btn.dataset.pendCli, btn.dataset.pendId));
@@ -3833,15 +3849,19 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
        desde cuándo corre el año del plan anual, con su próximo cobro. */
     // 11-oct-2026: el pago único pasa primero por Por cobrar (✓ "completada") y sale con el tacho (factura).
     // 12-oct: el plan mensual no pasa por Por cobrar: su ✓ lo manda directo a Mantenimiento.
+    // 16-oct: el plan anual sí pasa por Por cobrar y sale con "Pagó todo".
     const porCobrar = !entregada && esPorCobrar(c);
-    const completada = (!entregada && !porCobrar && modalidad !== 'unico' && modalidad !== 'mensual')
-        ? `<button class="icon-btn btn-terminada" data-completada-id="${c.id}" title="Marcar la web como completada: pasa a Por cobrar">✓</button>`
+    const completada = (!entregada && !porCobrar && modalidad !== 'mensual')
+        ? `<button class="icon-btn btn-terminada" data-completada-id="${c.id}" title="${modalidad === 'unico' ? "Marcar la web como terminada: pasa a Por cobrar hasta que pague todo" : "Marcar la web como completada: pasa a Por cobrar"}">✓</button>`
         : '';
     const reabrir = porCobrar
         ? `<button class="icon-btn" data-reabrir-id="${c.id}" title="Volver a En proceso">↩</button>`
         : '';
-    const terminada = (!entregada && modalidad !== 'propia' && (modalidad === 'unico' || modalidad === 'mensual' || porCobrar))
+    const terminada = (!entregada && (modalidad === 'mensual' || (porCobrar && modalidad === '')))
         ? `<button class="icon-btn btn-terminada" data-terminada-id="${c.id}" title="Marcar la web como terminada: pasa a Mantenimiento con su plan">✓</button>`
+        : '';
+    const pagoTodo = porCobrar && modalidad === 'unico'
+        ? `<button type="button" class="btn-ghost btn-pago-todo" data-pago-todo-id="${c.id}" title="${u.saldo ? `Registra el saldo de ${fmtMoney(u.saldo)} como cobrado y` : "La web"} pasa a Mantenimiento con el plan anual">Pagó todo</button>`
         : '';
     const webCompletada = porCobrar ? mantToDate(c.webCompletadaAt) : null;
     const iniciarPlan = modalidad === 'unico' && !r?.legado
@@ -3858,7 +3878,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
                     ${/* Pablo, 9-oct: también desde Clientes (y el plan anual de Mantenimiento, que usa esta fila). */ _botonVerChat(c)}
                     ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
                     ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
-                    ${porCobrar ? `<small style="font-size:11px;color:#4ade80">✓ Web completada${webCompletada ? ` el ${mantLongDate(webCompletada)}` : ""}</small>` : ""}
+                    ${porCobrar ? `<small style="font-size:11px;color:#4ade80">✓ Web ${modalidad === "unico" ? "terminada" : "completada"}${webCompletada ? ` el ${mantLongDate(webCompletada)}` : ""}</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
                     ${!conPendientes && !entregada && getEstado(c) === "cliente" ? _pendientesHTML(c) : ""}
                 </div>
@@ -3881,7 +3901,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
             <td>${_conSena(modalidad) ? pagoUnico + renovacion : suscripcion}</td>
             ${sinCambios ? "" : `<td class="center">${cambios}</td>`}
             <td class="actions-col">
-                ${completada}${terminada}${reabrir}${iniciarPlan}
+                ${pagoTodo}${completada}${terminada}${reabrir}${iniciarPlan}
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
                 <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo el saldo o una mensualidad (no marca la web como entregada)">🧾</button>
                 <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
@@ -3889,7 +3909,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
                     ? "Eliminar el cliente (el registro de la entrega queda en Completados)"
                     : modalidad === 'propia'
                         ? "Facturar y cerrar el pago único: sale de Clientes y queda en Completados"
-                        : "Entregar con factura. Si no hace falta factura, usá el ✓ de Terminada"}">🗑</button>
+                        : `Entregar con factura. Si no hace falta factura, usá ${pagoTodo ? "«Pagó todo»" : "el ✓ de Terminada"}`}">🗑</button>
             </td>
         </tr>`;
 }
@@ -4362,7 +4382,7 @@ function render() {
     const term = searchInput.value.trim().toLowerCase();
     const termPhone = cleanArgPhone(term);
     // Solo las webs en desarrollo: las entregadas están en Mantenimiento (19-sep-2026).
-    // En proceso (se están armando) o Por cobrar (completadas del pago único y del plan mensual).
+    // En proceso (se están armando) o Por cobrar (completadas del pago único, del plan anual y sin modalidad definida).
     const clientesBase = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c) && esPorCobrar(c) === (clientesVista === "cobrar"));
     let list = clientesBase;
     if (term) list = list.filter(c =>
@@ -4384,13 +4404,14 @@ function render() {
 
 /* En proceso / Por cobrar (Pablo, 11-oct-2026). Por cobrar son las webs ya
    completadas (`webCompletadaAt`, el ✓ de En proceso) del pago único, que esperan
-   el cobro del saldo. El plan mensual y el anual no pasan por acá: su ✓ las manda
-   directo a Mantenimiento (Pablo, 12-oct). */
+   el cobro del saldo. El plan mensual no pasa por acá: su ✓ lo manda directo a
+   Mantenimiento (Pablo, 12-oct). El plan anual sí (16-oct): su ✓ Terminada lo deja
+   en Por cobrar y sale a Mantenimiento con "Pagó todo" (marcarPagoTodo). */
 let clientesVista = "proceso";
 function esPorCobrar(c) {
     if (!c?.webCompletadaAt || webEntregada(c)) return false;
     const m = modalidadDe(c);
-    return m === "propia" || m === "";
+    return m === "propia" || m === "unico" || m === "";
 }
 document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
     b.addEventListener("click", () => {
@@ -4542,12 +4563,36 @@ async function marcarWebCompletada(id) {
     if (!c) return;
     const faltan = pendientesDe(c).filter(p => !p.hecho);
     const nombre = c.proyecto || c.nombre || "este cliente";
-    if (!confirm(`¿Marcar la web de "${nombre}" como completada?\n\nPasa a Por cobrar.${faltan.length ? `\n\nTodavía quedan ${faltan.length} pendiente${faltan.length === 1 ? "" : "s"} sin marcar: ${faltan.map(p => p.texto).join(", ")}.` : ""}`)) return;
+    const anual = modalidadDe(c) === "unico";
+    if (!confirm(`¿Marcar la web de "${nombre}" como ${anual ? "terminada" : "completada"}?\n\nPasa a Por cobrar${anual ? "; cuando pague todo, el botón \"Pagó todo\" la pasa a Mantenimiento con el plan anual" : ""}.${faltan.length ? `\n\nTodavía quedan ${faltan.length} pendiente${faltan.length === 1 ? "" : "s"} sin marcar: ${faltan.map(p => p.texto).join(", ")}.` : ""}`)) return;
     try {
         await updateDoc(doc(db, "clientes", id), { webCompletadaAt: serverTimestamp(), updatedAt: serverTimestamp() });
     } catch (err) {
         console.error(err);
         alert("Error al marcarla como completada: " + err.message);
+    }
+}
+
+/* "Pagó todo" (Pablo, 16-oct): el plan anual terminado espera en Por cobrar el
+   saldo; al cobrarlo, lo anota (abono y `cobros`, que lo muestra el Calendario) y
+   la web pasa a Mantenimiento con el plan anual, como el ✓ Terminada de antes. */
+async function marcarPagoTodo(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const { precio, saldo } = pagoUnicoDe(c);
+    const nombre = c.proyecto || c.nombre || "este cliente";
+    const detalle = saldo
+        ? `Se registra el saldo de ${fmtMoney(saldo)} como cobrado hoy y la web pasa a Mantenimiento con el plan anual.`
+        : `${precio ? "Ya no debe saldo: la" : "No tiene precio cargado, así que no se registra ningún monto. La"} web pasa a Mantenimiento con el plan anual.`;
+    if (!confirm(`¿"${nombre}" pagó todo?\n\n${detalle}\n\nEl registro de la entrega queda en Completados.`)) return;
+    const cobro = saldo
+        ? { abono: _num(c.abono) + saldo, cobros: _cobrosRegistrados(c, { at: new Date(), monto: saldo, tipo: "saldo" }) }
+        : null;
+    try {
+        await completarCliente(id, null, cobro);
+    } catch (err) {
+        console.error(err);
+        alert("Error al marcar que pagó todo: " + err.message);
     }
 }
 
@@ -6353,8 +6398,9 @@ async function removeClient(id) {
    se borra de `clientes`, se marca `entregadoAt` y sigue con su suscripción.
    Desde el 19-sep-2026 eso lo pasa del tab Clientes (webs en desarrollo) a
    Mantenimiento, al plan mensual o al anual. En `completados` queda una copia
-   como registro de la entrega (y de la factura). */
-async function completarCliente(id, factura) {
+   como registro de la entrega (y de la factura). `extra` son campos que se guardan
+   en el mismo paso, en el cliente y en la copia (el saldo de "Pagó todo"). */
+async function completarCliente(id, factura, extra = null) {
     const c = clients.find(x => x.id === id);
     if (!c) throw new Error("El cliente ya no está en la lista.");
 
@@ -6365,11 +6411,13 @@ async function completarCliente(id, factura) {
 
     batch.set(completadoRef, {
         ...clientData,
+        ...(extra || {}),
         clienteId: id,
         completadoAt: serverTimestamp(),
         ...(factura ? { factura } : {})
     });
     batch.update(clienteRef, {
+        ...(extra || {}),
         entregadoAt: serverTimestamp(),
         completadoId: completadoRef.id,
         updatedAt: serverTimestamp()
@@ -7366,7 +7414,7 @@ function renderCal() {
         const imp2 = tareasDelDia.filter(t => t.importancia == 2);
         const hasAny = tareasDelDia.length > 0;
         const isToday = todayY === calYear && todayM === calMonth && todayD === d;
-        const cls = ["cal-cell", isToday ? "today" : "", hasAny ? "has-demos" : ""].filter(Boolean).join(" ");
+        const cls = ["cal-cell", isToday ? "today" : "", hasAny ? "has-demos" : "", calSeleccion.has(dateStr) ? "cal-cell--sel" : ""].filter(Boolean).join(" ");
         let badges = "";
         if (imp2.length > 0) badges += `<span class="cal-badge badge-imp2">${imp2.length}</span>`;
         if (imp1.length > 0) badges += `<span class="cal-badge badge-imp1">${imp1.length}</span>`;
@@ -7379,10 +7427,73 @@ function renderCal() {
 
     html += `</div>`;
     calGrid.innerHTML = html;
+    calGrid.classList.toggle("cal-grid--eligiendo", calEligiendo);
 
     calGrid.querySelectorAll(".cal-cell[data-date]").forEach(cell => {
-        cell.addEventListener("click", () => openDayModal(cell.dataset.date));
+        cell.addEventListener("click", (e) => {
+            if (calEligiendo) _elegirDiaCal(cell.dataset.date, e.shiftKey);
+            else openDayModal(cell.dataset.date);
+        });
     });
+    _renderCalSuma();
+}
+
+function _elegirDiaCal(ymd, rango) {
+    if (rango && calUltimoElegido && calUltimoElegido !== ymd) {
+        const [desde, hasta] = [calUltimoElegido, ymd].sort();
+        for (let f = _fechaMp(desde), dia = desde; dia <= hasta; f.setDate(f.getDate() + 1), dia = _ymdDelMes(f.getFullYear(), f.getMonth(), f.getDate())) {
+            calSeleccion.add(dia);
+        }
+    } else if (calSeleccion.has(ymd)) calSeleccion.delete(ymd);
+    else calSeleccion.add(ymd);
+    calUltimoElegido = ymd;
+    // Solo cambian las marcas y el recuadro: la grilla queda como está.
+    calGrid.querySelectorAll(".cal-cell[data-date]").forEach(c => c.classList.toggle("cal-cell--sel", calSeleccion.has(c.dataset.date)));
+    _renderCalSuma();
+}
+
+/* El recuadro de la izquierda: las suscripciones (Mercado Pago y mensuales a mano, lo
+   mismo que la celda pinta en azul) de los días elegidos, lo que ya entró y lo que falta. */
+function _renderCalSuma() {
+    const box = document.getElementById("calSuma");
+    if (!box) return;
+    const elegidos = [...calSeleccion].sort();
+    let entro = 0, falta = 0, nCobros = 0;
+    const porMes = new Map();
+    if (elegidos.length) {
+        const dias = ingresosPorDia(elegidos[elegidos.length - 1]);
+        for (const ymd of elegidos) {
+            const mes = ymd.slice(0, 7);
+            if (!porMes.has(mes)) porMes.set(mes, { dias: 0, monto: 0 });
+            const m = porMes.get(mes);
+            m.dias++;
+            for (const it of (dias.get(ymd) || [])) {
+                if (it.clase !== "subs") continue;
+                if (it.cobrado) entro += it.monto; else falta += it.monto;
+                m.monto += it.monto;
+                nCobros++;
+            }
+        }
+    }
+    const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+    const mesLabel = ym => `${MONTHS_ES[parseInt(ym.slice(5), 10) - 1]} ${ym.slice(0, 4)}`;
+    const avisoMp = ingresosMpCargando ? `<p class="muted cal-suma-nota">Consultando Mercado Pago…</p>`
+        : ingresosMpError ? `<p class="cal-suma-nota cal-suma-error">Sin datos de Mercado Pago: solo suma los mensuales cargados a mano.</p>` : "";
+    box.innerHTML = `
+        <span class="cal-suma-titulo">💳 Sumar suscripciones</span>
+        <button type="button" class="${calEligiendo ? "btn-primary" : "btn-ghost"} cal-suma-btn" data-cal-suma="elegir" aria-pressed="${calEligiendo}">${calEligiendo ? "Listo" : elegidos.length ? "Elegir más días" : "Elegir días"}</button>
+        ${elegidos.length ? `
+            <div class="cal-suma-total">${fmtMoney(entro + falta)}</div>
+            <div class="cal-suma-linea"><span class="ingcal-punto ingcal-punto--subs"></span>${fmtMoney(entro)} ya entró</div>
+            <div class="cal-suma-linea"><span class="ingcal-punto ingcal-punto--falta"></span>${fmtMoney(falta)} falta cobrar</div>
+            <p class="muted cal-suma-nota">${plural(elegidos.length, "día", "días")} · ${plural(nCobros, "cobro", "cobros")}</p>
+            ${porMes.size > 1 ? `<ul class="cal-suma-meses">${[...porMes].map(([ym, m]) => `<li><span>${mesLabel(ym)} · ${plural(m.dias, "día", "días")}</span><span>${fmtMoney(m.monto)}</span></li>`).join("")}</ul>` : ""}
+            ${calEligiendo ? `<p class="muted cal-suma-nota">Shift + clic marca un rango. Con las flechas pasás de mes y los días marcados quedan.</p>` : ""}
+            <button type="button" class="btn-ghost cal-suma-limpiar" data-cal-suma="limpiar">Limpiar</button>`
+        : `<p class="muted cal-suma-nota">${calEligiendo
+            ? "Tocá los días que querés sumar. Con las flechas pasás de mes y los días marcados quedan. Shift + clic marca un rango."
+            : "Elegí uno o varios días, de uno o más meses, y acá se suman los pagos por suscripción de esos días."}</p>`}
+        ${avisoMp}`;
 }
 
 function openDayModal(dateStr) {

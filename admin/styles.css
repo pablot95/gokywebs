@@ -2182,6 +2182,7 @@ body.modal-open { overflow: hidden; }
     .cal-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 12px; }
     .cal-add-btn { width: auto; }
     .cal-leyenda { flex-direction: row; gap: 12px; }
+    .cal-suma { width: 100%; }
 
     /* Modales */
     .modal { padding: 18px 16px 20px; max-height: 92dvh; }
@@ -2316,6 +2317,22 @@ body.modal-open { overflow: hidden; }
 .cal-leyenda .cal-leyenda-item .ingcal-punto { margin-right: 0; }
 .modal--day .ingcal-detalle { margin-top: 0; }
 .modal--day .ing-detalle-tabla td { padding: 7px 8px; font-size: 13px; }
+
+/* Sumar las suscripciones de varios días (16-oct-2026). */
+.cal-suma { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.cal-suma-titulo { font-size: 13px; font-weight: 700; }
+.cal-suma-btn, .cal-suma-limpiar { width: 100%; font-size: 13px; padding: 7px 10px; }
+.cal-suma-total { font-size: 24px; font-weight: 700; color: #60A5FA; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1.1; }
+.cal-suma-linea { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cal-suma-linea .ingcal-punto { margin-right: 0; }
+.cal-suma-nota { font-size: 12px; margin: 0; line-height: 1.4; }
+.cal-suma-error { color: var(--danger); }
+.cal-suma-meses { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.cal-suma-meses li { display: flex; justify-content: space-between; gap: 8px; }
+.cal-suma-meses li span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cal-grid--eligiendo { user-select: none; }
+.cal-cell.cal-cell--sel { position: relative; border-color: #60A5FA; background: rgba(96, 165, 250, 0.14); box-shadow: inset 0 0 0 1px #60A5FA; }
+.cal-cell.cal-cell--sel::after { content: "✓"; position: absolute; top: 6px; right: 8px; font-size: 12px; font-weight: 700; color: #93C5FD; }
 
 .badge-imp1 { background: rgba(234,179,8,.85); min-width: 16px; }
 .badge-imp2 { background: rgba(239,68,68,.85); min-width: 16px; }
@@ -2502,6 +2519,7 @@ body.modal-open { overflow: hidden; }
     .cal-layout { flex-direction: column; }
     .cal-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; position: static; }
     .cal-add-btn { width: auto; }
+    .cal-suma { width: 100%; }
     .form-row-split { grid-template-columns: 1fr; }
 }
 

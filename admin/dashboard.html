@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261016-publicidadusd">
+    <link rel="stylesheet" href="styles.css?v=20261016-sumardias">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -671,6 +671,8 @@
                         <span id="calMonthLabel" class="cal-month-label"></span>
                         <button id="calNext" class="btn-ghost cal-nav-btn">&#8250;</button>
                     </div>
+                    <!-- 16-oct-2026: suma de las suscripciones de los días elegidos, de uno o más meses. dashboard.js: _renderCalSuma. -->
+                    <div class="cal-suma" id="calSuma" aria-live="polite"></div>
                     <div class="cal-leyenda">
                         <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Importancia 1</span>
                         <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Importancia 2</span>
@@ -1300,6 +1302,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261016-publicidadtotal"></script>
+    <script type="module" src="dashboard.js?v=20261016-sumardias"></script>
 </body>
 </html>
