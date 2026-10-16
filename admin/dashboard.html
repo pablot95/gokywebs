@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261016-dolares">
+    <link rel="stylesheet" href="styles.css?v=20261016-publicidadusd">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -551,12 +551,13 @@
                     <ul class="fin-lista" id="finAdicLista"></ul>
                 </div>
             </div>
-            <!-- Dólares (16-oct-2026): cada ingreso en dólares se reparte entre personas. Van en finanzasGastos con tipo "dolar". -->
+            <!-- Publicidad en dólares (16-oct-2026): gastos de publicidad en US$, repartidos entre personas, para llevar la
+                 cuenta de lo invertido. Van en finanzasGastos con tipo "dolar"; no se restan de la ganancia en pesos. -->
             <div class="fin-bloque fin-usd" id="finUsdBloque">
-                <div class="fin-bloque-cab"><h2>💵 Dólares <span class="muted">(ingresos del mes)</span></h2><strong id="finUsdTotalMes"></strong></div>
+                <div class="fin-bloque-cab"><h2>💵 Publicidad en dólares <span class="muted">(gastos del mes)</span></h2><strong id="finUsdTotalMes"></strong></div>
                 <form class="fin-usd-form" id="finUsdForm" autocomplete="off">
                     <div class="fin-usd-fila-datos">
-                        <input type="text" name="nombre" placeholder="Concepto (ej: Web Lozano, cliente del exterior…)" maxlength="80">
+                        <input type="text" name="nombre" placeholder="Concepto (ej: Meta Ads, campaña de octubre…)" maxlength="80">
                         <input type="number" name="usd" placeholder="Total en US$" min="0.01" step="0.01" inputmode="decimal" required>
                         <input type="date" name="fecha" required>
                     </div>
@@ -571,7 +572,7 @@
                         <p class="muted fin-usd-chequeo" id="finUsdChequeo"></p>
                     </div>
                     <div class="fin-usd-botones">
-                        <button type="submit" class="btn-primary" id="finUsdGuardar">Agregar ingreso</button>
+                        <button type="submit" class="btn-primary" id="finUsdGuardar">Agregar gasto</button>
                         <button type="button" class="btn-ghost" id="finUsdCancelar" hidden>Cancelar</button>
                     </div>
                 </form>
@@ -1298,6 +1299,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261016-carpetaszips"></script>
+    <script type="module" src="dashboard.js?v=20261016-publicidadusd"></script>
 </body>
 </html>

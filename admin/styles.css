@@ -2703,7 +2703,7 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .fin-item-monto { background: none; border: 0; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
 .fin-item-monto:hover { background: var(--bg-card); }
 .fin-vacio { padding: 8px 0; font-size: 13px; }
-/* Dólares: ingreso repartido entre personas (16-oct-2026) */
+/* Publicidad en dólares: gasto repartido entre personas (16-oct-2026) */
 .fin-usd { margin-top: 16px; }
 .fin-usd-form { display: grid; gap: 10px; margin-bottom: 12px; }
 .fin-usd-fila-datos { display: flex; flex-wrap: wrap; gap: 6px; }

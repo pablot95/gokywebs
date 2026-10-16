@@ -1683,15 +1683,18 @@ function renderFinanzas() {
     renderFinanzasUsd();
 }
 
-/* ── Dólares (Pablo, 16-oct-2026) ──
-   Cada ingreso en dólares se reparte entre personas. Va en la misma colección que los gastos
-   (finanzasGastos, que las reglas ya permiten) con tipo "dolar":
+/* ── Publicidad en dólares (Pablo, 16-oct-2026) ──
+   Gastos de publicidad en US$, para llevar la cuenta de cuánto se va invirtiendo; cada uno se
+   reparte entre personas. (A la mañana eran "ingresos en dólares"; Pablo aclaró que son gastos.)
+   Va en la misma colección que los gastos (finanzasGastos, que las reglas ya permiten) con tipo "dolar":
    { tipo: "dolar", nombre, usd: total, fecha: "YYYY-MM-DD", reparto: [{ persona, usd }] }.
-   Los gastos de arriba filtran por tipo, así que no cuentan estos documentos. Todo se suma en
-   centavos enteros para que los repartos cierren exactos. */
+   Los gastos fijos y adicionales filtran por tipo y la ganancia es en pesos, así que estos no la
+   tocan. Todo se suma en centavos enteros para que los repartos cierren exactos. */
 const _centavos = n => Math.round((Number(n) || 0) * 100);
 const fmtUsd = c => `US$ ${new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format((Number(c) || 0) / 100)}`;
 const _personaKey = p => String(p || "").trim().toLowerCase();
+// "Ingreso en dólares" era el nombre por defecto cuando el bloque era de ingresos.
+const _usdNombre = g => (g.nombre && g.nombre !== "Ingreso en dólares") ? g.nombre : "Publicidad";
 let finUsdEditId = "";
 
 function renderFinanzasUsd() {
@@ -1722,7 +1725,7 @@ function renderFinanzasUsd() {
 
     document.getElementById("finUsdResumen").innerHTML = hist.size ? `
         <table class="fin-usd-tabla">
-            <thead><tr><th>Persona</th><th class="num">Este mes</th><th class="num">Total acumulado</th></tr></thead>
+            <thead><tr><th>Persona</th><th class="num">Este mes</th><th class="num">Total invertido</th></tr></thead>
             <tbody>${[...hist.entries()].sort((a, b) => b[1].c - a[1].c).map(([k, x]) => `
                 <tr><td>${escapeHtml(x.nombre)}</td><td class="num">${fmtUsd(mes.get(k)?.c || 0)}</td><td class="num">${fmtUsd(x.c)}</td></tr>`).join("")}
             </tbody>
@@ -1730,14 +1733,14 @@ function renderFinanzasUsd() {
         </table>` : "";
 
     lista.innerHTML = delMes.length ? delMes.map(g => `<li class="fin-item fin-usd-item">
-            <span class="fin-item-nombre">${escapeHtml(g.nombre || "Ingreso en dólares")}
+            <span class="fin-item-nombre">${escapeHtml(_usdNombre(g))}
                 <small class="muted">${mantShortDate(new Date(`${g.fecha}T12:00:00`))}</small>
                 <small class="fin-usd-reparto-det">${(g.reparto || []).map(r => `${escapeHtml(r.persona)} ${fmtUsd(_centavos(r.usd))}`).join(" · ")}</small>
             </span>
             <strong class="fin-usd-monto">${fmtUsd(_centavos(g.usd))}</strong>
-            <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este ingreso" aria-label="Editar ${escapeHtml(g.nombre || "ingreso")}">✎</button>
-            <button type="button" class="icon-btn" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este ingreso" aria-label="Borrar ${escapeHtml(g.nombre || "ingreso")}">×</button>
-        </li>`).join("") : `<li class="muted fin-vacio">Sin ingresos en dólares en este mes.</li>`;
+            <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este gasto" aria-label="Editar ${escapeHtml(_usdNombre(g))}">✎</button>
+            <button type="button" class="icon-btn" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(_usdNombre(g))}">×</button>
+        </li>`).join("") : `<li class="muted fin-vacio">Sin gastos de publicidad en dólares en este mes.</li>`;
 }
 
 function finUsdFila(persona = "", usd = "") {
@@ -1774,7 +1777,7 @@ function finUsdReset() {
     f.fecha.value = _diaDe(new Date());
     document.getElementById("finUsdFilas").replaceChildren();
     finUsdFila();
-    document.getElementById("finUsdGuardar").textContent = "Agregar ingreso";
+    document.getElementById("finUsdGuardar").textContent = "Agregar gasto";
     document.getElementById("finUsdCancelar").hidden = true;
     finUsdChequeo();
 }
@@ -1815,9 +1818,9 @@ if (document.getElementById("finUsdForm")) {
         const claves = filas.map(x => _personaKey(x.persona));
         if (new Set(claves).size !== claves.length) { alert("Hay una persona repetida en el reparto."); return; }
         const suma = filas.reduce((a, x) => a + x.c, 0);
-        if (suma !== total) { alert(`Los montos de las personas suman ${fmtUsd(suma)} y el ingreso es de ${fmtUsd(total)}: ${suma < total ? "faltan" : "sobran"} ${fmtUsd(Math.abs(total - suma))}.`); return; }
+        if (suma !== total) { alert(`Los montos de las personas suman ${fmtUsd(suma)} y el gasto es de ${fmtUsd(total)}: ${suma < total ? "faltan" : "sobran"} ${fmtUsd(Math.abs(total - suma))}.`); return; }
         const datos = {
-            tipo: "dolar", nombre: f.nombre.value.trim() || "Ingreso en dólares",
+            tipo: "dolar", nombre: f.nombre.value.trim() || "Publicidad",
             usd: total / 100, fecha: f.fecha.value,
             reparto: filas.map(x => ({ persona: x.persona, usd: x.c / 100 })),
         };
@@ -1826,10 +1829,10 @@ if (document.getElementById("finUsdForm")) {
             else await addDoc(collection(db, "finanzasGastos"), { ...datos, createdAt: serverTimestamp() });
         } catch (err) {
             console.error(err);
-            alert("No se pudo guardar el ingreso: " + err.message);
+            alert("No se pudo guardar el gasto: " + err.message);
             return;
         }
-        finMes = datos.fecha.slice(0, 7);   // salta al mes del ingreso para verlo
+        finMes = datos.fecha.slice(0, 7);   // salta al mes del gasto para verlo
         finUsdReset();
         renderFinanzas();
     });
@@ -1840,13 +1843,13 @@ if (document.getElementById("finUsdForm")) {
         const g = finGastos.find(x => x.id === (borrar || editar).dataset[borrar ? "usdBorrar" : "usdEditar"]);
         if (!g) return;
         if (borrar) {
-            if (!confirm(`¿Borrar el ingreso "${g.nombre}" de ${fmtUsd(_centavos(g.usd))}?`)) return;
+            if (!confirm(`¿Borrar el gasto "${_usdNombre(g)}" de ${fmtUsd(_centavos(g.usd))}?`)) return;
             try { await deleteDoc(doc(db, "finanzasGastos", g.id)); }
             catch (err) { console.error(err); alert("No se pudo borrar: " + err.message); }
             return;
         }
         finUsdEditId = g.id;
-        f.nombre.value = g.nombre || "";
+        f.nombre.value = _usdNombre(g);
         f.usd.value = (_centavos(g.usd) / 100).toFixed(2);
         f.fecha.value = g.fecha;
         document.getElementById("finUsdFilas").replaceChildren();
