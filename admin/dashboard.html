@@ -552,9 +552,10 @@
                 </div>
             </div>
             <!-- Publicidad en dólares (16-oct-2026): gastos de publicidad en US$, repartidos entre personas, para llevar la
-                 cuenta de lo invertido. Van en finanzasGastos con tipo "dolar"; no se restan de la ganancia en pesos. -->
+                 cuenta de lo invertido. En total, sin dividir por mes (no depende de #finMes). Van en finanzasGastos con
+                 tipo "dolar"; no se restan de la ganancia en pesos. -->
             <div class="fin-bloque fin-usd" id="finUsdBloque">
-                <div class="fin-bloque-cab"><h2>💵 Publicidad en dólares <span class="muted">(gastos del mes)</span></h2><strong id="finUsdTotalMes"></strong></div>
+                <div class="fin-bloque-cab"><h2>💵 Publicidad en dólares <span class="muted">(total invertido)</span></h2><strong id="finUsdTotal"></strong></div>
                 <form class="fin-usd-form" id="finUsdForm" autocomplete="off">
                     <div class="fin-usd-fila-datos">
                         <input type="text" name="nombre" placeholder="Concepto (ej: Meta Ads, campaña de octubre…)" maxlength="80">
@@ -1299,6 +1300,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261016-publicidadusd"></script>
+    <script type="module" src="dashboard.js?v=20261016-publicidadtotal"></script>
 </body>
 </html>

@@ -1697,50 +1697,47 @@ const _personaKey = p => String(p || "").trim().toLowerCase();
 const _usdNombre = g => (g.nombre && g.nombre !== "Ingreso en dólares") ? g.nombre : "Publicidad";
 let finUsdEditId = "";
 
+/* En total, sin dividir por mes (Pablo, 16-oct): no depende del mes elegido arriba. */
 function renderFinanzasUsd() {
     const lista = document.getElementById("finUsdLista");
     if (!lista) return;
-    const todos = finGastos.filter(g => g.tipo === "dolar");
-    const delMes = todos.filter(g => String(g.fecha || "").slice(0, 7) === finMes)
+    const todos = finGastos.filter(g => g.tipo === "dolar")
         .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
-    const sumaPor = items => {
-        const m = new Map();   // clave en minúsculas → { nombre, c }
-        for (const g of items) for (const r of (g.reparto || [])) {
-            const k = _personaKey(r.persona);
-            if (!k) continue;
-            const x = m.get(k) || { nombre: String(r.persona).trim(), c: 0 };
-            x.c += _centavos(r.usd);
-            m.set(k, x);
-        }
-        return m;
-    };
-    const mes = sumaPor(delMes), hist = sumaPor(todos);
-    const totMes = delMes.reduce((a, g) => a + _centavos(g.usd), 0);
-    const totHist = todos.reduce((a, g) => a + _centavos(g.usd), 0);
-    document.getElementById("finUsdTotalMes").textContent = fmtUsd(totMes);
+    const porPersona = new Map();   // clave en minúsculas → { nombre, c }
+    for (const g of todos) for (const r of (g.reparto || [])) {
+        const k = _personaKey(r.persona);
+        if (!k) continue;
+        const x = porPersona.get(k) || { nombre: String(r.persona).trim(), c: 0 };
+        x.c += _centavos(r.usd);
+        porPersona.set(k, x);
+    }
+    const total = todos.reduce((a, g) => a + _centavos(g.usd), 0);
+    document.getElementById("finUsdTotal").textContent = fmtUsd(total);
 
-    document.getElementById("finUsdSugeridas").innerHTML = [...hist.values()]
+    document.getElementById("finUsdSugeridas").innerHTML = [...porPersona.values()]
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
         .map(x => `<option value="${escapeHtml(x.nombre)}"></option>`).join("");
 
-    document.getElementById("finUsdResumen").innerHTML = hist.size ? `
+    document.getElementById("finUsdResumen").innerHTML = porPersona.size ? `
         <table class="fin-usd-tabla">
-            <thead><tr><th>Persona</th><th class="num">Este mes</th><th class="num">Total invertido</th></tr></thead>
-            <tbody>${[...hist.entries()].sort((a, b) => b[1].c - a[1].c).map(([k, x]) => `
-                <tr><td>${escapeHtml(x.nombre)}</td><td class="num">${fmtUsd(mes.get(k)?.c || 0)}</td><td class="num">${fmtUsd(x.c)}</td></tr>`).join("")}
+            <thead><tr><th>Persona</th><th class="num">Total invertido</th></tr></thead>
+            <tbody>${[...porPersona.values()].sort((a, b) => b.c - a.c).map(x => `
+                <tr><td>${escapeHtml(x.nombre)}</td><td class="num">${fmtUsd(x.c)}</td></tr>`).join("")}
             </tbody>
-            <tfoot><tr><td>Total</td><td class="num">${fmtUsd(totMes)}</td><td class="num">${fmtUsd(totHist)}</td></tr></tfoot>
+            <tfoot><tr><td>Total</td><td class="num">${fmtUsd(total)}</td></tr></tfoot>
         </table>` : "";
 
-    lista.innerHTML = delMes.length ? delMes.map(g => `<li class="fin-item fin-usd-item">
+    const anioHoy = _diaDe(new Date()).slice(0, 4);
+    const fecha = ymd => mantShortDate(new Date(`${ymd}T12:00:00`)) + (String(ymd).slice(0, 4) !== anioHoy ? `/${String(ymd).slice(0, 4)}` : "");
+    lista.innerHTML = todos.length ? todos.map(g => `<li class="fin-item fin-usd-item">
             <span class="fin-item-nombre">${escapeHtml(_usdNombre(g))}
-                <small class="muted">${mantShortDate(new Date(`${g.fecha}T12:00:00`))}</small>
+                <small class="muted">${fecha(g.fecha)}</small>
                 <small class="fin-usd-reparto-det">${(g.reparto || []).map(r => `${escapeHtml(r.persona)} ${fmtUsd(_centavos(r.usd))}`).join(" · ")}</small>
             </span>
             <strong class="fin-usd-monto">${fmtUsd(_centavos(g.usd))}</strong>
             <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este gasto" aria-label="Editar ${escapeHtml(_usdNombre(g))}">✎</button>
             <button type="button" class="icon-btn" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(_usdNombre(g))}">×</button>
-        </li>`).join("") : `<li class="muted fin-vacio">Sin gastos de publicidad en dólares en este mes.</li>`;
+        </li>`).join("") : `<li class="muted fin-vacio">Todavía no cargaste gastos de publicidad en dólares.</li>`;
 }
 
 function finUsdFila(persona = "", usd = "") {
@@ -1832,7 +1829,6 @@ if (document.getElementById("finUsdForm")) {
             alert("No se pudo guardar el gasto: " + err.message);
             return;
         }
-        finMes = datos.fecha.slice(0, 7);   // salta al mes del gasto para verlo
         finUsdReset();
         renderFinanzas();
     });
