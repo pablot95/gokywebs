@@ -4886,6 +4886,38 @@ function _modalidadDeRespuesta(texto) {
     return "";
 }
 
+/* Lo que pagó al pasar a Cliente, para el evento de compra de Meta: la seña del
+   plan anual o del pago único (o la del plan si no se registró), o el primer mes
+   del mensual. `d` es el doc como queda guardado. */
+function _valorCompraMeta(d) {
+    const modalidad = modalidadDe(d);
+    if (modalidad === "mensual") return _num(d.montoMensual) || planDe(d).mensual;
+    if (_conSena(modalidad)) return _num(d.abono) || planDe(d, propuestaDeCliente(d)).sena;
+    return 0;
+}
+
+/* Pasó a Cliente: el bot le avisa a Meta la compra si el chat vino de un anuncio
+   (17-oct). Así la campaña aprende qué clics terminan en clientes. No frena nada:
+   si el bot no responde, el cambio de estado ya quedó guardado. */
+async function avisarCompraAMeta(d) {
+    const it = d.id ? presentadoDeCliente(d) : null;
+    const tel = it?.clave || d.telefono;
+    if (!tel) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "meta_compra", tel, valor: String(_valorCompraMeta(d)), cliente_id: d.id || "" }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        console.info(`Compra para Meta (${d.nombre || d.proyecto || tel}):`, data.resultado);
+    } catch (e) {
+        console.warn("No se pudo avisar la compra a Meta:", e);
+    }
+}
+
 async function setStatus(id, value) {
     try {
         const c = clients.find(x => x.id === id);
@@ -4966,6 +4998,7 @@ async function setStatus(id, value) {
         }
 
         await updateDoc(doc(db, "clientes", id), updateData);
+        if (value === "cliente" && prevEstado !== "cliente" && c) avisarCompraAMeta({ ...c, ...updateData, id });
     } catch (err) {
         console.error(err);
         alert("Error al actualizar: " + err.message);
@@ -5478,14 +5511,19 @@ form.addEventListener("submit", async (e) => {
     saveBtn.textContent = "Guardando...";
 
     try {
+        let nuevoId = id;
         if (id) {
             await updateDoc(doc(db, "clientes", id), data);
         } else {
-            await addDoc(collection(db, "clientes"), {
+            const ref = await addDoc(collection(db, "clientes"), {
                 ...data,
                 createdAt: serverTimestamp(),
                 createdBy: currentUser?.uid || null
             });
+            nuevoId = ref.id;
+        }
+        if (estadoCliente === "cliente" && (!actual || getEstado(actual) !== "cliente")) {
+            avisarCompraAMeta({ ...(actual || {}), ...data, id: nuevoId });
         }
         formDirty = false;
         closeModal();

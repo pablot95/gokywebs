@@ -585,6 +585,31 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ]);
         exit;
     }
+    /* Pasó a Cliente en el admin (admin/dashboard.js, 17-oct): se le avisa a
+     * Meta la compra con lo que pagó al arrancar, si el chat vino de un anuncio.
+     * Llega la clave del chat si la sincronización ya lo encontró, o el
+     * teléfono del cliente, y se busca igual que al presentar la demo. */
+    if ($a === 'meta_compra' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $clave = wabot_conv_resolver((string)$_POST['tel'], $motivo);
+        if ($clave === null) {
+            echo json_encode(['ok' => false, 'resultado' => $motivo === 'ambiguo' ? 'ambiguo' : 'sin_chat']);
+            exit;
+        }
+        $lock = wabot_lock_tomar($clave);
+        $resultado = 'ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($clave);
+                $resultado = wabot_capi_compra($conv, (float)($_POST['valor'] ?? 0), $cfg);
+                if ($resultado === 'ok') wabot_conv_save($conv);
+            } finally { wabot_lock_soltar($lock); }
+        }
+        wabot_log('meta_compra', ['clave' => $clave, 'resultado' => $resultado, 'valor' => (int)($_POST['valor'] ?? 0),
+                                  'cliente_id' => mb_substr((string)($_POST['cliente_id'] ?? ''), 0, 40)]);
+        echo json_encode(['ok' => $resultado === 'ok', 'resultado' => $resultado, 'clave' => $clave]);
+        exit;
+    }
     if ($a === 'enviar_template_interesado' && !empty($_POST['tel'])) {
         $tel = (string)$_POST['tel'];
         $lock = wabot_lock_tomar($tel);
@@ -774,7 +799,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $total   = count($textos);
         $enviado = $enviados === $total;
 
-        wabot_capi_evento($conv, 'Schedule', $cfg);
+        // Le llegó la demo: para Meta es un lead calificado ('Schedule' no existe en mensajería).
+        wabot_capi_evento($conv, 'QualifiedLead', $cfg);
         wabot_conv_save($conv);
         wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
                                         'enviados' => $enviados, 'total' => $total,
@@ -816,7 +842,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['confirmacion_demo_enviada'] = false;
         $conv['confirmacion_demo_ts'] = 0;
         $conv['confirmacion_demo_auto_intento_ts'] = 0;
-        wabot_capi_evento($conv, 'Schedule', $cfg);
+        wabot_capi_evento($conv, 'QualifiedLead', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;

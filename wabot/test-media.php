@@ -184,23 +184,58 @@ $GLOBALS['WABOT_TEST_CAPI'] = [];
 $convCapi = ['tel' => 'TESTCAPI1', 'conversation_key' => 'TESTCAPI1', 'canal' => 'whatsapp',
              'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
 caso('con clic de anuncio y config cargada, se manda el evento',
-    wabot_capi_evento($convCapi, 'Lead', $cfgCapi) === true);
-caso('y queda anotado para no repetirlo', in_array('Lead', $convCapi['capi_eventos'], true));
+    wabot_capi_evento($convCapi, 'LeadSubmitted', $cfgCapi) === true);
+caso('y queda anotado para no repetirlo', in_array('LeadSubmitted', $convCapi['capi_eventos'], true));
+$ultimoCapi = end($GLOBALS['WABOT_TEST_CAPI'])[2] ?? [];
+caso('va como mensajería de WhatsApp, con el clic del anuncio y sin custom_data',
+    ($ultimoCapi['action_source'] ?? '') === 'business_messaging' && ($ultimoCapi['messaging_channel'] ?? '') === 'whatsapp'
+    && ($ultimoCapi['user_data']['ctwa_clid'] ?? '') === 'ARAbc123' && !isset($ultimoCapi['custom_data']));
 caso('el mismo evento NO se manda dos veces (inflaria las conversiones de Meta)',
-    wabot_capi_evento($convCapi, 'Lead', $cfgCapi) === false);
+    wabot_capi_evento($convCapi, 'LeadSubmitted', $cfgCapi) === false);
 caso('pero otro evento distinto si',
-    wabot_capi_evento($convCapi, 'Schedule', $cfgCapi) === true);
+    wabot_capi_evento($convCapi, 'QualifiedLead', $cfgCapi) === true);
+
+// 17-oct: 'Lead' y 'Schedule' son del pixel; en mensajería Meta los rechazaba
+// todos con 400 y no quedaba nada anotado.
+$convNombre = ['tel' => 'TESTCAPI4', 'conversation_key' => 'TESTCAPI4', 'canal' => 'whatsapp',
+               'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
+$antesCapi = count($GLOBALS['WABOT_TEST_CAPI']);
+caso('un nombre que Meta no acepta en mensajería (Lead, Schedule) no sale',
+    wabot_capi_evento($convNombre, 'Lead', $cfgCapi) === false && wabot_capi_evento($convNombre, 'Schedule', $cfgCapi) === false
+    && count($GLOBALS['WABOT_TEST_CAPI']) === $antesCapi && $convNombre['capi_eventos'] === []);
+$nombresUsados = [];
+foreach (['lib.php', 'admin.php', 'webhook.php', 'cron.php'] as $archivoCapi) {
+    $fuente = is_file(__DIR__ . '/' . $archivoCapi) ? file_get_contents(__DIR__ . '/' . $archivoCapi) : '';
+    preg_match_all("/wabot_capi_evento\(\s*\\\$\w+\s*,\s*'([^']+)'/", $fuente, $m);
+    $nombresUsados = array_merge($nombresUsados, $m[1]);
+}
+caso('todos los eventos que manda el bot están en la lista de Meta (' . implode(', ', array_unique($nombresUsados)) . ')',
+    $nombresUsados && !array_diff($nombresUsados, WABOT_CAPI_EVENTOS));
 
 $convSinClid = ['tel' => 'TESTCAPI2', 'conversation_key' => 'TESTCAPI2', 'canal' => 'whatsapp',
                 'ctwa_clid' => '', 'capi_eventos' => []];
-caso('quien NO vino de un anuncio no genera evento', wabot_capi_evento($convSinClid, 'Lead', $cfgCapi) === false);
+caso('quien NO vino de un anuncio no genera evento', wabot_capi_evento($convSinClid, 'LeadSubmitted', $cfgCapi) === false);
 
 $cfgVacio = wabot_config_load();
 $cfgVacio['capi_dataset_id'] = ''; $cfgVacio['capi_token'] = '';
 $convInerte = ['tel' => 'TESTCAPI3', 'conversation_key' => 'TESTCAPI3', 'canal' => 'whatsapp',
                'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
 caso('sin configurar el dataset y el token, queda inerte',
-    wabot_capi_evento($convInerte, 'Lead', $cfgVacio) === false);
+    wabot_capi_evento($convInerte, 'LeadSubmitted', $cfgVacio) === false);
+
+// La compra (17-oct): pasó a Cliente en el admin.
+caso('la compra sale con lo que pagó, en pesos',
+    wabot_capi_compra($convCapi, '60000', $cfgCapi) === 'ok');
+$compraCapi = end($GLOBALS['WABOT_TEST_CAPI']);
+caso('como Purchase con currency ARS y value numérico',
+    $compraCapi[1] === 'Purchase' && ($compraCapi[2]['custom_data'] ?? null) === ['currency' => 'ARS', 'value' => 60000]);
+caso('y una sola vez por charla', wabot_capi_compra($convCapi, 60000, $cfgCapi) === 'ya');
+caso('sin clic de anuncio no hay a quién atribuirla', wabot_capi_compra($convSinClid, 20000, $cfgCapi) === 'sin_anuncio');
+caso('sin la API configurada no se intenta', wabot_capi_compra($convInerte, 20000, $cfgVacio) === 'sin_config');
+$convSinValor = ['tel' => 'TESTCAPI5', 'conversation_key' => 'TESTCAPI5', 'canal' => 'whatsapp',
+                 'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
+caso('sin monto no se manda (Meta pide el valor de la compra)',
+    wabot_capi_compra($convSinValor, 0, $cfgCapi) === 'sin_valor' && $convSinValor['capi_eventos'] === []);
 
 echo "\n— Notas de voz: WhatsApp valida contenedor Y codec (27-ago) —\n";
 

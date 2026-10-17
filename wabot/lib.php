@@ -2470,20 +2470,39 @@ function wabot_wa_adjunto($msg, $tipo) {
     return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
 }
 
+/* Los eventos que la API de conversiones acepta para mensajería (doc de Meta,
+ * "Conversions API for Business Messaging"). El bot usa LeadSubmitted (llenó el
+ * form), QualifiedLead (le llegó la demo) y Purchase (pasó a Cliente). */
+define('WABOT_CAPI_EVENTOS', ['Purchase', 'LeadSubmitted', 'QualifiedLead', 'InitiateCheckout', 'AddToCart',
+    'ViewContent', 'OrderCreated', 'OrderShipped', 'OrderDelivered', 'OrderCanceled', 'OrderReturned',
+    'CartAbandoned', 'RatingProvided', 'ReviewProvided']);
+
 /**
  * Le avisa a Meta que un clic de anuncio termino en algo (un lead, una demo
- * entregada). Es la API de conversiones para mensajeria.
+ * entregada, una compra). Es la API de conversiones para mensajeria.
  *
  * Sin esto Meta solo ve el clic y nunca sabe si sirvio: optimiza hacia un
  * evento que jamas observa y termina repartiendo el anuncio a cualquiera.
  *
  * Queda INERTE mientras no esten cargados el dataset y el token en el panel:
  * asi no rompe nada en instalaciones que todavia no lo configuraron.
+ *
+ * $customData va tal cual en custom_data (Purchase lleva value y currency).
  */
-function wabot_capi_evento(&$conv, $evento, $cfg) {
+function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
     $dataset = trim((string)($cfg['capi_dataset_id'] ?? ''));
     $token   = trim((string)($cfg['capi_token'] ?? ''));
     if ($dataset === '' || $token === '') return false;
+
+    /* Para mensajería Meta acepta solo SUS nombres de evento, no los del pixel:
+     * del 25-sep al 17-oct se mandaron 'Lead' y 'Schedule' y TODOS volvieron
+     * con 400 (subcode 2804066, "El tipo de evento de mensaje no es válido"):
+     * Meta nunca vio una conversión del bot. Un nombre fuera de la lista se
+     * frena acá, con su línea en el log, en vez de ir a buscar el 400. */
+    if (!in_array($evento, WABOT_CAPI_EVENTOS, true)) {
+        wabot_log('error', ['donde' => 'capi', 'evento' => $evento, 'res' => 'nombre de evento que Meta no acepta para mensajería']);
+        return false;
+    }
 
     $clid = trim((string)($conv['ctwa_clid'] ?? ''));
     if ($clid === '') return false;   // no vino de un anuncio: no hay nada que atribuir
@@ -2495,19 +2514,22 @@ function wabot_capi_evento(&$conv, $evento, $cfg) {
     if (in_array($evento, $ya, true)) return false;
 
     $clave = wabot_conversation_key($conv);
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) {
-        $GLOBALS['WABOT_TEST_CAPI'][] = [$clave, $evento];
-        $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
-        return true;
-    }
-
-    $body = json_encode(['data' => [[
+    $dato = [
         'event_name'        => $evento,
         'event_time'        => time(),
         'action_source'     => 'business_messaging',
         'messaging_channel' => 'whatsapp',
         'user_data'         => ['ctwa_clid' => $clid],
-    ]]], JSON_UNESCAPED_UNICODE);
+    ];
+    if ($customData) $dato['custom_data'] = $customData;
+
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) {
+        $GLOBALS['WABOT_TEST_CAPI'][] = [$clave, $evento, $dato];
+        $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
+        return true;
+    }
+
+    $body = json_encode(['data' => [$dato]], JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init('https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . $dataset . '/events?access_token=' . urlencode($token));
     curl_setopt_array($ch, [
@@ -2529,6 +2551,24 @@ function wabot_capi_evento(&$conv, $evento, $cfg) {
     $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
     wabot_log('capi_enviado', ['tel' => $conv['tel'] ?? '', 'evento' => $evento]);
     return true;
+}
+
+/**
+ * La compra: Pablo pasó a este contacto a Cliente en el admin (17-oct). Es la
+ * conversión que importa; con ella la campaña puede buscar gente que compra y
+ * no solo gente que escribe. $valor es lo que pagó al arrancar (la seña del
+ * plan anual o del pago único, o el primer mes del mensual), en pesos.
+ *
+ * Devuelve qué pasó, para que el admin lo muestre en la consola:
+ * ok · ya · sin_anuncio · sin_config · sin_valor · error.
+ */
+function wabot_capi_compra(&$conv, $valor, $cfg) {
+    $valor = (int)round((float)$valor);
+    if (trim((string)($cfg['capi_dataset_id'] ?? '')) === '' || trim((string)($cfg['capi_token'] ?? '')) === '') return 'sin_config';
+    if (trim((string)($conv['ctwa_clid'] ?? '')) === '') return 'sin_anuncio';
+    if (in_array('Purchase', (array)($conv['capi_eventos'] ?? []), true)) return 'ya';
+    if ($valor <= 0) return 'sin_valor';
+    return wabot_capi_evento($conv, 'Purchase', $cfg, ['currency' => 'ARS', 'value' => $valor]) ? 'ok' : 'error';
 }
 
 /**
@@ -6786,7 +6826,7 @@ function wabot_form_lead_procesar($payload, $cfg) {
         $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
         // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta
         // (una sola vez por charla: wabot_capi_evento lo recuerda).
-        wabot_capi_evento($conv, 'Lead', $cfg);
+        wabot_capi_evento($conv, 'LeadSubmitted', $cfg);
     }
     if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])
         && wabot_postprecio_encendido($cfg)) {
