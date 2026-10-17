@@ -32,7 +32,8 @@ charla_ad('5491100000302TEST', ['ctwa_clid' => 'c2', 'ctwa_clid_ts' => $t0 + 60,
 charla_ad('5491100000303TEST', ['ctwa_clid' => 'c3', 'ctwa_clid_ts' => $t0 + 120, 'anuncio_id' => 'A2', 'anuncio_titular' => 'Tu negocio merece su propia web',
     'cliente_id' => 'xyz']);   // llegó a cliente: cuenta en todas las etapas
 charla_ad('5491100000304TEST', ['ctwa_clid' => 'c4', 'ctwa_clid_ts' => $t0 + 180, 'anuncio_id' => 'B', 'anuncio_titular' => 'Tu tienda online',
-    'anuncio_visto' => ['id' => 'B', 'cuerpo' => 'Vendé las 24 h', 'ts' => $t0 + 180], 'form_link_mandado_ts' => $t0 + 300, 'form_completado_ts' => $t0 + 900]);
+    'anuncio_visto' => ['id' => 'B', 'cuerpo' => 'Vendé las 24 h', 'ts' => $t0 + 180], 'form_link_mandado_ts' => $t0 + 300, 'form_completado_ts' => $t0 + 900,
+    'anuncio_variante' => 'Similar 1% (prueba)']);
 charla_ad('5491100000305TEST', ['ctwa_clid' => 'c5', 'ctwa_clid_ts' => $t0 + 200]);   // Meta no mandó el id
 charla_ad('5491100000306TEST', []);                                                   // orgánico
 charla_ad('5491100000307TEST', ['presentado_ts' => $t0 + 4000]);                      // orgánico con demo
@@ -55,6 +56,14 @@ $e = wabot_anuncios_etapas_de(conv_nueva('X', ['transcript' => [['q' => 'cliente
     ['q' => 'humano', 't' => "Podés elegir entre dos planes:\n\n1) Plan anual: \$190.000\n2) Plan mensual: \$30.000", 'ts' => 5]]]), wabot_config_load());
 caso('el precio que pasó Pablo a mano también cuenta (se lee en la charla)', $e['precio'] && !$e['formulario']);
 
+echo "Variante del anuncio (17-oct)\n";
+caso('el anuncio de la copia de prueba se reconoce por su id', wabot_anuncio_variante('52558103567818', 'hola') === 'Similar 1% (prueba)');
+caso('sin id, por el mensaje predefinido de la copia', wabot_anuncio_variante('', 'Hola, me gustaría obtener la info') === 'Similar 1% (prueba)'
+    && wabot_anuncio_variante('999', 'hola me gustaria obtener la info!!') === 'Similar 1% (prueba)');
+caso('el mensaje predefinido del original', wabot_anuncio_variante('123', 'Hola. ¿Puedo obtener más información sobre esto?') === 'Original');
+caso('si escribió otra cosa, sin variante', wabot_anuncio_variante('123', 'quiero una web para mi negocio') === ''
+    && wabot_anuncio_variante('', '') === '');
+
 echo "Por anuncio\n";
 $r = wabot_anuncios_stats(time() - 30 * 86400, time());
 $ids = array_keys($r['anuncios']);
@@ -66,6 +75,8 @@ caso('A1: 2 escribieron, 1 respondió y recibió el precio (el clic de hace 40 d
 caso('A2: el cliente cuenta en todo el embudo', !in_array(0, $r['anuncios']['A2']['etapas'], true), json_encode($r['anuncios']['A2']['etapas']));
 caso('B: completó el formulario, sin demo; trae el texto del anuncio',
     $r['anuncios']['B']['etapas']['completaron'] === 1 && $r['anuncios']['B']['etapas']['demo'] === 0 && $r['anuncios']['B']['cuerpo'] === 'Vendé las 24 h');
+caso('la fila lleva la variante de sus charlas (y las de antes, ninguna)',
+    $r['anuncios']['B']['variante'] === 'Similar 1% (prueba)' && $r['anuncios']['A1']['variante'] === '' && $r['organico']['variante'] === '');
 caso('la imagen del anuncio sale del primer mensaje', ($r['anuncios']['A1']['imagen']['archivo'] ?? '') === '20261009-204044-9255b220.jpg'
     && ($r['anuncios']['A1']['imagen']['clave'] ?? '') === '5491100000301TEST');
 caso('el clic sin id de anuncio va en su propia fila', ($r['anuncios']['sin_id']['etapas']['contactos'] ?? 0) === 1);

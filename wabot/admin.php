@@ -137,7 +137,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     $statsJson = wabot_anuncios_stats($desdeJson, $hastaJson);
     $fila = function ($f) {
         $img = $f['imagen'] ?? null;
-        return ['id' => (string)$f['id'], 'titular' => (string)$f['titular'], 'texto' => (string)($f['cuerpo'] !== '' ? $f['cuerpo'] : $f['descripcion']),
+        return ['id' => (string)$f['id'], 'titular' => (string)$f['titular'], 'variante' => (string)($f['variante'] ?? ''),
+                'texto' => (string)($f['cuerpo'] !== '' ? $f['cuerpo'] : $f['descripcion']),
                 'imagen' => $img ? 'admin.php?accion=media&tel=' . rawurlencode((string)$img['clave']) . '&archivo=' . rawurlencode((string)$img['archivo']) . '&modo=ver' : '',
                 'etapas' => $f['etapas'], 'contactos' => $f['contactos_detalle']];
     };
@@ -4174,6 +4175,8 @@ function burbujaCita(t, chat) {
         const ANUNCIO_CHARLA = <?= json_encode((trim((string)($conv['anuncio_titular'] ?? '')) !== '' || trim((string)($conv['anuncio_id'] ?? '')) !== '')
             ? ['titular' => (string)($conv['anuncio_titular'] ?? ''), 'ts' => (int)($conv['ctwa_clid_ts'] ?? 0), 'viejo' => true]
             : null, JSON_UNESCAPED_UNICODE) ?>;
+        // Original o copia de prueba del anuncio (17-oct, wabot_anuncio_variante).
+        const ANUNCIO_VARIANTE = <?= json_encode((string)($conv['anuncio_variante'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
 
         /* El anuncio del que escribió (9-oct): imagen, título y texto arriba del
            mensaje, como en WhatsApp. Abajo, lo que el bot "ve" en la imagen. */
@@ -4190,7 +4193,8 @@ function burbujaCita(t, chat) {
             const txt = document.createElement('div');
             txt.className = 'anuncio-txt';
             const agregar = (tag, clase, texto) => { const el = document.createElement(tag); if (clase) el.className = clase; el.textContent = texto; txt.appendChild(el); return el; };
-            agregar('span', 'anuncio-et', a.media_tipo === 'video' ? 'Desde un anuncio (video)' : 'Desde un anuncio');
+            agregar('span', 'anuncio-et', (a.media_tipo === 'video' ? 'Desde un anuncio (video)' : 'Desde un anuncio')
+                + (ANUNCIO_VARIANTE ? ' · ' + ANUNCIO_VARIANTE : ''));
             if (a.titular) agregar('b', '', a.titular);
             if (a.cuerpo) agregar('span', 'anuncio-cuerpo', a.cuerpo);
             if (a.descripcion) agregar('span', 'anuncio-ve', 'El bot ve: ' + a.descripcion).title = a.descripcion;

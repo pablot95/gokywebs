@@ -1144,7 +1144,7 @@ function renderAnuncios() {
                 ? `<div class="anu-ad"><span class="anu-img anu-img--vacia" aria-hidden="true"></span><div><strong>Sin anuncio</strong><div class="anu-sub">Escribieron directo: el número, Instagram, la web</div></div></div>`
                 : `<div class="anu-ad">
                         ${f.imagen ? `<img class="anu-img" src="../wabot/${escapeHtml(f.imagen)}" alt="" loading="lazy">` : `<span class="anu-img anu-img--vacia" aria-hidden="true"></span>`}
-                        <div><strong>${escapeHtml(f.titular || "Sin título")}</strong>
+                        <div><strong>${escapeHtml(f.titular || "Sin título")}</strong>${f.variante ? ` <span class="anu-variante">${escapeHtml(f.variante)}</span>` : ""}
                             <div class="anu-sub">${f.id === "sin_id" ? "Meta no mandó el id del anuncio" : "id " + escapeHtml(f.id)}${metaAnuncios[f.id]?.nombre && metaAnuncios[f.id].nombre !== f.titular ? " · en Meta: " + escapeHtml(metaAnuncios[f.id].nombre) : ""}</div>
                             ${f.texto ? `<div class="anu-sub" title="${escapeHtml(f.texto)}">${escapeHtml(f.texto.length > 110 ? f.texto.slice(0, 108) + "…" : f.texto)}</div>` : ""}
                         </div></div>`;

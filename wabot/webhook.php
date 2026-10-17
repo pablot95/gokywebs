@@ -287,7 +287,11 @@ function wabot_procesar_entrante($ev, $cfg) {
                 $conv['ctwa_clid_ts']    = time();
                 $conv['anuncio_id']      = (string)($ref['anuncio_id'] ?? '');
                 $conv['anuncio_titular'] = (string)($ref['anuncio_titular'] ?? '');
-                wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id']]);
+                // El original o la copia de prueba (17-oct): por el id o por el mensaje predefinido.
+                $primerTexto = '';
+                foreach ($tanda as $item) if (trim((string)($item['t'] ?? '')) !== '') { $primerTexto = (string)$item['t']; break; }
+                $conv['anuncio_variante'] = wabot_anuncio_variante($conv['anuncio_id'], $primerTexto);
+                wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id'], 'variante' => $conv['anuncio_variante']]);
             }
             // Lo que dice el anuncio, para el contexto de la IA (ia.php, clasificador).
             if (is_array($ref) && !empty($ref['anuncio_fila'])) {

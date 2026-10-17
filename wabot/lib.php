@@ -1773,6 +1773,8 @@ function wabot_conv_load($clave) {
         'ctwa_clid_ts'                => 0,
         'anuncio_id'                  => '',
         'anuncio_titular'             => '',
+        // Qué variante del anuncio fue (wabot_anuncio_variante): "Similar 1% (prueba)", "Original" o ''.
+        'anuncio_variante'            => '',
         'capi_eventos'                => [],
         'form_link_enviado'           => false,
         'form_link_ts'                => 0,
@@ -2602,6 +2604,36 @@ function wabot_wa_referral($msg) {
     // Sin clic de anuncio ni nada que mostrar, no hay referral que guardar.
     if ($clid === '' && $ref['anuncio_titular'] === '' && $ref['anuncio_cuerpo'] === '' && $ref['anuncio_imagen_url'] === '') return null;
     return $ref;
+}
+
+/**
+ * Las variantes de un mismo anuncio (Pablo, 17-oct: "que el bot pueda
+ * diferenciar una campaña de la otra"). En Goky-multi-images el conjunto
+ * "WSP Conversaciones - Similar 1% (prueba)" es una copia del original con el
+ * público similar de los clientes; su anuncio Publioriginal abre el chat con
+ * otro mensaje predefinido (plantilla "WSP Ads - Similar 1% (prueba)"). Se
+ * reconoce por el id del anuncio de la copia y, si Meta no lo manda, por el
+ * mensaje. Los dos Publioriginal tienen el mismo título: sin esto no se
+ * distinguen ni en el chat ni en Por anuncio.
+ */
+const WABOT_ANUNCIO_VARIANTES_ID = [
+    '52558103567818' => 'Similar 1% (prueba)',
+];
+const WABOT_ANUNCIO_VARIANTES_MENSAJE = [
+    'me gustaria obtener la info' => 'Similar 1% (prueba)',
+    'puedo obtener mas informacion sobre esto' => 'Original',
+];
+
+/** La variante del anuncio según su id o el primer mensaje del chat; '' si no es ninguna. */
+function wabot_anuncio_variante($anuncioId, $primerMensaje) {
+    $id = trim((string)$anuncioId);
+    if ($id !== '' && array_key_exists($id, WABOT_ANUNCIO_VARIANTES_ID)) return WABOT_ANUNCIO_VARIANTES_ID[$id];
+    $t = preg_replace('/[^a-z0-9 ]+/', ' ', wabot_normalizar_busqueda($primerMensaje));
+    $t = ' ' . preg_replace('/\s+/', ' ', $t) . ' ';
+    foreach (WABOT_ANUNCIO_VARIANTES_MENSAJE as $frase => $variante) {
+        if (strpos($t, ' ' . $frase . ' ') !== false) return $variante;
+    }
+    return '';
 }
 
 /**

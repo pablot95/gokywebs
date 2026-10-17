@@ -85,6 +85,8 @@ function wabot_anuncios_de_charla($clave, $cv) {
         'cuerpo' => trim((string)($visto['cuerpo'] ?? '')),
         'link' => trim((string)($visto['link'] ?? '')),
         'imagen' => $imagen !== '' ? ['clave' => (string)$clave, 'archivo' => $imagen] : null,
+        // Original o copia de prueba (17-oct, wabot_anuncio_variante): se guarda desde ese día.
+        'variante' => trim((string)($cv['anuncio_variante'] ?? '')),
     ];
 }
 
@@ -137,7 +139,7 @@ function wabot_anuncios_stats($desde, $hasta) {
     $catalogo = json_decode((string)@file_get_contents(WABOT_DATA . '/anuncios.json'), true);
     if (!is_array($catalogo)) $catalogo = [];
     $vacia = function ($id) use ($catalogo) {
-        return ['id' => $id, 'titular' => trim((string)($catalogo[$id]['titular'] ?? '')), 'cuerpo' => '', 'link' => '', 'imagen' => null,
+        return ['id' => $id, 'titular' => trim((string)($catalogo[$id]['titular'] ?? '')), 'cuerpo' => '', 'link' => '', 'imagen' => null, 'variante' => '',
                 'descripcion' => trim((string)($catalogo[$id]['descripcion'] ?? '')),
                 'etapas' => array_fill_keys(array_keys(wabot_anuncios_etapas()), 0), 'contactos_detalle' => []];
     };
@@ -155,7 +157,7 @@ function wabot_anuncios_stats($desde, $hasta) {
             $cv = wabot_conv_load($clave);
             $a = wabot_anuncios_de_charla($clave, $cv);
             if (!$a && isset($delLog[$clave])) {
-                $a = ['id' => $delLog[$clave]['id'], 'ts' => $delLog[$clave]['ts'], 'titular' => '', 'cuerpo' => '', 'link' => '', 'imagen' => null, 'del_log' => true];
+                $a = ['id' => $delLog[$clave]['id'], 'ts' => $delLog[$clave]['ts'], 'titular' => '', 'cuerpo' => '', 'link' => '', 'imagen' => null, 'variante' => '', 'del_log' => true];
             }
             if ($a) {
                 $ts = $a['ts'];
@@ -173,7 +175,7 @@ function wabot_anuncios_stats($desde, $hasta) {
         if ($a) {
             if (!isset($r['anuncios'][$a['id']])) $r['anuncios'][$a['id']] = $vacia($a['id']);
             $fila = &$r['anuncios'][$a['id']];
-            foreach (['titular', 'cuerpo', 'link'] as $k) if ($fila[$k] === '' && $a[$k] !== '') $fila[$k] = $a[$k];
+            foreach (['titular', 'cuerpo', 'link', 'variante'] as $k) if ($fila[$k] === '' && $a[$k] !== '') $fila[$k] = $a[$k];
             if (!$fila['imagen'] && $a['imagen']) $fila['imagen'] = $a['imagen'];
         } else {
             $fila = &$r['organico'];

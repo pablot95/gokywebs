@@ -73,6 +73,7 @@ $archivo = (string)($fila['anuncio']['imagen'] ?? '');
 caso('con la imagen guardada entre sus adjuntos', $archivo !== '' && is_file(WABOT_DATA . '/media/' . $tel . '/' . $archivo));
 caso('y lo que el bot ve en ella', ($fila['anuncio']['descripcion'] ?? '') === $d1);
 caso('la atribución del anuncio sigue igual', ($cv['ctwa_clid'] ?? '') === 'ARAkLkTEST' && ($cv['anuncio_titular'] ?? '') === 'Tu tienda online lista en 7 días');
+caso('con otro mensaje, sin variante del anuncio', ($cv['anuncio_variante'] ?? null) === '');
 caso('la imagen del anuncio no va con las del cliente', !in_array($archivo, array_column(wabot_imagenes_cliente($cv), 'archivo'), true));
 $ctx = wabot_anuncio_contexto_texto($cv);
 caso('el bot sabe de qué anuncio vino', str_contains($ctx, '«Tu tienda online lista en 7 días»') && str_contains($ctx, 'imagen: El anuncio ofrece'), $ctx);
@@ -87,7 +88,16 @@ wabot_procesar_entrante(['channel_user_id' => $tel2, 'conversation_key' => $tel2
 $cv2 = wabot_conv_load($tel2);
 caso('sin anuncio, el mensaje queda como siempre', empty($cv2['transcript'][0]['anuncio']) && wabot_anuncio_contexto_texto($cv2) === '');
 
-foreach ([$tel, $tel2] as $t) {
+// La copia de prueba con el público similar (17-oct): su mensaje predefinido la delata.
+$tel3 = '5491100000079TEST';
+@unlink(wabot_conv_path($tel3)); @unlink(wabot_cola_path($tel3)); @unlink(wabot_historial_path($tel3));
+wabot_procesar_entrante(['channel_user_id' => $tel3, 'conversation_key' => $tel3, 'id' => uniqid('wamid.similar'),
+    'canal' => 'whatsapp', 'texto' => 'Hola, me gustaría obtener la info', 'nombre' => 'Caro', 'media' => null,
+    'referral' => array_merge($ref, ['ctwa_clid' => 'ARAsimTEST'])], $cfg);
+$cv3 = wabot_conv_load($tel3);
+caso('el mensaje de la copia de prueba guarda su variante', ($cv3['anuncio_variante'] ?? '') === 'Similar 1% (prueba)', (string)($cv3['anuncio_variante'] ?? ''));
+
+foreach ([$tel, $tel2, $tel3] as $t) {
     @unlink(wabot_conv_path($t)); @unlink(wabot_cola_path($t)); @unlink(wabot_historial_path($t));
     foreach (glob(WABOT_DATA . '/media/' . $t . '/*') ?: [] as $f) @unlink($f);
     @rmdir(WABOT_DATA . '/media/' . $t);
