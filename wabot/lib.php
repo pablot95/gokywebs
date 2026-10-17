@@ -2617,7 +2617,10 @@ function wabot_wa_referral($msg) {
  * distinguen ni en el chat ni en Por anuncio.
  */
 const WABOT_ANUNCIO_VARIANTES_ID = [
-    '52558103567818' => 'Similar 1% (prueba)',
+    '52558103567818' => 'Similar 1% (prueba)',   // Publioriginal de la copia
+    '52558109856018' => 'Similar 1% (prueba)',   // Post Creamos páginas web de la copia (17-oct)
+    '52547952767018' => 'Original',              // Publioriginal del original
+    '52558109399418' => 'Original',              // Post Creamos páginas web del original (17-oct)
 ];
 const WABOT_ANUNCIO_VARIANTES_MENSAJE = [
     'me gustaria obtener la info' => 'Similar 1% (prueba)',

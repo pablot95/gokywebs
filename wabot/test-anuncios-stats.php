@@ -57,7 +57,10 @@ $e = wabot_anuncios_etapas_de(conv_nueva('X', ['transcript' => [['q' => 'cliente
 caso('el precio que pasó Pablo a mano también cuenta (se lee en la charla)', $e['precio'] && !$e['formulario']);
 
 echo "Variante del anuncio (17-oct)\n";
-caso('el anuncio de la copia de prueba se reconoce por su id', wabot_anuncio_variante('52558103567818', 'hola') === 'Similar 1% (prueba)');
+caso('el anuncio de la copia de prueba se reconoce por su id', wabot_anuncio_variante('52558103567818', 'hola') === 'Similar 1% (prueba)'
+    && wabot_anuncio_variante('52558109856018', 'hola') === 'Similar 1% (prueba)');
+caso('los del conjunto original, también por su id', wabot_anuncio_variante('52547952767018', 'hola') === 'Original'
+    && wabot_anuncio_variante('52558109399418', 'me gustaría obtener la info') === 'Original');
 caso('sin id, por el mensaje predefinido de la copia', wabot_anuncio_variante('', 'Hola, me gustaría obtener la info') === 'Similar 1% (prueba)'
     && wabot_anuncio_variante('999', 'hola me gustaria obtener la info!!') === 'Similar 1% (prueba)');
 caso('el mensaje predefinido del original', wabot_anuncio_variante('123', 'Hola. ¿Puedo obtener más información sobre esto?') === 'Original');
