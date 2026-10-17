@@ -1523,7 +1523,7 @@ function _cobrosResumenHTML(calMes, dias) {
        clientes y se cobraron en ese plazo, pero la conversación viene de antes. Solo queda Suan
        Baby". El inicio de la charla es la fecha del boceto (_clientSketchDate); los cargados a mano,
        sin boceto, no cuentan. Lo cobrado desde esa fecha y el saldo que todavía deben.
-       "Total del mes" sigue contando solo lo del mes. */
+       El "Total" suma las tres tarjetas. */
     let unicosEntro = 0, nUnicos = 0, unicosFalta = 0, nUnicosSaldo = 0, nUnicosWebs = 0;
     const unicosIds = new Set();
     const desdeUnicos = _fechaMp(UNICOS_DESDE);
@@ -1553,10 +1553,10 @@ function _cobrosResumenHTML(calMes, dias) {
     const subAnuales = esFuturo ? `${notaAnuales} · el saldo se cobra al entregar`
         : esPasado ? notaAnuales
         : lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por cobrar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} por cobrar` : ""}`);
-    const faltaTotal = subsFalta + saldosFalta + anualFalta;
-    const subTotal = esPasado ? "todo cobrado"
-        : esFuturo ? "a cobrar (estimado)"
-        : lineasSub(subsCobrado + otros + anuales, faltaTotal);
+    // 16-oct (Pablo: "total del mes está mal también"): la suma de las tres tarjetas, tal como se ven.
+    const entroTotal = subsCobrado + unicosEntro + anuales;
+    const faltaTotal = subsFalta + unicosFalta + anualFalta;
+    const subTotal = lineasSub(entroTotal, faltaTotal, "suscripciones y pagos anuales del mes + pagos únicos desde el 13/09");
 
     return `
         ${_avisoMp()}
@@ -1564,7 +1564,7 @@ function _cobrosResumenHTML(calMes, dias) {
             <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
             <div class="stat-item"><span class="stat-label">💵 Pagos únicos (total desde el 13/09)</span><span class="stat-value">${fmtMoney(unicosEntro + unicosFalta)}</span><span class="muted ingcal-stat-sub">${lineasSub(unicosEntro, unicosFalta, `${nUnicosWebs} web${nUnicosWebs === 1 ? "" : "s"} con la charla desde el 13/09 · ${nUnicos} pago${nUnicos === 1 ? "" : "s"}${nUnicosSaldo ? ` · saldo de ${nUnicosSaldo} por cobrar` : ""} · no cambia con el mes`)}</span></div>
             <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
-            <div class="stat-item"><span class="stat-label">Total del mes</span><span class="stat-value">${fmtMoney(subsTotal + otros + anuales + saldosFalta + anualFalta)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
+            <div class="stat-item"><span class="stat-label">Total</span><span class="stat-value">${fmtMoney(entroTotal + faltaTotal)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
         <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
 }
