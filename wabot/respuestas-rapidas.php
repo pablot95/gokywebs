@@ -836,6 +836,45 @@ function wabot_rr_precios_sin_repetir_04oct(array $categorias, $ruta) {
     return $categorias;
 }
 
+/**
+ * Pablo, 16-oct: "las únicas respuestas rápidas que uso son las dos de los precios y" estas
+ * cinco, "así que dejá solo un botón con estas respuestas". Queda una sola categoría visible
+ * con sus textos tal cual (los dos bloques de precio salen de los que ya están, con sus
+ * marcadores); las demás se OCULTAN, no se borran (siguen en la pestaña Respuestas). Corre una
+ * sola vez (marca en data/migrated/): lo que él cambie después queda.
+ */
+const WABOT_RR_16OCT = [
+    'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?',
+    'Genial, recibido. Ahora te escribo desde otro numero ( 1125068578 ) , desde ahora seguimos el desarrollo por ese número',
+    'Buenas, todos nuestros trabajos terminados y funcionando están en gokywebs.com/portfolio',
+    'Que bueno que te haya gustado, cual de los dos modelos te gustó más?',
+    "Te paso los datos para la seña, en cuanto se acredite arrancamos: \nAlias: pablotravi\nCVU: 0000003100053462800156\nNombre: Pablo Travi",
+];
+
+function wabot_rr_solo_las_que_usa_16oct(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-solo-16oct';
+    if (is_file($marca)) return $categorias;
+    $precios = [];
+    foreach (['{landing_mensual}', '{ecommerce_mensual}'] as $marcador) {
+        foreach ($categorias as $categoria) {
+            foreach ((array)($categoria['items'] ?? []) as $texto) {
+                if (strpos((string)$texto, $marcador) !== false) { $precios[] = (string)$texto; continue 3; }
+            }
+        }
+    }
+    $nueva = ['ico' => '💬', 'titulo' => 'Respuestas', 'items' => array_values(array_unique(array_merge($precios, WABOT_RR_16OCT)))];
+    $resto = [];
+    foreach ($categorias as $categoria) {
+        $categoria['oculta'] = true;
+        $resto[] = $categoria;
+    }
+    $salida = array_merge([$nueva], $resto);
+    $json = json_encode($salida, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    @file_put_contents($marca, date('c') . "\n");
+    return $salida;
+}
+
 /** Migra solamente textos estándar; conserva las respuestas personalizadas. */
 function wabot_respuestas_rapidas_precios_1oct($categorias) {
     foreach ($categorias as &$categoria) {
@@ -905,7 +944,7 @@ function wabot_respuestas_rapidas_load() {
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_precios_sin_repetir_04oct($actual, $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {
