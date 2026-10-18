@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
  * Pestañas: Conversaciones · Conversaciones live · Revisión · Respuestas rápidas · Ajustes · Estado.
@@ -3294,16 +3294,8 @@ function burbujaCita(t, chat) {
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
                         <?php /* 6-oct: de nuevo $20.000 y $30.000 (pago/mensual20000 y pago/mensual30000); del 5 al 6-oct fueron $22.000 y $32.000. */ ?>
-                        <button type="button" class="sec" id="btnPlan25"
-                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $20.000</button>
-                        <button type="button" class="sec" id="btnPlan35"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
-                        <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual140 y pago/anual190; 9-oct a la noche). */ ?>
-                        <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $140.000</button>
-                        <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $190.000</button>
+                        <?php /* Plan $20.000 / $30.000 / Anual $140.000 / $190.000: pasaron de botones
+                               del encabezado a la categoría "Planes" (editable) de las respuestas rápidas (Pablo, 17-oct). */ ?>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
                                datos para la transferencia (pago/unico220 y pago/unico330). Desde el
@@ -4312,9 +4304,9 @@ function burbujaCita(t, chat) {
          * string al array de la categoría; el buscador con / la incorpora solo.
          * Sin las categorías ocultas y con los montos de ESTA charla ({precio},
          * {mensualidad}, {sena}…, ver wabot_respuestas_rapidas_montos). */
-        const RESPUESTAS_RAPIDAS = <?= json_encode(array_map(function ($cat) {
+const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             return ['ico' => $cat['ico'], 'tit' => $cat['titulo'], 'items' => array_values($cat['items'])];
-        }, wabot_respuestas_rapidas_visibles($respuestasRapidas, $conv, $cfg)), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+        }, wabot_respuestas_rapidas_visibles($respuestasRapidas, $conv, $cfg)), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
 
         const RR_TODAS = RESPUESTAS_RAPIDAS.flatMap((cat, categoria) =>
             cat.items.map((texto, item) => ({ texto, categoria, item, titulo: cat.tit, ico: cat.ico }))
@@ -4354,26 +4346,6 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
-         * escriben directo el mensaje con el link de pago, sin pasar por el
-         * buscador de respuestas rápidas. Texto genérico, sin tipo de web ni
-         * monto (Pablo, 5-oct): solo cambia el link. Texto de Pablo del 9-oct,
-         * tal cual. */
-        const TEXTO_PLAN_MENSUAL = 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: ';
-        document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar(TEXTO_PLAN_MENSUAL + 'gokywebs.com/pago/mensual20000');
-        });
-        document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar(TEXTO_PLAN_MENSUAL + 'gokywebs.com/pago/mensual30000');
-        });
-        /* Los del plan anual: la página tiene todas las condiciones y los datos
-         * para la transferencia; el mensaje adelanta la seña y el resto. */
-        document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional, con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140');
-        });
-        document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190');
-        });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
          * seña y el resto. */
