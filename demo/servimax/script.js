@@ -235,17 +235,16 @@ function initCobertura() {
   const cta = document.getElementById('cobCta');
   if (!form || !input || !msg || !cta) return;
   const lugares = [];
-  document.querySelectorAll('.partidos [data-partido]').forEach(li => {
-    const partido = li.dataset.partido;
-    lugares.push({ nombre: partido, partido, el: li });
-    (li.querySelector('span')?.textContent || '').split('·').forEach(t => {
-      const nombre = t.trim();
-      if (nombre && nombre !== partido) lugares.push({ nombre, partido, el: li });
-    });
+  document.querySelectorAll('.zona-lista').forEach(ul => {
+    ul.querySelectorAll('li').forEach(li => lugares.push({ nombre: li.textContent.trim(), zona: ul.dataset.zona, el: li }));
   });
-  document.querySelectorAll('.barrios li').forEach(li => lugares.push({ nombre: li.textContent.trim(), partido: 'CABA', el: li }));
-  ['CABA', 'Capital Federal', 'Capital', 'Ciudad de Buenos Aires'].forEach(nombre => lugares.push({ nombre, partido: 'CABA', el: null, ciudad: true }));
-  lugares.forEach(l => { l.n = normalizar(l.nombre); });
+  const capital = document.querySelector('.zona-lista[data-zona="Capital Federal"]')?.dataset.zona || 'Capital Federal';
+  ['CABA', 'Capital Federal', 'Capital', 'Ciudad de Buenos Aires'].forEach(nombre => lugares.push({ nombre, zona: capital, el: null, ciudad: true }));
+  [['Versailles', 'Versalles'], ['Nueva Pompeya', 'Pompeya'], ['La Paternal', 'Paternal'], ['Gran Bourg', 'Grand Bourg']].forEach(([alias, real]) => {
+    const l = lugares.find(x => x.nombre === real);
+    if (l) lugares.push({ ...l, nombreBuscado: alias });
+  });
+  lugares.forEach(l => { l.n = normalizar(l.nombreBuscado || l.nombre); });
 
   const inicial = msg.innerHTML;
   const hrefInicial = cta.getAttribute('href');
@@ -272,10 +271,7 @@ function initCobertura() {
       || lugares.find(l => l.n.split(' ').some(p => p.startsWith(q)))
       || lugares.find(l => l.n.length >= 4 && q.includes(l.n));
     if (hallado) {
-      const donde = hallado.ciudad ? 'la Ciudad de Buenos Aires'
-        : hallado.partido === 'CABA' ? `${hallado.nombre}, CABA`
-        : hallado.nombre === hallado.partido ? `${hallado.nombre}, Zona Norte`
-        : `${hallado.nombre}, ${hallado.partido}`;
+      const donde = hallado.ciudad ? hallado.zona : `${hallado.nombre}, ${hallado.zona}`;
       msg.className = 'cob-msg ok';
       msg.innerHTML = `${ICO_CHECK}<span>Sí, llegamos a <strong>${esc(donde)}</strong>. Escribinos y coordinamos la visita.</span>`;
       cta.setAttribute('href', linkWa(`Hola ServiMax, necesito un técnico a domicilio. Estoy en ${donde}. Equipo y falla: `));
