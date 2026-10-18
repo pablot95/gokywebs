@@ -26,6 +26,9 @@ facturador/data/*
 # Config local de Claude Code (rutas absolutas de esta máquina, no del proyecto)
 .claude/
 
+# Demo automática (tools/demo-auto): pedidos con datos del cliente, logs y estado de la PC
+tools/demo-auto/data/
+
 # Topes anti-spam de err/log.php (se regeneran solos)
 err/data/*
 !err/data/.htaccess

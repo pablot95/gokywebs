@@ -89,7 +89,15 @@ function prospecto_chatgpt_chat(string $chat): string {
     return trim(implode('', $limpios));
 }
 
-function prospecto_chatgpt_prompt(array $p): string {
+/** El tipo de web, como getPropuestaTipoWeb() del admin. */
+function prospecto_chatgpt_tipo(array $p): string {
+    return array_key_exists('tipo_web', $p)
+        ? prospecto_chatgpt_valor($p['tipo_web'])
+        : prospecto_chatgpt_valor(prospecto_chatgpt_primero($p, 'tipoDetectadoLabel', 'tipoDetectado'));
+}
+
+/** Los datos del boceto + el chat, igual que el final de los botones «Copiar» y «Copiar 10». */
+function prospecto_chatgpt_datos(array $p): string {
     [$nombre, $rubro] = prospecto_chatgpt_negocio($p);
     $sobre = array_unique(array_filter([
         $rubro,
@@ -101,9 +109,7 @@ function prospecto_chatgpt_prompt(array $p): string {
     $secundario = prospecto_chatgpt_valor($p['color_secundario'] ?? '');
     $colores = $fondos === '' && $principal === '' && $secundario === ''
         ? prospecto_chatgpt_valor(prospecto_chatgpt_primero($p, 'colores', 'colores_extra')) : '';
-    $tipo = array_key_exists('tipo_web', $p)
-        ? prospecto_chatgpt_valor($p['tipo_web'])
-        : prospecto_chatgpt_valor(prospecto_chatgpt_primero($p, 'tipoDetectadoLabel', 'tipoDetectado'));
+    $tipo = prospecto_chatgpt_tipo($p);
     $filas = [
         prospecto_chatgpt_fila('Nombre del negocio / marca', $nombre),
         prospecto_chatgpt_fila('Sobre el negocio y qué quiere lograr con la web', implode(' · ', $sobre)),
@@ -126,7 +132,39 @@ function prospecto_chatgpt_prompt(array $p): string {
     $datos = implode("\n\n", array_filter($filas, fn($v) => $v !== ''));
     $chat = prospecto_chatgpt_chat(prospecto_chatgpt_valor($p['chat_completo'] ?? ''));
     if ($chat !== '') $datos .= "\n\nAcá está el chat con el cliente, por si algún dato del brief quedó corto:\n\n" . $chat . "\n";
+    return $datos;
+}
+
+function prospecto_chatgpt_prompt(array $p): string {
     return "Crea 9 imágenes y crea un mock up de la web 720 x 480 usando estas imágenes.\n\n"
         . "Las 9 imágenes, todas juntas y sin textos: 1 tamaño 9:16 y otra tamaño 16:9. 7 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos. Que parezcan fotos reales, tomadas de la realidad: nada de ilustraciones, dibujos ni renders.\n\n"
-        . "La web es para:\n" . $datos;
+        . "La web es para:\n" . prospecto_chatgpt_datos($p);
+}
+
+/** La carpeta de la demo, como slugNegocio() del admin. */
+function prospecto_demo_slug(string $nombre): string {
+    $t = strtr(mb_strtolower($nombre), ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ñ' => 'n', 'ü' => 'u']);
+    return preg_replace('/[^a-z0-9]/', '', $t);
+}
+
+/**
+ * El texto del botón «Copiar» del admin (getPropuestaCopyText con las
+ * instrucciones de demo), para armar la demo sola cuando llegan las imágenes
+ * (tools/demo-auto, 18-oct). Si cambia el prefijo del botón, cambiar este también.
+ */
+function prospecto_demo_pedido(array $p): string {
+    [$nombre] = prospecto_chatgpt_negocio($p);
+    $slug = prospecto_demo_slug($nombre) ?: '[definir-nombre-del-negocio]';
+    $prefijo = [
+        'Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.',
+        "La carpeta del proyecto está en Gokywebsweb/demo/{$slug}/, con su subcarpeta images/.",
+        'Ya hay imágenes cargadas en esa carpeta images/: usalas para armar la demo.',
+        'Entre las imágenes de images/ hay un mock up con una idea de cómo podría ser la web: tomalo como referencia del diseño.',
+    ];
+    if (preg_match('/e-?commerce|tienda|cat[aá]logo|shop|carrito/iu', prospecto_chatgpt_tipo($p))) {
+        $prefijo[] = 'Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.';
+        $prefijo[] = 'Implementá paginación con cursor: el botón «Ver más» debe pedir la siguiente página de hasta 100 productos y la búsqueda debe traer páginas adicionales solo cuando necesita encontrar coincidencias.';
+        $prefijo[] = 'Aplicá el límite en el endpoint/consulta del servidor y evitá leer la colección completa con getDocs(collection(...)) o guardarla completa en el navegador. La portada y el catálogo público también deben devolver sólo sus productos visibles o una página acotada, con una defensa de 100 productos como máximo.';
+    }
+    return implode("\n", $prefijo) . "\n\n" . prospecto_chatgpt_datos($p);
 }
