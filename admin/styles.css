@@ -2557,13 +2557,15 @@ body.modal-open { overflow: hidden; }
 .anu-tabla { min-width: 860px; }
 .anu-tabla th, .anu-tabla td { padding: 10px 10px; }
 .anu-tabla th { white-space: normal; line-height: 1.25; }
-.anu-tabla .num { white-space: nowrap; }
+/* Títulos angostos (17-oct): en una línea cada uno, la última columna quedaba fuera de la pantalla. */
+.anu-tabla th.num { width: 92px; overflow-wrap: normal; }
+.anu-tabla td.num { white-space: nowrap; }
 .anu-pct { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; }
 .anu-tabla .anu-clientes { color: var(--accent); font-weight: 700; }
 .anu-fila { cursor: pointer; }
 .anu-fila:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .anu-fila.abierta td { background: rgba(37, 99, 235, 0.08); }
-.anu-ad { display: flex; gap: 10px; align-items: flex-start; min-width: 240px; max-width: 360px; }
+.anu-ad { display: flex; gap: 10px; align-items: flex-start; min-width: 220px; max-width: 320px; }
 .anu-img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; background: var(--bg-card); }
 .anu-img--vacia { display: inline-block; border: 1px dashed var(--border-strong); }
 .anu-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: normal; overflow-wrap: anywhere; }

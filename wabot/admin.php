@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
  * Pestañas: Conversaciones · Conversaciones live · Revisión · Respuestas rápidas · Ajustes · Estado.
@@ -1687,7 +1687,9 @@ body.conv-full .conv-head { padding-bottom:8px; margin-bottom:8px; }
 body.conv-full #responder { margin-top:8px; }
 body.conv-full #respTexto { min-height:44px; }
 body.conv-full #respEstado { margin-top:4px; }
-#respTexto { resize:none; }
+/* El ancho mínimo va acá y no en el style del textarea: inline le ganaba al
+   min-width:0 del celular y empujaba "Enviar" fuera de la pantalla (17-oct). */
+#respTexto { resize:none; flex:1; min-width:200px; }
 .resp-resize { position:absolute; top:-8px; left:8px; z-index:2; width:38px; height:14px; min-height:0; padding:0; border:1px solid var(--line-fuerte); border-radius:6px; background:var(--card-2); color:var(--dim); font:700 12px/12px system-ui,sans-serif; text-align:center; cursor:ns-resize; touch-action:none; }
 .resp-resize:hover, .resp-resize:focus-visible { border-color:var(--ac); color:var(--ac); }
 
@@ -2003,7 +2005,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     #responder { margin-top: 8px; }
     #responder .fila { flex-wrap: nowrap; gap: 7px; }
     #respTexto { flex: 1 1 auto; min-width: 0; min-height: 42px; }
-    #respGrabar { flex: 0 0 auto; padding: 0 13px; }
+    #respAdjuntar, #respGrabar { flex: 0 0 auto; padding: 0 11px; }
     #respEnviar { flex: 0 0 auto; padding: 0 15px; }
     #respEstado { margin-top: 4px; font-size: 11px; }
     .grabando { margin-top: 7px; padding: 7px 10px; gap: 8px; }
@@ -3413,7 +3415,7 @@ function burbujaCita(t, chat) {
                     </div>
                     <button type="button" id="respResize" class="resp-resize" aria-label="Arrastrá hacia arriba para agrandar el área de escritura y hacia abajo para achicarla" title="Arrastrá hacia arriba para agrandar; hacia abajo para achicar. Doble clic: tamaño automático">↕</button>
                     <div class="fila">
-                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
+                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
                         <button id="respAdjuntar" class="sec" type="button" title="Enviar una imagen (también podés pegarla con Ctrl+V)" aria-label="Enviar una imagen">📎</button>
                         <input type="file" id="respArchivo" accept="image/*" multiple hidden>
