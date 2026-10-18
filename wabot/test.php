@@ -3583,11 +3583,11 @@ caso('nunca cuelga el link de un plan al lado del precio del otro',
 echo "— Día de entrega: el día del cliente arranca a las 3 AM, no a las 00:00 —\n";
 
 $diaAR = function ($hora, $min = 30) { return gmmktime($hora + 3, $min, 0, 8, 21, 2026); };
-foreach ([3, 7, 10] as $h) {
+foreach ([3, 7, 10, 14] as $h) {
     $d = wabot_dia_entrega($diaAR($h));
     caso("cierra {$h}:30 → se entrega HOY", $d['palabra'] === 'hoy' && $d['fecha'] === '2026-08-21');
 }
-foreach ([11, 15, 23] as $h) {
+foreach ([15, 18, 23] as $h) {
     $d = wabot_dia_entrega($diaAR($h));
     caso("cierra {$h}:30 → mañana, y cae en la fecha siguiente", $d['palabra'] === 'mañana' && $d['fecha'] === '2026-08-22');
 }
@@ -3598,7 +3598,8 @@ foreach ([0, 1, 2] as $h) {
         $d['palabra'] === 'mañana' && $d['fecha'] === '2026-08-21');
 }
 caso('justo a las 3:00 ya es "hoy"', wabot_dia_entrega($diaAR(3, 0))['palabra'] === 'hoy');
-caso('justo a las 11:00 ya es "mañana"', wabot_dia_entrega($diaAR(11, 0))['palabra'] === 'mañana');
+caso('justo a las 15:00 ya es "mañana" (18-oct: el corte de la presentación automática)', wabot_dia_entrega($diaAR(15, 0))['palabra'] === 'mañana');
+caso('a las 14:59 todavía es "hoy"', wabot_dia_entrega($diaAR(14, 59))['palabra'] === 'hoy');
 caso('a las 2:59 todavía es "mañana"', wabot_dia_entrega($diaAR(2, 59))['palabra'] === 'mañana');
 
 caso('el cierre del prediseño ya no promete "24 a 48 horas"',

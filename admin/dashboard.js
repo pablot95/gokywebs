@@ -3464,6 +3464,8 @@ function initRealtime() {
         if (enMetrica("embudo")) renderEmbudoPresupuesto();
         const el = document.getElementById("countPropuestas");
         if (el) el.textContent = propuestas.length;
+        // Los que el bot ya presentó solo (18 h / 14 h, wabot/presentar.php) pasan a Seguimiento.
+        finalizarAutoPresentadas();
     }, (err) => {
         console.error("Propuestas error:", err);
     });
@@ -5858,6 +5860,7 @@ function renderPropuestas() {
                     <button class="btn-ghost btn-image-prompt${p.imgLanCopiado ? ' active' : ''}" data-prop-img="${p.id}" style="font-size:13px" title="Copiar el pedido de 10 imágenes: 9 de contenido (1 en 9:16, 1 en 16:9 y 7 en 1:1) y un mock up de la web de 720 x 480 con esas imágenes, con la info de este boceto">Copiar 10</button>
                     <button class="btn-toggle-prop${p.bocetoHecho ? ' active' : ''}" data-prop-boceto="${p.id}" style="font-size:13px">Boceto hecho</button>
                     <button class="btn-presentada-prop" data-prop-presentada="${p.id}" style="font-size:13px">Presentar</button>
+                    ${p.autoPresentada && !p.autoPresentada.demo_ok ? `<span class="prop-auto-falla" title="${escapeHtml(motivoAutoPresentada(p.autoPresentada))}">No salió sola</span>` : ""}
                     <button class="icon-btn" data-agenda-nombre="${escapeHtml(p.nombre || p.contacto_nombre || '')}" data-agenda-proyecto="${escapeHtml(p.nombre_negocio || p.rubro || '')}" title="Agregar al calendario">📅</button>
                     <button class="icon-btn delete" data-prop-del="${p.id}" title="Eliminar">🗑</button>
                 </td>
@@ -6964,11 +6967,13 @@ async function enviarMuestraWhatsapp(p, clienteId) {
     }
 }
 
-async function presentarPropuesta(propId) {
-    const p = propuestas.find(x => x.id === propId);
-    if (!p) return;
-    if (!confirm(`Pasar "${p.nombre_negocio || "este boceto"}" a Seguimiento?`)) return;
-
+/* El cliente en Seguimiento 1 que sale de un boceto presentado, y el boceto
+   que se borra. Lo usan el botón Presentar y la presentación automática
+   (wabot/presentar.php, 18-oct: el bot manda la demo sola a las 18 h o a las
+   14 h y deja `autoPresentada` en el boceto; finalizarAutoPresentadas lo pasa
+   acá al abrir el admin, con el id de cliente que ya le dio al bot). */
+async function pasarPropuestaASeguimiento(p, clienteId, extra = {}) {
+    const propId = p.id;
     const linkedLead = p.presupuestoId ? leads.find(l => l.id === p.presupuestoId) : null;
     // Plan cotizado (dos modalidades, 15-sep-2026): el del boceto o, si no lo trae, el del tipo de web.
     const plan = planDe(p, linkedLead);
@@ -6980,7 +6985,115 @@ async function presentarPropuesta(propId) {
     // Snapshot completo del boceto: como acto seguido borramos la propuesta original,
     // esta es la única copia que queda. Guardar TODO evita perder campos (rubro,
     // instagram, ciudad, cant_cursos…) que antes no se copiaban de a uno.
-    const { id: _omitId, ...propuestaSnapshot } = p;
+    const { id: _omitId, autoPresentada: _omitAuto, ...propuestaSnapshot } = p;
+
+    await setDoc(doc(db, "clientes", clienteId), {
+        nombre:          p.nombre || p.contacto_nombre || p.nombre_negocio || "",
+        proyecto:        p.nombre_negocio || p.rubro || getPropuestaTipoWeb(p) || "",
+        telefono:        p.telefono || p.contacto_cel || "",
+        estadoCliente:   "seguimiento1",
+        hablarleElDia,
+        // ── Plan y modalidad (15-sep-2026): la que eligió en el boceto o "" si todavía no eligió ──
+        planLabel:         plan.label,
+        modalidad:         plan.modalidad,
+        // Plan mensual: sin pago inicial, arranca cuando se suscribe en Mercado Pago.
+        primerPago:        0,
+        primerPagoAt:      null,
+        montoMensual:      plan.mensual,
+        estadoSuscripcion: "pendiente",
+        suscripcionDesde:  null,
+        preapprovalId:     "",
+        // Plan anual o web propia: el precio se fija y la seña se registra al pasar a Cliente
+        // (hasta entonces el precio cotizado sale del boceto guardado en propuestaSnapshot).
+        valorTotal:      0,
+        abono:           0,
+        notas:           "",
+        // ── Brief original completo (fuente de verdad para la vista de detalle) ──
+        propuestaSnapshot,
+        // ── Campos sueltos: los siguen usando las tablas y quedan por compatibilidad ──
+        propuestaId:     propId,
+        propuestaFecha:  p.fecha || "",
+        contactoNombre:  p.nombre || p.contacto_nombre || "",
+        email:           p.email || "",
+        tipoDetectado:   p.tipoDetectado || "",
+        tipoDetectadoLabel: p.tipoDetectadoLabel || "",
+        objetivos:       getPropuestaObjetivosTexto(p),
+        tipoPagina:      p.tipo_pagina || "",
+        rubro:           getPropuestaNegocioFields(p).rubro || "",
+        instagram:       p.instagram || "",
+        ciudadZona:      p.ciudad_zona || "",
+        cantCursos:      p.cant_cursos || "",
+        precioTotal:     p.precioTotal || 0,
+        sena:            p.sena || 0,
+        saldo:           p.saldo || 0,
+        sinPrecio:       !!p.sinPrecio,
+        catalogQty:      p.catalogQty || "",
+        colores:         p.colores || p.colores_extra || "",
+        colorFondos:     p.color_fondos || "",
+        colorPrincipal:  p.color_principal || "",
+        colorSecundario: p.color_secundario || "",
+        tipografias:     p.tipografias || "",
+        referencias:     p.referencias || "",
+        productosServicios: p.productos_servicios || "",
+        objetivoWeb:     p.objetivo_web || "",
+        logoUrl:         p.logoUrl || "",
+        logoNombre:      p.logoNombre || "",
+        extra:           p.extra || "",
+        // ── Datos del presupuesto vinculado ──
+        presupuestoId:   p.presupuestoId || null,
+        siteType:        linkedLead?.siteType || "",
+        businessType:    linkedLead?.businessType || "",
+        functionalities: linkedLead?.functionalities || [],
+        objectives:      linkedLead?.objectives || [],
+        pages:           linkedLead?.pages || "",
+        extras:          linkedLead?.extras || [],
+        extrasPrice:     linkedLead?.extrasPrice || 0,
+        basePrice:       linkedLead?.basePrice || 0,
+        createdAt:      serverTimestamp(),
+        createdBy:      currentUser?.uid || null,
+        ...extra,
+    });
+    await deleteDoc(doc(db, "propuestas", propId));
+}
+
+/* Bocetos que el bot ya presentó solo y siguen en Bocetos: pasan a Seguimiento
+   al abrir el admin (una vez por boceto en esta pestaña). Los que no salieron
+   (ventana de 24 h cerrada, sin chat…) se quedan con el aviso para mandarlos a mano. */
+const autoPresentadasEnCurso = new Set();
+
+// Por qué la presentación automática no le mandó la demo (el aviso «No salió sola» de Bocetos).
+function motivoAutoPresentada(a) {
+    const cuando = a.ts ? new Date(a.ts).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + ": " : "";
+    if (a.error) return cuando + a.error;
+    if (a.fuera_ventana) return cuando + (a.nunca_escribio ? "nunca escribió por WhatsApp" : "pasaron más de 24 h desde su último mensaje") + ". Tocá Presentar para ver el texto y mandarlo a mano.";
+    if (a.sin_chat) return cuando + "no hay chat con el bot. Tocá Presentar para ver el texto y mandarlo a mano.";
+    return cuando + "el bot no pudo confirmar el envío: mirá el chat antes de mandarla de nuevo.";
+}
+async function finalizarAutoPresentadas() {
+    for (const p of propuestas) {
+        const a = p.autoPresentada;
+        if (!a?.demo_ok || !a.clienteId || autoPresentadasEnCurso.has(p.id)) continue;
+        autoPresentadasEnCurso.add(p.id);
+        try {
+            await pasarPropuestaASeguimiento(p, a.clienteId, { presentadaAuto: a.ts || "" });
+        } catch (err) {
+            console.error("No se pudo pasar a Seguimiento el boceto presentado solo:", p.id, err);
+            autoPresentadasEnCurso.delete(p.id);
+        }
+    }
+}
+
+async function presentarPropuesta(propId) {
+    const p = propuestas.find(x => x.id === propId);
+    if (!p) return;
+    // Ya se la mandó el bot solo (presentación automática, 18-oct): no se la manda de nuevo.
+    if (p.autoPresentada?.demo_ok && p.autoPresentada.clienteId) {
+        if (!confirm(`A "${p.nombre_negocio || "este boceto"}" ya le llegó la demo sola. ¿Pasarlo a Seguimiento?`)) return;
+        try { await pasarPropuestaASeguimiento(p, p.autoPresentada.clienteId, { presentadaAuto: p.autoPresentada.ts || "" }); }
+        catch (err) { console.error(err); alert("Error: " + err.message); }
+        return;
+    }
+    if (!confirm(`Pasar "${p.nombre_negocio || "este boceto"}" a Seguimiento?`)) return;
 
     // El id se genera antes de escribir para poder pasárselo a wabot: así la
     // confirmación a las 48h y el archivo por inactividad saben a qué cliente avisarle.
@@ -7033,72 +7146,7 @@ async function presentarPropuesta(propId) {
     }
 
     try {
-        await setDoc(clienteRef, {
-            nombre:          p.nombre || p.contacto_nombre || p.nombre_negocio || "",
-            proyecto:        p.nombre_negocio || p.rubro || getPropuestaTipoWeb(p) || "",
-            telefono:        p.telefono || p.contacto_cel || "",
-            estadoCliente:   "seguimiento1",
-            hablarleElDia,
-            // ── Plan y modalidad (15-sep-2026): la que eligió en el boceto o "" si todavía no eligió ──
-            planLabel:         plan.label,
-            modalidad:         plan.modalidad,
-            // Plan mensual: sin pago inicial, arranca cuando se suscribe en Mercado Pago.
-            primerPago:        0,
-            primerPagoAt:      null,
-            montoMensual:      plan.mensual,
-            estadoSuscripcion: "pendiente",
-            suscripcionDesde:  null,
-            preapprovalId:     "",
-            // Plan anual o web propia: el precio se fija y la seña se registra al pasar a Cliente
-            // (hasta entonces el precio cotizado sale del boceto guardado en propuestaSnapshot).
-            valorTotal:      0,
-            abono:           0,
-            notas:           "",
-            // ── Brief original completo (fuente de verdad para la vista de detalle) ──
-            propuestaSnapshot,
-            // ── Campos sueltos: los siguen usando las tablas y quedan por compatibilidad ──
-            propuestaId:     propId,
-            propuestaFecha:  p.fecha || "",
-            contactoNombre:  p.nombre || p.contacto_nombre || "",
-            email:           p.email || "",
-            tipoDetectado:   p.tipoDetectado || "",
-            tipoDetectadoLabel: p.tipoDetectadoLabel || "",
-            objetivos:       getPropuestaObjetivosTexto(p),
-            tipoPagina:      p.tipo_pagina || "",
-            rubro:           getPropuestaNegocioFields(p).rubro || "",
-            instagram:       p.instagram || "",
-            ciudadZona:      p.ciudad_zona || "",
-            cantCursos:      p.cant_cursos || "",
-            precioTotal:     p.precioTotal || 0,
-            sena:            p.sena || 0,
-            saldo:           p.saldo || 0,
-            sinPrecio:       !!p.sinPrecio,
-            catalogQty:      p.catalogQty || "",
-            colores:         p.colores || p.colores_extra || "",
-            colorFondos:     p.color_fondos || "",
-            colorPrincipal:  p.color_principal || "",
-            colorSecundario: p.color_secundario || "",
-            tipografias:     p.tipografias || "",
-            referencias:     p.referencias || "",
-            productosServicios: p.productos_servicios || "",
-            objetivoWeb:     p.objetivo_web || "",
-            logoUrl:         p.logoUrl || "",
-            logoNombre:      p.logoNombre || "",
-            extra:           p.extra || "",
-            // ── Datos del presupuesto vinculado ──
-            presupuestoId:   p.presupuestoId || null,
-            siteType:        linkedLead?.siteType || "",
-            businessType:    linkedLead?.businessType || "",
-            functionalities: linkedLead?.functionalities || [],
-            objectives:      linkedLead?.objectives || [],
-            pages:           linkedLead?.pages || "",
-            extras:          linkedLead?.extras || [],
-            extrasPrice:     linkedLead?.extrasPrice || 0,
-            basePrice:       linkedLead?.basePrice || 0,
-            createdAt:      serverTimestamp(),
-            createdBy:      currentUser?.uid || null
-        });
-        await deleteDoc(doc(db, "propuestas", propId));
+        await pasarPropuestaASeguimiento(p, clienteRef.id);
         if (mostrarCopiaManual) mostrarPresentacionManual(p, envio, true);
         else if (avisoPresentado) alert(avisoPresentado);
     } catch (err) {

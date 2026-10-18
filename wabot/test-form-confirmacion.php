@@ -82,7 +82,9 @@ caso('saludo según la hora y la entrega resuelta (sin llaves)',
     strpos($texto, 'Hola, buenas tardes, ya recibimos tu formulario.') === 0 && strpos($texto, '{') === false, $texto);
 caso('corto: una confirmación, no un párrafo', mb_strlen($texto) <= 200, (string)mb_strlen($texto));
 echo "Cuándo se la entrega\n";
-foreach ([['07:00', 'Hola, buen día', 'hoy a la tarde'], ['13:50', 'Hola, buenas tardes', 'hoy a la tarde'], ['14:05', 'Hola, buenas tardes', 'mañana'],
+// El corte pasó de las 14 a las 15 h el 18-oct (presentación automática: 18 h el mismo día, 14 h del siguiente).
+foreach ([['07:00', 'Hola, buen día', 'hoy a la tarde'], ['14:05', 'Hola, buenas tardes', 'hoy a la tarde'],
+          ['14:59', 'Hola, buenas tardes', 'hoy a la tarde'], ['15:00', 'Hola, buenas tardes', 'mañana'],
           ['18:00', 'Hola, buenas tardes', 'mañana'], ['22:30', 'Hola, buenas noches', 'mañana'], ['01:00', 'Hola, buen día', 'mañana']] as [$hora, $saludo, $cuando]) {
     $t = strtotime($hoy . ' ' . $hora . ':00 UTC') + 3 * 3600;   // la hora es la argentina
     $c = fc_conv(6);

@@ -10,6 +10,7 @@
 require_once __DIR__ . '/redactor.php';
 require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
 require_once __DIR__ . '/meta-gasto.php';
@@ -720,110 +721,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         exit;
     }
     // Botón "Presentar" del admin: le manda al cliente los dos mensajes de la
-    // demo (link + pedido de feedback) desde el bot.
+    // demo (link + pedido de feedback) desde el bot. El envío vive en
+    // presentar.php (18-oct): lo usa también la presentación automática.
     if ($a === 'presentar_muestra' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
-        $negocio = trim((string)($_POST['negocio'] ?? ''));
-        $slug = $negocio !== '' ? wabot_slug_demo($negocio) : '';
-        if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la demo: falta el nombre del negocio.']); exit; }
-
-        $clave = wabot_conv_resolver($_POST['tel'], $motivo);
-        if ($clave === null) {
-            $tipo = trim((string)($_POST['tipo'] ?? ''));
-            $textoConv = [
-                'tipo' => array_key_exists($tipo, (array)($cfg['muestra_presentar_por_tipo'] ?? [])) ? $tipo : '',
-                'nombre_negocio' => $negocio,
-                'nombre' => trim((string)($_POST['nombre'] ?? '')),
-            ];
-            $textos = wabot_muestra_presentar_textos($slug, $cfg, $textoConv);
-            wabot_log('presentar_muestra_sin_chat', ['tel' => (string)$_POST['tel'], 'motivo' => $motivo, 'slug' => $slug]);
-            echo json_encode(['ok' => true, 'enviado' => false, 'sin_chat' => true, 'slug' => $slug,
-                              'textos' => $textos, 'textos_enviados' => array_fill(0, count($textos), false)]);
-            exit;
-        }
-        $conv = wabot_conv_load($clave);
-
-        // Presentar manda la demo y cambia de etapa, pero el chat sigue en
-        // manos de Pablo: nunca reactiva el bot por detrás.
-        wabot_conv_preparar_postdemo($conv);
-        $conv['presentado_ts'] = time();
-        $conv['presentado_slug'] = $slug;
-        $conv['presentado_confirmado'] = false;
-        $conv['presentado_via_bot'] = false;
-        $conv['presentado_recordatorio_enviado'] = false;
-        $conv['presentado_recordatorio_ts'] = 0;
-        $conv['confirmacion_demo_enviada'] = false;
-        $conv['confirmacion_demo_ts'] = 0;
-        $conv['confirmacion_demo_auto_intento_ts'] = 0;
-        $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
-
-        /* Se manda mensaje por mensaje y se mira CADA uno por separado.
-         *
-         * Antes era todo o nada: si el primero salía y el segundo no, se
-         * reportaba fracaso total y el panel le decía a Pablo que la mandara a
-         * mano — o sea, mandarle al cliente el link dos veces. Pasó de verdad:
-         * "se envió bien el mensaje pero el aviso decía que no se pudo".
-         *
-         * El PRIMERO es el que lleva el link: ese es el que define si la demo
-         * llegó. El seguimiento posterior queda disponible como botón manual. El
-         * segundo (el pedido de feedback) es un extra; que falle no cambia que
-         * el cliente ya tiene la demo.
-         *
-         * Ojo con leer un false como "no llegó": wabot_wa_send_text() corta a
-         * los 20 s, así que un timeout con Meta lenta devuelve false igual con
-         * el mensaje entregado. Por eso el panel avisa que hay que mirar el
-         * chat antes de reenviar, en vez de mandar a reenviar de una. */
-        /* Sin ventana de 24 h no se manda nada. El que llegó por el formulario
-         * y nunca escribió por WhatsApp tiene el chat cerrado para Meta: el
-         * envío se pierde sin aviso y en el panel queda como si hubiera salido.
-         * Pasó el 21-sep con Pescadería Las Grutas, que cargó su número en el
-         * formulario y nunca habló con el bot: la demo salió al vacío. El
-         * estado igual avanza, porque el link lo manda Pablo a mano. */
-        $textos = wabot_muestra_presentar_textos($slug, $cfg, $conv);
-        $fueraVentana = wabot_ventana_restante($conv) <= 0;
-        $enviados = 0;
-        $textosEnviados = array_fill(0, count($textos), false);
-        foreach ($fueraVentana ? [] : $textos as $i => $texto) {
-            // Un respiro entre los dos: mandarlos pegados hace que Meta a veces
-            // los entregue al revés, y el segundo no tiene sentido antes del link.
-            if ($i > 0) sleep(1);
-            if (!wabot_enviar($conv, $texto)) {
-                // Sin el enlace confirmado, no enviar el pedido de feedback solo.
-                if ($i === 0) break;
-                continue;
-            }
-            wabot_conv_transcript($conv, 'bot', $texto);
-            $textosEnviados[$i] = true;
-            $enviados++;
-            if ($i === 0) $conv['presentado_via_bot'] = true;
-        }
-        $total   = count($textos);
-        $enviado = $enviados === $total;
-
-        // Le llegó la demo: para Meta es un lead calificado ('Schedule' no existe en mensajería).
-        wabot_capi_evento($conv, 'QualifiedLead', $cfg);
-        wabot_conv_save($conv);
-        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
-                                        'enviados' => $enviados, 'total' => $total,
-                                        'fuera_ventana' => $fueraVentana]);
-
-        echo json_encode([
-            'ok'       => true,
-            'enviado'  => $enviado,
-            'enviados' => $enviados,
-            'total'    => $total,
-            'fuera_ventana' => $fueraVentana,
-            // Nunca escribió por WhatsApp: llegó por el formulario o por otro lado.
-            'nunca_escribio' => (int)($conv['ultimo_cliente_ts'] ?? 0) === 0,
-            'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
-            'slug'     => $slug,
-            'textos'   => $textos,
-            'textos_enviados' => $textosEnviados,
-            // Por dónde salió: el panel decía "por WhatsApp" siempre, y desde
-            // que los leads de Instagram se resuelven también, eso puede ser
-            // mentira (28-ago).
-            'canal'    => wabot_canal($conv),
-        ]);
+        echo json_encode(wabot_presentar_muestra([
+            'tel' => (string)$_POST['tel'],
+            'negocio' => (string)($_POST['negocio'] ?? ''),
+            'nombre' => (string)($_POST['nombre'] ?? ''),
+            'tipo' => (string)($_POST['tipo'] ?? ''),
+            'cliente_id' => (string)($_POST['cliente_id'] ?? ''),
+        ], $cfg));
         exit;
     }
     // La entregaste por fuera del bot (a mano, por mail, en persona): se marca

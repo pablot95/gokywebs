@@ -5684,9 +5684,13 @@ function wabot_seguimiento_hora_ok($cfg, $ahora) {
  * cierra a las 2 AM sigue mentalmente en el día anterior, y para él "mañana"
  * es la fecha de calendario que ya empezó. Por eso el corte va a las 3 AM.
  *
- *   03:00 a 10:59  → se entrega HOY (misma fecha)
- *   11:00 a 23:59  → MAÑANA (fecha siguiente)
+ *   03:00 a 14:59  → se entrega HOY (misma fecha)
+ *   15:00 a 23:59  → MAÑANA (fecha siguiente)
  *   00:00 a 02:59  → MAÑANA para él, que es la misma fecha de calendario
+ *
+ * El corte de las 15 h es el mismo de la presentación automática (Pablo,
+ * 18-oct: los bocetos de antes de las 15 se mandan a las 18 h; los de después,
+ * al día siguiente a las 14 h — presentar.php). Antes era a las 11 h.
  *
  * Devuelve ['palabra' => 'hoy'|'mañana', 'fecha' => 'Y-m-d'].
  */
@@ -5696,7 +5700,7 @@ function wabot_dia_entrega($ts = null) {
     $hora = (int)gmdate('G', $localTs);
     $fechaHoy = gmdate('Y-m-d', $localTs);
 
-    if ($hora >= 3 && $hora < 11) {
+    if ($hora >= 3 && $hora < 15) {
         return ['palabra' => 'hoy', 'fecha' => $fechaHoy];
     }
     if ($hora < 3) {
@@ -5992,11 +5996,12 @@ function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
     $plantilla = (string)($cfg['form_confirmacion'] ?? '');
     $h = wabot_hora_local($ahora);
     $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
-    /* {entrega} acá es propio (Pablo, 12-oct): antes de las 14 h "Estará lista para hoy a la tarde" y
-     * después, "para mañana". De madrugada (antes de las 3) sigue siendo "mañana": para el cliente el
-     * día todavía no empezó (mismo corte que wabot_dia_entrega). Se resuelve ya, así el transcript
-     * guarda lo que leyó el cliente. */
-    $entrega = ($h >= 3 && $h < 14) ? 'hoy a la tarde' : 'mañana';
+    /* {entrega} acá es propio (Pablo, 12-oct): antes de las 15 h "Estará lista para hoy a la tarde" y
+     * después, "para mañana" (era a las 14 h hasta el 18-oct: ahora coincide con la presentación
+     * automática de presentar.php, 18 h el mismo día o 14 h del siguiente). De madrugada (antes de
+     * las 3) sigue siendo "mañana": para el cliente el día todavía no empezó (mismo corte que
+     * wabot_dia_entrega). Se resuelve ya, así el transcript guarda lo que leyó el cliente. */
+    $entrega = ($h >= 3 && $h < 15) ? 'hoy a la tarde' : 'mañana';
     return trim(wabot_personalizar(strtr($plantilla, ['{saludo}' => $saludo, '{entrega}' => $entrega]), $cv));
 }
 

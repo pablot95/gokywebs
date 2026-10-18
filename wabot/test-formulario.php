@@ -581,7 +581,8 @@ $cVivo = conv_nueva('5492944814197');
 $cVivo['ultimo_cliente_ts'] = time() - 3600;
 caso('el que escribió hace un rato sigue adentro', wabot_ventana_restante($cVivo) > 0);
 
-$adminPres = (string)@file_get_contents(__DIR__ . '/admin.php');
+// El envío de Presentar vive en presentar.php desde el 18-oct (lo usa también la presentación automática).
+$adminPres = (string)@file_get_contents(__DIR__ . '/presentar.php');
 caso('presentar_muestra mide la ventana antes de mandar y no manda si está cerrada',
     strpos($adminPres, '$fueraVentana = wabot_ventana_restante($conv) <= 0;') !== false
     && strpos($adminPres, 'foreach ($fueraVentana ? [] : $textos as $i => $texto)') !== false);
