@@ -1,0 +1,43 @@
+{
+  "cliente": {
+    "origen": "Zip de Descargas (Descargar_todas_Distrileds_y_Pequenos.zip > Pequenos_tGX5Ccm2GMvZVG7nlK0e.zip), 9 fotos + mockup",
+    "recortes": {
+      "h-enterito.webp": "01_foto_9x16.png",
+      "p-enterito-muselina.webp": "01_foto_9x16.png",
+      "e-recien-nacidos.webp": "01_foto_9x16.png",
+      "h-conjunto.webp": "02_foto_16x9.png",
+      "p-cardigan-verde.webp": "02_foto_16x9.png",
+      "p-pantalon-gabardina.webp": "02_foto_16x9.png",
+      "p-body-celeste.webp": "03_foto_1x1.png",
+      "p-escarpines-tejidos.webp": "04_foto_1x1.png",
+      "p-campera-lluvia.webp": "05_foto_1x1.png",
+      "e-ninos.webp": "05_foto_1x1.png",
+      "p-jardinero-jean.webp": "06_foto_1x1.png",
+      "e-bebes.webp": "06_foto_1x1.png",
+      "p-vestido-lila.webp": "07_foto_1x1.png",
+      "p-buzo-frisa.webp": "08_foto_1x1.png",
+      "p-mochila-jardin.webp": "09_foto_1x1.png",
+      "e-accesorios.webp": "09_foto_1x1.png"
+    }
+  },
+  "logo": {
+    "logo-pequenos-ig.jpg": "Foto de perfil del Instagram @pequenos.st (150 px)",
+    "logo-pequenos.png": "Mismo logo recortado y con el fondo pasado a transparencia"
+  },
+  "pexels": [
+    { "archivo": "p-zapatillas-lona.webp", "id": 22484673, "url": "https://www.pexels.com/photo/22484673/" },
+    { "archivo": "p-sweater-rayado.webp", "id": 28259745, "url": "https://www.pexels.com/photo/28259745/" },
+    { "archivo": "p-enterito-estampado.webp", "id": 28259755, "url": "https://www.pexels.com/photo/28259755/" },
+    { "archivo": "p-conjunto-rayado.webp", "id": 34121887, "url": "https://www.pexels.com/photo/34121887/" },
+    { "archivo": "p-remera-verde-agua.webp", "id": 34156905, "url": "https://www.pexels.com/photo/34156905/" },
+    { "archivo": "p-vestido-rosa.webp", "id": 5693889, "url": "https://www.pexels.com/photo/5693889/" },
+    { "archivo": "p-set-gorro-escarpines.webp", "id": 5881236, "url": "https://www.pexels.com/photo/5881236/" },
+    { "archivo": "p-gorro-tejido.webp", "id": 11630885, "url": "https://www.pexels.com/photo/11630885/" },
+    { "archivo": "p-campera-matelaseada.webp", "id": 6334403, "url": "https://www.pexels.com/photo/6334403/" },
+    { "archivo": "p-manta-tejida.webp", "id": 14642652, "url": "https://www.pexels.com/photo/14642652/" },
+    { "archivo": "p-saquito-calado.webp", "id": 30791355, "url": "https://www.pexels.com/photo/30791355/" },
+    { "archivo": "p-remeras-vivos.webp", "id": 32233642, "url": "https://www.pexels.com/photo/32233642/" },
+    { "archivo": "p-jean-recto.webp", "id": 4109759, "url": "https://www.pexels.com/photo/4109759/" },
+    { "archivo": "p-pantuflas-osito.webp", "id": 35243144, "url": "https://www.pexels.com/photo/35243144/" }
+  ]
+}

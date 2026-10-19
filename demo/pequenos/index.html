@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pequeños — Ropa para bebés y niños, de RN a talle 18</title>
+<meta name="description" content="Ropa y accesorios para bebés y niños en Santa Teresa, Santa Fe: desde recién nacidos hasta talle 18 aprox. Elegí el talle, comprá online o consultá por WhatsApp.">
+<link rel="canonical" href="https://gokywebs.com/demo/pequenos/">
+<meta name="theme-color" content="#F8FAFC">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Pequeños">
+<meta property="og:title" content="Pequeños — Ropa para bebés y niños, de RN a talle 18">
+<meta property="og:description" content="Ropa y accesorios para bebés y niños en Santa Teresa, Santa Fe: desde recién nacidos hasta talle 18 aprox. Elegí el talle, comprá online o consultá por WhatsApp.">
+<meta property="og:url" content="https://gokywebs.com/demo/pequenos/">
+<meta property="og:image" content="https://gokywebs.com/demo/pequenos/images/h-conjunto.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23F3EDE5'/%3E%3Ctext x='31' y='46' font-family='Georgia,serif' font-size='40' text-anchor='middle' fill='%231F3B73'%3EP%3C/text%3E%3Cpath d='M48 22s-6-3.7-7.7-7.4c-1.2-2.7.4-5.8 3.4-5.8 1.7 0 2.9 1 4.3 2.6 1.4-1.6 2.6-2.6 4.3-2.6 3 0 4.6 3.1 3.4 5.8C54 18.3 48 22 48 22Z' fill='%23CC9A45'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&amp;family=Young+Serif&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "ClothingStore", "name": "Pequeños", "description": "Ropa y accesorios para bebés y niños en Santa Teresa, Santa Fe: desde recién nacidos hasta talle 18 aprox. Elegí el talle, comprá online o consultá por WhatsApp.", "url": "https://gokywebs.com/demo/pequenos/", "image": "https://gokywebs.com/demo/pequenos/images/h-conjunto.webp", "logo": "https://gokywebs.com/demo/pequenos/images/logo-pequenos.png", "telephone": "+54 9 3469 69-4020", "sameAs": ["https://www.instagram.com/pequenos.st/"], "address": {"@type": "PostalAddress", "streetAddress": "Juan de Garay 553", "addressLocality": "Santa Teresa", "addressRegion": "Santa Fe", "postalCode": "S2111", "addressCountry": "AR"}, "geo": {"@type": "GeoCoordinates", "latitude": -33.4354763, "longitude": -60.7859487}, "areaServed": "AR"}</script>
+</head>
+<body class="m1 p-home" data-modelo="1" data-pagina="home">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+<header class="site-header site-header--m1">
+  <div class="container header-row">
+    <a class="brand" href="./" aria-label="Pequeños, inicio"><img src="images/logo-pequenos.png" alt="Pequeños, ropa infantil" width="137" height="102"></a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <form class="nav-buscar" action="catalogo.html" role="search"><input type="search" name="q" placeholder="Buscar productos" aria-label="Buscar productos" autocomplete="off"><button type="submit" aria-label="Buscar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></form>
+      <div class="nav-drop" data-nav-drop>
+        <button type="button" class="nav-link nav-drop__btn" aria-expanded="false" aria-haspopup="true" aria-controls="dropTienda">Tienda <svg class="ico ico--chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-drop__panel" id="dropTienda">
+          <div><p class="nav-drop__tit">Por etapa</p><ul class="nav-drop__etapas" data-drop-etapas></ul></div>
+          <div><p class="nav-drop__tit">Por prenda</p><ul class="nav-drop__tipos" data-drop-tipos></ul></div>
+          <a class="nav-drop__todo" href="catalogo.html">Ver todo el catálogo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+      </div>
+      <a class="nav-link" href="catalogo.html?cat=recien-nacidos">Recién nacidos</a>
+      <a class="nav-link" href="catalogo.html?cat=bebes">Bebés</a>
+      <a class="nav-link" href="catalogo.html?cat=ninos">Niños</a>
+      <a class="nav-link" href="catalogo.html?cat=accesorios">Accesorios</a>
+      <a class="nav-link" href="#talle">Guía de talles</a>
+      <a class="nav-wsp" href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>WhatsApp 3469 69-4020</a>
+    </nav>
+    <div class="header-acc">
+      <form class="hsearch" action="catalogo.html" role="search"><input type="search" name="q" placeholder="Buscar productos" aria-label="Buscar productos" autocomplete="off"><button type="submit" aria-label="Buscar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></form>
+      <button type="button" class="hbtn cart-btn" data-open-cart aria-label="Abrir el carrito"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg><span class="cart-badge" data-cart-count hidden>0</span></button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+<main id="top">
+<section class="hero hero--m1" aria-labelledby="heroTit">
+  <div class="hero__texto">
+      <p class="hero-eyebrow"><svg class="ico-corazon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21Z"/></svg>Ropa infantil en Santa Teresa</p>
+      <h1 id="heroTit">Ropa para cada etapa de su infancia</h1>
+      <p class="hero-lead">Ropa y accesorios para bebés y niños, desde recién nacidos hasta talle 18 aprox. Elegí el talle en cada prenda y comprá online.</p>
+      <div class="hero-ctas"><a class="btn btn--cta" href="catalogo.html">Explorar colección <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a><a class="btn btn--line" href="#talle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>Encontrar su talle</a></div>
+  </div>
+  <div class="hero__panel">
+    <figure class="hero__foto"><img data-hero-img src="images/h-enterito.webp" alt="Enterito de muselina color crudo con botones de madera, colgado en una percha" width="941" height="1672" fetchpriority="high"></figure>
+  </div>
+  <div class="sello"><img src="images/logo-pequenos.png" alt="Pequeños, ropa infantil" width="137" height="102"></div>
+</section>
+<section class="tres" aria-label="Productos destacados">
+  <div class="container">
+    <ul class="tres__lista" data-tres></ul>
+    <div class="regla-tira">
+      <span class="regla-tira__linea" data-animate="linea" style="transform:scaleX(0)"></span>
+      <p data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><svg class="ico-corazon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21Z"/></svg>Desde recién nacidos hasta talle 18 aprox.</p>
+      <span class="regla-tira__linea regla-tira__linea--der" data-animate="linea" style="transform:scaleX(0)"></span>
+    </div>
+  </div>
+</section>
+<section class="etapas" aria-labelledby="etapasTit">
+  <div class="container">
+    <div class="sec-head"><div><h2 id="etapasTit" data-animate="subir" style="opacity:0;transform:translateY(32px)">Comprá por etapa</h2><p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Entrá por la edad y encontrá lo que le queda, de los primeros días a la escuela.</p></div></div>
+    <ul class="etapas__grid">
+      <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><a class="etapa" data-tono="rn" href="catalogo.html?cat=recien-nacidos"><span class="etapa__foto"><img src="images/e-recien-nacidos.webp" alt="" width="702" height="936"></span><span class="etapa__txt"><span class="etapa__nom">Recién nacidos</span><span class="etapa__rango">RN a 3 meses</span><span class="etapa__pie"><span data-cuenta-cat="recien-nacidos">Ver productos</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></span></a></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><a class="etapa" data-tono="bebe" href="catalogo.html?cat=bebes"><span class="etapa__foto"><img src="images/e-bebes.webp" alt="" width="720" height="959"></span><span class="etapa__txt"><span class="etapa__nom">Bebés</span><span class="etapa__rango">6 meses a 2 años</span><span class="etapa__pie"><span data-cuenta-cat="bebes">Ver productos</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></span></a></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><a class="etapa" data-tono="nino" href="catalogo.html?cat=ninos"><span class="etapa__foto"><img src="images/e-ninos.webp" alt="" width="720" height="959"></span><span class="etapa__txt"><span class="etapa__nom">Niños</span><span class="etapa__rango">Talle 2 a 18</span><span class="etapa__pie"><span data-cuenta-cat="ninos">Ver productos</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></span></a></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><a class="etapa" data-tono="acc" href="catalogo.html?cat=accesorios"><span class="etapa__foto"><img src="images/e-accesorios.webp" alt="" width="720" height="959"></span><span class="etapa__txt"><span class="etapa__nom">Accesorios</span><span class="etapa__rango">Para todas las etapas</span><span class="etapa__pie"><span data-cuenta-cat="accesorios">Ver productos</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></span></a></li>
+    </ul>
+  </div>
+</section>
+<section class="novedades" aria-labelledby="novTit">
+  <div class="container sec-head">
+    <div><h2 id="novTit" data-animate="subir" style="opacity:0;transform:translateY(32px)">Recién llegados</h2></div>
+    <div class="sec-head__acc" data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="link-ver" href="catalogo.html?orden=nuevos">Ver todo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a><div class="rail-flechas"><button type="button" data-rail-prev aria-label="Ver anteriores"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m11 18-6-6 6-6"/></svg></button><button type="button" data-rail-next aria-label="Ver siguientes"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></button></div></div>
+  </div>
+  <div class="rail-vp" data-rail><div class="rail-track" data-rail-track></div></div>
+</section>
+<section class="marca" aria-labelledby="marcaTit">
+  <div class="container marca__grid">
+    <figure class="marca__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)" data-parallax><img src="images/h-conjunto.webp" alt="Cárdigan tejido verde salvia y pantalón de gabardina beige extendidos sobre fondo crema" width="1672" height="941"></figure>
+    <div class="marca__txt">
+      <p class="marca__firma" data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg class="ico-corazon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21Z"/></svg>Romi, de Pequeños</p>
+      <h2 id="marcaTit" data-animate="subir" style="opacity:0;transform:translateY(32px)">Prendas elegidas pensando en el día a día</h2>
+      <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Romi elige cada prenda pensando en cómo se usa: algodones para todos los días, broches fáciles para cambiar el pañal y abrigos para ir a la plaza.</p>
+      <p data-animate="subir" style="opacity:0;transform:translateY(24px)">¿Dudás entre dos talles o buscás algo que no ves en la web? Escribile y te ayuda a elegir.</p>
+      <div data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn--line" href="https://wa.me/5493469694020?text=Hola%20Romi%21%20Quiero%20consultarte%20por%20un%20talle" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Escribirle a Romi</a></div>
+    </div>
+  </div>
+</section>
+<section class="talle" id="talle" data-talle data-tono="nino" aria-labelledby="talleTit">
+  <div class="container talle__grid">
+    <div class="talle__intro">
+      <h2 id="talleTit" data-animate="subir" style="opacity:0;transform:translateY(32px)">¿Qué talle le queda hoy?</h2>
+      <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Mové la regla hasta su altura o elegí su edad: te decimos el talle y te mostramos las prendas que hay en ese talle.</p>
+      <div class="talle__modo" role="group" aria-label="Buscar el talle por" data-animate="subir" style="opacity:0;transform:translateY(24px)"><button type="button" data-talle-modo="altura" aria-pressed="true">Por altura</button><button type="button" data-talle-modo="edad" aria-pressed="false">Por edad</button></div>
+      <div class="talle__campo" data-modo-panel="altura" data-animate="subir" style="opacity:0;transform:translateY(24px)"><div class="talle__lbl"><label for="talleAltura">Altura</label><output data-talle-cm for="talleAltura">98 cm</output></div><input type="range" id="talleAltura" min="46" max="176" step="1" value="98"><p class="talle__ayuda">Medilo descalzo, con la espalda contra la pared.</p></div>
+      <div class="talle__campo" data-modo-panel="edad" hidden><label for="talleEdad">Edad</label><select id="talleEdad"></select></div>
+    </div>
+    <div class="talle__res" data-animate="der" style="opacity:0;transform:translateX(56px)">
+      <div aria-live="polite">
+        <p class="talle__pre" data-talle-pre>Talle</p>
+        <p class="talle__n" data-talle-n>4</p>
+        <p class="talle__det" data-talle-det>3 a 4 años · 92 a 104 cm</p>
+      </div>
+      <p class="talle__nota">Si está justo en el límite, elegí el talle siguiente: le va a durar toda la temporada.</p>
+      <div class="talle__acc"><a class="btn btn--cta" data-talle-ver href="catalogo.html?talle=4"><span>Ver prendas en talle 4</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a><a class="btn btn--line" data-talle-wsp href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Quiero%20consultar%20qu%C3%A9%20talle%20me%20conviene" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Consultar por WhatsApp</a></div>
+    </div>
+    <div class="regla__vp" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <div class="regla" data-regla>
+        <div class="regla__tramos" data-regla-tramos></div>
+        <div class="regla__cinta" aria-hidden="true"></div>
+        <div class="regla__cm" data-regla-cm aria-hidden="true"></div>
+        <div class="regla__marca" data-regla-marca aria-hidden="true"><span>98 cm</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="cierre" aria-labelledby="cierreTit">
+  <div class="container cierre__grid">
+    <div class="cierre__txt">
+      <h2 id="cierreTit" data-animate="subir" style="opacity:0;transform:translateY(32px)">Elegí su talle y sumalo al carrito</h2>
+      <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Cuando termines, mandanos el pedido por WhatsApp y te confirmamos el stock. Si tenés dudas con un talle, escribinos antes.</p>
+      <ul class="cierre__datos" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <li><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><a href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener">WhatsApp 3469 69-4020</a></li>
+        <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".7" fill="currentColor"/></svg><a href="https://www.instagram.com/pequenos.st/" target="_blank" rel="noopener">@pequenos.st</a></li>
+        <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><a href="https://www.google.com/maps/search/?api=1&amp;query=Juan%20de%20Garay%20553%2C%20Santa%20Teresa%2C%20Santa%20Fe" target="_blank" rel="noopener">Juan de Garay 553, Santa Teresa (Santa Fe)</a></li>
+      </ul>
+      <div class="cierre__acc" data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn--cta" href="catalogo.html">Ver todo el catálogo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a><a class="btn btn--line" href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Escribir por WhatsApp</a></div>
+    </div>
+    <div class="mapa-wrap" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><section id="mapa" aria-label="Mapa: Juan de Garay 553, Santa Teresa"></section></div>
+  </div>
+</section>
+</main>
+<footer class="site-footer" id="contacto">
+  <div class="container footer__grid">
+    <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+      <a class="brand" href="./" aria-label="Pequeños, inicio"><img src="images/logo-pequenos.png" alt="Pequeños, ropa infantil" width="137" height="102"></a>
+      <p>Ropa y accesorios para bebés y niños, desde recién nacidos hasta talle 18 aprox.</p>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__tit">Tienda</p>
+      <ul><li><a href="catalogo.html?cat=recien-nacidos">Recién nacidos</a></li><li><a href="catalogo.html?cat=bebes">Bebés</a></li><li><a href="catalogo.html?cat=ninos">Niños</a></li><li><a href="catalogo.html?cat=accesorios">Accesorios</a></li><li><a href="#talle">Guía de talles</a></li></ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__tit">Contacto</p>
+      <ul>
+        <li><a href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>3469 69-4020</a></li>
+        <li><a href="https://www.instagram.com/pequenos.st/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".7" fill="currentColor"/></svg>@pequenos.st</a></li>
+        <li><a href="https://www.google.com/maps/search/?api=1&amp;query=Juan%20de%20Garay%20553%2C%20Santa%20Teresa%2C%20Santa%20Fe" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>Juan de Garay 553, Santa Teresa</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <p>© 2026 Pequeños · Ropa infantil</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito" data-open-cart>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5493469694020?text=Hola%20Peque%C3%B1os%21%20Vi%20la%20tienda%20online%20y%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<div class="drawer" id="cartDrawer" hidden>
+  <div class="drawer__bd" data-cerrar-cart></div>
+  <div class="drawer__panel" role="dialog" aria-modal="true" aria-label="Tu carrito">
+    <div class="drawer__head"><p class="drawer__tit">Tu carrito <span data-cart-titulo-n></span></p><button type="button" class="icon-btn" data-cerrar-cart aria-label="Cerrar el carrito"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+    <div class="drawer__body" id="cartLines"></div>
+    <div class="drawer__foot" id="cartFoot" hidden></div>
+  </div>
+</div>
+
+<div class="qv" id="qv" hidden>
+  <div class="qv__bd" data-cerrar-qv></div>
+  <div class="qv__panel" role="dialog" aria-modal="true" aria-label="Vista rápida del producto">
+    <button type="button" class="icon-btn qv__close" data-cerrar-qv aria-label="Cerrar la vista rápida"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <div id="qvContent"></div>
+  </div>
+</div>
+<script type="application/ld+json" id="ldProducto">{}</script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+<script src="script.js?v=1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
