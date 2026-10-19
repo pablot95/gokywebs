@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>At San José de Metán — Agencia de viajes en Metán, Salta</title>
+  <meta name="description" content="Pasajes en micro y avión, paquetes turísticos, cruceros y asistencia al viajero en San José de Metán. Mirá las ofertas del día y consultá por WhatsApp.">
+  <link rel="canonical" href="https://gokywebs.com/demo/atsanjosedemetan/">
+  <meta name="theme-color" content="#F7FAF8">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:site_name" content="At San José de Metán">
+  <meta property="og:title" content="At San José de Metán — Agencia de viajes en Metán, Salta">
+  <meta property="og:description" content="Pasajes, paquetes, cruceros y asistencia al viajero. Todos los días, los flyers con las ofertas de las operadoras.">
+  <meta property="og:url" content="https://gokywebs.com/demo/atsanjosedemetan/">
+  <meta property="og:image" content="https://gokywebs.com/demo/atsanjosedemetan/images/og-atsanjose.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23153A30'/%3E%3Ctext x='32' y='41' font-family='Georgia,serif' font-size='27' font-weight='700' text-anchor='middle' fill='%23F7FAF8'%3EAt%3C/text%3E%3Cpath d='M17 49 L25 43 L30 46 L36 40 L42 45 L47 49' fill='none' stroke='%23D8A76B' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&amp;family=Figtree:wght@400;600&amp;display=swap">
+  <link rel="preload" as="image" href="images/quebrada.webp" imagesrcset="images/quebrada-chica.webp 960w, images/quebrada.webp 1672w" imagesizes="100vw" fetchpriority="high">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css?v=20261019133431">
+  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    "name": "At San José de Metán",
+    "description": "Agencia de viajes: pasajes en micro y avión, paquetes turísticos, cruceros y asistencia al viajero.",
+    "url": "https://gokywebs.com/demo/atsanjosedemetan/",
+    "image": "https://gokywebs.com/demo/atsanjosedemetan/images/og-atsanjose.jpg",
+    "telephone": "+54 9 297 412-6345",
+    "sameAs": ["https://www.instagram.com/atsanjosede_metann/"],
+    "address": { "@type": "PostalAddress", "streetAddress": "20 de Febrero 319, oficina 2", "addressLocality": "San José de Metán", "addressRegion": "Salta", "postalCode": "4440", "addressCountry": "AR" },
+    "geo": { "@type": "GeoCoordinates", "latitude": -25.4995, "longitude": -64.9752 },
+    "areaServed": ["San José de Metán", "Salta", "Tucumán"],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Servicios de viaje",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pasajes en micro" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pasajes aéreos" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Paquetes turísticos" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Cruceros" } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Asistencia al viajero" } }
+      ]
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "¿El precio del flyer es el final?", "acceptedAnswer": { "@type": "Answer", "text": "Cada flyer lo arma su operadora, y los precios y lugares cambian durante el día. Antes de reservar te confirmamos el valor vigente por WhatsApp." } },
+      { "@type": "Question", "name": "¿Desde dónde salen los viajes?", "acceptedAnswer": { "@type": "Answer", "text": "Cada flyer dice desde dónde sale: muchas salidas son desde Salta o Tucumán. Si querés salir desde otra ciudad, preguntanos y buscamos opciones." } },
+      { "@type": "Question", "name": "¿Puedo pedir un viaje que no está en los flyers?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Contanos destino, fechas aproximadas y cuántos viajan, y te armamos opciones con las operadoras." } },
+      { "@type": "Question", "name": "¿Qué cubre la asistencia al viajero?", "acceptedAnswer": { "@type": "Answer", "text": "Atención médica, medicamentos y problemas con el equipaje durante el viaje, según el plan que elijas. Para viajar a Europa es obligatoria." } },
+      { "@type": "Question", "name": "¿Dónde está la oficina?", "acceptedAnswer": { "@type": "Answer", "text": "En 20 de Febrero 319, oficina 2, San José de Metán. También podés hacer toda la reserva por WhatsApp." } }
+    ]
+  }
+  </script>
+</head>
+<body class="m1" id="top">
+  <nav class="gw-modelos" aria-label="Modelos de la web">
+    <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+    <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+  </nav>
+
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-bus" viewBox="0 0 24 24"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></symbol>
+    <symbol id="i-avion" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></symbol>
+    <symbol id="i-valija" viewBox="0 0 24 24"><path d="M6 20a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2"/><path d="M8 18V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v14"/><path d="M10 20h4"/><circle cx="16" cy="20" r="2"/><circle cx="8" cy="20" r="2"/></symbol>
+    <symbol id="i-barco" viewBox="0 0 24 24"><path d="M12 10.189V14"/><path d="M12 2v3"/><path d="M19 13V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v6"/><path d="M19.38 20A11.6 11.6 0 0 0 21 14l-8.188-3.639a2 2 0 0 0-1.624 0L3 14a11.6 11.6 0 0 0 2.81 7.76"/><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1s1.2 1 2.5 1c2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></symbol>
+    <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-ig" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-izq" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-der" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></symbol>
+    <symbol id="i-wa" viewBox="0 0 32 32"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="At San José de Metán, volver al inicio">
+        <span class="brand-nombre"><b>At</b> San José de Metán</span>
+        <span class="brand-sub">Agencia de viajes</span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+        <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#ofertas">Ofertas del día</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#reservar">Cómo reservar</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="btn btn-primary btn-sm header-cta" href="https://wa.me/5492974126345?text=Hola!%20Vi%20la%20web%20de%20la%20agencia%20y%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener"><svg class="wa-glyph" aria-hidden="true"><use href="#i-wa"/></svg>Escribinos</a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero hero-m1" aria-labelledby="hero-titulo">
+      <div class="hero-media">
+        <div class="hero-foto" data-parallax>
+          <img data-hero-img src="images/quebrada.webp" srcset="images/quebrada-chica.webp 960w, images/quebrada.webp 1672w" sizes="100vw" width="1672" height="941" alt="Ruta entre los cerros de colores de la Quebrada, en el norte argentino" fetchpriority="high">
+        </div>
+        <div class="sello-hero">
+          <div class="sello sello-gira" aria-hidden="true">
+            <svg class="sello-aro" viewBox="0 0 120 120"><defs><path id="aro-hero" d="M60,60 m-48,0 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0"/></defs><text><textPath href="#aro-hero" textLength="296" lengthAdjust="spacing">San José de Metán · Agencia de viajes ·</textPath></text></svg>
+            <span class="sello-centro"><b>At</b><svg viewBox="0 0 44 14"><path d="M1 13 L11 4 L17 9 L24 2 L33 10 L37 7 L43 13"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="container">
+        <div class="hero-copy">
+          <p class="eyebrow hero-eyebrow">Tu próximo viaje empieza acá</p>
+          <h1 id="hero-titulo">Pasajes, paquetes y cruceros <span class="acento">con las ofertas de hoy</span></h1>
+          <p class="hero-lead">Cada día subimos los flyers que nos mandan las operadoras. Elegí el tuyo y te confirmamos precio y cupos por WhatsApp.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href="https://wa.me/5492974126345?text=Hola!%20Vi%20la%20web%20de%20la%20agencia%20y%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener"><svg class="wa-glyph" aria-hidden="true"><use href="#i-wa"/></svg>Consultar por WhatsApp</a>
+            <a class="btn btn-ghost" href="#ofertas">Ver las ofertas de hoy</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="franja" aria-label="Qué podés reservar">
+      <div class="container">
+        <div class="franja-card">
+          <a class="franja-item" href="#servicios" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <span class="franja-ico"><svg class="icon" aria-hidden="true"><use href="#i-avion"/></svg></span>
+            <span class="franja-txt"><b>Pasajes</b><span>Aéreos, terrestres y más</span></span>
+          </a>
+          <a class="franja-item" href="#servicios" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <span class="franja-ico"><svg class="icon" aria-hidden="true"><use href="#i-valija"/></svg></span>
+            <span class="franja-txt"><b>Paquetes</b><span>Nacionales e internacionales</span></span>
+          </a>
+          <a class="franja-item" href="#servicios" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <span class="franja-ico"><svg class="icon" aria-hidden="true"><use href="#i-barco"/></svg></span>
+            <span class="franja-txt"><b>Cruceros</b><span>Viví el mundo sobre el mar</span></span>
+          </a>
+          <a class="franja-item" href="#servicios" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <span class="franja-ico"><svg class="icon" aria-hidden="true"><use href="#i-escudo"/></svg></span>
+            <span class="franja-txt"><b>Asistencia</b><span>Viajá tranquilo, siempre acompañado</span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="ofertas" id="ofertas" aria-labelledby="ofertas-titulo">
+      <div class="container">
+        <div class="ofertas-head">
+          <div data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">
+            <h2 id="ofertas-titulo">Ofertas <em>del día</em></h2>
+          </div>
+          <div class="ofertas-firma-wrap" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
+            <p class="ofertas-firma">Más que un viaje, son historias</p>
+          </div>
+        </div>
+        <p class="ofertas-intro" data-animate="subir" style="opacity:0;transform:translateY(24px)">Todos los días cargamos los flyers que nos mandan las operadoras con las que trabajamos. Tocá el que te guste para verlo en grande y consultarlo.</p>
+        <div class="ofertas-barra" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <p class="hoy-ticket"><svg class="icon" aria-hidden="true"><use href="#i-cal"/></svg><span data-hoy>Hoy</span> · <span data-cuenta>6</span> flyers nuevos</p>
+          <div class="chips" role="group" aria-label="Filtrar ofertas">
+            <button type="button" class="chip" data-filtro="todas" aria-pressed="true">Todas <small>6</small></button>
+            <button type="button" class="chip" data-filtro="internacional" aria-pressed="false">Internacionales</button>
+            <button type="button" class="chip" data-filtro="nacional" aria-pressed="false">Nacionales</button>
+            <button type="button" class="chip" data-filtro="micro" aria-pressed="false">En micro</button>
+            <button type="button" class="chip" data-filtro="aereo" aria-pressed="false">Aéreos</button>
+            <button type="button" class="chip" data-filtro="crucero" aria-pressed="false">Cruceros</button>
+          </div>
+        </div>
+
+        <ul class="flyers-grid" data-flyers aria-live="polite">
+          <li class="flyer" data-flyer="caribe" data-tipos="internacional aereo" data-resumen="Aruba, Jamaica, Punta Cana y Cancún. Aéreo + hotel, con salidas desde Salta y Tucumán." data-foto="images/caribe-chica.webp" data-corto="Caribe" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Caribe 2027">
+              <span class="flyer-img"><img src="images/flyer-caribe-chica.webp" srcset="images/flyer-caribe-chica.webp 540w, images/flyer-caribe.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Caribe 2027: Aruba, Jamaica, Punta Cana y Cancún, aéreo y hotel con salidas desde Salta y Tucumán"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Atlántica</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Caribe 2027</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABCaribe%202027%C2%BB%20de%20Operadora%20Atl%C3%A1ntica%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+          <li class="flyer" data-flyer="crucero" data-tipos="crucero internacional" data-resumen="Del 22 al 27 de diciembre: Buenos Aires, Punta del Este y Montevideo, con pensión completa y bebidas." data-foto="images/crucero-chica.webp" data-corto="Crucero" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Crucero de verano">
+              <span class="flyer-img"><img src="images/flyer-crucero-chica.webp" srcset="images/flyer-crucero-chica.webp 540w, images/flyer-crucero.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Crucero de verano, del 22 al 27 de diciembre: Buenos Aires, Punta del Este y Montevideo con pensión completa"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Mar Austral</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Crucero de verano</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABCrucero%20de%20verano%C2%BB%20de%20Operadora%20Mar%20Austral%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+          <li class="flyer" data-flyer="riofoz" data-tipos="internacional micro" data-resumen="14 días y 9 noches en bus cama, con hoteles en Río y en Foz y asistencia al viajero." data-foto="images/iguazu-chica.webp" data-corto="Río + Foz" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Río de Janeiro + Foz do Iguaçu">
+              <span class="flyer-img"><img src="images/flyer-riofoz-chica.webp" srcset="images/flyer-riofoz-chica.webp 540w, images/flyer-riofoz.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Río de Janeiro y Foz do Iguaçu en bus cama, 14 días y 9 noches con hoteles y asistencia al viajero"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Norte</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Río de Janeiro + Foz do Iguaçu</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABR%C3%ADo%20de%20Janeiro%20%2B%20Foz%20do%20Igua%C3%A7u%C2%BB%20de%20Operadora%20Norte%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+          <li class="flyer" data-flyer="camboriu" data-tipos="internacional micro" data-resumen="Temporada de verano en Brasil, en bus cama desde Salta y Tucumán." data-foto="images/micro-chica.webp" data-corto="Camboriú" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Camboriú y Canasvieiras">
+              <span class="flyer-img"><img src="images/flyer-camboriu-chica.webp" srcset="images/flyer-camboriu-chica.webp 540w, images/flyer-camboriu.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Camboriú y Canasvieiras, temporada de verano en bus cama desde Salta y Tucumán"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Norte</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Camboriú y Canasvieiras</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABCambori%C3%BA%20y%20Canasvieiras%C2%BB%20de%20Operadora%20Norte%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+          <li class="flyer" data-flyer="europa" data-tipos="internacional aereo" data-resumen="Temporada 2027: paquetes con aéreo desde Argentina e itinerarios a tu medida." data-foto="images/europa-chica.webp" data-corto="Europa" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Europa clásica">
+              <span class="flyer-img"><img src="images/flyer-europa-chica.webp" srcset="images/flyer-europa-chica.webp 540w, images/flyer-europa.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Europa clásica, temporada 2027: paquetes con aéreo desde Argentina e itinerarios a medida"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Global</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Europa clásica</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABEuropa%20cl%C3%A1sica%C2%BB%20de%20Operadora%20Global%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+          <li class="flyer" data-flyer="patagonia" data-tipos="nacional aereo" data-resumen="El Calafate y El Chaltén: aéreo + hotel desde Salta, con excursiones opcionales." data-foto="images/patagonia-chica.webp" data-corto="Patagonia" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <button class="flyer-ver" type="button" aria-label="Ver en grande el flyer Patagonia de glaciares">
+              <span class="flyer-img"><img src="images/flyer-patagonia-chica.webp" srcset="images/flyer-patagonia-chica.webp 540w, images/flyer-patagonia.webp 1080w" sizes="(max-width: 640px) 46vw, (max-width: 960px) 45vw, 380px" width="540" height="675" alt="Flyer Patagonia de glaciares: El Calafate y El Chaltén con aéreo y hotel desde Salta"></span>
+              <span class="flyer-zoom"><svg class="icon" aria-hidden="true"><use href="#i-zoom"/></svg></span>
+            </button>
+            <div class="flyer-info">
+              <p class="flyer-op"><span>Operadora Sur</span><span class="flyer-hoy">Hoy</span></p>
+              <h3>Patagonia de glaciares</h3>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5492974126345?text=Hola!%20Vi%20en%20la%20web%20el%20flyer%20%C2%ABPatagonia%20de%20glaciares%C2%BB%20de%20Operadora%20Sur%20y%20quiero%20saber%20precio%20y%20cupos." target="_blank" rel="noopener">Consultar</a>
+            </div>
+          </li>
+        </ul>
+        <p class="flyers-vacio" data-vacio hidden>Hoy no hay flyers de este tipo. Escribinos y lo buscamos con las operadoras.</p>
+
+        <div class="ofertas-nota" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <span>¿No encontrás tu destino entre las ofertas de hoy?</span>
+          <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20No%20encontr%C3%A9%20mi%20viaje%20en%20las%20ofertas%20de%20hoy.%20%C2%BFMe%20ayudan%20a%20buscarlo%3F" target="_blank" rel="noopener">Pedinos que lo busquemos<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="servicios" id="servicios" aria-labelledby="servicios-titulo">
+      <div class="container">
+        <div class="sec-head">
+          <div data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">
+            <h2 id="servicios-titulo" class="titulo-acento">Todo tu viaje, <em>en una sola agencia</em></h2>
+          </div>
+          <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Pasajes, paquetes, cruceros y asistencia, con atención por WhatsApp o en la oficina.</p>
+        </div>
+        <ul class="serv-grid">
+          <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <div class="serv-foto"><img src="images/micro-chica.webp" width="720" height="720" alt="Micro de larga distancia en una ruta de montaña al atardecer"></div>
+            <div class="serv-body">
+              <span class="serv-ico"><svg class="icon" aria-hidden="true"><use href="#i-bus"/></svg></span>
+              <h3>Pasajes en micro</h3>
+              <p>Bus cama y semicama para viajes por el país y a países vecinos. Te comparamos empresas y horarios.</p>
+              <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20Quiero%20consultar%20por%20pasajes%20en%20micro." target="_blank" rel="noopener">Consultar pasajes en micro<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </div>
+          </li>
+          <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <div class="serv-foto"><img src="images/avion-chica.webp" width="720" height="720" alt="Avión en la plataforma visto desde la ventana del aeropuerto"></div>
+            <div class="serv-body">
+              <span class="serv-ico"><svg class="icon" aria-hidden="true"><use href="#i-avion"/></svg></span>
+              <h3>Pasajes aéreos</h3>
+              <p>Vuelos nacionales e internacionales desde Salta o Tucumán, con horarios, escalas y equipaje claros antes de emitir.</p>
+              <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20Quiero%20consultar%20por%20pasajes%20a%C3%A9reos." target="_blank" rel="noopener">Consultar pasajes aéreos<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </div>
+          </li>
+          <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <div class="serv-foto"><img src="images/europa-chica.webp" width="720" height="720" alt="Calle empedrada de una ciudad europea con una cúpula al fondo"></div>
+            <div class="serv-body">
+              <span class="serv-ico"><svg class="icon" aria-hidden="true"><use href="#i-valija"/></svg></span>
+              <h3>Paquetes turísticos</h3>
+              <p>Traslado, alojamiento y excursiones en un solo paquete, para recorrer Argentina o viajar al exterior.</p>
+              <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20Quiero%20consultar%20por%20paquetes%20tur%C3%ADsticos." target="_blank" rel="noopener">Consultar paquetes<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </div>
+          </li>
+          <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <div class="serv-foto"><img src="images/crucero-chica.webp" width="720" height="720" alt="Crucero navegando en mar abierto frente a la costa"></div>
+            <div class="serv-body">
+              <span class="serv-ico"><svg class="icon" aria-hidden="true"><use href="#i-barco"/></svg></span>
+              <h3>Cruceros</h3>
+              <p>Salidas por Brasil, Uruguay y el Caribe. Te explicamos qué incluye cada tarifa: cabina, comidas, bebidas y excursiones.</p>
+              <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20Quiero%20consultar%20por%20cruceros." target="_blank" rel="noopener">Consultar cruceros<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </div>
+          </li>
+          <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(48px)">
+            <div class="serv-foto"><img src="images/asistencia-chica.webp" width="720" height="720" alt="Valija con pasaporte y anteojos de sol en la sala de espera de un aeropuerto"></div>
+            <div class="serv-body">
+              <span class="serv-ico"><svg class="icon" aria-hidden="true"><use href="#i-escudo"/></svg></span>
+              <h3>Asistencia al viajero</h3>
+              <p>Cobertura médica y de equipaje para todo el viaje. En algunos destinos, como Europa, es obligatoria para entrar.</p>
+              <a class="link-flecha" href="https://wa.me/5492974126345?text=Hola!%20Quiero%20consultar%20por%20asistencia%20al%20viajero." target="_blank" rel="noopener">Consultar asistencia<svg class="icon" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="reservar" id="reservar" aria-labelledby="reservar-titulo">
+      <div class="container reservar-grid">
+        <div>
+          <div class="sec-head">
+            <div data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">
+              <h2 id="reservar-titulo">Cómo reservás tu viaje</h2>
+            </div>
+          </div>
+          <ol class="pasos">
+            <li class="paso" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+              <span class="paso-num">1</span><span class="paso-linea"></span>
+              <div><h3>Elegí una oferta o contanos tu idea</h3><p>Tocá el flyer que te gustó, o escribinos destino, fechas y cuántos viajan.</p></div>
+            </li>
+            <li class="paso" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+              <span class="paso-num">2</span><span class="paso-linea"></span>
+              <div><h3>Te confirmamos precio y cupos</h3><p>Las operadoras actualizan precios y lugares todos los días: te pasamos lo vigente y las opciones de pago.</p></div>
+            </li>
+            <li class="paso" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+              <span class="paso-num">3</span><span class="paso-linea"></span>
+              <div><h3>Reservás y te mandamos todo</h3><p>Pasajes, vouchers y asistencia en tu WhatsApp, o en la oficina si preferís venir.</p></div>
+            </li>
+          </ol>
+        </div>
+        <div class="faq" id="preguntas">
+          <div data-animate="der" style="opacity:0;transform:translateX(40px)">
+            <h3 class="faq-titulo">Preguntas antes de viajar</h3>
+          </div>
+          <div class="faq-lista">
+            <details class="faq-item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+              <summary>¿El precio del flyer es el final?<svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg></summary>
+              <p>Cada flyer lo arma su operadora, y los precios y lugares cambian durante el día. Antes de reservar te confirmamos el valor vigente por WhatsApp.</p>
+            </details>
+            <details class="faq-item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+              <summary>¿Desde dónde salen los viajes?<svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg></summary>
+              <p>Cada flyer dice desde dónde sale: muchas salidas son desde Salta o Tucumán. Si querés salir desde otra ciudad, preguntanos y buscamos opciones.</p>
+            </details>
+            <details class="faq-item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+              <summary>¿Puedo pedir un viaje que no está en los flyers?<svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg></summary>
+              <p>Sí. Contanos destino, fechas aproximadas y cuántos viajan, y te armamos opciones con las operadoras.</p>
+            </details>
+            <details class="faq-item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+              <summary>¿Qué cubre la asistencia al viajero?<svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg></summary>
+              <p>Atención médica, medicamentos y problemas con el equipaje durante el viaje, según el plan que elijas. Para viajar a Europa es obligatoria.</p>
+            </details>
+            <details class="faq-item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+              <summary>¿Dónde está la oficina?<svg class="icon" aria-hidden="true"><use href="#i-mas"/></svg></summary>
+              <p>En 20 de Febrero 319, oficina 2, San José de Metán. También podés hacer toda la reserva por WhatsApp.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cierre" id="contacto" aria-labelledby="cierre-titulo">
+      <div class="sello-cierre">
+        <div data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
+          <div class="sello sello-gira" aria-hidden="true">
+            <svg class="sello-aro" viewBox="0 0 120 120"><defs><path id="aro-cierre" d="M60,60 m-48,0 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0"/></defs><text><textPath href="#aro-cierre" textLength="296" lengthAdjust="spacing">San José de Metán · Agencia de viajes ·</textPath></text></svg>
+            <span class="sello-centro"><b>At</b><svg viewBox="0 0 44 14"><path d="M1 13 L11 4 L17 9 L24 2 L33 10 L37 7 L43 13"/></svg></span>
+          </div>
+        </div>
+      </div>
+      <div class="container cierre-grid">
+        <div>
+          <div class="cierre-texto">
+            <div data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">
+              <h2 id="cierre-titulo">¿A dónde querés ir?</h2>
+            </div>
+            <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Contanos destino, fecha y cuántos viajan: te mandamos opciones de las operadoras por WhatsApp.</p>
+          </div>
+          <form class="consulta" id="consultaForm" novalidate data-animate="subir" style="opacity:0;transform:translateY(40px)">
+            <label class="campo campo-full">Destino
+              <input type="text" name="destino" autocomplete="off" placeholder="Ej.: Camboriú, Cancún o Bariloche" required aria-describedby="err-destino">
+              <span class="campo-error" id="err-destino"></span>
+            </label>
+            <label class="campo">¿Cuándo querés viajar?
+              <input type="text" name="cuando" autocomplete="off" placeholder="Ej.: enero, fines de marzo">
+            </label>
+            <label class="campo">Salgo desde
+              <select name="salida">
+                <option>San José de Metán</option>
+                <option>Salta</option>
+                <option>Tucumán</option>
+                <option>Otra ciudad</option>
+              </select>
+            </label>
+            <label class="campo">Viajeros
+              <select name="viajeros">
+                <option>1 persona</option>
+                <option selected>2 personas</option>
+                <option>3 personas</option>
+                <option>4 personas</option>
+                <option>5 personas</option>
+                <option>6 o más</option>
+              </select>
+            </label>
+            <label class="campo">Servicio
+              <select name="servicio">
+                <option>Paquete completo</option>
+                <option>Pasaje en micro</option>
+                <option>Pasaje aéreo</option>
+                <option>Crucero</option>
+                <option>Asistencia al viajero</option>
+              </select>
+            </label>
+            <button class="btn btn-gold" type="submit"><svg class="wa-glyph" aria-hidden="true"><use href="#i-wa"/></svg>Pedir opciones por WhatsApp</button>
+          </form>
+        </div>
+        <div class="cierre-contacto">
+          <ul class="datos">
+            <li data-animate="der" style="opacity:0;transform:translateX(48px)">
+              <a class="dato" href="https://wa.me/5492974126345?text=Hola!%20Vi%20la%20web%20de%20la%20agencia%20y%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener">
+                <span class="dato-ico"><svg class="wa-glyph" aria-hidden="true"><use href="#i-wa"/></svg></span>
+                <span class="dato-txt"><small>WhatsApp</small><span>+54 9 297 412-6345</span></span>
+              </a>
+            </li>
+            <li data-animate="der" style="opacity:0;transform:translateX(48px)">
+              <a class="dato" href="https://www.instagram.com/atsanjosede_metann/" target="_blank" rel="noopener">
+                <span class="dato-ico"><svg class="icon" aria-hidden="true"><use href="#i-ig"/></svg></span>
+                <span class="dato-txt"><small>Instagram</small><span>@atsanjosede_metann</span></span>
+              </a>
+            </li>
+            <li data-animate="der" style="opacity:0;transform:translateX(48px)">
+              <div class="dato">
+                <span class="dato-ico"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg></span>
+                <span class="dato-txt"><small>Oficina</small><span>20 de Febrero 319, of. 2 · San José de Metán, Salta</span></span>
+              </div>
+            </li>
+          </ul>
+          <div class="mapa-wrap">
+            <div class="mapa" id="mapa" data-animate="mascara" style="clip-path:inset(100% 0 0 0)" role="img" aria-label="Mapa de San José de Metán con la zona de la oficina"></div>
+            <p class="mapa-nota" data-animate="subir" style="opacity:0;transform:translateY(16px)">La marca indica la zona aproximada de la oficina.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <svg class="footer-cerros" viewBox="0 0 560 120" aria-hidden="true"><path d="M0 110 L60 70 L95 88 L150 40 L205 82 L240 64 L300 104 L350 58 L392 76 L450 28 L505 72 L560 50"/><path d="M0 118 L70 92 L120 104 L190 72 L250 98 L320 80 L380 106 L440 70 L500 96 L560 84"/></svg>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
+          <a class="brand" href="#top" aria-label="At San José de Metán, volver al inicio">
+            <span class="brand-nombre"><b>At</b> San José de Metán</span>
+            <span class="brand-sub">Agencia de viajes</span>
+          </a>
+          <p>Pasajes, paquetes, cruceros y asistencia al viajero, con las ofertas de las operadoras actualizadas cada día.</p>
+        </div>
+        <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <h3>La agencia</h3>
+          <ul>
+            <li><a href="#ofertas">Ofertas del día</a></li>
+            <li><a href="#servicios">Servicios</a></li>
+            <li><a href="#reservar">Cómo reservar</a></li>
+          </ul>
+        </div>
+        <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <h3>Contacto</h3>
+          <ul>
+            <li><a href="https://wa.me/5492974126345?text=Hola!%20Vi%20la%20web%20de%20la%20agencia%20y%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener">+54 9 297 412-6345</a></li>
+            <li><a href="https://www.instagram.com/atsanjosede_metann/" target="_blank" rel="noopener">@atsanjosede_metann</a></li>
+          </ul>
+        </div>
+        <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <h3>Oficina</h3>
+          <p>20 de Febrero 319, oficina 2<br>San José de Metán, Salta</p>
+        </div>
+      </div>
+      <div class="footer-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <span>© 2026 At San José de Metán · Agencia de viajes · Legajo N.º 16896</span>
+        <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+      </div>
+    </div>
+  </footer>
+
+  <dialog class="visor" id="visor" aria-label="Flyer en grande">
+    <div class="visor-caja">
+      <figure class="visor-fig"><img id="visorImg" src="images/flyer-caribe.webp" width="1080" height="1350" alt="" loading="lazy"></figure>
+      <div class="visor-texto">
+        <p class="visor-op" id="visorOp">Operadora Atlántica</p>
+        <h3 id="visorTit">Caribe 2027</h3>
+        <p class="visor-res" id="visorRes">Aruba, Jamaica, Punta Cana y Cancún. Aéreo + hotel, con salidas desde Salta y Tucumán.</p>
+        <p class="visor-aviso"><span data-hoy="aviso">Subido hoy</span>. Precio y cupos según la operadora: te los confirmamos por WhatsApp antes de reservar.</p>
+        <a class="btn btn-primary" id="visorWa" href="https://wa.me/5492974126345" target="_blank" rel="noopener"><svg class="wa-glyph" aria-hidden="true"><use href="#i-wa"/></svg>Consultar esta oferta</a>
+        <div class="visor-nav">
+          <button type="button" class="rail-btn" id="visorPrev" aria-label="Flyer anterior"><svg class="icon" aria-hidden="true"><use href="#i-izq"/></svg></button>
+          <span id="visorCuenta">1 / 6</span>
+          <button type="button" class="rail-btn" id="visorNext" aria-label="Flyer siguiente"><svg class="icon" aria-hidden="true"><use href="#i-der"/></svg></button>
+        </div>
+      </div>
+      <button type="button" class="visor-cerrar" id="visorCerrar" aria-label="Cerrar flyer"><svg class="icon" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+    </div>
+  </dialog>
+
+  <a class="wsp-float" id="wsp-float" href="https://wa.me/5492974126345?text=Hola!%20Vi%20la%20web%20de%20la%20agencia%20y%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+
+  <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js?v=20261019133431"></script>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>
