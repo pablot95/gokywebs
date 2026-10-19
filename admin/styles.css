@@ -2340,6 +2340,14 @@ body.modal-open { overflow: hidden; }
 .mp-vinculo-btn { font: inherit; font-size: 11px; font-weight: 600; color: var(--text); background: transparent; border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 8px; cursor: pointer; white-space: nowrap; }
 .mp-vinculo-btn:hover { border-color: var(--text-muted); }
 .mp-vinculo--fuera .mp-vinculo-btn { padding: 0 6px; }
+/* Mantenimiento → Pagan por afuera (19-oct) */
+.mant-pf-nota { font-size: 13px; margin: 0 0 12px; }
+#mantPorFueraSinMp > .mant-pf-nota { margin-top: 12px; }
+.clients-table .mant-pf-dia { width: 72px; max-width: 72px; background: #111d35; border: 1px solid #1e2c49; border-radius: 8px; color: #e6ecf7; font: inherit; font-size: 14px; padding: 6px 8px; }
+.mant-pf-dia:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.mant-pf-titulo { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+.mant-pf-sinmp { display: flex; flex-direction: column; gap: 6px; }
+.mant-pf-sinmp .mp-vinculo { font-size: 13px; margin: 0; }
 .mant-por-fuera { margin-top: 12px; font-size: 13px; }
 
 /* Sumar las suscripciones de varios días (16-oct-2026). */

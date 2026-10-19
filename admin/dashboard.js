@@ -1549,7 +1549,7 @@ function _cruceMercadoPago() {
         if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
         const sus = suscripcionDe(c);
         if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
-        candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true,
+        candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: Number(c.diaCobro) || 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true,
             ..._negocioYPersona(c.proyecto, c.nombre), palabras: _palabrasNombre(c.nombre, c.proyecto, c.contactoNombre, String(c.email || "").split("@")[0]) });
     }
     candidatos.sort((a, b) => a.desde - b.desde);
@@ -9046,6 +9046,91 @@ document.addEventListener("click", async (e) => {
     }
 });
 
+/* Mantenimiento → Pagan por afuera (Pablo, 19-oct: "una pestaña para cargar las fechas donde tengo que
+   cobrarlos a los que están pagando por afuera"). Los mensuales activos con la marca `pagaPorFuera`, con
+   el día del mes del cobro (`diaCobro`, en el suscriptor o en el cliente; sin día, el del alta) y el
+   próximo cobro. Debajo, los que no aparecen en Mercado Pago, para marcarlos desde acá. */
+function _mantPorFueraLista() {
+    const out = [];
+    const clientePorMant = _clientePorSuscripcion();
+    for (const m of (mantenimiento || [])) {
+        if (m.pagaPorFuera !== true || avisoMantDe(m) || (m.estado || "activo") !== "activo") continue;
+        const c = clientePorMant.get(m.id);
+        out.push({ ref: m, coleccion: "mantenimiento", nombre: c?.proyecto || m.nombre || "Suscriptor", persona: c?.proyecto ? (c.nombre || m.nombre || "") : "",
+            monto: Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0), desde: mantToDate(m.createdAt), texto: [m.nombre, m.email, c?.proyecto, c?.nombre].join(" ") });
+    }
+    for (const c of (clients || [])) {
+        if (c.pagaPorFuera !== true || getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
+        const sus = suscripcionDe(c);
+        if (sus.estado !== "activa") continue;
+        out.push({ ref: c, coleccion: "clientes", nombre: c.proyecto || c.nombre || "Cliente", persona: c.proyecto ? (c.nombre || "") : "",
+            monto: sus.mensual, desde: sus.desde, texto: [c.proyecto, c.nombre, c.email, c.telefono].join(" ") });
+    }
+    const hoy = _diaDe(new Date());
+    const [hy, hm] = hoy.split("-").map(Number);
+    for (const f of out) {
+        f.dia = Number(f.ref.diaCobro) || 0;
+        const dia = f.dia || f.desde?.getDate() || 0;
+        if (!dia) { f.proximo = ""; continue; }
+        let ymd = _ymdDelMes(hy, hm - 1, dia);
+        if (ymd < hoy) ymd = _ymdDelMes(hy, hm, dia);
+        if (f.desde && ymd < _diaDe(f.desde)) ymd = _diaDe(f.desde);
+        f.proximo = ymd;
+    }
+    return out.sort((a, b) => (a.proximo || "9999").localeCompare(b.proximo || "9999"));
+}
+
+function _renderMantPorFuera(term) {
+    const tb = document.getElementById("mantPorFueraTbody");
+    if (!tb) return;
+    const todos = _mantPorFueraLista();
+    const countEl = document.getElementById("mantCountPorFuera");
+    if (countEl) countEl.textContent = todos.length;
+    const lista = term ? todos.filter(f => f.texto.toLowerCase().includes(term)) : todos;
+    const hoy = _fechaMp(_diaDe(new Date()));
+    const cuando = ymd => {
+        if (!ymd) return "";
+        const [y, m, d] = ymd.split("-");
+        const dias = Math.round((_fechaMp(ymd) - hoy) / 86400000);
+        return `${d}/${m}/${y} <span class="muted">· ${dias === 0 ? "hoy" : dias === 1 ? "mañana" : `en ${dias} días`}</span>`;
+    };
+    tb.innerHTML = lista.length ? lista.map(f => {
+        const destino = `${f.coleccion}:${escapeHtml(f.ref.id)}`;
+        return `<tr>
+            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}</td>
+            <td>${fmtMoney(f.monto)}/mes</td>
+            <td><input type="number" class="mant-pf-dia" min="1" max="31" step="1" inputmode="numeric" value="${f.dia || ""}" placeholder="${f.desde ? f.desde.getDate() : ""}" data-dia-cobro="${destino}" aria-label="Día del mes en que se le cobra a ${escapeHtml(f.nombre)}" title="Día del mes (1 a 31). Vacío: el día del alta"></td>
+            <td>${cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
+            <td class="actions-cell"><button type="button" class="btn-ghost" style="font-size:12px" data-por-fuera="${destino}" data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">Ya no paga por afuera</button></td>
+        </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nadie que pague por afuera con esa búsqueda." : "Nadie marcado como que paga por afuera. Marcalos abajo o en Plan mensual."}</td></tr>`;
+
+    const sinMpEl = document.getElementById("mantPorFueraSinMp");
+    if (!sinMpEl) return;
+    if (!mantCruce) { sinMpEl.innerHTML = `<p class="muted mant-pf-nota">${ingresosMpError ? "No se pudo leer Mercado Pago para ver quién falta." : "Buscando en Mercado Pago quién no tiene suscripción…"}</p>`; return; }
+    const sinMp = [...mantCruce.values()].filter(k => !k.sub && !k.porFuera && !k.porId);
+    sinMpEl.innerHTML = sinMp.length ? `
+        <p class="mant-pf-titulo">No aparecen en Mercado Pago (${sinMp.length})</p>
+        <div class="mant-pf-sinmp">${sinMp.map(k => `<div class="mp-vinculo mp-vinculo--falta">${escapeHtml(k.negocio || k.nombre)} · ${fmtMoney(k.monto)}/mes <button type="button" class="mp-vinculo-btn" data-por-fuera="${k.esCliente ? "clientes" : "mantenimiento"}:${escapeHtml(k.ref.id)}" data-por-fuera-valor="1">Paga por afuera</button></div>`).join("")}</div>` : "";
+}
+
+document.addEventListener("change", async (e) => {
+    const input = e.target.closest("[data-dia-cobro]");
+    if (!input) return;
+    const [coleccion, id] = input.dataset.diaCobro.split(":");
+    const n = Number(input.value);
+    const valido = Number.isInteger(n) && n >= 1 && n <= 31;
+    if (input.value !== "" && !valido) { alert("El día va del 1 al 31 (vacío: el día del alta)."); renderMantenimiento(); return; }
+    input.disabled = true;
+    try {
+        await updateDoc(doc(db, coleccion, id), { diaCobro: valido ? n : null, updatedAt: serverTimestamp() });
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
+        input.disabled = false;
+    }
+});
+
 function _claveMantCliente(c) {
     const s = suscripcionDe(c);
     if (s.aviso?.tipoEvento === "pausa") return "pausado";
@@ -9154,10 +9239,13 @@ function renderMantenimiento() {
     if (anualEl) anualEl.hidden = mantPlan !== "anual";
     const facturacionEl = document.getElementById("mantFacturacion");
     if (facturacionEl) facturacionEl.hidden = mantPlan !== "facturacion";
+    const porFueraEl = document.getElementById("mantPorFuera");
+    if (porFueraEl) porFueraEl.hidden = mantPlan !== "porfuera";
     const altaBtn = document.getElementById("openMantModalBtn");
     if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
 
     _renderMantAnual(anual, term);
+    _renderMantPorFuera(term);
     _renderMantSuscripciones(tbody, filas, sinSusc, term);
     // Facturación consulta Mercado Pago: se carga al entrar la primera vez (o con "Actualizar"), no con cada cambio de Firestore.
     if (mantPlan === "facturacion" && !factAuto && !factAutoCargando && !factAutoError) cargarFactAuto();

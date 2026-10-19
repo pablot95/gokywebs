@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261019-campanas-bocetos">
+    <link rel="stylesheet" href="styles.css?v=20261019-por-afuera">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -343,6 +343,7 @@
                 <div class="mant-planes" id="mantPlanes" role="group" aria-label="Plan">
                     <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="porfuera" aria-pressed="false" title="Los mensuales que pagan fuera de Mercado Pago y el día del mes en que hay que cobrarles">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                 </div>
                 <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" style="flex:1 1 240px;max-width:340px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
@@ -404,6 +405,27 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <!-- Pagan por afuera (19-oct-2026): el día del mes en que se le cobra a cada uno. -->
+            <div id="mantPorFuera" hidden>
+                <p class="muted mant-pf-nota">El día del mes en que le cobrás a cada uno. El Calendario y Finanzas lo cuentan ese día; sin día, el del alta.</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Mensualidad</th>
+                                <th>Día de cobro</th>
+                                <th>Próximo cobro</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantPorFueraTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="mantPorFueraSinMp"></div>
             </div>
             <!-- Facturación (26-sep-2026): cada mensualidad que cobra Mercado Pago se factura sola.
                  Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
@@ -1310,6 +1332,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261019-anuales-total"></script>
+    <script type="module" src="dashboard.js?v=20261019-por-afuera"></script>
 </body>
 </html>
