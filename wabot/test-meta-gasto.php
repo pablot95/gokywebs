@@ -17,7 +17,8 @@ require_once __DIR__ . '/meta-gasto.php';
 $tmp = sys_get_temp_dir() . '/wabot-test-meta-' . getmypid();
 $GLOBALS['WABOT_TEST_META_GASTO_ARCHIVO'] = $tmp . '-dias.json';
 $GLOBALS['WABOT_TEST_META_GASTO_ANUNCIOS_ARCHIVO'] = $tmp . '-anuncios.json';
-$borrar = function () { @unlink($GLOBALS['WABOT_TEST_META_GASTO_ARCHIVO']); @unlink($GLOBALS['WABOT_TEST_META_GASTO_ANUNCIOS_ARCHIVO']); };
+$GLOBALS['WABOT_TEST_META_CAMPANAS_ARCHIVO'] = $tmp . '-campanas.json';
+$borrar = function () { @unlink($GLOBALS['WABOT_TEST_META_GASTO_ARCHIVO']); @unlink($GLOBALS['WABOT_TEST_META_GASTO_ANUNCIOS_ARCHIVO']); @unlink($GLOBALS['WABOT_TEST_META_CAMPANAS_ARCHIVO']); };
 $borrar();
 
 $TOKEN = 'EAAtokenSecreto123';
@@ -123,9 +124,12 @@ $borrar();
 $pedidos = [];
 $contesta = function ($q) use ($ok, $dia) {
     if (($q['level'] ?? '') === 'ad') {
-        return $ok([['ad_id' => '120200000000000001', 'ad_name' => 'Multiimagenes', 'spend' => '1500'],
-                    ['ad_id' => '120200000000000002', 'ad_name' => 'Video', 'spend' => '500.5'],
-                    ['ad_id' => '120200000000000003', 'ad_name' => 'Apagado', 'spend' => '0']]);
+        return $ok([['ad_id' => '120200000000000001', 'ad_name' => 'Multiimagenes', 'spend' => '1500',
+                     'adset_id' => '7001', 'adset_name' => 'Advantage', 'campaign_id' => '9001', 'campaign_name' => 'WSP Conversaciones'],
+                    ['ad_id' => '120200000000000002', 'ad_name' => 'Video', 'spend' => '500.5',
+                     'adset_id' => '7002', 'adset_name' => 'Similar 1%', 'campaign_id' => '9001', 'campaign_name' => 'WSP Conversaciones'],
+                    ['ad_id' => '120200000000000003', 'ad_name' => 'Apagado', 'spend' => '0',
+                     'adset_id' => '7003', 'adset_name' => 'Viejo', 'campaign_id' => '9002', 'campaign_name' => 'Interacción']]);
     }
     return $ok([$dia('2026-10-01', '1200'), $dia('2026-10-02', '1000'), $dia('2026-09-20', '50000')]);
 };
@@ -135,6 +139,10 @@ caso('pide por anuncio, en esas fechas', ($qa['level'] ?? '') === 'ad' && json_d
 caso('por id de anuncio, con el nombre de Meta; los que no gastaron no van',
     count($r['anuncios']) === 2 && $r['anuncios']['120200000000000001'] === ['nombre' => 'Multiimagenes', 'gasto' => 1500.0], json_encode($r['anuncios']));
 caso('el total es el de la cuenta en esas fechas (incluye los que Meta ya no lista)', $r['total'] === 2200.0, (string)$r['total']);
+caso('pide la campaña y el conjunto de cada anuncio', strpos($qa['fields'] ?? '', 'campaign_id') !== false && strpos($qa['fields'] ?? '', 'adset_name') !== false);
+$mapa = wabot_meta_campanas_leer();
+caso('y los anota, también el que no gastó', count($mapa) === 3 && $mapa['120200000000000002'] === ['nombre' => 'Video', 'conjunto_id' => '7002', 'conjunto' => 'Similar 1%', 'campana_id' => '9001', 'campana' => 'WSP Conversaciones']
+    && $mapa['120200000000000003']['campana'] === 'Interacción', json_encode($mapa));
 $pedidos = [];
 $r = wabot_meta_gasto_anuncios('2026-10-01', '2026-10-13', $cfg);
 caso('las mismas fechas antes de media hora no vuelven a preguntar', !$pedidos && count($r['anuncios']) === 2);
@@ -146,6 +154,56 @@ $r = wabot_meta_gasto_anuncios('2026-10-01', '2026-10-13', $cfg);
 caso('si Meta falla, queda lo último leído para esas fechas, con el aviso', count($r['anuncios']) === 2 && $r['error'] !== '', $r['error']);
 $r = wabot_meta_gasto_anuncios('2026-01-01', '2026-01-31', $cfg);
 caso('y si nunca se leyeron esas fechas, vacío con el aviso', $r['anuncios'] === [] && $r['error'] !== '');
+
+echo "Campaña de cada anuncio\n";
+// Lo anotado por el gasto sigue; 111 y 222 son clics viejos que hay que pedir por id; 333 está borrado.
+$anuncioMeta = function ($nombre, $conj, $camp) {
+    return ['name' => $nombre, 'adset' => ['id' => 'c' . $conj, 'name' => $conj], 'campaign' => ['id' => 'k' . $camp, 'name' => $camp], 'id' => 'x'];
+};
+$pedidos = [];
+$contesta = function ($q) use ($ok, $anuncioMeta) {
+    $ids = explode(',', (string)($q['ids'] ?? ''));
+    if (in_array('33333333', $ids, true)) return [400, json_encode(['error' => ['message' => '(#803) Some of the aliases you requested do not exist: 33333333', 'code' => 803]])];
+    return [200, json_encode(array_combine($ids, array_map(function ($id) use ($anuncioMeta) {
+        return $id === '11111111' ? $anuncioMeta('Publioriginal', 'Advantage', 'WSP Conversaciones') : $anuncioMeta('01 - Vendés por Instagram', 'Multi', 'Goky-multi-images');
+    }, $ids)))];
+};
+$r = wabot_meta_anuncios_campanas(['120200000000000001', '11111111', 22222222, 'sin_id', '11111111'], $cfg);
+$qc = []; parse_str((string)parse_url($pedidos[0] ?? '', PHP_URL_QUERY), $qc);
+caso('pide de una vez solo los que no conoce, con campaña y conjunto',
+    count($pedidos) === 1 && ($qc['ids'] ?? '') === '11111111,22222222' && ($qc['fields'] ?? '') === WABOT_META_CAMPOS_ANUNCIO, $pedidos[0] ?? '');
+caso('devuelve los tres (el anotado y los dos pedidos), sin el sin_id',
+    array_keys($r) == ['120200000000000001', '11111111', '22222222'] && $r['11111111']['campana'] === 'WSP Conversaciones'
+    && $r['22222222']['conjunto'] === 'Multi' && $r['22222222']['campana_id'] === 'kGoky-multi-images', json_encode($r));
+caso('quedan guardados sin el token', strpos((string)file_get_contents($GLOBALS['WABOT_TEST_META_CAMPANAS_ARCHIVO']), $TOKEN) === false
+    && isset(wabot_meta_campanas_leer()['22222222']));
+$pedidos = [];
+$r = wabot_meta_anuncios_campanas(['11111111', '22222222'], $cfg);
+caso('la segunda vez no pregunta nada', !$pedidos && count($r) === 2);
+
+$pedidos = [];
+$contesta = function ($q, $url) use ($anuncioMeta) {
+    if (isset($q['ids'])) return [400, json_encode(['error' => ['message' => '(#803) Some of the aliases you requested do not exist: 33333333', 'code' => 803]])];
+    if (strpos($url, '/33333333?') !== false) return [400, json_encode(['error' => ['message' => 'Unsupported get request. Object with ID 33333333 does not exist', 'code' => 100, 'error_subcode' => 33]])];
+    return [200, json_encode($anuncioMeta('Post Creamos páginas web', 'Similar', 'WSP Conversaciones'))];
+};
+$r = wabot_meta_anuncios_campanas(['33333333', '44444444'], $cfg);
+caso('uno borrado tira la tanda: los pide de a uno y el que existe entra', count($pedidos) === 3 && array_keys($r) == ['44444444'] && $r['44444444']['nombre'] === 'Post Creamos páginas web', json_encode($r));
+$pedidos = [];
+$r = wabot_meta_anuncios_campanas(['33333333', '44444444'], $cfg);
+caso('el borrado no se vuelve a pedir hasta el otro día', !$pedidos && count($r) === 1);
+$m = wabot_meta_campanas_leer(); $m['33333333']['no_encontrado'] = time() - 2 * 86400;
+file_put_contents($GLOBALS['WABOT_TEST_META_CAMPANAS_ARCHIVO'], json_encode($m));
+$r = wabot_meta_anuncios_campanas(['33333333'], $cfg);
+caso('al otro día sí', count($pedidos) === 2 && !$r);
+
+$pedidos = [];
+$contesta = function () { return [400, json_encode(['error' => ['message' => 'Error validating access token: Session has expired', 'code' => 190]])]; };
+$r = wabot_meta_anuncios_campanas(['55555555', '66666666', '11111111'], $cfg);
+caso('con el token vencido no insiste de a uno y devuelve lo que ya sabía', count($pedidos) === 1 && array_keys($r) == ['11111111'] && !isset(wabot_meta_campanas_leer()['55555555']));
+$pedidos = [];
+$r = wabot_meta_anuncios_campanas(['55555555', '11111111'], []);
+caso('sin token no pregunta y devuelve lo guardado', !$pedidos && array_keys($r) == ['11111111']);
 
 $borrar();
 todo_ok();

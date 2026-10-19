@@ -1051,6 +1051,11 @@ let anunciosError = "";
 let anunciosCargando = false;
 let anunciosRango = null;        // { desde, hasta } "YYYY-MM-DD"
 const anunciosAbiertos = new Set();
+/* Por campaña o por anuncio (Pablo, 19-oct: "¿de las campañas de ads, cuáles
+   hacen boceto? hasta ahora solo medimos clientes"). La campaña y el conjunto
+   de cada anuncio los trae el bot de Meta (meta.campanas); "Hicieron boceto"
+   es la etapa del bot "completaron el formulario" (o más lejos). */
+let anunciosAgrupar = "campana";
 
 function anunciosUltimosDias(dias) {
     const hoy = _diaDe(new Date());
@@ -1089,7 +1094,11 @@ function renderAnuncios() {
     const rapidos = [["7 días", anunciosUltimosDias(7)], ["30 días", anunciosUltimosDias(30)], ["90 días", anunciosUltimosDias(90)],
                      ["Desde el 24-ago", { desde: "2026-08-24", hasta: _diaDe(new Date()) }]];
     let html = `
-        <p class="muted">De qué anuncio vino cada persona (Meta manda el id del anuncio con el primer mensaje después del clic) y hasta dónde llegó. Cada una cuenta en la fecha del clic, y los porcentajes son sobre las que escribieron desde ese anuncio. "Pasaron a Cliente" es el mismo cruce que en Contactos y clientes. Tocá un anuncio para ver sus contactos.</p>
+        <p class="muted">De qué campaña y anuncio vino cada persona (Meta manda el id del anuncio con el primer mensaje después del clic) y hasta dónde llegó. Cada una cuenta en la fecha del clic, y los porcentajes son sobre las que escribieron desde ahí. "Hicieron boceto" son las que completaron el formulario de la demo (o llegaron más lejos). "Pasaron a Cliente" es el mismo cruce que en Contactos y clientes. Tocá una campaña para ver sus anuncios, o un anuncio para ver sus contactos.</p>
+        <div class="anu-rango">
+            <button type="button" class="seg-chip${anunciosAgrupar === "campana" ? " active" : ""}" data-anu-agrupar="campana">Por campaña</button>
+            <button type="button" class="seg-chip${anunciosAgrupar === "anuncio" ? " active" : ""}" data-anu-agrupar="anuncio">Por anuncio</button>
+        </div>
         <div class="anu-rango">
             <label class="muted">Desde <input type="date" data-anu-desde value="${r.desde}" max="${r.hasta}"></label>
             <label class="muted">Hasta <input type="date" data-anu-hasta value="${r.hasta}" min="${r.desde}"></label>
@@ -1115,40 +1124,96 @@ function renderAnuncios() {
             .sort((a, b) => b[1].gasto - a[1].gasto)
             .forEach(([id, m]) => filas.push({ id, titular: m.nombre || "Sin nombre", texto: "", imagen: "", etapas: {}, contactos: [], _tipo: "anuncio" }));
         if (d.organico?.etapas?.contactos) filas.push({ ...d.organico, _tipo: "organico" });
-        let clientesTotal = 0, clientesAnuncios = 0, contactosAnuncios = 0;
+        // De qué campaña y conjunto es cada anuncio (19-oct). Sin token de Meta no hay: queda por anuncio.
+        const campanas = meta.campanas && typeof meta.campanas === "object" && !Array.isArray(meta.campanas) ? meta.campanas : {};
+        const porCampana = anunciosAgrupar === "campana" && Object.keys(campanas).length > 0;
+        let clientesTotal = 0, clientesAnuncios = 0, contactosAnuncios = 0, bocetosAnuncios = 0;
         for (const f of filas) {
             f._clientes = (f.contactos || []).filter(k => (k._cliente = clienteDe(k)));
             clientesTotal += f._clientes.length;
-            if (f._tipo === "anuncio") { clientesAnuncios += f._clientes.length; contactosAnuncios += f.etapas.contactos || 0; }
+            if (f._tipo === "anuncio") { clientesAnuncios += f._clientes.length; contactosAnuncios += f.etapas.contactos || 0; bocetosAnuncios += f.etapas.completaron || 0; }
         }
         const pct = (n, base) => base ? `<span class="anu-pct">${Math.round(100 * n / base)}%</span>` : "";
         const celdas = (f, clientesN) => {
             const base = f.etapas.contactos || 0;
-            return etapas.map(([k], i) => `<td class="num">${f.etapas[k] || 0}${i ? pct(f.etapas[k] || 0, base) : ""}</td>`).join("")
+            return etapas.map(([k], i) => `<td class="num${k === "completaron" ? " anu-boceto" : ""}">${f.etapas[k] || 0}${i ? pct(f.etapas[k] || 0, base) : ""}</td>`).join("")
                 + `<td class="num anu-clientes">${clientesN}${pct(clientesN, base)}</td>`;
         };
-        const celdaGasto = (gastoSinImp, contactosN, clientesN) => {
+        const celdaGasto = (gastoSinImp, contactosN, bocetosN, clientesN) => {
             if (!hayGasto) return "";
             if (gastoSinImp === null) return `<td class="num"><span class="muted">—</span></td>`;
             const g = gastoSinImp * RECARGO_PUBLICIDAD;
             if (!g) return `<td class="num"><span class="muted">$ 0</span></td>`;
             return `<td class="num">${fmtMoney(g)}<span class="anu-pct">${contactosN ? fmtMoney(g / contactosN) + " c/contacto" : "nadie escribió"}</span>`
+                + `${contactosN ? `<span class="anu-pct anu-pct--boceto">${bocetosN ? fmtMoney(g / bocetosN) + " c/boceto" : "ningún boceto"}</span>` : ""}`
                 + `${clientesN ? `<span class="anu-pct">${fmtMoney(g / clientesN)} c/cliente</span>` : ""}</td>`;
         };
-        const gastoDeFila = (f) => f._tipo !== "anuncio" || f.id === "sin_id" ? null : Number(metaAnuncios[f.id]?.gasto) || 0;
-        const cabecera = `<tr><th>Anuncio</th>${hayGasto ? '<th class="num" title="Lo que cobró Meta en esas fechas, con impuestos (× 1,23)">Gasto</th>' : ""}${etapas.map(([, l]) => `<th class="num">${escapeHtml(l)}</th>`).join("")}<th class="num">Pasaron a Cliente</th></tr>`;
-        const cuerpo = filas.map(f => {
+        const gastoDeFila = (f) => f._tipo === "campana" ? f._gasto
+            : f._tipo !== "anuncio" || f.id === "sin_id" ? null : Number(metaAnuncios[f.id]?.gasto) || 0;
+        // Por campaña: las filas de cada anuncio se suman en la de su campaña; "Sin anuncio" queda igual.
+        let filasVista = filas;
+        if (porCampana) {
+            const grupos = new Map();
+            for (const f of filas) {
+                if (f._tipo !== "anuncio") continue;
+                const c = campanas[f.id];
+                const id = c ? "campana:" + c.campana_id : "campana:sin_datos";
+                if (!grupos.has(id)) grupos.set(id, { id, _tipo: "campana", titular: c?.campana || "", _sinDatos: !c, etapas: {}, contactos: [], _clientes: [], _anuncios: [], _gasto: null });
+                const g = grupos.get(id);
+                for (const [k, n] of Object.entries(f.etapas || {})) g.etapas[k] = (g.etapas[k] || 0) + (Number(n) || 0);
+                g.contactos.push(...(f.contactos || []));
+                g._clientes.push(...f._clientes);
+                g._anuncios.push(f);
+                const gasto = gastoDeFila(f);
+                if (gasto !== null) g._gasto = (g._gasto || 0) + gasto;
+            }
+            // De los anuncios sin campaña no se sabe el gasto: "—", no "$ 0".
+            for (const g of grupos.values()) if (g._sinDatos && !g._gasto) g._gasto = null;
+            filasVista = [...grupos.values()].sort((a, b) => a._sinDatos - b._sinDatos
+                || (b.etapas.contactos || 0) - (a.etapas.contactos || 0) || (b._gasto || 0) - (a._gasto || 0));
+            filasVista.push(...filas.filter(f => f._tipo === "organico"));
+        }
+        const imagenAnuncio = (src, clase = "anu-img") => src ? `<img class="${clase}" src="../wabot/${escapeHtml(src)}" alt="" loading="lazy">` : `<span class="${clase} anu-img--vacia" aria-hidden="true"></span>`;
+        // Cada anuncio de una campaña: con el nombre que tiene en Meta (el título de WhatsApp suele repetirse).
+        const anunciosDeCampana = (f) => f._anuncios.map(a => {
+            const c = campanas[a.id];
+            const base = a.etapas.contactos || 0;
+            const bocetos = a.etapas.completaron || 0;
+            const gasto = gastoDeFila(a);
+            const g = gasto === null ? null : gasto * RECARGO_PUBLICIDAD;
+            const nombre = c?.nombre || metaAnuncios[a.id]?.nombre || a.titular || (a.id === "sin_id" ? "Sin id de anuncio" : "id " + a.id);
+            return `<li>
+                ${imagenAnuncio(a.imagen, "anu-img anu-img--chica")}
+                <span><strong>${escapeHtml(nombre)}</strong>${a.variante ? ` <span class="anu-variante">${escapeHtml(a.variante)}</span>` : ""}${c?.conjunto ? ` <span class="muted">· conjunto ${escapeHtml(c.conjunto)}</span>` : ""}</span>
+                <span class="muted">${base} escribieron · <strong class="anu-boceto-txt">${bocetos} boceto${bocetos === 1 ? "" : "s"}</strong>${base ? ` (${Math.round(100 * bocetos / base)}%)` : ""} · ${a._clientes.length} cliente${a._clientes.length === 1 ? "" : "s"}${hayGasto && g ? ` · ${fmtMoney(g)}${bocetos ? ` (${fmtMoney(g / bocetos)} c/boceto)` : ""}` : ""}</span>
+                ${base ? `<button type="button" class="btn-ghost anu-chat" data-anu-ver-anuncio="${escapeHtml(a.id)}">Ver contactos</button>` : ""}
+            </li>`;
+        }).join("");
+        const cabecera = `<tr><th>${porCampana ? "Campaña" : "Anuncio"}</th>${hayGasto ? '<th class="num" title="Lo que cobró Meta en esas fechas, con impuestos (× 1,23)">Gasto</th>' : ""}${etapas.map(([k, l]) => k === "completaron"
+            ? `<th class="num anu-boceto" title="Completaron el formulario de la demo, o llegaron más lejos (demo entregada, pagaron)">${escapeHtml(l)}</th>`
+            : `<th class="num">${escapeHtml(l)}</th>`).join("")}<th class="num">Pasaron a Cliente</th></tr>`;
+        const cuerpo = filasVista.map(f => {
             const id = f._tipo === "organico" ? "organico" : f.id;
             const abierto = anunciosAbiertos.has(id);
+            const campanaDeAnuncio = campanas[f.id] ? [campanas[f.id].campana, campanas[f.id].conjunto].filter(Boolean).join(" › ") : "";
+            const conjuntos = f._tipo === "campana" ? [...new Set(f._anuncios.map(a => campanas[a.id]?.conjunto).filter(Boolean))] : [];
             const anuncio = f._tipo === "organico"
                 ? `<div class="anu-ad"><span class="anu-img anu-img--vacia" aria-hidden="true"></span><div><strong>Sin anuncio</strong><div class="anu-sub">Escribieron directo: el número, Instagram, la web</div></div></div>`
+                : f._tipo === "campana"
+                ? `<div class="anu-ad">
+                        ${imagenAnuncio(f._anuncios.find(a => a.imagen)?.imagen)}
+                        <div><strong>${f._sinDatos ? "Sin datos de la campaña" : escapeHtml(f.titular || "Campaña sin nombre")}</strong>
+                            <div class="anu-sub">${f._sinDatos ? "Clics sin id de anuncio o anuncios que Meta ya no encuentra"
+                                : `${f._anuncios.length} anuncio${f._anuncios.length === 1 ? "" : "s"}${conjuntos.length ? ` · ${conjuntos.length === 1 ? "conjunto" : "conjuntos"} ${conjuntos.map(escapeHtml).join(", ")}` : ""}`}</div>
+                        </div></div>`
                 : `<div class="anu-ad">
-                        ${f.imagen ? `<img class="anu-img" src="../wabot/${escapeHtml(f.imagen)}" alt="" loading="lazy">` : `<span class="anu-img anu-img--vacia" aria-hidden="true"></span>`}
+                        ${imagenAnuncio(f.imagen)}
                         <div><strong>${escapeHtml(f.titular || "Sin título")}</strong>${f.variante ? ` <span class="anu-variante">${escapeHtml(f.variante)}</span>` : ""}
                             <div class="anu-sub">${f.id === "sin_id" ? "Meta no mandó el id del anuncio" : "id " + escapeHtml(f.id)}${metaAnuncios[f.id]?.nombre && metaAnuncios[f.id].nombre !== f.titular ? " · en Meta: " + escapeHtml(metaAnuncios[f.id].nombre) : ""}</div>
+                            ${campanaDeAnuncio ? `<div class="anu-sub">Campaña ${escapeHtml(campanaDeAnuncio)}</div>` : ""}
                             ${f.texto ? `<div class="anu-sub" title="${escapeHtml(f.texto)}">${escapeHtml(f.texto.length > 110 ? f.texto.slice(0, 108) + "…" : f.texto)}</div>` : ""}
                         </div></div>`;
-            const contactos = (f.contactos || []).map(k => {
+            const contactos = f._tipo === "campana" ? anunciosDeCampana(f) : (f.contactos || []).map(k => {
                 const cli = k._cliente;
                 const mod = cli ? modalidadDe(cli) : "";
                 const paga = cli ? (mod === "mensual" ? _num(cli.montoMensual) : pagoUnicoDe(cli).cobrado) : 0;
@@ -1160,16 +1225,19 @@ function renderAnuncios() {
                     <button type="button" class="btn-ghost anu-chat" data-chat-tel="${escapeHtml(k.clave)}" data-chat-titulo="${escapeHtml(k.nombre || k.tel || k.clave)}">Ver chat</button>
                 </li>`;
             }).join("");
-            return `<tr class="anu-fila${abierto ? " abierta" : ""}" data-anu-id="${escapeHtml(id)}" tabindex="0" aria-expanded="${abierto}"><td>${anuncio}</td>${celdaGasto(gastoDeFila(f), f.etapas.contactos || 0, f._clientes.length)}${celdas(f, f._clientes.length)}</tr>
+            return `<tr class="anu-fila${abierto ? " abierta" : ""}" data-anu-id="${escapeHtml(id)}" tabindex="0" aria-expanded="${abierto}"><td>${anuncio}</td>${celdaGasto(gastoDeFila(f), f.etapas.contactos || 0, f.etapas.completaron || 0, f._clientes.length)}${celdas(f, f._clientes.length)}</tr>
                 <tr class="anu-detalle"${abierto ? "" : " hidden"}><td colspan="${etapas.length + 2 + (hayGasto ? 1 : 0)}"><ul class="anu-contactos">${contactos || '<li class="muted">Sin contactos.</li>'}</ul></td></tr>`;
         }).join("");
         // En el total, el gasto se reparte solo entre los que vinieron de un anuncio.
-        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdaGasto(Number(meta.total) || 0, contactosAnuncios, clientesAnuncios)}${celdas(d.total, clientesTotal)}</tr>` : "";
+        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdaGasto(Number(meta.total) || 0, contactosAnuncios, bocetosAnuncios, clientesAnuncios)}${celdas(d.total, clientesTotal)}</tr>` : "";
         if (meta.error) html += `<p class="muted">⚠ Gasto de Meta: ${escapeHtml(meta.error)}</p>`;
-        html += filas.length
+        if (anunciosAgrupar === "campana" && !porCampana && filas.some(f => f._tipo === "anuncio")) {
+            html += `<p class="muted">${meta.configurado === false ? "Para ver por campaña hace falta el token de Meta (panel del bot → Ajustes → Gasto en publicidad)." : "Meta todavía no dijo de qué campaña es cada anuncio."} Mientras tanto, va por anuncio.</p>`;
+        }
+        html += filasVista.length
             ? `<div class="table-wrapper"><table class="clients-table anu-tabla"><thead>${cabecera}</thead><tbody>${cuerpo}${total}</tbody></table></div>`
             : `<p class="muted">Nadie escribió en esas fechas.</p>`;
-        html += `<p class="muted anu-nota">Hay datos desde el 24-ago. Hasta el 25-sep el anuncio sale del registro del servidor: solo el id, sin título ni imagen (si el anuncio siguió activo después, toma el título de esas charlas). La imagen y el texto, desde el 9-oct. Los que escriben por Instagram cuentan como sin anuncio.</p>`;
+        html += `<p class="muted anu-nota">Hay datos desde el 24-ago. Hasta el 25-sep el anuncio sale del registro del servidor: solo el id, sin título ni imagen (si el anuncio siguió activo después, toma el título de esas charlas). La imagen y el texto, desde el 9-oct. Los que escriben por Instagram cuentan como sin anuncio. La campaña y el conjunto de cada anuncio los da Meta (también los de clics viejos); los clics sin id y los anuncios que Meta ya no encuentra van en "Sin datos de la campaña".</p>`;
         html += hayGasto
             ? `<p class="muted anu-nota">El gasto es lo que cobró Meta en esas fechas, con impuestos (× 1,23). El del total incluye anuncios que Meta ya no lista (borrados o archivados), y en el total el costo por contacto y por cliente es sobre los que vinieron de un anuncio. Los que llegan por Instagram no traen el anuncio: en un anuncio que también lleva a Instagram, el costo por contacto sale más alto de lo que es.</p>`
             : meta.configurado === false ? `<p class="muted anu-nota">Para ver cuánto gastó cada anuncio, cargá un token con ads_read en el panel del bot → Ajustes → Gasto en publicidad.</p>` : "";
@@ -1192,6 +1260,19 @@ function renderAnuncios() {
         anunciosRango = { desde, hasta };
         cargarAnuncios();
     }));
+    cont.querySelectorAll("[data-anu-agrupar]").forEach(b => b.addEventListener("click", () => {
+        anunciosAgrupar = b.dataset.anuAgrupar;
+        renderAnuncios();
+    }));
+    // Desde una campaña, "Ver contactos" de uno de sus anuncios: pasa a Por anuncio con ese abierto.
+    cont.querySelectorAll("[data-anu-ver-anuncio]").forEach(b => b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = b.dataset.anuVerAnuncio;
+        anunciosAgrupar = "anuncio";
+        anunciosAbiertos.add(id);
+        renderAnuncios();
+        cont.querySelector(`.anu-fila[data-anu-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "center" });
+    }));
     cont.querySelectorAll(".anu-fila").forEach(tr => {
         const alternar = () => {
             const id = tr.dataset.anuId;
@@ -1204,7 +1285,7 @@ function renderAnuncios() {
         tr.addEventListener("click", alternar);
         tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(); } });
     });
-    cont.querySelectorAll(".anu-chat").forEach(b => b.addEventListener("click", (e) => {
+    cont.querySelectorAll(".anu-chat[data-chat-tel]").forEach(b => b.addEventListener("click", (e) => {
         e.stopPropagation();
         abrirChatModal(b.dataset.chatTel, b.dataset.chatTitulo);
     }));

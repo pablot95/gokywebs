@@ -2576,6 +2576,10 @@ body.modal-open { overflow: hidden; }
 .anu-tabla td.num { white-space: nowrap; }
 .anu-pct { display: block; font-size: 11px; color: var(--text-muted); font-weight: 400; }
 .anu-tabla .anu-clientes { color: var(--accent); font-weight: 700; }
+/* Hicieron boceto: la etapa que se mira por campaña (19-oct). Azul claro: el --primary no se lee sobre el fondo oscuro. */
+.anu-tabla .anu-boceto { color: #60A5FA; font-weight: 700; }
+.anu-tabla .anu-pct--boceto, .anu-boceto-txt { color: #60A5FA; }
+.anu-img.anu-img--chica { width: 32px; height: 32px; border-radius: 6px; }
 .anu-fila { cursor: pointer; }
 .anu-fila:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .anu-fila.abierta td { background: rgba(37, 99, 235, 0.08); }

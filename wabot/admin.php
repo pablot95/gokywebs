@@ -145,6 +145,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     };
     // Lo que gastó cada anuncio en esas fechas, leído de Meta (meta-gasto.php, 13-oct).
     $metaJson = wabot_meta_gasto_anuncios(date('Y-m-d', $desdeJson), date('Y-m-d', $hastaJson), $cfg, !empty($_GET['forzar']));
+    // La campaña y el conjunto de cada anuncio, para ver por campaña (19-oct); también los de clics viejos.
+    $metaJson['campanas'] = (object)wabot_meta_anuncios_campanas(array_merge(array_keys($statsJson['anuncios']), array_keys($metaJson['anuncios'])), $cfg);
     $metaJson['anuncios'] = (object)$metaJson['anuncios'];
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['desde' => date('Y-m-d', $desdeJson), 'hasta' => date('Y-m-d', $hastaJson), 'etapas' => wabot_anuncios_etapas(),

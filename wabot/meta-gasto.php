@@ -57,6 +57,24 @@ function wabot_meta_gasto_anuncios_archivo() {
     return $GLOBALS['WABOT_TEST_META_GASTO_ANUNCIOS_ARCHIVO'] ?? (WABOT_DATA . '/meta-gasto-anuncios.json');
 }
 
+function wabot_meta_campanas_archivo() {
+    return $GLOBALS['WABOT_TEST_META_CAMPANAS_ARCHIVO'] ?? (WABOT_DATA . '/meta-anuncios-campanas.json');
+}
+
+/** Un pedido a la Graph API: [código HTTP, cuerpo]. Los tests contestan con un doble. */
+function wabot_meta_ads_pedir($url) {
+    if (isset($GLOBALS['WABOT_TEST_META_ADS']) && is_callable($GLOBALS['WABOT_TEST_META_ADS'])) {
+        return call_user_func($GLOBALS['WABOT_TEST_META_ADS'], $url);
+    }
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_CONNECTTIMEOUT => 8]);
+    $res = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    if ($res === false) $res = json_encode(['error' => ['message' => 'sin conexión con Meta (' . curl_errno($ch) . ')']]);
+    curl_close($ch);
+    return [$code, $res];
+}
+
 /**
  * Un GET a la API de Marketing que sigue las páginas. Devuelve
  * ['ok' => bool, 'filas' => [...], 'error' => texto para Pablo].
@@ -67,18 +85,10 @@ function wabot_meta_ads_get($ruta, array $params, $cfg) {
     $url = 'https://graph.facebook.com/' . WABOT_META_ADS_VERSION . '/' . $ruta . '?' . http_build_query($params);
     $filas = [];
     for ($pagina = 0; $url !== '' && $pagina < 20; $pagina++) {
-        if (isset($GLOBALS['WABOT_TEST_META_ADS']) && is_callable($GLOBALS['WABOT_TEST_META_ADS'])) {
-            [$code, $res] = call_user_func($GLOBALS['WABOT_TEST_META_ADS'], $url);
-        } elseif (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        if (!isset($GLOBALS['WABOT_TEST_META_ADS']) && !empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
             return ['ok' => false, 'filas' => [], 'error' => 'sin red (test)'];
-        } else {
-            $ch = curl_init($url);
-            curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_CONNECTTIMEOUT => 8]);
-            $res = curl_exec($ch);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if ($res === false) $res = json_encode(['error' => ['message' => 'sin conexión con Meta (' . curl_errno($ch) . ')']]);
-            curl_close($ch);
         }
+        [$code, $res] = wabot_meta_ads_pedir($url);
         $d = json_decode((string)$res, true);
         if ($code < 200 || $code >= 300 || !is_array($d) || !isset($d['data']) || !is_array($d['data'])) {
             $error = wabot_meta_ads_error_legible(is_array($d) ? ($d['error'] ?? []) : [], (int)$code);
@@ -89,6 +99,22 @@ function wabot_meta_ads_get($ruta, array $params, $cfg) {
         $url = (string)($d['paging']['next'] ?? '');
     }
     return ['ok' => true, 'filas' => $filas, 'error' => ''];
+}
+
+/**
+ * Un GET a la Graph API que devuelve un objeto, no una lista (un anuncio, o
+ * varios con ?ids=). Devuelve ['ok', 'datos', 'error', 'codigo' (el de Meta)].
+ */
+function wabot_meta_ads_objeto($ruta, array $params, $cfg) {
+    if (!isset($GLOBALS['WABOT_TEST_META_ADS']) && !empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        return ['ok' => false, 'datos' => [], 'error' => 'sin red (test)', 'codigo' => 0];
+    }
+    $params['access_token'] = wabot_meta_ads_token($cfg);
+    [$code, $res] = wabot_meta_ads_pedir('https://graph.facebook.com/' . WABOT_META_ADS_VERSION . '/' . $ruta . '?' . http_build_query($params));
+    $d = json_decode((string)$res, true);
+    if ($code >= 200 && $code < 300 && is_array($d) && !isset($d['error'])) return ['ok' => true, 'datos' => $d, 'error' => '', 'codigo' => 0];
+    $err = is_array($d) && is_array($d['error'] ?? null) ? $d['error'] : [];
+    return ['ok' => false, 'datos' => [], 'error' => wabot_meta_ads_error_legible($err, (int)$code), 'codigo' => (int)($err['code'] ?? 0)];
 }
 
 /** El error de Meta, dicho para Pablo: qué tocar para que vuelva a andar. */
@@ -200,7 +226,7 @@ function wabot_meta_gasto_anuncios($desde, $hasta, $cfg, $forzar = false) {
     }
 
     $r = wabot_meta_ads_get('act_' . $cuenta . '/insights', [
-        'fields' => 'ad_id,ad_name,spend', 'level' => 'ad', 'limit' => 500,
+        'fields' => 'ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,spend', 'level' => 'ad', 'limit' => 500,
         'time_range' => json_encode(['since' => $desde, 'until' => $hasta]),
     ], $cfg);
     if (!$r['ok']) {
@@ -209,12 +235,16 @@ function wabot_meta_gasto_anuncios($desde, $hasta, $cfg, $forzar = false) {
                          : array_merge($vacio, ['error' => $r['error']]);
     }
     $anuncios = [];
+    $campanas = [];
     foreach ($r['filas'] as $f) {
         $id = (string)($f['ad_id'] ?? '');
+        if ($id !== '' && trim((string)($f['campaign_id'] ?? '')) !== '') $campanas[$id] = wabot_meta_anuncio_campana_de($f);
         $gasto = round((float)($f['spend'] ?? 0), 2);
         if ($id === '' || $gasto <= 0) continue;
         $anuncios[$id] = ['nombre' => (string)($f['ad_name'] ?? ''), 'gasto' => round(($anuncios[$id]['gasto'] ?? 0) + $gasto, 2)];
     }
+    // De paso queda anotada la campaña de cada uno (Por campaña, 19-oct).
+    if ($campanas) wabot_meta_campanas_anotar($campanas);
     // El total de la cuenta en esas fechas sale del día por día.
     $total = 0;
     foreach (wabot_meta_gasto($cfg)['dias'] as $dia => $gasto) {
@@ -228,4 +258,94 @@ function wabot_meta_gasto_anuncios($desde, $hasta, $cfg, $forzar = false) {
     $cache = array_slice($cache, 0, 12, true);
     wabot_json_guardar_atomico(wabot_meta_gasto_anuncios_archivo(), json_encode($cache, JSON_UNESCAPED_UNICODE));
     return ['configurado' => true, 'anuncios' => $anuncios, 'total' => $total, 'error' => ''];
+}
+
+/* ── De qué campaña es cada anuncio (Pablo, 19-oct: «¿de las campañas de ads,
+   cuáles hacen boceto?»). El id que manda WhatsApp con el clic es el del
+   anuncio; la campaña y el conjunto se le preguntan a Meta y quedan en
+   data/meta-anuncios-campanas.json para siempre (un anuncio no se muda de
+   campaña), así que también sirven para los clics viejos. ── */
+
+/** Lo que se pide de cada anuncio cuando se pregunta por id. */
+define('WABOT_META_CAMPOS_ANUNCIO', 'name,adset{id,name},campaign{id,name}');
+
+/** De una fila de insights o de un anuncio pedido por id: nombre, conjunto y campaña. */
+function wabot_meta_anuncio_campana_de(array $d) {
+    return [
+        'nombre'      => (string)($d['ad_name'] ?? $d['name'] ?? ''),
+        'conjunto_id' => (string)($d['adset_id'] ?? $d['adset']['id'] ?? ''),
+        'conjunto'    => (string)($d['adset_name'] ?? $d['adset']['name'] ?? ''),
+        'campana_id'  => (string)($d['campaign_id'] ?? $d['campaign']['id'] ?? ''),
+        'campana'     => (string)($d['campaign_name'] ?? $d['campaign']['name'] ?? ''),
+    ];
+}
+
+function wabot_meta_campanas_leer() {
+    $m = json_decode((string)@file_get_contents(wabot_meta_campanas_archivo()), true);
+    return is_array($m) ? $m : [];
+}
+
+/** Suma (o corrige) anuncios al archivo: [id => wabot_meta_anuncio_campana_de()]. */
+function wabot_meta_campanas_anotar(array $nuevos) {
+    $mapa = wabot_meta_campanas_leer();
+    $cambio = false;
+    foreach ($nuevos as $id => $c) {
+        if (($mapa[(string)$id] ?? null) === $c) continue;
+        $mapa[(string)$id] = $c;
+        $cambio = true;
+    }
+    if ($cambio) wabot_json_guardar_atomico(wabot_meta_campanas_archivo(), json_encode($mapa, JSON_UNESCAPED_UNICODE));
+    return $mapa;
+}
+
+/** Los códigos de Meta que quieren decir «ese anuncio no está» (borrado, de otra cuenta): no frenan a los demás. */
+function wabot_meta_ads_no_existe($codigo) {
+    return in_array((int)$codigo, [100, 803], true);
+}
+
+/**
+ * La campaña y el conjunto de estos anuncios: [id => ['nombre', 'conjunto_id',
+ * 'conjunto', 'campana_id', 'campana']], solo de los que se conocen. Los que
+ * gastaron en las fechas pedidas ya los anotó wabot_meta_gasto_anuncios; el
+ * resto se pide por id, de a 50 en un pedido. Si Meta no encuentra uno, la
+ * tanda entera vuelve con error: entonces de a uno (hasta 30 por vez), y el que
+ * no está se anota para volver a probar recién al otro día.
+ */
+function wabot_meta_anuncios_campanas(array $ids, $cfg) {
+    $mapa = wabot_meta_campanas_leer();
+    $ids = array_values(array_unique(array_filter(array_map('strval', $ids), function ($id) { return preg_match('/^\d{5,25}$/', $id) === 1; })));
+    if (wabot_meta_ads_configurado($cfg)) {
+        $faltan = array_values(array_filter($ids, function ($id) use ($mapa) {
+            $m = $mapa[$id] ?? null;
+            return !is_array($m) || (($m['campana_id'] ?? '') === '' && time() - (int)($m['no_encontrado'] ?? 0) > 86400);
+        }));
+        $nuevos = [];
+        $sueltos = 0;
+        $anotar = function ($id, $datos) use (&$nuevos) {
+            $c = is_array($datos) ? wabot_meta_anuncio_campana_de($datos) : [];
+            $nuevos[$id] = ($c['campana_id'] ?? '') !== '' ? $c : ['no_encontrado' => time()];
+        };
+        foreach (array_chunk($faltan, 50) as $tanda) {
+            $r = wabot_meta_ads_objeto('', ['ids' => implode(',', $tanda), 'fields' => WABOT_META_CAMPOS_ANUNCIO], $cfg);
+            if ($r['ok']) {
+                foreach ($tanda as $id) $anotar($id, $r['datos'][$id] ?? null);
+                continue;
+            }
+            // Token vencido, sin permiso o límite de llamadas: se prueba en la próxima.
+            if (!wabot_meta_ads_no_existe($r['codigo'])) break;
+            foreach ($tanda as $id) {
+                if (++$sueltos > 30) break 2;
+                $u = wabot_meta_ads_objeto($id, ['fields' => WABOT_META_CAMPOS_ANUNCIO], $cfg);
+                if ($u['ok']) $anotar($id, $u['datos']);
+                elseif (wabot_meta_ads_no_existe($u['codigo'])) $anotar($id, null);
+                else break 2;
+            }
+        }
+        if ($nuevos) $mapa = wabot_meta_campanas_anotar($nuevos);
+    }
+    $out = [];
+    foreach ($ids as $id) {
+        if (is_array($mapa[$id] ?? null) && ($mapa[$id]['campana_id'] ?? '') !== '') $out[$id] = $mapa[$id];
+    }
+    return $out;
 }

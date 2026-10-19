@@ -23,7 +23,7 @@ function wabot_anuncios_etapas() {
         'respondieron' => 'Contaron qué hacen',
         'precio'      => 'Recibieron el precio',
         'formulario'  => 'Aceptaron la demo',
-        'completaron' => 'Completaron el formulario',
+        'completaron' => 'Hicieron boceto',   // completaron el formulario de la demo (19-oct: «¿cuáles hacen boceto?»)
         'demo'        => 'Demo entregada',
         'clientes'    => 'Pagaron / clientes',
     ];
