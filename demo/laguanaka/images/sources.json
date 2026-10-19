@@ -1,0 +1,17 @@
+{
+  "base": {
+    "origen": "Zip de ChatGPT La_Guanaka_5cqU13O6fbHlIqE8ci0n.zip (Descargas, 19-oct-2026)",
+    "archivos": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup_720x480.png"],
+    "derivados": ["perchero.webp", "campera.webp", "tejidos.webp", "bijouterie.webp", "marroquineria.webp", "ojotas.webp", "zuecos.webp", "gorras.webp", "anteojos.webp", "p-campera-jean.webp", "p-sweater-guarda.webp", "p-jean-recto.webp", "p-argollas.webp", "p-aros-piedra.webp", "p-pulseras.webp", "p-cartera.webp", "p-billetera.webp", "p-ojotas.webp", "p-zuecos.webp", "p-gorra.webp", "p-anteojos-sol.webp", "p-anteojos-lectura.webp"]
+  },
+  "extra": [
+    { "archivo": "p-vestido-floral.webp", "fuente": "Pexels", "id": 31683080, "url": "https://www.pexels.com/photo/31683080/", "slot": "producto: vestido floral (ropa circular)" },
+    { "archivo": "p-camisaco.webp", "fuente": "Pexels", "id": 7671168, "url": "https://www.pexels.com/photo/7671168/", "slot": "producto: camisaco de gabardina (ropa circular)" },
+    { "archivo": "p-cardigan.webp", "fuente": "Pexels", "id": 9323857, "url": "https://www.pexels.com/photo/9323857/", "slot": "producto: cárdigan trenzado (ropa circular)" },
+    { "archivo": "p-sweater-rayado.webp", "fuente": "Pexels", "id": 45982, "url": "https://www.pexels.com/photo/45982/", "slot": "producto: sweater rayado (ropa circular)" },
+    { "archivo": "p-bombachas-pastel.webp", "fuente": "Pexels", "id": 11010392, "url": "https://www.pexels.com/photo/11010392/", "slot": "producto: bombachas pack x3 (ropa interior) + categoría ropa-interior.webp" },
+    { "archivo": "ropa-interior.webp", "fuente": "Pexels", "id": 11010392, "url": "https://www.pexels.com/photo/11010392/", "slot": "categoría Ropa interior" },
+    { "archivo": "p-bombachas-lunares.webp", "fuente": "Pexels", "id": 11010313, "url": "https://www.pexels.com/photo/11010313/", "slot": "producto: bombachas pack x3 (ropa interior)" },
+    { "archivo": "p-medias-lisas.webp", "fuente": "Pexels", "id": 9594141, "url": "https://www.pexels.com/photo/9594141/", "slot": "producto: medias pack x3 (ropa interior)" }
+  ]
+}
