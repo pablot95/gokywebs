@@ -1,0 +1,37 @@
+{
+  "base": {
+    "origen": "Zip MultirubroRufi_KVvp6C2QgusCkl16beje.zip (Descargas, 19-oct-2026), originales 01_imagen.png..09_imagen.png y 10_mockup_web.png en esta carpeta",
+    "derivadas": {
+      "hero-tv.webp": "02_imagen.png (16:9)",
+      "p-tv.webp": "02_imagen.png llevada a 1:1 extendiendo el fondo gris arriba y abajo",
+      "vertical-cocina.webp": "01_imagen.png (9:16), chapita de marca de la campana borrada",
+      "p-cocina.webp": "01_imagen.png, recorte 1:1 de la cocina",
+      "p-celular.webp": "03_imagen.png",
+      "p-microondas.webp": "04_imagen.png",
+      "p-pava.webp": "05_imagen.png",
+      "p-licuadora.webp": "06_imagen.png",
+      "p-ventilador.webp": "07_imagen.png",
+      "p-tostadora.webp": "08_imagen.png",
+      "p-ollas.webp": "09_imagen.png"
+    }
+  },
+  "extra": [
+    { "archivo": "p-batidora.webp", "fuente": "pexels", "id": 39181493, "url": "https://www.pexels.com/photo/39181493/", "query": "hand mixer", "slot": "producto batidora-mano" },
+    { "archivo": "p-licuadora-portatil.webp", "fuente": "pexels", "id": 27861734, "url": "https://www.pexels.com/photo/27861734/", "query": "portable blender", "slot": "producto licuadora-portatil" },
+    { "archivo": "p-plancha.webp", "fuente": "pexels", "id": 28576624, "url": "https://www.pexels.com/photo/28576624/", "query": "steam iron", "slot": "producto plancha-vapor" },
+    { "archivo": "p-auriculares.webp", "fuente": "pexels", "id": 17810093, "url": "https://www.pexels.com/photo/17810093/", "query": "wireless earbuds", "slot": "producto auriculares-bt" },
+    { "archivo": "p-cargador.webp", "fuente": "pexels", "id": 36012993, "url": "https://www.pexels.com/photo/36012993/", "query": "phone charger cable", "slot": "producto cargador-usb" },
+    { "archivo": "p-juego-agua.webp", "fuente": "pexels", "id": 13291108, "url": "https://www.pexels.com/photo/13291108/", "query": "glass pitcher set", "slot": "producto juego-agua" },
+    { "archivo": "p-vasos.webp", "fuente": "pexels", "id": 11276658, "url": "https://www.pexels.com/photo/11276658/", "query": "drinking glasses", "slot": "producto vasos-tallados" },
+    { "archivo": "p-bowls.webp", "fuente": "pexels", "id": 17888788, "url": "https://www.pexels.com/photo/17888788/", "query": "ceramic bowls", "slot": "producto bowls-flores" },
+    { "archivo": "p-vajilla.webp", "fuente": "pexels", "id": 18977895, "url": "https://www.pexels.com/photo/18977895/", "query": "white plates stack", "slot": "producto vajilla-blanca" },
+    { "archivo": "p-utensilios.webp", "fuente": "pexels", "id": 38667630, "url": "https://www.pexels.com/photo/38667630/", "query": "kitchen utensils set", "slot": "producto utensilios-bambu + tarjeta Bazar" },
+    { "archivo": "p-frascos.webp", "fuente": "pexels", "id": 4856504, "url": "https://www.pexels.com/photo/4856504/", "query": "storage jars glass", "slot": "producto frascos-hermeticos" },
+    { "archivo": "p-toallones.webp", "fuente": "pexels", "id": 17428224, "url": "https://www.pexels.com/photo/17428224/", "query": "bath towels", "slot": "producto toallones-algodon" },
+    { "archivo": "p-mantel.webp", "fuente": "pexels", "id": 33737108, "url": "https://www.pexels.com/photo/33737108/", "query": "tablecloth kitchen", "slot": "producto mantel-antimanchas" },
+    { "archivo": "p-termo.webp", "fuente": "pexels", "id": 29307238, "url": "https://www.pexels.com/photo/29307238/", "query": "thermos flask", "slot": "producto termo-acero" },
+    { "archivo": "p-soporte-tv.webp", "fuente": "pexels", "id": 6020432, "url": "https://www.pexels.com/photo/6020432/", "query": "tv wall mount", "slot": "producto soporte-tv + tarjeta Televisores" },
+    { "archivo": "p-control.webp", "fuente": "pexels", "id": 6159686, "url": "https://www.pexels.com/photo/6159686/", "query": "universal remote", "slot": "producto control-universal" }
+  ],
+  "descartadas": "16703772 (auriculares con logo JBL), 12021852 (parlante Sony), 29617989 (parlante Bose), 31748137 (parlante Marshall), 30946793 (pava con marca), 10104285 / 12359130 / 1670768 (marcas Aukey y Apple)"
+}
