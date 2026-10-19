@@ -1,0 +1,28 @@
+{
+  "base": {
+    "Sarmiento_woman_01.png": "Pablo (zip de ChatGPT) — vestido midi de lino en maniquí (9:16) → hero-vestido.webp, p-vestido-lino.webp",
+    "Sarmiento_woman_02.png": "Pablo — blazer crudo en perchero dorado (16:9) → hero-blazer.webp, p-blazer-crudo.webp",
+    "Sarmiento_woman_03.png": "Pablo — blusa blanca con calados → p-blusa-bordada.webp",
+    "Sarmiento_woman_04.png": "Pablo — jean recto celeste → p-jean-recto.webp",
+    "Sarmiento_woman_05.png": "Pablo — cárdigan verde salvia → p-cardigan-verde.webp",
+    "Sarmiento_woman_06.png": "Pablo — pollera de satén negra → p-pollera-saten.webp",
+    "Sarmiento_woman_07.png": "Pablo — cartera bandolera suela → p-cartera-suela.webp",
+    "Sarmiento_woman_08.png": "Pablo — aros argolla dorados → p-aros-argolla.webp",
+    "Sarmiento_woman_09.png": "Pablo — sweater terracota doblado → p-sweater-teja.webp",
+    "Sarmiento_woman_10.png": "Pablo — mock up de referencia (no se publica en la web)"
+  },
+  "extra": [
+    { "archivo": "p-vestido-floral.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/36213224/", "slot": "producto: Vestido lencero estampado" },
+    { "archivo": "p-remera-blanca.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/11671964/", "slot": "producto: Remera básica de algodón" },
+    { "archivo": "p-camisa-lino.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/22441297/", "slot": "producto: Camisa de lino cuello mao" },
+    { "archivo": "p-trench-beige.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/5424917/", "slot": "producto: Trench con cinto" },
+    { "archivo": "p-chatitas-suela.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/37853534/", "slot": "producto: Chatitas de cuero con elástico" },
+    { "archivo": "p-panuelo-seda.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/36455711/", "slot": "producto: Pañuelo de seda estampado" },
+    { "archivo": "p-tote-crudo.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/27100518/", "slot": "producto: Tote de cuero ecológico" },
+    { "archivo": "p-aros-perla.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/36823005/", "slot": "producto: Aros argollita con perla" },
+    { "archivo": "p-vestido-saten.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/35538618/", "slot": "producto: Vestido lencero de satén" },
+    { "archivo": "p-anteojos.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/10220086/", "slot": "producto: Anteojos de sol redondos con cadena" },
+    { "archivo": "p-jean-mom.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/1082528/", "slot": "producto: Jean mom en dos lavados" },
+    { "archivo": "p-musculosa-punto.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/9594418/", "slot": "producto: Musculosa de punto con botones" }
+  ]
+}
