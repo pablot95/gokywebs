@@ -61,6 +61,7 @@ const ERR_REPOS = [
     'pulidosreyes.com.ar'              => 'pablot95/pulidosreyes',
     'mrconstrucciones.com.ar'          => 'pablot95/mrconstrucciones',
     'carolinalucero.com.ar'          => 'pablot95/carolinalucero',
+    'electricistarobertotorrano.com.ar' => 'pablot95/electricistarobertotorrano',
     'crematoriosanfrancisco.com.ar'    => 'pablot95/crematoriosanfrancisco',
     'cuidarmasintegrarsalud.com.ar'    => 'pablot95/cuidarmasintegrarsalud',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
