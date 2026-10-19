@@ -1,0 +1,26 @@
+{
+  "origen": "Zip de imágenes de ChatGPT recibido por la demo automática el 18-oct-2026 (01-09 de contenido + 10_mockup_web.png de referencia). No se bajaron fotos de bancos.",
+  "archivos": {
+    "hero-surtido.webp": "02_imagen.png (16:9) entera",
+    "vertical-bases.webp": "01_imagen.png (9:16) entera",
+    "p-plato-dorado.webp": "03_imagen.png",
+    "p-bases-gruesas.webp": "recorte 1:1 de 01_imagen.png (0,470)-(941,1411)",
+    "p-plato-festoneado.webp": "recorte de 02_imagen.png (790,421)-(1310,941), 520 px",
+    "p-plato-plateado.webp": "recorte de 02_imagen.png (1338,607)-(1672,941), 334 px",
+    "p-bandeja-plateada.webp": "04_imagen.png",
+    "p-bandeja-dorada.webp": "06_imagen.png",
+    "p-caja-visor.webp": "05_imagen.png",
+    "p-caja-tarta.webp": "recorte de 07_imagen.png (600,40)-(1254,694)",
+    "p-caja-lisa.webp": "recorte de 07_imagen.png (20,60)-(600,640)",
+    "p-caja-cupcakes.webp": "recorte de 07_imagen.png (100,424)-(930,1254)",
+    "p-caja-macarons.webp": "recorte de 07_imagen.png (774,400)-(1254,880)",
+    "cajas-surtido.webp": "07_imagen.png entera",
+    "p-caja-rebatible.webp": "recorte de 02_imagen.png (70,10)-(670,610)",
+    "p-fuente-rectangular.webp": "recorte de 08_imagen.png (0,60)-(800,860)",
+    "p-fuente-individual.webp": "recorte de 08_imagen.png (790,520)-(1240,970)",
+    "p-fuente-redonda.webp": "recorte de 08_imagen.png (580,620)-(1180,1220)",
+    "fuentes-surtido.webp": "08_imagen.png entera",
+    "p-fuente-tapa-plastico.webp": "09_imagen.png",
+    "p-fuente-domo.webp": "recorte de 02_imagen.png (1190,150)-(1650,610)"
+  }
+}
