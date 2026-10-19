@@ -1,0 +1,40 @@
+{
+  "base": {
+    "origen": "Zip REVESTIMIENTOS_NICK_Ylk6U5KLriIc7u4TEwJl.zip (imágenes del pedido)",
+    "archivos": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup.png"]
+  },
+  "derivados": {
+    "hero-showroom.webp": "02_imagen.png",
+    "hero-showroom-sm.webp": "02_imagen.png",
+    "placa-crema.webp": "01_imagen.png",
+    "placa-crema-sm.webp": "01_imagen.png",
+    "p-calacatta.webp": "02_imagen.png (recorte de la placa del frente)",
+    "p-crema.webp": "01_imagen.png (recorte de la superficie de la placa)",
+    "p-travertino.webp": "03_imagen.png",
+    "p-piedra.webp": "04_imagen.png",
+    "p-venecitas.webp": "05_imagen.png",
+    "p-ceramica.webp": "06_imagen.png",
+    "p-gris.webp": "07_imagen.png",
+    "p-madera.webp": "08_imagen.png",
+    "p-verde.webp": "09_imagen.png"
+  },
+  "extra": [
+    {
+      "archivo": "colocacion.webp",
+      "tambien": "colocacion-sm.webp",
+      "fuente": "Pexels",
+      "id": 11806490,
+      "url": "https://www.pexels.com/photo/11806490/",
+      "descripcion": "Mano con guante colocando porcelanato con niveladores sobre adhesivo",
+      "slot": "Bloque de colocación"
+    },
+    {
+      "archivo": "p-liquido.webp",
+      "fuente": "Pexels",
+      "id": 36230779,
+      "url": "https://www.pexels.com/photo/36230779/",
+      "descripcion": "Piso continuo de resina con brillo (recorte cuadrado del piso)",
+      "slot": "Producto porcelanato líquido y su categoría"
+    }
+  ]
+}
