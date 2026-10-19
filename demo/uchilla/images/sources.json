@@ -1,0 +1,22 @@
+{
+  "base": {
+    "Uchilla_01.png": "Pablo (zip de ChatGPT) — maniquí con camisa de lino y pantalón sastrero (9:16) → maniqui.webp, p-camisa-lino.webp, p-pantalon-sastrero.webp",
+    "Uchilla_02.png": "Pablo — perchero con blusas, camisas y jeans (16:9) → perchero.webp, perchero-800.webp, p-blusas.webp, p-camisas-hombre.webp, p-jeans-hombre.webp",
+    "Uchilla_03.png": "Pablo — cárdigan trenzado → p-cardigan.webp",
+    "Uchilla_04.png": "Pablo — camisa Oxford celeste → p-camisa-celeste.webp",
+    "Uchilla_05.png": "Pablo — jean recto → p-jean-dama.webp",
+    "Uchilla_06.png": "Pablo — pantalón chino → p-chino.webp",
+    "Uchilla_07.png": "Pablo — conjunto infantil → p-conjunto.webp, p-short.webp",
+    "Uchilla_08.png": "Pablo — zapatillas blancas → p-zapatillas.webp",
+    "Uchilla_09.png": "Pablo — blanquería → blanqueria.webp, p-sabanas.webp, p-toallones.webp, p-almohadas.webp",
+    "Uchilla_10.png": "Pablo — mock up de referencia (no se publica en la web)"
+  },
+  "extra": [
+    { "archivo": "p-vestido.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/9788969/", "slot": "producto: Vestido de gasa con volado" },
+    { "archivo": "p-chatitas.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/5168531/", "slot": "producto: Chatitas con moño" },
+    { "archivo": "p-sandalias.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/36581188/", "slot": "producto: Sandalias de cuero con taco bajo" },
+    { "archivo": "p-enterito.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/29015875/", "slot": "producto: Enterito de algodón con osito" },
+    { "archivo": "p-manta.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/10321569/", "slot": "producto: Manta tejida de chenille" },
+    { "archivo": "p-acolchado.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/763148/", "slot": "producto: Acolchado infantil estampado" }
+  ]
+}
