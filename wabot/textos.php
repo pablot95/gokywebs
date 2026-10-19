@@ -277,6 +277,8 @@ function wabot_textos_default() {
         'cupones' => 'Sí, desde tu panel creás cupones de descuento, para toda la tienda o para productos puntuales.',
         'cobros_tienda' => 'Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.',
         'turnos' => 'Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.',
+        // "Sería para turnos señado?" (Pablo, 19-oct, a una masajista): la seña va en la web con reservas, que sale lo mismo que una tienda.
+        'turnos_sena' => 'Sí. En esa opción la persona elige día y horario desde la web y deja una seña para confirmar el turno. Incluye el sistema de turnos, calendario, panel para administrar horarios y reservas, y Mercado Pago para cobrar la seña desde la web.',
         'usuarios' => 'Sí, está incluido: la web puede tener usuarios, así tus clientes se registran y entran con su cuenta. No se paga aparte.',
         'estadisticas' => 'Sí: la tienda y la plataforma de cursos traen estadísticas de visitas y ventas en el panel. En el sitio profesional y la inmobiliaria te conectamos Google Analytics.',
         'estadisticas_tienda' => 'Sí, tu panel trae estadísticas: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.',

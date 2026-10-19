@@ -715,6 +715,46 @@ $r = turno('Directamente si', $c, $cfg);
 caso('"Directamente si" a la pregunta de los turnos → se cotiza con reservas (planes con panel + oferta), no se repregunta',
     count($r) === 2 && $r[0] === 'Perfecto, entonces p' . mb_substr(planes('panel', '$190.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// 19-oct, una masajista: "Ambas opciones son buenas" se llevó solo la informativa, y "Sería para turnos señado?" quedó para Pablo,
+// que le pasó el plan de la tienda ($30.000 / $190.000) con la seña por Mercado Pago incluida.
+foreach (['Ambas opciones son buenas' => true, 'Las dos' => true, 'ambas cosas' => true, 'Los 2 me sirven' => true,
+          'Solo WhatsApp' => false, 'Por WhatsApp' => false, 'Las dos, pero sin reservas' => false, 'Me da lo mismo' => false] as $m => $esperado) {
+    caso("¿elige las dos opciones? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_elige_las_dos($m) === $esperado);
+}
+function cv_masajista() {
+    $c = cv('5491100009007TEST');
+    wabot_conv_transcript($c, 'cliente', 'Soy masajista');
+    wabot_conv_transcript($c, 'bot', "Podemos armarte una web para mostrar los masajes que ofrecés, tus horarios y el contacto directo\n\nQuerés que la gente te pida turno por WhatsApp o que pueda reservar día y horario desde la página?");
+    return $c;
+}
+$c = cv_masajista();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
+$r = turno('Ambas opciones son buenas', $c, $cfg);
+caso('"Ambas opciones son buenas" a la pregunta de los turnos → los dos precios (sin y con reservas = el de la tienda), sin oferta todavía',
+    count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && $r[1] === 'Sin reservas p' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
+    && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
+$r = turno('Con reservas, sería para turnos señado?', $c, $cfg);
+caso('y si elige con reservas preguntando por la seña → la seña (incluida), el plan con panel congelado y la oferta, sin repetir los montos',
+    count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && mb_stripos($r[1], 'demo gratis') !== false && strpos(implode(' ', $r), '$190.000') === false
+    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Ya cotizada la informativa con la demo ofrecida: pide el precio con reservas y pregunta por la seña → se lo pasa (no lo deriva ni pregunta si lo quiere).
+$c = cv_masajista();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
+turno('Por WhatsApp', $c, $cfg);
+$antesOferta = (int)($c['comercial_oferta_ts'] ?? 0);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['En ese caso'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
+$r = turno("Si también\nSería para turnos señado?", $c, $cfg);
+caso('informativa ya cotizada + "Sería para turnos señado?" → la seña y "En ese caso podés elegir…" con el plan de la tienda, sin volver a ofrecer la demo',
+    $antesOferta > 0 && count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && $r[1] === 'En ese caso p' . mb_substr(planes('panel', '$190.000', '$30.000'), 1)
+    && !in_array(OFERTA, $r, true) && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['precio_cotizado'] ?? '') === '$190.000'
+    && !empty($c['landing_con_panel']) && empty($c['comercial_pausa']) && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('la seña de los turnos es una respuesta oficial (corta) y las instrucciones dicen que las reservas salen lo mismo que una tienda',
+    in_array('turnos_sena', wabot_comercial_info_claves($cfg), true) && mb_strlen((string)$cfg['info']['turnos_sena']) <= 260
+    && mb_stripos($ins, 'sale lo mismo que una tienda') !== false && mb_stripos($ins, 'turnos señados') !== false
+    && mb_stripos(wabot_comercial_info($cfg), 'salen lo mismo que una tienda') !== false);
+
 // Lo que salió de los chats de Pablo del 9-oct.
 foreach (['medios_pago_tienda' => 'billetera virtual', 'mp_nombre_negocio' => 'nombre del negocio'] as $k => $frase) {
     caso("respuesta oficial nueva $k (texto de Pablo), corta y ofrecida al modelo", mb_stripos((string)($cfg['info'][$k] ?? ''), $frase) !== false

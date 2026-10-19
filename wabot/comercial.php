@@ -308,7 +308,7 @@ function wabot_comercial_info($cfg) {
     $l[] = "\nSOLUCIONES Y PLANES (los montos los pone el sistema; vos nunca los escribís):";
     $l[] = '- informativa → plan "informativa" (el más económico). Incluye el desarrollo completo de la web, adaptada para celular, preparada para Google, un cambio por mes (lo hacemos nosotros), hosting, dominio, actualizaciones y soporte técnico. NO tiene panel: el cliente no edita nada solo.';
     $l[] = '- informativa_panel → plan "con panel": la misma web informativa, pero con panel para que el cliente cambie él mismo textos, fotos y servicios. Corresponde si dice que quiere manejar o actualizar el contenido por su cuenta.';
-    $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas (en la propuesta, solo lo que el cliente pidió). Las reservas de turnos online son siempre del plan con panel.';
+    $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas, con calendario, horarios y, si la quiere, la seña por Mercado Pago para confirmar el turno (en la propuesta, solo lo que el cliente pidió). Las reservas de turnos online, con o sin seña, son siempre del plan con panel: salen lo mismo que una tienda.';
     $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: el sistema usa el plan internacional, con sus montos. Una web que solo se ve desde otros países sin cobrar no es internacional.';
     $l[] = '- Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.';
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
@@ -1000,6 +1000,22 @@ function wabot_comercial_es_pregunta_turnos($texto) {
         && (bool)preg_match('/\b(whatsapp|wsp|wpp|consultas?|contact\w*|escrib\w*|mostrar)\b/u', $t);
 }
 
+/** ¿Lo último que le mandamos (sin contar al cliente) es la pregunta de los turnos? */
+function wabot_comercial_ultimo_es_pregunta_turnos($conv) {
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        $q = (string)($fila['q'] ?? '');
+        if ($q === 'cliente' || $q === 'sistema') continue;
+        return wabot_comercial_es_pregunta_turnos((string)($fila['t'] ?? ''));
+    }
+    return false;
+}
+
+/** ¿Elige las dos opciones ("ambas opciones son buenas", "las dos")? Pedir solo WhatsApp o "sin reservas" no. */
+function wabot_comercial_elige_las_dos($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    return (bool)preg_match('/\b(ambas|ambos|las dos|los dos|las 2|los 2)\b/u', $t) && !preg_match('/\b(sin reserv\w*|solo|solamente|nada mas)\b/u', $t);
+}
+
 /** ¿El cliente contesta (o despeja) esa pregunta? Ante la duda, sí: lo decide el modelo. */
 function wabot_comercial_contesta_turnos($texto) {
     $t = wabot_normalizar_frase((string)$texto);
@@ -1222,6 +1238,18 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $d['mensajes'] = $pregunta !== '' ? [$pregunta] : [];
         $d['info_claves'] = array_values(array_diff($d['info_claves'], $sinMontosTurnos));
         $ajustes[] = 'turnos_pendiente';
+    }
+    /* "Ambas opciones son buenas" a "por WhatsApp o reservar desde la página?"
+     * (19-oct, una masajista): el modelo lo leyó como "le da lo mismo" y le pasó
+     * solo la informativa, y el precio con reservas (el de la tienda) se lo tuvo
+     * que pasar Pablo. Con "las dos" van los dos precios y elige. */
+    if (!$yaCotizado && $d['accion'] === 'cotizar' && empty($d['dos_planes']) && in_array($sol, ['informativa', 'reservas'], true)
+        && wabot_comercial_elige_las_dos($texto) && wabot_comercial_ultimo_es_pregunta_turnos($conv)) {
+        $d['solucion'] = $sol = 'informativa';
+        $d['dos_planes'] = true;
+        $d['mensajes'] = [];
+        $d['info_claves'] = array_values(array_diff($d['info_claves'], $sinMontosTurnos));
+        $ajustes[] = 'turnos_las_dos';
     }
     /* Después de los dos precios (sin reservas / con reservas), lo que elige se
      * cotiza: así sale la oferta de la demo, y si eligió reservas, el plan con
@@ -1544,15 +1572,20 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             $planes = wabot_comercial_planes_texto($sol, $nueva, $cfg, $d['pago_unico'] || !empty($c['quiere_web_propia']));
             /* La web ya se la describimos (al preguntarle por los turnos) y la
              * propuesta es "Perfecto, entonces": va pegada a los planes, como
-             * Pablo ("Perfecto, entonces podés elegir entre dos planes:"). */
-            if ($propuesta !== '' && $planes !== '' && wabot_comercial_es_confirmacion_corta($propuesta)) {
+             * Pablo ("Perfecto, entonces podés elegir entre dos planes:"). Al pasar
+             * de la informativa a reservas, "En ese caso" (Pablo, 19-oct). */
+            if ($propuesta !== '' && $planes !== '' && (wabot_comercial_es_confirmacion_corta($propuesta)
+                    || ($cot && preg_match('/^en ese caso$/u', wabot_normalizar_frase($propuesta))))) {
                 $planes = wabot_comercial_pegar_confirmacion($propuesta, $planes);
             } elseif ($propuesta !== '') {
                 $msgs[] = ['t' => $propuesta, 'efecto' => 'propuesta'];
             }
             if ($planes !== '') $msgs[] = ['t' => $planes, 'efecto' => 'planes'];
+            /* Cambió de solución con la demo ya ofrecida (de la informativa a
+             * reservas, 19-oct): los planes nuevos sin volver a ofrecerla, como
+             * Pablo; el revisor lo frenaba por repetido y la charla se callaba. */
             $oferta = trim((string)($cfg['comercial']['oferta_demo'] ?? ''));
-            if ($oferta !== '' && $planes !== '') $msgs[] = ['t' => $oferta, 'efecto' => 'oferta'];
+            if ($oferta !== '' && $planes !== '' && !($cot && wabot_comercial_oferta_hecha($c, $cfg))) $msgs[] = ['t' => $oferta, 'efecto' => 'oferta'];
             break;
 
         case 'formulario':

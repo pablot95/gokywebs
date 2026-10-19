@@ -733,6 +733,12 @@ return [
         '¿Algún videíto también se puede colgar en esas páginas? Supongo que sí, ¿no?',
         'se pueden subir videos?',
     ],
+    // Una masajista, 19-oct (lo contestó Pablo: va con reservas, el plan de la tienda).
+    'turnos_sena' => [
+        'Sería para turnos señado?',
+        'se puede cobrar una seña para reservar el turno?',
+        'los clientes pueden dejar una seña por mercado pago?',
+    ],
     'horarios_entrega' => [
         'y la idea de horarios de entrega es mejor si se puede poner 3 opciones',
         'el cliente puede elegir el horario de entrega?',
