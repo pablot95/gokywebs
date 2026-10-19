@@ -1,0 +1,29 @@
+{
+  "base": {
+    "Mini_jardines_01.png": "Pablo (zip de ChatGPT) — columna de madera recuperada con suculentas (9:16) → hero-torre.webp, p-columna-madera.webp, m-madera.webp",
+    "Mini_jardines_02.png": "Pablo — cuenco esmaltado con casita de piedra (16:9) → hero-casita.webp, og-minijardines.webp, p-casita-piedra.webp, m-ceramica.webp",
+    "Mini_jardines_03.png": "Pablo — terrario cubo con fitonia → p-terrario-cubo.webp, m-vidrio.webp",
+    "Mini_jardines_04.png": "Pablo — cactus en cuenco de terracota → p-cactus-terracota.webp, m-terracota.webp",
+    "Mini_jardines_05.png": "Pablo — cajón de madera con helechos y puente → p-cajon-helechos.webp, amb-domicilio.webp",
+    "Mini_jardines_06.png": "Pablo — suculentas en taza de loza → p-taza-suculentas.webp, amb-taza.webp, m-loza.webp",
+    "Mini_jardines_07.png": "Pablo — árbol de jade en cuenco de cemento → p-jade-cemento.webp, m-cemento.webp",
+    "Mini_jardines_08.png": "Pablo — follaje en cuenco blanco → p-follaje-ceramica.webp, amb-interior.webp",
+    "Mini_jardines_09.png": "Pablo — jardín alpino en batea de piedra → p-alpino-piedra.webp, amb-exterior.webp, m-piedra.webp",
+    "Mini_jardines_10.png": "Pablo — mock up de referencia (no se publica en la web)"
+  },
+  "extra": [
+    { "archivo": "p-botellon-fitonia.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/1400375/", "slot": "producto: Terrario botellón con fitonia roja" },
+    { "archivo": "p-terrario-orquidea.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/1542937/", "slot": "producto: Terrario con orquídea mini (vendido)" },
+    { "archivo": "p-terrario-casita.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/2100238/", "slot": "producto: Frasco con casita roja y médanos" },
+    { "archivo": "p-terrario-corcho.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/7639973/", "slot": "producto: Terrario cerrado con tapa de corcho" },
+    { "archivo": "p-kokedamas.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/5725638/", "slot": "producto: Kokedamas de palmera (set de 3) + m-musgo.webp" },
+    { "archivo": "p-cerco-blanco.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/14695165/", "slot": "producto: Jardín de suculentas con cerco blanco" },
+    { "archivo": "p-musgo-montana.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/28142962/", "slot": "producto: Paisaje de musgo con montaña de piedra (vendido)" },
+    { "archivo": "p-casita-terracota.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/28808333/", "slot": "producto: Casita entre helechos en maceta de barro" },
+    { "archivo": "p-conejito-hongos.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/30374705/", "slot": "producto: Jardín del conejito y los hongos" },
+    { "archivo": "p-cactus-piedras.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/15849616/", "slot": "producto: Cactus en cuenco con piedras negras" },
+    { "archivo": "p-echeverias.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/8170948/", "slot": "producto: Rosetas de echeveria en cuenco oscuro" },
+    { "archivo": "p-jardinera-madera.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/2676753/", "slot": "producto: Jardinera larga de madera con suculentas" },
+    { "archivo": "p-cactus-bowl.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/6912837/", "slot": "producto: Cactus en bowl blanco" }
+  ]
+}

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini Jardines — Jardines en miniatura hechos a mano en Santa Fe</title>
+<meta name="description" content="Jardines en miniatura únicos, ecológicos y libres de químicos, hechos a mano por Miriam en Santa Fe. Terrarios, suculentas y kokedamas para interior y exterior.">
+<link rel="canonical" href="https://gokywebs.com/demo/minijardines/modelo-2.html">
+<meta name="theme-color" content="#FAFAF5">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Mini Jardines">
+<meta property="og:title" content="Mini Jardines — Jardines en miniatura hechos a mano en Santa Fe">
+<meta property="og:description" content="Jardines en miniatura únicos, ecológicos y libres de químicos, hechos a mano por Miriam en Santa Fe. Terrarios, suculentas y kokedamas para interior y exterior.">
+<meta property="og:url" content="https://gokywebs.com/demo/minijardines/modelo-2.html">
+<meta property="og:image" content="https://gokywebs.com/demo/minijardines/images/og-minijardines.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232D4527'/%3E%3Ctext x='29' y='46' font-family='Georgia,serif' font-size='38' font-style='italic' text-anchor='middle' fill='%23FAFAF5'%3EM%3C/text%3E%3Cpath d='M47 24l2-8M53 26l5-6' stroke='%23E6D987' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css?v=20261019-1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"GardenStore","name":"Mini Jardines","description":"Jardines en miniatura únicos, ecológicos y libres de químicos, hechos a mano por Miriam con materiales nuevos y reciclados. Trabajos a domicilio.","url":"https://gokywebs.com/demo/minijardines/","image":"https://gokywebs.com/demo/minijardines/images/og-minijardines.webp","telephone":"+5493424364862","address":{"@type":"PostalAddress","addressLocality":"Santa Fe","addressRegion":"Santa Fe","addressCountry":"AR"},"areaServed":{"@type":"City","name":"Santa Fe"},"founder":{"@type":"Person","name":"Miriam"},"priceRange":"$$","sameAs":["https://www.instagram.com/miriam_7359/"]}</script>
+<script type="application/ld+json" id="ldProducto">{}</script>
+</head>
+<body class="m2" data-modelo="2" data-pagina="home">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
+</nav>
+<p class="aviso">Jardines en miniatura hechos a mano en Santa Fe · <b>Trabajos a domicilio</b></p>
+<header class="site-header site-header--centro">
+  <div class="container header-in">
+    <div class="header-izq">
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <a class="icon-btn icon-btn--buscar" href="catalogo-2.html?q=" aria-label="Buscar diseños"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></a>
+    </div>
+    <a class="brand" href="modelo-2.html" aria-label="Mini Jardines, inicio"><span class="brand__mini">Mini</span><span class="brand__jardines">Jardines</span></a>
+    <div class="acciones">
+      <button type="button" class="icon-btn" data-open-cart aria-label="Abrir el carrito"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg><span class="badge-n" data-cart-count hidden>0</span></button>
+    </div>
+  </div>
+  <div class="header-nav">
+    <div class="container">
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div class="nav-drop" data-nav-drop>
+        <button type="button" class="nav-drop__btn" aria-expanded="false" aria-haspopup="true" aria-controls="dropCat">Catálogo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-drop__panel" id="dropCat">
+          <ul class="nav-drop__lista" data-drop-lista></ul>
+          <div class="nav-drop__ubic"><a href="catalogo-2.html?ubicacion=interior">Para interior</a><a href="catalogo-2.html?ubicacion=exterior">Para exterior</a></div>
+          <a class="nav-drop__todo" href="catalogo-2.html">Ver todo el catálogo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+      </div>
+      <a href="catalogo-2.html?ubicacion=interior" data-ubic-link="interior">Interior</a>
+      <a href="catalogo-2.html?ubicacion=exterior" data-ubic-link="exterior">Exterior</a>
+      <a href="#precios">Precios</a>
+      <a href="#cuidados">Cuidados</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    </div>
+  </div>
+</header>
+<main>
+<section class="hero hero--vidriera" id="top">
+  <div class="hero__media"><img data-hero-img src="images/hero-casita.webp" alt="Cuenco de cerámica con un paisaje en miniatura: casita de piedra, camino de lajas, árbol de jade y suculentas" width="1672" height="941" fetchpriority="high"></div>
+  <div class="container hero__contenido">
+      <p class="hero-eyebrow">De mi jardín al tuyo · Santa Fe</p>
+      <h1>Jardines en miniatura, <em>únicos e irrepetibles</em></h1>
+      <p class="hero-lead">Miriam los diseña hace seis años con plantas vivas, piedras y macetas nuevas o recicladas. Para adentro o para afuera de tu casa.</p>
+      <div class="hero-ctas">
+        <a class="btn btn--claro" href="catalogo-2.html">Ver los diseños <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        <a class="btn btn--line" href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20encargar%20un%20mini%20jard%C3%ADn.%20Te%20cuento%20para%20d%C3%B3nde%20es%3A" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Encargar uno a medida</a>
+      </div>
+      <ul class="hero-chips">
+        <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Libres de químicos</li>
+        <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="m14 16-3 3 3 3"/><path d="M8.293 13.596 7.196 9.5 3.1 10.598"/><path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/><path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></svg>Materiales reciclados</li>
+        <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Trabajos a domicilio</li>
+      </ul>
+  </div>
+  <button type="button" class="hero__tag" data-quick="casita-piedra"><span>Paisaje con casita de piedra</span><b>$64.900</b><em>Ver el diseño <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></em></button>
+  <div class="sello" aria-hidden="true"><svg viewBox="0 0 120 120"><defs><path id="selloHero" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs><text><textPath href="#selloHero" textLength="276" lengthAdjust="spacing">De mi jardín al tuyo · Mini Jardines ·</textPath></text></svg><span class="sello__centro"></span></div>
+</section>
+<section class="donde" id="donde" aria-labelledby="tDonde">
+  <div class="container">
+    <div class="sello" aria-hidden="true"><svg viewBox="0 0 120 120"><defs><path id="selloDonde" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs><text><textPath href="#selloDonde" textLength="276" lengthAdjust="spacing">Para adentro · Para afuera · Hecho a mano ·</textPath></text></svg><span class="sello__centro"></span></div>
+    <div class="sec-head sec-head--centro">
+      <h2 id="tDonde" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">¿Dónde lo vas a poner?</h2>
+      <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Cada diseño está pensado para un lugar. Elegí primero si va adentro o afuera de tu casa.</p>
+    </div>
+    <div class="puertas">
+      <article class="puerta" data-animate="izq" style="opacity:0;transform:translateX(-56px)">
+        <div class="puerta__foto"><img src="images/amb-interior.webp" alt="Cuenco blanco con palmera, potus y fitonia sobre una mesa de living" width="800" height="1000"></div>
+        <div class="puerta__txt">
+          <p class="puerta__kicker">Interior</p>
+          <h3 class="puerta__tit">Para adentro</h3>
+          <p class="puerta__desc">Follaje, helechos, fitonias y musgo, en terrarios de vidrio, cuencos y kokedamas.</p>
+          <p class="puerta__luz"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><span>Luz indirecta, cerca de una ventana.</span></p>
+          <a class="link-flecha puerta__link" href="catalogo-2.html?ubicacion=interior"><span data-cuenta-ubic="interior">Ver los diseños de interior</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+      </article>
+      <article class="puerta" data-animate="der" style="opacity:0;transform:translateX(56px)">
+        <div class="puerta__foto"><img src="images/amb-exterior.webp" alt="Batea de piedra con siemprevivas, sedum, rocas y un enebro enano al aire libre, con montañas de fondo" width="800" height="1000"></div>
+        <div class="puerta__txt">
+          <p class="puerta__kicker">Exterior</p>
+          <h3 class="puerta__tit">Para afuera</h3>
+          <p class="puerta__desc">Cactus, suculentas y siemprevivas, en terracota, madera recuperada y piedra.</p>
+          <p class="puerta__luz"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg><span>Sol directo o media sombra, al aire libre.</span></p>
+          <a class="link-flecha puerta__link" href="catalogo-2.html?ubicacion=exterior"><span data-cuenta-ubic="exterior">Ver los diseños de exterior</span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+<section class="previa" id="disenos" aria-labelledby="tPrevia">
+  <div class="container">
+    <div class="sec-head sec-head--fila">
+      <div>
+        <h2 id="tPrevia" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Diseños disponibles</h2>
+        <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Cada uno es único: cuando se vende, no vuelve igual.</p>
+      </div>
+      <div data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="link-flecha" href="catalogo-2.html">Ver el catálogo completo <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></div>
+    </div>
+    <div class="mosaico" data-preview data-mosaico data-excluir="casita-piedra"></div>
+  </div>
+</section>
+<section class="precios" id="precios" aria-labelledby="tPrecios">
+  <div class="container precios__grid">
+    <div class="precios__lado">
+      <div class="sec-head">
+        <h2 id="tPrecios" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Lista de precios</h2>
+        <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Precios de referencia según el tipo de diseño y el tamaño. Si el que te gustó ya se vendió, Miriam te hace uno parecido.</p>
+      </div>
+      <div data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <div class="tabs" role="group" aria-label="Filtrar la lista de precios">
+          <button type="button" class="tab" data-precios-tab="" aria-pressed="true">Todos</button>
+          <button type="button" class="tab" data-precios-tab="interior" aria-pressed="false">Interior</button>
+          <button type="button" class="tab" data-precios-tab="exterior" aria-pressed="false">Exterior</button>
+        </div>
+      </div>
+      <div data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn--musgo" href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20encargar%20un%20mini%20jard%C3%ADn.%20Te%20cuento%20para%20d%C3%B3nde%20es%3A" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Encargar uno por WhatsApp</a></div>
+      <div class="precios__notas">
+        <p class="precios__nota" data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg><span><b>Centros de mesa y souvenirs</b>Para cumpleaños, casamientos y eventos, con precio por cantidad. <a href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20consultar%20por%20centros%20de%20mesa%20o%20souvenirs%20para%20un%20evento." target="_blank" rel="noopener">Consultá por WhatsApp</a></span></p>
+        <p class="precios__nota" data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span><b>Trabajo a domicilio</b>Se cotiza según el espacio y las plantas que lleve. <a href="#domicilio">Cómo funciona</a></span></p>
+      </div>
+    </div>
+    <div>
+      <p class="precios__medidas">Chico: hasta 15 cm · Mediano: 15 a 25 cm · Grande: más de 25 cm</p>
+      <table class="tabla-precios">
+        <caption class="sr-only">Precios por tipo de diseño y tamaño</caption>
+        <thead>
+          <tr><th scope="col">Diseño</th><th scope="col">Chico<small>hasta 15 cm</small></th><th scope="col">Mediano<small>15 a 25 cm</small></th><th scope="col">Grande<small>más de 25 cm</small></th></tr>
+        </thead>
+        <tbody data-precios-tabla></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<section class="materiales" id="materiales" aria-labelledby="tMat">
+  <div class="container">
+    <div class="sec-head sec-head--centro">
+      <h2 id="tMat" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">De qué están hechas las macetas</h2>
+      <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Materiales nuevos y reciclados, elegidos según la planta y el lugar donde va a vivir.</p>
+    </div>
+    <div class="muestras" data-muestras></div>
+  </div>
+</section>
+<section class="llegada" id="contacto" aria-labelledby="tLlegada">
+  <div class="container">
+    <div class="sec-head">
+      <h2 id="tLlegada" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Cómo te llega y dónde estamos</h2>
+      <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Miriam trabaja en Santa Fe y coordina todo por WhatsApp: el envío, el pago o la visita a tu casa.</p>
+    </div>
+    <div class="llegada__grid">
+      <article class="domicilio" id="domicilio">
+        <div class="domicilio__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/amb-domicilio.webp" alt="Cajón de madera con helechos, musgo y un puente de piedra en miniatura" width="1200" height="750"></div>
+        <div class="domicilio__txt" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <h3>Trabajos a domicilio</h3>
+          <p>Miriam va a tu casa y arma el jardín en tu maceta, en un cantero o en el balcón, con las plantas que mejor se dan en ese lugar.</p>
+          <ol class="pasos">
+            <li class="paso"><span><b>Mandá fotos del lugar</b><span>Por WhatsApp, con una idea del tamaño.</span></span></li>
+            <li class="paso"><span><b>Coordinamos la visita</b><span>Día, horario y presupuesto, antes de empezar.</span></span></li>
+            <li class="paso"><span><b>Armado en el lugar</b><span>Y te quedan las indicaciones para cuidarlo.</span></span></li>
+          </ol>
+          <a class="btn btn--musgo" href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20coordinar%20un%20trabajo%20a%20domicilio.%20Te%20mando%20fotos%20del%20lugar%3A" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Coordinar una visita</a>
+        </div>
+      </article>
+      <div class="llegada__datos">
+        <div class="dato" id="envios" data-animate="der" style="opacity:0;transform:translateX(56px)">
+          <h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>Formas de envío</h3>
+          <ul class="dato__lista">
+            <li><b>Retiro en Santa Fe</b><span>Coordinamos el día y el punto de retiro.</span></li>
+            <li><b>Entrega en la ciudad</b><span>Te lo llevamos armado y listo para apoyar. El costo depende de la zona.</span></li>
+            <li><b>Otras localidades</b><span>Consultanos y vemos la mejor forma de que viaje sin moverse.</span></li>
+          </ul>
+        </div>
+        <div class="dato" data-animate="der" style="opacity:0;transform:translateX(56px)">
+          <h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>Medios de pago</h3>
+          <ul class="pagos">
+            <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>Transferencia</li>
+            <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>Mercado Pago</li>
+            <li><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>Efectivo al retirar</li>
+          </ul>
+        </div>
+        <div class="dato" data-animate="der" style="opacity:0;transform:translateX(56px)">
+          <h3><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Ubicación</h3>
+          <section class="mapa" id="mapa" aria-label="Mapa de la ciudad de Santa Fe con la zona de entrega"></section>
+          <div class="ubicacion__txt">
+            <p>Santa Fe, Argentina · la dirección exacta se coordina al retirar.</p>
+            <a href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20hacerte%20una%20consulta." target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>+54 9 342 436-4862</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="cuidados" id="cuidados" aria-labelledby="tCuidados">
+  <div class="container">
+    <div class="cuidados__top">
+      <div class="sec-head">
+        <h2 id="tCuidados" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Cuidados básicos</h2>
+        <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Consejos simples para que tu mini jardín dure y se vea siempre lindo. Elegí el tipo de diseño que tenés.</p>
+      </div>
+      <div data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <div class="tabs" role="tablist" aria-label="Tipo de diseño">
+          <button type="button" class="tab" role="tab" id="tabCuidado0" aria-controls="cuidadoPanel" aria-selected="true" tabindex="0" data-cuidado-tab="suculentas">Suculentas y cactus</button>
+          <button type="button" class="tab" role="tab" id="tabCuidado1" aria-controls="cuidadoPanel" aria-selected="false" tabindex="-1" data-cuidado-tab="terrario">Terrarios</button>
+          <button type="button" class="tab" role="tab" id="tabCuidado2" aria-controls="cuidadoPanel" aria-selected="false" tabindex="-1" data-cuidado-tab="follaje">Follaje y helechos</button>
+          <button type="button" class="tab" role="tab" id="tabCuidado3" aria-controls="cuidadoPanel" aria-selected="false" tabindex="-1" data-cuidado-tab="kokedama">Kokedamas</button>
+        </div>
+      </div>
+    </div>
+    <div class="cuidado" data-cuidado>
+      <div class="cuidado__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img data-cuidado-foto src="images/p-cactus-terracota.webp" alt="Ejemplo de suculentas y cactus" width="1000" height="1000"></div>
+      <div data-animate="der" style="opacity:0;transform:translateX(56px)">
+        <div class="cuidado__panel" id="cuidadoPanel" role="tabpanel" aria-labelledby="tabCuidado0" aria-live="polite" data-cuidado-panel></div>
+        <div class="cuidado__acc">
+          <a class="btn btn--claro" data-cuidado-wsp href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Tengo%20un%20mini%20jard%C3%ADn%20de%20suculentas%20y%20cactus%20y%20quiero%20consultarte%20por%20sus%20cuidados.%20Te%20mando%20una%20foto%3A" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Mandale una foto a Miriam</a>
+          <a class="link-flecha" href="catalogo-2.html?disponibles=1">Ver diseños disponibles <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="cierre" aria-labelledby="tCierre">
+  <div class="container cierre__in">
+    <div>
+      <h2 class="cierre__tit" id="tCierre" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Contale a Miriam <em>dónde lo vas a poner</em></h2>
+      <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Mandale una foto del lugar y te sugiere el diseño, el tamaño y la maceta que mejor quedan.</p>
+      <div class="hero-ctas" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <a class="btn btn--musgo" href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Te%20cuento%20d%C3%B3nde%20quiero%20poner%20un%20mini%20jard%C3%ADn%3A" target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>Escribirle por WhatsApp</a>
+        <a class="btn btn--line" href="catalogo-2.html">Ver los diseños</a>
+      </div>
+    </div>
+    <div class="cierre__foto" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><div class="cierre__disco"><div class="cierre__img" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/amb-taza.webp" alt="Taza de loza antigua con plato, convertida en maceta de suculentas" width="900" height="900"></div></div></div>
+  </div>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
+        <a class="brand" href="modelo-2.html" aria-label="Mini Jardines, inicio"><span class="brand__mini">Mini</span><span class="brand__jardines">Jardines</span></a>
+        <p>Jardines en miniatura diseñados a mano por Miriam en Santa Fe. Ecológicos, libres de químicos y con materiales nuevos y reciclados.</p>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <h3>Tienda</h3>
+        <ul>
+          <li><a href="catalogo-2.html?cat=terrarios">Terrarios de vidrio</a></li>
+          <li><a href="catalogo-2.html?cat=suculentas">Suculentas y cactus</a></li>
+          <li><a href="catalogo-2.html?cat=paisajes">Paisajes en miniatura</a></li>
+          <li><a href="catalogo-2.html?cat=follaje">Follaje y kokedamas</a></li>
+          <li><a href="catalogo-2.html">Todo el catálogo</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <h3>Ayuda</h3>
+        <ul>
+          <li><a href="#precios">Lista de precios</a></li>
+          <li><a href="#cuidados">Cuidados básicos</a></li>
+          <li><a href="#materiales">Materiales de las macetas</a></li>
+          <li><a href="#envios">Envíos y medios de pago</a></li>
+          <li><a href="#domicilio">Trabajos a domicilio</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <h3>Contacto</h3>
+        <ul>
+          <li><a href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Quiero%20hacerte%20una%20consulta." target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>+54 9 342 436-4862</a></li>
+          <li><a href="https://www.instagram.com/miriam_7359/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg>@miriam_7359</a></li>
+          <li><a href="#contacto"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Santa Fe, Argentina</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p>© 2026 Mini Jardines · Santa Fe</p>
+      <p>Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a></p>
+    </div>
+  </div>
+</footer>
+<div class="drawer" id="cartDrawer" hidden>
+  <div class="drawer__bd" data-cerrar-cart></div>
+  <aside class="drawer__panel" role="dialog" aria-modal="true" aria-label="Tu carrito">
+    <div class="drawer__head"><h2>Tu carrito <span data-cart-titulo-n></span></h2><button type="button" class="icon-btn" data-cerrar-cart aria-label="Cerrar el carrito"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+    <div class="drawer__body" id="cartLines"></div>
+    <div class="drawer__foot" id="cartFoot" hidden></div>
+  </aside>
+</div>
+<div class="qv" id="qv" hidden>
+  <div class="qv__bd" data-cerrar-qv></div>
+  <div class="qv__panel" role="dialog" aria-modal="true" aria-label="Detalle del diseño">
+    <button type="button" class="qv__close" data-cerrar-qv aria-label="Cerrar el detalle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <div id="qvContent"></div>
+  </div>
+</div>
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" data-open-cart aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5493424364862?text=Hola%20Miriam%21%20Vi%20la%20web%20de%20Mini%20Jardines%20y%20quiero%20consultar%20por%20un%20dise%C3%B1o." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=20261019-1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
