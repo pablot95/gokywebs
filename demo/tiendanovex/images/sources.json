@@ -1,0 +1,43 @@
+{
+  "base": {
+    "origen": "Zip TIENDA_NOVEX_pgRLCUpsoYRnveCaJ6aC.zip (Descargas, 19-oct-2026), originales Novex_01..Novex_10_mockup.png en esta carpeta",
+    "derivadas": {
+      "hero-cafetera.webp": "Novex_02.png (16:9)",
+      "vertical-difusor.webp": "Novex_01.png (9:16)",
+      "p-difusor.webp": "Novex_01.png, recorte 1:1",
+      "p-cafetera.webp": "Novex_02.png, recorte 1:1",
+      "p-bandolera.webp": "Novex_03.png",
+      "p-set-joyas.webp": "Novex_04.png",
+      "p-perfume.webp": "Novex_05.png",
+      "p-auriculares.webp": "Novex_06.png",
+      "p-botella.webp": "Novex_07.png",
+      "p-lampara.webp": "Novex_08.png",
+      "p-licuadora.webp": "Novex_09.png"
+    }
+  },
+  "extra": [
+    { "archivo": "p-anillos.webp", "fuente": "pexels", "id": 10897815, "url": "https://www.pexels.com/photo/10897815/", "query": "gold ring jewelry", "slot": "producto anillos-finos" },
+    { "archivo": "p-pava.webp", "fuente": "pexels", "id": 10965748, "url": "https://www.pexels.com/photo/10965748/", "query": "white electric kettle", "slot": "producto pava-vidrio" },
+    { "archivo": "p-vajilla.webp", "fuente": "pexels", "id": 11065504, "url": "https://www.pexels.com/photo/11065504/", "query": "ceramic mug minimal", "slot": "producto vajilla-gres" },
+    { "archivo": "p-velas.webp", "fuente": "pexels", "id": 18225982, "url": "https://www.pexels.com/photo/18225982/", "query": "scented candle minimal", "slot": "producto velas-soja" },
+    { "archivo": "p-anteojos.webp", "fuente": "pexels", "id": 27353350, "url": "https://www.pexels.com/photo/27353350/", "query": "sunglasses product", "slot": "producto anteojos-sol" },
+    { "archivo": "p-pulsera.webp", "fuente": "pexels", "id": 34399158, "url": "https://www.pexels.com/photo/34399158/", "query": "gold bracelet minimal", "slot": "producto pulsera-eslabones" },
+    { "archivo": "p-aros-perla.webp", "fuente": "pexels", "id": 36823005, "url": "https://www.pexels.com/photo/36823005/", "query": "pearl earrings", "slot": "producto argollas-perla" },
+    { "archivo": "p-smartwatch.webp", "fuente": "pexels", "id": 393047, "url": "https://www.pexels.com/photo/393047/", "query": "smart watch white", "slot": "producto reloj-inteligente" },
+    { "archivo": "p-almohadones.webp", "fuente": "pexels", "id": 4271729, "url": "https://www.pexels.com/photo/4271729/", "query": "throw pillow beige", "slot": "producto almohadones" },
+    { "archivo": "p-rodillo.webp", "fuente": "pexels", "id": 4938500, "url": "https://www.pexels.com/photo/4938500/", "query": "facial roller", "slot": "producto rodillo-cuarzo" },
+    { "archivo": "p-cargador.webp", "fuente": "pexels", "id": 5961044, "url": "https://www.pexels.com/photo/5961044/", "query": "wireless charger", "slot": "producto cargador-inalambrico" },
+    { "archivo": "p-aceites.webp", "fuente": "pexels", "id": 6915310, "url": "https://www.pexels.com/photo/6915310/", "query": "essential oil bottle", "slot": "producto aceites-esenciales" },
+    { "archivo": "p-crema.webp", "fuente": "pexels", "id": 8054404, "url": "https://www.pexels.com/photo/8054404/", "query": "body lotion bottle", "slot": "producto crema-corporal" },
+    { "archivo": "p-perfume-rosa.webp", "fuente": "pexels", "id": 1666404, "url": "https://www.pexels.com/photo/1666404/", "query": "perfume bottle white background", "slot": "producto perfume-floral" },
+    { "archivo": "p-bruma.webp", "fuente": "pexels", "id": 6801177, "url": "https://www.pexels.com/photo/6801177/", "query": "perfume bottle beige", "slot": "producto bruma-corporal" },
+    { "archivo": "p-difusor-varillas.webp", "fuente": "pexels", "id": 18987029, "url": "https://www.pexels.com/photo/18987029/", "query": "reed diffuser", "slot": "producto difusor-varillas" },
+    { "archivo": "p-pinzas.webp", "fuente": "pexels", "id": 20166054, "url": "https://www.pexels.com/photo/20166054/", "query": "hair claw clip", "slot": "producto pinzas-pelo" }
+  ],
+  "descartadas": [
+    { "id": 16038072, "motivo": "frasco con la marca Burberry grabada" },
+    { "id": 28028234, "motivo": "tarjeteros con la marca Pergamon" },
+    { "id": 34690231, "motivo": "frasco con la marca Si (Armani)" },
+    { "id": 27742135, "motivo": "etiqueta de marca Vilvah" }
+  ]
+}
