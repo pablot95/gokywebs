@@ -58,6 +58,7 @@ const ERR_REPOS = [
     'lxfparquetpisosdemadera.com.ar'   => 'pablot95/lxfparquetpisosdemadera',
     'julietaledesmaasesoracomercial.com.ar' => 'pablot95/julietaledesmaasesoracomercial',
     'pulidosreyes.com.ar'              => 'pablot95/pulidosreyes',
+    'mrconstrucciones.com.ar'          => 'pablot95/mrconstrucciones',
     'cuidarmasintegrarsalud.com.ar'    => 'pablot95/cuidarmasintegrarsalud',
     'remodelacionesnm.com.ar'          => 'pablot95/remodelacionesnm',
     'mutualdicom.com.ar'               => 'pablot95/mutualdicom',
