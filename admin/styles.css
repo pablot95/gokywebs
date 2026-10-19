@@ -2322,6 +2322,15 @@ body.modal-open { overflow: hidden; }
 .cal-leyenda .cal-leyenda-item .ingcal-punto { margin-right: 0; }
 .modal--day .ingcal-detalle { margin-top: 0; }
 .modal--day .ing-detalle-tabla td { padding: 7px 8px; font-size: 13px; }
+/* Quién paga cada suscripción del día (19-oct-2026): en la celda y en el detalle del día. */
+.cal-cell-nombres { list-style: none; margin: 1px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cal-cell-nombre { font-size: 11px; line-height: 1.3; color: #BFDBFE; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 5px; border-left: 2px solid #60A5FA; }
+.cal-cell-nombre--falta { border-left-style: dashed; color: var(--text-muted); }
+.cal-cell-nombre--mas { border-left-color: transparent; color: var(--text-muted); }
+.ingcal-quien { font-weight: 600; }
+.ingcal-detalle .ingcal-quien-sub { display: block; font-size: 11.5px; margin: 2px 0 0 16px; }
+.ingcal-a-confirmar { color: #F59E0B; cursor: help; }
+@media (max-width: 600px) { .cal-cell-nombres { display: none; } }
 
 /* Mantenimiento: cómo se cobra cada mensualidad (Mercado Pago / por afuera, 16-oct-2026). */
 .mrr-detalle { display: block; font-size: 12px; margin-top: 4px; max-width: 320px; line-height: 1.4; }

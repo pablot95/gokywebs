@@ -1365,7 +1365,8 @@ function _montoCorto(n) {
 }
 
 /* Todo lo que entró y lo que falta cobrar de suscripciones, día por día, hasta `hastaYmd`:
-   Map("YYYY-MM-DD" → [{monto, clase: "subs" | "otros", tipo, nombre, cobrado, aprox}]). */
+   Map("YYYY-MM-DD" → [{monto, clase: "subs" | "otros", tipo, nombre, cobrado, aprox}]).
+   Las suscripciones llevan además `negocio`, `persona` y `nombreMp` (el que paga en Mercado Pago). */
 function ingresosPorDia(hastaYmd) {
     const hoy = _diaDe(new Date());
     const dias = new Map();
@@ -1373,11 +1374,21 @@ function ingresosPorDia(hastaYmd) {
         if (!dias.has(ymd)) dias.set(ymd, []);
         dias.get(ymd).push(it);
     };
+    // De quién es cada suscripción de Mercado Pago: el mensual que le tocó en el cruce.
+    const cruce = _cruceMercadoPago();
+    const quienDeSub = new Map(cruce.filter(k => k.sub).map(k => [k.sub.id, { negocio: k.negocio, persona: k.persona, aConfirmar: k.aConfirmar }]));
+    // Los cobros llegan sin el nombre del que paga (19-oct, los 43): va el de su suscripción.
+    const nombreDeSub = new Map((ingresosMp?.suscripciones || []).map(s => [String(s.id), s.nombre || ""]));
+    const deMp = (idSub, nombreMp) => {
+        const q = quienDeSub.get(String(idSub || "")) || { negocio: "", persona: "" };
+        const mp = String(nombreMp || nombreDeSub.get(String(idSub || "")) || "").replace(/\s+/g, " ").trim();
+        return { ...q, nombreMp: mp, nombre: q.negocio || q.persona || mp || "Suscriptor" };
+    };
 
     // Ya entró: suscripciones (cobros reales de Mercado Pago, netos de devoluciones).
     for (const c of (ingresosMp?.cobros || [])) {
         const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
-        if (neto > 0 && c.dia) agregar(c.dia, { monto: neto, clase: "subs", tipo: "Suscripción", nombre: c.nombre || "Suscriptor", cobrado: true });
+        if (neto > 0 && c.dia) agregar(c.dia, { monto: neto, clase: "subs", tipo: "Suscripción", cobrado: true, ...deMp(c.suscripcion, c.nombre) });
     }
     // Ya entró: otros pagos (señas, saldos, cobros anuales, ajustes).
     for (const k of cobrosAnualesYUnicos()) {
@@ -1398,7 +1409,7 @@ function ingresosPorDia(hastaYmd) {
                 if (i > 0) continue;
                 ymd = hoy;
             }
-            agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", nombre: s.nombre || "Suscriptor", cobrado: false });
+            agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", cobrado: false, ...deMp(s.id, s.nombre) });
         }
     }
     // Los mensuales que no cobra Mercado Pago (no están arriba), el día del mes del alta (o el que se cargó
@@ -1409,7 +1420,7 @@ function ingresosPorDia(hastaYmd) {
     //   hoy, como falta cobrar (antes desaparecía del mes: Electro lift, 16-oct); los meses anteriores no cuentan.
     const [hy, hm] = hoy.split("-").map(Number);
     const mesesDesdeHoy = ymd => { const [y, m] = ymd.split("-").map(Number); return (y - hy) * 12 + (m - hm); };
-    for (const k of _cruceMercadoPago()) {
+    for (const k of cruce) {
         if (k.porId || k.sub) continue;
         const inicio = _diaDe(k.desde);
         const primero = k.porFuera ? Math.max(mesesDesdeHoy(inicio), mesesDesdeHoy(INGRESOS_DESDE)) : Math.max(0, mesesDesdeHoy(inicio));
@@ -1419,7 +1430,7 @@ function ingresosPorDia(hastaYmd) {
             if (ymd < inicio) continue;
             const yaPaso = ymd < hoy;
             if (yaPaso && !k.porFuera) ymd = hoy;
-            agregar(ymd, { monto: k.monto, clase: "subs", tipo: k.porFuera ? "Paga por afuera" : "Mensualidad sin Mercado Pago", nombre: k.nombre, cobrado: k.porFuera && yaPaso });
+            agregar(ymd, { monto: k.monto, clase: "subs", tipo: k.porFuera ? "Paga por afuera" : "Mensualidad sin Mercado Pago", nombre: k.negocio || k.persona || k.nombre, negocio: k.negocio, persona: k.persona, nombreMp: "", cobrado: k.porFuera && yaPaso });
         }
     }
     return dias;
@@ -1433,34 +1444,100 @@ function ingresosPorDia(hastaYmd) {
    toma como suya la suscripción de Mercado Pago del mismo monto dada de alta
    hasta 3 días antes o después. Los marcados "Paga por afuera" (`pagaPorFuera`,
    16-oct) no se cruzan: no tienen suscripción y no le sacan la suya a otro.
-   [{ ref (el suscriptor o el cliente), esCliente, nombre, monto, desde, porFuera,
-   porId (tiene el ID de su suscripción), sub (la suscripción que le tocó, o null) }]. */
+   Si hay varias que podrían ser (19-oct: seis de $20.000 entre el 14 y el 16, y
+   el Calendario mostraba a Peluso Carina con la de Yanina Vazquez), primero la
+   que comparte el nombre con el cliente y después la de la fecha más cercana.
+   [{ ref (el suscriptor o el cliente), esCliente, nombre, negocio, persona, monto,
+   desde, porFuera, porId (tiene el ID de su suscripción), sub (la suscripción que
+   le tocó, o null) }]. */
 function _cruceMercadoPago() {
     const subs = (ingresosMp?.suscripciones || []).map(s => ({ id: String(s.id), nombre: s.nombre || "", monto: Number(s.monto) || 0, alta: new Date(s.alta), usada: false }));
+    const clientePorMant = _clientePorSuscripcion();
     const candidatos = [];
     for (const m of (mantenimiento || [])) {
         if (avisoMantDe(m) || (m.estado || "activo") !== "activo") continue;
         const monto = Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0);
         const desde = mantToDate(m.createdAt);
-        if (monto > 0 && desde) candidatos.push({ ref: m, esCliente: false, pre: String(m.preapprovalId || "").trim(), monto, desde, dia: Number(m.diaCobro) || 0, nombre: m.nombre || "Suscriptor", porFuera: m.pagaPorFuera === true });
+        if (!(monto > 0 && desde)) continue;
+        // El negocio y la persona, de su cliente (o del completado del que salió); si no, lo cargado en el suscriptor.
+        const c = clientePorMant.get(m.id) || (m.completadoId && (completados || []).find(x => x.id === m.completadoId)) || null;
+        candidatos.push({ ref: m, esCliente: false, pre: String(m.preapprovalId || "").trim(), monto, desde, dia: Number(m.diaCobro) || 0, nombre: m.nombre || "Suscriptor", porFuera: m.pagaPorFuera === true,
+            ..._negocioYPersona(c?.proyecto, c?.nombre || m.nombre), palabras: _palabrasNombre(m.nombre, c?.nombre, c?.proyecto, String(m.email || "").split("@")[0]) });
     }
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
         const sus = suscripcionDe(c);
         if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
-        candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true });
+        candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true,
+            ..._negocioYPersona(c.proyecto, c.nombre), palabras: _palabrasNombre(c.nombre, c.proyecto, c.contactoNombre, String(c.email || "").split("@")[0]) });
     }
-    for (const k of candidatos.sort((a, b) => a.desde - b.desde)) {
+    candidatos.sort((a, b) => a.desde - b.desde);
+    for (const k of candidatos) {
         k.porId = !!k.pre && !k.porFuera;
         k.sub = null;
-        if (k.porFuera) continue;
-        // Con ID es de Mercado Pago: si no está entre las activas, se dio de baja.
-        const sub = k.pre
-            ? subs.find(s => s.id === k.pre)
-            : subs.find(s => !s.usada && s.monto === k.monto && Math.abs(s.alta - k.desde) <= 3 * 86400000);
+    }
+    // Con ID es de Mercado Pago: si no está entre las activas, se dio de baja.
+    for (const k of candidatos.filter(k => k.porId)) {
+        const sub = subs.find(s => s.id === k.pre);
         if (sub) { sub.usada = true; k.sub = sub; }
     }
+    const pares = [];
+    for (const k of candidatos) {
+        if (k.porId || k.porFuera) continue;
+        for (const s of subs) {
+            const dif = Math.abs(s.alta - k.desde);
+            if (!s.usada && s.monto === k.monto && dif <= 3 * 86400000) {
+                const dias = Math.abs(Math.round((_fechaMp(_diaDe(s.alta)) - _fechaMp(_diaDe(k.desde))) / 86400000));
+                pares.push({ k, s, dif, dias, enComun: _nombresEnComun(k.palabras, s.nombre) });
+            }
+        }
+    }
+    pares.sort((a, b) => b.enComun - a.enComun || a.dif - b.dif);
+    for (const { k, s, enComun } of pares) {
+        if (k.sub || s.usada) continue;
+        s.usada = true;
+        k.sub = s;
+        k.porNombre = s.porNombre = enComun > 0;
+    }
+    // Elegida solo por la fecha cuando otra sin nombre en común, igual de cercana, también podía ser:
+    // "a confirmar" (LxF Parquet, alta el 16: la del 14 y la del 18 están a dos días).
+    for (const k of candidatos) {
+        const elegido = !k.porId && !k.porNombre && pares.find(p => p.k === k && p.s === k.sub);
+        k.aConfirmar = !!elegido && pares.some(p => !p.k.porNombre && !p.s.porNombre && (p.k === k) !== (p.s === k.sub) && p.dias <= elegido.dias);
+    }
     return candidatos;
+}
+
+function _negocioYPersona(negocio, persona) {
+    const n = String(negocio || "").trim();
+    const p = String(persona || "").trim();
+    return { negocio: n, persona: p === n ? "" : p };
+}
+
+/* Las palabras de un nombre para compararlo con el de Mercado Pago: sin tildes ni símbolos, en
+   minúscula y de 3 letras o más ("Yani~" → yani, "diegodani134" → diegodani, "Agustín" → agustin). */
+const _PALABRAS_VACIAS = new Set(["del", "las", "los"]);
+function _palabrasNombre(...textos) {
+    const out = new Set();
+    for (const t of textos) {
+        for (const p of String(t || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/[^a-z]+/)) {
+            if (p.length >= 3 && !_PALABRAS_VACIAS.has(p)) out.add(p);
+        }
+    }
+    return out;
+}
+
+/* Cuántas palabras del nombre de Mercado Pago están entre las del cliente. Vale que una empiece con la
+   otra (Yani / Yanina, Agus / Agustín) si la más corta tiene 4 letras o más. */
+function _nombresEnComun(palabras, nombreMp) {
+    let n = 0;
+    for (const b of _palabrasNombre(nombreMp)) {
+        for (const a of palabras) {
+            const [corta, larga] = a.length <= b.length ? [a, b] : [b, a];
+            if (a === b || (corta.length >= 4 && larga.startsWith(corta))) { n++; break; }
+        }
+    }
+    return n;
 }
 
 /* Cobros del mes que se mira en la pestaña Calendario (Pablo, 11-oct-2026: "los
@@ -1569,17 +1646,48 @@ function _cobrosResumenHTML(calMes, dias) {
         <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
 }
 
-/* Los renglones de plata de la celda de un día (montos cortos, uno por tipo). */
+/* Quién paga una suscripción, en una línea: "Negocio · Persona · MP: Nombre en Mercado Pago". */
+function _quienCobroTexto(it) {
+    const sinCliente = !it.negocio && !it.persona;
+    const partes = [it.negocio, it.persona].filter(Boolean);
+    if (it.nombreMp) partes.push(`MP: ${it.nombreMp}${sinCliente ? " (sin cliente asignado)" : it.aConfirmar ? " (a confirmar)" : ""}`);
+    if (!partes.length) partes.push(it.nombre);
+    return partes.join(" · ");
+}
+
+/* Lo mismo para el detalle del día: el negocio arriba y, debajo, la persona y el nombre en Mercado Pago. */
+function _quienCobroCelda(it) {
+    const lineas = [];
+    if (it.negocio && it.persona) lineas.push(escapeHtml(it.persona));
+    if (it.nombreMp) {
+        lineas.push(!it.negocio && !it.persona ? "En Mercado Pago, sin cliente asignado"
+            : `Mercado Pago: ${escapeHtml(it.nombreMp)}${it.aConfirmar ? ` <span class="ingcal-a-confirmar" title="No comparte el nombre con el cliente y hay otra suscripción del mismo monto dada de alta esos días: se asignó por la fecha más cercana">· a confirmar</span>` : ""}`);
+    }
+    return `<span class="ingcal-quien">${escapeHtml(it.negocio || it.persona || it.nombre)}</span>${lineas.map(l => `<span class="muted ingcal-quien-sub">${l}</span>`).join("")}`;
+}
+
+const CAL_NOMBRES_MAX = 4;
+
+/* Los renglones de plata de la celda de un día (montos cortos, uno por tipo) y, debajo, quién paga
+   cada suscripción ese día (19-oct): el negocio, o la persona / el nombre de Mercado Pago si no hay. */
 function _cobrosCeldaHTML(items) {
     if (!items?.length) return "";
     const subsOk = items.filter(it => it.clase === "subs" && it.cobrado).reduce((a, it) => a + it.monto, 0);
     const subsPend = items.filter(it => it.clase === "subs" && !it.cobrado).reduce((a, it) => a + it.monto, 0);
     const otr = items.filter(it => it.clase === "otros").reduce((a, it) => a + it.monto, 0);
     if (!(subsOk + subsPend + otr)) return "";
+    const subs = items.filter(it => it.clase === "subs")
+        .sort((a, b) => (a.cobrado === b.cobrado ? b.monto - a.monto : a.cobrado ? -1 : 1));
+    const visibles = subs.length > CAL_NOMBRES_MAX ? subs.slice(0, CAL_NOMBRES_MAX - 1) : subs;
+    const nombres = subs.length ? `<ul class="cal-cell-nombres">${visibles.map(it => `
+            <li class="cal-cell-nombre${it.cobrado ? "" : " cal-cell-nombre--falta"}" title="${escapeHtml(`${_quienCobroTexto(it)} · ${fmtMoney(it.monto)} · ${it.cobrado ? "ya entró" : "falta cobrar"}`)}">${escapeHtml(it.negocio || it.persona || it.nombre)}</li>`).join("")}
+            ${subs.length > visibles.length ? `<li class="cal-cell-nombre cal-cell-nombre--mas">+${subs.length - visibles.length} más</li>` : ""}
+        </ul>` : "";
     return `<div class="cal-cell-cobros">
         ${subsOk ? `<span class="ingcal-mov ingcal-mov--subs">${_montoCorto(subsOk)}</span>` : ""}
         ${subsPend ? `<span class="ingcal-mov ingcal-mov--falta">${_montoCorto(subsPend)}</span>` : ""}
         ${otr ? `<span class="ingcal-mov ingcal-mov--otros">${_montoCorto(otr)}</span>` : ""}
+        ${nombres}
     </div>`;
 }
 
@@ -1595,7 +1703,7 @@ function _cobrosDetalleHTML(items) {
             </div>
             <div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${orden.map(it => `
                 <tr>
-                    <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${escapeHtml(it.nombre)}</td>
+                    <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${it.clase === "subs" ? _quienCobroCelda(it) : escapeHtml(it.nombre)}</td>
                     <td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
                     <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}</td>
                     <td class="num">${fmtMoney(it.monto)}</td>
