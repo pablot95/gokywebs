@@ -6291,9 +6291,9 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         const slug = slugNegocio(nombreNegocio) || "[definir-nombre-del-negocio]";
         prefijo = [
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
-            `La carpeta del proyecto está en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
-            "Ya hay imágenes cargadas en esa carpeta images/: usalas para armar la demo.",
-            "Entre las imágenes de images/ hay un mock up con una idea de cómo podría ser la web: tomalo como referencia del diseño.",
+            `Tenés que crear la carpeta del proyecto en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
+            "Las imágenes de la demo están en un zip en la carpeta Descargas (puede ser que estén dentro de otro zip): buscá el zip, descomprimilo y copiá las imágenes a esa carpeta images/ para armar la demo.",
+            "Entre las imágenes hay un mock up con una idea de cómo podría ser la web: tomalo como referencia del diseño.",
             ...(esEcommerce ? [
                 "Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.",
                 "Implementá paginación con cursor: el botón «Ver más» debe pedir la siguiente página de hasta 100 productos y la búsqueda debe traer páginas adicionales solo cuando necesita encontrar coincidencias.",
