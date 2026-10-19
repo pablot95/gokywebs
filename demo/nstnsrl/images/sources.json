@@ -1,0 +1,25 @@
+{
+  "cliente": [
+    { "archivo": "NSTN_SRL_01.png", "uso": "hero-heladera.webp, p-heladera-no-frost.webp" },
+    { "archivo": "NSTN_SRL_02.png", "uso": "hero-moto.webp, p-moto-street-150.webp" },
+    { "archivo": "NSTN_SRL_03.png", "uso": "p-lavarropas-frontal.webp" },
+    { "archivo": "NSTN_SRL_04.png", "uso": "p-microondas-digital.webp" },
+    { "archivo": "NSTN_SRL_05.png", "uso": "p-smart-tv-4k.webp" },
+    { "archivo": "NSTN_SRL_06.png", "uso": "p-cocina-5-hornallas.webp" },
+    { "archivo": "NSTN_SRL_07.png", "uso": "p-aire-split.webp" },
+    { "archivo": "NSTN_SRL_08.png", "uso": "p-freidora-aire.webp" },
+    { "archivo": "NSTN_SRL_09.png", "uso": "p-scooter-150.webp" },
+    { "archivo": "NSTN_SRL_10_mockup.png", "uso": "referencia de diseño, no se publica en la web" }
+  ],
+  "extra": [
+    { "archivo": "p-pava-electrica.webp", "fuente": "Pexels", "id": 10965749, "url": "https://www.pexels.com/photo/10965749/" },
+    { "archivo": "p-licuadora.webp", "fuente": "Pexels", "id": 17890637, "url": "https://www.pexels.com/photo/17890637/" },
+    { "archivo": "p-tostadora.webp", "fuente": "Pexels", "id": 5825406, "url": "https://www.pexels.com/photo/5825406/" },
+    { "archivo": "p-lavavajillas.webp", "fuente": "Pexels", "id": 3829560, "url": "https://www.pexels.com/photo/3829560/" },
+    { "archivo": "p-robot-aspiradora.webp", "fuente": "Pexels", "id": 7641488, "url": "https://www.pexels.com/photo/7641488/" },
+    { "archivo": "p-ventilador-pie.webp", "fuente": "Pexels", "id": 13983948, "url": "https://www.pexels.com/photo/13983948/" },
+    { "archivo": "p-plancha-vapor.webp", "fuente": "Pexels", "id": 4440650, "url": "https://www.pexels.com/photo/4440650/" },
+    { "archivo": "p-batidora-mano.webp", "fuente": "Pexels", "id": 11881952, "url": "https://www.pexels.com/photo/11881952/" },
+    { "archivo": "p-scooter-electrico.webp", "fuente": "Pexels", "id": 15675779, "url": "https://www.pexels.com/photo/15675779/" }
+  ]
+}
