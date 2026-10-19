@@ -553,8 +553,8 @@ body[data-tienda="accesorios"] .hero--pantalla .hero__foto::after { background: 
 .f-op.vacio { opacity: .45; }
 .f-limpiar { align-self: flex-start; margin-top: 10px; min-height: 40px; font-weight: 600; font-size: .9rem; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
 .activos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: var(--sp-2); }
-.activo { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 8px 0 14px; border-radius: 999px; background: var(--color-primary-soft); font-size: .86rem; font-weight: 600; }
-.activo svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.activos .activo { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 8px 0 14px; border-radius: 999px; background: var(--color-primary-soft); font-size: .86rem; font-weight: 600; }
+.activos .activo svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
 .cat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(20px, 2.2vw, 30px) clamp(14px, 1.6vw, 22px); }
 .cat-mas { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: var(--sp-5); font-size: .88rem; color: var(--color-text-muted); }
 .cat-vacio { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: clamp(32px, 6vw, 64px) 16px; border-radius: var(--radius); background: var(--color-bg-alt); }
