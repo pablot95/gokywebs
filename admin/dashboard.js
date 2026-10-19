@@ -1658,23 +1658,22 @@ function _cobrosResumenHTML(calMes, dias) {
     // renovaciones que vencen en el mes; en el mes actual entran además las vencidas.
     // 14-oct (Pablo): el saldo cuenta mientras no se cobre, aunque la web ya figure entregada
     // (marcarla terminada con saldo pendiente hacía desaparecer plata que todavía falta).
-    let saldosFalta = 0, nSaldos = 0, anualFalta = 0, nAnualSaldo = 0, nAnualRenov = 0;
-    if (!esPasado) {
-        for (const c of (clients || [])) {
-            if (getEstado(c) !== "cliente") continue;
-            if (!esFuturo && _conSena(modalidadDe(c)) && !c.sinPrecio) {
-                const saldo = pagoUnicoDe(c).saldo;
-                if (saldo > 0) {
-                    if (_esPlanAnual(c)) { anualFalta += saldo; nAnualSaldo++; }
-                    else { saldosFalta += saldo; nSaldos++; }
-                }
-            }
-            const ren = renovacionAnualDe(c);
-            if (ren && !ren.legado && ren.monto > 0 && ren.proximo) {
-                const ymd = _diaDe(ren.proximo);
-                if (ymd.slice(0, 7) === calMes || (!esFuturo && ymd < hoy)) { anualFalta += ren.monto; nAnualRenov++; }
-            }
+    /* Pagos anuales (Pablo, 19-oct: "quiero que me muestre los pagos anuales totales"): como los
+       pagos únicos, en total y sin depender del mes. Entró = todo lo cobrado del plan anual hasta hoy;
+       falta = los saldos que todavía deben y las renovaciones ya vencidas. */
+    let anualFalta = 0, nAnualSaldo = 0, nAnualRenov = 0;
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente") continue;
+        if (_esPlanAnual(c) && !c.sinPrecio) {
+            const saldo = pagoUnicoDe(c).saldo;
+            if (saldo > 0) { anualFalta += saldo; nAnualSaldo++; }
         }
+        const ren = renovacionAnualDe(c);
+        if (ren && !ren.legado && ren.monto > 0 && ren.proximo && _diaDe(ren.proximo) < hoy) { anualFalta += ren.monto; nAnualRenov++; }
+    }
+    anuales = 0; nAnuales = 0;
+    for (const k of cobrosAnualesYUnicos()) {
+        if (k.planAnual && _diaDe(k.fecha) <= hoy) { anuales += k.monto; nAnuales++; }
     }
     /* Pagos únicos (Pablo, 16-oct): en total, sin depender del mes que se mira. Solo la modalidad
        pago único y solo las charlas que empezaron desde UNICOS_DESDE: "los otros entraron como
@@ -1707,21 +1706,19 @@ function _cobrosResumenHTML(calMes, dias) {
     const subSubs = esPasado ? "todo cobrado"
         : esFuturo ? "a cobrar (estimado)"
         : lineasSub(subsCobrado, subsFalta);
-    const notaAnuales = `${nAnuales ? `${nAnuales} pago${nAnuales === 1 ? "" : "s"}: señas, saldos y renovaciones` : "ningún pago anual este mes"}`;
-    const subAnuales = esFuturo ? `${notaAnuales} · el saldo se cobra al entregar`
-        : esPasado ? notaAnuales
-        : lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por cobrar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} por cobrar` : ""}`);
+    const notaAnuales = `${nAnuales ? `${nAnuales} pago${nAnuales === 1 ? "" : "s"}: señas, saldos y renovaciones` : "ningún pago anual todavía"}`;
+    const subAnuales = lineasSub(anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · saldo de ${nAnualSaldo} web${nAnualSaldo === 1 ? "" : "s"} por cobrar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} vencida${nAnualRenov === 1 ? "" : "s"}` : ""} · no cambia con el mes`);
     // 16-oct (Pablo: "total del mes está mal también"): la suma de las tres tarjetas, tal como se ven.
     const entroTotal = subsCobrado + unicosEntro + anuales;
     const faltaTotal = subsFalta + unicosFalta + anualFalta;
-    const subTotal = lineasSub(entroTotal, faltaTotal, "suscripciones y pagos anuales del mes + pagos únicos desde el 13/09");
+    const subTotal = lineasSub(entroTotal, faltaTotal, "suscripciones del mes + pagos únicos desde el 13/09 + pagos anuales en total");
 
     return `
         ${_avisoMp()}
         <div class="stats-box stats-box--periods ingcal-stats">
             <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
             <div class="stat-item"><span class="stat-label">💵 Pagos únicos (total desde el 13/09)</span><span class="stat-value">${fmtMoney(unicosEntro + unicosFalta)}</span><span class="muted ingcal-stat-sub">${lineasSub(unicosEntro, unicosFalta, `${nUnicosWebs} web${nUnicosWebs === 1 ? "" : "s"} con la charla desde el 13/09 · ${nUnicos} pago${nUnicos === 1 ? "" : "s"}${nUnicosSaldo ? ` · saldo de ${nUnicosSaldo} por cobrar` : ""} · no cambia con el mes`)}</span></div>
-            <div class="stat-item"><span class="stat-label">📅 Pagos anuales</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
+            <div class="stat-item"><span class="stat-label">📅 Pagos anuales (total)</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
             <div class="stat-item"><span class="stat-label">Total</span><span class="stat-value">${fmtMoney(entroTotal + faltaTotal)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
         </div>
         <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
