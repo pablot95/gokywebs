@@ -1,0 +1,16 @@
+{
+  "base": "Zip Brasal_o4TJdzvtfWo6BBXelN9G.zip (Descargas, 19-oct-2026): 01-09_imagen.png + 10_mockup.png, imagenes ilustrativas",
+  "logo": "Foto del logo pirograbado que mando el cliente por WhatsApp (wabot/data/media/5491156694145/20261019-095933-8bd0736d.jpg): logo-brasal*.webp, sello-madera.webp, favicon*.png",
+  "pexels": [
+    { "archivo": "p-molinillo.webp", "id": 13643929, "url": "https://www.pexels.com/photo/13643929/" },
+    { "archivo": "p-salero.webp", "id": 6690894, "url": "https://www.pexels.com/photo/6690894/" },
+    { "archivo": "p-cucharas-madera.webp", "id": 5507645, "url": "https://www.pexels.com/photo/5507645/" },
+    { "archivo": "p-bowl-madera.webp", "id": 8251782, "url": "https://www.pexels.com/photo/8251782/" },
+    { "archivo": "p-tabla-redonda.webp", "id": 20717345, "url": "https://www.pexels.com/photo/20717345/" },
+    { "archivo": "p-mortero.webp", "id": 194101, "url": "https://www.pexels.com/photo/194101/" },
+    { "archivo": "p-apoya-cucharas.webp", "id": 38605742, "url": "https://www.pexels.com/photo/38605742/" },
+    { "archivo": "p-tabla-servir.webp", "id": 30910220, "url": "https://www.pexels.com/photo/30910220/" },
+    { "archivo": "p-cubiertos-ensalada.webp", "id": 8251820, "url": "https://www.pexels.com/photo/8251820/" },
+    { "archivo": "brasas.webp, brasas-ancha.webp", "id": 8021097, "url": "https://www.pexels.com/photo/8021097/" }
+  ]
+}
