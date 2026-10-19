@@ -1,0 +1,31 @@
+{
+  "base": {
+    "JyM_01_imagen.png": "Pablo (zip de ChatGPT) — perfume sobre travertino (9:16) → perfume-vertical.webp, p-perfume-edp.webp",
+    "JyM_02_imagen.png": "Pablo — paleta de sombras nude (16:9) → paleta-ancha.webp, p-paleta-sombras.webp",
+    "JyM_03_imagen.png": "Pablo — labial nude → p-labial.webp",
+    "JyM_04_imagen.png": "Pablo — sérum con gotero → p-serum.webp",
+    "JyM_05_imagen.png": "Pablo — crema facial en pote de vidrio → p-crema.webp",
+    "JyM_06_imagen.png": "Pablo — aros cuadrados plateados → p-aros-cuadrados.webp",
+    "JyM_07_imagen.png": "Pablo — pulsera de eslabones dorada → p-pulsera-dorada.webp",
+    "JyM_08_imagen.png": "Pablo — máscara de pestañas → p-mascara.webp",
+    "JyM_09_imagen.png": "Pablo — set de pinceles con polvo → p-pinceles.webp",
+    "JyM_10_mockup_web.png": "Pablo — mock up de referencia (no se publica en la web)"
+  },
+  "extra": [
+    { "archivo": "p-base-liquida.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/27677564/", "slot": "producto: Base líquida" },
+    { "archivo": "p-trio-piel.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/7256060/", "slot": "producto: Trío de piel" },
+    { "archivo": "p-iluminador.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/4938507/", "slot": "producto: Iluminador compacto" },
+    { "archivo": "p-polvo-suelto.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/8776810/", "slot": "producto: Polvo suelto" },
+    { "archivo": "p-aceite-facial.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/8490096/", "slot": "producto: Aceite facial" },
+    { "archivo": "p-gel-limpiador.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/4938451/", "slot": "producto: Gel limpiador" },
+    { "archivo": "p-protector-solar.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/8533212/", "slot": "producto: Protector solar" },
+    { "archivo": "p-eau-de-toilette.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/34089130/", "slot": "producto: Eau de toilette" },
+    { "archivo": "p-body-mist.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/6801177/", "slot": "producto: Body mist" },
+    { "archivo": "p-perfume-rollon.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/12402366/", "slot": "producto: Perfume en aceite roll-on" },
+    { "archivo": "p-aros-trenzados.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/12144978/", "slot": "producto: Aros argolla trenzados" },
+    { "archivo": "p-aros-argolla.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/12194348/", "slot": "producto: Aros argolla lisos" },
+    { "archivo": "p-collar-corazon.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/16935588/", "slot": "producto: Collar corazón" },
+    { "archivo": "p-collar-dije.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/27357177/", "slot": "producto: Collar fino con dije" },
+    { "archivo": "p-anillos-plata.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/9430437/", "slot": "producto: Set de anillos plateados" }
+  ]
+}
