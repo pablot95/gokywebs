@@ -50,6 +50,7 @@ const ERR_REPOS = [
     'fozconstrucciones.com.ar'         => 'pablot95/fozconstrucciones',
     'adumircarpinteria.com.ar'         => 'pablot95/adumircarpinteria',
     'xn--avanzams-fza.com.ar'          => 'pablot95/avanzamas',      // avanzamás.com.ar
+    'ayurvedasivapriya.com.ar'         => 'pablot95/ayurvedasivapriya',
     'tintamorenabelleza.com.ar'        => 'pablot95/tintamorena',
     'electrolift.com.ar'               => 'pablot95/electrolift',
     'mdliving.com.ar'                  => 'pablot95/mdliving',
