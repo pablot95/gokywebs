@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261019-por-afuera">
+    <link rel="stylesheet" href="styles.css?v=20261020-mant-compacto">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -321,22 +321,6 @@
                     <h1>Mantenimiento</h1>
                     <p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p>
                 </div>
-                <div class="stats-box stats-box--periods">
-                    <div class="stat-item" title="Lo que entra por mes: las suscripciones activas de Mercado Pago, los que pagan por afuera y los que se cargaron activos a mano en un cliente">
-                        <span class="stat-label">Mensualidad activa</span>
-                        <span class="stat-value" id="mrrActivo">$0</span>
-                        <!-- 16-oct-2026: cuánto es de Mercado Pago, cuánto paga por afuera y cuánto no se encontró. dashboard.js: _updateMantCounters. -->
-                        <span class="muted mrr-detalle" id="mrrDetalle" hidden></span>
-                    </div>
-                    <div class="stat-item" title="Webs entregadas con el plan mensual que todavía no tienen la suscripción de Mercado Pago">
-                        <span class="stat-label">Por activar</span>
-                        <span class="stat-value" id="porActivar">0</span>
-                    </div>
-                    <div class="stat-item" title="Plan anual: los cobros de cada año que ya vencieron o vencen en los próximos 30 días, y cuánto suman">
-                        <span class="stat-label">Cobros anuales</span>
-                        <span class="stat-value" id="anualesACobrar">0</span>
-                    </div>
-                </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
             </div>
             <div class="mant-toolbar">
@@ -346,7 +330,9 @@
                     <button type="button" class="mant-plan-btn" data-mantplan="porfuera" aria-pressed="false" title="Los mensuales que pagan fuera de Mercado Pago y el día del mes en que hay que cobrarles">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                 </div>
-                <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" style="flex:1 1 240px;max-width:340px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
+            </div>
+            <div class="mant-search-row">
+                <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off">
             </div>
             <div id="mantMensual">
             <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->

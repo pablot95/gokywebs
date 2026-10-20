@@ -3071,3 +3071,13 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .mant-err--sinsenal { color: var(--text-muted); }
 .err-mant { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 99px; font-size: 10.5px; font-weight: 600; vertical-align: 1px; color: #93C5FD; background: rgba(96, 165, 250, .14); }
 .err-site--destacada { outline: 2px solid #60A5FA; outline-offset: 2px; transition: outline-color .4s; }
+
+/* Mantenimiento (20-oct): sin tarjetas de totales; planes grandes, buscador en su fila, links chicos. */
+.mant-toolbar { margin: 0 0 12px; }
+.mant-planes { display: flex; width: 100%; padding: 5px; gap: 6px; border-radius: 12px; }
+.mant-plan-btn { flex: 1 1 0; justify-content: center; font-size: 17px; padding: 14px 20px; border-radius: 9px; }
+.mant-search-row { margin: 0 0 14px; }
+.mant-search-row input { width: 100%; background: #111d35; border: 1px solid #1e2c49; border-radius: 10px; color: #e6ecf7; font: inherit; font-size: .9rem; padding: 9px 12px; }
+.mant-links { padding: 8px 12px; margin: 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; border-radius: 10px; }
+.mant-links-title { margin: 0; font-size: .7rem; }
+.mant-link { padding: 3px 10px; min-width: 0; font-size: .78rem; }
