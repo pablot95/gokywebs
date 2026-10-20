@@ -484,16 +484,208 @@ function closeModal() {
     editingTaskId = null;
 }
 
-// 'sep=;' + BOM: fuerza a Excel a separar por ';' y leer bien los acentos, sin importar el idioma del Excel
-function downloadCsv(header, rows, filename) {
-    const csvCell = v => {
-        const s = String(v ?? '');
-        return /[";\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s;
-    };
-    const lines = ['sep=;', header.join(';'), ...rows.map(r => r.map(csvCell).join(';'))];
-    const csv = '﻿' + lines.join('\r\n');
+// ── Exportar a Excel (.xlsx con formato, armado con ExcelJS) ──
+// Antes era un CSV con 'sep=;' + BOM: con la línea 'sep=' Excel ignora el BOM y los
+// acentos salían rotos («CategorÃ­a»), y un CSV no lleva formato. ExcelJS se baja del
+// CDN recién la primera vez que se exporta.
+const EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+let excelJsPromise = null;
+function loadExcelJs() {
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    excelJsPromise ??= new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = EXCELJS_URL;
+        s.onload = () => resolve(window.ExcelJS);
+        s.onerror = () => { excelJsPromise = null; reject(new Error('No se pudo cargar ExcelJS')); };
+        document.head.appendChild(s);
+    });
+    return excelJsPromise;
+}
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+const XL = {
+    header: 'FFFFC93C',     // --amarillo
+    texto: 'FF4A4022',      // --texto
+    textoClaro: 'FF9C9070', // --texto-claro
+    zebra: 'FFFFF6D9',      // --amarillo-suave
+    borde: 'FFF3E6BC',      // --borde
+    total: 'FFFFE9A8',
+};
+const FMT_TIEMPO = '[h]:mm:ss';
+const FMT_HORAS = '0.00';
+const FMT_FECHA = 'dd/mm/yyyy';
+const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+function dateFromKey(dateKey) {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    // Al mediodía UTC: ExcelJS guarda la fecha en UTC y así no se corre de día.
+    return new Date(Date.UTC(y, m - 1, d, 12));
+}
+const secsToExcel = secs => secs / 86400;
+const secsToHours = secs => Math.round((secs / 3600) * 100) / 100;
+
+
+const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+const xlFill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+const xlBorde = { style: 'thin', color: { argb: XL.borde } };
+const xlBordes = { top: xlBorde, left: xlBorde, bottom: xlBorde, right: xlBorde };
+
+function newSheet(wb, name, frozenCols) {
+    const ws = wb.addWorksheet(name, {
+        views: [{ state: 'frozen', xSplit: frozenCols, ySplit: 1 }],
+        pageSetup: {
+            orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+            margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 },
+        },
+        headerFooter: { oddFooter: `Cromor · ${name} · página &P de &N` },
+    });
+    ws.pageSetup.printTitlesRow = '1:1';
+    return ws;
+}
+
+function styleCell(cell, { bold, italic, muted, bg, align = 'left', numFmt, wrap, size } = {}) {
+    cell.font = { bold: !!bold, italic: !!italic, size: size || 11, color: { argb: muted ? XL.textoClaro : XL.texto } };
+    cell.border = xlBordes;
+    cell.alignment = { vertical: 'middle', horizontal: align, wrapText: !!wrap, indent: 0 };
+    if (bg) cell.fill = xlFill(bg);
+    if (numFmt) cell.numFmt = numFmt;
+}
+
+// Una hoja por mes con los días en columnas: cada proyecto (con su total por día) y,
+// debajo, sus tasks; al pie, lo sin asignar y el total del día. Columna final: total del mes.
+function addMonthSheet(wb, ym, days) {
+    const [y, m] = ym.split('-').map(Number);
+    const ws = newSheet(wb, `${MESES_CORTOS[m - 1]} ${y}`, 2);
+    const nDays = days.length;
+    const colTotal = 3 + nDays;
+
+    ws.getColumn(1).width = 34;
+    ws.getColumn(2).width = 10;
+    for (let i = 0; i < nDays; i++) ws.getColumn(3 + i).width = 10;
+    ws.getColumn(colTotal).width = 11;
+
+    // Agrupa: proyecto -> task (nombre + categoría) -> segundos por día
+    const proyectos = new Map();
+    const unassigned = new Array(nDays).fill(0);
+    const dayTotals = new Array(nDays).fill(0);
+    days.forEach(([, data], i) => {
+        const tasks = Object.values(data.projects || {}).filter(p => (p.seconds || 0) > 0);
+        let taskSeconds = 0;
+        tasks.forEach(p => {
+            const secs = taskDisplaySeconds(p);
+            taskSeconds += secs;
+            const proyecto = p.categoryName || 'Sin proyecto';
+            if (!proyectos.has(proyecto)) proyectos.set(proyecto, { secs: new Array(nDays).fill(0), tasks: new Map() });
+            const g = proyectos.get(proyecto);
+            g.secs[i] += secs;
+            const key = `${p.name || 'Task'}::${p.tipo || ''}`;
+            if (!g.tasks.has(key)) g.tasks.set(key, { name: p.name || 'Task', tipo: p.tipo || '', secs: new Array(nDays).fill(0) });
+            g.tasks.get(key).secs[i] += secs;
+        });
+        const daySeconds = Math.max(data.generalSeconds || 0, taskSeconds);
+        unassigned[i] = daySeconds - taskSeconds;
+        dayTotals[i] = daySeconds;
+    });
+    const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+    // Encabezado: un día por columna ("11 jun" / "jueves")
+    const head = ws.getRow(1);
+    head.height = 32;
+    head.getCell(1).value = 'Proyecto / Task';
+    head.getCell(2).value = 'Categoría';
+    days.forEach(([dateKey], i) => {
+        const [yy, mm, dd] = dateKey.split('-').map(Number);
+        head.getCell(3 + i).value = `${dd} ${MESES_CORTOS[mm - 1]}\n${DIAS_CORTOS[new Date(yy, mm - 1, dd).getDay()]}`;
+    });
+    head.getCell(colTotal).value = 'Total';
+    for (let c = 1; c <= colTotal; c++) {
+        styleCell(head.getCell(c), { bold: true, bg: XL.header, align: c <= 2 ? 'left' : 'center', wrap: true });
+    }
+
+    const writeTimes = (row, secsArr, opts) => {
+        secsArr.forEach((s, i) => {
+            const cell = row.getCell(3 + i);
+            if (s > 0) cell.value = secsToExcel(s);
+            styleCell(cell, { ...opts, align: 'right', numFmt: FMT_TIEMPO });
+        });
+        const total = row.getCell(colTotal);
+        total.value = secsToExcel(sum(secsArr));
+        styleCell(total, { ...opts, bold: true, align: 'right', numFmt: FMT_TIEMPO, bg: opts.bg || XL.total });
+    };
+
+    let r = 2;
+    [...proyectos.entries()]
+        .sort((a, b) => sum(b[1].secs) - sum(a[1].secs) || a[0].localeCompare(b[0], 'es'))
+        .forEach(([proyecto, g]) => {
+            const row = ws.getRow(r++);
+            row.getCell(1).value = proyecto;
+            styleCell(row.getCell(1), { bold: true, bg: XL.zebra });
+            styleCell(row.getCell(2), { bg: XL.zebra });
+            writeTimes(row, g.secs, { bold: true, bg: XL.zebra });
+
+            [...g.tasks.values()]
+                .sort((a, b) => sum(b.secs) - sum(a.secs) || a.name.localeCompare(b.name, 'es'))
+                .forEach(t => {
+                    const tr = ws.getRow(r++);
+                    tr.getCell(1).value = t.name;
+                    styleCell(tr.getCell(1));
+                    tr.getCell(1).alignment = { vertical: 'middle', indent: 2 };
+                    tr.getCell(2).value = t.tipo;
+                    styleCell(tr.getCell(2), { align: 'center' });
+                    writeTimes(tr, t.secs, {});
+                });
+        });
+
+    if (sum(unassigned) > 0) {
+        const row = ws.getRow(r++);
+        row.getCell(1).value = 'Sin asignar';
+        styleCell(row.getCell(1), { italic: true, muted: true });
+        styleCell(row.getCell(2));
+        writeTimes(row, unassigned, { italic: true, muted: true });
+    }
+
+    const tot = ws.getRow(r++);
+    tot.height = 20;
+    tot.getCell(1).value = 'Total del día';
+    styleCell(tot.getCell(1), { bold: true, bg: XL.header });
+    styleCell(tot.getCell(2), { bg: XL.header });
+    writeTimes(tot, dayTotals, { bold: true, bg: XL.header });
+
+    // Lo mismo en horas con decimales, para sumar/facturar
+    const horas = ws.getRow(r++);
+    horas.getCell(1).value = 'Horas';
+    styleCell(horas.getCell(1), { bold: true, muted: true });
+    styleCell(horas.getCell(2));
+    dayTotals.forEach((s, i) => {
+        const cell = horas.getCell(3 + i);
+        cell.value = secsToHours(s);
+        styleCell(cell, { muted: true, align: 'right', numFmt: FMT_HORAS });
+    });
+    horas.getCell(colTotal).value = secsToHours(sum(dayTotals));
+    styleCell(horas.getCell(colTotal), { bold: true, muted: true, align: 'right', numFmt: FMT_HORAS });
+}
+
+// Arma el libro con los días que se le pasen ([dateKey, data], ya ordenados): una hoja por mes.
+async function buildWorkbook(days) {
+    const ExcelJS = await loadExcelJs();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'Cromor';
+    wb.created = new Date();
+
+    const porMes = new Map();
+    days.forEach(d => {
+        const ym = d[0].slice(0, 7);
+        if (!porMes.has(ym)) porMes.set(ym, []);
+        porMes.get(ym).push(d);
+    });
+    porMes.forEach((monthDays, ym) => addMonthSheet(wb, ym, monthDays));
+    return wb;
+}
+
+async function downloadWorkbook(wb, filename) {
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -505,8 +697,6 @@ function downloadCsv(header, rows, filename) {
 }
 
 // ── Exportar TODO el calendario (todos los días con tiempo, de todos los meses) ──
-// Una fila por task, más una fila "(sin asignar)" por día cuando el total del día
-// supera la suma de sus tasks: así la columna Horas suma lo mismo que el calendario.
 async function exportAllToExcel() {
     const btn = $('calendarExportAllBtn');
     btn.disabled = true;
@@ -518,36 +708,9 @@ async function exportAllToExcel() {
             if (data.finalized) days.push([d.id, data]);
         });
         days.sort((a, b) => a[0].localeCompare(b[0]));
+        if (!days.length) { toast('No hay días con tiempo para exportar.', 'error'); return; }
 
-        const fecha = dateKey => dateKey.split('-').reverse().join('/');
-        const rows = [];
-        days.forEach(([dateKey, data]) => {
-            const tasks = Object.values(data.projects || {})
-                .filter(p => (p.seconds || 0) > 0)
-                .sort((a, b) => taskDisplaySeconds(b) - taskDisplaySeconds(a));
-            const taskSeconds = tasks.reduce((sum, p) => sum + taskDisplaySeconds(p), 0);
-            const unassigned = Math.max(0, (data.generalSeconds || 0) - taskSeconds);
-            const hecho = doneDays[dateKey] ? 'Sí' : '';
-            tasks.forEach(p => rows.push([
-                fecha(dateKey),
-                p.categoryName || '',               // Proyecto
-                p.name || '',                       // Task
-                p.tipo || '',                       // Categoría
-                formatTime(taskDisplaySeconds(p)),  // Time
-                fmtFrac(taskDisplaySeconds(p)),     // Horas
-                p.completed ? 'Sí' : '',
-                hecho,
-                p.comment || '',
-            ]));
-            if (unassigned > 0) {
-                rows.push([fecha(dateKey), '', '(sin asignar)', '', formatTime(unassigned), fmtFrac(unassigned), '', hecho, '']);
-            }
-        });
-
-        if (!rows.length) { toast('No hay días con tiempo para exportar.', 'error'); return; }
-
-        const header = ['Fecha', 'Proyecto', 'Task', 'Categoría', 'Time', 'Horas', 'Completada', 'Día hecho', 'Comentario'];
-        downloadCsv(header, rows, `Cromor_todo_${getDateKey()}.csv`);
+        await downloadWorkbook(await buildWorkbook(days), `Cromor_todo_${getDateKey()}.xlsx`);
         toast(`Exportados ${days.length} días.`, 'success');
     } catch (e) {
         console.error(e);
@@ -557,25 +720,18 @@ async function exportAllToExcel() {
     }
 }
 
-// ── Exportar el día a un archivo que abre en Excel ──
-// Columnas: Proyecto (categoría/proyecto de la task) · Task (nombre) · Categoría (tipo) · Time
-function exportDayToExcel() {
+// ── Exportar el día abierto en el modal ──
+async function exportDayToExcel() {
     if (!currentModalData) { toast('Abrí un día para exportarlo.', 'error'); return; }
+    const hasTasks = Object.values(currentModalData.projects || {}).some(p => (p.seconds || 0) > 0);
+    if (!hasTasks) { toast('No hay tasks con tiempo para exportar.', 'error'); return; }
 
-    const rows = Object.values(currentModalData.projects || {})
-        .filter(p => (p.seconds || 0) > 0)
-        .sort((a, b) => taskDisplaySeconds(b) - taskDisplaySeconds(a))
-        .map(p => [
-            p.categoryName || '',               // Proyecto
-            p.name || '',                       // Task
-            p.tipo || '',                        // Categoría
-            formatTime(taskDisplaySeconds(p)),   // Time
-            p.comment || '',                     // Comentario
-        ]);
-
-    if (!rows.length) { toast('No hay tasks con tiempo para exportar.', 'error'); return; }
-
-    const header = ['Proyecto', 'Task', 'Categoría', 'Time', 'Comentario'];
-    downloadCsv(header, rows, `Cromor_${currentModalDateKey || getDateKey()}.csv`);
-    toast('Día exportado.', 'success');
+    const dateKey = currentModalDateKey || getDateKey();
+    try {
+        await downloadWorkbook(await buildWorkbook([[dateKey, currentModalData]]), `Cromor_${dateKey}.xlsx`);
+        toast('Día exportado.', 'success');
+    } catch (e) {
+        console.error(e);
+        toast('No se pudo exportar', 'error');
+    }
 }
