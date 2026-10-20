@@ -299,7 +299,8 @@ function wabot_presentar_fs_marcar($id, array $marca) {
 function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $presentar = null, $marcar = null, $hayDemo = null, $avisar = null) {
     $ahora = $ahora ?? time();
     $res = ['revisadas' => 0, 'presentadas' => 0, 'sin_enviar' => 0, 'esperando_demo' => 0, 'detalle' => []];
-    if (array_key_exists('presentar_auto', (array)$cfg) && !$cfg['presentar_auto']) return $res + ['apagado' => true];
+    // Apagada desde el 20-oct (Pablo): solo corre con `presentar_auto: true` en la config.
+    if (empty(((array)$cfg)['presentar_auto'])) return $res + ['apagado' => true];
     $hora = wabot_hora_local($ahora);
     if ($hora < 9 || $hora >= 22) return $res;
 
