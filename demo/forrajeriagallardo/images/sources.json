@@ -1,0 +1,21 @@
+{
+  "zip": "Forrajeria_Gallardo_4o27d673xmzJP7PLUDes.zip (Descargas, 20-oct-2026): 01-09_producto.png y 10_mockup_720x480.png, copiados sin tocar",
+  "logo": {
+    "archivos": ["logo-gallardo.png", "logo-gallardo-320.png", "favicon.png"],
+    "origen": "Foto de perfil del Linktree del cliente (linktr.ee/forrajeriagallardo), 675 x 675 px; se pasó a transparente solo el blanco exterior"
+  },
+  "derivados": {
+    "hero-bolsas.webp, hero-bolsas-960.webp": "02_producto.png (16:9)",
+    "bolsa-vertical.webp": "01_producto.png (9:16)",
+    "p-perro-adulto.webp": "03_producto.png completa",
+    "p-perro-cachorro.webp": "recorte de 01_producto.png",
+    "p-gato-adulto.webp, p-perro-grande.webp, p-mezcla-granos.webp": "recortes de 02_producto.png",
+    "p-mezcla-jaula.webp, p-mezcla-loros.webp": "04_producto.png completa y recorte",
+    "p-maiz-entero.webp, p-mezcla-ponedoras.webp": "recortes de 05_producto.png",
+    "p-pellet-conejos.webp, p-pellet-caballos.webp": "06_producto.png completa y recorte",
+    "p-set-collar-correa.webp, p-collar.webp, p-correa.webp": "07_producto.png completa y recortes",
+    "p-set-comederos.webp, p-comedero.webp, p-soga.webp": "08_producto.png completa y recortes",
+    "p-combo-limpieza.webp, p-lavandina.webp, p-detergente.webp, p-limpiador.webp": "09_producto.png completa y recortes"
+  },
+  "bancos": "Ninguna foto de bancos libres"
+}
