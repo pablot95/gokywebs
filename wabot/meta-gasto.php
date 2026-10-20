@@ -303,6 +303,51 @@ function wabot_meta_ads_no_existe($codigo) {
     return in_array((int)$codigo, [100, 803], true);
 }
 
+/* ── Anuncios eliminados en Meta (Pablo, 20-oct: «elimina los anuncios que se
+   eliminaron en meta»). Se guarda en data/meta-anuncios-borrados.json por id:
+   borrado (effective_status DELETED o que Meta ya no encuentra) y cuándo se
+   miró. Un borrado no vuelve; los demás se vuelven a mirar cada 12 h. ── */
+
+function wabot_meta_borrados_archivo() {
+    return $GLOBALS['WABOT_TEST_META_BORRADOS_ARCHIVO'] ?? (WABOT_DATA . '/meta-anuncios-borrados.json');
+}
+
+/** Los ids de estos anuncios que están eliminados en Meta. Sin token o con Meta caído, solo los que ya se sabían. */
+function wabot_meta_anuncios_borrados(array $ids, $cfg) {
+    $m = json_decode((string)@file_get_contents(wabot_meta_borrados_archivo()), true);
+    $mapa = is_array($m) ? $m : [];
+    $ids = array_values(array_unique(array_filter(array_map('strval', $ids), function ($id) { return preg_match('/^\d{5,25}$/', $id) === 1; })));
+    if (wabot_meta_ads_configurado($cfg)) {
+        $faltan = array_values(array_filter($ids, function ($id) use ($mapa) {
+            $e = $mapa[$id] ?? null;
+            return !is_array($e) || (empty($e['borrado']) && time() - (int)($e['ts'] ?? 0) > 43200);
+        }));
+        $nuevos = [];
+        $sueltos = 0;
+        $estado = function ($datos) { return ['borrado' => strtoupper((string)($datos['effective_status'] ?? '')) === 'DELETED', 'ts' => time()]; };
+        foreach (array_chunk($faltan, 50) as $tanda) {
+            $r = wabot_meta_ads_objeto('', ['ids' => implode(',', $tanda), 'fields' => 'effective_status'], $cfg);
+            if ($r['ok']) {
+                foreach ($tanda as $id) $nuevos[$id] = isset($r['datos'][$id]) ? $estado($r['datos'][$id]) : ['borrado' => true, 'ts' => time()];
+                continue;
+            }
+            if (!wabot_meta_ads_no_existe($r['codigo'])) break;
+            foreach ($tanda as $id) {
+                if (++$sueltos > 30) break 2;
+                $u = wabot_meta_ads_objeto($id, ['fields' => 'effective_status'], $cfg);
+                if ($u['ok']) $nuevos[$id] = $estado($u['datos']);
+                elseif (wabot_meta_ads_no_existe($u['codigo'])) $nuevos[$id] = ['borrado' => true, 'ts' => time()];
+                else break 2;
+            }
+        }
+        if ($nuevos) {
+            $mapa = $nuevos + $mapa;   // array_merge renumeraría los ids (son números)
+            wabot_json_guardar_atomico(wabot_meta_borrados_archivo(), json_encode($mapa, JSON_UNESCAPED_UNICODE));
+        }
+    }
+    return array_values(array_filter($ids, function ($id) use ($mapa) { return !empty($mapa[$id]['borrado']); }));
+}
+
 /**
  * La campaña y el conjunto de estos anuncios: [id => ['nombre', 'conjunto_id',
  * 'conjunto', 'campana_id', 'campana']], solo de los que se conocen. Los que
