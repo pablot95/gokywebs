@@ -118,6 +118,7 @@ export async function initCalendar(userId) {
     $('dayModalClose').addEventListener('click', closeModal);
     $('dayModal').addEventListener('click', e => { if (e.target.id === 'dayModal') closeModal(); });
     $('dayModalExportBtn').addEventListener('click', exportDayToExcel);
+    $('calendarExportAllBtn').addEventListener('click', exportAllToExcel);
 
     await loadDoneDays();
     renderCalendar();
@@ -483,6 +484,79 @@ function closeModal() {
     editingTaskId = null;
 }
 
+// 'sep=;' + BOM: fuerza a Excel a separar por ';' y leer bien los acentos, sin importar el idioma del Excel
+function downloadCsv(header, rows, filename) {
+    const csvCell = v => {
+        const s = String(v ?? '');
+        return /[";\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s;
+    };
+    const lines = ['sep=;', header.join(';'), ...rows.map(r => r.map(csvCell).join(';'))];
+    const csv = '﻿' + lines.join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+// ── Exportar TODO el calendario (todos los días con tiempo, de todos los meses) ──
+// Una fila por task, más una fila "(sin asignar)" por día cuando el total del día
+// supera la suma de sus tasks: así la columna Horas suma lo mismo que el calendario.
+async function exportAllToExcel() {
+    const btn = $('calendarExportAllBtn');
+    btn.disabled = true;
+    try {
+        const snap = await getDocs(collection(db, 'users', uid, 'days'));
+        const days = [];
+        snap.forEach(d => {
+            const data = d.data();
+            if (data.finalized) days.push([d.id, data]);
+        });
+        days.sort((a, b) => a[0].localeCompare(b[0]));
+
+        const fecha = dateKey => dateKey.split('-').reverse().join('/');
+        const rows = [];
+        days.forEach(([dateKey, data]) => {
+            const tasks = Object.values(data.projects || {})
+                .filter(p => (p.seconds || 0) > 0)
+                .sort((a, b) => taskDisplaySeconds(b) - taskDisplaySeconds(a));
+            const taskSeconds = tasks.reduce((sum, p) => sum + taskDisplaySeconds(p), 0);
+            const unassigned = Math.max(0, (data.generalSeconds || 0) - taskSeconds);
+            const hecho = doneDays[dateKey] ? 'Sí' : '';
+            tasks.forEach(p => rows.push([
+                fecha(dateKey),
+                p.categoryName || '',               // Proyecto
+                p.name || '',                       // Task
+                p.tipo || '',                       // Categoría
+                formatTime(taskDisplaySeconds(p)),  // Time
+                fmtFrac(taskDisplaySeconds(p)),     // Horas
+                p.completed ? 'Sí' : '',
+                hecho,
+                p.comment || '',
+            ]));
+            if (unassigned > 0) {
+                rows.push([fecha(dateKey), '', '(sin asignar)', '', formatTime(unassigned), fmtFrac(unassigned), '', hecho, '']);
+            }
+        });
+
+        if (!rows.length) { toast('No hay días con tiempo para exportar.', 'error'); return; }
+
+        const header = ['Fecha', 'Proyecto', 'Task', 'Categoría', 'Time', 'Horas', 'Completada', 'Día hecho', 'Comentario'];
+        downloadCsv(header, rows, `Cromor_todo_${getDateKey()}.csv`);
+        toast(`Exportados ${days.length} días.`, 'success');
+    } catch (e) {
+        console.error(e);
+        toast('No se pudo exportar', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // ── Exportar el día a un archivo que abre en Excel ──
 // Columnas: Proyecto (categoría/proyecto de la task) · Task (nombre) · Categoría (tipo) · Time
 function exportDayToExcel() {
@@ -501,23 +575,7 @@ function exportDayToExcel() {
 
     if (!rows.length) { toast('No hay tasks con tiempo para exportar.', 'error'); return; }
 
-    const csvCell = v => {
-        const s = String(v ?? '');
-        return /[";\n]/.test(s) ? '"' + s.replaceAll('"', '""') + '"' : s;
-    };
     const header = ['Proyecto', 'Task', 'Categoría', 'Time', 'Comentario'];
-    // 'sep=;' + BOM: fuerza a Excel a separar por ';' y leer bien los acentos, sin importar el idioma del Excel
-    const lines = ['sep=;', header.join(';'), ...rows.map(r => r.map(csvCell).join(';'))];
-    const csv = '﻿' + lines.join('\r\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Cromor_${currentModalDateKey || getDateKey()}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    downloadCsv(header, rows, `Cromor_${currentModalDateKey || getDateKey()}.csv`);
     toast('Día exportado.', 'success');
 }

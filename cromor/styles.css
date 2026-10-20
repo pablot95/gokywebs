@@ -1372,6 +1372,13 @@ input.clock-digital[readonly] {
     text-transform: capitalize;
 }
 
+.calendar-export-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.5rem 0 1rem;
+    flex-shrink: 0;
+}
+
 .calendar-nav-btn {
     width: 36px;
     height: 36px;
