@@ -1135,7 +1135,7 @@ function initHeroMotion() {
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
   const paso = (sel, vars, t) => { const els = hero.querySelectorAll(sel); if (els.length) tl.from(els, vars, t); };
   paso('[data-hero-img]', { scale: 1.08, duration: 1.8 }, 0);
-  paso('.is-activa .hero-eyebrow, .hero__txt .hero-eyebrow', { y: 18, opacity: 0, duration: 0.9 }, 0.1);
+  paso('.is-activa .hero-logo, .is-activa .hero-eyebrow, .hero__txt .hero-eyebrow', { y: 18, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' }, 0.1);
   paso('h1', { y: 36, opacity: 0, filter: 'blur(10px)', duration: 1.2, clearProps: 'filter' }, 0.2);
   paso('.is-activa .hero-lead, .hero__txt .hero-lead', { y: 24, opacity: 0, duration: 1 }, 0.45);
   paso('.is-activa .hero-ctas .btn, .hero__txt .hero-ctas .btn', { y: 20, opacity: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform,opacity' }, 0.6);
