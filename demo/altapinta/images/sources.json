@@ -1,0 +1,25 @@
+{
+  "cliente": {
+    "nota": "Las 9 fotos y el mock up llegaron en el zip Alta_pinta_cYRvs47FtnWqHyfsfZEf.zip (20-oct-2026). Los p-*, c-* y h-* que salen de ellas son recortes en WebP; los PNG originales quedan sin tocar.",
+    "mockup": "Alta Pinta_ textiles para tu hogar-6.png"
+  },
+  "pexels": [
+    { "archivo": "p-sabanas-lino.webp", "id": 27439405, "url": "https://www.pexels.com/photo/27439405/", "uso": "Juego de sábanas de lino lavado" },
+    { "archivo": "p-sabanas-percal.webp", "id": 3755590, "url": "https://www.pexels.com/photo/3755590/", "uso": "Juego de sábanas de percal" },
+    { "archivo": "p-cubrecama-microfibra.webp", "id": 7587745, "url": "https://www.pexels.com/photo/7587745/", "uso": "Cubrecama liso de microfibra" },
+    { "archivo": "p-cubrecama-matelaseado.webp", "id": 27638174, "url": "https://www.pexels.com/photo/27638174/", "uso": "Cubrecama matelaseado" },
+    { "archivo": "p-cortina-tusor.webp", "id": 37331166, "url": "https://www.pexels.com/photo/37331166/", "uso": "Cortina de tusor con voile" },
+    { "archivo": "p-cortina-blackout.webp", "id": 6528796, "url": "https://www.pexels.com/photo/6528796/", "uso": "Cortina blackout" },
+    { "archivo": "p-toallon-guarda.webp", "id": 6430745, "url": "https://www.pexels.com/photo/6430745/", "uso": "Toallón con guarda" },
+    { "archivo": "p-toallon-peinado.webp", "id": 45980, "url": "https://www.pexels.com/photo/45980/", "uso": "Toallón de algodón peinado" },
+    { "archivo": "p-toallon-hotel.webp", "id": 7691101, "url": "https://www.pexels.com/photo/7691101/", "uso": "Toallón blanco tipo hotel" },
+    { "archivo": "p-toallas-mano.webp", "id": 17428224, "url": "https://www.pexels.com/photo/17428224/", "uso": "Toallas de mano" },
+    { "archivo": "p-conejo-orejon.webp", "id": 4887078, "url": "https://www.pexels.com/photo/4887078/", "uso": "Conejo de peluche" },
+    { "archivo": "p-conejita-tela.webp", "id": 19314757, "url": "https://www.pexels.com/photo/19314757/", "uso": "Conejita de tela" },
+    { "archivo": "p-repasadores-rayados.webp", "id": 4794872, "url": "https://www.pexels.com/photo/4794872/", "uso": "Repasadores rayados" },
+    { "archivo": "p-repasador-guarda.webp", "id": 8896869, "url": "https://www.pexels.com/photo/8896869/", "uso": "Repasador con guarda" },
+    { "archivo": "p-sabanas-cuna.webp", "id": 7937990, "url": "https://www.pexels.com/photo/7937990/", "uso": "Juego de sábanas para cuna" },
+    { "archivo": "p-cubresillon-flores.webp", "id": 30324280, "url": "https://www.pexels.com/photo/30324280/", "uso": "Cubresillón estampado" },
+    { "archivo": "p-cubresillon-corderito.webp", "id": 30380638, "url": "https://www.pexels.com/photo/30380638/", "uso": "Cubresillón de corderito" }
+  ]
+}
