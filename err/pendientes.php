@@ -77,6 +77,7 @@ const ERR_REPOS = [
     'valuhcatyarte.com.ar'             => 'pablot95/valuhcatyarte',
     'yanzon.com.ar'                    => 'pablot95/yanzon',
     'zaguirinmobiliaria.com.ar'        => 'pablot95/zaguirinmobiliaria',
+    'servimax.com.ar'                => 'pablot95/servimax',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
