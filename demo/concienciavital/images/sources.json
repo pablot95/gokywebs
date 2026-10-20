@@ -1,0 +1,25 @@
+{
+  "demo": "concienciavital",
+  "fotos_base": {
+    "origen": "Zip del pedido de demo (Descargas, Conciencia_Vital_*.zip), imágenes ilustrativas sin personas",
+    "archivos": {
+      "aprendizaje.webp": "01_aprendizaje_9x16.png · nosotros (9:16)",
+      "aula.webp": "02_aula_16x9.png · hero de los dos modelos (16:9)",
+      "cuidados.webp": "03_cuidados.png · curso destacado Cuidados básicos",
+      "virtual.webp": "04_cursos_virtuales.png · modalidad virtual en vivo",
+      "comunicacion.webp": "05_comunicacion.png · curso destacado Comunicación",
+      "autocuidado.webp": "06_autocuidado.png · curso destacado Autocuidado",
+      "recursos.webp": "07_recursos.png · recursos educativos",
+      "prevencion.webp": "08_prevencion.png · áreas de formación",
+      "grabadas.webp": "09_clases_grabadas.png · modalidad grabados"
+    },
+    "mockup": "10_mockup_720x480.png · referencia del Modelo 1"
+  },
+  "logo": {
+    "archivo": "logo-conciencia-vital.png",
+    "origen": "Captura de una publicación de https://www.instagram.com/conciencia_vital_/ con el fondo crema y el aro del sello quitados",
+    "pendiente": "Pedir al cliente el archivo original del logo",
+    "favicon": "favicon.png, recortado de la marca del mismo logo"
+  },
+  "fotos_extra": []
+}
