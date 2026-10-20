@@ -6295,7 +6295,8 @@ function wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || !wabot_plantilla_auto_activa('seguimiento_interesado', $cfg)) return false;
     if (empty($cv['favorito']) || (int)($cv['favorito_ts'] ?? 0) < wabot_plantillas_auto_desde_ts()) return false;
-    if (!empty($cv['seguimiento_interesado_enviado']) || !empty($cv['seguimiento_interesado_auto_intento_ts'])) return false;
+    $plantilla = wabot_seguimiento_interesado_plantilla($cv);
+    if ($plantilla === '' || !wabot_plantilla_auto_activa($plantilla, $cfg)) return false;
     if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
     $ultimo = wabot_ultimo_mensaje_ts($cv);
@@ -6383,12 +6384,38 @@ function wabot_template_72h_enviar(&$conv, $cfg) {
     return 'ok';
 }
 
+/**
+ * Qué plantilla le toca al favorito, o '' si ya no le toca ninguna.
+ *
+ * Pablo, 20-oct: a los que volvió a marcar con la estrella después del
+ * seguimiento no les salía nada más, porque era una sola vez por chat. Marcar
+ * de nuevo (favorito_ts posterior al envío y al último intento) vuelve a
+ * programarlo. Si el cliente contestó aquella plantilla, se repite la misma;
+ * si no la contestó, no se le repite lo que ignoró (Meta mide quejas): va la de
+ * la demo, si tuvo demo y nunca le llegó, y si no, nada.
+ */
+function wabot_seguimiento_interesado_plantilla($cv) {
+    $intento = (int)($cv['seguimiento_interesado_auto_intento_ts'] ?? 0);
+    if (empty($cv['seguimiento_interesado_enviado'])) return $intento > 0 ? '' : 'seguimiento_interesado';
+    $enviado = (int)($cv['seguimiento_interesado_ts'] ?? 0);
+    $fav = (int)($cv['favorito_ts'] ?? 0);
+    if (empty($cv['favorito']) || $enviado <= 0 || $fav <= max($enviado, $intento)) return '';
+    if (wabot_ultimo_cliente_ts($cv) > $enviado) return 'seguimiento_interesado';
+    if (!empty($cv['presentado_ts']) && empty($cv['confirmacion_demo_enviada'])) return 'confirmacion_demo_48h';
+    return '';
+}
+
 /** La misma plantilla sirve a mano en Seguimientos; el cron sigue siendo solo para favoritos. */
 function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = false) {
     if (wabot_canal($conv) === 'instagram') return 'canal';
     if (!$permitirSinFavorito && empty($conv['favorito'])) return 'no_interesado';
-    if (!empty($conv['seguimiento_interesado_enviado'])) return 'ya';
-    if (!wabot_enviar_plantilla($conv, 'seguimiento_interesado', $cfg)) return 'error';
+    $plantilla = empty($conv['seguimiento_interesado_enviado']) ? 'seguimiento_interesado' : wabot_seguimiento_interesado_plantilla($conv);
+    if ($plantilla === '') return 'ya';
+    if (!wabot_enviar_plantilla($conv, $plantilla, $cfg)) return 'error';
+    if ($plantilla === 'confirmacion_demo_48h') {
+        $conv['confirmacion_demo_enviada'] = true;
+        $conv['confirmacion_demo_ts'] = time();
+    }
     $conv['seguimiento_interesado_enviado'] = true;
     $conv['seguimiento_interesado_ts'] = time();
     // Mandada la plantilla, sale de favoritos (Pablo, 4-oct): la estrella marca
