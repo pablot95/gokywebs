@@ -1,0 +1,43 @@
+{
+  "cliente": {
+    "origen": "Zip de ChatGPT con 9 fotos + mock up, copiado a images/ por tools/demo-auto (20-oct-2026)",
+    "mockup": "4PRINCESAS_ pequeños regalos, grandes sonrisas-8.png",
+    "recortes": {
+      "h-bloques.webp": "Bloques de madera y cajas regalo-24.png",
+      "v-conejo.webp": "Conejo de peluche y regalo elegante-23.png",
+      "p-tren-madera.webp": "Tren de juguete de madera en estudio-25.png",
+      "p-camion-volcador.webp": "Camión de juguete amarillo-28.png",
+      "p-bloques-madera.webp": "Bloques de madera y cajas regalo-24.png",
+      "p-conejo-peluche.webp": "Conejo de peluche y regalo elegante-23.png",
+      "p-vasos-fiesta.webp": "Decoración de fiesta en tonos pastel-26.png",
+      "p-platos-festoneados.webp": "Decoración de fiesta en tonos pastel-26.png",
+      "p-caja-regalo.webp": "Elegante caja blanca con cinta fucsia-30.png",
+      "p-frascos-bambu.webp": "Frascos de vidrio con tapas de bambú-32.png",
+      "p-tazas-ceramica.webp": "Tazas de cerámica en luz natural-27.png",
+      "p-lapices-colores.webp": "Lápices de colores y cuadernos ordenados-29.png",
+      "p-cuaderno-espiral.webp": "Lápices de colores y cuadernos ordenados-29.png"
+    }
+  },
+  "pexels": [
+    { "archivo": "p-oso-peluche.webp", "id": 7298152, "url": "https://www.pexels.com/photo/7298152/" },
+    { "archivo": "p-osito-crochet.webp", "id": 7738663, "url": "https://www.pexels.com/photo/7738663/" },
+    { "archivo": "p-encastre-madera.webp", "id": 35579565, "url": "https://www.pexels.com/photo/35579565/" },
+    { "archivo": "p-cohete-madera.webp", "id": 7355365, "url": "https://www.pexels.com/photo/7355365/", "nota": "se tapó el texto de unos libros al pie, detrás de la aleta derecha" },
+    { "archivo": "p-xilofon.webp", "id": 6743154, "url": "https://www.pexels.com/photo/6743154/" },
+    { "archivo": "p-globos-pastel.webp", "id": 3905855, "url": "https://www.pexels.com/photo/3905855/" },
+    { "archivo": "p-vela-numero.webp", "id": 18745754, "url": "https://www.pexels.com/photo/18745754/" },
+    { "archivo": "o-cumple.webp", "id": 18745754, "url": "https://www.pexels.com/photo/18745754/" },
+    { "archivo": "p-sorbetes-locos.webp", "id": 7123075, "url": "https://www.pexels.com/photo/7123075/" },
+    { "archivo": "p-vasos-vidrio.webp", "id": 1166646, "url": "https://www.pexels.com/photo/1166646/" },
+    { "archivo": "p-tablas-madera.webp", "id": 6208155, "url": "https://www.pexels.com/photo/6208155/" },
+    { "archivo": "o-casa.webp", "id": 6208155, "url": "https://www.pexels.com/photo/6208155/" },
+    { "archivo": "p-acuarelas.webp", "id": 1576210, "url": "https://www.pexels.com/photo/1576210/" },
+    { "archivo": "p-marcadores.webp", "id": 998587, "url": "https://www.pexels.com/photo/998587/" },
+    { "archivo": "p-cuaderno-kraft.webp", "id": 5088017, "url": "https://www.pexels.com/photo/5088017/" },
+    { "archivo": "o-cole.webp", "id": 5088017, "url": "https://www.pexels.com/photo/5088017/" },
+    { "archivo": "p-vela-aromatica.webp", "id": 6755744, "url": "https://www.pexels.com/photo/6755744/" },
+    { "archivo": "p-portarretrato.webp", "id": 4464204, "url": "https://www.pexels.com/photo/4464204/" },
+    { "archivo": "p-cajas-kraft.webp", "id": 7410461, "url": "https://www.pexels.com/photo/7410461/" },
+    { "archivo": "o-regalo.webp", "id": 7410461, "url": "https://www.pexels.com/photo/7410461/" }
+  ]
+}
