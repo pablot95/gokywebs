@@ -21,19 +21,21 @@ document.addEventListener('keydown', e => {
 });
 
 const CATEGORIAS = [
-  { id: 'perfumes', nombre: 'Perfumes importados', corto: 'Perfumes', img: 'images/p-ambar-nocturno.webp', bajada: 'Eau de parfum, eau de toilette y body splash, ordenados por familia olfativa.' },
+  { id: 'perfumes', nombre: 'Perfumes importados', corto: 'Perfumes', img: 'images/p-ambar-nocturno.webp', bajada: 'Eau de parfum, eau de toilette, body splash y packs, ordenados por familia olfativa.' },
+  { id: 'lenceria', nombre: 'Lencería', corto: 'Lencería', img: 'images/p-conjunto-encaje-nude.webp', bajada: 'Conjuntos, corpiños, bodies y camisones. Elegí tu talle en cada producto.' },
   { id: 'capilar', nombre: 'Cuidado capilar', corto: 'Capilares', img: 'images/p-serum-puntas.webp', bajada: 'Shampoo, acondicionador, máscaras y finalizadores para cada tipo de pelo.' },
   { id: 'aromas', nombre: 'Aromas para el hogar', corto: 'Aromatizantes', img: 'images/p-difusor-saphirus.webp', bajada: 'Textiles, difusores, home spray y sahumerios de Saphirus.' },
   { id: 'accesorios', nombre: 'Accesorios', corto: 'Accesorios', img: 'images/p-cepillo-bambu.webp', bajada: 'Cepillos, broches y lo necesario para llevar tus productos de viaje.' },
 ];
 
 const TIPOS = {
-  edp: 'Eau de parfum', edt: 'Eau de toilette', splash: 'Body splash',
+  edp: 'Eau de parfum', edt: 'Eau de toilette', splash: 'Body splash', pack: 'Packs y preventas',
+  conjuntos: 'Conjuntos', corpinos: 'Corpiños y bralettes', bodies: 'Bodies', bombachas: 'Bombachas', dormir: 'Camisones',
   limpieza: 'Shampoo y acondicionador', tratamiento: 'Tratamientos', finalizador: 'Finalizadores',
   textil: 'Aromatizantes textiles', difusor: 'Difusores', spray: 'Home spray', sahumerio: 'Sahumerios',
   cabello: 'Para el pelo', viaje: 'Para viajar',
 };
-const TIPOS_POR_CAT = { perfumes: ['edp', 'edt', 'splash'], capilar: ['limpieza', 'tratamiento', 'finalizador'], aromas: ['textil', 'difusor', 'spray', 'sahumerio'], accesorios: ['cabello', 'viaje'] };
+const TIPOS_POR_CAT = { perfumes: ['edp', 'edt', 'splash', 'pack'], lenceria: ['conjuntos', 'corpinos', 'bodies', 'bombachas', 'dormir'], capilar: ['limpieza', 'tratamiento', 'finalizador'], aromas: ['textil', 'difusor', 'spray', 'sahumerio'], accesorios: ['cabello', 'viaje'] };
 const PARA = { ella: 'Para ella', el: 'Para él', unisex: 'Unisex' };
 
 const FAMILIAS = [
@@ -47,12 +49,22 @@ const FAMILIAS = [
 const AROMAS_TEXTIL = ['Naranja pimienta', 'Flores blancas', 'Coco vainilla', 'Lavanda', 'Bamboo'];
 const AROMAS_DIFUSOR = ['Lavanda y romero', 'Flores blancas', 'Vainilla', 'Cítrico'];
 const AROMAS_SAHUMERIO = ['Sándalo', 'Palo santo', 'Lavanda', 'Vainilla'];
+const TALLES_CORPINO = ['85', '90', '95', '100'];
+const TALLES_LETRA = ['S', 'M', 'L', 'XL'];
 
 const PRODUCTOS = [
+  { id: 'pack-preventa', nombre: 'Pack x3 preventa: Bleu de Chanel, Sauvage y Club de Nuit Iconic', cat: 'perfumes', tipo: 'pack', para: 'el', pres: '3 perfumes', precio: 179700, descuento: 0, transferencia: 10, preventa: true, stock: 10, alta: 0,
+    incluye: [
+      { nombre: 'Bleu de Chanel', ml: '100 ml', notas: 'Aromático, amaderado, elegante' },
+      { nombre: 'Sauvage Dior', ml: '100 ml', notas: 'Fresco, especiado, intenso' },
+      { nombre: 'Club de Nuit Iconic Blue', ml: '105 ml', notas: 'Cítrico, amaderado, moderno' },
+    ],
+    img: 'images/p-pack-preventa.webp', alt: 'Tres frascos de perfume sobre fondo oscuro: Bleu de Chanel, Sauvage de Dior y Club de Nuit Iconic Blue',
+    desc: 'Pack de tres perfumes de lujo en preventa, edición limitada. Pagando por transferencia bancaria ahorrás 10 %. Envío en 7 a 10 días y garantía de 30 días.', tags: ['pack', 'preventa', 'chanel', 'bleu', 'dior', 'sauvage', 'club de nuit', 'iconic', 'armaf', 'masculino', 'regalo'] },
   { id: 'ambar-nocturno', nombre: 'Ámbar Nocturno', cat: 'perfumes', tipo: 'edp', para: 'unisex', familia: 'ambar', pres: '100 ml', precio: 79900, descuento: 0, stock: 8, rango: 1, alta: 12,
     notas: ['Cardamomo', 'Ámbar', 'Vainilla'], img: 'images/p-ambar-nocturno.webp', alt: 'Frasco rectangular de perfume color ámbar con tapa negra sobre un estante de piedra al sol',
     desc: 'Abre con cardamomo y se asienta en un ámbar con vainilla cálido y redondo. Dura toda la noche.', tags: ['ambar', 'vainilla', 'noche', 'invierno', 'dulce'] },
-  { id: 'oud-tostado', nombre: 'Oud Tostado', cat: 'perfumes', tipo: 'edp', para: 'el', familia: 'ambar', pres: '100 ml', precio: 89900, descuento: 0, stock: 5, rango: 8, alta: 9,
+  { id: 'oud-tostado', nombre: 'Oud Tostado', cat: 'perfumes', tipo: 'edp', para: 'el', familia: 'ambar', pres: '100 ml', precio: 89900, descuento: 0, stock: 5, rango: 10, alta: 9,
     notas: ['Café', 'Oud', 'Haba tonka'], img: 'images/p-oud-tostado.webp', alt: 'Frasco alto de perfume ámbar con tapa esférica de vidrio marrón, sobre mármol',
     desc: 'Café tostado sobre una base de oud y haba tonka. Intenso, para quien busca un perfume que se note.', tags: ['oud', 'cafe', 'arabe', 'intenso', 'noche'] },
   { id: 'cuero-vainilla', nombre: 'Cuero & Vainilla', cat: 'perfumes', tipo: 'edp', para: 'unisex', familia: 'ambar', pres: '100 ml', precio: 92900, descuento: 0, stock: 0, alta: 14,
@@ -76,13 +88,13 @@ const PRODUCTOS = [
   { id: 'te-verde-higo', nombre: 'Té Verde & Higo', cat: 'perfumes', tipo: 'edt', para: 'unisex', familia: 'fresco', pres: '100 ml', precio: 61900, descuento: 0, stock: 6, alta: 29,
     notas: ['Té verde', 'Hoja de higo', 'Cedro'], img: 'images/p-te-verde-higo.webp', alt: 'Frasco de perfume verde agua apoyado sobre arena con sombras de sol',
     desc: 'Verde y jugoso: té verde, hoja de higo y un fondo de cedro claro.', tags: ['te verde', 'higo', 'verde', 'fresco', 'verano'] },
-  { id: 'neroli-dorado', nombre: 'Neroli Dorado', cat: 'perfumes', tipo: 'edp', para: 'unisex', familia: 'citrico', pres: '50 ml', precio: 58900, descuento: 0, stock: 7, rango: 7, alta: 10,
+  { id: 'neroli-dorado', nombre: 'Neroli Dorado', cat: 'perfumes', tipo: 'edp', para: 'unisex', familia: 'citrico', pres: '50 ml', precio: 58900, descuento: 0, stock: 7, rango: 9, alta: 10,
     notas: ['Mandarina', 'Neroli', 'Almizcle'], img: 'images/p-neroli-dorado.webp', alt: 'Frasco alto y fino de perfume dorado con tapa plateada a la luz del sol',
     desc: 'Mandarina y flor de azahar sobre almizcle. Luminoso, ideal para la oficina.', tags: ['neroli', 'mandarina', 'azahar', 'citrico', 'oficina'] },
   { id: 'body-splash-mandarina', nombre: 'Body splash Mandarina & Eucalipto', cat: 'perfumes', tipo: 'splash', para: 'unisex', familia: 'citrico', pres: '250 ml', precio: 18900, descuento: 15, stock: 12, alta: 23,
     notas: ['Mandarina', 'Eucalipto', 'Algodón'], img: 'images/p-body-splash-algodon.webp', alt: 'Frasco esmerilado de body splash con atomizador junto a una rama de eucalipto',
     desc: 'Bruma corporal liviana para después de la ducha. Se puede aplicar varias veces al día.', tags: ['body splash', 'bruma', 'mandarina', 'eucalipto', 'corporal'] },
-  { id: 'azul-profundo', nombre: 'Azul Profundo', cat: 'perfumes', tipo: 'edt', para: 'el', familia: 'amaderado', pres: '100 ml', precio: 76900, descuento: 0, stock: 9, rango: 6, alta: 8,
+  { id: 'azul-profundo', nombre: 'Azul Profundo', cat: 'perfumes', tipo: 'edt', para: 'el', familia: 'amaderado', pres: '100 ml', precio: 76900, descuento: 0, stock: 9, rango: 8, alta: 8,
     notas: ['Bergamota', 'Lavanda', 'Cedro'], img: 'images/p-azul-profundo.webp', alt: 'Frasco rectangular de perfume azul marino con tapa negra sobre un escalón de piedra',
     desc: 'Bergamota y lavanda sobre cedro. Aromático y prolijo, para todos los días.', tags: ['lavanda', 'cedro', 'aromatico', 'masculino', 'oficina'] },
   { id: 'vetiver-dorado', nombre: 'Vetiver Dorado', cat: 'perfumes', tipo: 'edp', para: 'el', familia: 'amaderado', pres: '100 ml', precio: 86900, descuento: 0, stock: 4, alta: 28,
@@ -91,6 +103,28 @@ const PRODUCTOS = [
   { id: 'cedro-piedra', nombre: 'Cedro & Piedra', cat: 'perfumes', tipo: 'edt', para: 'el', familia: 'amaderado', pres: '100 ml', precio: 71900, descuento: 0, stock: 5, alta: 13,
     notas: ['Limón', 'Cedro', 'Ámbar gris'], img: 'images/p-cedro-piedra.webp', alt: 'Frasco de perfume de vidrio esmerilado apoyado sobre piedras apiladas y mármol gris',
     desc: 'Limón y cedro con un fondo mineral de ámbar gris. Limpio y masculino.', tags: ['cedro', 'mineral', 'limon', 'masculino'] },
+
+  { id: 'conjunto-encaje-nude', nombre: 'Conjunto de encaje nude', cat: 'lenceria', tipo: 'conjuntos', pres: 'Corpiño y bombacha', precio: 32900, descuento: 0, stock: 8, rango: 5, alta: 21, talles: TALLES_CORPINO,
+    img: 'images/p-conjunto-encaje-nude.webp', alt: 'Conjunto de corpiño y bombacha de encaje color nude apoyado sobre una mesa de madera',
+    desc: 'Corpiño con aro y bombacha de encaje floral en tono nude. Breteles regulables y cierre de tres posiciones.', tags: ['conjunto', 'encaje', 'nude', 'corpino', 'bombacha', 'con aro', 'regalo'] },
+  { id: 'corpino-encaje-azul', nombre: 'Corpiño de encaje azul', cat: 'lenceria', tipo: 'corpinos', pres: 'Con aro', precio: 21900, descuento: 0, stock: 6, alta: 18, talles: TALLES_CORPINO,
+    img: 'images/p-corpino-encaje-azul.webp', alt: 'Corpiño de encaje azul colgado junto a un tulipán rosado',
+    desc: 'Encaje azul francia con aro y copa sin relleno. Breteles regulables.', tags: ['corpino', 'encaje', 'azul', 'con aro'] },
+  { id: 'push-up-bordo', nombre: 'Corpiño push-up de encaje bordó', cat: 'lenceria', tipo: 'corpinos', pres: 'Push-up', precio: 24900, descuento: 0, stock: 3, alta: 12, talles: ['85', '90', '95'],
+    img: 'images/p-push-up-bordo.webp', alt: 'Corpiño push-up de encaje bordó apoyado sobre una sábana blanca',
+    desc: 'Push-up con relleno suave y encaje bordó en las copas. Ideal para escotes.', tags: ['corpino', 'push up', 'encaje', 'bordo', 'rojo'] },
+  { id: 'bralette-durazno', nombre: 'Bralette de tul durazno', cat: 'lenceria', tipo: 'corpinos', pres: 'Sin aro', precio: 17900, descuento: 0, stock: 9, alta: 24, talles: ['S', 'M', 'L'],
+    img: 'images/p-bralette-durazno.webp', alt: 'Bralette de tul color durazno con volados colgado de una percha negra',
+    desc: 'Bralette sin aro de tul liviano con volados. Cómodo para todo el día.', tags: ['bralette', 'tul', 'durazno', 'sin aro', 'comodo'] },
+  { id: 'body-encaje-negro', nombre: 'Body de encaje negro', cat: 'lenceria', tipo: 'bodies', pres: 'Manga corta', precio: 29900, descuento: 0, stock: 4, alta: 20, talles: ['S', 'M', 'L'],
+    img: 'images/p-body-encaje-negro.webp', alt: 'Body de encaje negro de manga corta colgado frente a una tela blanca',
+    desc: 'Body de encaje negro con hombros caídos y broche abajo. Va como lencería o con un jean.', tags: ['body', 'encaje', 'negro', 'manga corta'] },
+  { id: 'camison-saten', nombre: 'Camisón de satén con encaje', cat: 'lenceria', tipo: 'dormir', pres: 'Satén', precio: 34900, descuento: 0, stock: 6, alta: 33, talles: TALLES_LETRA,
+    img: 'images/p-camison-saten.webp', alt: 'Camisón de satén negro con escote de encaje color champagne sobre una sábana gris',
+    desc: 'Camisón de satén negro con encaje champagne en el escote y breteles finos.', tags: ['camison', 'saten', 'encaje', 'negro', 'dormir', 'regalo'] },
+  { id: 'bombacha-lunares', nombre: 'Bombacha de algodón con lunares', cat: 'lenceria', tipo: 'bombachas', pres: 'Algodón', precio: 6900, descuento: 0, stock: 15, alta: 14, talles: TALLES_LETRA,
+    img: 'images/p-bombacha-lunares.webp', alt: 'Bombacha blanca de algodón con lunares rojos sobre fondo rosa',
+    desc: 'Algodón con lycra, blanca con lunares rojos y borde festoneado.', tags: ['bombacha', 'algodon', 'lunares', 'blanca'] },
 
   { id: 'mascara-keratina', nombre: 'Máscara nutritiva con keratina', cat: 'capilar', tipo: 'tratamiento', pres: '300 g', precio: 21900, descuento: 0, stock: 11, rango: 4, alta: 7,
     img: 'images/p-mascara-keratina.webp', alt: 'Pote de vidrio con máscara capilar blanca y un plato con crema sobre piedra clara',
@@ -111,7 +145,7 @@ const PRODUCTOS = [
   { id: 'textil-saphirus', nombre: 'Aromatizante textil Saphirus', cat: 'aromas', tipo: 'textil', marca: 'Saphirus', pres: '250 ml', precio: 9900, descuento: 0, stock: 30, rango: 3, alta: 16, aromas: AROMAS_TEXTIL,
     img: 'images/p-textil-saphirus.webp', alt: 'Frasco transparente de aromatizante textil con atomizador blanco y etiqueta celeste',
     desc: 'Para sábanas, cortinas, almohadones y ropa. Rociá a 30 cm de la tela y dejá secar.', tags: ['saphirus', 'textil', 'sabanas', 'ropa', 'aromatizante'] },
-  { id: 'difusor-saphirus', nombre: 'Difusor de varillas Saphirus', cat: 'aromas', tipo: 'difusor', marca: 'Saphirus', pres: '125 ml', precio: 14900, descuento: 0, stock: 18, rango: 5, alta: 17, aromas: AROMAS_DIFUSOR,
+  { id: 'difusor-saphirus', nombre: 'Difusor de varillas Saphirus', cat: 'aromas', tipo: 'difusor', marca: 'Saphirus', pres: '125 ml', precio: 14900, descuento: 0, stock: 18, rango: 6, alta: 17, aromas: AROMAS_DIFUSOR,
     img: 'images/p-difusor-saphirus.webp', alt: 'Difusor de vidrio con varillas de madera junto a un cuenco y un florero claro',
     desc: 'Perfuma un ambiente sin prender nada. Girá las varillas cada tanto para renovar el aroma.', tags: ['saphirus', 'difusor', 'varillas', 'ambiente', 'hogar'] },
   { id: 'home-spray-saphirus', nombre: 'Home spray Saphirus', cat: 'aromas', tipo: 'spray', marca: 'Saphirus', pres: '250 ml', precio: 9400, descuento: 0, stock: 15, alta: 22, aromas: AROMAS_DIFUSOR,
@@ -145,6 +179,14 @@ const redondear = n => Math.round(n / 100) * 100;
 const precioFinal = p => (p.descuento > 0 ? redondear(p.precio * (1 - p.descuento / 100)) : p.precio);
 const catDe = id => CATEGORIAS.find(c => c.id === id);
 const famDe = id => FAMILIAS.find(f => f.id === id);
+const precioTransferencia = p => Math.round(precioFinal(p) * (1 - (p.transferencia || 0) / 100));
+const varDe = p => {
+  if ((p.aromas || []).length) return { valores: p.aromas, titulo: 'Elegí el aroma', boton: 'Elegir aroma' };
+  if ((p.talles || []).length) return { valores: p.talles, titulo: 'Elegí el talle', boton: 'Elegir talle', talle: true };
+  return null;
+};
+const pideEleccion = p => (varDe(p)?.valores.length || 0) > 1;
+const varTexto = (p, v) => (v && p.talles ? `Talle ${v}` : v || '');
 
 const RANGOS_PRECIO = [
   { id: '0-15000', nombre: 'Hasta $15.000', min: 0, max: 15000 },
@@ -158,7 +200,7 @@ function textoDe(p) {
   if (!textoBusqueda.has(p.id)) {
     textoBusqueda.set(p.id, norm([
       p.nombre, p.marca, catDe(p.cat)?.nombre, catDe(p.cat)?.corto, TIPOS[p.tipo], PARA[p.para], famDe(p.familia)?.nombre, p.pres,
-      p.desc, ...(p.notas || []), ...(p.aromas || []), ...(p.tags || []), p.descuento > 0 ? 'oferta descuento' : '',
+      p.desc, ...(p.notas || []), ...(p.aromas || []), ...(p.talles || []).map(t => `talle ${t}`), ...(p.incluye || []).map(x => x.nombre), ...(p.tags || []), p.descuento > 0 ? 'oferta descuento' : '',
     ].join(' ')));
   }
   return textoBusqueda.get(p.id);
@@ -194,7 +236,7 @@ function crearTienda(coleccion, { tope = 100 } = {}) {
       case 'precio-asc': return (a, b) => precioFinal(a) - precioFinal(b) || desempate(a, b);
       case 'precio-desc': return (a, b) => precioFinal(b) - precioFinal(a) || desempate(a, b);
       case 'nombre': return (a, b) => a.nombre.localeCompare(b.nombre, 'es') || desempate(a, b);
-      default: return (a, b) => (a.rango || 999) - (b.rango || 999) || (b.stock > 0) - (a.stock > 0) || b.alta - a.alta || desempate(a, b);
+      default: return (a, b) => (b.preventa ? 1 : 0) - (a.preventa ? 1 : 0) || (a.rango || 999) - (b.rango || 999) || (b.stock > 0) - (a.stock > 0) || b.alta - a.alta || desempate(a, b);
     }
   }
   function consultar({ filtros = {}, orden = 'destacados', cursor = null, limite = 16 } = {}) {
@@ -374,12 +416,14 @@ function refrescarTriggers() {
 }
 
 function metaDe(p) {
+  if (p.preventa) return `Preventa · ${p.pres}`;
   if (p.cat === 'perfumes') return `${famDe(p.familia)?.nombre || TIPOS[p.tipo]} · ${p.pres}`;
   if (p.marca) return `${p.marca} · ${p.pres}`;
   return `${TIPOS[p.tipo]} · ${p.pres}`;
 }
 
 function badgeDe(p) {
+  if (p.preventa) return '<span class="badge badge--oro">Edición limitada</span>';
   if (p.stock <= 0) return '<span class="badge badge--sin">Sin stock</span>';
   if (p.descuento > 0) return `<span class="badge badge--off">-${p.descuento}%</span>`;
   if (p.stock <= 3) return '<span class="badge">Últimas unidades</span>';
@@ -389,15 +433,16 @@ function badgeDe(p) {
 
 function precioHTML(p) {
   const fin = precioFinal(p);
-  return p.descuento > 0 ? `<s>${formatearPrecio(p.precio)}</s><strong class="off">${formatearPrecio(fin)}</strong>` : `<strong>${formatearPrecio(fin)}</strong>`;
+  const base = p.descuento > 0 ? `<s>${formatearPrecio(p.precio)}</s><strong class="off">${formatearPrecio(fin)}</strong>` : `<strong>${formatearPrecio(fin)}</strong>`;
+  return p.transferencia ? `${base}<span class="prod-transf">${formatearPrecio(precioTransferencia(p))} por transferencia</span>` : base;
 }
 
 function cardHTML(p) {
   const sin = p.stock <= 0;
-  const eleccion = (p.aromas || []).length > 1;
+  const eleccion = pideEleccion(p);
   let acciones;
   if (sin) acciones = `<button class="btn btn--cta prod-add" type="button" disabled>Sin stock</button>`;
-  else if (eleccion) acciones = `<button class="btn btn--cta prod-add" type="button" data-quick="${p.id}">Elegir aroma</button>`;
+  else if (eleccion) acciones = `<button class="btn btn--cta prod-add" type="button" data-quick="${p.id}">${varDe(p).boton}</button>`;
   else acciones = `<div class="stepper" data-stepper><button type="button" data-step="-1" aria-label="Restar uno">−</button><input type="number" value="1" min="1" max="${p.stock}" inputmode="numeric" aria-label="Cantidad de ${esc(p.nombre)}"><button type="button" data-step="1" aria-label="Sumar uno">+</button></div><button class="btn btn--cta prod-add prod-add--ico" type="button" data-add="${p.id}" aria-label="Agregar ${esc(p.nombre)} al carrito"><span class="txt">Agregar<span class="largo"> al carrito</span></span><svg class="ico-add" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg></button>`;
   return `<article class="prod" data-id="${p.id}">
     <button class="prod-foto" type="button" data-quick="${p.id}" aria-label="Ver detalle de ${esc(p.nombre)}"><img src="${p.img}" alt="${esc(p.alt)}" width="1000" height="1250" decoding="async">${badgeDe(p)}</button>
@@ -425,10 +470,10 @@ function cantidadDe(btn) {
 function agregar(id, qty = 1, v = '', { abrir = false } = {}) {
   const p = getProducto(id);
   if (!p) return;
-  if ((p.aromas || []).length > 1 && !v) { abrirQuickView(id); return; }
+  if (pideEleccion(p) && !v) { abrirQuickView(id); return; }
   const sumados = Cart.add(p, qty, v);
   if (abrir) { closeQuickView(false); openCartDrawer(); return; }
-  if (sumados > 0) showToast(`${p.nombre}${v ? ` (${v})` : ''} se sumó al carrito.`);
+  if (sumados > 0) showToast(`${p.nombre}${v ? ` (${varTexto(p, v)})` : ''} se sumó al carrito.`);
   else showToast(`Ya tenés en el carrito todo el stock de ${p.nombre}.`);
 }
 
@@ -493,7 +538,7 @@ function renderCarrito() {
   body.innerHTML = items.map(({ p, v, qty }) => `<div class="linea">
       <img src="${p.img}" alt="" width="76" height="95">
       <div>
-        <div class="linea-top"><div><p class="linea-nombre">${esc(p.nombre)}</p><p class="linea-var">${esc([p.pres, v].filter(Boolean).join(' · '))}</p></div>
+        <div class="linea-top"><div><p class="linea-nombre">${esc(p.nombre)}</p><p class="linea-var">${esc([p.pres, varTexto(p, v), p.transferencia ? `${formatearPrecio(precioTransferencia(p))} c/u por transferencia` : ''].filter(Boolean).join(' · '))}</p></div>
           <button class="linea-quitar" type="button" data-quitar="${p.id}" data-v="${esc(v || '')}" aria-label="Quitar ${esc(p.nombre)}">${ICON.basura}</button></div>
         <div class="linea-bot">
           <div class="stepper" data-stepper><button type="button" data-linea-step="-1" data-id="${p.id}" data-v="${esc(v || '')}" aria-label="Restar uno">−</button><input type="number" value="${qty}" min="1" max="${p.stock}" aria-label="Cantidad" data-linea-input data-id="${p.id}" data-v="${esc(v || '')}"><button type="button" data-linea-step="1" data-id="${p.id}" data-v="${esc(v || '')}" aria-label="Sumar uno">+</button></div>
@@ -501,7 +546,7 @@ function renderCarrito() {
         </div>
       </div>
     </div>`).join('');
-  const resumen = items.map(({ p, v, qty }) => `• ${qty} × ${p.nombre}${v ? ` (${v})` : ''}`).join('\n');
+  const resumen = items.map(({ p, v, qty }) => `• ${qty} × ${p.nombre}${v ? ` (${varTexto(p, v)})` : ''}`).join('\n');
   foot.innerHTML = `<div class="drawer-total"><span>Subtotal</span><strong>${formatearPrecio(Cart.total())}</strong></div>
     <p class="drawer-nota">El envío se calcula al finalizar la compra. ¿Dudas con algún producto? <a href="${wa(`Hola Liam Aura, quiero consultar por este pedido:\n${resumen}`)}" target="_blank" rel="noopener">Consultalo por WhatsApp</a>.</p>
     <button class="btn btn--cta" type="button" data-finalizar>Finalizar compra</button>
@@ -578,11 +623,14 @@ function relacionadosDe(p) {
 
 function qvHTML(p) {
   const sin = p.stock <= 0;
-  const aromas = p.aromas || [];
-  const stockTxt = sin ? 'Sin stock por ahora' : p.stock <= 3 ? `Quedan ${p.stock} unidades` : 'En stock';
+  const vari = varDe(p);
+  const valores = vari?.valores || [];
+  const v0 = valores.length === 1 ? valores[0] : vari && !vari.talle ? valores[0] : '';
+  const stockTxt = sin ? 'Sin stock por ahora' : p.preventa ? 'Preventa · stock limitado' : p.stock <= 3 ? `Quedan ${p.stock} unidades` : 'En stock';
   const notas = (p.notas || []).length === 3 ? `<dl class="qv-notas"><div><dt>Salida</dt><dd>${esc(p.notas[0])}</dd></div><div><dt>Corazón</dt><dd>${esc(p.notas[1])}</dd></div><div><dt>Fondo</dt><dd>${esc(p.notas[2])}</dd></div></dl>` : '';
-  const selAromas = aromas.length > 1 ? `<fieldset class="qv-aromas"><legend>Elegí el aroma</legend><div class="guia-opciones" role="radiogroup" aria-label="Aroma">${aromas.map((a, i) => `<button type="button" class="chip" role="radio" aria-checked="${i === 0}" data-aroma="${esc(a)}">${esc(a)}</button>`).join('')}</div></fieldset>` : '';
-  const v0 = aromas.length > 1 ? aromas[0] : '';
+  const incluye = (p.incluye || []).length ? `<ul class="qv-incluye">${p.incluye.map(x => `<li><strong>${esc(x.nombre)}</strong><span>${esc(x.ml)} · ${esc(x.notas)}</span></li>`).join('')}</ul>` : '';
+  const condiciones = p.preventa ? '<ul class="qv-condiciones"><li>Compra segura</li><li>Envío en 7 a 10 días</li><li>Garantía de 30 días</li></ul>' : '';
+  const selVar = valores.length > 1 ? `<fieldset class="qv-aromas"><legend>${vari.titulo}</legend><div class="guia-opciones" role="radiogroup" aria-label="${vari.talle ? 'Talle' : 'Aroma'}">${valores.map(a => `<button type="button" class="chip${vari.talle ? ' chip--talle' : ''}" role="radio" aria-checked="${a === v0}" data-var="${esc(a)}">${esc(a)}</button>`).join('')}</div></fieldset>` : '';
   const rel = relacionadosDe(p);
   return `<div class="qv-grid">
       <div class="qv-foto"><img src="${p.img}" alt="${esc(p.alt)}" width="1000" height="1250">${badgeDe(p)}</div>
@@ -592,8 +640,10 @@ function qvHTML(p) {
         <p class="prod-precio qv-precio">${precioHTML(p)}</p>
         <p class="qv-desc">${esc(p.desc)}</p>
         ${notas}
+        ${incluye}
         ${p.para ? `<p class="qv-para">${esc(PARA[p.para])}${p.familia ? ` · familia ${esc(famDe(p.familia)?.corto)}` : ''}</p>` : ''}
-        ${selAromas}
+        ${selVar}
+        ${condiciones}
         <p class="qv-stock ${sin ? 'sin' : p.stock <= 3 ? 'poco' : ''}">${stockTxt}</p>
         <div class="qv-acciones-wrap">
           ${sin ? '' : `<div class="stepper" data-stepper><button type="button" data-step="-1" aria-label="Restar uno">−</button><input type="number" value="1" min="1" max="${p.stock}" inputmode="numeric" aria-label="Cantidad"><button type="button" data-step="1" aria-label="Sumar uno">+</button></div>`}
@@ -663,28 +713,33 @@ function initQuickView() {
   if (!qv) return;
   qv.addEventListener('click', e => {
     if (e.target.closest('[data-close-qv]')) { closeQuickView(); return; }
-    const aroma = e.target.closest('[data-aroma]');
-    if (aroma) {
-      aroma.parentElement.querySelectorAll('[data-aroma]').forEach(b => b.setAttribute('aria-checked', String(b === aroma)));
-      qv.querySelectorAll('[data-qv-add], [data-qv-buy]').forEach(b => { b.dataset.v = aroma.dataset.aroma; });
+    const opcion = e.target.closest('[data-var]');
+    if (opcion) {
+      opcion.parentElement.querySelectorAll('[data-var]').forEach(b => b.setAttribute('aria-checked', String(b === opcion)));
+      qv.querySelectorAll('[data-qv-add], [data-qv-buy]').forEach(b => { b.dataset.v = opcion.dataset.var; });
       return;
     }
-    const add = e.target.closest('[data-qv-add]');
-    if (add) {
-      agregar(add.dataset.qvAdd, cantidadDe(add), add.dataset.v || '');
+    const accion = e.target.closest('[data-qv-add], [data-qv-buy]');
+    if (accion) {
+      const id = accion.dataset.qvAdd || accion.dataset.qvBuy;
+      const p = getProducto(id);
+      if (p && pideEleccion(p) && !accion.dataset.v) {
+        showToast(`${varDe(p).titulo} antes de agregarlo.`);
+        qv.querySelector('[data-var]')?.focus();
+        return;
+      }
+      agregar(id, cantidadDe(accion), accion.dataset.v || '', { abrir: 'qvBuy' in accion.dataset });
       return;
     }
-    const buy = e.target.closest('[data-qv-buy]');
-    if (buy) { agregar(buy.dataset.qvBuy, cantidadDe(buy), buy.dataset.v || '', { abrir: true }); return; }
     const ir = e.target.closest('[data-qv-ir]');
     if (ir) abrirQuickView(ir.dataset.qvIr);
   }, true);
   qv.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeQuickView();
     atraparFoco(qv, e);
-    const radio = e.target.closest('[data-aroma]');
+    const radio = e.target.closest('[data-var]');
     if (radio && ['ArrowRight', 'ArrowLeft'].includes(e.key)) {
-      const todos = [...radio.parentElement.querySelectorAll('[data-aroma]')];
+      const todos = [...radio.parentElement.querySelectorAll('[data-var]')];
       const sig = todos[(todos.indexOf(radio) + (e.key === 'ArrowRight' ? 1 : -1) + todos.length) % todos.length];
       sig.focus(); sig.click();
     }
@@ -851,12 +906,12 @@ function initPreview(excluir) {
   const cont = document.querySelector('[data-preview]');
   if (!cont) return;
   const mosaico = cont.classList.contains('mosaico');
-  const { items } = Tienda.consultar({ filtros: { excluir, stock: true }, orden: 'nuevos', limite: 8 });
+  const { items } = Tienda.consultar({ filtros: { excluir: [...excluir, 'pack-preventa'], stock: true }, orden: 'nuevos', limite: mosaico ? 4 : 8 });
   items.forEach(cachear);
   let html = items.map(p => liHTML(p)).join('');
   if (mosaico) {
     const total = Tienda.contar({});
-    html += `<li class="mosaico-li-cta" data-animate="subir" style="opacity:0;transform:translateY(40px)"><div class="mosaico-cta"><strong>Hay ${total} productos en la tienda</strong><p>Perfumes, capilares, aromas Saphirus y accesorios, con buscador y filtros.</p><a class="btn btn--cta" href="${CATALOGO_URL}">Ver todo el catálogo ${ICON.flecha}</a></div></li>`;
+    html += `<li class="mosaico-li-cta" data-animate="subir" style="opacity:0;transform:translateY(40px)"><div class="mosaico-cta"><strong>Hay ${total} productos en la tienda</strong><p>Perfumes, lencería, capilares, aromas Saphirus y accesorios, con buscador y filtros.</p><a class="btn btn--cta" href="${CATALOGO_URL}">Ver todo el catálogo ${ICON.flecha}</a></div></li>`;
   }
   cont.innerHTML = html;
 }
@@ -1030,7 +1085,7 @@ function initCatalogo() {
     const cat = estado.cat.length === 1 ? catDe(estado.cat[0]) : null;
     const fam = cat?.id === 'perfumes' && estado.familia.length === 1 ? famDe(estado.familia[0]) : null;
     if (h1) h1.textContent = fam ? `Perfumes ${fam.corto}` : cat ? cat.nombre : 'Catálogo';
-    if (bajada) bajada.textContent = fam ? fam.desc : cat ? cat.bajada : 'Perfumes importados, cuidado capilar, aromas Saphirus y accesorios. Filtrá por categoría, familia olfativa o precio.';
+    if (bajada) bajada.textContent = fam ? fam.desc : cat ? cat.bajada : 'Perfumes importados, lencería, cuidado capilar, aromas Saphirus y accesorios. Filtrá por categoría, familia olfativa o precio.';
     if (miga) {
       miga.innerHTML = cat ? `<a href="${CATALOGO_URL}">Catálogo</a>` : 'Catálogo';
       const ultimo = document.querySelector('[data-miga-cat]');

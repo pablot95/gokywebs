@@ -5,8 +5,12 @@
     "derivados": ["liam-01.webp", "liam-02.webp", "liam-06.webp", "liam-07.webp", "liam-08.webp", "liam-09.webp", "p-ambar-nocturno.webp", "p-oud-tostado.webp", "p-brisa-marina.webp", "p-almizcle-blanco.webp", "p-rosa-empolvada.webp", "p-azul-profundo.webp", "p-neroli-dorado.webp", "p-mascara-keratina.webp", "p-serum-puntas.webp", "p-difusor-saphirus.webp", "p-textil-saphirus.webp"]
   },
   "logo": {
-    "archivo": "logo-liamaura.png / logo-liamaura.webp",
-    "origen": "Foto de perfil de https://www.instagram.com/liam.by.aura/ (150 px, ampliada a 360 px y recortada en círculo)"
+    "archivo": "logo-liamaura.png / logo-liamaura.webp (512 px, recorte circular)",
+    "origen": "logoliam.jpg, 1254 px, enviado por la clienta por WhatsApp (19-oct-2026)"
+  },
+  "pack_preventa": {
+    "archivos": ["p-pack-preventa.webp", "pack-preventa-ancho.webp"],
+    "origen": "infopdosliam.jpg (757 x 1600) enviado por la clienta: frascos recortados de su imagen del Pack x3 preventa; precio, 10 % por transferencia, envío 7-10 días y garantía 30 días salen de ahí"
   },
   "pexels": [
     { "archivo": "p-vetiver-dorado.webp", "id": 18031835, "url": "https://www.pexels.com/photo/18031835/" },
@@ -24,6 +28,13 @@
     { "archivo": "p-cepillo-bambu.webp", "id": 9096593, "url": "https://www.pexels.com/photo/9096593/" },
     { "archivo": "p-broches-carey.webp", "id": 20166054, "url": "https://www.pexels.com/photo/20166054/" },
     { "archivo": "p-neceser-corderito.webp", "id": 18421514, "url": "https://www.pexels.com/photo/18421514/" },
-    { "archivo": "p-frascos-viaje.webp", "id": 8049841, "url": "https://www.pexels.com/photo/8049841/" }
+    { "archivo": "p-frascos-viaje.webp", "id": 8049841, "url": "https://www.pexels.com/photo/8049841/" },
+    { "archivo": "p-conjunto-encaje-nude.webp", "id": 10457175, "url": "https://www.pexels.com/photo/10457175/" },
+    { "archivo": "p-corpino-encaje-azul.webp", "id": 15171148, "url": "https://www.pexels.com/photo/15171148/" },
+    { "archivo": "p-push-up-bordo.webp", "id": 3682271, "url": "https://www.pexels.com/photo/3682271/" },
+    { "archivo": "p-bralette-durazno.webp", "id": 8731342, "url": "https://www.pexels.com/photo/8731342/" },
+    { "archivo": "p-body-encaje-negro.webp", "id": 9356538, "url": "https://www.pexels.com/photo/9356538/" },
+    { "archivo": "p-camison-saten.webp", "id": 13025181, "url": "https://www.pexels.com/photo/13025181/" },
+    { "archivo": "p-bombacha-lunares.webp", "id": 7479438, "url": "https://www.pexels.com/photo/7479438/" }
   ]
 }
