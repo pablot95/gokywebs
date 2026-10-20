@@ -1,0 +1,29 @@
+{
+  "cliente": {
+    "origen": "Zip Liam_Aura_P2n6Wap84kqvohvc3Vfa.zip (Descargas, 19-oct-2026)",
+    "archivos": ["01_perfume_9x16.png", "02_perfumes_16x9.png", "03_perfume_rosado.png", "04_perfume_azul.png", "05_perfume_dorado.png", "06_tratamiento_capilar.png", "07_serum_capilar.png", "08_difusor.png", "09_aromatizante.png", "10_mockup_720x480.png"],
+    "derivados": ["liam-01.webp", "liam-02.webp", "liam-06.webp", "liam-07.webp", "liam-08.webp", "liam-09.webp", "p-ambar-nocturno.webp", "p-oud-tostado.webp", "p-brisa-marina.webp", "p-almizcle-blanco.webp", "p-rosa-empolvada.webp", "p-azul-profundo.webp", "p-neroli-dorado.webp", "p-mascara-keratina.webp", "p-serum-puntas.webp", "p-difusor-saphirus.webp", "p-textil-saphirus.webp"]
+  },
+  "logo": {
+    "archivo": "logo-liamaura.png / logo-liamaura.webp",
+    "origen": "Foto de perfil de https://www.instagram.com/liam.by.aura/ (150 px, ampliada a 360 px y recortada en círculo)"
+  },
+  "pexels": [
+    { "archivo": "p-vetiver-dorado.webp", "id": 18031835, "url": "https://www.pexels.com/photo/18031835/" },
+    { "archivo": "p-peonia-lichi.webp", "id": 16266286, "url": "https://www.pexels.com/photo/16266286/" },
+    { "archivo": "p-te-verde-higo.webp", "id": 8361522, "url": "https://www.pexels.com/photo/8361522/" },
+    { "archivo": "p-cuero-vainilla.webp", "id": 34089130, "url": "https://www.pexels.com/photo/34089130/" },
+    { "archivo": "p-durazno-jazmin.webp", "id": 7005940, "url": "https://www.pexels.com/photo/7005940/" },
+    { "archivo": "p-cedro-piedra.webp", "id": 7814957, "url": "https://www.pexels.com/photo/7814957/" },
+    { "archivo": "p-body-splash-algodon.webp", "id": 4998548, "url": "https://www.pexels.com/photo/4998548/" },
+    { "archivo": "p-shampoo-sin-sulfatos.webp", "id": 7796742, "url": "https://www.pexels.com/photo/7796742/" },
+    { "archivo": "p-acondicionador-hidratante.webp", "id": 7814991, "url": "https://www.pexels.com/photo/7814991/" },
+    { "archivo": "p-aceite-argan.webp", "id": 7797444, "url": "https://www.pexels.com/photo/7797444/" },
+    { "archivo": "p-home-spray-saphirus.webp", "id": 12037266, "url": "https://www.pexels.com/photo/12037266/" },
+    { "archivo": "p-sahumerios-saphirus.webp", "id": 5984850, "url": "https://www.pexels.com/photo/5984850/" },
+    { "archivo": "p-cepillo-bambu.webp", "id": 9096593, "url": "https://www.pexels.com/photo/9096593/" },
+    { "archivo": "p-broches-carey.webp", "id": 20166054, "url": "https://www.pexels.com/photo/20166054/" },
+    { "archivo": "p-neceser-corderito.webp", "id": 18421514, "url": "https://www.pexels.com/photo/18421514/" },
+    { "archivo": "p-frascos-viaje.webp", "id": 8049841, "url": "https://www.pexels.com/photo/8049841/" }
+  ]
+}
