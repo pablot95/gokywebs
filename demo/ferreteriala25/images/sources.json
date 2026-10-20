@@ -1,0 +1,21 @@
+{
+  "cliente": {
+    "01_producto.png": "f-taladro.webp, p-taladro.webp, p-mechas.webp",
+    "02_producto.png": "f-herramientas.webp, f-herramientas-1200.webp, p-caja.webp",
+    "03_producto.png": "f-buloneria.webp, p-bulon.webp, p-tuerca.webp, p-arandela.webp",
+    "04_producto.png": "f-cobre.webp, p-codo-cobre.webp, p-te-cobre.webp, p-cupla-cobre.webp",
+    "05_producto.png": "f-electricidad.webp, p-cable.webp, p-termica.webp",
+    "06_producto.png": "f-pvc.webp, p-codo-pvc.webp, p-ramal-pvc.webp",
+    "07_producto.png": "f-hierros.webp, p-cano.webp",
+    "08_producto.png": "f-chapas.webp, p-chapa.webp",
+    "09_producto.png": "f-gas.webp, p-llave-gas.webp, p-codo-bronce.webp, p-niple.webp, p-buje.webp",
+    "10_mockup_720x480.png": "referencia de diseño, no se publica en la web"
+  },
+  "pexels": [
+    { "archivo": "px-destornilladores.webp", "id": 5583106, "url": "https://www.pexels.com/photo/5583106/", "slot": "producto: Juego de 3 destornilladores" },
+    { "archivo": "px-lampara.webp", "id": 7140253, "url": "https://www.pexels.com/photo/7140253/", "slot": "producto: Lámpara LED gota E27" },
+    { "archivo": "px-tornillo-t1.webp", "id": 5583084, "url": "https://www.pexels.com/photo/5583084/", "slot": "producto: Tornillo T1 punta aguja" },
+    { "archivo": "px-tarugos.webp", "id": 5691641, "url": "https://www.pexels.com/photo/5691641/", "slot": "producto: Tarugo de nylon" },
+    { "archivo": "px-clavos.webp", "id": 190101, "url": "https://www.pexels.com/photo/190101/", "slot": "producto: Clavo punta París" }
+  ]
+}
