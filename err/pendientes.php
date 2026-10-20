@@ -78,6 +78,8 @@ const ERR_REPOS = [
     'yanzon.com.ar'                    => 'pablot95/yanzon',
     'zaguirinmobiliaria.com.ar'        => 'pablot95/zaguirinmobiliaria',
     'servimax.com.ar'                => 'pablot95/servimax',
+    'concienciavital.com.ar'           => 'pablot95/concienciavital',
+    'burgeradonai.com.ar'              => 'pablot95/burgeradonai',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
