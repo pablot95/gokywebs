@@ -151,9 +151,23 @@ const PRODUCTOS = [
   { id: 'borrador-atrapasuenos', nombre: 'Atrapasueños (borrador)', cat: 'decoracion', tipo: 'deco', colores: ['crudo'], precio: 22000, stock: 1, medida: '-', rango: 0, alta: 1, visible: false,
     img: 'images/p-tapiz-mini.webp', alt: '', corto: '', desc: '', tags: [] },
 ];
+const MATERIALES = {
+  'tapiz-girasol': 'Cordón de algodón y varilla de madera',
+  'tapiz-arena': 'Cordón de algodón y varilla de madera',
+  'tapiz-brisa': 'Cordón de algodón, rama natural y cuentas de madera',
+  'plumas-rama': 'Cordón de algodón y rama natural',
+  'alas-terracota': 'Cordón de algodón y rama natural',
+  'espejo-mandala': 'Cordón de algodón y espejo',
+  'espejo-flecos': 'Cordón de algodón, espejo y cuentas de madera',
+  'almohadon-girasoles': 'Funda de cordón de algodón con forro de tela',
+  'botella-hoja': 'Vidrio, yute y cordón de algodón',
+  'llavero-girasol': 'Cordón de algodón y aro metálico',
+  'llavero-hoja': 'Cordón de algodón y aro de madera',
+};
 PRODUCTOS.forEach(p => {
   if (p.descuento == null) p.descuento = 0;
   if (p.stock == null) p.stock = 0;
+  p.material = MATERIALES[p.id] || 'Cordón de algodón';
 });
 
 const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -790,7 +804,7 @@ function abrirQV(id, origen) {
   const ld = document.getElementById('ldProducto');
   if (ld) ld.textContent = JSON.stringify({
     '@context': 'https://schema.org', '@type': 'Product', name: p.nombre, image: new URL(p.img, location.href).href, description: p.desc,
-    brand: { '@type': 'Brand', name: 'Girasoles' }, material: 'Cordón de algodón',
+    brand: { '@type': 'Brand', name: 'Girasoles' }, material: p.material,
     offers: { '@type': 'Offer', priceCurrency: 'ARS', price: precioFinal(p), availability: p.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' },
   });
 }
@@ -817,7 +831,7 @@ function pintarQV() {
       <dl class="qv__ficha">
         <div><dt>Medida</dt><dd>${esc(p.medida)}</dd></div>
         <div><dt>Colores</dt><dd>${esc(p.colores.map(c => COLORES[c]?.nombre).join(', '))}</dd></div>
-        <div><dt>Material</dt><dd>Cordón de algodón</dd></div>
+        <div><dt>Material</dt><dd>${esc(p.material)}</dd></div>
         <div><dt>Disponibles</dt><dd>${sin ? 'Sin stock por ahora' : p.stock === 1 ? 'Pieza única' : `${p.stock} unidades`}</dd></div>
       </dl>
       ${opcionesHTML}
