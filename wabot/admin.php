@@ -530,7 +530,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h', 'seguimiento_interesado'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -615,6 +615,19 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                                   'cliente_id' => mb_substr((string)($_POST['cliente_id'] ?? ''), 0, 40)]);
         echo json_encode(['ok' => $resultado === 'ok', 'resultado' => $resultado, 'clave' => $clave]);
         exit;
+    }
+    if ($a === 'enviar_template_saludo' && !empty($_POST['tel'])) {
+        $tel = (string)$_POST['tel'];
+        $lock = wabot_lock_tomar($tel);
+        $resultado = 'ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($tel);
+                $resultado = wabot_template_saludo_enviar($conv, $cfg);
+                if ($resultado === 'ok') wabot_conv_save($conv);
+            } finally { wabot_lock_soltar($lock); }
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&template_saludo_' . $resultado . '=1'); exit;
     }
     if ($a === 'enviar_template_interesado' && !empty($_POST['tel'])) {
         $tel = (string)$_POST['tel'];
@@ -2014,6 +2027,10 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['template_72_canal'])) echo '<p class="ok" style="color:var(--bad)">Este template es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_72_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó el template o no está activo en Ajustes.</p>'; ?>
     <?php if (isset($_GET['template_72_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
+    <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
+    <?php if (isset($_GET['template_saludo_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
+    <?php if (isset($_GET['template_saludo_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó la plantilla «saludo» o no está activa en Ajustes.</p>'; ?>
+    <?php if (isset($_GET['template_saludo_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
     <?php if (isset($_GET['template_interesado_ok'])) echo '<p class="ok">Plantilla de seguimiento para interesado enviada.</p>'; ?>
     <?php if (isset($_GET['template_interesado_ya'])) echo '<p class="ok" style="color:var(--warn)">La plantilla para interesado ya se envió en este chat.</p>'; ?>
     <?php if (isset($_GET['template_interesado_no_interesado'])) echo '<p class="ok" style="color:var(--warn)">Marcá el chat como favorito antes de enviar esta plantilla.</p>'; ?>
@@ -3027,6 +3044,7 @@ function burbujaCita(t, chat) {
             <?php $plantillasLabels = [
                 'confirmacion_demo_48h' => 'Seguimiento de la demo · 72 h',
                 'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
+                'saludo' => 'Saludo · Marketing (solo a mano desde el chat)',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -3035,15 +3053,17 @@ function burbujaCita(t, chat) {
                         <input type="text" name="plantilla_<?= $e($clavePlant) ?>_nombre" placeholder="nombre_exacto_de_la_plantilla" value="<?= $e((string)($p['nombre'] ?? '')) ?>" style="width:100%">
                     </div>
                     <div><label>Idioma</label><input type="text" name="plantilla_<?= $e($clavePlant) ?>_idioma" value="<?= $e((string)($p['idioma'] ?? 'es_AR')) ?>" style="width:90px"></div>
-                    <?php if ($clavePlant === 'seguimiento_interesado'): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Marketing</span><?php endif; ?>
+                    <?php if ($clavePlant === 'seguimiento_interesado' || $clavePlant === 'saludo'): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Marketing</span><?php endif; ?>
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_activa" <?= !empty($p['activa']) ? 'checked' : '' ?>>
                         Activa
                     </label>
+                    <?php if ($clavePlant !== 'saludo'): ?>
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_automatico" <?= !array_key_exists('automatico', $p) || !empty($p['automatico']) ? 'checked' : '' ?>>
                         Automática a las 18 h
                     </label>
+                    <?php endif; ?>
                 </div>
                 <div style="margin-top:8px">
                     <label>Texto aprobado en Meta (es lo que queda escrito en el chat)</label>
@@ -3188,6 +3208,13 @@ function burbujaCita(t, chat) {
                         <form method="post" onsubmit="return confirm('Enviar ahora la plantilla seguimiento_interesado?')">
                             <input type="hidden" name="accion" value="enviar_template_interesado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"<?= ($templateInteresadoEnviado || !$templateInteresadoActivo) ? ' disabled' : '' ?> title="<?= $e($templateInteresadoEnviado ? 'Ya fue enviada en este chat.' : (!$templateInteresadoActivo ? 'Activá y configurá la plantilla en Ajustes.' : 'Envía la plantilla de Marketing aprobada por Meta.')) ?>"><?= $templateInteresadoEnviado ? '✓ Seguimiento interesado enviado' : 'Enviar seguimiento interesado' ?></button>
+                        </form>
+                        <?php endif; ?>
+                        <?php /* Plantilla "saludo" (Marketing), 21-oct: a mano y repetible. */ ?>
+                        <?php if (wabot_canal($conv) !== 'instagram'): $templateSaludoActivo = wabot_plantilla_config('saludo', $cfg) !== null; ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla saludo («Hola, cómo estás?»)?')">
+                            <input type="hidden" name="accion" value="enviar_template_saludo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= $templateSaludoActivo ? '' : ' disabled' ?> title="<?= $e($templateSaludoActivo ? 'Envía la plantilla de Marketing «saludo» aprobada por Meta.' : 'Activá y configurá la plantilla en Ajustes.') ?>">Enviar saludo</button>
                         </form>
                         <?php endif; ?>
                         <?php /* "Encender/Apagar bot acá", "Rehacer boceto", "Confirmó la demo" y "Ya le

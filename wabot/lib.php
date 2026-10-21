@@ -6405,6 +6405,13 @@ function wabot_seguimiento_interesado_plantilla($cv) {
     return '';
 }
 
+/** Plantilla "saludo" (Marketing): solo a mano desde el chat, se puede repetir. */
+function wabot_template_saludo_enviar(&$conv, $cfg) {
+    if (wabot_canal($conv) === 'instagram') return 'canal';
+    if (!wabot_enviar_plantilla($conv, 'saludo', $cfg)) return 'error';
+    return 'ok';
+}
+
 /** La misma plantilla sirve a mano en Seguimientos; el cron sigue siendo solo para favoritos. */
 function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = false) {
     if (wabot_canal($conv) === 'instagram') return 'canal';
