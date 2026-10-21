@@ -378,7 +378,7 @@ main > section.categorias { padding-top: 0; padding-bottom: calc(var(--section-p
 .marca__foto img { position: absolute; inset: -4% 0; width: 100%; height: 108%; object-fit: cover; object-position: 50% 62%; }
 .marca__media { position: relative; }
 .marca__media .huella { width: 34px; height: 34px; right: -2.4rem; top: 12%; rotate: 16deg; }
-body.m1 .marca__media { align-self: start; margin-top: calc(-1 * var(--cruce) - var(--section-pad-y)); }
+body.m1 .marca__media { align-self: start; margin-top: calc(-1 * var(--section-pad-y) - clamp(28px, 3.4vw, 44px)); }
 .marca__txt { display: grid; gap: 1.1rem; }
 .marca__txt > p { color: var(--color-text-muted); max-width: 48ch; }
 .marca__paleta { display: flex; flex-wrap: wrap; gap: .5rem; }
