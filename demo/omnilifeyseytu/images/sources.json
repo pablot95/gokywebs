@@ -1,0 +1,15 @@
+{
+  "cliente": "Zip Omnilife_y_Seytu de Descargas (9 fotos + mock up), envases de referencia sin marca",
+  "pexels": [
+    { "archivo": "p-proteina-frutilla.webp", "id": 13779116, "url": "https://www.pexels.com/photo/13779116/" },
+    { "archivo": "p-infusion-hierbas.webp", "id": 10584487, "url": "https://www.pexels.com/photo/10584487/" },
+    { "archivo": "p-espuma-limpiadora.webp", "id": 7691166, "url": "https://www.pexels.com/photo/7691166/" },
+    { "archivo": "p-base-liquida.webp", "id": 7256092, "url": "https://www.pexels.com/photo/7256092/" },
+    { "archivo": "p-rubor.webp", "id": 8776814, "url": "https://www.pexels.com/photo/8776814/" },
+    { "archivo": "p-sombras.webp", "id": 4774061, "url": "https://www.pexels.com/photo/4774061/" },
+    { "archivo": "p-iluminador.webp", "id": 4938507, "url": "https://www.pexels.com/photo/4938507/" },
+    { "archivo": "p-mascarilla-capilar.webp", "id": 6167444, "url": "https://www.pexels.com/photo/6167444/" },
+    { "archivo": "p-aceite-capilar.webp", "id": 7796455, "url": "https://www.pexels.com/photo/7796455/" }
+  ],
+  "licencia": "Pexels License (uso libre, sin atribución obligatoria)"
+}
