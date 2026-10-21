@@ -1,0 +1,29 @@
+{
+  "base": {
+    "girasoles_01.png": "Pablo (zip de ChatGPT) — tapiz con girasol y borlas (9:16) → hero-tapiz.webp, g-tapiz.webp, p-tapiz-girasol.webp",
+    "girasoles_02.png": "Pablo — comedor con camino de mesa y tapiz chico (16:9) → hero-taller.webp, og-girasoles.jpg",
+    "girasoles_03.png": "Pablo — colgante para maceta con girasoles → p-colgante-girasoles.webp",
+    "girasoles_04.png": "Pablo — espejo mandala con girasoles → p-espejo-mandala.webp, cat-decoracion.webp",
+    "girasoles_05.png": "Pablo — posavasos con flores → p-posavasos-girasol.webp",
+    "girasoles_06.png": "Pablo — almohadón con girasoles → p-almohadon-girasoles.webp",
+    "girasoles_07.png": "Pablo — llaveros en tres colores → p-llavero-girasol.webp, cat-accesorios.webp",
+    "girasoles_08.png": "Pablo — camino de mesa con girasoles → p-camino-girasoles.webp",
+    "girasoles_09.png": "Pablo — hilos, aros y piezas a medio hacer → t-materiales.webp, p-llavero-hoja.webp",
+    "girasoles_mockup.png": "Pablo — mock up de referencia (no se publica en la web)"
+  },
+  "logo": { "archivo": "logo-girasoles.webp", "fuente": "Foto de perfil del Instagram @gir.asoless (150 px)", "nota": "Pedir el archivo en alta" },
+  "extra": [
+    { "archivo": "p-tapiz-brisa.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/12956063/", "slot": "producto: Tapiz Brisa en rama natural" },
+    { "archivo": "p-botella-hoja.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/15231190/", "slot": "producto: Botella decorada con hoja de macramé" },
+    { "archivo": "p-plumas-rama.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/16176329/", "slot": "producto: Plumas de macramé en rama (par)" },
+    { "archivo": "p-tapiz-arena.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/16820437/", "slot": "producto: Tapiz Arena con varilla + cat-tapices.webp" },
+    { "archivo": "p-espejo-flecos.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/18915435/", "slot": "producto: Espejo redondo con flecos" },
+    { "archivo": "p-colgantes-duo.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/30684650/", "slot": "producto: Set de colgantes mostaza y crudo" },
+    { "archivo": "p-colgante-crudo.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/31951801/", "slot": "producto: Colgante doble para macetas" },
+    { "archivo": "p-bolso-flecos.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/33194363/", "slot": "producto: Bolso de macramé con flecos" },
+    { "archivo": "p-tapiz-rombos.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/35033796/", "slot": "producto: Tapiz Rombos natural" },
+    { "archivo": "p-duo-mostaza.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/37181466/", "slot": "producto: Dúo mostaza (tapiz con rombo y media luna)" },
+    { "archivo": "p-tapiz-mini.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/6208095/", "slot": "producto: Mini tapiz para rincones" },
+    { "archivo": "p-alas-terracota.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/7190406/", "slot": "producto: Alas de macramé terracota (sin stock)" }
+  ]
+}
