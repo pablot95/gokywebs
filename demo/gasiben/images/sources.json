@@ -1,0 +1,15 @@
+{
+  "origen": "Zip Gasiben_lN5giLyPSfKbIlM1daDy.zip enviado por Gokywebs (20-oct-2026); sin fotos de bancos",
+  "imagenes": [
+    { "archivo": "caldera-mural.webp", "original": "01_caldera_vertical.png", "ratio": "9:16", "uso": "M1 hero dividido · M2 guía de señales" },
+    { "archivo": "cocina-calefaccion.webp", "original": "02_cocina_calefaccion_hero.png", "ratio": "16:9", "uso": "M1 cierre · M2 hero ancho · og-gasiben.jpg" },
+    { "archivo": "radiador.webp", "original": "03_radiador.png", "ratio": "1:1", "uso": "Servicio Calefacción por radiadores" },
+    { "archivo": "caldera-instalacion.webp", "original": "04_calefon.png", "ratio": "1:1", "uso": "Servicio Calderas" },
+    { "archivo": "cocina.webp", "original": "05_cocina.png", "ratio": "1:1", "uso": "Servicio Cocinas y hornos" },
+    { "archivo": "estufa.webp", "original": "06_estufa.png", "ratio": "1:1", "uso": "Servicio Estufas" },
+    { "archivo": "herramientas.webp", "original": "07_herramientas.png", "ratio": "1:1", "uso": "M1 proceso · M2 tarjeta de cierre" },
+    { "archivo": "canerias.webp", "original": "08_canerias.png", "ratio": "1:1", "uso": "Servicio Cañerías e instalaciones" },
+    { "archivo": "termotanque.webp", "original": "09_termotanque.png", "ratio": "1:1", "uso": "Servicio Termotanques y calefones" },
+    { "archivo": "10_mockup_720x480.png", "original": "10_mockup_720x480.png", "ratio": "3:2", "uso": "Referencia de diseño del Modelo 1 (no se muestra)" }
+  ]
+}
