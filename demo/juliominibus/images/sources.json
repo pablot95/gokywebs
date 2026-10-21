@@ -1,0 +1,15 @@
+{
+  "origen": "Zip Juliominibus_TbBeRpGO0p69crmSeQzR.zip enviado por Gokywebs (21-oct-2026); imágenes ilustrativas, sin fotos de bancos",
+  "imagenes": [
+    { "archivo": "minibus-vertical.webp", "original": "01_minibus_vertical.png", "ratio": "9:16", "uso": "M1 proceso · M2 hero en celular y banda del proceso" },
+    { "archivo": "flota-ruta.webp", "original": "02_flota_horizontal.png", "ratio": "16:9", "uso": "Hero de los dos modelos · og-juliominibus.jpg" },
+    { "archivo": "combi-sierras.webp", "original": "03_viajes_especiales.png", "ratio": "1:1", "uso": "Servicio Viajes especiales · Unidad de 15" },
+    { "archivo": "combi-empresa.webp", "original": "04_traslados_empresariales.png", "ratio": "1:1", "uso": "Servicio Viajes empresariales · Unidad de 19" },
+    { "archivo": "colectivo-planta.webp", "original": "05_personal.png", "ratio": "1:1", "uso": "Servicio Traslado de personal" },
+    { "archivo": "interior-minibus.webp", "original": "06_interior_minibus.png", "ratio": "1:1", "uso": "Preguntas frecuentes" },
+    { "archivo": "colectivo-45.webp", "original": "07_colectivo.png", "ratio": "1:1", "uso": "Unidad de 45" },
+    { "archivo": "interior-colectivo.webp", "original": "08_interior_colectivo.png", "ratio": "1:1", "uso": "Cierre" },
+    { "archivo": "minibus-24.webp", "original": "09_minibus_mediano.png", "ratio": "1:1", "uso": "Unidad de 24" },
+    { "archivo": "10_mockup_720x480.png", "original": "10_mockup_720x480.png", "ratio": "3:2", "uso": "Referencia de diseño del Modelo 1 (no se muestra)" }
+  ]
+}
