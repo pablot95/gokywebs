@@ -80,6 +80,7 @@ const ERR_REPOS = [
     'servimax.com.ar'                => 'pablot95/servimax',
     'concienciavital.com.ar'           => 'pablot95/concienciavital',
     'burgeradonai.com.ar'              => 'pablot95/burgeradonai',
+    'adaradermocosmiatria.com.ar'      => 'pablot95/adara',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
