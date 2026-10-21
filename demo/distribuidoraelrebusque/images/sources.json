@@ -1,0 +1,40 @@
+{
+  "cliente_base": {
+    "hero-mayorista.webp": "02_catalogo_horizontal.png",
+    "hero-mayorista-960.webp": "02_catalogo_horizontal.png",
+    "og.jpg": "02_catalogo_horizontal.png",
+    "deposito-vertical.webp": "01_mayorista_vertical.png",
+    "p-fusilli.webp": "03_pastas.png",
+    "p-pan-hamburguesa.webp": "04_panes.png",
+    "p-prepizzas.webp": "05_prepizzas.png",
+    "cat-huevos.webp": "06_huevos.png",
+    "p-supremas.webp": "07_pollo.png",
+    "p-medallones.webp": "08_hamburguesas.png",
+    "p-chizitos.webp": "09_snacks.png"
+  },
+  "flyers_del_cliente_whatsapp": {
+    "promo-finas.webp": "02-imagen.jpg",
+    "promo-super-parrilleras.webp": "03-imagen.jpg",
+    "promo-hamburguesones.webp": "04-imagen.jpg",
+    "promo-premium.webp": "05-imagen.jpg",
+    "promo-cerdo.webp": "07-imagen.jpg",
+    "oferta-pata-muslo.webp": "38-imagen.jpg",
+    "oferta-huevos.webp": "39-imagen.jpg",
+    "oferta-supremas.webp": "41-imagen.jpg"
+  },
+  "pexels": {
+    "p-pata-muslo.webp": "https://www.pexels.com/photo/12381147/",
+    "p-carne-mecanizada.webp": "https://www.pexels.com/photo/128401/",
+    "p-hamburguesas-parrilleras.webp": "https://www.pexels.com/photo/3877666/",
+    "p-salchichas.webp": "https://www.pexels.com/photo/14062146/",
+    "p-huevo-blanco.webp": "https://www.pexels.com/photo/6846030/",
+    "p-noquis.webp": "https://www.pexels.com/photo/5451005/",
+    "p-ravioles.webp": "https://www.pexels.com/photo/14750156/",
+    "p-sorrentinos.webp": "https://www.pexels.com/photo/34511613/",
+    "p-discos-empanadas.webp": "https://www.pexels.com/photo/8279588/",
+    "p-pan-semillas.webp": "https://www.pexels.com/photo/1586947/",
+    "p-pan-rallado.webp": "https://www.pexels.com/photo/5988255/",
+    "p-bizcochos.webp": "https://www.pexels.com/photo/37108654/",
+    "p-grisines.webp": "https://www.pexels.com/photo/10838787/"
+  }
+}
