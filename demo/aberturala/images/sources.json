@@ -1,0 +1,22 @@
+{
+  "cliente": {
+    "origen": "zip de Descargas (AberturaLA_wGNIM3X3RaV05Lz9L9U9.zip), 20-oct-2026",
+    "archivos": ["01_puerta.png", "02_corrediza.png", "03_pvc.png", "04_mampara.png", "05_cielorraso.png", "06_cortinas.png", "07_wall_panel.png", "08_placard.png", "09_herrajes.png", "10_mockup_720x480.png"],
+    "derivados": ["h-corrediza.webp", "h-puerta.webp", "g-pvc.webp", "g-mampara.webp", "g-cielorraso.webp", "g-cortinas.webp", "g-wall-panel.webp", "g-placard.webp", "g-herrajes.webp", "p-puerta-aluminio.webp", "p-corrediza-negra.webp", "p-pvc-oscilo.webp", "p-pvc-bano.webp", "p-mampara-fija.webp", "p-cielorraso.webp", "p-roller.webp", "p-wall-panel-roble.webp", "p-placard-blanco.webp", "p-manija.webp", "p-bisagra.webp", "og.jpg"]
+  },
+  "extra": [
+    { "archivo": "p-corrediza-aluminio.webp", "fuente": "Pexels", "id": 32248256, "url": "https://www.pexels.com/photo/32248256/", "nota": "recorte 4:5, color del muro bajado al 30 %" },
+    { "archivo": "p-ventana-blanca.webp", "fuente": "Pexels", "id": 30786734, "url": "https://www.pexels.com/photo/30786734/" },
+    { "archivo": "p-puerta-balcon.webp", "fuente": "Pexels", "id": 34574609, "url": "https://www.pexels.com/photo/34574609/" },
+    { "archivo": "g-puerta-balcon.webp", "fuente": "Pexels", "id": 34574609, "url": "https://www.pexels.com/photo/34574609/" },
+    { "archivo": "p-pvc-abrir.webp", "fuente": "Pexels", "id": 17966851, "url": "https://www.pexels.com/photo/17966851/" },
+    { "archivo": "p-mampara-corrediza.webp", "fuente": "Pexels", "id": 7005268, "url": "https://www.pexels.com/photo/7005268/" },
+    { "archivo": "p-mampara-esquinera.webp", "fuente": "Pexels", "id": 7005476, "url": "https://www.pexels.com/photo/7005476/" },
+    { "archivo": "p-persiana.webp", "fuente": "Pexels", "id": 35102521, "url": "https://www.pexels.com/photo/35102521/" },
+    { "archivo": "p-placard-espejo.webp", "fuente": "Pexels", "id": 6903247, "url": "https://www.pexels.com/photo/6903247/" },
+    { "archivo": "p-wall-panel-nogal.webp", "fuente": "Pexels", "id": 6958141, "url": "https://www.pexels.com/photo/6958141/" },
+    { "archivo": "p-mosquitero.webp", "fuente": "Pexels", "id": 20075559, "url": "https://www.pexels.com/photo/20075559/" },
+    { "archivo": "s-colocacion.webp", "fuente": "Pexels", "id": 5691531, "url": "https://www.pexels.com/photo/5691531/" },
+    { "archivo": "s-obra.webp", "fuente": "Pexels", "id": 5691521, "url": "https://www.pexels.com/photo/5691521/" }
+  ]
+}
