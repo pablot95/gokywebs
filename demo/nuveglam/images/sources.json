@@ -1,0 +1,33 @@
+{
+  "cliente": {
+    "origen": "Zip NUVE_GLAM_GS7DyBGVLxiqPgx6XDHI.zip de Descargas (20-oct-2026), copiado tal cual",
+    "archivos": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup_720x480.png"],
+    "derivados": {
+      "nuve-01.webp ... nuve-09.webp": "las 9 fotos en WebP, mismo tamaño",
+      "p-urbana-nube.webp": "01_imagen.png recortada",
+      "p-clasica-crema.webp": "02_imagen.png recortada",
+      "p-knit-negra.webp": "03_imagen.png",
+      "p-gamuza-rosa.webp": "04_imagen.png",
+      "p-ambar-intenso.webp": "05_imagen.png",
+      "p-jazmin-dorado.webp": "06_imagen.png",
+      "p-linea-azul.webp": "07_imagen.png",
+      "p-set-bagues.webp": "08_imagen.png",
+      "p-clasica-franja-azul.webp": "09_imagen.png"
+    }
+  },
+  "pexels": [
+    { "archivo": "p-lona-blanca.webp", "id": 7193626, "url": "https://www.pexels.com/photo/7193626/", "slot": "producto: Lona blanca básica" },
+    { "archivo": "p-retro-perla.webp", "id": 13536939, "url": "https://www.pexels.com/photo/13536939/", "slot": "producto: Retro perla suela caramelo" },
+    { "archivo": "p-urbana-arena.webp", "id": 12049740, "url": "https://www.pexels.com/photo/12049740/", "slot": "producto: Urbana arena acolchada" },
+    { "archivo": "p-piedra-blanca.webp", "id": 7814959, "url": "https://www.pexels.com/photo/7814959/", "slot": "producto: Piedra Blanca" },
+    { "archivo": "p-almizcle-suave.webp", "id": 34089130, "url": "https://www.pexels.com/photo/34089130/", "slot": "producto: Almizcle Suave" },
+    { "archivo": "p-flor-de-sal.webp", "id": 16266295, "url": "https://www.pexels.com/photo/16266295/", "slot": "producto: Flor de Sal" },
+    { "archivo": "p-esencias-arabes.webp", "id": 12402366, "url": "https://www.pexels.com/photo/12402366/", "slot": "producto: Esencias árabes en aceite x 2" },
+    { "archivo": "p-peonia-suave.webp", "id": 7005940, "url": "https://www.pexels.com/photo/7005940/", "slot": "producto: Peonía Suave" },
+    { "archivo": "p-crema-corporal-bagues.webp", "id": 7814991, "url": "https://www.pexels.com/photo/7814991/", "slot": "producto: Crema corporal Bagués (foto ilustrativa)" },
+    { "archivo": "p-crema-manos-bagues.webp", "id": 4938446, "url": "https://www.pexels.com/photo/4938446/", "slot": "producto: Crema de manos Bagués (foto ilustrativa)" },
+    { "archivo": "p-body-mist-bagues.webp", "id": 6801177, "url": "https://www.pexels.com/photo/6801177/", "slot": "producto: Body mist Bagués (foto ilustrativa)" },
+    { "archivo": "p-difusor-bagues.webp", "id": 7436108, "url": "https://www.pexels.com/photo/7436108/", "slot": "producto: Difusor de varillas Bagués (foto ilustrativa)" },
+    { "archivo": "p-serum-corporal-bagues.webp", "id": 8054404, "url": "https://www.pexels.com/photo/8054404/", "slot": "producto: Sérum corporal humectante Bagués (foto ilustrativa)" }
+  ]
+}
