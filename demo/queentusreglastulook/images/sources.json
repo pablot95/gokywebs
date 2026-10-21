@@ -1,0 +1,29 @@
+{
+  "cliente": {
+    "origen": "Queen_tus_reglas_tu_look_oiEo3Q4dub2VazmQ606j.zip (Descargas, 20-oct-2026)",
+    "archivos": ["01_vestido.png", "02_coleccion.png", "03_blusa.png", "04_jean.png", "05_blazer.png", "06_top.png", "07_pantalon.png", "08_camisa.png", "09_falda.png", "10_mockup_720x480.png"],
+    "derivados": {
+      "vestido-negro-alto.webp": "01_vestido.png",
+      "p-vestido-drapeado.webp": "01_vestido.png (llevado a cuadrado extendiendo la pared)",
+      "coleccion.webp": "02_coleccion.png",
+      "og.jpg": "02_coleccion.png",
+      "p-blusa-saten.webp": "03_blusa.png",
+      "p-jean-recto.webp": "04_jean.png",
+      "p-blazer-negro.webp": "05_blazer.png",
+      "p-top-lentejuelas.webp": "06_top.png",
+      "p-pantalon-amplio.webp": "07_pantalon.png",
+      "p-camisa-blanca.webp": "08_camisa.png",
+      "p-pollera-saten.webp": "09_falda.png"
+    }
+  },
+  "pexels": [
+    { "archivo": "p-vestido-halter.webp", "id": "14513896", "url": "https://www.pexels.com/photo/14513896/", "uso": "Vestido halter estampado" },
+    { "archivo": "p-vestido-rojo.webp", "id": "19895956", "url": "https://www.pexels.com/photo/19895956/", "uso": "Vestido rojo plisado" },
+    { "archivo": "p-vestido-marfil.webp", "id": "35538618", "url": "https://www.pexels.com/photo/35538618/", "uso": "Vestido satinado marfil" },
+    { "archivo": "p-vestido-corset.webp", "id": "15893780", "url": "https://www.pexels.com/photo/15893780/", "uso": "Vestido corset de tul" },
+    { "archivo": "p-trench-beige.webp", "id": "5424917", "url": "https://www.pexels.com/photo/5424917/", "uso": "Trench con cinto" },
+    { "archivo": "p-remera-basica.webp", "id": "12039633", "url": "https://www.pexels.com/photo/12039633/", "uso": "Remera básica" },
+    { "archivo": "p-sweater-ingles.webp", "id": "9603630", "url": "https://www.pexels.com/photo/9603630/", "uso": "Sweater de punto inglés" }
+  ],
+  "licencia": "Pexels License (uso libre, sin atribución obligatoria)"
+}
