@@ -1,0 +1,41 @@
+{
+  "origen": "Zip del cliente SV_Fragance_YWjQx9H3Zp46JhHysaQY.zip (21-oct-2026). Sin fotos de bancos.",
+  "originales": {
+    "svfragance_01.png": "01_perfume_vertical.png (900x1600)",
+    "svfragance_02.png": "02_coleccion_horizontal.png (1600x900)",
+    "svfragance_03.png": "03_arabe_ambar.png",
+    "svfragance_04.png": "04_nicho_oscuro.png",
+    "svfragance_05.png": "05_floral.png",
+    "svfragance_06.png": "06_decants.png",
+    "svfragance_07.png": "07_perfume_fresco.png",
+    "svfragance_08.png": "08_perfume_dorado.png",
+    "svfragance_09.png": "09_presentacion_sellada.png",
+    "svfragance_mockup.png": "10_mockup_720x480.png (referencia del Modelo 1)"
+  },
+  "recortes": {
+    "hero-coleccion.webp": "svfragance_02.png completa",
+    "portada-frasco.webp": "svfragance_01.png completa",
+    "og-svfragance.jpg": "svfragance_02.png 1200x630",
+    "cat-arabes.webp": "svfragance_03.png con zoom",
+    "cat-nicho.webp": "svfragance_04.png con zoom",
+    "cat-disenador.webp": "svfragance_01.png cuadrado",
+    "cat-decants.webp": "svfragance_06.png con zoom",
+    "decants.webp": "svfragance_06.png",
+    "sellado.webp": "svfragance_09.png",
+    "p-khamrah.webp": "svfragance_03.png",
+    "p-asad.webp": "svfragance_02.png, frasco derecho",
+    "p-bleu.webp": "svfragance_02.png, frasco del medio",
+    "p-la-vie-est-belle.webp": "svfragance_02.png, frasco izquierdo",
+    "p-br540.webp": "svfragance_01.png cuadrado",
+    "p-oud-for-greatness.webp": "svfragance_04.png",
+    "p-aventus.webp": "svfragance_04.png espejado y con zoom",
+    "p-yara.webp": "svfragance_05.png",
+    "p-libre.webp": "svfragance_05.png espejado y con zoom",
+    "p-hawas.webp": "svfragance_07.png",
+    "p-adg-profondo.webp": "svfragance_07.png espejado y con zoom",
+    "p-amber-oud-gold.webp": "svfragance_08.png",
+    "p-layton.webp": "svfragance_08.png espejado y con zoom",
+    "p-sauvage.webp": "svfragance_09.png, frasco sin la caja"
+  },
+  "nota": "Los frascos son ilustrativos (sin marca); los nombres de los perfumes son reales y los precios de demo."
+}
