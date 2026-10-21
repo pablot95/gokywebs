@@ -3658,6 +3658,17 @@ function initRealtime() {
         console.error("Mantenimiento error:", err);
     });
 
+    // ── Contraseñas de Mantenimiento ──
+    onSnapshot(collection(db, "credenciales"), (snap) => {
+        credenciales = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => String(a.cliente).localeCompare(String(b.cliente), "es", { sensitivity: "base" }));
+        renderCredenciales();
+    }, (err) => {
+        console.error("Credenciales error:", err);
+        const tbody = document.getElementById("credTbody");
+        if (tbody) tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No se pudieron leer: ${escapeHtml(err.message)}</td></tr>`;
+    });
+
     // ── Reseñas de demos (botón flotante de snippets_canonicos_demos §9) ──
     const qResenas = query(collection(db, "resenas"), orderBy("createdAt", "desc"));
     onSnapshot(qResenas, (snap) => {
@@ -9166,6 +9177,9 @@ function renderMantenimiento() {
     if (facturacionEl) facturacionEl.hidden = mantPlan !== "facturacion";
     const porFueraEl = document.getElementById("mantPorFuera");
     if (porFueraEl) porFueraEl.hidden = mantPlan !== "porfuera";
+    const contrasenasEl = document.getElementById("mantContrasenas");
+    if (contrasenasEl) contrasenasEl.hidden = mantPlan !== "contrasenas";
+    renderCredenciales();
     const altaBtn = document.getElementById("openMantModalBtn");
     if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
 
@@ -9179,6 +9193,113 @@ function renderMantenimiento() {
         renderFactArchivo();
     }
 }
+
+/* ── Mantenimiento → Contraseñas (21-oct-2026) ──
+   Mail + clave de cada cliente, a mano. Colección `credenciales` (reglas: solo el admin). */
+let credenciales = [];
+let credEditId = null;
+const credVisibles = new Set();   // ids con la clave a la vista
+
+function renderCredenciales() {
+    const tbody = document.getElementById("credTbody");
+    if (!tbody) return;
+    const cont = document.getElementById("mantCountContrasenas");
+    if (cont) cont.textContent = credenciales.length;
+    if (mantPlan !== "contrasenas") return;
+    const term = (searchMantInput?.value || "").trim().toLowerCase();
+    const filas = credenciales.filter(c => !term || `${c.cliente} ${c.email} ${c.nota}`.toLowerCase().includes(term));
+    tbody.innerHTML = filas.length ? filas.map(c => {
+        const visible = credVisibles.has(c.id);
+        return `<tr>
+            <td><strong>${escapeHtml(c.cliente)}</strong></td>
+            <td>${c.email ? `${escapeHtml(c.email)} <button type="button" class="fa-link" data-cred-copiar="${escapeHtml(c.id)}" data-campo="email">Copiar</button>` : `<span class="muted">—</span>`}</td>
+            <td><code>${visible ? escapeHtml(c.clave) : "••••••••"}</code>
+                <button type="button" class="fa-link" data-cred-ver="${escapeHtml(c.id)}">${visible ? "Ocultar" : "Ver"}</button>
+                <button type="button" class="fa-link" data-cred-copiar="${escapeHtml(c.id)}" data-campo="clave">Copiar</button></td>
+            <td>${c.nota ? escapeHtml(c.nota) : `<span class="muted">—</span>`}</td>
+            <td class="actions-col">
+                <button type="button" class="btn-ghost" data-cred-editar="${escapeHtml(c.id)}" style="font-size:12px">Editar</button>
+                <button type="button" class="btn-ghost" data-cred-borrar="${escapeHtml(c.id)}" style="font-size:12px">Borrar</button></td>
+        </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "No hay contraseñas para esa búsqueda." : "Todavía no hay contraseñas cargadas."}</td></tr>`;
+}
+
+function _credResetForm() {
+    credEditId = null;
+    const f = document.getElementById("credForm");
+    f.reset();
+    document.getElementById("credGuardarBtn").textContent = "Agregar";
+    document.getElementById("credCancelarBtn").hidden = true;
+}
+
+document.getElementById("credForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget;
+    const datos = {
+        cliente: f.cliente.value.trim(),
+        email: f.email.value.trim(),
+        clave: f.clave.value.trim(),
+        nota: f.nota.value.trim(),
+        updatedAt: serverTimestamp()
+    };
+    if (!datos.cliente || !datos.clave) return;
+    const btn = document.getElementById("credGuardarBtn");
+    btn.disabled = true;
+    try {
+        if (credEditId) await updateDoc(doc(db, "credenciales", credEditId), datos);
+        else await addDoc(collection(db, "credenciales"), { ...datos, createdAt: serverTimestamp() });
+        _credResetForm();
+    } catch (err) {
+        alert("No se pudo guardar: " + err.message);
+    } finally {
+        btn.disabled = false;
+    }
+});
+document.getElementById("credCancelarBtn")?.addEventListener("click", _credResetForm);
+
+document.getElementById("credTbody")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    const id = btn.dataset.credVer || btn.dataset.credCopiar || btn.dataset.credEditar || btn.dataset.credBorrar;
+    const c = credenciales.find(x => x.id === id);
+    if (!c) return;
+    if (btn.dataset.credVer) {
+        credVisibles.has(id) ? credVisibles.delete(id) : credVisibles.add(id);
+        renderCredenciales();
+    } else if (btn.dataset.credCopiar) {
+        try {
+            await navigator.clipboard.writeText(c[btn.dataset.campo] || "");
+            const t = btn.textContent;
+            btn.textContent = "¡Copiado!";
+            setTimeout(() => { btn.textContent = t; }, 1200);
+        } catch (_) { alert("No se pudo copiar."); }
+    } else if (btn.dataset.credEditar) {
+        const f = document.getElementById("credForm");
+        credEditId = id;
+        f.cliente.value = c.cliente || "";
+        f.email.value = c.email || "";
+        f.clave.value = c.clave || "";
+        f.nota.value = c.nota || "";
+        document.getElementById("credGuardarBtn").textContent = "Guardar";
+        document.getElementById("credCancelarBtn").hidden = false;
+        f.cliente.focus();
+    } else if (btn.dataset.credBorrar) {
+        if (!confirm(`¿Borrar la contraseña de ${c.cliente}${c.email ? " (" + c.email + ")" : ""}?`)) return;
+        try { await deleteDoc(doc(db, "credenciales", id)); }
+        catch (err) { alert("No se pudo borrar: " + err.message); }
+    }
+});
+
+// Facturación tiene dos pestañas: Suscripciones y Facturas emitidas.
+document.querySelectorAll("#faSubtabs [data-fasub]").forEach(b => {
+    b.addEventListener("click", () => {
+        const sub = b.dataset.fasub;
+        document.querySelectorAll("#faSubtabs [data-fasub]").forEach(x =>
+            x.setAttribute("aria-pressed", String(x === b)));
+        document.getElementById("faPanelSusc").hidden = sub !== "suscripciones";
+        document.getElementById("faPanelFacturas").hidden = sub !== "facturas";
+    });
+});
 
 /* ── Mantenimiento → Facturación (26-sep-2026) ──
    Las mensualidades que cobra Mercado Pago se facturan solas: el cron

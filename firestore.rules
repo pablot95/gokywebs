@@ -13,6 +13,8 @@ service cloud.firestore {
     match /gastoPublicidad/{doc} { allow read, write: if isAdmin(); }
     // Gastos fijos (mensuales) y adicionales de la pestaña Finanzas (12-oct-2026).
     match /finanzasGastos/{doc} { allow read, write: if isAdmin(); }
+    // Mail + clave de cada cliente, pestaña Contraseñas de Mantenimiento (21-oct-2026).
+    match /credenciales/{doc} { allow read, write: if isAdmin(); }
     match /propuestas/{doc}    {
       allow create: if true;           // formulario /form escribe sin login
       allow read, delete: if isAdmin();

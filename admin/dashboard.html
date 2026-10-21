@@ -329,6 +329,7 @@
                     <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="porfuera" aria-pressed="false" title="Los mensuales que pagan fuera de Mercado Pago y el día del mes en que hay que cobrarles">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
                 </div>
             </div>
             <div class="mant-search-row">
@@ -416,7 +417,39 @@
             <!-- Facturación (26-sep-2026): cada mensualidad que cobra Mercado Pago se factura sola.
                  Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
                  no de Firestore; lo emite el cron (mantenimiento/api/facturar-cobros.php). -->
+            <!-- Contraseñas (21-oct-2026): mail + clave de cada cliente, colección `credenciales` (solo el admin). -->
+            <div id="mantContrasenas" hidden>
+                <form id="credForm" class="cred-form" autocomplete="off">
+                    <input type="text" name="cliente" class="form-input" placeholder="Cliente / sitio" maxlength="80" required>
+                    <input type="text" name="email" class="form-input" placeholder="Mail o usuario" maxlength="120" autocomplete="off">
+                    <input type="text" name="clave" class="form-input" placeholder="Contraseña" maxlength="120" autocomplete="off" required>
+                    <input type="text" name="nota" class="form-input" placeholder="Nota (ej: admin, mail)" maxlength="120">
+                    <button type="submit" class="btn-primary" id="credGuardarBtn">Agregar</button>
+                    <button type="button" class="btn-ghost" id="credCancelarBtn" hidden>Cancelar</button>
+                </form>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Mail / usuario</th>
+                                <th>Contraseña</th>
+                                <th>Nota</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="credTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div id="mantFacturacion" hidden>
+                <div class="mant-planes fa-subtabs" id="faSubtabs" role="group" aria-label="Facturación" style="margin-bottom:16px">
+                    <button type="button" class="mant-plan-btn" data-fasub="suscripciones" aria-pressed="true">Suscripciones</button>
+                    <button type="button" class="mant-plan-btn" data-fasub="facturas" aria-pressed="false">Facturas emitidas</button>
+                </div>
+                <div id="faPanelSusc">
                 <div class="fa-estado">
                     <div>
                         <p class="fa-titulo">Facturación automática <span class="fa-badge" id="faBadge">…</span></p>
@@ -465,9 +498,11 @@
                         </tbody>
                     </table>
                 </div>
+                </div>
                 <!-- Facturas emitidas (3-oct-2026): todo el registro, automáticas y a mano.
                      Cada PDF queda guardado en el server al emitirse (config/arca/archivo.php);
                      admin/api/facturas.php las lista y las baja de a una o todas en un .zip. -->
+                <div id="faPanelFacturas" hidden>
                 <div class="fa-archivo-cab">
                     <p class="mant-subtitulo">Facturas emitidas</p>
                     <div class="fa-acciones">
@@ -492,6 +527,7 @@
                             <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
                         </tbody>
                     </table>
+                </div>
                 </div>
             </div>
         </section>
@@ -1318,6 +1354,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261020-sin-campana"></script>
+    <script type="module" src="dashboard.js?v=20261021-contrasenas"></script>
 </body>
 </html>
