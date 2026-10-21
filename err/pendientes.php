@@ -57,6 +57,7 @@ const ERR_REPOS = [
     'indumentarialulu.com.ar'          => 'pablot95/luluindumentaria',
     'joawindumentaria.com.ar'          => 'pablot95/joawindumentaria',
     'petshopbony.com.ar'               => 'pablot95/petshopbony',
+    'pataclub.ar'                      => 'pablot95/pataclub',
     'afmasajesydepilacion.com.ar'      => 'pablot95/afmasajesydepilacion',
     'lxfparquetpisosdemadera.com.ar'   => 'pablot95/lxfparquetpisosdemadera',
     'julietaledesmaasesoracomercial.com.ar' => 'pablot95/julietaledesmaasesoracomercial',
