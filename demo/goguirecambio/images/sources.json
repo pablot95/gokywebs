@@ -1,0 +1,36 @@
+{
+  "origen": "Zip del cliente Gogui_recambio_VKELMMfOx4OPwwII9LTE.zip (21-oct-2026), sin zip interno. Sin fotos de bancos. Imágenes ilustrativas (no son productos reales del local).",
+  "originales": {
+    "01_arranque_vertical.png": "900x1600",
+    "02_catalogo_horizontal.png": "1600x900",
+    "03_arranque.png": "1254x1254",
+    "04_alternador.png": "1254x1254",
+    "05_portacarbones.png": "1254x1254",
+    "06_bobina.png": "1254x1254 (bobinas de campo de arranque)",
+    "07_rotor.png": "1254x1254 (inducido de arranque)",
+    "08_estator.png": "1254x1254",
+    "09_luces.png": "1254x1254",
+    "10_mockup_720x480.png": "referencia del Modelo 1"
+  },
+  "recortes": {
+    "banco.webp": "02 completa (portada M1, banda M2)",
+    "arranque-vertical.webp": "01 completa (identificar M1, portada M2)",
+    "og-goguirecambio.jpg": "02 a 1200x675",
+    "p-arranque-12v.webp": "03 completa",
+    "p-arranque-reductor.webp": "01 recorte (0,110,900,1010)",
+    "p-arranque-24v.webp": "02 recorte izquierdo (0,20,880,900)",
+    "p-alternador-90a.webp": "04 completa",
+    "p-alternador-120a.webp": "02 recorte derecho (850,40,1600,790)",
+    "p-bendix-12v.webp": "03 recorte del piñón (0,450,520,970)",
+    "p-automatico-12v.webp": "03 recorte del automático (560,90,1120,650)",
+    "p-inducido.webp": "07 completa",
+    "p-bobinas-campo.webp": "06 completa",
+    "p-portacarbones.webp": "05 completa",
+    "p-carbones.webp": "05 recorte (120,110,700,690)",
+    "p-bendix-24v.webp": "01 recorte de la nariz (130,60,650,580)",
+    "p-automatico-24v.webp": "01 recorte del automático (340,590,900,1150)",
+    "p-estator.webp": "08 completa",
+    "p-polea.webp": "04 recorte de la polea (790,440,1250,900)",
+    "p-lamparas-h4.webp": "09 completa"
+  }
+}
