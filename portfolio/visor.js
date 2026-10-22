@@ -141,7 +141,8 @@
     var ICO = {
         izq: ico('<path d="M15 6l-6 6 6 6"/>'),
         der: ico('<path d="M9 6l6 6-6 6"/>'),
-        lupa: ico('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')
+        lupa: ico('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+        afuera: ico('<path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>')
     };
 
     /* ── Estado ── */
@@ -179,6 +180,13 @@
                 '</div>' +
                 '<img class="gv-marco" src="' + BASE + 'laptop.webp" alt="" width="1672" height="941" loading="lazy" decoding="async">' +
             '</div>' +
+            '<div class="gv-rotulo">' +
+                '<span class="gv-rotulo-nombre"></span>' +
+                '<span class="gv-rotulo-tipo"></span>' +
+                '<a class="gv-rotulo-dominio" target="_blank" rel="noopener"><span></span>' + ICO.afuera + '</a>' +
+            '</div>' +
+            '<button class="gv-nav gv-prev" type="button" aria-label="Trabajo anterior">' + ICO.izq + '</button>' +
+            '<button class="gv-nav gv-next" type="button" aria-label="Trabajo siguiente">' + ICO.der + '</button>' +
             '<p class="gv-oculto" aria-live="polite"></p>' +
         '</div>' +
         '<div class="gv-vacio" hidden>' +
@@ -187,9 +195,7 @@
             '<button class="gv-btn" type="button" data-gv-reset>Ver todos los trabajos</button>' +
         '</div>' +
         '<div class="gv-strip">' +
-            '<button class="gv-nav gv-prev" type="button" aria-label="Trabajo anterior">' + ICO.izq + '</button>' +
             '<div class="gv-rail" role="list" aria-label="Trabajos"></div>' +
-            '<button class="gv-nav gv-next" type="button" aria-label="Trabajo siguiente">' + ICO.der + '</button>' +
         '</div>';
 
     var slot = root.getAttribute('data-toolbar') && document.querySelector(root.getAttribute('data-toolbar'));
@@ -203,6 +209,9 @@
     var $q = $tb.querySelector('.gv-q');
     var $stage = root.querySelector('.gv-stage');
     var $info = root.querySelector('.gv-stage [aria-live]');
+    var $rNombre = root.querySelector('.gv-rotulo-nombre');
+    var $rTipo = root.querySelector('.gv-rotulo-tipo');
+    var $rDominio = root.querySelector('.gv-rotulo-dominio');
     var $view = root.querySelector('.gv-view');
     var $shot = root.querySelector('.gv-shot');
     var $vacio = root.querySelector('.gv-vacio');
@@ -330,6 +339,10 @@
         $view.setAttribute('aria-label', 'Web de ' + t.nombre + ' (' + dominio(t.url) + '). Se recorre con scroll.');
         $shot.alt = 'Web de ' + t.nombre + ' (' + dominio(t.url) + '), página completa';
         $info.textContent = t.nombre + ': ' + t.que + (t.zona ? ', ' + t.zona : '') + '.';
+        $rNombre.textContent = t.nombre;
+        $rTipo.textContent = t._tipos.map(function (id) { return CHIP_TIPO[id] || LABEL_TIPO[id] || id; }).join(' + ');
+        $rDominio.href = t.url;
+        $rDominio.firstChild.textContent = dominio(t.url);
 
         /* La captura nueva se carga aparte y entra cuando está lista: nunca se
            ve el marco vacío ni la captura vieja a mitad de scroll. */
