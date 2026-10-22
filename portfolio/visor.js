@@ -167,12 +167,17 @@
             '</div>' +
         '</div>';
 
-    /* La web elegida ocupa toda la pantalla y no lleva nada encima: los
-       filtros flotan arriba y las miniaturas abajo, chicas y sin textos. */
+    /* En la compu la web se ve en la pantalla de una notebook: la foto
+       (laptop.webp, con la pantalla transparente) va encima de la web y no
+       atrapa el mouse. En el celular .gv-escena no cuenta y la web ocupa
+       todo, como antes. */
     root.innerHTML =
         '<div class="gv-stage">' +
-            '<div class="gv-view" tabindex="0">' +
-                '<img class="gv-shot" alt="" decoding="async">' +
+            '<div class="gv-escena">' +
+                '<div class="gv-view" tabindex="0">' +
+                    '<img class="gv-shot" alt="" decoding="async">' +
+                '</div>' +
+                '<img class="gv-marco" src="' + BASE + 'laptop.webp" alt="" width="1672" height="941" loading="lazy" decoding="async">' +
             '</div>' +
             '<p class="gv-oculto" aria-live="polite"></p>' +
         '</div>' +

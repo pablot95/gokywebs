@@ -54,6 +54,35 @@
 .gv-view:focus-visible { outline: 2px solid var(--gv-gold); outline-offset: -3px; }
 .gv-shot { display: block; width: 100%; height: auto; transition: opacity 0.35s var(--gv-ease); }
 .gv-stage.cargando .gv-shot { opacity: 0; }
+.gv-escena { display: contents; }
+.gv-marco { display: none; }
+
+/* ── Compu y tablet: la web en la pantalla de la notebook ──
+   La foto (1672×941) cubre todo el lugar que ocupaba la web; su pantalla
+   transparente va de x 229–1444 e y 178–862. La web va detrás, un poco
+   más grande, y el marco de la foto le tapa los bordes. Si sobra alto, la
+   foto se recorta abajo (el teclado), nunca la pantalla. */
+@media (min-width: 761px) {
+    .gv-stage {
+        flex: 1 1 auto; align-self: stretch; width: auto; height: auto; min-height: 0; margin: 0;
+        border: 0; border-radius: 0; box-shadow: none; background: #d9cbb8; cursor: default;
+        container-type: size;
+    }
+    .gv-escena {
+        --gv-h: max(calc(100cqw / 1.77683), 100cqh);
+        display: block; position: absolute; left: 50%; translate: -50% 0;
+        height: var(--gv-h); aspect-ratio: 1672 / 941;
+        top: clamp(calc(100cqh - var(--gv-h)), calc(50cqh - var(--gv-h) * 0.553), 0px);
+    }
+    .gv-view {
+        inset: auto; left: 13.69%; top: 18.92%; width: 72.73%; height: 72.79%;
+        background: #fff; cursor: pointer;
+    }
+    .gv-marco {
+        display: block; position: absolute; inset: 0; width: 100%; height: 100%;
+        pointer-events: none; user-select: none;
+    }
+}
 
 /* ── Filtros ─────────────────────────────────────────────── */
 .gv-toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; font-family: var(--gv-sans); }
