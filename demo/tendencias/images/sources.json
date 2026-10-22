@@ -1,0 +1,29 @@
+{
+  "cliente": [
+    "01_auriculares_vertical.png", "02_tecnologia_horizontal.png", "03_auriculares.png", "04_celular.png", "05_parlante.png",
+    "06_reloj.png", "07_lampara.png", "08_soporte.png", "09_organizador.png", "10_mockup_720x480.png"
+  ],
+  "recortes_de_cliente": {
+    "hero-tecnologia.webp": "02", "vertical-auriculares.webp": "01", "p-auriculares-vincha.webp": "01", "p-auriculares-pro.webp": "02",
+    "g-celular-mesa.webp": "02", "g-parlante-correa.webp": "02", "p-auriculares-tws.webp": "03", "p-celular-5g.webp": "04",
+    "p-parlante-mini.webp": "05", "p-reloj-inteligente.webp": "06", "p-lampara-hongo.webp": "07", "p-soporte-aluminio.webp": "08",
+    "p-organizador-cables.webp": "09", "cat-auriculares.webp": "01", "cat-celulares.webp": "04", "cat-parlantes.webp": "05",
+    "cat-hogar.webp": "07", "cat-accesorios.webp": "09", "cat-tecnologia.webp": "06", "og-tendencias.jpg": "02"
+  },
+  "pexels": [
+    { "archivo": "p-proyector.webp", "id": 31726719, "url": "https://www.pexels.com/photo/31726719/" },
+    { "archivo": "g-proyector-escritorio.webp", "id": 31726737, "url": "https://www.pexels.com/photo/31726737/" },
+    { "archivo": "p-lampara-atardecer.webp", "id": 33217886, "url": "https://www.pexels.com/photo/33217886/" },
+    { "archivo": "p-teclado-patitas.webp", "id": 34204696, "url": "https://www.pexels.com/photo/34204696/" },
+    { "archivo": "p-teclado-compacto.webp", "id": 12561283, "url": "https://www.pexels.com/photo/12561283/" },
+    { "archivo": "p-bateria-portatil.webp", "id": 38649063, "url": "https://www.pexels.com/photo/38649063/", "nota": "se borró la marca impresa en las cuatro baterías" },
+    { "archivo": "p-cargador-inalambrico.webp", "id": 5961044, "url": "https://www.pexels.com/photo/5961044/" },
+    { "archivo": "p-reloj-despertador.webp", "id": 2397363, "url": "https://www.pexels.com/photo/2397363/" },
+    { "archivo": "p-licuadora-portatil.webp", "id": 27861734, "url": "https://www.pexels.com/photo/27861734/" },
+    { "archivo": "p-gua-sha.webp", "id": 6963143, "url": "https://www.pexels.com/photo/6963143/" },
+    { "archivo": "p-humidificador.webp", "id": 6914612, "url": "https://www.pexels.com/photo/6914612/" },
+    { "archivo": "p-lampara-luna.webp", "id": 3999825, "url": "https://www.pexels.com/photo/3999825/" },
+    { "archivo": "p-tripode-selfie.webp", "id": 6587651, "url": "https://www.pexels.com/photo/6587651/" },
+    { "archivo": "p-ventilador-retro.webp", "id": 8102643, "url": "https://www.pexels.com/photo/8102643/" }
+  ]
+}
