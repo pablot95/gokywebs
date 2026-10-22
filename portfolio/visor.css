@@ -58,21 +58,33 @@
 .gv-marco { display: none; }
 
 /* ── Compu y tablet: la web en la pantalla de la notebook ──
-   La foto (1672×941) cubre todo el lugar que ocupaba la web; su pantalla
-   transparente va de x 229–1444 e y 178–862. La web va detrás, un poco
-   más grande, y el marco de la foto le tapa los bordes. Si sobra alto, la
-   foto se recorta abajo (el teclado), nunca la pantalla. */
-@media (min-width: 761px) {
+   La foto (1672×941) tiene la pantalla transparente en x 229–1444 e
+   y 178–862, y el marco de la notebook arranca en y 143. Se la achica para
+   que la notebook entre entera de alto (24px arriba, el teclado apoyado
+   abajo), al menos 8% más chica que si cubriera todo, y con la pantalla en
+   no más del 96% del ancho. Los costados que quedan
+   los llena la misma foto desenfocada, y la nítida se funde en los bordes.
+   La web va detrás, un poco más grande, y el marco le tapa los bordes.
+   En pantallas paradas (tablet vertical) la notebook quedaría chiquita:
+   ahí se ve la web sola, como en el celular. */
+@media (min-width: 761px) and (min-aspect-ratio: 5/4) {
     .gv-stage {
         flex: 1 1 auto; align-self: stretch; width: auto; height: auto; min-height: 0; margin: 0;
         border: 0; border-radius: 0; box-shadow: none; background: #d9cbb8; cursor: default;
         container-type: size;
     }
+    .gv-stage::before {
+        content: ""; position: absolute; inset: -30px;
+        background: url('laptop.webp') center / cover no-repeat; filter: blur(16px);
+    }
     .gv-escena {
-        --gv-h: max(calc(100cqw / 1.77683), 100cqh);
+        --gv-h: min(calc((100cqh - 24px) / 0.848), calc(max(100cqw / 1.77683, 100cqh) * 0.92), calc(100cqw * 0.743));
         display: block; position: absolute; left: 50%; translate: -50% 0;
-        height: var(--gv-h); aspect-ratio: 1672 / 941;
-        top: clamp(calc(100cqh - var(--gv-h)), calc(50cqh - var(--gv-h) * 0.553), 0px);
+        height: var(--gv-h); aspect-ratio: 1672 / 941; top: calc(100cqh - var(--gv-h));
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(transparent, #000 8%);
+        -webkit-mask-composite: source-in;
+        mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(transparent, #000 8%);
+        mask-composite: intersect;
     }
     .gv-view {
         inset: auto; left: 13.69%; top: 18.92%; width: 72.73%; height: 72.79%;
