@@ -1,0 +1,25 @@
+{
+  "demo": "deltagasagua",
+  "fecha": "2026-10-22",
+  "base": {
+    "origen": "Deltagas_y_agua_JadhrDfcX0HG5xkZqqYr.zip (Descargas), 9 fotos + mockup",
+    "archivos": {
+      "01_imagen.png": "caldera-lavadero.webp (9:16)",
+      "02_imagen.png": "bano-completo.webp (16:9)",
+      "03_imagen.png": "sifon-bacha.webp (1:1)",
+      "04_imagen.png": "cano-gas-llave.webp (1:1)",
+      "05_imagen.png": "calefon.webp (1:1)",
+      "06_imagen.png": "griferia.webp (1:1)",
+      "07_imagen.png": "herramientas.webp (1:1)",
+      "08_imagen.png": "anafe.webp (1:1)",
+      "09_imagen.png": "inodoro.webp (1:1)",
+      "10_mockup_720x480.png": "referencia de diseño del Modelo 1, no se publica en la página"
+    }
+  },
+  "logo": {
+    "origen": "deltagasinfo.jpg (flyer del cliente en Descargas): recorte del logo con el fondo pasado a transparencia",
+    "archivos": ["logo-deltagas.png", "logo-icono.png"]
+  },
+  "og": "og-deltagas.jpg, armada con bano-completo + logo",
+  "extra_de_bancos": []
+}
