@@ -1,0 +1,32 @@
+{
+  "cliente": {
+    "zip": "Ginger_sahumos_T99KfFChg2WlOc2yn95A.zip (Descargas, 22-oct-2026)",
+    "archivos": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup_720x480.png"],
+    "usos": {
+      "01_imagen.png": ["ritual-vertical.webp", "p-magistrales.webp", "p-portasahumerios-vibes.webp"],
+      "02_imagen.png": ["hero-ritual.webp", "og-gingersahumos.jpg", "p-sahumerio-triangular.webp", "p-velas-x10.webp", "p-lampara-manos.webp", "p-oval-cemento.webp"],
+      "03_imagen.png": ["p-natural-premium.webp", "cat-sahumerios.webp"],
+      "04_imagen.png": ["p-esfera-*.webp", "p-bombitas-chakras.webp", "cat-esferas.webp"],
+      "05_imagen.png": ["p-vela-alba.webp", "cat-velas.webp"],
+      "06_imagen.png": ["p-kit-*.webp", "cat-kits.webp"],
+      "07_imagen.png": ["p-esencia-hornito.webp", "p-difusor.webp", "cat-esencias.webp"],
+      "08_imagen.png": ["p-lampara-sal.webp", "cat-lamparas.webp"],
+      "09_imagen.png": ["p-portasahumerio-sagrado.webp", "cat-base.webp"]
+    }
+  },
+  "logo": {
+    "archivo": "logo-ginger.png / logo-ginger.webp",
+    "fuente": "Logo de la tienda Empretienda del cliente (gingersahumos.empretienda.com.ar), bajado el 22-oct-2026"
+  },
+  "pexels": [
+    { "id": "6512311", "url": "https://www.pexels.com/photo/6512311/", "archivo": "p-palo-santo-corto.webp", "slot": "Sahumerio palo santo corto" },
+    { "id": "12544497", "url": "https://www.pexels.com/photo/12544497/", "archivo": "p-palo-santo-cortezas.webp", "slot": "Palo santo con cortezas" },
+    { "id": "11137699", "url": "https://www.pexels.com/photo/11137699/", "archivo": "p-velas-x6.webp", "slot": "Velas aromáticas x 6" },
+    { "id": "6311829", "url": "https://www.pexels.com/photo/6311829/", "archivo": "p-vela-terra.webp", "slot": "Vela Terra Ánfora" },
+    { "id": "5933780", "url": "https://www.pexels.com/photo/5933780/", "archivo": "p-vela-sakura.webp", "slot": "Vela Sakura" },
+    { "id": "6956563", "url": "https://www.pexels.com/photo/6956563/", "archivo": "p-buda-meditando.webp, cat-budas.webp", "slot": "Buda meditando grande / categoría Budas" },
+    { "id": "9375044", "url": "https://www.pexels.com/photo/9375044/", "archivo": "p-buda-orando.webp", "slot": "Buda orando grande" },
+    { "id": "2865888", "url": "https://www.pexels.com/photo/2865888/", "archivo": "p-buda-relax.webp", "slot": "Buda relax mediano (recortado sin el cuadro de la pared)" },
+    { "id": "7303280", "url": "https://www.pexels.com/photo/7303280/", "archivo": "p-sahumador-cemento.webp", "slot": "Sahumador grande de cemento" }
+  ]
+}
