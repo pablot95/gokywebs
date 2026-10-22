@@ -1,0 +1,34 @@
+{
+  "base": {
+    "origen": "Zip LUCKY_FOOD_mKmE9fTgZ1mf98jyPUNX.zip de Descargas (9 fotos + 10_mockup_720x480.png), copiado el 22-oct-2026 y borrado de Descargas",
+    "archivos": {
+      "01-horma.webp / cat-quesos.webp / p-queso-campo.webp": "01_imagen.png (9:16)",
+      "02-tabla.webp / og.jpg": "02_imagen.png (16:9), hero de los dos modelos",
+      "p-azul.webp / cat-especialidades.webp": "03_imagen.png",
+      "p-salame-milan.webp": "04_imagen.png",
+      "p-jamon-cocido.webp": "05_imagen.png",
+      "p-mozzarella.webp": "06_imagen.png",
+      "p-reggianito.webp": "07_imagen.png",
+      "p-bondiola.webp / cat-fiambres.webp": "08_imagen.png",
+      "p-brie.webp": "09_imagen.png"
+    }
+  },
+  "pexels": {
+    "licencia": "Pexels License (uso libre, sin atribución obligatoria)",
+    "archivos": {
+      "p-sardo.webp": "https://www.pexels.com/photo/793129/",
+      "p-queso-bola.webp": "https://www.pexels.com/photo/4187778/",
+      "p-emmental.webp": "https://www.pexels.com/photo/36040972/",
+      "p-jamon-crudo.webp": "https://www.pexels.com/photo/19688911/",
+      "p-salamin.webp": "https://www.pexels.com/photo/4639694/",
+      "p-salame-grueso.webp": "https://www.pexels.com/photo/28881693/",
+      "p-lomo-ahumado.webp": "https://www.pexels.com/photo/13149102/",
+      "p-panceta.webp": "https://www.pexels.com/photo/306799/",
+      "p-matambre.webp": "https://www.pexels.com/photo/9672328/",
+      "p-provolone.webp": "https://www.pexels.com/photo/28881696/",
+      "p-feta.webp": "https://www.pexels.com/photo/19460144/",
+      "cava.webp": "https://www.pexels.com/photo/8287389/"
+    },
+    "descartada": "24871698 (queso sobre papel con el logo de un comercio)"
+  }
+}
