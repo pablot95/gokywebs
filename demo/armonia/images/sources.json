@@ -1,0 +1,22 @@
+{
+  "zip_cliente": {
+    "01_imagen.png": ["laja-placas-vertical.webp", "p-laja-gris-placas.webp"],
+    "02_imagen.png": ["hero-ingreso.webp", "hero-ingreso-sm.webp", "og-armonia.jpg"],
+    "03_imagen.png": ["p-laja-gris-irregular.webp"],
+    "04_imagen.png": ["p-laja-dorada-irregular.webp"],
+    "05_imagen.png": ["p-laja-rustica-tiras.webp"],
+    "06_imagen.png": ["p-adoquin-porfido-mixto.webp"],
+    "07_imagen.png": ["p-baldosa-64-panes.webp"],
+    "08_imagen.png": ["p-mosaico-granitico.webp"],
+    "09_imagen.png": ["vereda-terminada.webp"],
+    "10_mockup_720x480.png": "referencia de diseño, no se usa en la web"
+  },
+  "pexels": [
+    { "archivo": "p-porfido-gris-abanico.webp", "id": 36783573, "url": "https://www.pexels.com/photo/36783573/", "slot": "producto: adoquín de pórfido gris en abanico" },
+    { "archivo": "p-baldosa-tactil.webp", "id": 7231778, "url": "https://www.pexels.com/photo/7231778/", "slot": "producto: baldosa táctil" },
+    { "archivo": "p-baldosa-canto-rodado.webp", "id": 36346040, "url": "https://www.pexels.com/photo/36346040/", "slot": "producto: baldosa granítica canto rodado" },
+    { "archivo": "p-porfido-irregular.webp", "id": 9579218, "url": "https://www.pexels.com/photo/9579218/", "slot": "producto: laja de pórfido irregular" },
+    { "archivo": "p-baldosa-lisa.webp", "id": 11255190, "url": "https://www.pexels.com/photo/11255190/", "slot": "producto: baldosa lisa 40x40" },
+    { "archivo": "p-mosaico-granitico-blanco.webp", "id": 4977440, "url": "https://www.pexels.com/photo/4977440/", "slot": "producto: mosaico granítico blanco" }
+  ]
+}
