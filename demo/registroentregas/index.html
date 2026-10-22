@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Registro de entregas — Comedor comunitario</title>
+<meta name="description" content="Sistema para registrar la entrega de mercadería: padrón de familias, aviso en color si la persona o alguien de su domicilio ya retiró e historial por jornada.">
+<link rel="canonical" href="https://gokywebs.com/demo/registroentregas/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Registro de entregas — Comedor comunitario">
+<meta property="og:description" content="Cargá a cada familia una vez y el sistema te avisa en color si esa persona o alguien de su casa ya retiró la mercadería.">
+<meta property="og:url" content="https://gokywebs.com/demo/registroentregas/">
+<meta name="theme-color" content="#23574b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2323574b'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 14h20M8 14l2 9h12l2-9M12 14l3-6M20 14l-3-6'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=20261022a">
+</head>
+<body>
+
+<div class="login" id="login">
+  <section class="login__marca">
+    <div class="marca marca--clara">
+      <span class="marca__icono"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></svg></span>
+      <span class="marca__texto"><strong>Registro de entregas</strong><span>Comedor comunitario</span></span>
+    </div>
+    <div class="login__mensaje">
+      <h1>Cada familia retira una vez por jornada.</h1>
+      <p>Cargás a cada familia una sola vez. El día de la entrega buscás por DNI, apellido o domicilio y el sistema te avisa en color si esa persona o alguien de su casa ya retiró.</p>
+    </div>
+    <ul class="semaforo" aria-label="Cómo avisa el sistema">
+      <li class="semaforo__item semaforo__item--verde"><span class="semaforo__punto"></span><span><strong>Puede retirar</strong><small>Nadie de su domicilio retiró en la jornada</small></span></li>
+      <li class="semaforo__item semaforo__item--naranja"><span class="semaforo__punto"></span><span><strong>Alguien de su casa ya retiró</strong><small>Mismo domicilio, aunque tenga otro apellido</small></span></li>
+      <li class="semaforo__item semaforo__item--rojo"><span class="semaforo__punto"></span><span><strong>Ya retiró hoy</strong><small>La misma persona o el mismo DNI</small></span></li>
+    </ul>
+  </section>
+
+  <section class="login__form">
+    <form class="login__caja" id="form-login" method="post" novalidate>
+      <div>
+        <h2>Ingresar</h2>
+        <p class="login__nota">Es una muestra con datos de ejemplo: tocá <b>Ingresar</b> y entrás directo.</p>
+      </div>
+      <label class="campo"><span>Usuario</span><input type="text" name="usuario" value="coordinacion" autocomplete="off" spellcheck="false"></label>
+      <label class="campo"><span>Contraseña</span><input type="text" class="campo__clave" name="clave" value="comedor2026" autocomplete="off" spellcheck="false"></label>
+      <button class="btn btn--primario btn--ancho" type="submit">Ingresar</button>
+      <p class="credito">Desarrollado por <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a></p>
+    </form>
+  </section>
+</div>
+
+<div class="app" id="app" hidden>
+  <header class="barra">
+    <div class="marca">
+      <span class="marca__icono"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="M4.5 15.5h15"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></svg></span>
+      <span class="marca__texto"><strong>Registro de entregas</strong><span>Comedor comunitario</span></span>
+    </div>
+
+    <nav class="pestanas" aria-label="Secciones">
+      <button type="button" class="pestana" data-accion="vista" data-vista="entregar" aria-current="page">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 11-1 9"/><path d="m19 11-4-7"/><path d="M2 11h20"/><path d="m3.5 11 1.6 7.4a2 2 0 0 0 2 1.6h9.8a2 2 0 0 0 2-1.6l1.7-7.4"/><path d="m5 11 4-7"/><path d="m9 11 1 9"/></svg>
+        <span>Entregar</span>
+      </button>
+      <button type="button" class="pestana" data-accion="vista" data-vista="padron" aria-current="false">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Padrón</span>
+      </button>
+      <button type="button" class="pestana" data-accion="vista" data-vista="historial" aria-current="false">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+        <span>Historial</span>
+      </button>
+    </nav>
+
+    <div class="usuario">
+      <button type="button" class="usuario__boton" data-accion="menu" aria-expanded="false" aria-controls="menu-usuario">
+        <span class="usuario__avatar" aria-hidden="true">CO</span>
+        <span class="usuario__nombre">Coordinación</span>
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <div class="menu" id="menu-usuario" hidden>
+        <button type="button" data-accion="restablecer">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Volver a los datos de muestra
+        </button>
+        <button type="button" data-accion="salir">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          Salir
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="contenido">
+    <section class="vista" id="vista-entregar" aria-labelledby="titulo-jornada">
+      <div class="entregar">
+        <div class="entregar__principal">
+          <div class="jornada">
+            <div>
+              <p class="antetitulo">Jornada de entrega</p>
+              <h1 id="titulo-jornada">Hoy</h1>
+            </div>
+            <label class="jornada__fecha">
+              <span>Fecha</span>
+              <input type="date" id="fecha-jornada">
+            </label>
+          </div>
+          <p class="jornada__otra" id="aviso-fecha" hidden>Estás registrando entregas de otro día. <button type="button" class="enlace" data-accion="volver-hoy">Volver a hoy</button></p>
+
+          <div class="buscador">
+            <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="buscar" placeholder="DNI, apellido o domicilio" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-label="Buscar por DNI, apellido o domicilio">
+            <button type="button" class="buscador__limpiar" id="limpiar-busqueda" aria-label="Borrar la búsqueda" hidden>
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+          <ul class="leyenda" aria-label="Qué significa cada color">
+            <li><span class="leyenda__punto leyenda__punto--verde"></span>Puede retirar</li>
+            <li><span class="leyenda__punto leyenda__punto--naranja"></span>Su domicilio ya retiró</li>
+            <li><span class="leyenda__punto leyenda__punto--rojo"></span>Ya retiró</li>
+          </ul>
+
+          <div class="resultados" id="resultados"></div>
+        </div>
+
+        <aside class="hoy" aria-labelledby="hoy-titulo">
+          <div class="hoy__cab">
+            <h2 id="hoy-titulo">Entregas de hoy</h2>
+            <p class="hoy__fecha" id="hoy-fecha"></p>
+          </div>
+          <dl class="contadores">
+            <div><dt>Familias</dt><dd id="c-familias">0</dd></div>
+            <div><dt>Personas</dt><dd id="c-personas">0</dd></div>
+            <div><dt>Adultos</dt><dd id="c-adultos">0</dd></div>
+            <div><dt>Niños</dt><dd id="c-ninos">0</dd></div>
+          </dl>
+          <ol class="lista-hoy" id="lista-hoy"></ol>
+        </aside>
+      </div>
+    </section>
+
+    <section class="vista" id="vista-padron" aria-labelledby="titulo-padron" hidden>
+      <div class="vista__cab">
+        <div>
+          <p class="antetitulo">Familias cargadas</p>
+          <h1 id="titulo-padron">Padrón</h1>
+          <p class="vista__resumen" id="padron-resumen"></p>
+        </div>
+        <button type="button" class="btn btn--primario" data-accion="nueva-persona">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>
+          Cargar persona
+        </button>
+      </div>
+
+      <div class="filtros">
+        <div class="buscador buscador--chico">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="buscar-padron" placeholder="Buscar en el padrón" autocomplete="off" spellcheck="false" aria-label="Buscar en el padrón">
+        </div>
+        <div class="segmentado" role="group" aria-label="Filtrar el padrón">
+          <button type="button" data-accion="filtro" data-filtro="todos" aria-pressed="true">Todos</button>
+          <button type="button" data-accion="filtro" data-filtro="compartidos" aria-pressed="false">Domicilio compartido</button>
+          <button type="button" data-accion="filtro" data-filtro="ninos" aria-pressed="false">Con niños</button>
+        </div>
+      </div>
+
+      <div class="tabla-caja">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th scope="col">Persona</th>
+              <th scope="col">Domicilio</th>
+              <th scope="col">Grupo familiar</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Última entrega</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-padron"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="vista" id="vista-historial" aria-labelledby="titulo-historial" hidden>
+      <div class="vista__cab">
+        <div>
+          <p class="antetitulo">Entregas por fecha</p>
+          <h1 id="titulo-historial">Historial</h1>
+          <p class="vista__resumen" id="historial-resumen"></p>
+        </div>
+        <button type="button" class="btn" data-accion="exportar-todo">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+          Descargar todo en Excel
+        </button>
+      </div>
+      <div class="jornadas" id="lista-jornadas"></div>
+    </section>
+
+    <p class="credito credito--app">Desarrollado por <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a></p>
+  </main>
+</div>
+
+<dialog class="dialogo" id="dlg-persona" aria-label="Ficha de la persona">
+  <form id="form-persona" method="post" novalidate>
+    <header class="dialogo__cab">
+      <h2 id="dlg-persona-titulo">Cargar persona</h2>
+      <span class="guardado" id="estado-guardado" hidden></span>
+      <button type="button" class="boton-icono" data-accion="cerrar-persona" aria-label="Cerrar">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </header>
+
+    <div class="dialogo__cuerpo">
+      <div class="campos">
+        <label class="campo"><span>Nombre</span><input type="text" name="nombre" autocomplete="off" spellcheck="false"></label>
+        <label class="campo"><span>Apellido</span><input type="text" name="apellido" autocomplete="off" spellcheck="false"></label>
+        <p class="aviso-campo campos__ancho" data-aviso="nombre" hidden></p>
+        <label class="campo"><span>DNI</span><input type="text" name="dni" inputmode="numeric" autocomplete="off" maxlength="12"></label>
+        <p class="aviso-campo campos__ancho" data-aviso="dni" hidden></p>
+        <label class="campo"><span>Teléfono <small>(opcional)</small></span><input type="text" name="telefono" inputmode="tel" autocomplete="off"></label>
+        <label class="campo campos__ancho"><span>Domicilio</span><input type="text" name="domicilio" autocomplete="off" spellcheck="false" placeholder="Calle y número, o manzana y casa"></label>
+        <p class="aviso-campo campos__ancho" data-aviso="domicilio" hidden></p>
+
+        <fieldset class="grupo campos__ancho">
+          <legend>Grupo familiar</legend>
+          <div class="grupo__fila">
+            <div class="contador">
+              <span class="contador__etiqueta" id="et-adultos">Adultos</span>
+              <div class="contador__control">
+                <button type="button" class="contador__boton" data-paso="-1" data-campo="adultos" aria-label="Un adulto menos"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                <input type="number" name="adultos" min="1" max="20" inputmode="numeric" aria-labelledby="et-adultos">
+                <button type="button" class="contador__boton" data-paso="1" data-campo="adultos" aria-label="Un adulto más"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+              </div>
+            </div>
+            <div class="contador">
+              <span class="contador__etiqueta" id="et-ninos">Niños</span>
+              <div class="contador__control">
+                <button type="button" class="contador__boton" data-paso="-1" data-campo="ninos" aria-label="Un niño menos"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                <input type="number" name="ninos" min="0" max="20" inputmode="numeric" aria-labelledby="et-ninos">
+                <button type="button" class="contador__boton" data-paso="1" data-campo="ninos" aria-label="Un niño más"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+              </div>
+            </div>
+            <p class="grupo__total">En total<strong id="total-grupo">1</strong><span id="total-grupo-texto">persona</span></p>
+          </div>
+        </fieldset>
+
+        <label class="campo campos__ancho"><span>Observaciones <small>(opcional)</small></span><textarea name="notas" rows="2" placeholder="Ej.: un niño celíaco, retira con autorización, etc."></textarea></label>
+      </div>
+
+      <div class="historial-persona" id="historial-persona" hidden></div>
+    </div>
+
+    <footer class="dialogo__pie">
+      <p class="dialogo__falta" id="falta-persona" hidden></p>
+      <button type="button" class="btn btn--texto btn--peligro-texto" data-modo="editar" data-accion="eliminar-persona">Eliminar del padrón</button>
+      <span class="dialogo__espacio"></span>
+      <button type="submit" class="btn" data-modo="alta" value="cargar">Solo cargar</button>
+      <button type="submit" class="btn btn--primario" data-modo="alta" value="cargar-entregar">Cargar y registrar entrega</button>
+      <button type="button" class="btn btn--primario" data-modo="editar" data-accion="cerrar-persona">Listo</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="dialogo dialogo--chico" id="dlg-confirmar" aria-labelledby="conf-titulo">
+  <form method="dialog">
+    <div class="dialogo__cuerpo confirmar">
+      <span class="confirmar__icono" id="conf-icono"></span>
+      <h2 id="conf-titulo"></h2>
+      <p id="conf-texto"></p>
+      <fieldset class="motivos" id="conf-motivos" hidden>
+        <legend>¿Por qué se entrega igual?</legend>
+        <div id="conf-opciones"></div>
+      </fieldset>
+    </div>
+    <footer class="dialogo__pie">
+      <span class="dialogo__espacio"></span>
+      <button class="btn" value="no">Volver</button>
+      <button class="btn btn--aviso" id="conf-si" value="si">Confirmar</button>
+    </footer>
+  </form>
+</dialog>
+
+<script src="script.js?v=20261022a"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
