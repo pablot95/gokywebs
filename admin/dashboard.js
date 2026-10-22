@@ -867,6 +867,86 @@ function buscadorClienteDeContacto() {
     };
 }
 
+/* Los números de costo de una semana (o de varias sumadas: ver calcRangoInversion). */
+function calcSemanaInversion(s, key) {
+    const convertidos = s.contactos.filter(c => c._esCliente)
+        .sort((a, b) => (b._clienteDesde?.getTime() || 0) - (a._clienteDesde?.getTime() || 0));
+
+    // El costo por suscriptor solo se reparte entre los de plan mensual: un
+    // pago único o anual ya se pagó solo, así que su plata se resta del
+    // gasto antes de repartir el resto entre los que quedan suscriptos
+    // (Pablo, 26-sep: "si hay clientes que hicieron pago único o anual,
+    // que ese precio se descuente").
+    const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
+    const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
+    const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
+    const gastoSemana = gastoSemanaInversion(key);
+    const gastoIngresado = gastoSemana.ingresado;
+    const gasto = gastoSemana.total;   // el que cuenta en todas las cuentas
+    // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
+    // van siempre sumados al gasto, y el costo se reparte sobre ese total
+    // (Pablo, 10-oct).
+    const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
+    const gastoTotal = gasto + extraPaginas;
+    const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
+    // El costo ya no se reparte por suscriptor sino por cada $26.500 de ingreso
+    // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 26.500) (Pablo, 12-oct).
+    const ingresoMensual = suscriptores.reduce((acc, c) => acc + _num(c._clienteDoc.montoMensual), 0);
+    const tramos = ingresoMensual / INGRESO_MENSUAL_BASE;
+    const costoPorSuscriptor = tramos > 0 ? costoNeto / tramos : null;
+    // Lo mismo, pero restando el total de cada venta anual/única y no solo lo
+    // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
+    const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
+    const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
+    const costoPorSuscriptorTotal = tramos > 0 ? costoNetoTotal / tramos : null;
+    return { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal };
+}
+
+/* Promedio de un rango (Pablo, 22-oct): suma lo de cada semana entera que toca el
+   rango (gasto + $10.000 por página, menos lo ya cobrado en pago único/anual) y lo
+   reparte entre los tramos de $26.500 de ingreso mensual de todos los suscriptos. */
+let inversionRango = { desde: "2026-10-04", hasta: "" };
+function calcRangoInversion(semanas, desde, hasta) {
+    const k0 = semanaClave(new Date(desde + "T12:00:00").getTime() / 1000), k1 = semanaClave(new Date(hasta + "T12:00:00").getTime() / 1000);
+    const r = { semanas: 0, contactos: 0, clientes: 0, gastoTotal: 0, sumaPagoUnico: 0, sumaVentaTotal: 0, costoNeto: 0, costoNetoTotal: 0, ingresoMensual: 0 };
+    for (const key of Array.from(semanas.keys()).sort()) {
+        if (key < k0 || key > k1) continue;
+        const s = semanas.get(key), c = calcSemanaInversion(s, key);
+        r.semanas++; r.contactos += s.contactos.length; r.clientes += c.convertidos.length;
+        r.gastoTotal += c.gastoTotal; r.sumaPagoUnico += c.sumaPagoUnico; r.sumaVentaTotal += c.sumaVentaTotal;
+        r.costoNeto += c.costoNeto; r.costoNetoTotal += c.costoNetoTotal; r.ingresoMensual += c.ingresoMensual;
+    }
+    r.tramos = r.ingresoMensual / INGRESO_MENSUAL_BASE;
+    r.porTramo = r.tramos > 0 ? r.costoNeto / r.tramos : null;
+    r.porTramoTotal = r.tramos > 0 ? r.costoNetoTotal / r.tramos : null;
+    return r;
+}
+function rangoInversionHtml(semanas) {
+    const hoy = _diaDe(new Date());
+    const rg = inversionRango;
+    if (!rg.hasta) rg.hasta = hoy;
+    const r = calcRangoInversion(semanas, rg.desde, rg.hasta);
+    const n = (x) => String(Math.round(x * 100) / 100).replace(".", ",");
+    const verde = "var(--accent-green,#4ade80)";
+    const tarjeta = (titulo, valor, detalle) => `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor" style="color:${verde}">${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
+    const divisor = r.tramos > 0 ? ` ÷ ${n(r.tramos)} (${fmtMoney(r.ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})` : " · sin ingreso mensual todavía";
+    const por = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
+    const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) : "—",
+        `Gasto + páginas ${fmtMoney(r.gastoTotal)}, se restan ${fmtMoney(r.sumaPagoUnico)} → costo neto ${fmtMoney(r.costoNeto)}` + divisor)
+        + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por} · según el total de la venta`, r.tramos > 0 ? fmtMoney(r.porTramoTotal) : "—",
+        `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor) : "") : "";
+    const rapidos = [["Desde el 04-oct", "2026-10-04"], ["Últimos 30 días", ymdAgregarDias(hoy, -29)]];
+    return `<div class="panel" style="margin-bottom:14px">
+        <strong>Promedio de un rango</strong>
+        <p class="muted" style="margin:4px 0 10px">Suma todas las semanas (enteras, de domingo a sábado) que toca el rango: ${r.semanas} semana${r.semanas === 1 ? "" : "s"} · ${r.contactos} contactos · ${r.clientes} pasaron a Cliente.</p>
+        <div class="anu-rango">
+            <label class="muted">Desde <input type="date" data-inv-rango-desde value="${rg.desde}" max="${rg.hasta}"></label>
+            <label class="muted">Hasta <input type="date" data-inv-rango-hasta value="${rg.hasta}" min="${rg.desde}" max="${hoy}"></label>
+            ${rapidos.map(([l, d]) => `<button type="button" class="seg-chip${d === rg.desde && rg.hasta === hoy ? " active" : ""}" data-inv-rango-rapido="${d}">${l}</button>`).join("")}
+        </div>
+        <div class="inv-cards">${tarjetas || '<p class="muted">Sin gasto cargado en ese rango.</p>'}</div>
+    </div>`;
+}
 function renderInversion() {
     const chips = document.getElementById("inversionSemanas");
     const cont = document.getElementById("inversionContent");
@@ -910,38 +990,18 @@ function renderInversion() {
 
     const aMostrar = inversionSemanaSel === "todas" ? claves : claves.filter(k => k === inversionSemanaSel);
     cont.innerHTML = gastoMetaEstadoHtml();
+    {
+        const pr = document.createElement("div");
+        pr.innerHTML = rangoInversionHtml(semanas);
+        cont.appendChild(pr);
+        const redibujar = () => renderInversion();
+        pr.querySelector("[data-inv-rango-desde]").addEventListener("change", e => { if (e.target.value) { inversionRango.desde = e.target.value; redibujar(); } });
+        pr.querySelector("[data-inv-rango-hasta]").addEventListener("change", e => { if (e.target.value) { inversionRango.hasta = e.target.value; redibujar(); } });
+        pr.querySelectorAll("[data-inv-rango-rapido]").forEach(b => b.addEventListener("click", () => { inversionRango = { desde: b.dataset.invRangoRapido, hasta: _diaDe(new Date()) }; redibujar(); }));
+    }
     for (const key of aMostrar) {
         const s = semanas.get(key);
-        const convertidos = s.contactos.filter(c => c._esCliente)
-            .sort((a, b) => (b._clienteDesde?.getTime() || 0) - (a._clienteDesde?.getTime() || 0));
-
-        // El costo por suscriptor solo se reparte entre los de plan mensual: un
-        // pago único o anual ya se pagó solo, así que su plata se resta del
-        // gasto antes de repartir el resto entre los que quedan suscriptos
-        // (Pablo, 26-sep: "si hay clientes que hicieron pago único o anual,
-        // que ese precio se descuente").
-        const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
-        const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
-        const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
-        const gastoSemana = gastoSemanaInversion(key);
-        const gastoIngresado = gastoSemana.ingresado;
-        const gasto = gastoSemana.total;   // el que cuenta en todas las cuentas
-        // Los $10.000 por cada cliente de la semana (la página hecha) son un hecho:
-        // van siempre sumados al gasto, y el costo se reparte sobre ese total
-        // (Pablo, 10-oct).
-        const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
-        const gastoTotal = gasto + extraPaginas;
-        const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
-        // El costo ya no se reparte por suscriptor sino por cada $26.500 de ingreso
-        // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 26.500) (Pablo, 12-oct).
-        const ingresoMensual = suscriptores.reduce((acc, c) => acc + _num(c._clienteDoc.montoMensual), 0);
-        const tramos = ingresoMensual / INGRESO_MENSUAL_BASE;
-        const costoPorSuscriptor = tramos > 0 ? costoNeto / tramos : null;
-        // Lo mismo, pero restando el total de cada venta anual/única y no solo lo
-        // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
-        const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
-        const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
-        const costoPorSuscriptorTotal = tramos > 0 ? costoNetoTotal / tramos : null;
+        const { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal } = calcSemanaInversion(s, key);
 
         // La columna Costo de cada cliente se sacó (Pablo, 11-oct): el costo queda en los cuadritos.
         const filas = convertidos.map(c => {
