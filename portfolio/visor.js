@@ -107,13 +107,14 @@
     /* En la compu la captura va a pantalla completa: se usa la de 1920 px
        (previews/hd/). En el celular alcanza la de 960 y pesa mucho menos. */
     var grande = window.matchMedia('(min-width: 961px)');
-    /* En el celular, la web en su versión celular (previews/cel/, 780 px):
-       la de escritorio achicada a 375 px no se lee. */
-    var celular = window.matchMedia('(max-width: 760px)');
+    /* En el celular (y la tablet parada, que muestran la web dentro de un
+       celular; mismo corte que visor.css), la web en su versión celular
+       (previews/cel/, 780 px): la de escritorio achicada no se lee. */
+    var celular = window.matchMedia('(max-width: 760px), (max-aspect-ratio: 1249/1000)');
     function srcCaptura(t) { return BASE + 'previews/' + t.id + '.webp'; }
     function srcPantalla(t) {
-        if (grande.matches) return BASE + 'previews/hd/' + t.id + '.webp';
         if (celular.matches) return BASE + 'previews/cel/' + t.id + '.webp';
+        if (grande.matches) return BASE + 'previews/hd/' + t.id + '.webp';
         return srcCaptura(t);
     }
     function srcMini(t) { return BASE + 'previews/mini/' + t.id + '.webp'; }
@@ -179,6 +180,7 @@
                     '<img class="gv-shot" alt="" decoding="async">' +
                 '</div>' +
                 '<img class="gv-marco" src="' + BASE + 'laptop.webp" alt="" width="1672" height="941" loading="lazy" decoding="async">' +
+                '<img class="gv-marco gv-marco--cel" src="' + BASE + 'celular.webp" alt="" width="1672" height="941" loading="lazy" decoding="async">' +
             '</div>' +
             '<div class="gv-rotulo">' +
                 '<span class="gv-rotulo-nombre"></span>' +

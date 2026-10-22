@@ -54,80 +54,119 @@
 .gv-view:focus-visible { outline: 2px solid var(--gv-gold); outline-offset: -3px; }
 .gv-shot { display: block; width: 100%; height: auto; transition: opacity 0.35s var(--gv-ease); }
 .gv-stage.cargando .gv-shot { opacity: 0; }
-.gv-escena { display: contents; }
-.gv-marco, .gv-rotulo { display: none; }
+/* ── La web dentro de un aparato ─────────────────────────────
+   Compu (ancho ≥ 761 y apaisado): una notebook, laptop.webp. Celular y
+   tablet parada: un celular, celular.webp. Las dos fotos miden 1672×941,
+   tienen la pantalla transparente y van encima de la web (que va detrás,
+   un poco más grande: el marco le tapa los bordes).
+   El aparato entero queda entre el rótulo de arriba (nombre, tipo y
+   dominio) y la tira de miniaturas: ninguna miniatura tapa la pantalla.
+   Fotos y fondo van oscurecidos para que resalte la web.
+   Cada modo da la geometría de su foto, en fracciones de la foto:
+     --gv-arriba   dónde empieza el aparato (alto)
+     --gv-cuerpo   cuánto mide el aparato (alto)
+     --gv-medio    del borde de arriba del aparato al medio de la pantalla (alto)
+     --gv-mitad    medio ancho del aparato (en altos de la foto)
+     --gv-pl/pt/pw/ph  la pantalla (% de la foto) */
+.gv-stage {
+    flex: 1 1 auto; align-self: stretch; width: auto; height: auto; min-height: 0; margin: 0;
+    border: 0; border-radius: 0; box-shadow: none; background: #3a332b; cursor: default;
+    container-type: size;
+}
+.gv-escena {
+    display: block; position: absolute; left: 50%; translate: -50% 0;
+    height: var(--gv-h); aspect-ratio: 1672 / 941; top: calc(var(--gv-rotulo-alto) - var(--gv-h) * var(--gv-arriba));
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), var(--gv-mascara-v);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), var(--gv-mascara-v);
+    mask-composite: intersect;
+}
+/* Lo que sobra alrededor: la foto sin el aparato, desenfocada y oscura. */
+.gv-stage::before {
+    content: ""; position: absolute; inset: -30px;
+    background: var(--gv-fondo-foto) center / cover no-repeat; filter: blur(8px) brightness(0.62) saturate(0.85);
+}
+.gv-view {
+    inset: auto; left: var(--gv-pl); top: var(--gv-pt); width: var(--gv-pw); height: var(--gv-ph);
+    background: #fff; cursor: pointer;
+}
+.gv-marco {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none; user-select: none; filter: brightness(0.62) saturate(0.85);
+}
+.gv-marco--cel { display: none; }
 
-/* ── Compu y tablet: la web en la pantalla de la notebook ──
-   La foto (1672×941) tiene la pantalla transparente en x 229–1444 e
-   y 178–862; el marco de la notebook va de y 143 a 885 y de x 205 a 1470.
-   El marco entero queda entre el rótulo de arriba (nombre, tipo y dominio)
-   y la tira de miniaturas: ninguna miniatura tapa la pantalla. La pantalla
-   no pasa del 96% del ancho. Los costados los llena laptop-fondo.webp (la
-   misma foto desenfocada, con la franja de la notebook rellenada con los
-   colores de sus bordes), la nítida se funde en los bordes, y las dos van oscurecidas
-   para que resalte la web. La web va detrás, un poco más grande, y el
-   marco le tapa los bordes. En pantallas paradas (tablet vertical) la
-   notebook quedaría chiquita: ahí se ve la web sola, como en el celular. */
+/* Rótulo arriba del aparato: nombre · tipo · dominio */
+.gv-rotulo {
+    position: absolute; z-index: 2; left: 12px; right: 12px; top: 0;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    height: var(--gv-rotulo-alto); white-space: nowrap;
+    color: #fff; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+.gv-rotulo-nombre { font: 500 clamp(1.15rem, 1.5vw, 1.5rem)/1 var(--gv-serif); overflow: hidden; text-overflow: ellipsis; }
+.gv-rotulo-tipo {
+    flex: none; padding: 5px 11px; border-radius: 999px; background: var(--gv-gold); color: #0A1F44;
+    font: 600 0.7rem/1 var(--gv-sans); letter-spacing: 0.04em; text-transform: uppercase; text-shadow: none;
+}
+.gv-rotulo-dominio {
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    color: rgba(255, 255, 255, 0.82); font: 500 0.86rem/1 var(--gv-sans); text-decoration: none;
+}
+.gv-rotulo-dominio:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.gv-rotulo-dominio svg { width: 13px; height: 13px; }
+.gv-rotulo-dominio:focus-visible { outline: 2px solid var(--gv-gold); outline-offset: 3px; border-radius: 4px; }
+
+/* Flechas grandes a los costados del aparato, a la altura del medio de
+   la pantalla. */
+.gv-stage .gv-nav {
+    top: calc(var(--gv-rotulo-alto) + var(--gv-h) * var(--gv-medio)); bottom: auto; translate: 0 -50%;
+    width: var(--gv-flecha); height: var(--gv-flecha); background: rgba(10, 31, 68, 0.88);
+    box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.6);
+}
+.gv-stage .gv-nav svg { width: 26px; height: 26px; }
+.gv-stage .gv-prev { left: max(4px, calc(50% - var(--gv-h) * var(--gv-mitad) - var(--gv-flecha) - var(--gv-flecha-aire))); }
+.gv-stage .gv-next { right: max(4px, calc(50% - var(--gv-h) * var(--gv-mitad) - var(--gv-flecha) - var(--gv-flecha-aire))); }
+
+/* Notebook: pantalla en x 229–1444, y 178–862; el marco va de y 143 a 885
+   y de x 205 a 1470. La pantalla no pasa del 96% del ancho. Los costados
+   los llena laptop-fondo.webp (la misma foto desenfocada, con la franja de
+   la notebook rellenada con los colores de sus bordes). */
 @media (min-width: 761px) and (min-aspect-ratio: 5/4) {
     .gv-stage {
         --gv-rotulo-alto: 58px;
         --gv-tira-alto: calc(clamp(169px, 11.7vw, 247px) * 0.625 + 30px);
         --gv-h: min(calc((100cqh - var(--gv-rotulo-alto) - var(--gv-tira-alto)) / 0.788), calc(100cqw * 0.743));
-        flex: 1 1 auto; align-self: stretch; width: auto; height: auto; min-height: 0; margin: 0;
-        border: 0; border-radius: 0; box-shadow: none; background: #3a332b; cursor: default;
-        container-type: size;
+        --gv-arriba: 0.152; --gv-medio: 0.401; --gv-mitad: 0.672;
+        --gv-pl: 13.69%; --gv-pt: 18.92%; --gv-pw: 72.73%; --gv-ph: 72.79%;
+        --gv-flecha: 60px; --gv-flecha-aire: 32px;
+        --gv-mascara-v: linear-gradient(transparent, #000 8%, #000 94%, transparent);
+        --gv-fondo-foto: url('laptop-fondo.webp');
     }
-    .gv-stage::before {
-        content: ""; position: absolute; inset: -30px;
-        background: url('laptop-fondo.webp') center / cover no-repeat; filter: blur(8px) brightness(0.62) saturate(0.85);
-    }
-    .gv-escena {
-        display: block; position: absolute; left: 50%; translate: -50% 0;
-        height: var(--gv-h); aspect-ratio: 1672 / 941; top: calc(var(--gv-rotulo-alto) - var(--gv-h) * 0.152);
-        -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(transparent, #000 8%, #000 94%, transparent);
-        -webkit-mask-composite: source-in;
-        mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent), linear-gradient(transparent, #000 8%, #000 94%, transparent);
-        mask-composite: intersect;
-    }
-    .gv-view {
-        inset: auto; left: 13.69%; top: 18.92%; width: 72.73%; height: 72.79%;
-        background: #fff; cursor: pointer;
-    }
-    .gv-marco {
-        display: block; position: absolute; inset: 0; width: 100%; height: 100%;
-        pointer-events: none; user-select: none; filter: brightness(0.62) saturate(0.85);
-    }
+}
 
-    /* Rótulo arriba de la notebook: nombre · tipo · dominio */
-    .gv-rotulo {
-        position: absolute; z-index: 2; left: 50%; top: 0; translate: -50% 0;
-        display: flex; align-items: center; justify-content: center; gap: 12px;
-        height: var(--gv-rotulo-alto); max-width: calc(100% - 32px); white-space: nowrap;
-        color: #fff; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+/* Celular: pantalla en x 622–1049, y 29–903; el aparato va de y 12 a 920
+   y de x 605 a 1065. Lo que sobra a los costados ya es la foto misma. */
+@media (max-width: 760px), (max-aspect-ratio: 1249/1000) {
+    .gv-stage {
+        --gv-rotulo-alto: 52px;
+        --gv-tira-alto: calc(146px * 0.625 + 34px);
+        --gv-h: min(calc((100cqh - var(--gv-rotulo-alto) - var(--gv-tira-alto)) / 0.966), calc((100cqw - 96px) / 0.4888));
+        --gv-arriba: 0.013; --gv-medio: 0.482; --gv-mitad: 0.2444;
+        --gv-pl: 37.20%; --gv-pt: 3.08%; --gv-pw: 25.54%; --gv-ph: 92.88%;
+        --gv-flecha: 42px; --gv-flecha-aire: 4px;
+        --gv-mascara-v: linear-gradient(transparent, #000 1.2%, #000 98%, transparent);
+        --gv-fondo-foto: url('celular-fondo.webp');
     }
-    .gv-rotulo-nombre { font: 500 clamp(1.15rem, 1.5vw, 1.5rem)/1 var(--gv-serif); overflow: hidden; text-overflow: ellipsis; }
-    .gv-rotulo-tipo {
-        flex: none; padding: 5px 11px; border-radius: 999px; background: var(--gv-gold); color: #0A1F44;
-        font: 600 0.7rem/1 var(--gv-sans); letter-spacing: 0.04em; text-transform: uppercase; text-shadow: none;
-    }
-    .gv-rotulo-dominio {
-        flex: none; display: inline-flex; align-items: center; gap: 5px;
-        color: rgba(255, 255, 255, 0.82); font: 500 0.86rem/1 var(--gv-sans); text-decoration: none;
-    }
-    .gv-rotulo-dominio:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
-    .gv-rotulo-dominio svg { width: 13px; height: 13px; }
-    .gv-rotulo-dominio:focus-visible { outline: 2px solid var(--gv-gold); outline-offset: 3px; border-radius: 4px; }
-
-    /* Flechas grandes a los costados de la notebook, a la altura del medio
-       de la pantalla (el marco ocupa ±0.672 × alto de la foto del centro). */
-    .gv-stage .gv-nav {
-        top: calc(var(--gv-rotulo-alto) + var(--gv-h) * 0.401); bottom: auto; translate: 0 -50%;
-        width: 60px; height: 60px; background: rgba(10, 31, 68, 0.88);
-        box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.6);
-    }
-    .gv-stage .gv-nav svg { width: 26px; height: 26px; }
-    .gv-stage .gv-prev { left: max(12px, calc(50% - var(--gv-h) * 0.672 - 92px)); }
-    .gv-stage .gv-next { right: max(12px, calc(50% - var(--gv-h) * 0.672 - 92px)); }
+    .gv-marco { display: none; }
+    .gv-marco--cel { display: block; }
+    /* Barra de estado negra donde va la isla: la web arranca debajo. */
+    .gv-view { border-top: calc(var(--gv-h) * 0.06) solid #0b0b0b; }
+    .gv-stage .gv-nav { display: grid; }
+    .gv-stage .gv-nav svg { width: 20px; height: 20px; }
+    .gv-rotulo { flex-wrap: wrap; align-content: center; gap: 4px 8px; }
+    .gv-rotulo-nombre { flex: 0 0 100%; text-align: center; font-size: 1.05rem; }
+    .gv-rotulo-tipo { padding: 3px 8px; font-size: 0.6rem; }
+    .gv-rotulo-dominio { font-size: 0.76rem; }
 }
 
 /* ── Filtros ─────────────────────────────────────────────── */
@@ -253,7 +292,6 @@
 /* ── Celular ─────────────────────────────────────────────── */
 @media (max-width: 760px) {
     .gv { --gv-encima: 50px; --gv-ancho: calc(100vw - 12px); --gv-alto: calc(var(--gv-pantalla) - var(--gv-encima) - 11px); }
-    .gv-stage { margin-top: 6px; border-radius: 8px; }
     .gv-toolbar { overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
     .gv-toolbar::-webkit-scrollbar { display: none; }
     .gv--con-filtros > .gv-toolbar { padding: 8px 10px; }
