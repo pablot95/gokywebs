@@ -1,0 +1,29 @@
+{
+  "zip_cliente": {
+    "casa-villasuiza-1": "01_imagen.png",
+    "casa-villasuiza-2": "09_imagen.png",
+    "casa-villasuiza-3": "08_imagen.png",
+    "duplex-piazzanorte-1": "03_imagen.png",
+    "duplex-piazzanorte-2": "02_imagen.png",
+    "casa-delcarmen-1": "07_imagen.png",
+    "depto-centro-1": "04_imagen.png",
+    "local-centro-1": "05_imagen.png",
+    "lote-piazzasur-1": "06_imagen.png"
+  },
+  "pexels": {
+    "casa-pinasco-1": "https://www.pexels.com/photo/8134745/",
+    "casa-pinasco-2": "https://www.pexels.com/photo/8134746/",
+    "casa-pinasco-3": "https://www.pexels.com/photo/8134848/",
+    "depto-oubinas-1": "https://www.pexels.com/photo/6969987/",
+    "depto-oubinas-2": "https://www.pexels.com/photo/6970005/",
+    "depto-plaza-1": "https://www.pexels.com/photo/7535073/",
+    "depto-plaza-2": "https://www.pexels.com/photo/7534540/",
+    "depto-plaza-3": "https://www.pexels.com/photo/7534166/",
+    "mono-sanantonio-1": "https://www.pexels.com/photo/6890400/",
+    "depto-piazzacentro-1": "https://www.pexels.com/photo/8146313/",
+    "depto-piazzacentro-2": "https://www.pexels.com/photo/8146327/",
+    "depto-piazzacentro-3": "https://www.pexels.com/photo/8146320/",
+    "casa-viggiano-1": "https://www.pexels.com/photo/13460178/"
+  },
+  "barrios": "Límites de barrios de Azul: © OpenStreetMap contributors (ODbL), relaciones admin_level 9, simplificados. «Centro» trazado a mano entre los barrios vecinos."
+}
