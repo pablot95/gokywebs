@@ -1,0 +1,10 @@
+[
+  {"id":"aj-001","nombre":"Collar con dije circular","categoria":"Collares","imagen":"01_imagen.webp","precio":48500,"stock":6,"destacado":true,"descripcion":"Un detalle delicado para combinar todos los días."},
+  {"id":"aj-002","nombre":"Anillo solitario","categoria":"Anillos","imagen":"03_imagen.webp","precio":37500,"stock":5,"destacado":true,"descripcion":"Una pieza clásica de brillo sutil."},
+  {"id":"aj-003","nombre":"Aros argolla dorados","categoria":"Aros","imagen":"04_imagen.webp","precio":32900,"stock":8,"destacado":true,"descripcion":"Aros de líneas simples, para usar una y otra vez."},
+  {"id":"aj-004","nombre":"Pulsera eslabones","categoria":"Pulseras","imagen":"05_imagen.webp","precio":28500,"stock":7,"destacado":false,"descripcion":"Una pulsera liviana de inspiración clásica."},
+  {"id":"aj-005","nombre":"Collar corazón","categoria":"Collares","imagen":"06_imagen.webp","precio":39900,"stock":6,"destacado":false,"descripcion":"Un dije pequeño para regalar o regalarte."},
+  {"id":"aj-006","nombre":"Reloj clásico","categoria":"Relojes","imagen":"07_imagen.webp","precio":89900,"stock":3,"destacado":true,"descripcion":"Diseño sobrio y versátil para cada día."},
+  {"id":"aj-007","nombre":"Aros punto de luz","categoria":"Aros","imagen":"08_imagen.webp","precio":34900,"stock":5,"destacado":false,"descripcion":"Pequeños, luminosos y fáciles de combinar."},
+  {"id":"aj-008","nombre":"Set de anillos dorados","categoria":"Anillos","imagen":"09_imagen.webp","precio":42900,"stock":4,"destacado":false,"descripcion":"Tres diseños para combinar a tu manera."}
+]
