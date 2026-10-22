@@ -88,6 +88,7 @@ const ERR_REPOS = [
     'movimientodesuelodorrego.com.ar' => 'pablot95/movimientodesuelodorrego',
     'byjoyas.com.ar' => 'pablot95/byjoyas',
     'escuelaespaciomirenacer.com.ar' => 'pablot95/espaciomirenacer',
+    'siaweb.com.ar' => 'pablot95/siaweb',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
