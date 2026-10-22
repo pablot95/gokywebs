@@ -15,7 +15,9 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const GIT = process.env.GIT || "git";
 const DESDE = "2026-10-04";
 
-const salida = execFileSync(GIT, ["log", "--reverse", `--since=${DESDE}`, "--diff-filter=A", "--name-only",
+const REF = process.env.REF || "HEAD";   // p. ej. REF=origin/main si el checkout está atrasado
+
+const salida = execFileSync(GIT, ["log", REF, "--reverse", `--since=${DESDE}`, "--diff-filter=A", "--name-only",
     "--format=@@%h|%ad|%(trailers:key=Co-Authored-By,valueonly,separator=;)", "--date=short", "--", "demo"],
     { cwd: raiz, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
 
