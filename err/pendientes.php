@@ -87,6 +87,7 @@ const ERR_REPOS = [
     'elysoloviajes.com.ar' => 'pablot95/elysoloviajes',
     'movimientodesuelodorrego.com.ar' => 'pablot95/movimientodesuelodorrego',
     'byjoyas.com.ar' => 'pablot95/byjoyas',
+    'escuelaespaciomirenacer.com.ar' => 'pablot95/espaciomirenacer',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
