@@ -1,0 +1,17 @@
+{
+  "fotos": {
+    "origen": "Zip Green_Nursing de Descargas (22-oct-2026): 9 fotos ilustrativas + mockup",
+    "abuela-sillon": "01_imagen.png (9:16)",
+    "cama-internacion": "02_imagen.png (16:9)",
+    "abuelo-lectura": "03_imagen.png",
+    "merienda-en-casa": "04_imagen.png",
+    "control-enfermeria": "05_imagen.png",
+    "cuidadora-en-casa": "06_imagen.png",
+    "enfermeria-internacional": "08_imagen.png",
+    "capacitacion": "09_imagen.png",
+    "sin-usar": "07_imagen.png (baño adaptado)"
+  },
+  "logo": "Sacado del flyer en PDF que la clienta mandó por WhatsApp el 22-oct (wabot/data/media/5491128071955/20261022-123431-4064dfb3.pdf): logo.webp, logo-h.webp (cruz + nombre en una fila) e icono.webp, con versiones -claro",
+  "og-greennursing.jpg": "Compuesta con 02_imagen.png y el logo",
+  "bancos": "Ninguna foto de bancos libres"
+}
