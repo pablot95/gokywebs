@@ -5964,8 +5964,9 @@ function wabot_form_recordatorio_correr($cfg, $ahora = null) {
  * "Cuando un cliente llene el formulario, a los 5 minutos (si es que el cliente no
  * mandó ni un mensaje extra) el bot mande un mensaje de confirmación del form".
  * Sale una vez por formulario completado (form_completado_ts), cuando pasaron
- * form_confirmacion_minutos y desde entonces no escribió el cliente ni le contestó
- * el bot o Pablo (si ya hubo respuesta, ya está confirmado). Es una respuesta a lo
+ * form_confirmacion_minutos y desde entonces no preguntó nada el cliente ni le contestó
+ * el bot o Pablo (si ya hubo respuesta, ya está confirmado; desde el 22-oct, material
+ * o un comentario sin pregunta no la frenan). Es una respuesta a lo
  * que él acaba de hacer, así que no espera el horario de contacto ni se frena por
  * otro automático reciente; sí necesita la ventana de 24 h abierta (texto libre) y
  * que el formulario sea de hace poco (si el cron estuvo caído, no llega horas tarde).
@@ -5983,11 +5984,19 @@ function wabot_form_confirmacion_corresponde($cv, $cfg, $ahora = null) {
     if (!empty($cv['archivado']) || !empty($cv['contexto_consulta'])) return false;
     if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
     if (!empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts']) || !empty($cv['form_recibido_confirmado'])) return false;
-    // Algo después del formulario: un mensaje del cliente, del bot o de Pablo.
-    if (wabot_ultimo_cliente_ts($cv) > $completado) return false;
+    /* Algo después del formulario: una respuesta del bot o de Pablo, o una
+     * pregunta del cliente (esa la contesta Pablo). Material o un comentario sin
+     * pregunta no la frena (22-oct, Deltagas: mandó su boceto a los 2 minutos y
+     * nadie le confirmó nada, con el bot ya apagado en el chat). */
     foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
         if ((int)($fila['ts'] ?? 0) <= $completado) break;
-        if (in_array(($fila['q'] ?? ''), ['cliente', 'bot', 'humano'], true)) return false;
+        $q = (string)($fila['q'] ?? '');
+        if ($q === 'bot' || $q === 'humano') return false;
+        if ($q !== 'cliente') continue;
+        // Lo que escribió él (sin la descripción de la foto que agrega el bot entre paréntesis).
+        $t = trim((string)preg_replace('/\n\(.*$/su', '', (string)($fila['t'] ?? '')));
+        $t = function_exists('wabot_texto_sin_links') ? wabot_texto_sin_links($t) : $t;
+        if (strpos($t, '?') !== false || strpos($t, '¿') !== false) return false;
     }
     return wabot_ventana_restante($cv, $ahora) >= 600;
 }

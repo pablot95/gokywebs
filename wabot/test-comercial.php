@@ -229,11 +229,34 @@ oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta
 $r = turno('Dale, a ver cómo quedaría', $c, $cfg);
 caso('«Dale, a ver cómo quedaría» → el formulario, una sola vez', count($r) === 1 && con_form($r) && str_starts_with($r[0], 'Para hacer la demo, solo tendrías que llenar este formulario'), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('queda en pausa por formulario (sin control manual, sin bloquear el recordatorio)', !empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'formulario' && empty($c['control_manual']) && empty($c['seguimiento_bloqueado']) && !empty($c['form_link_mandado_ts']));
-oa([dc(['accion' => 'responder', 'mensajes' => ['Tarda poco.']])]);
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['plazos']])]);
 $r = turno('Y cuánto tarda?', $c, $cfg);
-caso('después del formulario, una duda habitual → silencio, pendiente para Pablo, sin llamar al modelo', $r === [] && !empty($c['handoff_pendiente']) && count(pedidos()) === 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('después del formulario (sin completar), una duda habitual se contesta (22-oct)', $r === [$cfg['info']['plazos']] && count(pedidos()) === 1
+    && ($c['comercial_pausa'] ?? '') === 'formulario' && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('el modelo sabe que el formulario ya salió', strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'YA LE MANDAMOS EL FORMULARIO') !== false);
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
 $r = turno('Dale', $c, $cfg);
-caso('un segundo sí no manda el formulario de nuevo', $r === []);
+caso('un segundo sí no manda el formulario de nuevo', $r === [] && ($c['comercial_pausa'] ?? '') === 'formulario', json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Gracias! Lo usamos para armar la demo']])]);
+$r = turno('[foto] Te paso el logo', $c, $cfg);
+caso('material después del formulario → se agradece', $r === ['Gracias! Lo usamos para armar la demo'], json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'No le abre el link del formulario'])]);
+$r = turno('No me abre el link', $c, $cfg);
+caso('lo que no es simple sigue en silencio para Pablo, sin tomar el control ni frenar el recordatorio', $r === [] && !empty($c['handoff_pendiente'])
+    && ($c['comercial_pausa'] ?? '') === 'formulario' && empty($c['control_manual']) && empty($c['seguimiento_bloqueado']));
+$cP = $c;
+wabot_conv_transcript($cP, 'humano', 'Hola! Probá de nuevo ahora');
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$r = turno('Ahí lo abrí, una pregunta más: cuánto tarda?', $cP, $cfg);
+caso('si Pablo ya escribió después del formulario, el bot no se mete', $r === [] && count(pedidos()) === 0);
+$cC = $c; $cC['form_completado_ts'] = time();
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$r = turno('Ya lo completé, cuánto tarda?', $cC, $cfg);
+caso('con el formulario completo el bot sigue callado (10-oct)', $r === [] && count(pedidos()) === 0);
+$cfgOff = $cfg; $cfgOff['comercial']['post_formulario'] = false;
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$r = turno('Cuánto tarda?', $c, $cfgOff);
+caso('con comercial.post_formulario = false vuelve el silencio de antes', $r === [] && count(pedidos()) === 0);
 
 $c = cv_cotizada();
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
@@ -495,9 +518,10 @@ $cvd = wabot_conv_load($tel);
 caso('el sí manda el formulario y la charla queda en pausa por formulario', count($GLOBALS['WABOT_TEST_ENVIADOS']) === 1 && strpos($GLOBALS['WABOT_TEST_ENVIADOS'][0][1], 'gokywebs.com/form/') !== false
     && ($cvd['comercial_pausa'] ?? '') === 'formulario' && !empty($cvd['form_link_mandado_ts']));
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
-oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting']])]);
 wabot_procesar_entrante(['channel_user_id' => $tel, 'conversation_key' => $tel, 'id' => uniqid('tc.3'), 'canal' => 'whatsapp', 'texto' => 'Y el hosting va incluido?', 'nombre' => 'Marta', 'media' => null], $cfg);
-caso('después del formulario el webhook no manda nada y no llama al modelo', $GLOBALS['WABOT_TEST_ENVIADOS'] === [] && count(pedidos()) === 0 && !empty(wabot_conv_load($tel)['handoff_pendiente']));
+caso('después del formulario el webhook contesta la duda y la charla sigue en pausa por formulario (22-oct)', count($GLOBALS['WABOT_TEST_ENVIADOS']) === 1
+    && strpos($GLOBALS['WABOT_TEST_ENVIADOS'][0][1], 'hosting') !== false && (wabot_conv_load($tel)['comercial_pausa'] ?? '') === 'formulario', json_encode($GLOBALS['WABOT_TEST_ENVIADOS'], JSON_UNESCAPED_UNICODE));
 @unlink(wabot_conv_path($tel)); @unlink(wabot_cola_path($tel));
 
 // En el modo off, nada de esto corre: la charla se atiende como siempre.
@@ -1027,9 +1051,15 @@ $clavesCuatro = ['hosting', 'mantenimiento', 'carga', 'plataformas'];
 $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => array_merge($clavesCuatro, ['hosting', 'clave_inexistente'])])]);
 $r = turno('El hosting está incluido? Qué incluye el mantenimiento? Puedo editar mis productos? Qué plataforma usan?', $c, $cfg);
-caso('cuatro dudas conocidas → cuatro respuestas, sin duplicados ni claves inventadas', count($r) === 4
-    && strpos($r[0], 'hosting') !== false && strpos($r[1], 'mantenimiento') !== false
-    && strpos($r[2], 'panel') !== false && strpos($r[3], 'WordPress') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+// Desde el 22-oct, cuatro o más respuestas oficiales salen juntas en un solo mensaje, en orden.
+$posiciones = array_map(fn($p) => strpos($r[0] ?? '', $p), ['hosting', 'mantenimiento', 'panel', 'WordPress']);
+caso('cuatro dudas conocidas → las cuatro respuestas en un solo mensaje, sin duplicados ni claves inventadas', count($r) === 1
+    && !in_array(false, $posiciones, true) && $posiciones === array_values(array_unique($posiciones)) && $posiciones == array_values((function ($p) { sort($p); return $p; })($posiciones))
+    && substr_count($r[0], 'hosting y el dominio .com.ar') === 1, json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting', 'mantenimiento', 'carga']])]);
+$r = turno('Incluye hosting? Qué es el mantenimiento? Lo edito yo?', $c, $cfg);
+caso('tres respuestas oficiales siguen saliendo por separado', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $clavesVenta = ['envios', 'medios_pago_tienda', 'proceso', 'mantenimiento'];
 $cotCompleta = dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => $clavesVenta,
@@ -1037,10 +1067,16 @@ $cotCompleta = dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' 
 $c = cv();
 oa([$cotCompleta]);
 $r = turno('Vendo vinos. Quisiera saber cuánto sale, cómo son los envíos, con qué pueden pagar, cómo se empieza y qué mantenimiento incluye', $c, $cfg);
-caso('cotiza y contesta cuatro dudas aunque no haya signos de pregunta, incluido el proceso', count($r) === 7
-    && $r[0] === $cfg['info']['envios'] && $r[1] === $cfg['info']['medios_pago_tienda']
-    && $r[2] === $cfg['info']['proceso'] && strpos($r[3], 'mantenimiento') !== false
-    && strpos($r[5], 'Plan anual: $190.000') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('cotiza y contesta cuatro dudas aunque no haya signos de pregunta, incluido el proceso', count($r) === 4
+    && str_starts_with($r[0], $cfg['info']['envios']) && strpos($r[0], $cfg['info']['medios_pago_tienda']) !== false
+    && strpos($r[0], $cfg['info']['proceso']) !== false && strpos($r[0], 'mantenimiento') !== false
+    && strpos($r[2], 'Plan anual: $190.000') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+// Con el valor ya pasado, "Te pasamos el valor y…" no va (22-oct, Maxi: "Cómo se comenzaría?").
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['proceso']])]);
+$r = turno('Como se comenzaria', $c, $cfg);
+caso('el proceso con el precio ya dado arranca por el diseño', count($r) === 1 && str_starts_with($r[0], 'Si te interesa, te armamos sin cargo un primer diseño')
+    && strpos($r[0], 'Te pasamos el valor') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['envios', 'medios_pago_tienda']])]);
@@ -1065,11 +1101,11 @@ caso('dos webs juntas no pierden las dudas', count($r) === 4 && $r[0] === $cfg['
 $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta', 'info_claves' => $clavesCuatro])]);
 $r = turno('Dale, armala, pero antes contame lo del hosting, mantenimiento, si edito los productos y qué plataforma usan?', $c, $cfg);
-caso('aceptar la demo con cuatro dudas → contesta todas antes del formulario', count($r) === 5 && con_form([$r[4]])
+caso('aceptar la demo con cuatro dudas → contesta todas antes del formulario', count($r) === 2 && strpos($r[0], 'WordPress') !== false && con_form([$r[1]])
     && ($c['comercial_pausa'] ?? '') === 'formulario', json_encode($r, JSON_UNESCAPED_UNICODE));
-oa([]);
-$r = turno('Y cómo se paga?', $c, $cfg);
-caso('después del formulario sigue Pablo, sin llamar al modelo ni contestar', $r === [] && count(pedidos()) === 0);
+oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Quiere pagar ya'])]);
+$r = turno('Te transfiero ahora, pasame los datos', $c, $cfg);
+caso('después del formulario, lo que es para Pablo sigue en silencio', $r === [] && !empty($c['handoff_pendiente']) && ($c['comercial_pausa'] ?? '') === 'formulario');
 
 // Las reglas que agregan una respuesta prioritaria tampoco pueden borrar las otras.
 $c = cv_cotizada('tienda');
@@ -1176,6 +1212,43 @@ oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta
 $r = turno('Dale', $c, $cfg);
 caso('un formulario solo también se revisa si había una duda pendiente', count($GLOBALS['OA_REVISIONES']) === 2
     && count($r) === 2 && strpos($r[0], 'panel') !== false && con_form($r) && ($c['comercial_pendientes'] ?? null) === [], json_encode($r, JSON_UNESCAPED_UNICODE));
+
+echo "— 15. Charlas del 22-oct —\n";
+// Geo es acá: tras la oferta le preguntamos otra cosa, contó que no abrió y un "Ok" a "Somos de Tigre…" mandaba el formulario.
+$c = cv_cotizada('tienda');
+wabot_conv_transcript($c, 'cliente', 'No hay nada funcionando');
+wabot_conv_transcript($c, 'bot', 'Te referís a que el lugar todavía no está funcionando o a que no tenés una web?');
+wabot_conv_transcript($c, 'cliente', 'No abrimos... pensaba mes que viene. Ustedes en donde estan?');
+wabot_conv_transcript($c, 'bot', $cfg['info']['ubicacion']);
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
+$r = turno('Ok', $c, $cfg);
+caso('un "Ok" con la charla en otro tema no manda el formulario: pregunta si quiere la demo', count($r) === 1 && !con_form($r) && strpos($r[0], 'demo') !== false
+    && empty($c['link_form_enviado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('esa repregunta es un texto fijo: no pasa por el revisor (con GPT real la frenaba)', count($GLOBALS['OA_REVISIONES']) === 0);
+oa([dc(['accion' => 'esperar', 'solucion' => 'tienda'])]);
+$r = turno('Sí, dale', $c, $cfg);
+caso('y el sí a esa pregunta manda el formulario', count($r) === 1 && con_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+wabot_conv_transcript($c, 'cliente', 'Y el hosting?');
+wabot_conv_transcript($c, 'bot', $cfg['info']['hosting']);
+oa([dc(['accion' => 'esperar', 'solucion' => 'tienda'])]);
+$r = turno('Dale', $c, $cfg);
+caso('con la oferta abierta (aclaramos una duda sin preguntar nada), el "dale" sigue aceptando', count($r) === 1 && con_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// nicolas (poda en altura) pidió marketing y publicidad: se lo pasaba a Pablo; a Patri, con lo mismo, se le contestaba.
+$c = cv();
+wabot_conv_transcript($c, 'bot', $cfg['bienvenida']);
+oa([dc(['accion' => 'humano', 'solucion' => 'sin_definir', 'motivo' => 'Busca marketing y publicidad para poda en altura, no una web']),
+    dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'info_claves' => ['marketing'],
+        'mensajes' => ['Buenísimo. Podemos armarte una web para mostrar tus servicios de poda en altura y contacto directo por WhatsApp'], 'ficha' => ['rubro' => 'tu servicio de poda en altura']])]);
+$r = turno('Me dedico a la poda en altura y quiero hacer marketing, publicidad. Me gustaría asesorarme', $c, $cfg);
+caso('pedir publicidad no se deriva: se le pide al modelo que conteste y siga con la web', count(pedidos()) === 2 && in_array($cfg['info']['marketing'], $r, true)
+    && strpos(implode(' ', $r), 'Plan anual') !== false && ($c['comercial_pausa'] ?? '') !== 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('el motivo de la corrección llega al modelo', strpos(json_encode(pedidos()[1]['input'] ?? [], JSON_UNESCAPED_UNICODE), 'respuesta oficial marketing') !== false);
+caso('las instrucciones dicen que gastronomía es tienda sin preguntar y que publicidad no se deriva',
+    strpos(wabot_comercial_instrucciones_comportamiento(), '"gastronomía" a secas') !== false
+    && strpos(wabot_comercial_instrucciones_comportamiento(), 'Pedir publicidad, marketing') !== false
+    && strpos(wabot_comercial_instrucciones_comportamiento(), 'DESPUÉS DEL FORMULARIO') !== false);
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);

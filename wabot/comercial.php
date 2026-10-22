@@ -174,6 +174,10 @@ function wabot_comercial_texto_es_oferta($texto, $cfg = null) {
     if ($t === '') return false;
     if (strpos($t, 'demo gratis') !== false && (strpos($t, 'antes de decidir') !== false || strpos($t, 'como quedaria') !== false)) return true;
     if (strpos($t, 'primer diseno') !== false && strpos($t, 'sin cargo') !== false && strpos($t, 'queres que lo armemos') !== false) return true;
+    // La repregunta cuando un "ok" suelto no alcanzaba (22-oct, wabot_comercial_validar).
+    if (strpos($t, 'queres que te armemos la demo') !== false) return true;
+    $confirmar = is_array($cfg) ? trim((string)($cfg['comercial']['confirmar_demo'] ?? '')) : '';
+    if ($confirmar !== '' && $t === wabot_normalizar_frase($confirmar)) return true;
     return function_exists('wabot_texto_es_oferta_entrega') && wabot_texto_es_oferta_entrega($texto);
 }
 
@@ -211,6 +215,23 @@ function wabot_comercial_ultimo_es_oferta($conv, $cfg = null) {
     return false;
 }
 
+/**
+ * ¿La oferta de la demo sigue siendo lo último que le planteamos? No, si
+ * después le preguntamos otra cosa (22-oct, Geo es acá: tras la oferta le
+ * preguntamos "te referís a que el lugar todavía no está funcionando?", contó
+ * que todavía no abre y un "Ok" a "Somos de Tigre…" salió como aceptación).
+ */
+function wabot_comercial_oferta_sigue_abierta($conv, $cfg = null) {
+    if (!wabot_comercial_oferta_hecha($conv, $cfg)) return false;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        $t = (string)($fila['t'] ?? '');
+        if (wabot_comercial_texto_es_oferta($t, $cfg)) return true;
+        if (strpos(function_exists('wabot_texto_sin_links') ? wabot_texto_sin_links($t) : $t, '?') !== false) return false;
+    }
+    return true;
+}
+
 /* ─────────────────────────────── Estado de la charla ─────────────────────────────── */
 
 /**
@@ -240,6 +261,27 @@ function wabot_comercial_elegible($conv, $cfg, $modo = 'auto') {
     if (in_array((string)($conv['cierre'] ?? ''), ['baja', 'proveedor'], true)) return [false, 'Charla cerrada (' . $conv['cierre'] . ')'];
     if (!empty($conv['contexto_consulta'])) return [false, 'No es una consulta de venta (' . str_replace('_', ' ', (string)$conv['contexto_consulta']) . ')'];
     return [true, ''];
+}
+
+/**
+ * ¿Puede contestar lo simple con el formulario ya mandado? (Pablo, 22-oct:
+ * "¿tienen otros trabajos realizados?" quedaba sin respuesta.) Solo mientras
+ * el link salió y no lo completó: completo, el bot se apaga en el chat (10-oct).
+ * Ni con la charla en manos de Pablo, ni si él ya escribió después del link,
+ * ni con la demo presentada, el pago avisado o un cliente.
+ */
+function wabot_comercial_post_form_permitido($conv, $cfg) {
+    if (array_key_exists('post_formulario', (array)($cfg['comercial'] ?? [])) && empty($cfg['comercial']['post_formulario'])) return false;
+    if (wabot_comercial_estado($conv) !== 'formulario' || (string)($conv['comercial_pausa'] ?? '') === 'humano') return false;
+    if (!empty($conv['control_manual']) || !empty($conv['bot_off']) || !empty($conv['archivado'])) return false;
+    if ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']) || !empty($conv['presentado_ts'])) return false;
+    if (!empty($conv['pago_avisado_ts']) || !empty($conv['cliente_id']) || !empty($conv['contexto_consulta'])) return false;
+    if (in_array((string)($conv['cierre'] ?? ''), ['baja', 'proveedor', 'rechazo'], true)) return false;
+    $desde = (int)($conv['comercial_pausa_ts'] ?? 0) ?: (int)($conv['form_link_mandado_ts'] ?? 0);
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') === 'humano' && (int)($fila['ts'] ?? 0) >= $desde) return false;
+    }
+    return true;
 }
 
 /**
@@ -392,6 +434,10 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
         $c[] = wabot_comercial_oferta_hecha($conv, $cfg)
             ? '- Ya le ofrecimos la demo gratis y todavía no la aceptó: si este mensaje la acepta (aunque sea con otras palabras), accion formulario.'
             : '- Todavía no le ofrecimos la demo: sale sola después de los planes cuando cotizás.';
+    } elseif (wabot_comercial_estado($conv) === 'formulario') {
+        $c[] = ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']) || !empty($conv['presentado_ts']))
+            ? '- Ya completó el formulario de la demo.'
+            : '- YA LE MANDAMOS EL FORMULARIO DE LA DEMO y todavía no lo completó: seguí lo de DESPUÉS DEL FORMULARIO.';
     }
     $c[] = '- ' . ($yaHablo ? 'Ya le escribimos antes en esta charla: no lo vuelvas a saludar.' : 'Todavía no le escribimos nada en esta charla.');
     if ($hablóPablo) $c[] = '- Una persona del equipo ya escribió en esta charla (figura como "Gokywebs (persona)"): lo que dijo vale como dicho por nosotros.';
@@ -666,7 +712,12 @@ function wabot_comercial_borrador_texto(array $mensajes) {
  */
 function wabot_comercial_hay_que_revisar(array $b, $texto) {
     if (($b['accion'] ?? '') === 'humano') return false;
-    foreach ((array)($b['mensajes'] ?? []) as $m) if (in_array($m['efecto'] ?? 'texto', ['texto', 'propuesta', 'info'], true)) return true;
+    foreach ((array)($b['mensajes'] ?? []) as $m) {
+        if (!in_array($m['efecto'] ?? 'texto', ['texto', 'propuesta', 'info'], true)) continue;
+        // La repregunta de la demo es un texto fijo del sistema (22-oct): el revisor la frenaba pidiendo el formulario.
+        if (($m['efecto'] ?? 'texto') === 'texto' && wabot_comercial_texto_es_oferta((string)($m['t'] ?? ''))) continue;
+        return true;
+    }
     return function_exists('wabot_mensaje_pregunta_algo') && wabot_mensaje_pregunta_algo($texto);
 }
 
@@ -1118,6 +1169,13 @@ function wabot_comercial_dudas($d, $texto, $conv) {
             $dudas[] = 'elegiste catalogo, pero el cliente no dijo que no quiere cobrar por la web: si vende productos, asumí venta online (solucion tienda) y escribí la propuesta para una tienda';
         }
     }
+    /* Pedir publicidad o difusión no se deriva (22-oct): a Patri ("necesito
+     * difusión") se le contestó y siguió; a nicolas (poda en altura, "quiero
+     * marketing, publicidad") se lo pasó a Pablo y quedó sin respuesta. */
+    if ($d['accion'] === 'humano' && $d['solucion'] !== 'crm'
+        && preg_match('/\b(marketing|publicidad|difusi[oó]n|redes|anuncios?|pauta|community)\b/iu', (string)$d['motivo'])) {
+        $dudas[] = 'pedir publicidad, marketing, redes o difusión no es motivo para pasarlo a una persona: pedí la respuesta oficial marketing y seguí con la web (si ya sabés a qué se dedica, cotizá; si no, preguntáselo)';
+    }
     if (in_array($d['accion'], ['responder', 'cotizar'], true) && $d['solucion'] === 'cursos') {
         $agregadas = wabot_comercial_cursos_funciones_de_mas(implode("\n", $d['mensajes']), $cliente);
         if ($agregadas) {
@@ -1192,7 +1250,7 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     $yaCotizado = wabot_comercial_cotizacion($conv, $cfg) !== null;
     if ((in_array($d['accion'], ['responder', 'esperar'], true) || ($d['accion'] === 'cotizar' && $yaCotizado && !wabot_comercial_pide_precio_otra_vez($texto)))
         && wabot_comercial_estado($conv) === 'atencion' && wabot_comercial_si_claro($texto)
-        && (wabot_comercial_ultimo_es_oferta($conv, $cfg) || (wabot_comercial_oferta_hecha($conv, $cfg) && !wabot_comercial_ultimo_pregunta($conv)))) {
+        && (wabot_comercial_ultimo_es_oferta($conv, $cfg) || wabot_comercial_oferta_sigue_abierta($conv, $cfg))) {
         $d['accion'] = 'formulario';
         $d['intencion'] = 'acepta';
         $d['mensajes'] = [];
@@ -1202,6 +1260,26 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     if ($d['accion'] === 'formulario' && !wabot_comercial_oferta_hecha($conv, $cfg)) {
         $d['accion'] = (wabot_comercial_solucion_estandar($sol) && $negocio) ? 'cotizar' : 'responder';
         $ajustes[] = 'formulario_sin_oferta';
+    }
+    /* Un "ok" suelto cuando después de la oferta la charla fue por otro lado (le
+     * preguntamos otra cosa) no acepta la demo: se le pregunta si la quiere
+     * (22-oct, Geo es acá: no abrió todavía y el "Ok" era a "Somos de Tigre…"). */
+    $acuseSuelto = wabot_comercial_si_claro($texto) || (function_exists('wabot_es_acuse') && wabot_es_acuse($texto));
+    if ($d['accion'] === 'formulario' && wabot_comercial_estado($conv) === 'atencion' && $acuseSuelto
+        && !wabot_comercial_ultimo_es_oferta($conv, $cfg) && !wabot_comercial_oferta_sigue_abierta($conv, $cfg)) {
+        $d['accion'] = 'responder';
+        $d['intencion'] = 'ninguna';
+        $d['mensajes'] = [trim((string)($cfg['comercial']['confirmar_demo'] ?? '')) ?: 'Te consulto, querés que te armemos la demo así ves cómo quedaría?'];
+        $ajustes[] = 'formulario_confirmar_demo';
+    }
+    /* Con el formulario ya mandado (22-oct) se contestan dudas y se agradece el
+     * material, pero no se vuelve a cotizar ni a mandar el link: el precio solo
+     * si lo pide otra vez. */
+    if (wabot_comercial_estado($conv) === 'formulario') {
+        if ($d['accion'] === 'formulario' || ($d['accion'] === 'cotizar' && !wabot_comercial_pide_precio_otra_vez($texto))) {
+            $d['accion'] = ($d['mensajes'] || $d['info_claves']) ? 'responder' : 'esperar';
+            $ajustes[] = 'post_form_sin_repetir';
+        }
     }
     // Cotizar exige una solución estándar y saber a qué se dedica.
     if ($d['accion'] === 'cotizar' && !wabot_comercial_solucion_estandar($sol)) {
@@ -1416,6 +1494,16 @@ function wabot_comercial_info_textos(array $claves, $conv, $cfg, $sinMontos) {
     foreach ($claves as $k) {
         $una = isset($extra[$k]) ? (string)$extra[$k] : wabot_info_lineas([$k], $conv, $cfg);
         if ($una === '') continue;
+        /* "Te pasamos el valor y, si te interesa…" con el valor ya pasado (22-oct,
+         * Maxi: "Cómo se comenzaría?"): la misma respuesta, desde el diseño. */
+        if ($k === 'proceso' && empty($conv['_cotiza_este_turno']) && wabot_comercial_cotizacion($conv, $cfg) !== null) {
+            $alt = trim((string)($cfg['info']['proceso_cotizado'] ?? ''));
+            if ($alt === '') {
+                $alt = trim((string)preg_replace('/^Te pasamos el valor y,?\s*/u', '', $una));
+                $alt = mb_strtoupper(mb_substr($alt, 0, 1)) . mb_substr($alt, 1);
+            }
+            if ($alt !== '') $una = $alt;
+        }
         $una = wabot_precio_placeholders($una, $conv, $cfg, $tipo !== '' ? $tipo : null);
         if ($sinMontos && strpos($una, '$') !== false) continue;
         $out[] = $una;
@@ -1626,6 +1714,8 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             $paraInfo['landing_con_panel'] = $tipoFuturo === 'landing' && $cotInfo['plan'] !== 'informativa';
         }
         if ($d['pago_unico']) $paraInfo['quiere_web_propia'] = true;
+        // El valor sale en este mismo turno: "Te pasamos el valor y…" sigue valiendo.
+        if ($cot === null) $paraInfo['_cotiza_este_turno'] = true;
         $claves = array_values(array_diff($d['info_claves'], ['precio_sin_rubro']));
         $infos = [];
         foreach (wabot_comercial_info_textos($claves, $paraInfo, $cfg, $cotInfo === null) as $t) {
@@ -1636,6 +1726,19 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             unset($m);
             $msgs = array_merge($infos, $msgs);
         }
+    }
+
+    /* Todas las dudas se contestan (10-oct), pero cuatro o más respuestas oficiales
+     * salen juntas en un solo mensaje (22-oct, Maxi: "esos puntos de los planes
+     * a qué hacen referencia" recibió cinco mensajes uno atrás del otro). */
+    if (count(array_filter($msgs, function ($m) { return $m['efecto'] === 'info'; })) > 3) {
+        $juntos = [];
+        foreach ($msgs as $m) {
+            $i = count($juntos) - 1;
+            if ($m['efecto'] === 'info' && $i >= 0 && $juntos[$i]['efecto'] === 'info') $juntos[$i]['t'] .= "\n\n" . $m['t'];
+            else $juntos[] = $m;
+        }
+        $msgs = $juntos;
     }
 
     // El saludo se devuelve una vez por charla, al principio del primer mensaje nuestro; nunca pegado a un bloque aprobado (planes, oferta, formulario).
@@ -1811,7 +1914,9 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     }
     $conv['ultimo_ts'] = time();
     [$ok, $motivo] = wabot_comercial_elegible($conv, $cfg, 'auto');
-    if (!$ok) {
+    // Con el link del formulario mandado y sin completar, contesta lo simple (22-oct).
+    $postForm = !$ok && wabot_comercial_post_form_permitido($conv, $cfg);
+    if (!$ok && !$postForm) {
         // Lo que escriba con la charla pausada lo ve Pablo (salvo la que él ya tomó).
         if (empty($conv['control_manual'])) $conv['handoff_pendiente'] = true;
         return [];
@@ -1852,6 +1957,16 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         return [];
     }
     $b = $res['b'];
+    if ($postForm && $b['accion'] === 'humano') {
+        /* Lo que no es simple (no le abre el link, pide una llamada, quiere pagar)
+         * queda como antes: en silencio para Pablo, sin tomar el control ni
+         * bloquear el recordatorio del formulario. */
+        $conv['handoff_pendiente'] = true;
+        $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'humano', 'motivo' => (string)$b['motivo'],
+                                     'ajustes' => $res['ajustes'], 'revision' => $res['revision']];
+        wabot_log('comercial_post_form_pablo', ['tel' => $conv['tel'] ?? '', 'motivo' => mb_substr((string)$b['motivo'], 0, 160)]);
+        return [];
+    }
     $conv = $b['conv'];
     $conv['comercial_ultimo']['ajustes'] = $res['ajustes'];
     $conv['comercial_ultimo']['revision'] = $res['revision'];
