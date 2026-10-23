@@ -92,6 +92,7 @@ const ERR_REPOS = [
     'ahorramismo.com.ar' => 'pablot95/ahorramismo',
     'escuelaespaciomirenacer.com.ar' => 'pablot95/espaciomirenacer',
     'siaweb.com.ar' => 'pablot95/siaweb',
+    'gestoriaimpulso.com.ar' => 'pablot95/gestoriaimpulso',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
