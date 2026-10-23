@@ -318,6 +318,49 @@ caso('una llamada puede usar otro modelo que el del panel (el revisor y su sombr
     return $r['ok'] && $r['modelo'] === 'gpt-6-luna' && $r2['modelo'] === 'gpt-6-sol' && $modeloPedido === 'gpt-6-sol';
 })());
 
+echo "— 8b. La caché con corte explícito (23-oct): las instrucciones se leen, la charla no se escribe —\n";
+
+caso('los cortes explícitos van desde GPT-5.6',
+    wabot_openai_cache_explicita_va('gpt-6.1-sol') && wabot_openai_cache_explicita_va('gpt-6-sol') && wabot_openai_cache_explicita_va('gpt-6-luna')
+    && wabot_openai_cache_explicita_va('gpt-5.6-terra') && wabot_openai_cache_explicita_va('gpt-6.1-sol-2026-10-01') && wabot_openai_cache_explicita_va('gpt-7')
+    && !wabot_openai_cache_explicita_va('gpt-5.5') && !wabot_openai_cache_explicita_va('gpt-5.4-mini') && !wabot_openai_cache_explicita_va('gpt-5-mini')
+    && !wabot_openai_cache_explicita_va('o3'));
+$largas = str_repeat('Regla fija del asistente. ', 400);
+$armado = wabot_openai_cache_explicita(['model' => 'gpt-6.1-sol', 'instructions' => $largas, 'input' => [['role' => 'user', 'content' => 'la charla']], 'store' => false]);
+caso('las instrucciones largas pasan a un mensaje developer con el corte al final',
+    !isset($armado['instructions']) && ($armado['input'][0]['role'] ?? '') === 'developer'
+    && ($armado['input'][0]['content'][0]['type'] ?? '') === 'input_text' && ($armado['input'][0]['content'][0]['text'] ?? '') === $largas
+    && ($armado['input'][0]['content'][0]['prompt_cache_breakpoint'] ?? null) === ['mode' => 'explicit'], json_encode(array_keys($armado)));
+caso('la charla va después del corte, tal cual, y el modo explícito no la escribe en caché',
+    ($armado['input'][1] ?? null) === ['role' => 'user', 'content' => 'la charla'] && count($armado['input']) === 2
+    && ($armado['prompt_cache_options'] ?? null) === ['mode' => 'explicit'] && $armado['store'] === false);
+$corto = wabot_openai_cache_explicita(['model' => 'gpt-6.1-sol', 'instructions' => 'Respondé en JSON.', 'input' => 'el prompt del clasificador']);
+caso('instrucciones cortas (no llegan al mínimo de la caché): sin corte, y nada se escribe',
+    ($corto['instructions'] ?? '') === 'Respondé en JSON.' && $corto['input'] === [['role' => 'user', 'content' => 'el prompt del clasificador']]
+    && ($corto['prompt_cache_options'] ?? null) === ['mode' => 'explicit']);
+caso('las reglas del flujo comercial alcanzan para llevar corte', mb_strlen(wabot_comercial_instrucciones($cfg)) >= WABOT_OPENAI_CORTE_MIN_CHARS);
+/** Contesta {"ok":true} y anota con qué modelo y si se pidió el corte; $rechazar: 400 a los cortes. */
+function oa_cache_simular(array &$vistos, $rechazar = false) {
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload, $explicita = false) use (&$vistos, $rechazar) {
+        $vistos[] = [$payload['model'], $explicita];
+        if ($rechazar && $explicita) return [400, '{"error":{"message":"Unknown parameter: \'prompt_cache_options\'.","param":"prompt_cache_options"}}'];
+        return [200, json_encode(['model' => $payload['model'], 'status' => 'completed', 'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => '{"ok":true}']]]],
+            'usage' => ['input_tokens' => 10, 'output_tokens' => 2]])];
+    };
+}
+$antesHttp = $GLOBALS['WABOT_TEST_OPENAI_HTTP'] ?? null;
+$vistos = [];
+oa_cache_simular($vistos);
+wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6.1-sol']);
+wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-5.4']);
+caso('la llamada pide el corte en GPT-6.1 Sol y no en un modelo anterior', $vistos === [['gpt-6.1-sol', true], ['gpt-5.4', false]], json_encode($vistos));
+$vistos = [];
+oa_cache_simular($vistos, true);
+$rCache = wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6.1-sol']);
+caso('si la API no acepta los cortes, se pide como antes y contesta igual',
+    $rCache['ok'] && $vistos === [['gpt-6.1-sol', true], ['gpt-6.1-sol', false]], json_encode($vistos));
+$GLOBALS['WABOT_TEST_OPENAI_HTTP'] = $antesHttp;
+
 echo "— 9. Modo shadow: contesta Gemini, OpenAI solo se anota —\n";
 
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'shadow';

@@ -2500,12 +2500,14 @@ function burbujaCita(t, chat) {
                 <?= $iaUso['sin_precio'] ? '<span style="color:var(--warn)">' . (int)$iaUso['sin_precio'] . ' llamada(s) de un modelo sin precio cargado no suman al costo: cargalo en Ajustes.</span>' : '' ?></p>
             <?php if ($iaUso['total']['llamadas'] > 0): ?>
                 <table class="ia-tabla">
-                    <tr><th>Tarea</th><th class="n">Llamadas</th><th class="n">Entrada</th><th class="n">Salida</th><th class="n">Costo</th></tr>
+                    <?php /* Qué parte de la entrada salió de la caché y qué parte se escribió (23-oct): si casi todo se escribe y nada se lee, la caché no sirve y se paga de más. */
+                        $pct = function ($parte, $total) { return $total > 0 ? round(100 * $parte / $total) . ' %' : '—'; }; ?>
+                    <tr><th>Tarea</th><th class="n">Llamadas</th><th class="n">Entrada</th><th class="n" title="La parte de la entrada que se leyó de la caché (la más barata)">Leída de caché</th><th class="n" title="La parte de la entrada que se escribió en la caché (1,25 veces la entrada)">Escrita en caché</th><th class="n">Salida</th><th class="n">Costo</th></tr>
                     <?php foreach ($iaUso['por_tarea'] as $t => $v): ?>
-                        <tr><td><?= $e($nombresTarea[$t] ?? $t) ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $num($v['entrada']) ?></td><td class="n"><?= $num($v['salida']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                        <tr><td><?= $e($nombresTarea[$t] ?? $t) ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $num($v['entrada']) ?></td><td class="n"><?= $pct($v['cache'], $v['entrada']) ?></td><td class="n"><?= $pct($v['escritura'], $v['entrada']) ?></td><td class="n"><?= $num($v['salida']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                     <?php foreach ($iaUso['por_modo'] as $m => $v): ?>
-                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, pruebas en sombra (no se mandó ni decidió nada)' :($m === 'revision' ? 'de eso, la revisión de las charlas (no se manda nada)' : 'de eso, respuestas reales') ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, pruebas en sombra (no se mandó ni decidió nada)' :($m === 'revision' ? 'de eso, la revisión de las charlas (no se manda nada)' : 'de eso, respuestas reales') ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
                     <?php endforeach; ?>
                 </table>
                 <h3 style="margin:16px 0 4px">Las conversaciones que más gastaron</h3>

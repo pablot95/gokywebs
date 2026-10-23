@@ -142,13 +142,57 @@ function wabot_openai_esfuerzo($cfg = null) {
 
 /* ─────────────────────────────── Llamada a la API ─────────────────────────────── */
 
-/** Un POST a /v1/responses: [código http, cuerpo, segundos de Retry-After]. El gancho de test lo simula. */
-function wabot_openai_post($payload, $timeout) {
+/**
+ * Caché explícita (23-oct). En GPT-5.6 y posteriores, la caché implícita pone
+ * el corte al final del último mensaje del usuario, que acá es la charla y
+ * cambia en cada llamada: cada pedido escribía en caché todo lo que mandaba
+ * (1,25 veces la entrada) y el siguiente no lo podía leer, porque no había un
+ * corte justo después de las instrucciones (developers.openai.com/api/docs/guides/prompt-caching,
+ * "A shared prefix is not always a cached prefix"). Por eso pasar a GPT-6.1
+ * Sol, que lee la caché a mitad de precio, casi no se notaba: no se leía.
+ *
+ * Con el modo explícito, las instrucciones van como mensaje developer con un
+ * corte al final (el `instructions` de arriba no admite cortes): se escriben
+ * una vez cada 30 minutos de uso y después se leen a 0,05-0,1 veces la
+ * entrada. Lo que va después del corte (la charla) se cobra como entrada
+ * común, sin el recargo de escritura. Con instrucciones cortas, que no llegan
+ * al mínimo de la caché (1.024 tokens), no hay corte: nada se escribe.
+ */
+const WABOT_OPENAI_CORTE_MIN_CHARS = 4000;   // ~1.100 tokens en castellano
+
+/** ¿El modelo admite cortes de caché explícitos? GPT-5.6 en adelante (gpt-5.6-terra, gpt-6-luna, gpt-6.1-sol…). */
+function wabot_openai_cache_explicita_va($modelo) {
+    if (!preg_match('/^gpt-(\d+)(?:\.(\d+))?(?:-|$)/i', trim((string)$modelo), $m)) return false;
+    return (int)$m[1] > 5 || ((int)$m[1] === 5 && (int)($m[2] ?? 0) >= 6);
+}
+
+/** El pedido tal como sale con caché explícita: instrucciones con su corte, después lo que cambia. */
+function wabot_openai_cache_explicita($payload) {
+    $instrucciones = (string)($payload['instructions'] ?? '');
+    $entrada = $payload['input'] ?? [];
+    if (!is_array($entrada)) $entrada = [['role' => 'user', 'content' => (string)$entrada]];
+    if (mb_strlen($instrucciones) >= WABOT_OPENAI_CORTE_MIN_CHARS) {
+        unset($payload['instructions']);
+        array_unshift($entrada, ['role' => 'developer', 'content' => [[
+            'type' => 'input_text', 'text' => $instrucciones, 'prompt_cache_breakpoint' => ['mode' => 'explicit'],
+        ]]]);
+    }
+    $payload['input'] = $entrada;
+    $payload['prompt_cache_options'] = ['mode' => 'explicit'];
+    return $payload;
+}
+
+/**
+ * Un POST a /v1/responses: [código http, cuerpo, segundos de Retry-After]. El
+ * gancho de test lo simula y recibe el pedido sin armar, con $explicita aparte.
+ */
+function wabot_openai_post($payload, $timeout, $explicita = false) {
     if (isset($GLOBALS['WABOT_TEST_OPENAI_HTTP'])) {
-        $r = call_user_func($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $payload);
+        $r = call_user_func($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $payload, $explicita);
         return [(int)($r[0] ?? 0), (string)($r[1] ?? ''), (float)($r[2] ?? 0)];
     }
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return [0, '', 0];
+    if ($explicita) $payload = wabot_openai_cache_explicita($payload);
     $retry = 0.0;
     $ch = curl_init('https://api.openai.com/v1/responses');
     curl_setopt_array($ch, [
@@ -232,10 +276,12 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
         'max_output_tokens' => (int)($opciones['max_tokens'] ?? wabot_ia_numero($cfg, 'openai_max_tokens', 1600, 300, 8000)),
         'store' => false,
         'text' => ['format' => $formato],
-        // Las instrucciones son iguales en cada llamada de la misma tarea: con la misma
-        // clave, OpenAI reusa la caché y esa parte se cobra 10 veces menos.
+        // Las instrucciones son iguales en cada llamada de la misma tarea. En los modelos
+        // anteriores a GPT-5.6, la misma clave ayuda a caer en la caché; desde 5.6 manda
+        // el corte explícito (wabot_openai_cache_explicita) y la clave solo separa la cuenta.
         'prompt_cache_key' => 'gokywebs-wabot-' . $tarea,
     ];
+    $explicita = wabot_openai_cache_explicita_va($modelo);
     $esfuerzo = (string)($opciones['esfuerzo'] ?? wabot_openai_esfuerzo($cfg));
     if ($esfuerzo !== '' && $esfuerzo !== 'none') $payload['reasoning'] = ['effort' => $esfuerzo];
     // Identifica al cliente ante OpenAI sin mandarle el teléfono: un hash.
@@ -245,7 +291,7 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
     $inicio = microtime(true);
     $http = 0; $error = 'sin_respuesta'; $jsonRoto = 0; $cortada = 0;
     for ($intento = 0; $intento < 4; $intento++) {
-        [$http, $body, $retry] = wabot_openai_post($payload, $timeout);
+        [$http, $body, $retry] = wabot_openai_post($payload, $timeout, $explicita);
         $json = json_decode($body, true);
 
         if ($http >= 200 && $http < 300 && is_array($json)) {
@@ -277,6 +323,12 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
         $parametro = is_array($json) ? (string)($json['error']['param'] ?? '') : '';
         // Un parámetro que este modelo no acepta: se saca y se vuelve a pedir.
         if ($http === 400) {
+            // Si no acepta los cortes de caché, el pedido de siempre (más caro, pero contesta).
+            if ($explicita && preg_match('/prompt_cache_(options|breakpoint)/i', $parametro . ' ' . $mensaje)) {
+                $explicita = false;
+                wabot_log('error', ['donde' => 'openai_cache_explicita', 'tarea' => $tarea, 'modelo' => $modelo, 'msg' => mb_substr($mensaje, 0, 200)]);
+                continue;
+            }
             $sacar = null;
             foreach (['reasoning', 'safety_identifier', 'prompt_cache_key'] as $p) {
                 if (isset($payload[$p]) && (strpos($parametro, $p) === 0 || stripos($mensaje, $p) !== false)) { $sacar = $p; break; }
