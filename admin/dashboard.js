@@ -20,7 +20,7 @@ import {
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { pendientesIniciales, ayudaDePendiente, HOSTINGER, PENDIENTES_SACADOS, TEXTOS_NUEVOS } from "./pendientes-catalogo.js?v=20261015-botones";
+import { pendientesIniciales, normalizarPendientes, ayudaDePendiente, PENDIENTES_VERSION } from "./pendientes-catalogo.js?v=20261023-tres";
 
 const TYPE_LABELS = { landing: 'Landing Page', 'web-completa': 'Web Completa', ecommerce: 'E-commerce', inmobiliaria: 'Inmobiliaria' };
 
@@ -4644,88 +4644,25 @@ document.querySelectorAll("#clientesViews .seg-chip").forEach(b => {
 });
 
 /* Un pendiente de la web: { id, texto, hecho, por: 'pablo' | 'claude', at }. Los
-   que no tienen lista todavía muestran la de su tipo (sembrarPendientes la guarda). */
+   que no tienen lista todavía muestran la de arranque, y los que no pasaron a la del
+   23-oct se muestran ya pasados (sembrarPendientes guarda las dos cosas). */
 function pendientesDe(c) {
-    return Array.isArray(c.pendientes) ? _limpiarPendientes(c.pendientes) : pendientesIniciales(tipoPendientesDe(c), c.tareas);
+    if (!Array.isArray(c.pendientes)) return pendientesIniciales(c.tareas);
+    return normalizarPendientes(c.pendientes, c.pendientesVersion !== PENDIENTES_VERSION);
 }
 
-/* 15-oct: Google y Firebase ya no son pendientes, y los que quedan tienen nombre corto
-   (Comprar dominio, Cargar email, Completar tienda, Subir a host, Mandar acc.). */
-function _limpiarPendientes(lista) {
-    return lista
-        .filter(p => !PENDIENTES_SACADOS.includes(p.id))
-        .map(p => TEXTOS_NUEVOS[p.id] && p.texto !== TEXTOS_NUEVOS[p.id] ? { ...p, texto: TEXTOS_NUEVOS[p.id] } : p);
-}
-
-/* La lista de pendientes que le toca a una web: la del plan del cliente (planDe;
-   al pasar a Cliente guarda el que marcó el bot en el prospecto, `tipoWeb`, y
-   Pablo lo puede cambiar en el modal). Si el bot marcó que la segunda web de un
-   "dos webs" es una tienda, o que es ecommerce y el plan no se pudo deducir, va la
-   de la tienda, que incluye lo de las demás. */
-function tipoPendientesDe(c) {
-    const p = propuestaDeCliente(c);
-    const key = planDe(c, p).key;
-    const marcas = [c, c.propuestaSnapshot, p].filter(Boolean);
-    if (key !== "ecommerce" && marcas.some(f => f.segundaWeb === "ecommerce" || (!key && f.esEcommerce === true))) return "ecommerce";
-    return key;
-}
-
-/* Si el tipo de la web cambió después de sembrar (Pablo cambió el plan, el bot lo corrigió), la lista
-   se acomoda al tipo nuevo: lo hecho y lo que él agregó se queda; lo sin tocar de la lista vieja se reemplaza. */
-function _reconciliarPendientes(c, clave) {
-    const nuevos = pendientesIniciales(clave, c.tareas);
-    const idsNuevos = new Set(nuevos.map(p => p.id));
-    const idsCatalogoViejo = new Set(pendientesIniciales(c.pendientesTipo === "generico" ? null : c.pendientesTipo).map(p => p.id));
-    const porId = new Map(c.pendientes.map(p => [p.id, p]));
-    return [
-        ...nuevos.map(p => porId.get(p.id) || p),
-        ...c.pendientes.filter(p => !idsNuevos.has(p.id) && (p.hecho || !idsCatalogoViejo.has(p.id))),
-    ];
-}
-
+/* 23-oct: todas las webs llevan Completar web, Google Search y Mandar acc., sin
+   importar el tipo. Se guarda la lista en las que no tienen y se pasan una sola vez
+   las que traen la de antes (dominio, email, host…); `pendientesVersion` lo marca. */
 const _sembrando = new Set();
 function sembrarPendientes() {
-    // El tipo de web sale del boceto: hasta que cargan los bocetos no se sabe cuál lista corresponde.
-    if (!clientesCargados || !propuestasCargadas || !presupuestosCargados) return;
+    if (!clientesCargados) return;
     for (const c of clients) {
         if (getEstado(c) !== "cliente" || webEntregada(c)) continue;
-        const clave = tipoPendientesDe(c);
-        const marca = clave || "generico";
-        const nueva = !Array.isArray(c.pendientes);
-        const conHostinger = clave === "ecommerce" || clave === "cursos";
-        if (!nueva) {
-            // 15-oct: se guarda la lista ya sin Google/Firebase y con los nombres cortos.
-            const limpia = _limpiarPendientes(c.pendientes);
-            const llaveL = `${c.id}:limpieza`;
-            if (JSON.stringify(limpia) !== JSON.stringify(c.pendientes) && !_sembrando.has(llaveL)) {
-                _sembrando.add(llaveL);
-                updateDoc(doc(db, "clientes", c.id), { pendientes: limpia })
-                    .catch(err => { _sembrando.delete(llaveL); console.error("No se pudo limpiar los pendientes:", err); });
-            }
-        }
-        if (!nueva && (typeof c.pendientesTipo !== "string" || c.pendientesTipo === marca)) {
-            // "Subir los archivos a Hostinger" (12-oct): a las tiendas y cursos ya sembrados se les suma una sola
-            // vez (después de Firebase); si Pablo lo saca, la marca evita que vuelva.
-            if (typeof c.pendientesTipo === "string" && conHostinger && !c.pendientesHostinger) {
-                const llaveH = `${c.id}:hostinger`;
-                if (!_sembrando.has(llaveH)) {
-                    _sembrando.add(llaveH);
-                    const lista = c.pendientes.some(p => p.id === HOSTINGER.id) ? c.pendientes : (() => {
-                        const i = c.pendientes.findIndex(p => p.id === "firebase");
-                        const item = { id: HOSTINGER.id, texto: HOSTINGER.texto, hecho: false, por: "", at: "" };
-                        return i < 0 ? [...c.pendientes, item] : [...c.pendientes.slice(0, i + 1), item, ...c.pendientes.slice(i + 1)];
-                    })();
-                    updateDoc(doc(db, "clientes", c.id), { pendientes: lista, pendientesHostinger: true })
-                        .catch(err => { _sembrando.delete(llaveH); console.error("No se pudo sumar el pendiente de Hostinger:", err); });
-                }
-            }
-            continue;
-        }
-        const llave = `${c.id}:${marca}`;
-        if (_sembrando.has(llave)) continue;
-        _sembrando.add(llave);
-        updateDoc(doc(db, "clientes", c.id), { pendientes: nueva ? pendientesIniciales(clave, c.tareas) : _reconciliarPendientes(c, clave), pendientesTipo: marca, ...(conHostinger ? { pendientesHostinger: true } : {}) })
-            .catch(err => { _sembrando.delete(llave); console.error("No se pudieron guardar los pendientes:", err); });
+        if (c.pendientesVersion === PENDIENTES_VERSION || _sembrando.has(c.id)) continue;
+        _sembrando.add(c.id);
+        updateDoc(doc(db, "clientes", c.id), { pendientes: pendientesDe(c), pendientesVersion: PENDIENTES_VERSION })
+            .catch(err => { _sembrando.delete(c.id); console.error("No se pudieron guardar los pendientes:", err); });
     }
 }
 

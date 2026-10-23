@@ -9,7 +9,7 @@
    node admin/pendientes-claude.mjs agregar <cliente> "texto"          # un pendiente propio de esa web
 
    <cliente>: el id del doc o parte del nombre/proyecto (tiene que ser uno solo).
-   <pendiente>: el id (dominio, email, google, accesos, firebase, tienda, contenido…) o parte del texto.
+   <pendiente>: el id (web, google, accesos; desde el 23-oct no hay otros) o parte del texto.
    Si la web todavía no tiene `pendientes`, el panel los siembra al abrirse: abrí el admin una vez. */
 import { readFileSync } from "node:fs";
 import { createSign } from "node:crypto";
