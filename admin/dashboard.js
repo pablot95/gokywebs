@@ -235,8 +235,7 @@ function fechaCortaJs(d) {
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> { ingresado, total, recargo }
-const INGRESO_MENSUAL_BASE = 26500;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor
-const INGRESO_MENSUAL_BASE_TOTAL = 27100;  // la tarjeta «según el total de la venta» reparte por tramos de $27.100, en todas las semanas (Pablo, 23-oct)
+const INGRESO_MENSUAL_BASE = 27100;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor; $27.100 desde el 23-oct (antes 26.500), también en las semanas viejas
 const COSTO_POR_PAGINA = 10000;     // lo que cuesta cada página hecha, se suma al costo del cliente
 /* Desde el 11-oct Pablo tipea el gasto de la semana sin impuestos y lo que cuenta es
    ese número × 1,23. Se guarda lo tipeado con `recargo: 1.23` y el recargo se aplica
@@ -890,8 +889,8 @@ function calcSemanaInversion(s, key) {
     const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
     const gastoTotal = gasto + extraPaginas;
     const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
-    // El costo ya no se reparte por suscriptor sino por cada $26.500 de ingreso
-    // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 26.500) (Pablo, 12-oct).
+    // El costo ya no se reparte por suscriptor sino por cada $27.100 de ingreso
+    // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 27.100) (Pablo, 12-oct).
     const ingresoMensual = suscriptores.reduce((acc, c) => acc + _num(c._clienteDoc.montoMensual), 0);
     const tramos = ingresoMensual / INGRESO_MENSUAL_BASE;
     const costoPorSuscriptor = tramos > 0 ? costoNeto / tramos : null;
@@ -899,14 +898,13 @@ function calcSemanaInversion(s, key) {
     // cobrado hasta ahora (la seña); va al lado del cálculo de arriba (Pablo, 10-oct).
     const sumaVentaTotal = pagoUnico.reduce((acc, c) => { const p = pagoUnicoDe(c._clienteDoc); return acc + Math.max(p.precio, p.cobrado); }, 0);
     const costoNetoTotal = Math.max(0, gastoTotal - sumaVentaTotal);
-    const tramosTotal = ingresoMensual / INGRESO_MENSUAL_BASE_TOTAL;
-    const costoPorSuscriptorTotal = tramosTotal > 0 ? costoNetoTotal / tramosTotal : null;
-    return { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, tramosTotal, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal };
+    const costoPorSuscriptorTotal = tramos > 0 ? costoNetoTotal / tramos : null;
+    return { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal };
 }
 
 /* Promedio de un rango (Pablo, 22-oct): suma lo de cada semana entera que toca el
    rango (gasto + $10.000 por página, menos lo ya cobrado en pago único/anual) y lo
-   reparte entre los tramos de $26.500 de ingreso mensual de todos los suscriptos. */
+   reparte entre los tramos de $27.100 de ingreso mensual de todos los suscriptos. */
 let inversionRango = { desde: "2026-10-04", hasta: "" };
 function calcRangoInversion(semanas, desde, hasta) {
     const k0 = semanaClave(new Date(desde + "T12:00:00").getTime() / 1000), k1 = semanaClave(new Date(hasta + "T12:00:00").getTime() / 1000);
@@ -920,8 +918,7 @@ function calcRangoInversion(semanas, desde, hasta) {
     }
     r.tramos = r.ingresoMensual / INGRESO_MENSUAL_BASE;
     r.porTramo = r.tramos > 0 ? r.costoNeto / r.tramos : null;
-    r.tramosTotal = r.ingresoMensual / INGRESO_MENSUAL_BASE_TOTAL;
-    r.porTramoTotal = r.tramosTotal > 0 ? r.costoNetoTotal / r.tramosTotal : null;
+    r.porTramoTotal = r.tramos > 0 ? r.costoNetoTotal / r.tramos : null;
     return r;
 }
 function rangoInversionHtml(semanas) {
@@ -932,12 +929,12 @@ function rangoInversionHtml(semanas) {
     const n = (x) => String(Math.round(x * 100) / 100).replace(".", ",");
     const verde = "var(--accent-green,#4ade80)";
     const tarjeta = (titulo, valor, detalle) => `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor" style="color:${verde}">${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
-    const divisor = (tramos, base) => tramos > 0 ? ` ÷ ${n(tramos)} (${fmtMoney(r.ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(base)})` : " · sin ingreso mensual todavía";
-    const por = (base) => `Por cada ${fmtMoney(base)} de ingreso mensual`;
-    const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por(INGRESO_MENSUAL_BASE)} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) : "—",
-        `Gasto + páginas ${fmtMoney(r.gastoTotal)}, se restan ${fmtMoney(r.sumaPagoUnico)} → costo neto ${fmtMoney(r.costoNeto)}` + divisor(r.tramos, INGRESO_MENSUAL_BASE))
-        + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por(INGRESO_MENSUAL_BASE_TOTAL)} · según el total de la venta`, r.tramosTotal > 0 ? fmtMoney(r.porTramoTotal) : "—",
-        `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor(r.tramosTotal, INGRESO_MENSUAL_BASE_TOTAL)) : "") : "";
+    const divisor = r.tramos > 0 ? ` ÷ ${n(r.tramos)} (${fmtMoney(r.ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})` : " · sin ingreso mensual todavía";
+    const por = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
+    const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) : "—",
+        `Gasto + páginas ${fmtMoney(r.gastoTotal)}, se restan ${fmtMoney(r.sumaPagoUnico)} → costo neto ${fmtMoney(r.costoNeto)}` + divisor)
+        + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por} · según el total de la venta`, r.tramos > 0 ? fmtMoney(r.porTramoTotal) : "—",
+        `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor) : "") : "";
     const rapidos = [["Desde el 04-oct", "2026-10-04"], ["Últimos 30 días", ymdAgregarDias(hoy, -29)]];
     return `<div class="panel" style="margin-bottom:14px">
         <strong>Promedio de un rango</strong>
@@ -1004,7 +1001,7 @@ function renderInversion() {
     }
     for (const key of aMostrar) {
         const s = semanas.get(key);
-        const { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, tramosTotal, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal } = calcSemanaInversion(s, key);
+        const { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal } = calcSemanaInversion(s, key);
 
         // La columna Costo de cada cliente se sacó (Pablo, 11-oct): el costo queda en los cuadritos.
         const filas = convertidos.map(c => {
@@ -1033,12 +1030,10 @@ function renderInversion() {
         const tarjeta = (titulo, valor, detalle, color = "") =>
             `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor"${color ? ` style="color:${color}"` : ""}>${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
         const verde = "var(--accent-green,#4ade80)";
-        const divisorDe = (t, base) => t > 0
-            ? ` ÷ ${String(Math.round(t * 100) / 100).replace(".", ",")} (${fmtMoney(ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(base)})`
+        const divisor = tramos > 0
+            ? ` ÷ ${String(Math.round(tramos * 100) / 100).replace(".", ",")} (${fmtMoney(ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})`
             : ` · sin ingreso mensual todavía`;
-        const divisor = divisorDe(tramos, INGRESO_MENSUAL_BASE);
         const porIngreso = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
-        const porIngresoTotal = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE_TOTAL)} de ingreso mensual`;
         const tarjetas = [];
         if (gastoTotal > 0) {
             tarjetas.push(tarjeta(`${porIngreso} · según lo cobrado (seña)`,
@@ -1046,10 +1041,10 @@ function renderInversion() {
                 (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
                     + divisor, verde));
             if (sumaVentaTotal > sumaPagoUnico) {
-                tarjetas.push(tarjeta(`${porIngresoTotal} · según el total de la venta`,
-                    tramosTotal > 0 ? fmtMoney(costoPorSuscriptorTotal) : "—",
+                tarjetas.push(tarjeta(`${porIngreso} · según el total de la venta`,
+                    tramos > 0 ? fmtMoney(costoPorSuscriptorTotal) : "—",
                     `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
-                        + divisorDe(tramosTotal, INGRESO_MENSUAL_BASE_TOTAL), verde));
+                        + divisor, verde));
             }
         }
         const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
