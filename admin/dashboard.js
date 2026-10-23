@@ -235,8 +235,8 @@ function fechaCortaJs(d) {
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> { ingresado, total, recargo }
-const INGRESO_MENSUAL_BASE = 26500;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor
-const COSTO_POR_PAGINA = 10000;      // lo que cuesta cada página hecha, se suma al costo del cliente
+const INGRESO_MENSUAL_BASE = 27100;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor; $27.100 desde el 23-oct (antes 26.500), también en las semanas viejas
+const COSTO_POR_PAGINA = 10000;     // lo que cuesta cada página hecha, se suma al costo del cliente
 /* Desde el 11-oct Pablo tipea el gasto de la semana sin impuestos y lo que cuenta es
    ese número × 1,23. Se guarda lo tipeado con `recargo: 1.23` y el recargo se aplica
    al calcular. Lo cargado antes (sin `recargo`) ya incluía los impuestos: cuenta tal
@@ -889,8 +889,8 @@ function calcSemanaInversion(s, key) {
     const extraPaginas = COSTO_POR_PAGINA * convertidos.length;
     const gastoTotal = gasto + extraPaginas;
     const costoNeto = Math.max(0, gastoTotal - sumaPagoUnico);
-    // El costo ya no se reparte por suscriptor sino por cada $26.500 de ingreso
-    // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 26.500) (Pablo, 12-oct).
+    // El costo ya no se reparte por suscriptor sino por cada $27.100 de ingreso
+    // mensual: costo neto ÷ (ingreso mensual de los suscriptos ÷ 27.100) (Pablo, 12-oct).
     const ingresoMensual = suscriptores.reduce((acc, c) => acc + _num(c._clienteDoc.montoMensual), 0);
     const tramos = ingresoMensual / INGRESO_MENSUAL_BASE;
     const costoPorSuscriptor = tramos > 0 ? costoNeto / tramos : null;
@@ -904,7 +904,7 @@ function calcSemanaInversion(s, key) {
 
 /* Promedio de un rango (Pablo, 22-oct): suma lo de cada semana entera que toca el
    rango (gasto + $10.000 por página, menos lo ya cobrado en pago único/anual) y lo
-   reparte entre los tramos de $26.500 de ingreso mensual de todos los suscriptos. */
+   reparte entre los tramos de $27.100 de ingreso mensual de todos los suscriptos. */
 let inversionRango = { desde: "2026-10-04", hasta: "" };
 function calcRangoInversion(semanas, desde, hasta) {
     const k0 = semanaClave(new Date(desde + "T12:00:00").getTime() / 1000), k1 = semanaClave(new Date(hasta + "T12:00:00").getTime() / 1000);
