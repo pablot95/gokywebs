@@ -1,6 +1,6 @@
 <?php
 /**
- * wabot/test-revision.php — la revisión de las charlas cada media hora (revision.php, 9-oct-2026), sin red.
+ * wabot/test-revision.php — la revisión de las charlas cada hora (revision.php, 9-oct-2026), sin red.
  *
  *   php wabot/test-revision.php
  *
@@ -31,8 +31,10 @@ $t0 = time() - 6000;
 function oa_revision(array $cola) {
     $GLOBALS['OA_COLA'] = $cola;
     $GLOBALS['OA_PEDIDOS'] = [];
-    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload) {
+    $GLOBALS['OA_CORTES'] = [];
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload, $corte = null) {
         $GLOBALS['OA_PEDIDOS'][] = $payload;
+        $GLOBALS['OA_CORTES'][] = $corte;
         $sig = array_shift($GLOBALS['OA_COLA']);
         if ($sig === null) $sig = ['ok' => true, 'problemas' => [], 'resumen' => 'Todo bien.', 'intervenir' => false];
         if (is_int($sig)) return [$sig, '{"error":{"message":"caído"}}'];
@@ -138,6 +140,10 @@ caso('revisa solo la charla con algo nuevo del bot (una llamada)', count($p) ===
 $ent = entrada_de($p[0] ?? []);
 caso('la llamada es la tarea revision, con razonamiento medio y las instrucciones de siempre (caché)',
     ($p[0]['prompt_cache_key'] ?? '') === 'gokywebs-wabot-revision' && ($p[0]['reasoning']['effort'] ?? '') === 'medium' && ($p[0]['instructions'] ?? '') === $ins);
+// 23-oct: una pasada por hora; con el corte de 30 minutos, la caché se vencía entre pasada y pasada.
+caso('las reglas van con el corte de caché de 12 horas', ($GLOBALS['OA_CORTES'][0] ?? null) === '12h', json_encode($GLOBALS['OA_CORTES']));
+caso('una pasada por hora: a la media hora todavía no toca, a la hora (con margen) sí',
+    !wabot_revision_toca($t0 + 1800) && !wabot_revision_toca($t0 + 2999) && wabot_revision_toca($t0 + 3000) && wabot_revision_toca($t0 + 3600));
 caso('GPT ve los mensajes nuevos del bot con ★ (la bienvenida vieja también es nueva en la primera pasada)',
     nuevas($ent) === 3 && strpos($ent, '★ [' . date('d/m H:i', $t0 - 650) . '] Bot: Buenísimo. Podemos armarte una tienda online para tus velas') !== false, $ent);
 caso('… lo del cliente sin ★, y el estado que guardó el sistema',

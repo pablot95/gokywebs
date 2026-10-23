@@ -335,15 +335,24 @@ caso('la charla va después del corte, tal cual, y el modo explícito no la escr
     ($armado['input'][1] ?? null) === ['role' => 'user', 'content' => 'la charla'] && count($armado['input']) === 2
     && ($armado['prompt_cache_options'] ?? null) === ['mode' => 'explicit'] && $armado['store'] === false);
 $corto = wabot_openai_cache_explicita(['model' => 'gpt-6.1-sol', 'instructions' => 'Respondé en JSON.', 'input' => 'el prompt del clasificador']);
+$armado12 = wabot_openai_cache_explicita(['model' => 'gpt-6.1-sol', 'instructions' => $largas, 'input' => 'la charla'], '12h');
+caso('el corte de 12 horas lleva su ttl en el corte (el resto del pedido sigue en 30 minutos)',
+    ($armado12['input'][0]['content'][0]['prompt_cache_breakpoint'] ?? null) === ['mode' => 'explicit', 'ttl' => '12h']
+    && ($armado12['prompt_cache_options'] ?? null) === ['mode' => 'explicit'] && ($armado12['input'][1]['content'] ?? '') === 'la charla');
+caso('escribir con el corte de 12 horas cuesta 2,5× la entrada', abs(wabot_openai_costo('gpt-6.1-sol', 22000, 0, 0, null, 20000, 20000) - 0.104) < 0.0000001
+    && abs(wabot_openai_costo('gpt-6.1-sol', 22000, 0, 0, null, 20000) - 0.054) < 0.0000001);
+$fila12 = wabot_ia_uso_registrar('prueba_12h', 'gpt-6.1-sol', ['input_tokens' => 22000, 'input_tokens_details' => ['cached_tokens' => 0, 'cache_write_tokens' => 20000,
+    'cache_write_tokens_details' => ['ttl_30m_tokens' => 0, 'ttl_12h_tokens' => 20000]], 'output_tokens' => 0], ['usuario' => 'cache12hTEST']);
+caso('el uso anota la escritura de 12 horas y la cobra a su precio', $fila12['escritura_12h'] === 20000 && abs($fila12['costo_usd'] - 0.104) < 0.0000001, json_encode($fila12));
 caso('instrucciones cortas (no llegan al mínimo de la caché): sin corte, y nada se escribe',
     ($corto['instructions'] ?? '') === 'Respondé en JSON.' && $corto['input'] === [['role' => 'user', 'content' => 'el prompt del clasificador']]
     && ($corto['prompt_cache_options'] ?? null) === ['mode' => 'explicit']);
 caso('las reglas del flujo comercial alcanzan para llevar corte', mb_strlen(wabot_comercial_instrucciones($cfg)) >= WABOT_OPENAI_CORTE_MIN_CHARS);
-/** Contesta {"ok":true} y anota con qué modelo y si se pidió el corte; $rechazar: 400 a los cortes. */
+/** Contesta {"ok":true} y anota con qué modelo y qué corte se pidió; $rechazar: 400 a los cortes. */
 function oa_cache_simular(array &$vistos, $rechazar = false) {
-    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload, $explicita = false) use (&$vistos, $rechazar) {
-        $vistos[] = [$payload['model'], $explicita];
-        if ($rechazar && $explicita) return [400, '{"error":{"message":"Unknown parameter: \'prompt_cache_options\'.","param":"prompt_cache_options"}}'];
+    $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = function ($payload, $corte = null) use (&$vistos, $rechazar) {
+        $vistos[] = [$payload['model'], $corte];
+        if ($rechazar && $corte !== null) return [400, '{"error":{"message":"Unknown parameter: \'prompt_cache_options\'.","param":"prompt_cache_options"}}'];
         return [200, json_encode(['model' => $payload['model'], 'status' => 'completed', 'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => '{"ok":true}']]]],
             'usage' => ['input_tokens' => 10, 'output_tokens' => 2]])];
     };
@@ -353,12 +362,14 @@ $vistos = [];
 oa_cache_simular($vistos);
 wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6.1-sol']);
 wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-5.4']);
-caso('la llamada pide el corte en GPT-6.1 Sol y no en un modelo anterior', $vistos === [['gpt-6.1-sol', true], ['gpt-5.4', false]], json_encode($vistos));
+wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6.1-sol'], ['cache_ttl' => '12h']);
+caso('la llamada pide el corte en GPT-6.1 Sol (de 30 minutos, o 12 horas si la tarea lo pide) y no en un modelo anterior',
+    $vistos === [['gpt-6.1-sol', '30m'], ['gpt-5.4', null], ['gpt-6.1-sol', '12h']], json_encode($vistos));
 $vistos = [];
 oa_cache_simular($vistos, true);
 $rCache = wabot_openai_llamar('prueba_cache', 'x', 'y', ['type' => 'json_object'], ['openai_modelo' => 'gpt-6.1-sol']);
 caso('si la API no acepta los cortes, se pide como antes y contesta igual',
-    $rCache['ok'] && $vistos === [['gpt-6.1-sol', true], ['gpt-6.1-sol', false]], json_encode($vistos));
+    $rCache['ok'] && $vistos === [['gpt-6.1-sol', '30m'], ['gpt-6.1-sol', null]], json_encode($vistos));
 $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = $antesHttp;
 
 echo "— 9. Modo shadow: contesta Gemini, OpenAI solo se anota —\n";

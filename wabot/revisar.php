@@ -2,11 +2,13 @@
 /**
  * wabot/revisar.php — corre la revisión de las charlas del bot (revision.php).
  *
- * Desde el hosting, dos veces por hora, a las y cuarto y menos cuarto (el cron
- * de seguimiento.php corre en punto y y media: así no se pisan y la revisión ve
- * los avisos que acaba de mandar):
- *   15,45 * * * *  php /home/USUARIO/domains/gokywebs.com/public_html/wabot/revisar.php
+ * Una vez por hora, a las y cuarto (el cron de seguimiento.php corre en punto
+ * y y media: así no se pisan y la revisión ve los avisos que acaba de mandar):
+ *   15 * * * *  php /home/USUARIO/domains/gokywebs.com/public_html/wabot/revisar.php
  * o por URL, con el verify token como clave (Authorization: Bearer VERIFY_TOKEN).
+ * Hasta el 23-oct eran dos por hora (15,45): si el cron quedó así, la pasada
+ * que llega antes de la hora se saltea sola (wabot_revision_toca). Con
+ * --forzar (o ?forzar=1 por URL) corre igual.
  *
  * Correrlo de más no repite nada: cada tramo de cada charla se revisa una vez.
  */
@@ -24,5 +26,11 @@ if (php_sapi_name() !== 'cli') {
     header('Content-Type: application/json; charset=utf-8');
 }
 @set_time_limit(WABOT_REVISION_MAX_SEG + 300);
+
+$forzar = php_sapi_name() === 'cli' ? in_array('--forzar', array_slice($argv ?? [], 1), true) : !empty($_GET['forzar']);
+if (!$forzar && !wabot_revision_toca()) {
+    echo json_encode(['estado' => 'todavia_no', 'ultima_ts' => wabot_revision_estado_leer()['ultima_ts']], JSON_UNESCAPED_UNICODE) . "\n";
+    exit;
+}
 
 echo json_encode(wabot_revision_correr(wabot_config_load()), JSON_UNESCAPED_UNICODE) . "\n";

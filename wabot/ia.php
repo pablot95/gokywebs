@@ -157,6 +157,11 @@ function wabot_openai_esfuerzo($cfg = null) {
  * entrada. Lo que va después del corte (la charla) se cobra como entrada
  * común, sin el recargo de escritura. Con instrucciones cortas, que no llegan
  * al mínimo de la caché (1.024 tokens), no hay corte: nada se escribe.
+ *
+ * El corte dura 30 minutos desde el último uso (escribirlo cuesta 1,25 veces
+ * la entrada) o, si la tarea lo pide con $opciones['cache_ttl'] = '12h', 12
+ * horas desde que se escribió (2,5 veces): conviene a lo que corre con
+ * pausas más largas que media hora, como la revisión de cada hora.
  */
 const WABOT_OPENAI_CORTE_MIN_CHARS = 4000;   // ~1.100 tokens en castellano
 
@@ -166,15 +171,16 @@ function wabot_openai_cache_explicita_va($modelo) {
     return (int)$m[1] > 5 || ((int)$m[1] === 5 && (int)($m[2] ?? 0) >= 6);
 }
 
-/** El pedido tal como sale con caché explícita: instrucciones con su corte, después lo que cambia. */
-function wabot_openai_cache_explicita($payload) {
+/** El pedido tal como sale con caché explícita: instrucciones con su corte ('30m' o '12h'), después lo que cambia. */
+function wabot_openai_cache_explicita($payload, $ttl = '30m') {
     $instrucciones = (string)($payload['instructions'] ?? '');
     $entrada = $payload['input'] ?? [];
     if (!is_array($entrada)) $entrada = [['role' => 'user', 'content' => (string)$entrada]];
     if (mb_strlen($instrucciones) >= WABOT_OPENAI_CORTE_MIN_CHARS) {
         unset($payload['instructions']);
         array_unshift($entrada, ['role' => 'developer', 'content' => [[
-            'type' => 'input_text', 'text' => $instrucciones, 'prompt_cache_breakpoint' => ['mode' => 'explicit'],
+            'type' => 'input_text', 'text' => $instrucciones,
+            'prompt_cache_breakpoint' => ['mode' => 'explicit'] + ($ttl === '12h' ? ['ttl' => '12h'] : []),
         ]]]);
     }
     $payload['input'] = $entrada;
@@ -183,16 +189,17 @@ function wabot_openai_cache_explicita($payload) {
 }
 
 /**
- * Un POST a /v1/responses: [código http, cuerpo, segundos de Retry-After]. El
- * gancho de test lo simula y recibe el pedido sin armar, con $explicita aparte.
+ * Un POST a /v1/responses: [código http, cuerpo, segundos de Retry-After].
+ * $corte: null (el pedido de siempre) o cuánto dura el corte de caché, '30m' o
+ * '12h'. El gancho de test lo simula y recibe el pedido sin armar, con $corte aparte.
  */
-function wabot_openai_post($payload, $timeout, $explicita = false) {
+function wabot_openai_post($payload, $timeout, $corte = null) {
     if (isset($GLOBALS['WABOT_TEST_OPENAI_HTTP'])) {
-        $r = call_user_func($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $payload, $explicita);
+        $r = call_user_func($GLOBALS['WABOT_TEST_OPENAI_HTTP'], $payload, $corte);
         return [(int)($r[0] ?? 0), (string)($r[1] ?? ''), (float)($r[2] ?? 0)];
     }
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return [0, '', 0];
-    if ($explicita) $payload = wabot_openai_cache_explicita($payload);
+    if ($corte !== null) $payload = wabot_openai_cache_explicita($payload, $corte);
     $retry = 0.0;
     $ch = curl_init('https://api.openai.com/v1/responses');
     curl_setopt_array($ch, [
@@ -281,7 +288,8 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
         // el corte explícito (wabot_openai_cache_explicita) y la clave solo separa la cuenta.
         'prompt_cache_key' => 'gokywebs-wabot-' . $tarea,
     ];
-    $explicita = wabot_openai_cache_explicita_va($modelo);
+    // El corte de caché y cuánto dura (ver wabot_openai_cache_explicita); null en los modelos anteriores.
+    $corte = wabot_openai_cache_explicita_va($modelo) ? (($opciones['cache_ttl'] ?? '') === '12h' ? '12h' : '30m') : null;
     $esfuerzo = (string)($opciones['esfuerzo'] ?? wabot_openai_esfuerzo($cfg));
     if ($esfuerzo !== '' && $esfuerzo !== 'none') $payload['reasoning'] = ['effort' => $esfuerzo];
     // Identifica al cliente ante OpenAI sin mandarle el teléfono: un hash.
@@ -291,7 +299,7 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
     $inicio = microtime(true);
     $http = 0; $error = 'sin_respuesta'; $jsonRoto = 0; $cortada = 0;
     for ($intento = 0; $intento < 4; $intento++) {
-        [$http, $body, $retry] = wabot_openai_post($payload, $timeout, $explicita);
+        [$http, $body, $retry] = wabot_openai_post($payload, $timeout, $corte);
         $json = json_decode($body, true);
 
         if ($http >= 200 && $http < 300 && is_array($json)) {
@@ -324,8 +332,8 @@ function wabot_openai_llamar($tarea, $instrucciones, $entrada, $formato, $cfg = 
         // Un parámetro que este modelo no acepta: se saca y se vuelve a pedir.
         if ($http === 400) {
             // Si no acepta los cortes de caché, el pedido de siempre (más caro, pero contesta).
-            if ($explicita && preg_match('/prompt_cache_(options|breakpoint)/i', $parametro . ' ' . $mensaje)) {
-                $explicita = false;
+            if ($corte !== null && preg_match('/prompt_cache_(options|breakpoint)/i', $parametro . ' ' . $mensaje)) {
+                $corte = null;
                 wabot_log('error', ['donde' => 'openai_cache_explicita', 'tarea' => $tarea, 'modelo' => $modelo, 'msg' => mb_substr($mensaje, 0, 200)]);
                 continue;
             }
@@ -371,8 +379,10 @@ function wabot_ia_uso_dir() {
  * Costo estimado en dólares, o null si el modelo no tiene precio cargado.
  * $escritura: los tokens de entrada que se escribieron en la caché (vienen
  * aparte en el uso de OpenAI y se cobran con su precio, no como entrada común).
+ * $escritura12h: cuántos de ellos con el corte de 12 horas, que cuesta 2,5
+ * veces la entrada en vez de 1,25 (23-oct).
  */
-function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null, $escritura = 0) {
+function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null, $escritura = 0, $escritura12h = 0) {
     $precios = wabot_openai_precios();
     $p = null;
     foreach ($precios as $nombre => $valores) {
@@ -385,8 +395,11 @@ function wabot_openai_costo($modelo, $entrada, $cache, $salida, $cfg = null, $es
     }
     if ($p === null) return null;
     $escritura = max(0, min((int)$escritura, $entrada - $cache));
+    $escritura12h = max(0, min((int)$escritura12h, $escritura));
     $sinCache = max(0, $entrada - $cache - $escritura);
-    return round(($sinCache * $p[0] + $cache * $p[1] + $escritura * ($p[3] ?? $p[0]) + $salida * $p[2]) / 1000000, 6);
+    $precio12h = isset($p[3]) ? $p[0] * 2.5 : $p[0];
+    return round(($sinCache * $p[0] + $cache * $p[1] + ($escritura - $escritura12h) * ($p[3] ?? $p[0]) + $escritura12h * $precio12h
+        + $salida * $p[2]) / 1000000, 6);
 }
 
 /**
@@ -398,13 +411,14 @@ function wabot_ia_uso_registrar($tarea, $modelo, $uso, $opciones = []) {
     $entrada = (int)($uso['input_tokens'] ?? 0);
     $cache   = (int)($uso['input_tokens_details']['cached_tokens'] ?? 0);
     $escrito = (int)($uso['input_tokens_details']['cache_write_tokens'] ?? 0);
+    $escrito12h = (int)($uso['input_tokens_details']['cache_write_tokens_details']['ttl_12h_tokens'] ?? 0);
     $salida  = (int)($uso['output_tokens'] ?? 0);
     $razon   = (int)($uso['output_tokens_details']['reasoning_tokens'] ?? 0);
-    $costo   = wabot_openai_costo($modelo, $entrada, $cache, $salida, null, $escrito);
+    $costo   = wabot_openai_costo($modelo, $entrada, $cache, $salida, null, $escrito, $escrito12h);
     $fila = [
         'ts' => date('c'), 'tarea' => $tarea, 'modo' => (string)($opciones['modo'] ?? 'real'), 'modelo' => $modelo,
         'conv' => (string)($opciones['usuario'] ?? ($GLOBALS['WABOT_IA_CLAVE'] ?? '')),
-        'entrada' => $entrada, 'cache' => $cache, 'escritura' => $escrito, 'salida' => $salida, 'razonamiento' => $razon, 'costo_usd' => $costo,
+        'entrada' => $entrada, 'cache' => $cache, 'escritura' => $escrito, 'escritura_12h' => $escrito12h, 'salida' => $salida, 'razonamiento' => $razon, 'costo_usd' => $costo,
     ];
     if (empty($GLOBALS['WABOT_TEST_SIN_RED']) || isset($GLOBALS['WABOT_TEST_IA_USO_DIR'])) {
         $dir = wabot_ia_uso_dir();

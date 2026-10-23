@@ -206,7 +206,7 @@ function wabot_ajustes_claves() {
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'form_confirmacion_activo', 'form_confirmacion_minutos',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
-            // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
+            // La revisión de las charlas (revision.php, 9-oct; una vez por hora desde el 23-oct); sin tope de gasto de fábrica (10-oct).
             'revision_activa', 'revision_gasto_max_usd',
             // El gasto en publicidad leído de Meta para Inversión (meta-gasto.php, 13-oct).
             'meta_ads_token', 'meta_ads_cuenta'],

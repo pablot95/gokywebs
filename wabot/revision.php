@@ -4,9 +4,9 @@
  * 9-oct-2026, con el flujo comercial recién puesto en automático: "que
  * periódicamente (2 veces por hora) se manden las conversaciones en wabot para
  * analizar el comportamiento del wabot y verificar que no esté cometiendo
- * errores").
+ * errores"). Desde el 23-oct, una vez por hora (Pablo: para que gaste menos).
  *
- * Dos veces por hora (revisar.php, por cron) junta las charlas donde el bot
+ * Una vez por hora (revisar.php, por cron) junta las charlas donde el bot
  * escribió algo desde la pasada anterior y le pasa cada una a GPT con lo mismo
  * que sabe el bot: sus reglas, la información comercial, los precios vigentes y
  * los textos fijos aprobados. GPT marca lo que Pablo corregiría (no contestó lo
@@ -14,7 +14,7 @@
  * aviso automático fuera de lugar…). Lo que encuentra queda en
  * data/revision/AAAA-MM-DD.jsonl, se ve en la pestaña Revisión del panel y, si
  * es grave, le suena el celular a Pablo. También junta los errores técnicos del
- * log de esa media hora (OpenAI caído, envíos rechazados).
+ * log de esa hora (OpenAI caído, envíos rechazados).
  *
  * Solo lee: no escribe en las charlas ni le manda nada a ningún cliente. Lo que
  * el bot ya mandó no se corrige solo; el aviso es para que Pablo intervenga a
@@ -31,11 +31,16 @@ require_once __DIR__ . '/redactor.php';   // el motor y comercial.php (reglas, i
 require_once __DIR__ . '/push.php';
 
 const WABOT_REVISION_QUIETA_SEG = 120;          // movimiento más reciente que esto: la próxima pasada
-const WABOT_REVISION_MAX_CHARLAS = 15;          // por pasada; el resto queda pendiente
+const WABOT_REVISION_MAX_CHARLAS = 30;          // por pasada (15 cuando eran dos por hora); el resto queda pendiente
 const WABOT_REVISION_PRIMERA_VEZ_SEG = 6 * 3600; // la primera pasada mira las últimas 6 horas
 const WABOT_REVISION_MAX_ATRAS_SEG = 2 * 86400; // con el cron parado días, no revisa todo lo viejo
 const WABOT_REVISION_MAX_SEG = 20 * 60;         // una pasada no se pisa con la siguiente
 const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo tramo antes de soltarlo
+/* Una pasada por hora (23-oct). El cron puede seguir a las y cuarto y menos
+ * cuarto: revisar.php saltea la que llega antes de tiempo (ver
+ * wabot_revision_toca). El margen absorbe la demora del cron. */
+const WABOT_REVISION_CADA_SEG = 3600;
+const WABOT_REVISION_MARGEN_SEG = 10 * 60;
 /* El criterio de las instrucciones. Al cambiarlo, lo revisado hoy con el
  * anterior queda aparte (AAAA-MM-DD.vN.jsonl, no se muestra) y las últimas 6
  * horas se vuelven a revisar. v2 (9-oct, 23 h): la v1 marcaba como fuera de
@@ -73,6 +78,15 @@ function wabot_revision_estado_leer() {
     foreach (['convs', 'pendientes', 'corridas', 'gasto'] as $k) if (!is_array($e[$k] ?? null)) $e[$k] = [];
     $e['ultima_ts'] = (int)($e['ultima_ts'] ?? 0);
     return $e;
+}
+
+/**
+ * ¿Ya toca otra pasada? Una por hora (23-oct): si la última empezó hace menos
+ * de una hora (con el margen del cron), no. La primera de todas, sí.
+ */
+function wabot_revision_toca($ahora = null) {
+    $ultima = wabot_revision_estado_leer()['ultima_ts'];
+    return $ultima <= 0 || (int)($ahora ?? time()) - $ultima >= WABOT_REVISION_CADA_SEG - WABOT_REVISION_MARGEN_SEG;
 }
 
 function wabot_revision_estado_guardar(array $e) {
@@ -179,7 +193,7 @@ function wabot_revision_nombre($cv) {
 
 function wabot_revision_instrucciones_auditor() {
     return <<<'EOT'
-Sos el auditor de calidad del WhatsApp comercial de Gokywebs, una agencia argentina que hace páginas web a medida. Un bot atiende los chats solo. Cada media hora leés las charlas donde el bot escribió algo nuevo y le avisás a Pablo, el dueño, si el bot se equivocó. Lo que el bot ya mandó no se puede cambiar: tu informe es para que Pablo intervenga a tiempo y para corregir al bot.
+Sos el auditor de calidad del WhatsApp comercial de Gokywebs, una agencia argentina que hace páginas web a medida. Un bot atiende los chats solo. Cada hora leés las charlas donde el bot escribió algo nuevo y le avisás a Pablo, el dueño, si el bot se equivocó. Lo que el bot ya mandó no se puede cambiar: tu informe es para que Pablo intervenga a tiempo y para corregir al bot.
 
 Recibís la charla (del más viejo al más nuevo, con día y hora). "Bot" es el bot; "Pablo (a mano)" es Pablo escribiendo él; "Sistema" son notas internas que el cliente no ve. Los mensajes del bot marcados con ★ son los NUEVOS: revisá solo esos. Lo anterior es contexto y ya se revisó. Después va el estado que guardó el sistema (lo que entendió del negocio, el precio que se le pasó, si se le ofreció la demo o se le mandó el formulario, si lo pasó a Pablo y por qué).
 
@@ -428,9 +442,12 @@ function wabot_revision_esquema() {
 function wabot_revision_charla($cv, array $lineas, array $tramo, $cfg) {
     $cfgLlamada = $cfg;
     $cfgLlamada['openai_timeout'] = 60;   // nadie espera esta respuesta: que piense tranquilo
+    /* Corte de caché de 12 horas (23-oct): con una pasada por hora, el de 30
+     * minutos se vencía entre pasada y pasada y cada una volvía a escribir las
+     * ~22k fichas de reglas. */
     $r = wabot_openai_llamar('revision', wabot_revision_instrucciones($cfg),
         [['role' => 'user', 'content' => wabot_revision_contexto($cv, $lineas, $tramo, $cfg)]],
-        wabot_revision_esquema(), $cfgLlamada, ['modo' => 'revision', 'max_tokens' => 3000, 'esfuerzo' => 'medium', 'sin_circuito' => true]);
+        wabot_revision_esquema(), $cfgLlamada, ['modo' => 'revision', 'max_tokens' => 3000, 'esfuerzo' => 'medium', 'sin_circuito' => true, 'cache_ttl' => '12h']);
     $costo = (float)($r['uso']['costo_usd'] ?? 0);
     if (!$r['ok'] || !is_array($r['datos'])) {
         return ['llamada_ok' => false, 'error' => (string)($r['error'] ?? 'sin_datos'), 'costo_usd' => $costo];

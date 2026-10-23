@@ -486,7 +486,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['postprecio_config_presente'])) $cfg['solo_bienvenida'] = !empty($_POST['solo_bienvenida']);
         // El flujo comercial unificado (9-oct): off, sugerencias o auto.
         if (in_array($_POST['flujo_comercial'] ?? '', ['off', 'sugerencias', 'auto'], true)) $cfg['flujo_comercial'] = (string)$_POST['flujo_comercial'];
-        // La revisión de las charlas cada media hora (revision.php, 9-oct).
+        // La revisión de las charlas (revision.php, 9-oct; una vez por hora desde el 23-oct).
         if (isset($_POST['revision_gasto_max_usd'])) {
             $cfg['revision_activa'] = !empty($_POST['revision_activa']);
             // Vacío o 0: sin tope (Pablo, 10-oct).
@@ -2457,7 +2457,7 @@ function burbujaCita(t, chat) {
                          'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex',
                          'sugerir_respuestas' => 'Respuestas rápidas sugeridas en el panel',
                          'bienvenida_rubro' => '¿El primer mensaje ya dice el rubro? (bienvenida)',
-                         'revision' => 'Revisión de las charlas cada media hora',
+                         'revision' => 'Revisión de las charlas cada hora',
                          'comercial' => 'Flujo comercial (cada respuesta)', 'comercial_revisor' => 'Revisor de cada respuesta',
                          'comercial_revisor_sombra' => 'Revisor en sombra (solo compara)', 'postprecio' => 'Consultas después del precio'];
         $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
@@ -2679,7 +2679,7 @@ function burbujaCita(t, chat) {
                     <?php endforeach; ?>
                 </div>
             </div>
-            <p class="meta" style="margin-top:6px">A las y cuarto y menos cuarto, GPT (<?= $e(wabot_openai_modelo($cfg)) ?>) lee las charlas donde el bot escribió algo nuevo, con las mismas reglas y precios que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie. Si encuentra algo grave, te suena el celular.</p>
+            <p class="meta" style="margin-top:6px">Una vez por hora, a las y cuarto, GPT (<?= $e(wabot_openai_modelo($cfg)) ?>) lee las charlas donde el bot escribió algo nuevo, con las mismas reglas y precios que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie. Si encuentra algo grave, te suena el celular.</p>
             <?php if (!wabot_revision_activa($cfg)): ?>
                 <p class="meta" style="color:var(--warn);margin-top:6px">Está apagada: se prende en <a href="admin.php?tab=ajustes">Ajustes</a> → Revisión de las charlas.</p>
             <?php elseif ($revUltimaTs <= 0): ?>
@@ -2688,8 +2688,8 @@ function burbujaCita(t, chat) {
                 <p class="meta" style="margin-top:6px">Última pasada: <?= $e($revHace($revUltimaTs)) ?> (<?= $e(date('d/m H:i', $revUltimaTs)) ?>)<?php if ($revUltima): ?>
                     — revisó <?= (int)$revUltima['revisadas'] ?>, <?= (int)$revUltima['con_problemas'] ?> con algo para mirar<?= (int)($revUltima['pendientes'] ?? 0) ? ', ' . (int)$revUltima['pendientes'] . ' para la próxima' : '' ?><?php endif; ?>.
                     Gasto de hoy: <?= $revUsd($revEstado['gasto'][date('Y-m-d')] ?? 0) ?><?= wabot_revision_tope_usd($cfg) > 0 ? ' de ' . $revUsd(wabot_revision_tope_usd($cfg)) : ' (sin tope)' ?>.</p>
-                <?php if (time() - $revUltimaTs > 50 * 60): ?>
-                    <p class="meta" style="color:var(--warn);margin-top:4px">Hace más de media hora que no corre: revisá el cron de <code>wabot/revisar.php</code> en Hostinger.</p>
+                <?php if (time() - $revUltimaTs > 80 * 60): ?>
+                    <p class="meta" style="color:var(--warn);margin-top:4px">Hace más de una hora que no corre: revisá el cron de <code>wabot/revisar.php</code> en Hostinger.</p>
                 <?php endif; ?>
                 <?php if (!empty($revUltima['tope'])): ?>
                     <p class="meta" style="color:var(--warn);margin-top:4px">Se llegó al gasto máximo del día: lo que falta se revisa mañana (o subí el tope en Ajustes).</p>
@@ -2873,14 +2873,14 @@ function burbujaCita(t, chat) {
             <div class="fila" style="gap:18px;align-items:flex-end">
                 <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
                     <input type="checkbox" name="revision_activa" value="1" <?= wabot_revision_activa($cfg) ? 'checked' : '' ?> style="width:auto">
-                    Revisar cada media hora lo que contestó el bot
+                    Revisar cada hora lo que contestó el bot
                 </label>
                 <div>
                     <label>Gasto máximo por día (US$)</label>
                     <input type="number" name="revision_gasto_max_usd" min="0" max="50" step="0.5" value="<?= wabot_revision_tope_usd($cfg) > 0 ? $e((string)wabot_revision_tope_usd($cfg)) : '' ?>" placeholder="sin tope" style="width:90px">
                 </div>
             </div>
-            <p class="meta" style="margin-top:6px">A las y cuarto y menos cuarto, GPT lee las charlas donde el bot escribió algo nuevo, con las mismas reglas que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie: lo que encuentra está en la pestaña <a href="admin.php?tab=revision">Revisión</a> y, si es grave, te suena el celular. Gasto máximo vacío = sin tope; si ponés uno y se llega, lo que falta se revisa al día siguiente.</p>
+            <p class="meta" style="margin-top:6px">Una vez por hora, a las y cuarto, GPT lee las charlas donde el bot escribió algo nuevo, con las mismas reglas que tiene el bot, y marca lo que corregirías vos. No le manda nada a nadie: lo que encuentra está en la pestaña <a href="admin.php?tab=revision">Revisión</a> y, si es grave, te suena el celular. Gasto máximo vacío = sin tope; si ponés uno y se llega, lo que falta se revisa al día siguiente.</p>
             <p class="meta" style="margin-top:10px">Key de OpenAI:
                 <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
             </p>
