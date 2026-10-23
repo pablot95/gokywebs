@@ -88,6 +88,7 @@ const ERR_REPOS = [
     'deltagasyagua.com.ar' => 'pablot95/deltagasyagua',
     'movimientodesuelodorrego.com.ar' => 'pablot95/movimientodesuelodorrego',
     'byjoyas.com.ar' => 'pablot95/byjoyas',
+    'armoniapisos.com.ar' => 'pablot95/armoniapisos',
     'ahorramismo.com.ar' => 'pablot95/ahorramismo',
     'escuelaespaciomirenacer.com.ar' => 'pablot95/espaciomirenacer',
     'siaweb.com.ar' => 'pablot95/siaweb',
