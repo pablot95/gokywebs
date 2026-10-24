@@ -1,0 +1,12 @@
+{
+  "base": "01-09_imagen.png y 10_mockup_720x480.png: zip de Descargas (Organic_Tat3wp0KZqT877VOdjSx.zip, 23-oct-2026). logo-original.jpg: logoorganic.jpg de Descargas (logo real del cliente); logo-organic*, logo-texto* y logo-raiz* salen de ese archivo con el fondo transparente.",
+  "extra": [
+    { "archivo": "p-castanas-caju.webp", "fuente": "Pexels", "id": 36631827, "url": "https://www.pexels.com/photo/36631827/", "slot": "Castañas de cajú" },
+    { "archivo": "p-datiles.webp", "fuente": "Pexels", "id": 35166629, "url": "https://www.pexels.com/photo/35166629/", "slot": "Dátiles" },
+    { "archivo": "p-malbec.webp", "fuente": "Pexels", "id": 12883027, "url": "https://www.pexels.com/photo/12883027/", "slot": "Vino tinto Malbec" },
+    { "archivo": "p-lentejas.webp", "fuente": "Pexels", "id": 8108209, "url": "https://www.pexels.com/photo/8108209/", "slot": "Lentejas rojas" },
+    { "archivo": "p-granola.webp", "fuente": "Pexels", "id": 6823306, "url": "https://www.pexels.com/photo/6823306/", "slot": "Granola" },
+    { "archivo": "p-chia.webp", "fuente": "Pexels", "id": 27468397, "url": "https://www.pexels.com/photo/27468397/", "slot": "Semillas de chía" },
+    { "archivo": "p-aceitunas.webp", "fuente": "Pexels", "id": 1611560, "url": "https://www.pexels.com/photo/1611560/", "slot": "Aceitunas negras en aceite de oliva" }
+  ]
+}
