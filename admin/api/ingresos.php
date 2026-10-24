@@ -7,7 +7,7 @@
  *
  *   GET ?desde=2026-08-01
  *   → {ok, cobros: [{id, suscripcion, monto, devuelto, dia, aprobado, nombre}],
- *      suscripciones: [{id, nombre, estado, monto, proximoCobro, alta}]}
+ *      suscripciones: [{id, nombre, estado, monto, proximoCobro, alta, baja, semaforo, ultimoCobro}]}
  */
 
 require __DIR__ . '/auth-admin.php';
@@ -37,10 +37,14 @@ try {
         if ($c['nombre'] !== '') $nombres[$c['suscripcion']] = $c['nombre'];
     }
 
+    // Las canceladas también van (24-oct): un cliente vinculado a una que se dio de baja
+    // tiene que verse como baja, no como "no aparece en Mercado Pago". `semaforo` es el
+    // de MP: "green" al día, "yellow"/"red" cuando el último cobro rebotó y lo reintenta
+    // (next_payment_date ya pasó al mes siguiente, así que el atrasado no se ve ahí).
     $suscripciones = [];
     foreach (sus_suscripciones($mp, $yo) as $s) {
         $estado = (string) ($s['status'] ?? '');
-        if (!in_array($estado, ['authorized', 'paused'], true)) continue;
+        if (!in_array($estado, ['authorized', 'paused', 'cancelled'], true)) continue;
         $id = (string) ($s['id'] ?? '');
         $nombre = trim(($s['payer_first_name'] ?? '') . ' ' . ($s['payer_last_name'] ?? ''));
         $suscripciones[] = [
@@ -50,6 +54,9 @@ try {
             'monto' => round((float) ($s['auto_recurring']['transaction_amount'] ?? 0), 2),
             'proximoCobro' => $estado === 'authorized' ? (string) ($s['next_payment_date'] ?? '') : '',
             'alta' => (string) ($s['date_created'] ?? ''),
+            'baja' => $estado === 'cancelled' ? (string) ($s['last_modified'] ?? '') : '',
+            'semaforo' => (string) ($s['summarized']['semaphore'] ?? ''),
+            'ultimoCobro' => (string) ($s['summarized']['last_charged_date'] ?? ''),
         ];
     }
 

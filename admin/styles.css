@@ -2348,6 +2348,31 @@ body.modal-open { overflow: hidden; }
 .mant-pf-titulo { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
 .mant-pf-sinmp { display: flex; flex-direction: column; gap: 6px; }
 .mant-pf-sinmp .mp-vinculo { font-size: 13px; margin: 0; }
+/* Vincular con MP (24-oct) */
+.mp-vinculo-aviso { color: #F59E0B; }
+.mant-vinc-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.mant-vinc-resumen { font-size: 13px; }
+.mant-vinc-todas { margin-left: auto; font-size: 13px; padding: 7px 12px; }
+.clients-table .mant-vinc-select { width: 100%; min-width: 220px; max-width: 360px; background: #111d35; border: 1px solid #1e2c49; border-radius: 8px; color: #e6ecf7; font: inherit; font-size: 13px; padding: 6px 8px; }
+.mant-vinc-select:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.mant-vinc-estado { font-size: 12px; font-weight: 600; }
+.mant-vinc-estado--ok { color: #4ADE80; }
+.mant-vinc-estado--duda { color: var(--text-muted); }
+.mant-vinc-estado--mal { color: #F59E0B; }
+@media (max-width: 600px) { .mant-vinc-todas { margin-left: 0; } }
+/* Calendario → Intentos de cobro (24-oct) */
+#calVistas { margin-bottom: 14px; }
+.intentos-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0 12px; }
+.intentos-buscar { flex: 1 1 220px; max-width: 320px; background: #111d35; border: 1px solid #1e2c49; border-radius: 10px; color: #e6ecf7; font: inherit; font-size: 13px; padding: 7px 10px; }
+.intentos-actualizar { margin-left: auto; font-size: 13px; }
+.intentos-tabla td { vertical-align: top; }
+.intento-detalle { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.intento-estado { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.intento-estado--cobrado { color: #4ADE80; }
+.intento-estado--reintentando { color: #F59E0B; }
+.intento-estado--rechazado { color: #F87171; }
+.intento-estado--devuelto, .intento-estado--programado { color: var(--text-muted); }
+@media (max-width: 600px) { .intentos-actualizar { margin-left: 0; } .intento-estado { white-space: normal; } }
 .mant-por-fuera { margin-top: 12px; font-size: 13px; }
 
 /* Sumar las suscripciones de varios días (16-oct-2026). */

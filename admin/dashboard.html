@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261020-mant-compacto">
+    <link rel="stylesheet" href="styles.css?v=20261024-intentos-cobro">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -328,6 +328,7 @@
                     <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="porfuera" aria-pressed="false" title="Los mensuales que pagan fuera de Mercado Pago y el día del mes en que hay que cobrarles">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="vincular" aria-pressed="false" title="Qué suscripción de Mercado Pago es de cada cliente del plan mensual">Vincular con MP <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
                 </div>
@@ -413,6 +414,29 @@
                     </table>
                 </div>
                 <div id="mantPorFueraSinMp"></div>
+            </div>
+            <!-- Vincular con MP (24-oct-2026): cada mensual con su suscripción de Mercado Pago, guardada en
+                 preapprovalId. Sin vínculo, el admin la adivina por monto, fecha de alta y nombre. -->
+            <div id="mantVincular" hidden>
+                <p class="muted mant-pf-nota">Elegí la suscripción de Mercado Pago de cada cliente y guardala: queda fija y el Calendario, Finanzas y las bajas usan esa. Las que no están vinculadas se adivinan por monto, fecha de alta y nombre (“sugerida”).</p>
+                <div class="mant-vinc-barra" id="mantVincularBarra"></div>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Mensualidad</th>
+                                <th>Suscripción de Mercado Pago</th>
+                                <th>Estado</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantVincularTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="mantVincularLibres"></div>
             </div>
             <!-- Facturación (26-sep-2026): cada mensualidad que cobra Mercado Pago se factura sola.
                  Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
@@ -708,6 +732,13 @@
 
         <!-- Tab: Calendario -->
         <section class="panel tab-panel" id="tabCalendario" hidden>
+            <!-- 24-oct-2026: Calendario o Intentos de cobro (cada cobro de suscripción de Mercado Pago con sus reintentos). -->
+            <div class="seg-views" id="calVistas">
+                <button type="button" class="seg-chip active" data-cal-vista="calendario">Calendario</button>
+                <button type="button" class="seg-chip" data-cal-vista="intentos" title="Cada cobro de suscripción de Mercado Pago: cobrados, rechazados, reintentos y devueltos">Intentos de cobro <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
+            </div>
+            <div id="calVistaIntentos" hidden></div>
+            <div id="calVistaCalendario">
             <!-- 11-oct-2026: los cobros por día (antes en Inversión) viven acá, junto a las tareas. dashboard.js: renderCal. -->
             <div id="calResumen"></div>
             <div class="cal-layout">
@@ -729,6 +760,7 @@
                     <button class="btn-primary cal-add-btn" id="addTareaHoyBtn">+ Agregar tarea hoy</button>
                 </aside>
                 <div class="cal-grid" id="calGrid"></div>
+            </div>
             </div>
         </section>
     </main>
@@ -975,7 +1007,7 @@
                     </select>
 
                     <!-- 16-oct-2026: sin suscripción de Mercado Pago; el Calendario y Finanzas lo cuentan cobrado cada mes. -->
-                    <label class="nb-check mant-por-fuera"><input type="checkbox" id="mantPorFuera"> 💵 Paga por afuera (no tiene suscripción en Mercado Pago)</label>
+                    <label class="nb-check mant-por-fuera"><input type="checkbox" id="mantPorFueraCheck"> 💵 Paga por afuera (no tiene suscripción en Mercado Pago)</label>
 
                     <label for="mantDiaCobro">Día del mes en que paga</label>
                     <input type="number" id="mantDiaCobro" min="1" max="31" step="1" inputmode="numeric" placeholder="(opcional) si no, el día del alta">
@@ -1354,6 +1386,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261024-rango-plegable"></script>
+    <script type="module" src="dashboard.js?v=20261024-intentos-cobro"></script>
 </body>
 </html>
