@@ -906,13 +906,18 @@ function calcSemanaInversion(s, key) {
    rango (gasto + $10.000 por página, menos lo ya cobrado en pago único/anual) y lo
    reparte entre los tramos de $27.100 de ingreso mensual de todos los suscriptos. */
 let inversionRango = { desde: "2026-10-04", hasta: "" };
+let inversionRangoAbierto = false;
 function calcRangoInversion(semanas, desde, hasta) {
     const k0 = semanaClave(new Date(desde + "T12:00:00").getTime() / 1000), k1 = semanaClave(new Date(hasta + "T12:00:00").getTime() / 1000);
-    const r = { semanas: 0, contactos: 0, clientes: 0, gastoTotal: 0, sumaPagoUnico: 0, sumaVentaTotal: 0, costoNeto: 0, costoNetoTotal: 0, ingresoMensual: 0 };
+    const r = { semanas: 0, contactos: 0, clientes: 0, suscripciones: 0, anuales: 0, unicos: 0, gastoTotal: 0, sumaPagoUnico: 0, sumaVentaTotal: 0, costoNeto: 0, costoNetoTotal: 0, ingresoMensual: 0 };
     for (const key of Array.from(semanas.keys()).sort()) {
         if (key < k0 || key > k1) continue;
         const s = semanas.get(key), c = calcSemanaInversion(s, key);
         r.semanas++; r.contactos += s.contactos.length; r.clientes += c.convertidos.length;
+        for (const cv of c.convertidos) {
+            const mod = modalidadDe(cv._clienteDoc);
+            if (mod === "mensual") r.suscripciones++; else if (mod === "unico") r.anuales++; else if (mod === "propia") r.unicos++;
+        }
         r.gastoTotal += c.gastoTotal; r.sumaPagoUnico += c.sumaPagoUnico; r.sumaVentaTotal += c.sumaVentaTotal;
         r.costoNeto += c.costoNeto; r.costoNetoTotal += c.costoNetoTotal; r.ingresoMensual += c.ingresoMensual;
     }
@@ -928,7 +933,11 @@ function rangoInversionHtml(semanas) {
     const r = calcRangoInversion(semanas, rg.desde, rg.hasta);
     const n = (x) => String(Math.round(x * 100) / 100).replace(".", ",");
     const verde = "var(--accent-green,#4ade80)";
-    const tarjeta = (titulo, valor, detalle) => `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor" style="color:${verde}">${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
+    const tarjeta = (titulo, valor, detalle, color = verde) => `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor"${color ? ` style="color:${color}"` : ""}>${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
+    // Cuántos de los que pasaron a Cliente en el rango eligió cada forma de pago (Pablo, 24-oct).
+    const cantidades = tarjeta("Suscripciones", r.suscripciones, "plan mensual", "")
+        + tarjeta("Pago anual", r.anuales, "plan anual", "")
+        + tarjeta("Pago único", r.unicos, "web propia", "");
     const divisor = r.tramos > 0 ? ` ÷ ${n(r.tramos)} (${fmtMoney(r.ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})` : " · sin ingreso mensual todavía";
     const por = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
     const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) : "—",
@@ -936,16 +945,18 @@ function rangoInversionHtml(semanas) {
         + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por} · según el total de la venta`, r.tramos > 0 ? fmtMoney(r.porTramoTotal) : "—",
         `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor) : "") : "";
     const rapidos = [["Desde el 04-oct", "2026-10-04"], ["Últimos 30 días", ymdAgregarDias(hoy, -29)]];
-    return `<div class="panel" style="margin-bottom:14px">
-        <strong>Promedio de un rango</strong>
+    // Arranca minimizado y se expande con un clic; queda como lo dejó al redibujar (Pablo, 24-oct).
+    return `<details class="panel" style="margin-bottom:14px" data-inv-rango-panel${inversionRangoAbierto ? " open" : ""}>
+        <summary style="cursor:pointer"><strong>Promedio de un rango</strong> <span class="muted">· ${r.clientes} cliente${r.clientes === 1 ? "" : "s"}: ${r.suscripciones} suscripci${r.suscripciones === 1 ? "ón" : "ones"}, ${r.anuales} anual${r.anuales === 1 ? "" : "es"}, ${r.unicos} pago${r.unicos === 1 ? "" : "s"} único${r.unicos === 1 ? "" : "s"}</span></summary>
         <p class="muted" style="margin:4px 0 10px">Suma todas las semanas (enteras, de domingo a sábado) que toca el rango: ${r.semanas} semana${r.semanas === 1 ? "" : "s"} · ${r.contactos} contactos · ${r.clientes} pasaron a Cliente.</p>
         <div class="anu-rango">
             <label class="muted">Desde <input type="date" data-inv-rango-desde value="${rg.desde}" max="${rg.hasta}"></label>
             <label class="muted">Hasta <input type="date" data-inv-rango-hasta value="${rg.hasta}" min="${rg.desde}" max="${hoy}"></label>
             ${rapidos.map(([l, d]) => `<button type="button" class="seg-chip${d === rg.desde && rg.hasta === hoy ? " active" : ""}" data-inv-rango-rapido="${d}">${l}</button>`).join("")}
         </div>
+        <div class="inv-cards">${cantidades}</div>
         <div class="inv-cards">${tarjetas || '<p class="muted">Sin gasto cargado en ese rango.</p>'}</div>
-    </div>`;
+    </details>`;
 }
 function renderInversion() {
     const chips = document.getElementById("inversionSemanas");
@@ -995,6 +1006,7 @@ function renderInversion() {
         pr.innerHTML = rangoInversionHtml(semanas);
         cont.appendChild(pr);
         const redibujar = () => renderInversion();
+        pr.querySelector("[data-inv-rango-panel]").addEventListener("toggle", e => { inversionRangoAbierto = e.target.open; });
         pr.querySelector("[data-inv-rango-desde]").addEventListener("change", e => { if (e.target.value) { inversionRango.desde = e.target.value; redibujar(); } });
         pr.querySelector("[data-inv-rango-hasta]").addEventListener("change", e => { if (e.target.value) { inversionRango.hasta = e.target.value; redibujar(); } });
         pr.querySelectorAll("[data-inv-rango-rapido]").forEach(b => b.addEventListener("click", () => { inversionRango = { desde: b.dataset.invRangoRapido, hasta: _diaDe(new Date()) }; redibujar(); }));
