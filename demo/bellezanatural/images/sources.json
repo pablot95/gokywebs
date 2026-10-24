@@ -1,0 +1,12 @@
+{
+  "base": "01_imagen.png a 09_imagen.png y 10_mockup_720x480.png: zip de Pablo (Descargas, 22-oct-2026)",
+  "extra": [
+    { "archivo": "p-cepillo.webp", "fuente": "Pexels", "id": 7055289, "url": "https://www.pexels.com/photo/7055289/", "uso": "Cepillo de dientes de bambú" },
+    { "archivo": "p-karite-petalos.webp", "fuente": "Pexels", "id": 7055158, "url": "https://www.pexels.com/photo/7055158/", "uso": "Jabón de karité con pétalos" },
+    { "archivo": "p-aceite-rosa.webp", "fuente": "Pexels", "id": 4857813, "url": "https://www.pexels.com/photo/4857813/", "uso": "Aceite de rosa mosqueta" },
+    { "archivo": "p-desodorante.webp", "fuente": "Pexels", "id": 8490122, "url": "https://www.pexels.com/photo/8490122/", "uso": "Desodorante natural en barra" },
+    { "archivo": "p-sales.webp", "fuente": "Pexels", "id": 11616419, "url": "https://www.pexels.com/photo/11616419/", "uso": "Sales de baño" },
+    { "archivo": "p-balsamo.webp", "fuente": "Pexels", "id": 374643, "url": "https://www.pexels.com/photo/374643/", "uso": "Bálsamo labial" },
+    { "archivo": "p-esponja.webp", "fuente": "Pexels", "id": 9475738, "url": "https://www.pexels.com/photo/9475738/", "uso": "Esponja vegetal" }
+  ]
+}

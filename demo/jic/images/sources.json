@@ -1,0 +1,26 @@
+{
+  "fotos": {
+    "origen": "Zip JIC_XpIbYK1pn1JunoOV4eF0.zip de Descargas (9 fotos + 10_mockup_720x480.png), copiado el 22-oct-2026 y borrado de Descargas",
+    "archivos": {
+      "01-epp-banco.webp": "01_imagen.png (9:16) - hero Modelo 1 y hero celular del Modelo 2",
+      "02-planta.webp": "02_imagen.png (16:9) - hero Modelo 2, franja/galería, ficha Programas de seguridad",
+      "03-casco.webp": "03_imagen.png (1:1) - ficha Investigación de accidentes",
+      "04-sonometro.webp": "04_imagen.png (1:1) - franja/galería, ficha Evaluación de riesgos",
+      "05-monitor-ambiental.webp": "05_imagen.png (1:1) - ficha Mediciones ambientales",
+      "06-salida-emergencia.webp": "06_imagen.png (1:1) - ficha Plan de emergencia",
+      "07-sala-capacitacion.webp": "07_imagen.png (1:1) - franja/galería, ficha Capacitaciones",
+      "08-legajo.webp": "08_imagen.png (1:1) - bloque Equipo, ficha Documentación legal",
+      "09-epp-botas.webp": "09_imagen.png (1:1) - ficha Elementos de protección personal",
+      "og.jpg": "recorte 1200x630 de 02_imagen.png"
+    }
+  },
+  "logo": {
+    "origen": "Tarjeta en PDF que el cliente mandó por WhatsApp el 22-oct-2026 12:22 (wabot/data/media/5492615615921/20261022-122245-9b9c0b84.pdf), imagen embebida de 1063x591",
+    "archivos": {
+      "logo-tarjeta.png": "imagen original de la tarjeta (logo 3D sobre pared gris)",
+      "logo.webp": "recorte escudo + CONSULTORA HIGIENE Y SEGURIDAD",
+      "logo-escudo.webp": "recorte solo del escudo con JIC"
+    }
+  },
+  "bancos": "ninguna foto de bancos libres"
+}

@@ -1,0 +1,25 @@
+{
+  "cliente": {
+    "zip": "ESTILO_POLO_ZxSer4dAZQ1bQXhRTgPb.zip (Descargas, 22-oct-2026)",
+    "archivos": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup_720x480.png"],
+    "usos": {
+      "01_imagen.png": ["sombrero-vertical.webp", "p-sombrero-fieltro.webp", "cat-sombreros.webp", "mat-fieltro.webp"],
+      "02_imagen.png": ["hero-bolso.webp", "og-estilopolo.jpg", "p-bolso-viajero.webp"],
+      "03_imagen.png": ["p-cartera-tote.webp", "cat-marroquineria.webp"],
+      "04_imagen.png": ["p-billetera.webp"],
+      "05_imagen.png": ["p-cinto-faja.webp"],
+      "06_imagen.png": ["p-botas.webp", "cat-calzado.webp"],
+      "07_imagen.png": ["p-pulover-trenzado.webp", "cat-indumentaria.webp"],
+      "08_imagen.png": ["p-mate-cuero.webp", "cat-regaleria.webp", "mat-alpaca.webp"],
+      "09_imagen.png": ["p-neceser.webp"]
+    }
+  },
+  "pexels": [
+    { "id": "10263545", "url": "https://www.pexels.com/photo/10263545/", "archivo": "p-montura.webp, cat-talabarteria.webp", "slot": "Montura a medida / rubro Talabartería" },
+    { "id": "30667047", "url": "https://www.pexels.com/photo/30667047/", "archivo": "mat-cuero.webp", "slot": "Materia prima: cuero" },
+    { "id": "14642651", "url": "https://www.pexels.com/photo/14642651/", "archivo": "mat-lana.webp, p-pulover-camel.webp", "slot": "Materia prima: lana / Pulóver de lana camel" },
+    { "id": "6650001", "url": "https://www.pexels.com/photo/6650001/", "archivo": "p-portafolio-suela.webp, p-cartera-suela.webp", "slot": "Portafolio de cuero / Cartera de cuero suela" },
+    { "id": "6633602", "url": "https://www.pexels.com/photo/6633602/", "archivo": "p-monedero.webp", "slot": "Monedero de cuero" },
+    { "id": "12210270", "url": "https://www.pexels.com/photo/12210270/", "archivo": "p-zapatos.webp", "slot": "Zapatos de cuero acordonados" }
+  ]
+}

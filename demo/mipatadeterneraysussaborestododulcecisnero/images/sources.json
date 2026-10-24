@@ -1,0 +1,21 @@
+{
+  "cliente": {
+    "01_imagen.png": "zip del pedido (9:16) — hero-pata*.webp, p-pata*.webp (recorte), cat-pata.webp (recorte)",
+    "02_imagen.png": "zip del pedido (16:9) — mesa-catering*.webp, cat-salados.webp (recorte), og.jpg",
+    "03_imagen.png": "zip del pedido — p-miga*.webp",
+    "04_imagen.png": "zip del pedido — p-empanadas*.webp",
+    "05_imagen.png": "zip del pedido — p-hamburguesas*.webp",
+    "06_imagen.png": "zip del pedido — p-pizzetitas*.webp",
+    "07_imagen.png": "zip del pedido — p-rogel*.webp, cat-dulces.webp (recorte)",
+    "08_imagen.png": "zip del pedido — p-alfajores*.webp",
+    "09_imagen.png": "zip del pedido — p-brownies*.webp",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la web)"
+  },
+  "pexels": [
+    { "archivo": "p-cazuelas.webp", "slot": "producto Cazuelitas de pollo", "id": 35156470, "url": "https://www.pexels.com/photo/35156470/" },
+    { "archivo": "p-fosforitos.webp", "slot": "producto Fosforitos de jamón y queso", "id": 6915503, "url": "https://www.pexels.com/photo/6915503/" },
+    { "archivo": "p-panchos.webp", "slot": "producto Mini panchos de frankfurt", "id": 5584277, "url": "https://www.pexels.com/photo/5584277/" },
+    { "archivo": "p-torta.webp", "slot": "producto Torta decorada", "id": 10891147, "url": "https://www.pexels.com/photo/10891147/" },
+    { "archivo": "p-tarta.webp", "slot": "producto Tarta de frutillas", "id": 11441242, "url": "https://www.pexels.com/photo/11441242/" }
+  ]
+}

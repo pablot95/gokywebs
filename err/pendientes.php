@@ -84,6 +84,20 @@ const ERR_REPOS = [
     'burgeradonai.com.ar'              => 'pablot95/burgeradonai',
     'adaradermocosmiatria.com.ar'      => 'pablot95/adara',
     'consultoranoa.com.ar' => 'pablot95/consultoranoa',
+    'elysoloviajes.com.ar' => 'pablot95/elysoloviajes',
+    'deltagasyagua.com.ar' => 'pablot95/deltagasyagua',
+    'movimientodesuelodorrego.com.ar' => 'pablot95/movimientodesuelodorrego',
+    'byjoyas.com.ar' => 'pablot95/byjoyas',
+    'armoniapisos.com.ar' => 'pablot95/armoniapisos',
+    'ahorramismo.com.ar' => 'pablot95/ahorramismo',
+    'escuelaespaciomirenacer.com.ar' => 'pablot95/espaciomirenacer',
+    'siaweb.com.ar' => 'pablot95/siaweb',
+    'gestoriaimpulso.com.ar' => 'pablot95/gestoriaimpulso',
+    'nor-bex.com' => 'pablot95/norbex',
+    'serviciotecnicodelviso.com.ar' => 'pablot95/serviciotecnicodelviso',
+    'mipatadeternera.com.ar' => 'pablot95/mipatadeternera',
+    'altapintablanqueria.com.ar' => 'pablot95/altapintablanqueria',
+    'abperfumes.com.ar' => 'pablot95/abperfumes',
 ];
 
 header('Content-Type: application/json; charset=utf-8');

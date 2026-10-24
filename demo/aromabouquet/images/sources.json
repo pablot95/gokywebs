@@ -1,0 +1,29 @@
+{
+  "nota": "01-09_imagen.png y 10_mockup vienen del zip de Pablo. logo-ig-150.jpg es la foto de perfil de instagram.com/aromabouquet25 (150 px, pedir el original en alta). Las fotos de producto que no salen del zip son de Pexels (licencia Pexels, uso libre), recortadas a 4:5.",
+  "zip": {
+    "p-malbec-reserva": "01_imagen.png",
+    "p-caja-brindis": "02_imagen.png",
+    "p-whisky": "03_imagen.png",
+    "p-gin": "04_imagen.png",
+    "p-extra-brut": "05_imagen.png",
+    "p-ipa-x3": "06_imagen.png",
+    "p-aperitivo-rojo": "07_imagen.png",
+    "p-estuche-vasos": "08_imagen.png",
+    "p-agua-con-gas": "09_imagen.png"
+  },
+  "pexels": {
+    "p-cabernet": "https://www.pexels.com/photo/7809779/",
+    "p-torrontes": "https://www.pexels.com/photo/2820146/",
+    "p-rosado": "https://www.pexels.com/photo/15006642/",
+    "p-amargo": "https://www.pexels.com/photo/7796813/",
+    "p-golden": "https://www.pexels.com/photo/5659174/",
+    "p-degustacion": "https://www.pexels.com/photo/6377486/ (recortada y con el fondo extendido arriba)",
+    "p-tonica": "https://www.pexels.com/photo/6612349/",
+    "p-pomelo": "https://www.pexels.com/photo/8217417/",
+    "p-jugo": "https://www.pexels.com/photo/8679343/",
+    "p-licorera": "https://www.pexels.com/photo/5947022/",
+    "p-set-copas": "https://www.pexels.com/photo/4877844/",
+    "p-kit-flautas": "https://www.pexels.com/photo/8015273/",
+    "p-caja-regalo": "https://www.pexels.com/photo/7670677/"
+  }
+}
