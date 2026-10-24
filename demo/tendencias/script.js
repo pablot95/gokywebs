@@ -410,7 +410,7 @@ function badgeHTML(p) {
 }
 
 function accionHTML(p) {
-  if (!hayStock(p)) return `<a class="prod-add prod-add--avisar" href="${wspLink(`Hola Tendencias! Quiero que me avisen cuando vuelva: ${p.nombre}.`)}" target="_blank" rel="noopener">${ICO.campana}<span>Avisame</span></a>`;
+  if (!hayStock(p)) return `<a class="prod-add prod-add--avisar" href="${wspLink(`Hola TendenciaViral! Quiero que me avisen cuando vuelva: ${p.nombre}.`)}" target="_blank" rel="noopener">${ICO.campana}<span>Avisame</span></a>`;
   if (tieneVariantes(p)) return `<button type="button" class="prod-add prod-add--elegir" data-quick="${esc(p.id)}" aria-label="Elegir ${esc(p.variantes.nombre.toLowerCase())} de ${esc(p.nombre)}">${ICO.opciones}<span>Elegir</span></button>`;
   return `<button type="button" class="prod-add" data-add="${esc(p.id)}" aria-label="Agregar ${esc(p.nombre)} al carrito">${ICO.carrito}<span>Agregar</span></button>`;
 }
@@ -657,7 +657,7 @@ function initRail() {
 }
 
 function rankAccion(p) {
-  if (!hayStock(p)) return `<a class="btn btn--cta" href="${wspLink(`Hola Tendencias! Quiero que me avisen cuando vuelva: ${p.nombre}.`)}" target="_blank" rel="noopener">${ICO.campana}Avisame cuando vuelva</a>`;
+  if (!hayStock(p)) return `<a class="btn btn--cta" href="${wspLink(`Hola TendenciaViral! Quiero que me avisen cuando vuelva: ${p.nombre}.`)}" target="_blank" rel="noopener">${ICO.campana}Avisame cuando vuelva</a>`;
   if (tieneVariantes(p)) return `<button type="button" class="btn btn--cta" data-quick="${esc(p.id)}">${ICO.opciones}Elegir ${esc(p.variantes.nombre.toLowerCase())}</button>`;
   return `<button type="button" class="btn btn--cta" data-add="${esc(p.id)}">${ICO.carrito}Agregar al carrito</button>`;
 }
@@ -868,12 +868,12 @@ function pintarQV() {
       ${tieneVariantes(p) ? `<fieldset class="qv__vars"><legend>${esc(p.variantes.nombre)}: <b>${esc(opcionDe(p, v)?.nombre || '')}</b></legend><div class="vars">${opcionesDe(p).map(o => `<label class="var${o.stock <= 0 ? ' var--sin' : ''}"><input type="radio" name="qv-var" value="${esc(o.id)}"${o.id === v ? ' checked' : ''}${o.stock <= 0 ? ' disabled' : ''}><span>${esc(o.nombre)}${o.extra > 0 ? ` <small>+${formatearPrecio(p.descuento > 0 ? redondear(o.extra * (1 - p.descuento / 100)) : o.extra)}</small>` : ''}${o.stock <= 0 ? ' <small>sin stock</small>' : ''}</span></label>`).join('')}</div></fieldset>` : ''}
       <div class="qv__acc">
         ${sin
-          ? `<a class="btn btn--cta" href="${wspLink(`Hola Tendencias! Quiero que me avisen cuando vuelva: ${nombreLinea(p, v)}.`)}" target="_blank" rel="noopener">${ICO.campana}Avisame cuando vuelva</a>`
+          ? `<a class="btn btn--cta" href="${wspLink(`Hola TendenciaViral! Quiero que me avisen cuando vuelva: ${nombreLinea(p, v)}.`)}" target="_blank" rel="noopener">${ICO.campana}Avisame cuando vuelva</a>`
           : `${libre > 0 ? `<div class="stepper stepper--grande" data-stepper><button type="button" data-step="-1" aria-label="Restar uno">${ICO.menos}</button><input type="number" value="1" min="1" max="${libre}" inputmode="numeric" aria-label="Cantidad"><button type="button" data-step="1" aria-label="Sumar uno">${ICO.mas}</button></div>` : ''}
         <button type="button" class="btn btn--cta" data-qv-add${libre > 0 ? '' : ' disabled'}>${ICO.carrito}${libre > 0 ? 'Agregar al carrito' : 'Ya está en tu carrito'}</button>
         <button type="button" class="btn btn--line" data-qv-comprar>Comprar ahora</button>`}
       </div>
-      <a class="qv__wsp" href="${wspLink(`Hola Tendencias! Tengo una consulta sobre: ${nombreLinea(p, v)}.`)}" target="_blank" rel="noopener">${ICO.wsp}<span>¿Dudas con la compatibilidad? Preguntanos por WhatsApp</span></a>
+      <a class="qv__wsp" href="${wspLink(`Hola TendenciaViral! Tengo una consulta sobre: ${nombreLinea(p, v)}.`)}" target="_blank" rel="noopener">${ICO.wsp}<span>¿Dudas con la compatibilidad? Preguntanos por WhatsApp</span></a>
       ${rel.length ? `<div class="qv__rel"><p class="qv__rel-tit">También te puede interesar</p><div class="qv__rel-grid">${rel.map(r => `<button type="button" class="qv__rel-item" data-qv-otro="${esc(r.id)}"><img src="${esc(r.img)}" alt="" width="200" height="200"><span>${esc(r.nombre)}</span><b>${tieneVariantes(r) ? 'Desde ' : ''}${formatearPrecio(precioDesde(r))}</b></button>`).join('')}</div></div>` : ''}
     </div>
   </div>`;
@@ -975,7 +975,7 @@ function renderCarrito() {
     </li>`;
   }).join('')}</ul>`;
   const lineas = items.map(i => { const p = getProducto(i.id); return `- ${i.qty} × ${nombreLinea(p, i.v || '')}: ${formatearPrecio(precioDe(p, i.v || '') * i.qty)}`; }).join('\n');
-  const msg = `Hola Tendencias! Quiero hacer este pedido:\n${lineas}\nTotal: ${formatearPrecio(Cart.total())}\nMi nombre es: \nMi zona para la entrega: `;
+  const msg = `Hola TendenciaViral! Quiero hacer este pedido:\n${lineas}\nTotal: ${formatearPrecio(Cart.total())}\nMi nombre es: \nMi zona para la entrega: `;
   foot.innerHTML = `<p class="drawer__total"><span>Total</span><b>${formatearPrecio(Cart.total())}</b></p>
     <button type="button" class="btn btn--cta" data-finalizar>Finalizar compra</button>
     <a class="btn btn--line" href="${wspLink(msg)}" target="_blank" rel="noopener">${ICO.wsp}Enviar el pedido por WhatsApp</a>
@@ -1151,7 +1151,7 @@ function initCatalogo() {
     if (bajada) bajada.textContent = cat ? cat.bajada : 'Audio, tecnología, accesorios y objetos para tu casa que se volvieron tendencia. Filtrá por categoría, uso o precio.';
     const miga = document.querySelector('[data-miga-actual]');
     if (miga) { miga.hidden = titulo === 'Todos los productos'; miga.textContent = titulo; }
-    document.title = `${titulo} — Tendencias`;
+    document.title = `${titulo} — TendenciaViral`;
     document.querySelectorAll('.nav-drop__cat').forEach(a => {
       const u = new URL(a.getAttribute('href'), location.href);
       if (u.searchParams.get('cat') === estado.cat) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');

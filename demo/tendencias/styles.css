@@ -822,3 +822,19 @@ body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
   .gw-modelos { left: 12px; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { .gw-modelos, .gw-modelos__btn { transition: none; } }
+
+/* Reseñas */
+.resenas { background: var(--color-bg); padding-block: var(--section-pad-y); }
+.resenas__prom { margin: 0; display: flex; align-items: baseline; gap: .5rem; font-size: 1rem; }
+.resenas__prom b { font: 700 2rem/1 var(--font-display); letter-spacing: -.04em; }
+.resenas__prom small { color: var(--color-text-muted); font-size: .9rem; }
+.estrellas { color: #E0A400; letter-spacing: .08em; }
+.resenas__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 1.5rem); }
+.resena { display: flex; flex-direction: column; gap: .7rem; padding: 1.4rem; background: var(--color-surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.resena p { margin: 0; flex: 1; font-size: .98rem; }
+.resena footer { display: grid; gap: .1rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.resena footer b { font: 600 .95rem/1.3 var(--font-display); }
+.resena footer small { color: var(--color-text-muted); font-size: .85rem; }
+.resenas__nota { margin: 1.2rem 0 0; font-size: .85rem; color: var(--color-text-muted); }
+@media (max-width: 1024px) { .resenas__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .resenas__grid { grid-template-columns: minmax(0, 1fr); } }@media (max-width: 380px) { .site-header .wordmark { font-size: 1.7rem; } }
