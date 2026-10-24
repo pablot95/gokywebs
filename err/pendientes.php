@@ -94,6 +94,7 @@ const ERR_REPOS = [
     'siaweb.com.ar' => 'pablot95/siaweb',
     'gestoriaimpulso.com.ar' => 'pablot95/gestoriaimpulso',
     'nor-bex.com' => 'pablot95/norbex',
+    'serviciotecnicodelviso.com.ar' => 'pablot95/serviciotecnicodelviso',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
