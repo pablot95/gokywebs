@@ -7746,9 +7746,20 @@ function renderIntentosCobro() {
     }
     // Quién es cada suscripción: el cliente que le tocó en el cruce (vinculado o sugerido).
     const quien = new Map((ingresosMp ? _cruceMercadoPago() : []).filter(k => k.sub).map(k => [k.sub.id, k]));
+    // Alta o renovación (Pablo, 24-oct): el primer cobro de cada suscripción es el alta; los demás, de una que
+    // ya estaba dada de alta. MP no numera los cobros mensuales: se cuentan por fecha dentro de cada suscripción.
+    const nroCobro = new Map();
+    const porSub = new Map();
+    for (const c of intentosCobro) {
+        if (!porSub.has(c.suscripcion)) porSub.set(c.suscripcion, []);
+        porSub.get(c.suscripcion).push(c);
+    }
+    for (const lista of porSub.values()) {
+        lista.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).forEach((c, i) => nroCobro.set(c, i + 1));
+    }
     const filas = intentosCobro.map(c => {
         const k = quien.get(String(c.suscripcion));
-        return { c, e: _intentoEstado(c), negocio: k?.negocio || "", persona: k?.persona || "" };
+        return { c, e: _intentoEstado(c), negocio: k?.negocio || "", persona: k?.persona || "", nro: nroCobro.get(c) || 1 };
     });
     const cuenta = clase => filas.filter(f => f.e.clase === clase);
     const suma = l => l.reduce((a, f) => a + (Number(f.c.monto) || 0), 0);
@@ -7766,7 +7777,7 @@ function renderIntentosCobro() {
 
     cont.innerHTML = `
         <div class="stats-box stats-box--periods ingcal-stats">
-            <div class="stat-item"><span class="stat-label">✓ Cobrado este mes</span><span class="stat-value">${fmtMoney(suma(nMes("cobrado")))}</span><span class="muted ingcal-stat-sub">${nMes("cobrado").length} cobro${nMes("cobrado").length === 1 ? "" : "s"}</span></div>
+            <div class="stat-item"><span class="stat-label">✓ Cobrado este mes</span><span class="stat-value">${fmtMoney(suma(nMes("cobrado")))}</span><span class="muted ingcal-stat-sub">${nMes("cobrado").length} cobro${nMes("cobrado").length === 1 ? "" : "s"}: ${nMes("cobrado").filter(f => f.nro === 1).length} de altas (${fmtMoney(suma(nMes("cobrado").filter(f => f.nro === 1)))}) y ${nMes("cobrado").filter(f => f.nro > 1).length} de los que ya estaban (${fmtMoney(suma(nMes("cobrado").filter(f => f.nro > 1)))})</span></div>
             <div class="stat-item"><span class="stat-label">⏳ Reintentando</span><span class="stat-value" style="${cuenta("reintentando").length ? "color:var(--warning)" : ""}">${fmtMoney(suma(cuenta("reintentando")))}</span><span class="muted ingcal-stat-sub">${cuenta("reintentando").length} cobro${cuenta("reintentando").length === 1 ? "" : "s"} rechazado${cuenta("reintentando").length === 1 ? "" : "s"} que MP vuelve a intentar</span></div>
             <div class="stat-item"><span class="stat-label">✕ Rechazados este mes</span><span class="stat-value" style="${nMes("rechazado").length ? "color:var(--danger)" : ""}">${nMes("rechazado").length}</span><span class="muted ingcal-stat-sub">sin más reintentos o con la suscripción cancelada · ${fmtMoney(suma(nMes("rechazado")))}</span></div>
             <div class="stat-item"><span class="stat-label">↩ Devuelto este mes</span><span class="stat-value">${fmtMoney(suma(nMes("devuelto")))}</span><span class="muted ingcal-stat-sub">${nMes("devuelto").length} ${nMes("devuelto").length === 1 ? "devolución" : "devoluciones"}</span></div>
@@ -7778,12 +7789,15 @@ function renderIntentosCobro() {
         </div>
         <div class="table-wrapper">
             <table class="clients-table intentos-tabla">
-                <thead><tr><th>Fecha</th><th>Quién</th><th>Monto</th><th>Estado</th><th>Detalle</th></tr></thead>
-                <tbody>${lista.length ? lista.map(({ c, e, negocio, persona }) => `
+                <thead><tr><th>Fecha</th><th>Quién</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Detalle</th></tr></thead>
+                <tbody>${lista.length ? lista.map(({ c, e, negocio, persona, nro }) => `
                     <tr>
                         <td>${escapeHtml(fh(c.fecha))}</td>
                         <td><div>${escapeHtml(negocio || persona || c.nombre || "Sin nombre")}</div><div class="muted" style="font-size:12px">${escapeHtml([negocio && persona ? persona : "", negocio || persona ? `MP: ${c.nombre}` : "sin cliente asignado"].filter(Boolean).join(" · "))}</div></td>
                         <td>${fmtMoney(Number(c.monto) || 0)}</td>
+                        <td>${nro === 1
+                            ? `<span class="intento-tipo intento-tipo--alta" title="El primer cobro de la suscripción">Alta · 1er pago</span>`
+                            : `<span class="intento-tipo" title="Una suscripción que ya estaba dada de alta">Ya suscripto · ${nro}º pago</span>`}</td>
                         <td><span class="intento-estado intento-estado--${e.clase}">${escapeHtml(e.texto)}</span></td>
                         <td class="intento-detalle">${[
                             e.motivo ? `Motivo: ${escapeHtml(e.motivo)}` : "",
@@ -7791,7 +7805,7 @@ function renderIntentosCobro() {
                             e.vence ? `Último día para cobrarlo: ${escapeHtml(fechaCortaJs(new Date(e.vence)).slice(0, 5))}` : "",
                             e.nota ? escapeHtml(e.nota.charAt(0).toUpperCase() + e.nota.slice(1)) : "",
                         ].filter(Boolean).map(t => `<div>${t}</div>`).join("") || `<span class="muted">—</span>`}</td>
-                    </tr>`).join("") : `<tr class="empty-row"><td colspan="5">${q ? "Nada con esa búsqueda." : "No hay cobros en este filtro."}</td></tr>`}
+                    </tr>`).join("") : `<tr class="empty-row"><td colspan="6">${q ? "Nada con esa búsqueda." : "No hay cobros en este filtro."}</td></tr>`}
                 </tbody>
             </table>
         </div>`;
