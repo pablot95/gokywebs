@@ -1547,14 +1547,14 @@ function _cruceMercadoPago() {
         // El negocio y la persona, de su cliente (o del completado del que salió); si no, lo cargado en el suscriptor.
         const c = clientePorMant.get(m.id) || (m.completadoId && (completados || []).find(x => x.id === m.completadoId)) || null;
         candidatos.push({ ref: m, esCliente: false, pre: String(m.preapprovalId || "").trim(), monto, desde, dia: Number(m.diaCobro) || 0, nombre: m.nombre || "Suscriptor", porFuera: m.pagaPorFuera === true,
-            ..._negocioYPersona(c?.proyecto, c?.nombre || m.nombre), palabras: _palabrasNombre(m.nombre, c?.nombre, c?.proyecto, String(m.email || "").split("@")[0]) });
+            ..._negocioYPersona(c?.proyecto, c?.nombre || m.nombre), palabras: _palabrasNombre(m.nombre, c?.nombre, c?.proyecto, c?.nombreMp, String(m.email || "").split("@")[0]) });
     }
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
         const sus = suscripcionDe(c);
         if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
         candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: Number(c.diaCobro) || 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true,
-            ..._negocioYPersona(c.proyecto, c.nombre), palabras: _palabrasNombre(c.nombre, c.proyecto, c.contactoNombre, String(c.email || "").split("@")[0]) });
+            ..._negocioYPersona(c.proyecto, c.nombre), palabras: _palabrasNombre(c.nombre, c.proyecto, c.contactoNombre, c.nombreMp, String(c.email || "").split("@")[0]) });
     }
     candidatos.sort((a, b) => a.desde - b.desde);
     for (const k of candidatos) {
@@ -5076,6 +5076,54 @@ async function avisarCompraAMeta(d) {
     }
 }
 
+/* Pasar a Cliente con el plan mensual (Pablo, 25-oct: "que me pregunte el nombre así lo puede vincular
+   con mercadopago"): se pide el nombre del titular de la cuenta que paga (suele no ser el del negocio) y
+   se busca su suscripción entre las de Mercado Pago que no tiene nadie. Una sola que coincide se confirma;
+   varias, se elige el número. Devuelve { nombreMp, preapprovalId } (vacíos si cancela o no hay ninguna).
+   El nombre queda en el doc: el cruce lo usa para adivinar mientras no haya ID. */
+async function _preguntarSuscripcionMp(c, monto) {
+    const nombreMp = (prompt(
+        `¿A nombre de quién está la suscripción en Mercado Pago?\n\n` +
+        `Nombre y apellido del titular de la cuenta que paga (puede no ser el del negocio). Con eso se vincula su suscripción. Si cancelás, queda sin vincular.`,
+        c.nombreMp || c.nombre || ""
+    ) || "").replace(/\s+/g, " ").trim();
+    if (!nombreMp) return { nombreMp: "", preapprovalId: "" };
+
+    // Recién suscripto: se vuelve a pedir la lista a Mercado Pago (si ya se está pidiendo, se espera).
+    for (let i = 0; ingresosMpCargando && i < 60; i++) await new Promise(r => setTimeout(r, 250));
+    await cargarIngresosMp(true);
+    if (!ingresosMp) {
+        alert(`No se pudo leer Mercado Pago${ingresosMpError ? ` (${ingresosMpError})` : ""}. Queda guardado "${nombreMp}": vinculala después en Mantenimiento → Vincular con MP.`);
+        return { nombreMp, preapprovalId: "" };
+    }
+    const tomadas = new Set([...(clients || []), ...(mantenimiento || [])].map(x => String(x.preapprovalId || "").trim()).filter(Boolean));
+    const palabras = _palabrasNombre(nombreMp);
+    const candidatas = (ingresosMp.suscripciones || [])
+        .filter(s => (s.estado === "authorized" || s.estado === "paused") && !tomadas.has(String(s.id)))
+        .map(s => ({ s, enComun: _nombresEnComun(palabras, s.nombre), mismoMonto: Number(s.monto) === Number(monto) }))
+        .filter(x => x.enComun > 0)
+        .sort((a, b) => b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || new Date(b.s.alta) - new Date(a.s.alta));
+    const etiqueta = ({ s }) => `${s.nombre || "Sin nombre"} · ${fmtMoney(Number(s.monto) || 0)}/mes · alta ${fechaCortaJs(new Date(s.alta)).slice(0, 5)}${s.estado === "paused" ? " · pausada" : ""}`;
+    if (!candidatas.length) {
+        alert(`No encontré en Mercado Pago una suscripción sin cliente a nombre de "${nombreMp}". Queda guardado el nombre: si se suscribe después, vinculala en Mantenimiento → Vincular con MP.`);
+        return { nombreMp, preapprovalId: "" };
+    }
+    // Una sola, o una que coincide en más palabras que el resto: se confirma.
+    const mejor = candidatas[0];
+    if (candidatas.length === 1 || (mejor.enComun > candidatas[1].enComun && mejor.mismoMonto)) {
+        return { nombreMp, preapprovalId: confirm(`Encontré esta suscripción en Mercado Pago:\n\n${etiqueta(mejor)}\n\n¿Es la de "${c.nombre || c.proyecto || "este cliente"}"?`) ? String(mejor.s.id) : "" };
+    }
+    const lista = candidatas.slice(0, 6);
+    const elegida = prompt(
+        `Hay ${candidatas.length} suscripciones en Mercado Pago que coinciden con "${nombreMp}":\n\n` +
+        lista.map((x, i) => `${i + 1}. ${etiqueta(x)}`).join("\n") +
+        `\n\nEscribí el número de la suya. Si cancelás o ninguna es, queda sin vincular.`,
+        "1"
+    );
+    const n = Number(String(elegida || "").trim());
+    return { nombreMp, preapprovalId: n >= 1 && n <= lista.length ? String(lista[n - 1].s.id) : "" };
+}
+
 async function setStatus(id, value) {
     try {
         const c = clients.find(x => x.id === id);
@@ -5148,6 +5196,11 @@ async function setStatus(id, value) {
                 } else if (!c.estadoSuscripcion) updateData.estadoSuscripcion = "pendiente";
                 if (typeof c.preapprovalId !== "string") updateData.preapprovalId = "";
                 if (_cotizacionSinCobro(c)) updateData.valorTotal = 0;
+                if (modalidad === "mensual" && !String(c.preapprovalId || "").trim()) {
+                    const mp = await _preguntarSuscripcionMp(c, updateData.montoMensual || _num(c.montoMensual));
+                    if (mp.nombreMp) updateData.nombreMp = mp.nombreMp;
+                    if (mp.preapprovalId) { updateData.preapprovalId = mp.preapprovalId; updateData.pagaPorFuera = false; }
+                }
             }
         }
 
@@ -5543,6 +5596,7 @@ function cargarPlanEnModal(c) {
 
     $("estadoSuscripcion").value = s ? s.estado : "pendiente";
     $("preapprovalId").value = s ? s.preapprovalId : "";
+    $("nombreMp").value = c?.nombreMp || "";
 
     const notaMp = $("suscripcionNota");
     const notas = [];
@@ -5636,6 +5690,7 @@ form.addEventListener("submit", async (e) => {
         data.montoMensual = Number(document.getElementById("montoMensual").value) || 0;
         data.estadoSuscripcion = document.getElementById("estadoSuscripcion").value || "pendiente";
         data.preapprovalId = document.getElementById("preapprovalId").value.trim();
+        data.nombreMp = document.getElementById("nombreMp").value.replace(/\s+/g, " ").trim();
         // Las fechas se escriben solo si cambiaron: así no se pisa la hora exacta con
         // que se registró el primer pago al pasar a Cliente.
         const pagoEl = document.getElementById("primerPagoAt");
@@ -5661,6 +5716,12 @@ form.addEventListener("submit", async (e) => {
         // elegir Cliente (listener de estadoCliente) y, si no se cargó la fecha, corre desde hoy.
         if (pasaACliente && data.estadoSuscripcion === "activa" && !_fechaDeInput(desdeEl.value) && !mantToDate(actual?.suscripcionDesde)) {
             data.suscripcionDesde = primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : _fechaDeInput(mantDateKey(new Date()));
+        }
+        // Mismo pedido que en el selector de estado: el nombre en Mercado Pago para vincular la suscripción.
+        if (pasaACliente && !data.preapprovalId) {
+            const mp = await _preguntarSuscripcionMp({ ...(actual || {}), ...data }, data.montoMensual);
+            if (mp.nombreMp) data.nombreMp = mp.nombreMp;
+            if (mp.preapprovalId) { data.preapprovalId = mp.preapprovalId; data.pagaPorFuera = false; }
         }
     }
 
