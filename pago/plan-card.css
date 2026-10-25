@@ -284,6 +284,80 @@ main {
 }
 .plan-tabs a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 
+/* Plan mensual (25-oct): suscripción o transferencia. Dos radios y dos paneles,
+   solo con CSS: anda sin JavaScript y después del cambio de pestaña de planes.js. */
+.pay-options { margin-top: 1rem; }
+.pay-option-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.pay-option-tabs label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 64px;
+    padding: .8rem .9rem;
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--navy);
+    font-family: var(--font-display);
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.25;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.pay-option-tabs label small { margin-top: .15rem; color: var(--muted); font-family: var(--font); font-size: .74rem; font-weight: 500; }
+.pay-option-tabs label:hover { border-color: var(--blue); }
+.pay-option-badge {
+    position: absolute;
+    top: -.6rem;
+    right: .6rem;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--copper);
+    color: #2B1500;
+    font-family: var(--font);
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+#pago-suscripcion:checked ~ .pay-option-tabs label[for="pago-suscripcion"],
+#pago-transferencia:checked ~ .pay-option-tabs label[for="pago-transferencia"] {
+    border-color: var(--blue);
+    background: #F2F6FF;
+    box-shadow: 0 0 0 1px var(--blue);
+}
+#pago-suscripcion:focus-visible ~ .pay-option-tabs label[for="pago-suscripcion"],
+#pago-transferencia:focus-visible ~ .pay-option-tabs label[for="pago-transferencia"] { outline: 2px solid var(--navy); outline-offset: 3px; }
+
+.pay-panel { display: none; margin-top: 1.1rem; }
+#pago-suscripcion:checked ~ .pay-panel-suscripcion,
+#pago-transferencia:checked ~ .pay-panel-transferencia { display: block; }
+.pay-panel > * + * { margin-top: .9rem; }
+.pay-panel .mp-note { margin-top: .7rem; }
+.pay-panel .plan-check-list li strong { color: var(--navy); }
+
+.transfer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 52px;
+    padding: .9rem 1.2rem;
+    border: 1.5px solid var(--blue);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--blue-dark);
+    font-family: var(--font-display);
+    font-size: .93rem;
+    font-weight: 700;
+    text-align: center;
+    transition: background .15s;
+}
+.transfer-btn:hover { background: #F2F6FF; }
+.transfer-btn:focus-visible { outline: 2px solid var(--navy); outline-offset: 3px; }
+
 .plan-card.is-entering { animation: plan-enter .22s ease-out; }
 @keyframes plan-enter {
     from { opacity: 0; transform: translateY(6px); }

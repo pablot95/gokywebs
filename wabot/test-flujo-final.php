@@ -284,7 +284,8 @@ caso('el turno del precio de Instagram ya entra sin cortar: dos mensajes de meno
  * el pago solos ya no llegan a los 1000 bytes). */
 $largoIg = wabot_precio_resumen($ig, $cfg) . "\n\n" . $cfg['info']['pago'] . "\n\n" . $cfg['info']['que_incluye']
     . "\n\n" . $cfg['info']['mantenimiento'];
-$esperadoIg = wabot_variar_muletilla(wabot_personalizar($largoIg, $ig), $ig);
+// El envío les pone https:// a los links (25-oct).
+$esperadoIg = wabot_links_https(wabot_variar_muletilla(wabot_personalizar($largoIg, $ig), $ig));
 caso('varias respuestas juntas en Instagram pasan los 1000 bytes: por eso hace falta cortarlas', strlen($esperadoIg) > 1000, (string)strlen($esperadoIg));
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $okIg = wabot_enviar($ig, $largoIg);

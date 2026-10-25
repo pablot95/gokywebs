@@ -536,6 +536,17 @@ function wabot_textos_default() {
             'automatico' => true,
             'texto' => 'Hola, cómo estás?',
         ],
+        // Utilidad (25-oct): el día del cobro, a los del plan mensual que pagan por
+        // afuera de Mercado Pago (renovacion.php). Apagada hasta que Meta la apruebe.
+        'renovacion_por_fuera' => [
+            'nombre' => 'renovacion_plan_mensual',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => false,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio', 'monto'],
+            'texto' => 'Hola {nombre}, hoy se renueva el plan mensual de {negocio}: {monto}. Podés transferir al alias pablotravi y mandarnos el comprobante por este chat. ¡Gracias!',
+        ],
         // Marketing, solo a mano desde el chat (21-oct): abre la conversación con un saludo.
         'saludo' => [
             'nombre' => 'saludo',

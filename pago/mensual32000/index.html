@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../plan-card.css?v=20261011-condiciones">
+    <link rel="stylesheet" href="../plan-card.css?v=20261025-transferencia">
     <script src="../planes.js?v=20260929" defer></script>
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
@@ -69,16 +69,58 @@
                         </ul>
                     </section>
 
-                    <div class="plan-cta">
-                        <a class="subscribe-btn" href="https://mpago.la/2CQLnCv" target="_blank" rel="noopener noreferrer">Suscribirme por $32.000 por mes</a>
-                        <p class="mp-note">El pago se procesa de forma segura a través de Mercado Pago.</p>
-                    </div>
+                    <section class="plan-section pay-choice">
+                        <h2>Cómo querés pagar</h2>
+                        <p class="plan-text">El plan y el precio son los mismos: elegí si preferís el débito automático o transferir vos cada mes.</p>
+                        <div class="pay-options">
+                            <input class="sr-only" type="radio" name="forma-pago" id="pago-suscripcion" checked>
+                            <input class="sr-only" type="radio" name="forma-pago" id="pago-transferencia">
+                            <div class="pay-option-tabs">
+                                <label for="pago-suscripcion"><span class="pay-option-badge">Recomendada</span>Suscripción<small>Débito automático</small></label>
+                                <label for="pago-transferencia">Transferencia<small>Pagás vos cada mes</small></label>
+                            </div>
+
+                            <div class="pay-panel pay-panel-suscripcion">
+                                <p class="plan-text">Te suscribís una sola vez en Mercado Pago y el cobro se hace solo todos los meses.</p>
+                                <ul class="plan-check-list">
+                                    <li><strong>No tenés que acordarte de pagar</strong> ni mandarnos comprobantes</li>
+                                    <li><strong>Tu web nunca se pausa</strong> por un pago olvidado o atrasado</li>
+                                    <li><strong>Sin pago inicial:</strong> arrancamos con el primer débito</li>
+                                    <li><strong>Con tarjeta de crédito, débito o dinero en cuenta</strong>, aunque no tengas cuenta de Mercado Pago</li>
+                                    <li><strong>Cancelás cuando quieras</strong> desde Mercado Pago, sin permanencia</li>
+                                </ul>
+                                <a class="subscribe-btn" href="https://mpago.la/2CQLnCv" target="_blank" rel="noopener noreferrer">Suscribirme por $32.000 por mes</a>
+                                <p class="mp-note">El pago se procesa de forma segura a través de Mercado Pago.</p>
+                            </div>
+
+                            <div class="pay-panel pay-panel-transferencia">
+                                <p class="plan-text">Cada mes transferís $32.000 a esta cuenta y nos mandás el comprobante por WhatsApp. El día que te toca pagar te avisamos por WhatsApp.</p>
+                                <dl class="transfer-box">
+                                    <div class="transfer-row">
+                                        <div><dt>Alias</dt><dd>pablotravi</dd></div>
+                                        <button type="button" class="copy-btn" data-copiar="pablotravi" aria-label="Copiar el alias">Copiar</button>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <div><dt>CVU</dt><dd>0000003100053462800156</dd></div>
+                                        <button type="button" class="copy-btn" data-copiar="0000003100053462800156" aria-label="Copiar el CVU">Copiar</button>
+                                    </div>
+                                    <div class="transfer-row">
+                                        <div><dt>Nombre</dt><dd>Pablo Travi</dd></div>
+                                    </div>
+                                </dl>
+                                <ul class="plan-check-list">
+                                    <li>Para arrancar transferís el primer mes; después, uno por mes, el mismo día</li>
+                                    <li>Si un mes la transferencia no llega, la web puede quedar pausada hasta que se regularice</li>
+                                </ul>
+                                <a class="transfer-btn" href="https://wa.me/5491140688675?text=Hola%20GokyWebs%2C%20te%20mando%20el%20comprobante%20de%20la%20transferencia%20del%20plan%20mensual%20de%20la%20tienda%2C%20los%20cursos%20o%20la%20inmobiliaria." target="_blank" rel="noopener noreferrer">Mandar el comprobante por WhatsApp</a>
+                            </div>
+                        </div>
+                    </section>
 
                     <section class="plan-section plan-condiciones">
-                        <h2>Condiciones de la suscripción</h2>
+                        <h2>Condiciones del plan mensual</h2>
                         <ul class="plan-check-list">
-                            <li>Sin pago inicial: arrancamos con el primer débito</li>
-                            <li>Débito automático mensual por Mercado Pago</li>
+                            <li>Pagás lo mismo por suscripción de Mercado Pago o por transferencia</li>
                             <li>Cancelás cuando quieras, sin permanencia</li>
                             <li>La web permanece publicada mientras el plan esté activo</li>
                             <li>Los aumentos son anuales, ajustados a inflación: la mensualidad se actualiza una vez al año</li>

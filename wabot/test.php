@@ -3992,7 +3992,7 @@ echo "\n— La presentación de la demo: el texto de Pablo del 5-oct, igual para
  * El sistema de gestión mantiene el suyo. */
 $demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'landing', 'nombre_negocio' => 'YF Prevención']);
 caso('es el texto de Pablo, con el negocio y el link',
-    $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\n\nPodés verla acá:\ngokywebs.com/demo/yfprevencion\n\n"
+    $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\n\nPodés verla acá:\nhttps://gokywebs.com/demo/yfprevencion\n\n"
         . "Mirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\n"
         . "Hay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.", $demoTextos[0]);
 caso('la aclaración de los dos modelos va una sola vez', substr_count($demoTextos[0], 'dos modelos') === 1);

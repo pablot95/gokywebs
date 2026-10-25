@@ -3115,6 +3115,7 @@ let leads = [];
 let completados = [];
 let tareas = [];
 let mantenimiento = [];          // suscriptores (sin los avisos de baja / pausa)
+let mantenimientoCargado = false; // llegó la primera foto de la colección (sincronizarRenovaciones no manda una lista a medias)
 let mantenimientoAvisos = [];    // avisos de baja / pausa que deja el webhook de MP en la misma colección
 let presupuestoFunnel = [];
 let resenas = [];
@@ -3746,6 +3747,7 @@ function initRealtime() {
         // tipoEvento desconocido no se muestra ni como suscriptor ni como aviso.
         mantenimientoAvisos = docsMant.filter(d => d.tipoEvento === "baja" || d.tipoEvento === "pausa");
         mantenimiento = docsMant.filter(d => !d.tipoEvento);
+        mantenimientoCargado = true;
         refrescarErroresPorClientes();
         // Pinta la tabla y el contador del tab (suscriptores activos, sin las bajas).
         renderMantenimiento();
@@ -7073,7 +7075,7 @@ const presentacionManualModal = document.getElementById("presentacionManualModal
 
 function textoPresentacionRespaldo(p, slug) {
     const negocio = p.nombre_negocio || p.rubro || "tu negocio";
-    const link = slug ? `gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
+    const link = slug ? `https://gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
     return `Ya está lista la primera propuesta para la web de ${negocio}\n\nPodés verla acá:\n${link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.`;
 }
 
@@ -9434,10 +9436,77 @@ function _mantPorFueraLista() {
     return out.sort((a, b) => (a.proximo || "9999").localeCompare(b.proximo || "9999"));
 }
 
+/* Aviso de renovación (Pablo, 25-oct: "quiero que el bot envíe esta plantilla cuando sea la fecha de
+   renovar"). El bot no sabe quién paga por afuera: cada vez que cambia esta lista se la pasa
+   (wabot/admin.php renovaciones_sync) y su cron manda la plantilla el día del cobro. La respuesta
+   trae los avisos de este mes, que la tabla muestra debajo del nombre. */
+let renovaciones = null;   // { plantilla_activa, enviados: { "coleccion:id": { mes, ts, ok, resultado } } }
+let renovacionesFirma = "";
+let renovacionesTimer = null;
+function _renovacionesFilas() {
+    if (!clientesCargados || !mantenimientoCargado) return null;
+    const clientePorMant = _clientePorSuscripcion();
+    return _mantPorFueraLista().map(f => {
+        const c = f.coleccion === "clientes" ? f.ref : clientePorMant.get(f.ref.id);
+        return {
+            id: `${f.coleccion}:${f.ref.id}`,
+            tel: String(c?.telefono || f.ref.whatsapp || f.ref.telefono || ""),
+            // Con proyecto, `nombre` es el negocio y `persona` quién paga; sin proyecto, solo está la persona.
+            persona: f.persona || f.ref.nombre || "",
+            negocio: f.persona ? f.nombre : "",
+            monto: f.monto || 0,
+            dia: f.dia || 0,
+            desde: f.desde ? _diaDe(f.desde) : ""
+        };
+    });
+}
+function programarSyncRenovaciones() {
+    clearTimeout(renovacionesTimer);
+    renovacionesTimer = setTimeout(sincronizarRenovaciones, 2500);
+}
+async function sincronizarRenovaciones(forzar = false) {
+    if (!currentUser) return;
+    const filas = _renovacionesFilas();
+    if (!filas) return;
+    const firma = JSON.stringify(filas);
+    if (!forzar && firma === renovacionesFirma && renovaciones) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "renovaciones_sync", lista: firma }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (!data?.ok) throw new Error("respuesta sin ok");
+        renovacionesFirma = firma;
+        renovaciones = { plantilla_activa: !!data.plantilla_activa, enviados: data.enviados || {} };
+        if (activeTab === "mantenimiento" && mantPlan === "porfuera") renderMantenimiento();
+    } catch (e) {
+        console.warn("No se pudo pasarle al bot la lista de los que pagan por afuera:", e);
+    }
+}
+// Los avisos que salieron hoy aparecen sin recargar; la lista va igual solo si cambió.
+setInterval(() => sincronizarRenovaciones(true), 30 * 60 * 1000);
+
+function _renovacionNota(id) {
+    const e = renovaciones?.enviados?.[id];
+    if (!e || e.mes !== _diaDe(new Date()).slice(0, 7)) return "";
+    const cuando = fechaCortaJs(new Date(e.ts * 1000)).slice(0, 5);
+    if (e.ok) return `<div class="muted" style="font-size:12px">📨 Aviso de renovación enviado el ${escapeHtml(cuando)}</div>`;
+    const motivos = { sin_chat: "sin teléfono", telefono: "teléfono raro", ambiguo: "dos chats con ese número", error: "WhatsApp no lo aceptó" };
+    return `<div class="mp-vinculo mp-vinculo--falta">Aviso de renovación sin enviar el ${escapeHtml(cuando)}: ${escapeHtml(motivos[e.resultado] || e.resultado || "error")}</div>`;
+}
+
 function _renderMantPorFuera(term) {
     const tb = document.getElementById("mantPorFueraTbody");
     if (!tb) return;
     const todos = _mantPorFueraLista();
+    const avisoEl = document.getElementById("mantPorFueraAviso");
+    if (avisoEl) avisoEl.textContent = !renovaciones ? ""
+        : renovaciones.plantilla_activa ? "📨 El día del cobro, desde las 10 h, el bot le manda la plantilla de renovación por WhatsApp."
+        : "La plantilla de renovación está apagada: el bot no avisa. Se activa en WhatsApp → Ajustes → Plantillas cuando Meta la apruebe.";
     const countEl = document.getElementById("mantCountPorFuera");
     if (countEl) countEl.textContent = todos.length;
     const lista = term ? todos.filter(f => f.texto.toLowerCase().includes(term)) : todos;
@@ -9454,7 +9523,7 @@ function _renderMantPorFuera(term) {
     tb.innerHTML = lista.length ? lista.map(f => {
         const destino = `${f.coleccion}:${escapeHtml(f.ref.id)}`;
         return `<tr>
-            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${reboteDe.has(f.ref) ? (g => `<div class="mp-vinculo mp-vinculo--falta" title="Intentó suscribirse en Mercado Pago como ${escapeHtml(g.nombre)} y no quedó suscripto${g.porNombre ? "" : " (encontrado por monto y fecha: a confirmar)"}">Intentó suscribirse el ${escapeHtml(fechaCortaJs(g.ultimo).slice(0, 5))}${g.motivo ? ` · ${escapeHtml(g.motivo)}` : ""}${g.intentos > 1 ? ` · ${g.intentos} intentos` : ""}</div>`)(reboteDe.get(f.ref)) : ""}</td>
+            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${_renovacionNota(destino)}${reboteDe.has(f.ref) ? (g => `<div class="mp-vinculo mp-vinculo--falta" title="Intentó suscribirse en Mercado Pago como ${escapeHtml(g.nombre)} y no quedó suscripto${g.porNombre ? "" : " (encontrado por monto y fecha: a confirmar)"}">Intentó suscribirse el ${escapeHtml(fechaCortaJs(g.ultimo).slice(0, 5))}${g.motivo ? ` · ${escapeHtml(g.motivo)}` : ""}${g.intentos > 1 ? ` · ${g.intentos} intentos` : ""}</div>`)(reboteDe.get(f.ref)) : ""}</td>
             <td>${fmtMoney(f.monto)}/mes</td>
             <td><input type="number" class="mant-pf-dia" min="1" max="31" step="1" inputmode="numeric" value="${f.dia || ""}" placeholder="${f.desde ? f.desde.getDate() : ""}" data-dia-cobro="${destino}" aria-label="Día del mes en que se le cobra a ${escapeHtml(f.nombre)}" title="Día del mes (1 a 31). Vacío: el día del alta"></td>
             <td>${cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
@@ -9720,6 +9789,8 @@ function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
     const term = (searchMantInput?.value || "").trim().toLowerCase();
+    // Con cada cambio de Clientes o Mantenimiento: el bot avisa la renovación a los que pagan por afuera.
+    programarSyncRenovaciones();
 
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));

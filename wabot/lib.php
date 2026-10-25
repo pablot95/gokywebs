@@ -934,13 +934,16 @@ function wabot_plantilla_valor($campo, $conv) {
     }
 }
 
-function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
+// $fijos: valores que no salen del chat (la renovación manda el monto y el negocio de Mantenimiento).
+function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
     if (wabot_canal($conv) === 'instagram') return false;
     $p = wabot_plantilla_config($clave, $cfg);
     if ($p === null) return false;
 
     $valores = [];
-    foreach ((array)($p['params'] ?? []) as $campo) $valores[$campo] = wabot_plantilla_valor($campo, $conv);
+    foreach ((array)($p['params'] ?? []) as $campo) {
+        $valores[$campo] = array_key_exists($campo, $fijos) ? (string)$fijos[$campo] : wabot_plantilla_valor($campo, $conv);
+    }
     $valoresBoton = [];
     foreach ((array)($p['boton'] ?? []) as $campo) $valoresBoton[$campo] = wabot_plantilla_valor($campo, $conv);
     foreach ($valoresBoton as $campo => $v) {
@@ -1014,7 +1017,8 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     if ($seguimiento !== '') {
         $textos[] = is_array($conv) ? wabot_personalizar($seguimiento, $conv) : $seguimiento;
     }
-    return $textos;
+    // Con https también los que Pablo copia a mano desde el panel (25-oct).
+    return array_map('wabot_links_https', $textos);
 }
 
 /**
@@ -3957,6 +3961,24 @@ function wabot_ig_ids_propios() {
     return array_values(array_filter($ids));
 }
 
+/**
+ * Los links nuestros salen siempre con https:// (Pablo, 25-oct: "que en el bot
+ * todos los links se envíen con https"). Sin el esquema, WhatsApp a veces no
+ * los vuelve tocables y el cliente tiene que copiarlos. Toca solo los dominios
+ * que mandamos (la web, Mercado Pago, wa.me); un http:// pasa a https://.
+ * Va en el envío y no en cada texto: así cubre la config guardada, las
+ * respuestas rápidas y lo que escribe Pablo en el panel.
+ */
+function wabot_links_https($texto) {
+    $texto = (string)$texto;
+    if ($texto === '') return $texto;
+    return preg_replace(
+        '~(?<![\w.@/:-])(?:http://)?((?:www\.)?gokywebs\.com|mpago\.la|wa\.me|(?:www\.)?mercadopago\.com\.ar)(?=[/?#]|[\s,;:!)\]]|\.(?!\w)|$)~iu',
+        'https://$1',
+        $texto
+    ) ?? $texto;
+}
+
 /** Manda un texto por el canal que corresponda a esa conversación. */
 function wabot_enviar($conv, $texto) {
     // Último filtro antes de que el texto salga al cliente: ningún {nombre}
@@ -4022,13 +4044,14 @@ function wabot_salida_es_bot($id) {
  * Si el texto coincide con algo que el bot acaba de mandar, es nuestro.
  */
 function wabot_eco_es_propio($conv, $texto, $ventanaSegundos = 900) {
-    $t = trim(preg_replace('/\s+/u', ' ', (string)$texto));
+    // El renglón guarda el texto sin el https:// que le agrega el envío (wabot_links_https).
+    $t = trim(preg_replace('/\s+/u', ' ', wabot_links_https($texto)));
     if ($t === '') return false;
     $desde = time() - max(60, (int)$ventanaSegundos);
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
         if ((int)($linea['ts'] ?? 0) < $desde) break;
         if (($linea['q'] ?? '') !== 'bot') continue;
-        if (trim(preg_replace('/\s+/u', ' ', (string)($linea['t'] ?? ''))) === $t) return true;
+        if (trim(preg_replace('/\s+/u', ' ', wabot_links_https($linea['t'] ?? ''))) === $t) return true;
     }
     return false;
 }
@@ -4079,7 +4102,7 @@ function wabot_ig_send_text($igsid, $texto) {
      * que en Instagram va escrito porque la imagen sale solo por WhatsApp,
      * mide ~1090 y no llegaba nunca; el cliente recibía la oferta del diseño
      * sin haber visto el precio. Se manda en partes, cortando entre párrafos. */
-    $partes = wabot_ig_partes((string)$texto);
+    $partes = wabot_ig_partes(wabot_links_https($texto));
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
         foreach ($partes as $p) $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$igsid, $p];
         return true;
@@ -4208,6 +4231,7 @@ function wabot_ig_media_bajar($url) {
 }
 
 function wabot_wa_send_text($tel, $texto) {
+    $texto = wabot_links_https($texto);
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, $texto]; return true; }
     if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') {
         wabot_log('error', ['donde' => 'wa_send', 'msg' => 'config sin completar']);
@@ -4258,6 +4282,8 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
 
     $comoTexto = function ($v) { return ['type' => 'text', 'text' => (string)$v]; };
     $componentes = [];
+    // Las variables del cuerpo pueden llevar un link; las del botón no (son el final de una URL fija).
+    $params = array_map('wabot_links_https', (array)$params);
     if ($params) {
         $componentes[] = ['type' => 'body', 'parameters' => array_map($comoTexto, array_values($params))];
     }
