@@ -125,6 +125,58 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
+ * Las charlas en las que se mandó un link de suscripción de Mercado Pago, con
+ * cuándo y de qué monto (Pablo, 24-oct: vincular cada primer pago rechazado
+ * con el chat de la persona, "o al menos sugerir por nombre y tiempo de cuando
+ * se le dio el enlace y cuando se rechazó"). Lo cruza el admin principal en
+ * Calendario → Intentos de cobro. Cuenta el link directo (mpago.la o el
+ * checkout del plan) y las páginas de pago/ y planmensual/ que lo llevan.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'links_pago_json') {
+    $codigos = ['2KGENxL' => 10000, '1pfejMG' => 20000, '2nEoNGN' => 22000, '28VK7Ev' => 25000, '2CQLnCv' => 32000, '1hYAiTM' => 35000, '2GhZD56' => 40000];
+    $planes = ['17321dd1a34e4ea0979175293297d60f' => 15000, 'ea40c15059ec42a7ac5b6293d77ae148' => 20000, '8df0842d799e40b5a0e9ef0696b47e8b' => 22000,
+        '56340e241c87402c81c02d43ce472fd7' => 25000, '36a67a7e42e7404989beb99703a0569b' => 30000, '4640949ef7694b5ab565d714326f04a2' => 32000, 'b7d653f4f61a445ba8859ae497e7ca66' => 35000];
+    $paginas = ['sitioprofesional' => 20000, 'tienda' => 30000];
+    $montoDe = function ($texto) use ($codigos, $planes, $paginas) {
+        if (preg_match('~mpago\.la/([A-Za-z0-9]+)~', $texto, $m)) return $codigos[$m[1]] ?? 0;
+        if (preg_match('~preapproval_plan_id=([0-9a-f]{32})~i', $texto, $m)) return $planes[strtolower($m[1])] ?? 0;
+        if (preg_match('~gokywebs\.com/(?:pago/mensual|planmensual/)(\d{4,6})\b~i', $texto, $m)) return (int)$m[1];
+        if (preg_match('~gokywebs\.com/planmensual/(sitioprofesional|tienda)\b~i', $texto, $m)) return $paginas[strtolower($m[1])];
+        return null;   // no es un link de suscripción
+    };
+    $salida = [];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $tel = basename($f, '.json');
+        if (stripos($tel, 'TEST') !== false) continue;
+        try {
+            $cv = wabot_conv_load($tel);
+            $links = [];
+            foreach ((array)($cv['transcript'] ?? []) as $fila) {
+                if (!is_array($fila) || !in_array($fila['q'] ?? '', ['bot', 'humano'], true) || !is_string($fila['t'] ?? null)) continue;
+                $monto = $montoDe($fila['t']);
+                if ($monto !== null) $links[] = ['ts' => (int)($fila['ts'] ?? 0), 'monto' => $monto];
+            }
+            if (!$links) continue;
+            $telWsp = trim((string)($cv['telefono_wsp'] ?? ''));
+            $salida[] = [
+                'tel' => $tel,
+                'tel_whatsapp' => $telWsp !== '' ? $telWsp : $tel,
+                'nombre' => trim((string)($cv['nombre'] ?? '')),
+                'negocio' => trim((string)($cv['nombre_negocio'] ?? '')),
+                'cliente_id' => (string)($cv['cliente_id'] ?? ''),
+                'canal' => wabot_canal($cv),
+                'links' => $links,
+            ];
+        } catch (\Throwable $err) {
+            wabot_log('error', ['donde' => 'links_pago_json', 'tel' => $tel, 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+        }
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($salida, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
  * Estadísticas por anuncio para Inversión → Por anuncio del admin principal
  * (Pablo, 10-oct: la buscaba ahí). El embudo de anuncios-stats.php por rango
  * de fechas del clic (?desde=&hasta=, AAAA-MM-DD; de fábrica, 30 días) y, por

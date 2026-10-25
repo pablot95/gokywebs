@@ -7694,13 +7694,55 @@ const MP_RECHAZO_TEXTO = {
 };
 const MP_REINTENTOS = 4;   // MP muestra "Intento 1 de 4"
 
+/* Las charlas del bot en las que se mandó un link de suscripción, con cuándo y de qué monto
+   (wabot/admin.php?accion=links_pago_json): para sugerir de qué chat es cada primer pago rechazado. Si
+   falla, los intentos se ven igual, sin la sugerencia. */
+let linksPago = null;
+async function cargarLinksPago() {
+    try {
+        try { await wabotAuthHandshake(); } catch (e) { /* el fetch de abajo falla con 401/403 */ }
+        const res = await fetch("../wabot/admin.php?accion=links_pago_json", { credentials: "same-origin" });
+        if (res.ok) linksPago = await res.json();
+    } catch (err) {
+        console.warn("No se pudieron traer los links de pago del bot:", err);
+    }
+}
+
+/* El chat de quien intentó suscribirse (Pablo, 24-oct: "vincular los rechazados con el chat de la persona, o
+   al menos sugerir por nombre y tiempo de cuando se le dio el enlace y cuando se rechazó"). Entre las charlas
+   con un link mandado hasta 7 días antes del intento: primero la que comparte el nombre con el de Mercado
+   Pago, después la que recibió el link de ese monto, y la más cercana en el tiempo.
+   → { chat, porNombre, mismoMonto, horas } | null */
+function _chatDeIntento(nombreMp, monto, cuando) {
+    if (!linksPago?.length) return null;
+    const t = cuando.getTime() / 1000;
+    let mejor = null;
+    for (const chat of linksPago) {
+        const antes = (chat.links || []).filter(l => l.ts <= t + 600 && l.ts >= t - 7 * 86400);
+        if (!antes.length) continue;
+        const ultimo = Math.max(...antes.map(l => l.ts));
+        const c = {
+            chat,
+            enComun: _nombresEnComun(_palabrasNombre(chat.nombre, chat.negocio), nombreMp),
+            mismoMonto: antes.some(l => l.monto === monto),
+            horas: Math.max(0, (t - ultimo) / 3600),
+        };
+        // Sin el nombre, solo por monto y hora: hasta 2 días entre el link y el intento.
+        if (!c.enComun && (!c.mismoMonto || c.horas > 48)) continue;
+        const gana = !mejor || c.enComun - mejor.enComun || c.mismoMonto - mejor.mismoMonto || mejor.horas - c.horas;
+        if (gana === true || gana > 0) mejor = c;
+    }
+    return mejor && { chat: mejor.chat, porNombre: mejor.enComun > 0, mismoMonto: mejor.mismoMonto, horas: mejor.horas };
+}
+
 async function cargarIntentosCobro() {
     if (intentosCobroCargando) return;
     intentosCobroCargando = true;
     intentosCobroError = "";
     if (activeTab === "calendario" && calVista === "intentos") renderIntentosCobro();
     try {
-        intentosCobro = (await llamarFacturacion("lista", null, {}, "intentos-cobro.php")).cobros || [];
+        const [datos] = await Promise.all([llamarFacturacion("lista", null, {}, "intentos-cobro.php"), cargarLinksPago()]);
+        intentosCobro = datos.cobros || [];
     } catch (err) {
         console.error(err);
         intentosCobroError = err.message;
@@ -7778,22 +7820,29 @@ function _altasRechazadas() {
         grupos.set(k, g);
     }
     const lista = [...grupos.values()];
+    // El chat en el que se le mandó el link (24-oct).
+    for (const g of lista) g.chat = _chatDeIntento(g.nombre, g.monto, g.ultimo);
     if (ingresosMp) {
         const libres = _cruceMercadoPago().filter(k => k.porFuera || !k.sub);
+        // Ese chat es el de este cliente: la ficha que se le presentó o el mismo WhatsApp.
+        const esSuChat = (chat, k) => !!chat && ((k.esCliente && chat.cliente_id === k.ref.id)
+            || [k.ref.telefono, k.ref.whatsapp].some(t => { const a = cleanArgPhone(t); return a.length >= 8 && a === cleanArgPhone(chat.tel_whatsapp); }));
         const pares = [];
         for (const g of lista.filter(g => !g.seSuscribio)) {
             for (const k of libres) {
+                const porChat = esSuChat(g.chat?.chat, k);
                 const enComun = _nombresEnComun(k.palabras, g.nombre);
                 const dias = Math.abs(g.ultimo - k.desde) / 86400000;
-                if (enComun > 0 ? dias <= 45 : k.monto === g.monto && dias <= 5) pares.push({ g, k, enComun, dias, mismoMonto: k.monto === g.monto });
+                if (porChat || (enComun > 0 ? dias <= 45 : k.monto === g.monto && dias <= 5)) pares.push({ g, k, porChat, enComun, dias, mismoMonto: k.monto === g.monto });
             }
         }
-        pares.sort((a, b) => b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || a.dias - b.dias);
+        pares.sort((a, b) => b.porChat - a.porChat || b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || a.dias - b.dias);
         const usados = new Set();
         for (const p of pares) {
             if (p.g.k || usados.has(p.k)) continue;
             p.g.k = p.k;
-            p.g.porNombre = p.enComun > 0;
+            p.g.porNombre = p.enComun > 0 || (p.porChat && p.g.chat.porNombre);
+            p.g.porChat = p.porChat;
             usados.add(p.k);
         }
     }
@@ -7841,17 +7890,23 @@ function renderIntentosCobro() {
 
     let lista = intentosFiltro === "todos" ? filas : intentosFiltro === "sinsuscribir" ? filas.filter(quedoSin) : filas.filter(f => f.e.clase === intentosFiltro);
     const comoPaga = k => k.porFuera ? "💵 paga por afuera" : "no aparece en Mercado Pago";
+    const hace = h => h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} días`;
+    const chatHtml = s => !s ? `<span class="muted">${linksPago ? "Sin chat con link de pago esos días" : "No se pudo leer el bot"}</span>` : `
+        <div>${escapeHtml(s.chat.negocio || s.chat.nombre || s.chat.tel)}${s.chat.negocio && s.chat.nombre ? ` <span class="muted">· ${escapeHtml(s.chat.nombre)}</span>` : ""}</div>
+        <div class="muted" style="font-size:12px">link${s.mismoMonto ? " de ese monto" : ""} mandado ${hace(s.horas)} antes · ${s.porNombre ? "mismo nombre" : "por monto y hora, a confirmar"}</div>
+        <button type="button" class="mp-vinculo-btn" data-ver-chat="${escapeHtml(s.chat.tel)}" data-ver-chat-titulo="${escapeHtml(s.chat.negocio || s.chat.nombre || s.chat.tel)}">Ver chat</button>`;
     const bloqueSin = sinSuscribir.length ? `
         <details class="panel intentos-sin" open>
             <summary><strong>Quedaron sin suscribir (${sinSuscribir.length})</strong> <span class="muted">· les rebotó el primer pago (o se les devolvió) y no se volvieron a suscribir. Al lado, el cliente que les corresponde entre los que pagan por afuera o no aparecen en Mercado Pago</span></summary>
             <div class="table-wrapper"><table class="clients-table">
-                <thead><tr><th>En Mercado Pago</th><th>Monto</th><th>Intentó</th><th>Motivo</th><th>Cliente</th></tr></thead>
+                <thead><tr><th>En Mercado Pago</th><th>Monto</th><th>Intentó</th><th>Motivo</th><th>Chat</th><th>Cliente</th></tr></thead>
                 <tbody>${sinSuscribir.map(g => `<tr>
                     <td>${escapeHtml(g.nombre || "Sin nombre")}</td>
                     <td>${fmtMoney(g.monto)}</td>
                     <td>${escapeHtml(fh(g.ultimo.toISOString()))}${g.intentos > 1 ? `<div class="muted" style="font-size:12px">${g.intentos} intentos desde el ${escapeHtml(fechaCortaJs(g.primero).slice(0, 5))}</div>` : ""}</td>
                     <td class="intento-detalle">${escapeHtml(g.motivo || "—")}</td>
-                    <td>${g.k ? `<div>${escapeHtml(g.k.negocio || g.k.persona || g.k.nombre)}</div><div class="muted" style="font-size:12px">${escapeHtml(comoPaga(g.k))} · ${g.porNombre ? "por el nombre" : "por monto y fecha, a confirmar"}</div>` : `<span class="muted">No se encontró el cliente</span>`}</td>
+                    <td>${chatHtml(g.chat)}</td>
+                    <td>${g.k ? `<div>${escapeHtml(g.k.negocio || g.k.persona || g.k.nombre)}</div><div class="muted" style="font-size:12px">${escapeHtml(comoPaga(g.k))} · ${g.porChat ? (g.chat.porNombre ? "por el chat" : "por el chat, a confirmar") : g.porNombre ? "por el nombre" : "por monto y fecha, a confirmar"}</div>` : `<span class="muted">No se encontró el cliente</span>`}</td>
                 </tr>`).join("")}</tbody>
             </table></div>
         </details>` : "";
@@ -7890,6 +7945,7 @@ function renderIntentosCobro() {
                             e.nota ? escapeHtml(e.nota.charAt(0).toUpperCase() + e.nota.slice(1)) : "",
                             rebote ? (rebote.seSuscribio ? `<span class="intento-ok">Después se suscribió</span>`
                                 : `<span class="intento-sin">Quedó sin suscribir${rebote.k ? ` · ${escapeHtml(comoPaga(rebote.k))}` : ""}</span>`) : "",
+                            rebote?.chat ? `Chat: ${chatHtml(rebote.chat)}` : "",
                         ].filter(Boolean).map(t => `<div>${t}</div>`).join("") || `<span class="muted">—</span>`}</td>
                     </tr>`).join("") : `<tr class="empty-row"><td colspan="6">${q ? "Nada con esa búsqueda." : "No hay cobros en este filtro."}</td></tr>`}
                 </tbody>
@@ -7903,6 +7959,8 @@ document.addEventListener("click", (e) => {
     const filtro = e.target.closest("[data-intentos-filtro]");
     if (filtro) { intentosFiltro = filtro.dataset.intentosFiltro; renderIntentosCobro(); return; }
     if (e.target.closest("[data-intentos-actualizar]")) cargarIntentosCobro();
+    const verChat = e.target.closest("[data-ver-chat]");
+    if (verChat) abrirChatModal(verChat.dataset.verChat, verChat.dataset.verChatTitulo);
 });
 document.addEventListener("input", (e) => {
     const b = e.target.closest("[data-intentos-buscar]");
