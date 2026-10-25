@@ -9,7 +9,7 @@
  *
  *   GET → {ok, cobros: [{id, suscripcion, nombre, estadoSuscripcion, monto, estado,
  *          pagoEstado, pagoDetalle, motivo, intento, proximoReintento, vence, fecha,
- *          creado, modificado, medio, pagoId}]}
+ *          creado, modificado, medio, pagoId, tipoPago, marca, ultimos4, titular}]}
  */
 
 require __DIR__ . '/auth-admin.php';
@@ -111,6 +111,38 @@ try {
         }
     }
     usort($cobros, function ($a, $b) { return strcmp($b['fecha'], $a['fecha']); });
+
+    /* Con qué pagó (Pablo, 25-oct: "¿el admin puede saber los últimos 4 dígitos de la tarjeta o si fue
+     * dinero en cuenta?"). El cobro trae solo el id del pago: el pago (/v1/payments) tiene el tipo
+     * (crédito, débito, dinero en cuenta), la marca, los últimos 4 y el titular. Un pago no cambia de
+     * medio, así que queda guardado en config/arca/ (sin acceso por HTTP) y se pide una sola vez. */
+    $cacheMedios = __DIR__ . '/../../config/arca/medios-pago-cache.json';
+    $medios = json_decode((string) @file_get_contents($cacheMedios), true);
+    if (!is_array($medios)) $medios = [];
+    $faltanMedios = [];
+    foreach ($cobros as $c) {
+        if ($c['pagoId'] !== '' && !isset($medios[$c['pagoId']])) $faltanMedios[$c['pagoId']] = '/v1/payments/' . rawurlencode($c['pagoId']);
+    }
+    // Tope por pedido: la primera vez son cientos; los que quedan salen en el próximo "Actualizar".
+    $nuevos = intentos_mp_varios(array_slice($faltanMedios, 0, 300, true));
+    foreach ($nuevos as $pagoId => $p) {
+        if ($p === null) continue;
+        $medios[$pagoId] = [
+            'tipo' => (string) ($p['payment_type_id'] ?? ''),
+            'marca' => (string) ($p['payment_method_id'] ?? ''),
+            'ultimos4' => (string) ($p['card']['last_four_digits'] ?? ''),
+            'titular' => trim((string) ($p['card']['cardholder']['name'] ?? '')),
+        ];
+    }
+    if ($nuevos) @file_put_contents($cacheMedios, json_encode($medios, JSON_UNESCAPED_UNICODE), LOCK_EX);
+    foreach ($cobros as &$c) {
+        $m = $medios[$c['pagoId']] ?? null;
+        $c['tipoPago'] = $m['tipo'] ?? '';
+        $c['marca'] = $m['marca'] ?? '';
+        $c['ultimos4'] = $m['ultimos4'] ?? '';
+        $c['titular'] = $m['titular'] ?? '';
+    }
+    unset($c);
 
     intentos_responder(['ok' => true, 'cobros' => $cobros, 'sinDatos' => $faltan]);
 } catch (Throwable $e) {

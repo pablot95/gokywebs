@@ -15,6 +15,7 @@ config/arca/emitidas-*.json*
 config/arca/facturacion-automatica*
 config/arca/facturas-*/
 config/arca/condiciones-iva-*.json
+config/arca/medios-pago-cache.json
 wabot/bot-config.json
 service-account.json
 demo/*

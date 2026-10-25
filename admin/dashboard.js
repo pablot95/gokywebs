@@ -7813,7 +7813,7 @@ async function cargarIntentosCobro() {
         intentosCobroCargando = false;
         _contarIntentos();
         if (activeTab === "calendario" && calVista === "intentos") renderIntentosCobro();
-        if (activeTab === "mantenimiento" && mantPlan === "porfuera") renderMantenimiento();
+        if (activeTab === "mantenimiento") renderMantenimiento();
     }
 }
 
@@ -7831,6 +7831,25 @@ function _intentoEstado(c) {
         nota: c.estadoSuscripcion === "cancelled" ? "la suscripción se canceló" : "sin más reintentos" };
     if (sigue) return { clase: "programado", texto: "Programado" };
     return { clase: "rechazado", texto: "✕ No se cobró", nota: c.estadoSuscripcion === "cancelled" ? "la suscripción se canceló" : c.estado };
+}
+
+/* Con qué pagó ese cobro (25-oct): "💳 Crédito Visa ···· 4321", "Dinero en cuenta"… "" si MP no lo dio
+   (un reintento rechazado sin pago, o todavía no consultado). */
+const MP_TIPO_PAGO = { credit_card: "Crédito", debit_card: "Débito", prepaid_card: "Prepaga", account_money: "Dinero en cuenta", ticket: "Efectivo", bank_transfer: "Transferencia" };
+const MP_MARCA = { visa: "Visa", master: "Mastercard", amex: "Amex", naranja: "Naranja", cabal: "Cabal", maestro: "Maestro", debvisa: "Visa", debmaster: "Mastercard", debcabal: "Cabal", argencard: "Argencard", tarshop: "Tarjeta Shopping", cencosud: "Cencosud", cmr: "CMR", diners: "Diners" };
+function _medioPagoTexto(c) {
+    if (!c) return "";
+    if (c.tipoPago === "account_money" || c.marca === "account_money") return "💰 Dinero en cuenta";
+    if (!c.tipoPago && !c.marca) return "";
+    const tipo = MP_TIPO_PAGO[c.tipoPago] || "";
+    const marca = MP_MARCA[c.marca] || (c.marca ? c.marca.charAt(0).toUpperCase() + c.marca.slice(1) : "");
+    const tarjeta = /card/.test(c.tipoPago) || c.ultimos4;
+    return [tarjeta ? "💳" : "", tipo, marca, c.ultimos4 ? `···· ${c.ultimos4}` : ""].filter(Boolean).join(" ");
+}
+function _medioPagoHTML(c) {
+    const t = _medioPagoTexto(c);
+    if (!t) return "";
+    return `<div class="muted" style="font-size:12px">${escapeHtml(t)}${c.titular ? ` · titular: ${escapeHtml(c.titular)}` : ""}</div>`;
 }
 
 function _contarIntentos() {
@@ -7996,7 +8015,7 @@ function renderIntentosCobro() {
                     <tr>
                         <td>${escapeHtml(fh(c.fecha))}</td>
                         <td><div>${escapeHtml(negocio || persona || c.nombre || "Sin nombre")}</div><div class="muted" style="font-size:12px">${escapeHtml([negocio && persona ? persona : "", negocio || persona ? `MP: ${c.nombre}` : "sin cliente asignado"].filter(Boolean).join(" · "))}</div></td>
-                        <td>${fmtMoney(Number(c.monto) || 0)}</td>
+                        <td>${fmtMoney(Number(c.monto) || 0)}${_medioPagoHTML(c)}</td>
                         <td>${nro === 1
                             ? `<span class="intento-tipo intento-tipo--alta" title="El primer cobro de la suscripción">Alta · 1er pago</span>`
                             : `<span class="intento-tipo" title="Una suscripción que ya estaba dada de alta">Ya suscripto · ${nro}º pago</span>`}</td>
@@ -9364,7 +9383,11 @@ function _mpVinculoHTML(ref, esCliente) {
     }
     const k = mantCruce?.get(ref);
     if (!k) return "";
-    const avisos = _mpAvisosTexto(k).map(t => ` <span class="mp-vinculo-aviso">· ${t}</span>`).join("");
+    // Con qué pagó el último cobro aprobado de esa suscripción (Intentos de cobro, 25-oct).
+    const ultimoMedio = k.sub ? _medioPagoTexto((intentosCobro || []).filter(c => c.suscripcion === String(k.sub.id) && c.pagoEstado === "approved" && (c.tipoPago || c.marca))
+        .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0]) : "";
+    const avisos = _mpAvisosTexto(k).map(t => ` <span class="mp-vinculo-aviso">· ${t}</span>`).join("")
+        + (ultimoMedio ? ` <span class="mp-vinculo-aviso">· ${escapeHtml(ultimoMedio)}</span>` : "");
     if (k.porId) return k.sub
         ? `<div class="mp-vinculo${k.baja ? " mp-vinculo--falta" : ""}" title="Vinculada a mano">✓ Mercado Pago: ${escapeHtml(k.sub.nombre || "suscripción")}${avisos}</div>`
         : `<div class="mp-vinculo mp-vinculo--falta">⚠ La suscripción vinculada no está en Mercado Pago</div>`;
@@ -9791,6 +9814,8 @@ function renderMantenimiento() {
     const term = (searchMantInput?.value || "").trim().toLowerCase();
     // Con cada cambio de Clientes o Mantenimiento: el bot avisa la renovación a los que pagan por afuera.
     programarSyncRenovaciones();
+    // El plan mensual muestra con qué pagó cada uno (los cobros de Intentos de cobro, 25-oct).
+    if (activeTab === "mantenimiento" && (mantPlan === "mensual" || mantPlan === "vincular") && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
 
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
