@@ -2370,6 +2370,10 @@ body.modal-open { overflow: hidden; }
 .intento-estado { font-size: 12px; font-weight: 600; white-space: nowrap; }
 .intento-tipo { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 .intento-tipo--alta { color: #60A5FA; font-weight: 600; }
+.intento-ok { color: #4ADE80; }
+.intento-sin { color: #F59E0B; font-weight: 600; }
+.intentos-sin { margin: 14px 0 0; }
+.intentos-sin > summary { cursor: pointer; margin-bottom: 10px; }
 .intento-estado--cobrado { color: #4ADE80; }
 .intento-estado--reintentando { color: #F59E0B; }
 .intento-estado--rechazado { color: #F87171; }

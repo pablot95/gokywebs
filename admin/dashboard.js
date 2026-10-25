@@ -7708,6 +7708,7 @@ async function cargarIntentosCobro() {
         intentosCobroCargando = false;
         _contarIntentos();
         if (activeTab === "calendario" && calVista === "intentos") renderIntentosCobro();
+        if (activeTab === "mantenimiento" && mantPlan === "porfuera") renderMantenimiento();
     }
 }
 
@@ -7735,6 +7736,70 @@ function _contarIntentos() {
     el.hidden = !n;
 }
 
+/* Qué número de cobro es cada uno dentro de su suscripción (1 = el alta). MP no los numera: van por fecha. */
+function _intentosNumerados() {
+    const nro = new Map();
+    const porSub = new Map();
+    for (const c of (intentosCobro || [])) {
+        if (!porSub.has(c.suscripcion)) porSub.set(c.suscripcion, []);
+        porSub.get(c.suscripcion).push(c);
+    }
+    for (const lista of porSub.values()) {
+        lista.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).forEach((c, i) => nro.set(c, i + 1));
+    }
+    return nro;
+}
+
+/* Los que intentaron suscribirse y les rebotó el primer pago (Pablo, 24-oct: "de los rechazados primer pago,
+   vincularlos con los que pagan por afuera, para saber quiénes quedaron sin suscribir"). Se agrupan por el
+   nombre en Mercado Pago (suelen probar varias veces seguidas); si esa persona tiene después algún cobro
+   aprobado, se terminó suscribiendo. A los que no, se les busca el cliente entre los mensuales sin
+   suscripción en MP (pagan por afuera o no aparecen): primero por nombre, después por monto y fecha.
+   [{ clave, nombre, monto, primero, ultimo, intentos, motivo, seSuscribio, k (el mensual del cruce) | null }]. */
+function _altasRechazadas() {
+    if (!intentosCobro) return [];
+    const nro = _intentosNumerados();
+    const clave = n => String(n || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    const aprobados = new Set(intentosCobro.filter(c => c.pagoEstado === "approved").map(c => clave(c.nombre)));
+    // A veces MP manda el nombre tapado ("n****** v******" = natalia ventura, 18-sep): vale la inicial y el largo de cada palabra.
+    const tapado = (t, n) => { const a = t.split(" "), b = n.split(" "); return a.length === b.length && a.every((p, i) => p[0] === b[i][0] && p.length === b[i].length); };
+    const seSuscribio = k => aprobados.has(k) || (k.includes("*") && [...aprobados].some(n => tapado(k, n)));
+    const grupos = new Map();
+    for (const c of intentosCobro) {
+        // También el alta que se cobró y se devolvió con la suscripción cancelada (Brenda, Walter, 22-oct): tampoco quedó suscripto.
+        const devuelto = c.pagoEstado === "refunded" && c.estadoSuscripcion === "cancelled";
+        if (nro.get(c) !== 1 || !(devuelto || (_intentoEstado(c).clase === "rechazado" && c.pagoEstado === "rejected"))) continue;
+        const k = clave(c.nombre) || c.suscripcion;
+        const fecha = new Date(c.fecha);
+        const g = grupos.get(k) || { clave: k, nombre: c.nombre, monto: Number(c.monto) || 0, primero: fecha, ultimo: fecha, intentos: 0, motivo: "", seSuscribio: seSuscribio(k), k: null };
+        g.intentos++;
+        if (fecha < g.primero) g.primero = fecha;
+        if (fecha >= g.ultimo) { g.ultimo = fecha; g.monto = Number(c.monto) || g.monto; g.motivo = devuelto ? "se cobró y se devolvió" : _intentoEstado(c).motivo || g.motivo; }
+        grupos.set(k, g);
+    }
+    const lista = [...grupos.values()];
+    if (ingresosMp) {
+        const libres = _cruceMercadoPago().filter(k => k.porFuera || !k.sub);
+        const pares = [];
+        for (const g of lista.filter(g => !g.seSuscribio)) {
+            for (const k of libres) {
+                const enComun = _nombresEnComun(k.palabras, g.nombre);
+                const dias = Math.abs(g.ultimo - k.desde) / 86400000;
+                if (enComun > 0 ? dias <= 45 : k.monto === g.monto && dias <= 5) pares.push({ g, k, enComun, dias, mismoMonto: k.monto === g.monto });
+            }
+        }
+        pares.sort((a, b) => b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || a.dias - b.dias);
+        const usados = new Set();
+        for (const p of pares) {
+            if (p.g.k || usados.has(p.k)) continue;
+            p.g.k = p.k;
+            p.g.porNombre = p.enComun > 0;
+            usados.add(p.k);
+        }
+    }
+    return lista.sort((a, b) => b.ultimo - a.ultimo);
+}
+
 function renderIntentosCobro() {
     const cont = document.getElementById("calVistaIntentos");
     if (!cont) return;
@@ -7747,19 +7812,19 @@ function renderIntentosCobro() {
     // Quién es cada suscripción: el cliente que le tocó en el cruce (vinculado o sugerido).
     const quien = new Map((ingresosMp ? _cruceMercadoPago() : []).filter(k => k.sub).map(k => [k.sub.id, k]));
     // Alta o renovación (Pablo, 24-oct): el primer cobro de cada suscripción es el alta; los demás, de una que
-    // ya estaba dada de alta. MP no numera los cobros mensuales: se cuentan por fecha dentro de cada suscripción.
-    const nroCobro = new Map();
-    const porSub = new Map();
-    for (const c of intentosCobro) {
-        if (!porSub.has(c.suscripcion)) porSub.set(c.suscripcion, []);
-        porSub.get(c.suscripcion).push(c);
-    }
-    for (const lista of porSub.values()) {
-        lista.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).forEach((c, i) => nroCobro.set(c, i + 1));
-    }
+    // ya estaba dada de alta.
+    const nroCobro = _intentosNumerados();
+    const rebotes = _altasRechazadas();
+    const sinSuscribir = rebotes.filter(g => !g.seSuscribio);
+    const reboteDe = new Map(rebotes.map(g => [g.clave, g]));
+    const claveNombre = n => String(n || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
     const filas = intentosCobro.map(c => {
         const k = quien.get(String(c.suscripcion));
-        return { c, e: _intentoEstado(c), negocio: k?.negocio || "", persona: k?.persona || "", nro: nroCobro.get(c) || 1 };
+        const nro = nroCobro.get(c) || 1;
+        const rebote = nro === 1 && (c.pagoEstado === "rejected" || c.pagoEstado === "refunded") ? reboteDe.get(claveNombre(c.nombre) || c.suscripcion) : null;
+        // El que rebotó y quedó sin suscribir toma el nombre del cliente que se le encontró.
+        const kr = rebote && !rebote.seSuscribio ? rebote.k : null;
+        return { c, e: _intentoEstado(c), negocio: k?.negocio || kr?.negocio || "", persona: k?.persona || kr?.persona || "", nro, rebote };
     });
     const cuenta = clase => filas.filter(f => f.e.clase === clase);
     const suma = l => l.reduce((a, f) => a + (Number(f.c.monto) || 0), 0);
@@ -7770,8 +7835,26 @@ function renderIntentosCobro() {
     const chips = [["todos", "Todos", filas.length], ["reintentando", "Reintentando", cuenta("reintentando").length], ["rechazado", "Rechazados", cuenta("rechazado").length],
         ["cobrado", "Cobrados", cuenta("cobrado").length], ["devuelto", "Devueltos", cuenta("devuelto").length], ["programado", "Programados", cuenta("programado").length]]
         .filter(([v, , n]) => n || v === "todos" || v === intentosFiltro);
+    const quedoSin = f => f.rebote && !f.rebote.seSuscribio;
+    const nSin = filas.filter(quedoSin).length;
+    if (nSin || intentosFiltro === "sinsuscribir") chips.splice(3, 0, ["sinsuscribir", "Quedaron sin suscribir", nSin]);
 
-    let lista = intentosFiltro === "todos" ? filas : filas.filter(f => f.e.clase === intentosFiltro);
+    let lista = intentosFiltro === "todos" ? filas : intentosFiltro === "sinsuscribir" ? filas.filter(quedoSin) : filas.filter(f => f.e.clase === intentosFiltro);
+    const comoPaga = k => k.porFuera ? "💵 paga por afuera" : "no aparece en Mercado Pago";
+    const bloqueSin = sinSuscribir.length ? `
+        <details class="panel intentos-sin" open>
+            <summary><strong>Quedaron sin suscribir (${sinSuscribir.length})</strong> <span class="muted">· les rebotó el primer pago (o se les devolvió) y no se volvieron a suscribir. Al lado, el cliente que les corresponde entre los que pagan por afuera o no aparecen en Mercado Pago</span></summary>
+            <div class="table-wrapper"><table class="clients-table">
+                <thead><tr><th>En Mercado Pago</th><th>Monto</th><th>Intentó</th><th>Motivo</th><th>Cliente</th></tr></thead>
+                <tbody>${sinSuscribir.map(g => `<tr>
+                    <td>${escapeHtml(g.nombre || "Sin nombre")}</td>
+                    <td>${fmtMoney(g.monto)}</td>
+                    <td>${escapeHtml(fh(g.ultimo.toISOString()))}${g.intentos > 1 ? `<div class="muted" style="font-size:12px">${g.intentos} intentos desde el ${escapeHtml(fechaCortaJs(g.primero).slice(0, 5))}</div>` : ""}</td>
+                    <td class="intento-detalle">${escapeHtml(g.motivo || "—")}</td>
+                    <td>${g.k ? `<div>${escapeHtml(g.k.negocio || g.k.persona || g.k.nombre)}</div><div class="muted" style="font-size:12px">${escapeHtml(comoPaga(g.k))} · ${g.porNombre ? "por el nombre" : "por monto y fecha, a confirmar"}</div>` : `<span class="muted">No se encontró el cliente</span>`}</td>
+                </tr>`).join("")}</tbody>
+            </table></div>
+        </details>` : "";
     const q = intentosBusqueda.trim().toLowerCase();
     if (q) lista = lista.filter(f => [f.negocio, f.persona, f.c.nombre].join(" ").toLowerCase().includes(q));
 
@@ -7782,6 +7865,7 @@ function renderIntentosCobro() {
             <div class="stat-item"><span class="stat-label">✕ Rechazados este mes</span><span class="stat-value" style="${nMes("rechazado").length ? "color:var(--danger)" : ""}">${nMes("rechazado").length}</span><span class="muted ingcal-stat-sub">sin más reintentos o con la suscripción cancelada · ${fmtMoney(suma(nMes("rechazado")))}</span></div>
             <div class="stat-item"><span class="stat-label">↩ Devuelto este mes</span><span class="stat-value">${fmtMoney(suma(nMes("devuelto")))}</span><span class="muted ingcal-stat-sub">${nMes("devuelto").length} ${nMes("devuelto").length === 1 ? "devolución" : "devoluciones"}</span></div>
         </div>
+        ${bloqueSin}
         <div class="intentos-barra">
             ${chips.map(([v, l, n]) => `<button type="button" class="seg-chip${intentosFiltro === v ? " active" : ""}" data-intentos-filtro="${v}">${l} <span class="seg-chip-count">${n}</span></button>`).join("")}
             <input type="search" class="intentos-buscar" data-intentos-buscar placeholder="Buscar cliente o nombre en Mercado Pago…" value="${escapeHtml(intentosBusqueda)}" autocomplete="off">
@@ -7790,7 +7874,7 @@ function renderIntentosCobro() {
         <div class="table-wrapper">
             <table class="clients-table intentos-tabla">
                 <thead><tr><th>Fecha</th><th>Quién</th><th>Monto</th><th>Tipo</th><th>Estado</th><th>Detalle</th></tr></thead>
-                <tbody>${lista.length ? lista.map(({ c, e, negocio, persona, nro }) => `
+                <tbody>${lista.length ? lista.map(({ c, e, negocio, persona, nro, rebote }) => `
                     <tr>
                         <td>${escapeHtml(fh(c.fecha))}</td>
                         <td><div>${escapeHtml(negocio || persona || c.nombre || "Sin nombre")}</div><div class="muted" style="font-size:12px">${escapeHtml([negocio && persona ? persona : "", negocio || persona ? `MP: ${c.nombre}` : "sin cliente asignado"].filter(Boolean).join(" · "))}</div></td>
@@ -7804,6 +7888,8 @@ function renderIntentosCobro() {
                             e.proximo ? `Próximo reintento: ${escapeHtml(fh(e.proximo))}` : "",
                             e.vence ? `Último día para cobrarlo: ${escapeHtml(fechaCortaJs(new Date(e.vence)).slice(0, 5))}` : "",
                             e.nota ? escapeHtml(e.nota.charAt(0).toUpperCase() + e.nota.slice(1)) : "",
+                            rebote ? (rebote.seSuscribio ? `<span class="intento-ok">Después se suscribió</span>`
+                                : `<span class="intento-sin">Quedó sin suscribir${rebote.k ? ` · ${escapeHtml(comoPaga(rebote.k))}` : ""}</span>`) : "",
                         ].filter(Boolean).map(t => `<div>${t}</div>`).join("") || `<span class="muted">—</span>`}</td>
                     </tr>`).join("") : `<tr class="empty-row"><td colspan="6">${q ? "Nada con esa búsqueda." : "No hay cobros en este filtro."}</td></tr>`}
                 </tbody>
@@ -9236,6 +9322,9 @@ function _renderMantPorFuera(term) {
     const countEl = document.getElementById("mantCountPorFuera");
     if (countEl) countEl.textContent = todos.length;
     const lista = term ? todos.filter(f => f.texto.toLowerCase().includes(term)) : todos;
+    // Si intentó suscribirse y le rebotó el primer pago (Calendario → Intentos de cobro, 24-oct).
+    if (mantPlan === "porfuera" && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
+    const reboteDe = new Map(_altasRechazadas().filter(g => g.k && !g.seSuscribio).map(g => [g.k.ref, g]));
     const hoy = _fechaMp(_diaDe(new Date()));
     const cuando = ymd => {
         if (!ymd) return "";
@@ -9246,7 +9335,7 @@ function _renderMantPorFuera(term) {
     tb.innerHTML = lista.length ? lista.map(f => {
         const destino = `${f.coleccion}:${escapeHtml(f.ref.id)}`;
         return `<tr>
-            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}</td>
+            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${reboteDe.has(f.ref) ? (g => `<div class="mp-vinculo mp-vinculo--falta" title="Intentó suscribirse en Mercado Pago como ${escapeHtml(g.nombre)} y no quedó suscripto${g.porNombre ? "" : " (encontrado por monto y fecha: a confirmar)"}">Intentó suscribirse el ${escapeHtml(fechaCortaJs(g.ultimo).slice(0, 5))}${g.motivo ? ` · ${escapeHtml(g.motivo)}` : ""}${g.intentos > 1 ? ` · ${g.intentos} intentos` : ""}</div>`)(reboteDe.get(f.ref)) : ""}</td>
             <td>${fmtMoney(f.monto)}/mes</td>
             <td><input type="number" class="mant-pf-dia" min="1" max="31" step="1" inputmode="numeric" value="${f.dia || ""}" placeholder="${f.desde ? f.desde.getDate() : ""}" data-dia-cobro="${destino}" aria-label="Día del mes en que se le cobra a ${escapeHtml(f.nombre)}" title="Día del mes (1 a 31). Vacío: el día del alta"></td>
             <td>${cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
