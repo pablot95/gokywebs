@@ -122,9 +122,9 @@ function pp_silencio($c, $r) {
 }
 
 foreach (['landing' => ['$20.000', '$140.000', '$220.000', '$80.000', '$140.000'],
-    'ecommerce' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000'],
-    'elearning' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000'],
-    'inmobiliaria' => ['$30.000', '$190.000', '$330.000', '$130.000', '$270.000']]
+    'ecommerce' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000'],
+    'elearning' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000'],
+    'inmobiliaria' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -232,7 +232,7 @@ foreach (['Gracias', '👍', 'Gracias por comunicarte, nuestro horario de atenci
     caso('acuse o respuesta automática no inventa avance: ' . $texto, $r === [] && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
 // El pago único ya no se ofrece (3-oct), pero al que lo elige igual se le manda su página.
-foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual190', 'unico330']] as $tipo => [$anual, $propia]) {
+foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual210', 'unico330']] as $tipo => [$anual, $propia]) {
     foreach (['El plan anual' => [$anual, 'plan anual'], 'El pago único' => [$propia, 'pago único']] as $texto => [$pagina, $nombre]) {
         $c = pp_conv($tipo, ['presentado_ts' => time()]);
         pp_api(pp_decision(['pago_link']));
@@ -244,7 +244,7 @@ foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual190', 'un
 // 2-oct (Pablo): los links al detalle de cada modalidad ya no van en el turno
 // del precio; salen cuando el cliente los pide.
 caso('detalle_modalidades está en el catálogo que ve el clasificador', isset(wabot_postprecio_catalogo()['detalle_modalidades']));
-foreach (['landing' => ['mensual20000', 'anual140'], 'ecommerce' => ['mensual30000', 'anual190']] as $tipo => $paginas) {
+foreach (['landing' => ['mensual20000', 'anual140'], 'ecommerce' => ['mensual30000', 'anual210']] as $tipo => $paginas) {
     $c = pp_conv($tipo);
     pp_api(pp_decision(['detalle_modalidades']));
     $r = turno('Tenés más info de cada plan? Dónde veo qué incluye cada uno?', $c, $cfg);

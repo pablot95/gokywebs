@@ -70,6 +70,9 @@ RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 # pago/anual240). Las páginas de $120.000 / $190.000 SIGUEN en línea, sin
 # redirección: "que esos clientes sigan viendo ese precio si ya se los pasé".
 
+# 24-oct-2026 (Pablo): el anual de tienda, cursos e inmobiliaria sube de $190.000 a $210.000
+# (pago/anual210); el sitio profesional sigue en $140.000. /pago/anual190 sigue en línea, sin 301,
+# para los que ya tenían ese precio.
 # 9-oct-2026 a la noche (Pablo): el anual baja a $140.000 / $190.000 (saldos
 # $80.000 / $130.000, seña $60.000). /pago/anual140 vuelve a ser una página real
 # (se sacó su 301 a anual120) y /pago/anual190 es la del resto. Los links viejos

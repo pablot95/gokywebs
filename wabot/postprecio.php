@@ -290,7 +290,7 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
             $clave = ['mensual' => 'mensual', 'anual' => 'anual', 'unico' => 'anual', 'propia' => 'unico'][$modalidad] ?? null;
             if ($clave === null || !wabot_planes_paginas_corresponde($tipo, $conv, $cfg, [$clave])) return null;
             $conv['postprecio_pregunta'] = '';
-            $pagina = wabot_planes_paginas()[$tipo][$clave]['pagina'];
+            $pagina = wabot_planes_paginas_de($tipo, $conv, $cfg)[$clave]['pagina'];
             return 'Acá tenés el detalle y cómo abonar el ' . ($clave === 'unico' ? 'pago único' : 'plan ' . $clave) . ': https://gokywebs.com/pago/' . $pagina . '/';
         case 'detalle_modalidades':
             // Las páginas del mensual y el anual (2-oct: solo si las pide; 3-oct: sin el pago único). Si no

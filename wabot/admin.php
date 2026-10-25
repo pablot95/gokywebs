@@ -3287,7 +3287,7 @@ function burbujaCita(t, chat) {
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
                         <?php /* 6-oct: de nuevo $20.000 y $30.000 (pago/mensual20000 y pago/mensual30000); del 5 al 6-oct fueron $22.000 y $32.000. */ ?>
-                        <?php /* Plan $20.000 / $30.000 / Anual $140.000 / $190.000: pasaron de botones
+                        <?php /* Plan $20.000 / $30.000 / Anual $140.000 / $190.000 (desde el 24-oct, $210.000): pasaron de botones
                                del encabezado a la categoría "Planes" (editable) de las respuestas rápidas (Pablo, 17-oct). */ ?>
                         <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los

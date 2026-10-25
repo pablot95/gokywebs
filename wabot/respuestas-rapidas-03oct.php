@@ -3,9 +3,9 @@
 function wabot_rr_03oct_montos() {
     return [
         'landing' => ['anual' => '$140.000', 'mensual' => '$20.000', 'unico' => '$220.000'],
-        'ecommerce' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'elearning' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'inmobiliaria' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'ecommerce' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'elearning' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'inmobiliaria' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
     ];
 }
 

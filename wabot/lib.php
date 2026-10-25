@@ -4452,7 +4452,7 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  * cuando el cliente pide el detalle (2-oct; antes, en el turno del precio) y
  * en las respuestas rápidas. Viven en pago/
  * (mensual20000, anual140, unico220 y, para tienda, cursos e inmobiliaria,
- * mensual30000, anual190, unico330 (el anual bajó la noche del 9-oct; a la mañana había subido a anual160/anual240, que siguen en línea para los que ya tenían ese precio; del 7 al 9-oct anual120 y anual190, antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
+ * mensual30000, anual210, unico330 (24-oct: el anual de la tienda, cursos e inmobiliaria sube de anual190 a anual210, que sigue en línea; el anual bajó la noche del 9-oct; a la mañana había subido a anual160/anual240, que siguen en línea para los que ya tenían ese precio; del 7 al 9-oct anual120 y anual190, antes anual140 y anual220); 3-oct, y el mensual de nuevo desde el 6-oct). El mensual y el anual tienen arriba
  * las pestañas para pasar de uno al otro; el pago único ya no se ofrece y su
  * página solo la manda Pablo al que pide el código propio.
  *
@@ -4464,7 +4464,7 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_planes_paginas() {
     $tienda = [
         'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
-        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
+        'anual'   => ['pagina' => 'anual210',  'monto' => '$210.000'],
         'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [
@@ -4480,12 +4480,33 @@ function wabot_planes_paginas() {
 }
 
 /**
+ * Las páginas de ESTA charla: si su monto congelado no es el de lista y hay en pago/ una página
+ * vieja que cobra ese monto, esa (24-oct: el anual del resto subió de $190.000 a $210.000 y a los
+ * que ya se les pasó precio les sigue saliendo pago/anual190). Las páginas se llaman por su monto:
+ * mensual20000 (el número entero), anual190 y unico330 (en miles). null si el tipo no tiene.
+ */
+function wabot_planes_paginas_de($tipo, $conv, $cfg) {
+    $paginas = wabot_planes_paginas()[(string)$tipo] ?? null;
+    if ($paginas === null || !function_exists('wabot_precio_vigente')) return $paginas;
+    $v = wabot_precio_vigente($conv, $cfg, $tipo);
+    foreach (['mensual' => 'mensualidad', 'anual' => 'precio', 'unico' => 'precio_unico'] as $modalidad => $campo) {
+        $n = wabot_monto_a_numero($v[$campo] ?? '');
+        if (!isset($paginas[$modalidad]) || $n <= 0 || $n % 1000 !== 0 || $n === wabot_monto_a_numero($paginas[$modalidad]['monto'])) continue;
+        $pagina = $modalidad . ($modalidad === 'mensual' ? $n : intdiv($n, 1000));
+        if (is_file(__DIR__ . '/../pago/' . $pagina . '/index.html')) {
+            $paginas[$modalidad] = ['pagina' => $pagina, 'monto' => '$' . number_format($n, 0, ',', '.')];
+        }
+    }
+    return $paginas;
+}
+
+/**
  * ¿Salen los links al detalle de las 3 modalidades en esta charla? Solo si las
  * tres páginas existen en el deploy y cobran los montos de ESTA charla
  * (mensualidad, plan anual y pago único, ya congelados o de lista).
  */
 function wabot_planes_paginas_corresponde($tipo, $conv, $cfg, $modalidades = ['mensual', 'anual']) {
-    $paginas = wabot_planes_paginas()[(string)$tipo] ?? null;
+    $paginas = wabot_planes_paginas_de($tipo, $conv, $cfg);
     if ($paginas === null || !function_exists('wabot_precio_vigente')) return false;
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     // Desde el 3-oct el detalle lista mensual y anual; el pago único se mira solo cuando es el elegido.

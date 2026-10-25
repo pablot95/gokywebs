@@ -134,7 +134,7 @@ $r = wabot_sugerencia_enviar($tel, $s2['id'], array_column($s2['mensajes'], 't')
 $cv = wabot_conv_load($tel);
 caso('salen los tres mensajes, en orden', $r['ok'] === true && $r['enviados'] === 3 && array_column($GLOBALS['WABOT_TEST_ENVIADOS'], 1) === array_column($s2['mensajes'], 't'), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('quedan en la charla como mensajes de Pablo', count(array_filter(array_slice($cv['transcript'], -3), fn($l) => $l['q'] === 'humano')) === 3);
-caso('recién ahora se congela el precio y se abre la oferta', !empty($cv['precio_dado']) && ($cv['comercial_cotizacion']['anual'] ?? '') === '$190.000' && ($cv['precio_cotizado'] ?? '') === '$190.000'
+caso('recién ahora se congela el precio y se abre la oferta', !empty($cv['precio_dado']) && ($cv['comercial_cotizacion']['anual'] ?? '') === '$210.000' && ($cv['precio_cotizado'] ?? '') === '$210.000'
     && !empty($cv['comercial_oferta_ts']) && ($cv['tipo'] ?? '') === 'ecommerce' && wabot_ficha($cv)['rubro'] === 'tu local de zapatillas', json_encode(array_intersect_key($cv, array_flip(['precio_dado', 'comercial_cotizacion', 'tipo']))));
 caso('mandar cuenta como intervención de Pablo: control manual, nada pendiente', !empty($cv['control_manual']) && !empty($cv['bot_off']) && empty($cv['handoff_pendiente']) && !empty($cv['comercial_sugerencia_enviada_ts']));
 caso('la sugerencia queda como enviada y registrada', wabot_sugerencia_leer($tel)['estado'] === 'enviada' && wabot_sugerencia_para_panel($cv, $cfg) === null
@@ -155,7 +155,7 @@ wabot_conv_transcript($cv, 'cliente', 'Vendo ropa');
 wabot_conv_save($cv);
 oa([$cotizar]);
 $s = wabot_sugerencia_generar($tel, $cfg, true);
-$finales = [$s['mensajes'][0]['t'], str_replace('$190.000', '$220.000', $s['mensajes'][1]['t']), ''];
+$finales = [$s['mensajes'][0]['t'], str_replace('$210.000', '$220.000', $s['mensajes'][1]['t']), ''];
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $r = wabot_sugerencia_enviar($tel, $s['id'], $finales, uniqid('e3'), $cfg);
 $cv = wabot_conv_load($tel);

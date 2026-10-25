@@ -6647,7 +6647,7 @@ function wabot_planes_links_texto($tipo, $conv, $cfg) {
     if ($plantilla === '') $plantilla = trim((string)(wabot_textos_default()['planes_links'] ?? ''));
     if ($plantilla === '') return '';
     $links = [];
-    foreach (wabot_planes_paginas()[(string)$tipo] as $modalidad => $pagina) {
+    foreach (wabot_planes_paginas_de($tipo, $conv, $cfg) as $modalidad => $pagina) {
         $links['{link_' . $modalidad . '}'] = 'gokywebs.com/pago/' . $pagina['pagina'];
     }
     return trim(strtr($plantilla, $links));

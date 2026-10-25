@@ -769,8 +769,14 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
         $montos['{' . $tipoLista . '_mensual}'] = $plan['mensual'];
         $montos['{' . $tipoLista . '_unico}'] = $plan['unico'];
     }
+    // El anual de una charla a la que ya se le pasó precio queda como estaba (Pablo, 24-oct: el de la
+    // tienda subió de $190.000 a $210.000, "a los que ya se les pasó precio que sigan con ese").
+    if (isset($v) && ($v['modelo'] ?? '') !== 'doble' && !empty($conv['precio_cotizado']) && isset($montos['{' . $tipo . '_anual}'])
+        && wabot_monto_a_numero($v['precio']) > 0) {
+        $montos['{' . $tipo . '_anual}'] = (string)$v['precio'];
+    }
     foreach (['mensual', 'anual', 'unico'] as $modalidad) {
-        $montos['{link_' . $modalidad . '}'] = wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg);
+        $montos['{link_' . $modalidad . '}'] = wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg, $conv);
     }
     foreach ($montos as $marcador => $monto) {
         if ($monto === '') $montos[$marcador] = 'EDITAR IMPORTE';
@@ -876,7 +882,7 @@ function wabot_rr_solo_las_que_usa_16oct(array $categorias, $ruta) {
 }
 
 /**
- * Pablo, 17-oct: los botones "Plan $20.000 / $30.000 / Anual $140.000 / $190.000" del
+ * Pablo, 17-oct: los botones "Plan $20.000 / $30.000 / Anual $140.000 / $190.000" (desde el 24-oct, $210.000) del
  * encabezado del chat pasaron a respuestas rápidas, y editables. Se agrega una vez (marca en
  * data/migrated/) la categoría "Planes" al principio con los mismos textos; después lo que
  * él edite o borre desde la pestaña Respuestas queda como lo dejó.
@@ -885,8 +891,35 @@ const WABOT_RR_PLANES_17OCT = [
     'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual20000',
     'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual30000',
     'Te paso el plan anual del sitio profesional, con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($80.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual140',
-    'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190',
+    'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210',
 ];
+
+/* 24-oct (Pablo): el anual de la tienda, cursos e inmobiliaria sube de $190.000 a $210.000. El texto de
+   fábrica de "Planes" pasa al nuevo una sola vez; si Pablo lo había editado, queda como lo dejó. La página
+   de $190.000 (pago/anual190) sigue en línea para los que ya tenían ese precio. */
+const WABOT_RR_ANUAL_24OCT = [
+    'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190'
+        => WABOT_RR_PLANES_17OCT[3],
+];
+
+function wabot_rr_anual_24oct(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-anual-24oct';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$texto) {
+            if (isset(WABOT_RR_ANUAL_24OCT[$texto])) { $texto = WABOT_RR_ANUAL_24OCT[$texto]; $cambio = true; }
+        }
+        unset($texto);
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
 
 function wabot_rr_planes_17oct(array $categorias, $ruta) {
     $marca = WABOT_DATA . '/migrated/respuestas-rapidas-planes-17oct';
@@ -931,8 +964,10 @@ function wabot_respuestas_rapidas_precios_1oct($categorias) {
  * La página de pago/ de una modalidad ('mensual', 'anual', 'unico'): la del
  * tipo de la charla, o una por grupo de tipos si todavía no tiene tipo.
  */
-function wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg) {
+function wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg, $conv = null) {
     $paginas = wabot_planes_paginas();
+    // Con tipo, la página de su precio (la vieja si se le cotizó antes de un aumento: wabot_planes_paginas_de).
+    if ($tipo !== '' && isset($paginas[$tipo]) && is_array($conv)) $paginas[$tipo] = wabot_planes_paginas_de($tipo, $conv, $cfg);
     $link = static fn($t) => isset($paginas[$t][$modalidad]) ? 'gokywebs.com/pago/' . $paginas[$t][$modalidad]['pagina'] : '';
     if ($tipo !== '' && isset($paginas[$tipo])) return $link($tipo);
     $nombres = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda', 'elearning' => 'cursos', 'inmobiliaria' => 'inmobiliaria'];
@@ -967,7 +1002,7 @@ function wabot_respuestas_rapidas_load() {
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

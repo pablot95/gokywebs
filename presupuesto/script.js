@@ -800,9 +800,9 @@ function getSiteType() {
    exito.html). Son montos que nunca se suman entre sí. Clave 'landing' = sitio
    profesional.
    Montos al 6-oct-2026, los mismos que wabot/textos.php y las páginas de
-   /pago: mensual $20.000 / $30.000, anual $140.000 / $190.000 (9-oct a la noche) y pago único
+   /pago: mensual $20.000 / $30.000, anual $140.000 / $210.000 (24-oct; la tienda, cursos e inmobiliaria estaban en $190.000 desde el 9-oct a la noche) y pago único
    $220.000 / $330.000. */
-const PRECIO_ANUAL      = { landing: 140000, ecommerce: 190000, inmobiliaria: 190000, elearning: 190000 };
+const PRECIO_ANUAL      = { landing: 140000, ecommerce: 210000, inmobiliaria: 210000, elearning: 210000 };
 const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
 const MENSUALIDAD       = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };

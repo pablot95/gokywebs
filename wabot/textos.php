@@ -14,7 +14,7 @@
  * en el precio. Hoy el bot está en "solo bienvenida" y el precio lo pasa Pablo.
  * - Mensual (6-oct; del 5 al 6-oct fue $22.000 / $32.000): $20.000 sitio profesional; $30.000 resto.
  *   Mercado Pago: mpago.la/1pfejMG (sitio) y el plan 36a67a7e… de MP (resto). Sin pago inicial adicional.
- * - Anual (9-oct a la noche, Pablo: "anual los bajamos, a como estaban antes"; a la mañana del 9-oct había subido a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, del 3 al 7-oct $140.000 / $220.000): $140.000 sitio profesional; $190.000 resto. Seña de $60.000,
+ * - Anual (24-oct, Pablo: "solo aumenta de 190 a 210": la tienda, cursos e inmobiliaria pasan a $210.000 y el sitio profesional sigue en $140.000; a los que ya se les pasó precio les queda el congelado. Antes, 9-oct a la noche: "anual los bajamos, a como estaban antes"; a la mañana del 9-oct había subido a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, del 3 al 7-oct $140.000 / $220.000): $140.000 sitio profesional; $210.000 resto. Seña de $60.000,
  *   saldo al entregar y renovación anual desde la seña.
  * - Pago único (antes $190.000 / $290.000): $220.000 sitio profesional; $330.000 resto. Misma seña,
  *   saldo al entregar; hosting y dominio incluidos el primer año.
@@ -618,7 +618,7 @@ function wabot_textos_default() {
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$190.000',
+            'precio' => '$210.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
@@ -633,7 +633,7 @@ function wabot_textos_default() {
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$190.000',
+            'precio' => '$210.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos completa',
@@ -648,7 +648,7 @@ function wabot_textos_default() {
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$190.000',
+            'precio' => '$210.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',
