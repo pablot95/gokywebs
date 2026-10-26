@@ -3112,3 +3112,59 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .mant-links { padding: 8px 12px; margin: 0 0 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; border-radius: 10px; }
 .mant-links-title { margin: 0; font-size: .7rem; }
 .mant-link { padding: 3px 10px; min-width: 0; font-size: .78rem; }
+
+/* Mantenimiento (26-oct, Pablo: "están horribles los botones"): las pestañas pasan de bloques
+   azules a una barra con subrayado, las de Facturación a un selector chico, y los botones de las
+   filas quedan todos de la misma altura (.btn-sm reemplaza los style="font-size…" sueltos). */
+#tabMantenimiento .mant-toolbar { margin: 4px 0 18px; }
+#tabMantenimiento .mant-planes { display: flex; width: 100%; gap: 4px; padding: 0; background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; overflow-x: auto; scrollbar-width: none; }
+#tabMantenimiento .mant-planes::-webkit-scrollbar { display: none; }
+#tabMantenimiento .mant-plan-btn { flex: none; position: relative; justify-content: flex-start; gap: 8px; padding: 12px 14px 13px; border-radius: 8px 8px 0 0; font-size: 14.5px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+#tabMantenimiento .mant-plan-btn:hover { color: var(--text); background: rgba(255, 255, 255, .03); }
+#tabMantenimiento .mant-plan-btn::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; border-radius: 2px; background: transparent; transition: background-color .15s; }
+#tabMantenimiento .mant-plan-btn[aria-pressed="true"] { background: none; color: var(--text); }
+#tabMantenimiento .mant-plan-btn[aria-pressed="true"]::after { background: #3B82F6; }
+#tabMantenimiento .mant-plan-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+#tabMantenimiento .mant-plan-btn .seg-chip-count { background: rgba(255, 255, 255, .06); color: var(--text-muted); font-size: 11.5px; padding: 1px 7px; }
+#tabMantenimiento .mant-plan-btn[aria-pressed="true"] .seg-chip-count { background: rgba(59, 130, 246, .18); color: #93C5FD; }
+
+/* Suscripciones / Facturas emitidas: selector chico, no otra barra de pestañas. */
+#tabMantenimiento .mant-planes.fa-subtabs { display: inline-flex; width: auto; gap: 2px; padding: 3px; margin: 0 0 18px !important; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; }
+#tabMantenimiento .fa-subtabs .mant-plan-btn { padding: 7px 16px; border-radius: 7px; font-size: 13.5px; }
+#tabMantenimiento .fa-subtabs .mant-plan-btn::after { display: none; }
+#tabMantenimiento .fa-subtabs .mant-plan-btn[aria-pressed="true"] { background: rgba(255, 255, 255, .09); color: var(--text); }
+
+/* Botones: misma altura en todas las pestañas; los de texto e ícono, uno al lado del otro. */
+#tabMantenimiento .btn-ghost,
+#tabMantenimiento .btn-primary,
+#tabMantenimiento .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; margin: 0; border-radius: 8px; font-size: 13px; font-weight: 600; line-height: 1; white-space: nowrap; vertical-align: middle; }
+#tabMantenimiento .btn-ghost,
+#tabMantenimiento .btn-primary { width: auto; padding: 0 14px; }
+#tabMantenimiento .btn-ghost { background: rgba(255, 255, 255, .03); border: 1px solid var(--border-strong); color: var(--text); }
+#tabMantenimiento .btn-ghost:hover { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .25); }
+#tabMantenimiento .btn-primary { background: var(--primary); border: 1px solid var(--primary); box-shadow: none; }
+#tabMantenimiento .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); box-shadow: none; }
+#tabMantenimiento .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+#tabMantenimiento .icon-btn { width: 34px; padding: 0; font-size: 14px; font-weight: 400; background: rgba(255, 255, 255, .03); }
+#tabMantenimiento .panel-header .btn-primary { height: 38px; padding: 0 18px; font-size: 14px; }
+#tabMantenimiento .btn-sm,
+#tabMantenimiento .clients-table td .icon-btn:not(.actions-col *) { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 7px; }
+#tabMantenimiento .clients-table td .icon-btn:not(.actions-col *) { width: 28px; padding: 0; }
+#tabMantenimiento td .btn-sm { margin-top: 4px; }
+#tabMantenimiento .clients-table .actions-col,
+#tabMantenimiento .clients-table .actions-cell { text-align: right; white-space: nowrap; }
+#tabMantenimiento .actions-col > *,
+#tabMantenimiento .actions-cell > * { margin: 2px 0 2px 6px; }
+#tabMantenimiento .actions-col .btn-sm,
+#tabMantenimiento .actions-cell .btn-sm { height: 34px; margin-top: 2px; padding: 0 12px; font-size: 12.5px; }
+#tabMantenimiento .fa-acciones { align-items: center; }
+/* Contraseñas: el alta en una fila, no cuatro campos apilados a lo ancho. */
+.cred-form { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; align-items: center; background: #0d1830; border: 1px solid #1e2c49; border-radius: 12px; padding: 10px; margin: 0 0 16px; }
+.cred-form input { padding: 9px 12px; font-size: 14px; }
+.cred-form [hidden] { display: none !important; }
+#tabMantenimiento .cred-form .btn-primary,
+#tabMantenimiento .cred-form .btn-ghost { height: 38px; }
+@media (max-width: 900px) { .cred-form { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) {
+    #tabMantenimiento .mant-plan-btn { padding: 11px 10px 12px; font-size: 13.5px; }
+}

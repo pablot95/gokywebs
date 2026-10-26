@@ -9113,7 +9113,7 @@ function _mantEstadoHTML(fila) {
     const fecha = mantToDate(aviso.fechaBaja) || mantToDate(aviso.createdAt);
     return `${badge}
                     <div class="muted" style="font-size:12px;white-space:nowrap">${fecha ? `el ${mantLongDate(fecha)} · ` : ""}en Mercado Pago</div>
-                    ${m ? `<button class="btn-ghost" data-mant-aviso-del="${escapeHtml(aviso.id)}" style="font-size:11px;padding:2px 8px;margin-top:4px" title="Borra el aviso de ${aviso.tipoEvento === "baja" ? "baja" : "pausa"}, por ejemplo si reactivaste la suscripción. El suscriptor queda como estaba.">Quitar aviso</button>` : ""}`;
+                    ${m ? `<button class="btn-ghost btn-sm" data-mant-aviso-del="${escapeHtml(aviso.id)}" title="Borra el aviso de ${aviso.tipoEvento === "baja" ? "baja" : "pausa"}, por ejemplo si reactivaste la suscripción. El suscriptor queda como estaba.">Quitar aviso</button>` : ""}`;
 }
 
 // Fila de un aviso de baja / pausa que no cruza con ningún suscriptor de la lista.
@@ -9251,7 +9251,7 @@ function _mantContactoHTML(c, m) {
             ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>${destino ? ` <button type="button" class="icon-btn" ${destino} data-dom-valor="${escapeHtml(dominio)}" title="Cambiar el dominio">✎</button>` : ""}`
               + (deErrores ? `<div class="muted" style="font-size:11px" title="Es la web que avisa en Errores con el nombre de esta ficha. Si no es, cambialo con el lápiz.">tomado de Errores</div>` : "")
             : destino
-                ? `<button type="button" class="btn-ghost" ${destino} data-dom-valor="" style="font-size:12px;padding:2px 8px">+ Agregar dominio</button>`
+                ? `<button type="button" class="btn-ghost btn-sm" ${destino} data-dom-valor="">+ Agregar dominio</button>`
                 : `<span class="muted">—</span>`) + _mantErroresHTML(c, m, dominio)
     };
 }
@@ -9550,7 +9550,7 @@ function _renderMantPorFuera(term) {
             <td>${fmtMoney(f.monto)}/mes</td>
             <td><input type="number" class="mant-pf-dia" min="1" max="31" step="1" inputmode="numeric" value="${f.dia || ""}" placeholder="${f.desde ? f.desde.getDate() : ""}" data-dia-cobro="${destino}" aria-label="Día del mes en que se le cobra a ${escapeHtml(f.nombre)}" title="Día del mes (1 a 31). Vacío: el día del alta"></td>
             <td>${cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
-            <td class="actions-cell"><button type="button" class="btn-ghost" style="font-size:12px" data-por-fuera="${destino}" data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">Ya no paga por afuera</button></td>
+            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-por-fuera="${destino}" data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">Ya no paga por afuera</button></td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nadie que pague por afuera con esa búsqueda." : "Nadie marcado como que paga por afuera. Marcalos abajo o en Plan mensual."}</td></tr>`;
 
@@ -9659,7 +9659,7 @@ function _renderMantVincular(term) {
             <td>${fmtMoney(k.monto)}/mes<div class="muted" style="font-size:12px">alta ${escapeHtml(dm(k.desde))}</div></td>
             <td><select class="mant-vinc-select" data-vinc-select="${destino}" data-vinc-actual="${escapeHtml(actual)}" aria-label="Suscripción de Mercado Pago de ${escapeHtml(k.negocio || k.nombre)}">${opciones(k)}</select></td>
             <td><span class="mant-vinc-estado mant-vinc-estado--${e.clase}">${escapeHtml(e.texto)}</span></td>
-            <td class="actions-cell"><button type="button" class="btn-ghost" style="font-size:12px" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button></td>
+            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button></td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nadie con esa búsqueda." : "Nada para revisar: cada mensual tiene su suscripción vinculada o paga por afuera."}</td></tr>`;
 
@@ -9891,8 +9891,8 @@ function renderCredenciales() {
                 <button type="button" class="fa-link" data-cred-copiar="${escapeHtml(c.id)}" data-campo="clave">Copiar</button></td>
             <td>${c.nota ? escapeHtml(c.nota) : `<span class="muted">—</span>`}</td>
             <td class="actions-col">
-                <button type="button" class="btn-ghost" data-cred-editar="${escapeHtml(c.id)}" style="font-size:12px">Editar</button>
-                <button type="button" class="btn-ghost" data-cred-borrar="${escapeHtml(c.id)}" style="font-size:12px">Borrar</button></td>
+                <button type="button" class="btn-ghost btn-sm" data-cred-editar="${escapeHtml(c.id)}">Editar</button>
+                <button type="button" class="btn-ghost btn-sm" data-cred-borrar="${escapeHtml(c.id)}">Borrar</button></td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "No hay contraseñas para esa búsqueda." : "Todavía no hay contraseñas cargadas."}</td></tr>`;
 }
@@ -10169,7 +10169,7 @@ function _factAutoFacturaHTML(f, detalle) {
 
 function _factAutoCobroHTML(c) {
     const f = c.factura;
-    const facturar = texto => `<button type="button" class="btn-ghost" data-fa-facturar="${escapeHtml(c.id)}" style="font-size:12px">${texto}</button>`;
+    const facturar = texto => `<button type="button" class="btn-ghost btn-sm" data-fa-facturar="${escapeHtml(c.id)}">${texto}</button>`;
     const descargar = f ? `<button type="button" class="icon-btn" data-fa-descargar="${escapeHtml(c.id)}" title="Descargar la factura">⬇</button>` : "";
     let estado = "";
     let acciones = "";
@@ -10228,7 +10228,7 @@ function _factAutoSuscripcionHTML(s) {
             <button type="button" class="fa-link" data-fa-receptor="${escapeHtml(s.id)}">Cambiar</button></td>
         <td>${f ? `${escapeHtml(numeroComprobante(f.puntoVenta, f.numero))}<div class="muted" style="font-size:11px">${_factAutoFecha(f.fecha)} · ${fmtMoney(f.total)}</div>` : `<span class="muted">—</span>`}</td>
         <td class="actions-col">${f ? `<button type="button" class="icon-btn" data-fa-descargar-susc="${escapeHtml(s.id)}" title="Descargar la última factura">⬇</button>` : ""}
-            <button type="button" class="btn-ghost" data-fa-excluir="${escapeHtml(s.id)}" style="font-size:12px">${s.excluida ? "Que se facture sola" : "No facturar sola"}</button></td>
+            <button type="button" class="btn-ghost btn-sm" data-fa-excluir="${escapeHtml(s.id)}">${s.excluida ? "Que se facture sola" : "No facturar sola"}</button></td>
     </tr>`;
 }
 
@@ -10556,7 +10556,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
                 </td>
                 <td class="actions-col">
                     <button class="icon-btn" data-mant-facturar="${escapeHtml(m.id)}" title="Facturar la mensualidad">🧾</button>
-                    <button class="btn-ghost" data-mant-edit="${m.id}" style="font-size:13px">✎ Editar</button>
+                    <button class="btn-ghost btn-sm" data-mant-edit="${m.id}">✎ Editar</button>
                     <button class="icon-btn mant-delete" data-mant-del="${m.id}" title="Eliminar">🗑</button>
                 </td>
             </tr>`;
