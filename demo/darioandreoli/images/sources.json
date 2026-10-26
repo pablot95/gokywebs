@@ -1,0 +1,35 @@
+{
+  "cliente": {
+    "01_imagen.png": ["vertical-solitario.webp", "p-solitario-plata.webp"],
+    "02_imagen.png": ["hero-cadena.webp", "og.jpg", "p-cadena-chapita-oro.webp"],
+    "03_imagen.png": ["p-argollas-plata.webp"],
+    "04_imagen.png": ["p-alianza-oro.webp"],
+    "05_imagen.png": ["p-pulsera-acero.webp"],
+    "06_imagen.png": ["p-reloj-clasico.webp"],
+    "07_imagen.png": ["p-abridores-oro.webp"],
+    "08_imagen.png": ["p-cadena-corazon-plata.webp"],
+    "09_imagen.png": ["p-reloj-acero.webp"],
+    "10_mockup_720x480.png": "referencia de diseño, no se publica en la web"
+  },
+  "pexels": [
+    { "archivo": "p-abridores-circonia-plata.webp", "id": 28389455, "url": "https://www.pexels.com/photo/28389455/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillo-geometrico-plata.webp", "id": 10181432, "url": "https://www.pexels.com/photo/10181432/", "uso": "producto ilustrativo" },
+    { "archivo": "p-esclava-labrada-plata.webp", "id": 13595530, "url": "https://www.pexels.com/photo/13595530/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillo-pave-plata.webp", "id": 1302307, "url": "https://www.pexels.com/photo/1302307/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillo-piedra-verde-plata.webp", "id": 32786083, "url": "https://www.pexels.com/photo/32786083/", "uso": "producto ilustrativo" },
+    { "archivo": "p-argollas-oro.webp", "id": 12194345, "url": "https://www.pexels.com/photo/12194345/", "uso": "producto ilustrativo" },
+    { "archivo": "p-esclava-cubic-oro.webp", "id": 34399115, "url": "https://www.pexels.com/photo/34399115/", "uso": "producto ilustrativo" },
+    { "archivo": "p-solitario-oro.webp", "id": 30541178, "url": "https://www.pexels.com/photo/30541178/", "uso": "producto ilustrativo" },
+    { "archivo": "p-aros-perla-oro.webp", "id": 36823005, "url": "https://www.pexels.com/photo/36823005/", "uso": "producto ilustrativo" },
+    { "archivo": "p-aros-estrella-acero.webp", "id": 29193421, "url": "https://www.pexels.com/photo/29193421/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillo-serpiente-acero.webp", "id": 15709716, "url": "https://www.pexels.com/photo/15709716/", "uso": "producto ilustrativo" },
+    { "archivo": "p-cadena-piedra-luna-acero.webp", "id": 34372565, "url": "https://www.pexels.com/photo/34372565/", "uso": "producto ilustrativo" },
+    { "archivo": "p-reloj-cuero-marron.webp", "id": 5058216, "url": "https://www.pexels.com/photo/5058216/", "uso": "producto ilustrativo" },
+    { "archivo": "p-reloj-cuadrado-dorado.webp", "id": 10557834, "url": "https://www.pexels.com/photo/10557834/", "uso": "producto ilustrativo" }
+  ],
+  "descartadas": {
+    "35989300": "relojes con la marca Fossil en la esfera",
+    "6489728": "reloj con marca en la esfera",
+    "16109320": "cadena sobre blanco que se lee como plástico"
+  }
+}
