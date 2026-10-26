@@ -98,6 +98,7 @@ const ERR_REPOS = [
     'mipatadeternera.com.ar' => 'pablot95/mipatadeternera',
     'altapintablanqueria.com.ar' => 'pablot95/altapintablanqueria',
     'abperfumes.com.ar' => 'pablot95/abperfumes',
+    'transportechavarri.com.ar' => 'pablot95/transportechavarri',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
