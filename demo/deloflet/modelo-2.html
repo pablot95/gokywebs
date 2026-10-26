@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deloflet — Fletes, mudanzas y repartos en Buenos Aires</title>
+<meta name="description" content="Empresa familiar con más de 30 años en el transporte: fletes, mudanzas y repartos en Buenos Aires y el interior del país. Vehículos habilitados y servicio de peón.">
+<link rel="canonical" href="https://gokywebs.com/demo/deloflet/modelo-2.html">
+<meta name="theme-color" content="#1B2430">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Deloflet">
+<meta property="og:title" content="Deloflet — Fletes, mudanzas y repartos en Buenos Aires">
+<meta property="og:description" content="Empresa familiar con más de 30 años en el transporte. Fletes, mudanzas y repartos en Buenos Aires y el interior del país.">
+<meta property="og:url" content="https://gokywebs.com/demo/deloflet/modelo-2.html">
+<meta property="og:image" content="https://gokywebs.com/demo/deloflet/images/og-deloflet.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231B2430'/%3E%3Ctext x='32' y='44' font-family='Arial Narrow,Arial,sans-serif' font-weight='800' font-size='38' fill='%23FF0000' text-anchor='middle'%3ED%3C/text%3E%3Crect x='18' y='50' width='28' height='3' rx='1.5' fill='%2300FFFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@700;800&amp;family=Instrument+Sans:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/camion-entrega.webp" imagesrcset="images/camion-entrega-960.webp 960w, images/camion-entrega.webp 1600w" imagesizes="(max-width: 1240px) 100vw, 1180px">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"MovingCompany","name":"Deloflet","description":"Empresa familiar con más de 30 años en el transporte: fletes, mudanzas y repartos en Buenos Aires y el interior del país, con vehículos habilitados y servicio de peón.","url":"https://gokywebs.com/demo/deloflet/","image":"https://gokywebs.com/demo/deloflet/images/og-deloflet.jpg","telephone":"+54 9 11 6886-2313","address":{"@type":"PostalAddress","addressRegion":"Buenos Aires","addressCountry":"AR"},"areaServed":[{"@type":"State","name":"Buenos Aires"},{"@type":"Country","name":"Argentina"}],"sameAs":["https://www.instagram.com/fletesdeloflet/"],"hasOfferCatalog":{"@type":"OfferCatalog","name":"Servicios de transporte","itemListElement":[{"@type":"Offer","itemOffered":{"@type":"Service","name":"Fletes"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Mudanzas"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Repartos"}}]}}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Viajan al interior del país?","acceptedAnswer":{"@type":"Answer","text":"Sí. Además de todo Buenos Aires hacemos viajes al interior: contanos origen, destino y qué hay que llevar, y coordinamos fecha y precio."}},{"@type":"Question","name":"¿Tienen servicio de peón?","acceptedAnswer":{"@type":"Answer","text":"Sí. Lo sumás al pedir el presupuesto y el peón se ocupa de cargar y descargar."}},{"@type":"Question","name":"¿Qué datos necesitan para pasarme un precio?","acceptedAnswer":{"@type":"Answer","text":"Desde dónde, hasta dónde, qué hay que llevar y para qué día. Si hay escaleras o un ascensor chico, avisanos en el mensaje."}},{"@type":"Question","name":"¿Los vehículos están habilitados?","acceptedAnswer":{"@type":"Answer","text":"Sí. Trabajamos con vehículos totalmente habilitados para hacer fletes, mudanzas y repartos."}}]}
+</script>
+</head>
+<body class="m2">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
+</nav>
+
+<header class="site-header" id="top">
+  <div class="container header-inner">
+    <a class="brand" href="modelo-2.html" aria-label="Deloflet, inicio">
+      <span class="wordmark">Deloflet</span>
+      <span class="brand__sub">Fletes · Mudanzas · Repartos</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#servicios">Servicios</a>
+      <a href="#trabajos">Trabajos</a>
+      <a href="#presupuesto">Presupuesto</a>
+      <a href="#ubicacion">Ubicación</a>
+      <a class="btn btn--cta btn--chico nav-cta" href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener">Pedí presupuesto</a>
+    </nav>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="hero hero--centro" id="inicio" aria-labelledby="heroTitulo">
+    <div class="hero__texto">
+      <p class="hero-eyebrow"><span class="regla" aria-hidden="true"></span>Llevamos lo que importa</p>
+      <h1 id="heroTitulo">Fletes, mudanzas y repartos <span class="acento">en Buenos Aires y el interior</span></h1>
+      <p class="hero-lead">Empresa familiar con más de 30 años en el transporte. Vehículos habilitados y servicio de peón para cargar y descargar.</p>
+      <div class="hero-ctas">
+        <a class="btn btn--cta" href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener">Pedí tu presupuesto
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a class="btn btn--ghost" href="#trabajos">Ver trabajos realizados</a>
+      </div>
+      <ul class="garantias">
+        <li class="hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Vehículos habilitados</li>
+        <li class="hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Servicio de peón</li>
+        <li class="hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>Buenos Aires y el interior</li>
+      </ul>
+    </div>
+    <div class="container hero__ancha">
+      <div class="hero__foto">
+        <div class="hero__marco">
+          <div class="hero__parallax" data-parallax>
+            <img data-hero-img src="images/camion-entrega.webp" srcset="images/camion-entrega-960.webp 960w, images/camion-entrega.webp 1600w" sizes="(max-width: 1240px) 100vw, 1180px" width="1600" height="900" alt="Camión de Deloflet estacionado frente a una casa, con cajas de la mudanza y una zorra roja" fetchpriority="high">
+          </div>
+        </div>
+        <div class="rotulo-mini hero-badge">
+          <div class="rotulo-mini__papel">
+            <span class="rotulo-mini__ojal" aria-hidden="true"></span>
+            <span class="wordmark wordmark--mini">Deloflet</span>
+            <span class="rotulo-mini__ruta">Buenos Aires<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>Interior del país</span>
+          </div>
+        </div>
+        <div class="sello hero-badge" role="img" aria-label="Empresa familiar con más de 30 años">
+          <div class="sello__cuerpo">
+            <svg class="sello__aro" viewBox="0 0 120 120" aria-hidden="true">
+              <defs><path id="selloCirculo" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs>
+              <text><textPath href="#selloCirculo" textLength="284" lengthAdjust="spacing">EMPRESA FAMILIAR · FLETES Y MUDANZAS ·</textPath></text>
+            </svg>
+            <span class="sello__num">+30</span>
+            <span class="sello__txt">años</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="servicios" id="servicios" aria-labelledby="serviciosTitulo">
+    <div class="container">
+      <div class="seccion-cab" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="regla regla--cab" aria-hidden="true"></span>
+        <h2 id="serviciosTitulo">Elegí qué necesitás mover</h2>
+      </div>
+      <ul class="servicios__lista">
+        <li class="servicio">
+          <figure class="servicio__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/camion-ruta.webp" srcset="images/camion-ruta-640.webp 640w, images/camion-ruta.webp 1200w" sizes="(max-width: 760px) 100vw, 44vw" width="1200" height="1200" alt="Camión de caja cerrada de Deloflet en una estación de servicio sobre la ruta"></figure>
+          <article class="servicio__card" data-animate="der" style="opacity:0;transform:translateX(48px)">
+            <span class="servicio__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+            <div class="servicio__cuerpo">
+              <h3>Fletes</h3>
+              <p>Llevamos cargas y objetos de un punto a otro: muebles sueltos, electrodomésticos, materiales o una compra grande.</p>
+              <a class="servicio__link" href="#presupuesto" data-servicio="Flete">Cotizar un flete<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </article>
+        </li>
+        <li class="servicio">
+          <figure class="servicio__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/muebles-embalados.webp" srcset="images/muebles-embalados-640.webp 640w, images/muebles-embalados.webp 1200w" sizes="(max-width: 760px) 100vw, 44vw" width="1200" height="1200" alt="Silla y cómoda envueltas en manta y film, listas para la mudanza"></figure>
+          <article class="servicio__card" data-animate="izq" style="opacity:0;transform:translateX(-48px)">
+            <span class="servicio__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+            <div class="servicio__cuerpo">
+              <h3>Mudanzas</h3>
+              <p>Casas, departamentos y oficinas. Cargamos, viajamos y descargamos con cuidado en cada detalle.</p>
+              <a class="servicio__link" href="#presupuesto" data-servicio="Mudanza">Cotizar una mudanza<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </article>
+        </li>
+        <li class="servicio">
+          <figure class="servicio__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/reparto-utilitario.webp" srcset="images/reparto-utilitario-640.webp 640w, images/reparto-utilitario.webp 1200w" sizes="(max-width: 760px) 100vw, 44vw" width="1200" height="1200" alt="Utilitario con las puertas abiertas cargado con cajas frente a un local"></figure>
+          <article class="servicio__card" data-animate="der" style="opacity:0;transform:translateX(48px)">
+            <span class="servicio__icono" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
+            <div class="servicio__cuerpo">
+              <h3>Repartos</h3>
+              <p>Distribución y entregas en Buenos Aires y el interior del país, para comercios y empresas.</p>
+              <a class="servicio__link" href="#presupuesto" data-servicio="Reparto">Cotizar un reparto<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+            </div>
+          </article>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="empresa" id="empresa" aria-labelledby="empresaTitulo">
+    <div class="container empresa__grid">
+      <figure class="empresa__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+        <img src="images/camion-vertical.webp" srcset="images/camion-vertical-540.webp 540w, images/camion-vertical.webp 900w" sizes="(max-width: 640px) 100vw, 360px" width="900" height="1600" alt="Camión de Deloflet listo para salir, en una calle arbolada de Buenos Aires">
+      </figure>
+      <div class="empresa__texto">
+        <p class="empresa__num" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><span>+30</span> años en el transporte</p>
+        <div data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <span class="regla regla--cab" aria-hidden="true"></span>
+          <h2 id="empresaTitulo">El transporte, un oficio de familia</h2>
+        </div>
+        <p class="empresa__intro" data-animate="der" style="opacity:0;transform:translateX(48px)">En Deloflet el transporte es cosa de familia. Hacemos fletes, mudanzas y repartos en todo Buenos Aires y viajamos al interior del país, con vehículos totalmente habilitados y servicio de peón.</p>
+        <ol class="compromisos">
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="compromisos__num">01</span><div><h3>Vehículos habilitados</h3><p>Toda la flota está totalmente habilitada para circular y trabajar.</p></div></li>
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="compromisos__num">02</span><div><h3>Servicio de peón</h3><p>Sumás peón y se ocupa de cargar y descargar: vos solo indicás dónde va cada cosa.</p></div></li>
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)"><span class="compromisos__num">03</span><div><h3>Buenos Aires y el interior</h3><p>Viajes en todo Buenos Aires y traslados al interior del país, coordinados de antemano.</p></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="trabajos" id="trabajos" aria-labelledby="trabajosTitulo">
+    <div class="container">
+      <div class="seccion-cab seccion-cab--fila">
+        <div data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <span class="regla regla--cab" aria-hidden="true"></span>
+          <h2 id="trabajosTitulo">Trabajos realizados</h2>
+        </div>
+        <div class="filtros" role="group" aria-label="Filtrar trabajos" data-animate="subir" style="opacity:0;transform:translateY(20px)">
+          <button type="button" class="filtro" data-filtro="todos" aria-pressed="true">Todos</button>
+          <button type="button" class="filtro" data-filtro="fletes" aria-pressed="false">Fletes</button>
+          <button type="button" class="filtro" data-filtro="mudanzas" aria-pressed="false">Mudanzas</button>
+          <button type="button" class="filtro" data-filtro="repartos" aria-pressed="false">Repartos</button>
+        </div>
+        <div class="riel__flechas" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
+          <button type="button" class="riel__flecha" data-riel="prev" aria-label="Ver trabajos anteriores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button type="button" class="riel__flecha" data-riel="next" aria-label="Ver más trabajos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+      </div>
+      <div class="riel">
+        <ul class="obras" id="obras">
+          <li class="obra" data-cat="mudanzas" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/mudanza-carga.webp">
+              <span class="obra__foto"><img src="images/mudanza-carga-640.webp" srcset="images/mudanza-carga-640.webp 640w, images/mudanza-carga.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Interior del camión con muebles cubiertos con mantas y sujetos con cintas rojas"></span>
+              <span class="obra__pie"><span class="obra__cat">Mudanzas</span><span class="obra__txt">Carga sujeta con cintas y mantas</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="fletes" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/camion-ruta.webp">
+              <span class="obra__foto"><img src="images/camion-ruta-640.webp" srcset="images/camion-ruta-640.webp 640w, images/camion-ruta.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Camión de caja cerrada en una estación de servicio sobre la ruta"></span>
+              <span class="obra__pie"><span class="obra__cat">Fletes</span><span class="obra__txt">Viajes al interior del país</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="repartos" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/entrega-puerta.webp">
+              <span class="obra__foto"><img src="images/entrega-puerta-640.webp" srcset="images/entrega-puerta-640.webp 640w, images/entrega-puerta.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Tres cajas sobre una zorra roja en la puerta de una casa"></span>
+              <span class="obra__pie"><span class="obra__cat">Repartos</span><span class="obra__txt">Entrega en la puerta</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="mudanzas" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/muebles-embalados.webp">
+              <span class="obra__foto"><img src="images/muebles-embalados-640.webp" srcset="images/muebles-embalados-640.webp 640w, images/muebles-embalados.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Silla y cómoda envueltas en manta y film, junto a cajas de mudanza en un pasillo"></span>
+              <span class="obra__pie"><span class="obra__cat">Mudanzas</span><span class="obra__txt">Muebles envueltos antes de bajar</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="fletes" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/zorra-deposito.webp">
+              <span class="obra__foto"><img src="images/zorra-deposito-640.webp" srcset="images/zorra-deposito-640.webp 640w, images/zorra-deposito.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Zorra roja con cajas apiladas en un depósito con estanterías"></span>
+              <span class="obra__pie"><span class="obra__cat">Fletes</span><span class="obra__txt">Carga y descarga con zorra</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="repartos" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/reparto-utilitario.webp">
+              <span class="obra__foto"><img src="images/reparto-utilitario-640.webp" srcset="images/reparto-utilitario-640.webp 640w, images/reparto-utilitario.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Utilitario blanco con las puertas abiertas frente a un local, cargado con cajas"></span>
+              <span class="obra__pie"><span class="obra__cat">Repartos</span><span class="obra__txt">Reparto a comercios</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="mudanzas" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/materiales-proteccion.webp">
+              <span class="obra__foto"><img src="images/materiales-proteccion-640.webp" srcset="images/materiales-proteccion-640.webp 640w, images/materiales-proteccion.webp 1200w" sizes="(max-width: 640px) 78vw, 340px" width="640" height="640" alt="Mantas azules, rollo de film y esquineros de cartón en la caja del camión"></span>
+              <span class="obra__pie"><span class="obra__cat">Mudanzas</span><span class="obra__txt">Mantas, film y esquineros para el viaje</span></span>
+            </button>
+          </li>
+          <li class="obra" data-cat="fletes" data-animate="der" style="opacity:0;transform:translateX(64px)">
+            <button type="button" class="obra__btn" data-grande="images/camion-vertical.webp">
+              <span class="obra__foto"><img src="images/camion-vertical-540.webp" srcset="images/camion-vertical-540.webp 540w, images/camion-vertical.webp 900w" sizes="(max-width: 640px) 78vw, 340px" width="540" height="960" alt="Camión blanco de caja cerrada estacionado en una calle arbolada"></span>
+              <span class="obra__pie"><span class="obra__cat">Fletes</span><span class="obra__txt">Flete puerta a puerta</span></span>
+            </button>
+          </li>
+        </ul>
+      </div>
+      <p class="trabajos__nota" data-animate="subir" style="opacity:0;transform:translateY(20px)">Imágenes ilustrativas · las fotos de los trabajos de Deloflet se suman acá.</p>
+    </div>
+  </section>
+
+  <section class="presupuesto" id="presupuesto" aria-labelledby="presupuestoTitulo">
+    <div class="container">
+      <div class="seccion-cab" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="regla regla--cab" aria-hidden="true"></span>
+        <h2 id="presupuestoTitulo">Contanos qué hay que llevar</h2>
+        <p class="seccion-bajada">Completá el rótulo y te lo mandamos armado por WhatsApp para pasarte el presupuesto.</p>
+      </div>
+      <div class="presupuesto__grid">
+        <div class="presupuesto__form" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <form class="rotulo" id="rotulo" novalidate>
+            <div class="rotulo__cab">
+              <span class="rotulo__ojal" aria-hidden="true"></span>
+              <span class="wordmark wordmark--rotulo">Deloflet</span>
+              <span class="rotulo__titulo">Rótulo de carga</span>
+              <span class="rotulo__arriba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Este lado arriba</span>
+            </div>
+            <fieldset class="rotulo__grupo">
+              <legend>Servicio</legend>
+              <div class="opciones">
+                <label class="opcion"><input type="radio" name="servicio" value="Flete"><span>Flete</span></label>
+                <label class="opcion"><input type="radio" name="servicio" value="Mudanza" checked><span>Mudanza</span></label>
+                <label class="opcion"><input type="radio" name="servicio" value="Reparto"><span>Reparto</span></label>
+              </div>
+            </fieldset>
+            <div class="rotulo__ruta">
+              <div class="campo">
+                <label for="rDesde">Desde</label>
+                <input id="rDesde" name="desde" type="text" placeholder="Barrio o localidad" autocomplete="off" aria-describedby="rDesdeError" required>
+                <span class="campo__error" id="rDesdeError" hidden>¿Desde dónde salimos?</span>
+              </div>
+              <span class="rotulo__flecha" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+              <div class="campo">
+                <label for="rHasta">Hasta</label>
+                <input id="rHasta" name="hasta" type="text" placeholder="Barrio, localidad o provincia" autocomplete="off" aria-describedby="rHastaError" required>
+                <span class="campo__error" id="rHastaError" hidden>¿A dónde lo llevamos?</span>
+              </div>
+            </div>
+            <div class="campo">
+              <label for="rCarga">Qué hay que llevar</label>
+              <input id="rCarga" name="carga" type="text" placeholder="Ej.: departamento de 2 ambientes" autocomplete="off">
+            </div>
+            <div class="rotulo__fila">
+              <div class="campo">
+                <label for="rFecha">Fecha</label>
+                <input id="rFecha" name="fecha" type="date">
+              </div>
+              <fieldset class="rotulo__grupo">
+                <legend>¿Sumás peón?</legend>
+                <div class="opciones opciones--chicas">
+                  <label class="opcion"><input type="radio" name="peon" value="Sí"><span>Sí</span></label>
+                  <label class="opcion"><input type="radio" name="peon" value="No"><span>No</span></label>
+                  <label class="opcion"><input type="radio" name="peon" value="A definir" checked><span>A definir</span></label>
+                </div>
+              </fieldset>
+            </div>
+            <button type="submit" class="btn btn--rojo btn--ancho">Enviar por WhatsApp
+              <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+            </button>
+          </form>
+        </div>
+        <div class="presupuesto__aside">
+          <div class="mensaje" data-animate="der" style="opacity:0;transform:translateX(48px)">
+            <p class="mensaje__titulo">Así nos llega tu pedido</p>
+            <p class="mensaje__texto" id="mensajeTexto" aria-live="polite">Hola Deloflet, quiero pedir un presupuesto.</p>
+          </div>
+          <div class="faq">
+            <h3 class="faq__titulo" data-animate="subir" style="opacity:0;transform:translateY(20px)">Antes de pedir</h3>
+            <details data-animate="subir" style="opacity:0;transform:translateY(20px)">
+              <summary>¿Viajan al interior del país?</summary>
+              <p>Sí. Además de todo Buenos Aires hacemos viajes al interior: contanos origen, destino y qué hay que llevar, y coordinamos fecha y precio.</p>
+            </details>
+            <details data-animate="subir" style="opacity:0;transform:translateY(20px)">
+              <summary>¿Tienen servicio de peón?</summary>
+              <p>Sí. Lo sumás al pedir el presupuesto y el peón se ocupa de cargar y descargar.</p>
+            </details>
+            <details data-animate="subir" style="opacity:0;transform:translateY(20px)">
+              <summary>¿Qué datos necesitan para pasarme un precio?</summary>
+              <p>Desde dónde, hasta dónde, qué hay que llevar y para qué día. Si hay escaleras o un ascensor chico, avisanos en el mensaje.</p>
+            </details>
+            <details data-animate="subir" style="opacity:0;transform:translateY(20px)">
+              <summary>¿Los vehículos están habilitados?</summary>
+              <p>Sí. Trabajamos con vehículos totalmente habilitados para hacer fletes, mudanzas y repartos.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ubicacion" id="ubicacion" aria-labelledby="ubicacionTitulo">
+    <div class="container ubicacion__grid">
+      <div class="mapa-wrap" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+        <div class="mapa" id="mapa" role="img" aria-label="Mapa de Buenos Aires con la base de Deloflet"></div>
+        <span class="mapa__nota"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Base en Buenos Aires · dirección a confirmar</span>
+      </div>
+      <div class="datos" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="regla regla--cab" aria-hidden="true"></span>
+        <h2 id="ubicacionTitulo">Dónde estamos y cuándo atendemos</h2>
+        <p class="estado" id="estado"><span class="estado__punto" aria-hidden="true"></span><span id="estadoTxt">Horario de atención</span></p>
+        <dl class="horario" id="horario">
+          <div data-dias="1,2,3,4,5"><dt>Lunes a viernes</dt><dd>8 a 18 h</dd></div>
+          <div data-dias="6"><dt>Sábados</dt><dd>8 a 13 h</dd></div>
+          <div data-dias="0"><dt>Domingos</dt><dd>Cerrado</dd></div>
+        </dl>
+        <ul class="contacto">
+          <li><svg class="contacto__wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span><small>WhatsApp</small><a href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener">+54 9 11 6886-2313</a></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg><span><small>Instagram</small><a href="https://www.instagram.com/fletesdeloflet/" target="_blank" rel="noopener">@fletesdeloflet</a></span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg><span><small>Zona de trabajo</small>Todo Buenos Aires y el interior del país</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre" aria-labelledby="cierreTitulo">
+    <div class="container">
+      <div class="cierre__card" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <p class="cierre__kicker">Llevamos lo que importa</p>
+        <h2 id="cierreTitulo">Decinos desde dónde y hasta dónde, y coordinamos el viaje</h2>
+        <a class="btn btn--cta" href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener">Pedí tu presupuesto por WhatsApp
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
+      <span class="wordmark wordmark--footer">Deloflet</span>
+      <p class="footer__sub">Fletes · Mudanzas · Repartos</p>
+      <p>Empresa familiar con más de 30 años en el transporte.</p>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Servicios</p>
+      <ul>
+        <li><a href="#servicios">Fletes</a></li>
+        <li><a href="#servicios">Mudanzas</a></li>
+        <li><a href="#servicios">Repartos</a></li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Contacto</p>
+      <ul>
+        <li><a href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener">+54 9 11 6886-2313</a></li>
+        <li><a href="https://www.instagram.com/fletesdeloflet/" target="_blank" rel="noopener">@fletesdeloflet</a></li>
+        <li>Buenos Aires y el interior</li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Horario</p>
+      <ul>
+        <li>Lunes a viernes, 8 a 18 h</li>
+        <li>Sábados, 8 a 13 h</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <span>© 2026 Deloflet</span>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Trabajos realizados" hidden>
+  <div class="visor__fondo" data-cerrar></div>
+  <figure class="visor__marco">
+    <img id="visorImg" src="images/mudanza-carga-640.webp" alt="" width="640" height="640">
+    <figcaption id="visorPie"></figcaption>
+  </figure>
+  <button type="button" class="visor__btn visor__btn--cerrar" data-cerrar aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+  </button>
+  <button type="button" class="visor__btn visor__btn--prev" aria-label="Foto anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+  </button>
+  <button type="button" class="visor__btn visor__btn--next" aria-label="Foto siguiente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+  </button>
+</div>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491168862313?text=Hola%20Deloflet%2C%20quiero%20pedir%20un%20presupuesto." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

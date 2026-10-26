@@ -1,0 +1,15 @@
+{
+  "origen": "Zip Deloflet_E2yt81OlG0otXmHNtrJJ.zip de Descargas (26-oct-2026): 9 fotos ilustrativas + mock up. Sin fotos de bancos.",
+  "fotos": {
+    "camion-vertical.webp": "01_imagen.png (9:16) - empresa familiar / galería",
+    "camion-entrega.webp": "02_imagen.png (16:9) - portada de los dos modelos + og-deloflet.jpg",
+    "entrega-puerta.webp": "03_imagen.png (1:1) - galería, Repartos",
+    "mudanza-carga.webp": "04_imagen.png (1:1) - galería, Mudanzas",
+    "reparto-utilitario.webp": "05_imagen.png (1:1) - galería + Repartos en el Modelo 2",
+    "materiales-proteccion.webp": "06_imagen.png (1:1) - galería, Mudanzas",
+    "muebles-embalados.webp": "07_imagen.png (1:1) - galería + Mudanzas en el Modelo 2",
+    "zorra-deposito.webp": "08_imagen.png (1:1) - galería, Fletes",
+    "camion-ruta.webp": "09_imagen.png (1:1) - galería + Fletes en el Modelo 2"
+  },
+  "mockup": "10_mockup_720x480.png - referencia del Modelo 1"
+}
