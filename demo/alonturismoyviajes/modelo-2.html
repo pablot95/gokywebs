@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alon turismo y viajes — Viajes de egresados y salidas educativas</title>
+<meta name="description" content="Viajes de egresados, salidas educativas para jardín y primaria y escapadas grupales desde Quilmes. Micros doble piso, cobertura médica, seguros y equipo de contención.">
+<link rel="canonical" href="https://gokywebs.com/demo/alonturismoyviajes/modelo-2.html">
+<meta name="theme-color" content="#13204F">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Alon turismo y viajes">
+<meta property="og:title" content="Alon turismo y viajes — Viajes de egresados y salidas educativas">
+<meta property="og:description" content="Viajes de egresados, salidas educativas para jardín y primaria y escapadas grupales desde Quilmes, en micro doble piso y con seguros integrales.">
+<meta property="og:url" content="https://gokywebs.com/demo/alonturismoyviajes/modelo-2.html">
+<meta property="og:image" content="https://gokywebs.com/demo/alonturismoyviajes/images/og-alon.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ffffff'/%3E%3Ctext x='31' y='42' font-family='Arial,sans-serif' font-style='italic' font-weight='900' font-size='38' fill='%230000FF' text-anchor='middle'%3EA%3C/text%3E%3Crect x='14' y='48' width='36' height='4' rx='2' fill='%23FF0000' transform='rotate(-4 32 50)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=Figtree:ital,wght@0,400;0,600;1,800&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/micro-doble-piso.webp" imagesrcset="images/micro-doble-piso-540.webp 540w, images/micro-doble-piso.webp 900w" imagesizes="(max-width: 900px) 100vw, 40vw">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"TravelAgency","name":"Alon turismo y viajes","description":"Empresa argentina de turismo con más de 7 años de trayectoria: viajes de egresados, salidas educativas para jardín y primaria, escapadas grupales, chárter y alquiler de micro.","url":"https://gokywebs.com/demo/alonturismoyviajes/","image":"https://gokywebs.com/demo/alonturismoyviajes/images/og-alon.jpg","telephone":"+54 9 11 4444-5228","address":{"@type":"PostalAddress","addressLocality":"Quilmes","addressRegion":"Buenos Aires","addressCountry":"AR"},"areaServed":{"@type":"Country","name":"Argentina"},"sameAs":["https://www.instagram.com/alontourestudiantil/"],"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"09:00","closes":"18:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Saturday","opens":"09:00","closes":"13:00"}],"hasOfferCatalog":{"@type":"OfferCatalog","name":"Viajes","itemListElement":[{"@type":"Offer","itemOffered":{"@type":"Service","name":"Salidas educativas para jardín de infantes"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Salidas educativas para escuela primaria"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Viajes de egresados"}},{"@type":"Offer","itemOffered":{"@type":"Service","name":"Escapadas grupales, chárter y alquiler de micro"}}]}}
+</script>
+</head>
+<body class="m2">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
+</nav>
+
+<header class="site-header" id="top">
+  <div class="container header-inner">
+    <a class="brand" href="modelo-2.html" aria-label="Alon turismo y viajes, inicio">
+      <span class="wordmark">Alon</span>
+      <span class="brand__sub">turismo y viajes</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#viajes">Viajes</a>
+      <a href="#salidas">Salidas</a>
+      <a href="#seguridad">Seguridad</a>
+      <a href="#contacto">Contacto</a>
+      <a class="btn btn--cta btn--chico nav-cta" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener">Pedí tu presupuesto</a>
+    </nav>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="hero hero--partida" id="inicio" aria-labelledby="heroTitulo">
+    <figure class="hero__micro">
+      <img data-hero-img src="images/micro-doble-piso.webp" srcset="images/micro-doble-piso-540.webp 540w, images/micro-doble-piso.webp 900w" sizes="(max-width: 900px) 100vw, 40vw" width="900" height="1600" alt="Micro doble piso azul con franjas rojas estacionado frente a un lago y montañas" fetchpriority="high">
+    </figure>
+    <div class="hero__texto">
+      <p class="hero-eyebrow"><span class="franja" aria-hidden="true"></span>Viajes que dejan recuerdos</p>
+      <h1 id="heroTitulo">Viajes de egresados y salidas educativas, en micro doble piso</h1>
+      <p class="hero-lead">Organizamos viajes para jardín, primaria y egresados, y escapadas para todo público desde Quilmes. Con cobertura médica, seguros integrales y un equipo que cuida a los chicos todo el viaje.</p>
+      <div class="hero-ctas">
+          <a class="btn btn--cta" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener">
+            <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+            Pedí tu presupuesto
+          </a>
+          <a class="btn btn--claro" href="#salidas">Ver próximas salidas</a>
+        </div>
+      <p class="sello">
+        <span class="sello__marca">Alon</span>
+        <span class="sello__num">+7</span>
+        <span class="sello__txt">años de viajes</span>
+      </p>
+    </div>
+    <article class="boleto-hero hero-badge is-abierta" data-salida="cas" data-fecha="2026-11-14" aria-label="Próxima salida: Castelli">
+      <div class="boleto__main">
+        <p class="boleto-hero__label">Próxima salida</p>
+        <p class="boleto__destino">Castelli</p>
+        <p class="boleto__detalle">3ª Fiesta del Olvidao · micro doble piso</p>
+      </div>
+      <div class="boleto__talon">
+        <p class="boleto__fecha"><span>Sáb</span> 14 nov</p>
+        <p class="boleto__hora">14:00 h</p>
+        <p class="boleto__precio">$59.990</p>
+        <a class="btn btn--cta btn--chico" data-accion href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20reservar%20lugar%20para%20la%20salida%20a%20Castelli%20del%2014%20de%20noviembre." target="_blank" rel="noopener">Reservar lugar</a>
+      </div>
+    </article>
+  </section>
+
+  <section class="salidas" id="salidas" aria-labelledby="salidasTitulo">
+    <div class="container">
+      <div class="seccion-cab">
+        <span class="franja" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+        <h2 id="salidasTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Próximas salidas: elegí fecha y reservá tu lugar</h2>
+        <p class="seccion-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Escapadas de un día con lugar reservado, y viajes que coordinamos con tu escuela o tu grupo.</p>
+        <p class="tablero__reloj" data-animate="subir" style="opacity:0;transform:translateY(24px)">Hora en Quilmes <strong id="reloj">--:--</strong></p>
+      </div>
+      <div class="tablero">
+        <div class="tablero__head" aria-hidden="true"><span>Fecha</span><span>Hora</span><span>Destino</span><span>Sale de</span><span>Precio</span><span>Estado</span></div>
+        <div class="boletos">
+        <article class="boleto is-abierta" data-salida="cas" data-fecha="2026-11-14" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <div class="boleto__main">
+            <p class="boleto__cod">CAS</p>
+            <h3 class="boleto__destino">Castelli</h3>
+            <p class="boleto__detalle">3ª Fiesta del Olvidao · micro doble piso</p>
+            <p class="boleto__sale"><span>Sale de</span> Jumbo Calchaquí y Cruce Varela</p>
+          </div>
+          <div class="boleto__talon">
+            <p class="boleto__fecha"><span>Sáb</span> 14 nov</p>
+            <p class="boleto__hora">14:00 h</p>
+            <p class="boleto__precio">$59.990</p>
+            <p class="boleto__estado" data-estado>Reservá tu lugar</p>
+            <a class="btn btn--cta btn--chico" data-accion href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20reservar%20lugar%20para%20la%20salida%20a%20Castelli%20del%2014%20de%20noviembre." target="_blank" rel="noopener">Reservar lugar</a>
+          </div>
+        </article>
+        <article class="boleto is-realizada" data-salida="dol" data-fecha="2026-10-25" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <div class="boleto__main">
+            <p class="boleto__cod">DOL</p>
+            <h3 class="boleto__destino">Termas de Dolores</h3>
+            <p class="boleto__detalle">Bus semi cama, coordinador y entrada a las termas · 1ª parada: Minotauro</p>
+            <p class="boleto__sale"><span>Sale de</span> Jumbo Calchaquí, Cruce Varela y Rotonda Alpargatas</p>
+          </div>
+          <div class="boleto__talon">
+            <p class="boleto__fecha"><span>Dom</span> 25 oct</p>
+            <p class="boleto__hora">07:00 h</p>
+            <p class="boleto__precio">$69.990</p>
+            <p class="boleto__estado" data-estado>Realizada</p>
+            <a class="btn btn--linea btn--chico" data-accion href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20%C2%BFcu%C3%A1ndo%20es%20la%20pr%C3%B3xima%20salida%20a%20las%20Termas%20de%20Dolores%3F" target="_blank" rel="noopener">Pedí la próxima fecha</a>
+          </div>
+        </article>
+        <article class="boleto boleto--abierto is-coordinar" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <div class="boleto__main">
+            <p class="boleto__cod">EDU</p>
+            <h3 class="boleto__destino">Salidas educativas</h3>
+            <p class="boleto__detalle">Jardín y primaria: granjas, museos, planetario y parques</p>
+          </div>
+          <div class="boleto__talon">
+            <p class="boleto__fecha">Ciclo lectivo</p>
+            <p class="boleto__estado">A coordinar</p>
+            <a class="boleto__link" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20salidas%20educativas%20para%20mi%20escuela." target="_blank" rel="noopener">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </div>
+        </article>
+        <article class="boleto boleto--abierto is-coordinar" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <div class="boleto__main">
+            <p class="boleto__cod">EGR</p>
+            <h3 class="boleto__destino">Viajes de egresados</h3>
+            <p class="boleto__detalle">Destinos, diversión y experiencias inolvidables</p>
+          </div>
+          <div class="boleto__talon">
+            <p class="boleto__fecha">Con tu curso</p>
+            <p class="boleto__estado">A coordinar</p>
+            <a class="boleto__link" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20viaje%20de%20egresados." target="_blank" rel="noopener">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </div>
+        </article>
+        <article class="boleto boleto--abierto is-coordinar" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <div class="boleto__main">
+            <p class="boleto__cod">CHT</p>
+            <h3 class="boleto__destino">Chárter y alquiler de micro</h3>
+            <p class="boleto__detalle">Traslados a eventos, giras y paseos para tu grupo</p>
+          </div>
+          <div class="boleto__talon">
+            <p class="boleto__fecha">Todo el año</p>
+            <p class="boleto__estado">A coordinar</p>
+            <a class="boleto__link" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20ch%C3%A1rter%20o%20alquiler%20de%20micro%20para%20mi%20grupo." target="_blank" rel="noopener">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </div>
+        </article>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="viajes" id="viajes" aria-labelledby="viajesTitulo">
+    <div class="container">
+      <div class="seccion-cab viajes__titulo">
+        <span class="franja" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+        <h2 id="viajesTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Desde la primera salida del jardín hasta el viaje de egresados</h2>
+      </div>
+      <ul class="lineas">
+        <li class="linea" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="linea__card" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20una%20salida%20educativa%20para%20jard%C3%ADn." target="_blank" rel="noopener">
+            <span class="linea__foto"><img src="images/jardin-granja-640.webp" srcset="images/jardin-granja-640.webp 640w, images/jardin-granja.webp 1254w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 290px" width="640" height="640" alt="Chicos de jardín con gorritos miran una llama en una granja educativa"></span>
+            <div class="linea__cuerpo">
+              <span class="linea__tag">Salidas educativas</span>
+              <h3 class="linea__titulo">Jardín de infantes</h3>
+              <span class="linea__txt">Salidas cortas y cuidadas a granjas, reservas y paseos pensados para los más chicos, coordinadas con las docentes.</span>
+              <span class="linea__cta">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+            </div>
+          </a>
+        </li>
+        <li class="linea" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="linea__card" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20una%20salida%20educativa%20para%20primaria." target="_blank" rel="noopener">
+            <span class="linea__foto"><img src="images/primaria-salida-640.webp" srcset="images/primaria-salida-640.webp 640w, images/primaria-salida.webp 1254w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 290px" width="640" height="640" alt="Alumnos de primaria con mochilas recorren un jardín botánico junto a sus docentes"></span>
+            <div class="linea__cuerpo">
+              <span class="linea__tag">Salidas educativas</span>
+              <h3 class="linea__titulo">Escuela primaria</h3>
+              <span class="linea__txt">Excursiones para aprender fuera del aula: museos, planetario, parques temáticos y reservas naturales.</span>
+              <span class="linea__cta">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+            </div>
+          </a>
+        </li>
+        <li class="linea" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="linea__card" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20viaje%20de%20egresados." target="_blank" rel="noopener">
+            <span class="linea__foto"><img src="images/egresados-trekking-640.webp" srcset="images/egresados-trekking-640.webp 640w, images/egresados-trekking.webp 1254w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 290px" width="640" height="640" alt="Grupo de egresados con mochilas camina por un sendero de montaña frente a un lago"></span>
+            <div class="linea__cuerpo">
+              <span class="linea__tag">Egresados</span>
+              <h3 class="linea__titulo">Viajes de egresados</h3>
+              <span class="linea__txt">El viaje que el curso espera todo el año: destinos, diversión y experiencias inolvidables, con coordinadores todo el viaje.</span>
+              <span class="linea__cta">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+            </div>
+          </a>
+        </li>
+        <li class="linea" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="linea__card" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20las%20escapadas%20y%20salidas%20grupales." target="_blank" rel="noopener">
+            <span class="linea__foto"><img src="images/turismo-costanera-640.webp" srcset="images/turismo-costanera-640.webp 640w, images/turismo-costanera.webp 1254w" sizes="(max-width: 640px) 92vw, (max-width: 1100px) 46vw, 290px" width="640" height="640" alt="Turistas pasean por una costanera junto al lago con montañas de fondo"></span>
+            <div class="linea__cuerpo">
+              <span class="linea__tag">Todo público</span>
+              <h3 class="linea__titulo">Turismo en general</h3>
+              <span class="linea__txt">Escapadas de un día, giras y paseos para grupos, familias y viajeros, y chárter con micro para tu grupo.</span>
+              <span class="linea__cta">Consultar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="seguridad" id="seguridad" aria-labelledby="seguridadTitulo">
+    <div class="container seguridad__grid">
+      <div class="seguridad__texto">
+        <h2 id="seguridadTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Cómo cuidamos a cada grupo</h2>
+        <ul class="cuidados">
+        <li class="cuidado" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cuidado__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg></span>
+          <span class="cuidado__titulo">Micros doble piso</span>
+          <span class="cuidado__txt">Comodidad y seguridad en cada salida.</span>
+        </li>
+        <li class="cuidado" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cuidado__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg></span>
+          <span class="cuidado__titulo">Cobertura médica y seguros</span>
+          <span class="cuidado__txt">Seguros integrales en todos los viajes.</span>
+        </li>
+        <li class="cuidado" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cuidado__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span class="cuidado__titulo">Equipo de contención</span>
+          <span class="cuidado__txt">Profesionales que acompañan y supervisan a los chicos.</span>
+        </li>
+        <li class="cuidado" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cuidado__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <span class="cuidado__titulo">Coordinador en cada salida</span>
+          <span class="cuidado__txt">Una persona a cargo del grupo de la ida a la vuelta.</span>
+        </li>
+      </ul>
+      </div>
+      <div class="seguridad__fotos">
+        <figure class="seguridad__alta" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <img src="images/coordinadora-subida-640.webp" srcset="images/coordinadora-subida-640.webp 640w, images/coordinadora-subida.webp 1254w" sizes="(max-width: 900px) 46vw, 460px" width="640" height="640" alt="Coordinadora ayuda a un alumno a subir al micro con su mochila">
+        </figure>
+        <figure class="seguridad__chica" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <img src="images/micro-interior-640.webp" srcset="images/micro-interior-640.webp 640w, images/micro-interior.webp 1254w" sizes="(max-width: 900px) 46vw, 220px" width="640" height="640" alt="Interior de un micro con butacas azules y la escalera al piso de arriba">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="nosotros" id="nosotros" aria-labelledby="nosotrosTitulo">
+    <div class="container">
+      <div class="nosotros__m2">
+        <div class="nosotros__texto">
+          <p class="kicker" data-animate="subir" style="opacity:0;transform:translateY(24px)">+7 años en turismo nacional</p>
+          <h2 id="nosotrosTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">De la puerta de la escuela al destino, y de vuelta</h2>
+          <p class="nosotros__intro" data-animate="subir" style="opacity:0;transform:translateY(24px)">Alon es una empresa argentina de turismo con más de 7 años en el sector. Organizamos y gestionamos viajes estudiantiles, con especialización en egresados y salidas educativas de jardín y primaria, y salidas de turismo para todo público.</p>
+        </div>
+        <figure class="nosotros__ancha" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <img src="images/lago-patagonia.webp" srcset="images/lago-patagonia-720.webp 720w, images/lago-patagonia.webp 1600w" sizes="(max-width: 900px) 92vw, 640px" width="1600" height="900" alt="Lago rodeado de bosques y montañas nevadas en la Patagonia">
+        </figure>
+      </div>
+      <ol class="pasos">
+          <li class="paso" data-animate="der" style="opacity:0;transform:translateX(40px)">
+            <span class="paso__num">01</span>
+            <span class="paso__titulo">Nos contás el plan</span>
+            <span class="paso__txt">Nivel, cantidad de chicos, fecha y la idea de destino. Con eso arrancamos.</span>
+          </li>
+          <li class="paso" data-animate="der" style="opacity:0;transform:translateX(40px)">
+            <span class="paso__num">02</span>
+            <span class="paso__titulo">Te pasamos la propuesta</span>
+            <span class="paso__txt">Recorrido, horarios, micro y cobertura, para presentar en la escuela.</span>
+          </li>
+          <li class="paso" data-animate="der" style="opacity:0;transform:translateX(40px)">
+            <span class="paso__num">03</span>
+            <span class="paso__titulo">Coordinamos todo</span>
+            <span class="paso__txt">Punto de encuentro, paradas y equipo, con un coordinador a cargo.</span>
+          </li>
+          <li class="paso" data-animate="der" style="opacity:0;transform:translateX(40px)">
+            <span class="paso__num">04</span>
+            <span class="paso__titulo">Viajamos juntos</span>
+            <span class="paso__txt">Del punto de encuentro a la vuelta, el equipo acompaña y supervisa a los chicos.</span>
+          </li>
+        </ol>
+    </div>
+    <p class="sello-costura" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><span>Salimos desde</span><strong>Quilmes</strong><span>Buenos Aires</span></p>
+  </section>
+
+  <section class="consulta" id="consulta" aria-labelledby="consultaTitulo">
+    <div class="container consulta__grid">
+      <div class="consulta__intro">
+        <h2 id="consultaTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Contanos el viaje y te pasamos el presupuesto</h2>
+        <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Elegí el tipo de viaje, cuántos viajan y para cuándo. El pasaje se completa solo y lo mandás por WhatsApp.</p>
+        <figure class="consulta__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <img src="images/oficina-asesoria-640.webp" srcset="images/oficina-asesoria-640.webp 640w, images/oficina-asesoria.webp 1254w" sizes="(max-width: 900px) 92vw, 420px" width="640" height="640" alt="Asesora de viajes muestra un mapa a una pareja en la oficina">
+        </figure>
+      </div>
+      <div class="pasaje-wrap" data-animate="der" style="opacity:0;transform:translateX(40px)">
+        <form class="pasaje" id="pasaje" novalidate>
+          <div class="pasaje__cuerpo">
+            <p class="pasaje__titulo"><span>Pasaje de consulta</span><span class="pasaje__serie">ALN · 2026</span></p>
+            <fieldset class="pasaje__tipos">
+              <legend>¿Qué viaje están organizando?</legend>
+              <label class="chip"><input type="radio" name="tipo" value="Jardín" checked><span>Jardín</span></label>
+              <label class="chip"><input type="radio" name="tipo" value="Primaria"><span>Primaria</span></label>
+              <label class="chip"><input type="radio" name="tipo" value="Egresados"><span>Egresados</span></label>
+              <label class="chip"><input type="radio" name="tipo" value="Escapada o grupo"><span>Escapada o grupo</span></label>
+              <label class="chip"><input type="radio" name="tipo" value="Chárter o micro"><span>Chárter o micro</span></label>
+            </fieldset>
+            <div class="pasaje__campos">
+              <div class="campo campo--ancho">
+                <label for="pGrupo">Escuela o grupo</label>
+                <input id="pGrupo" name="grupo" type="text" autocomplete="organization" placeholder="Ej.: Jardín N° 905 de Quilmes">
+              </div>
+              <div class="campo">
+                <span class="campo__label" id="pPaxLabel">Pasajeros</span>
+                <div class="pax" role="group" aria-labelledby="pPaxLabel">
+                  <button type="button" class="pax__btn" data-pax="-1" aria-label="Uno menos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                  <input id="pPax" name="pax" type="number" inputmode="numeric" min="1" max="300" value="30" aria-labelledby="pPaxLabel">
+                  <button type="button" class="pax__btn" data-pax="1" aria-label="Uno más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+                </div>
+              </div>
+              <div class="campo">
+                <label for="pMes">¿Para cuándo?</label>
+                <select id="pMes" name="mes">
+                  <option value="">A definir</option>
+                </select>
+              </div>
+              <div class="campo campo--ancho">
+                <label for="pDestino">Destino o idea</label>
+                <input id="pDestino" name="destino" type="text" placeholder="Ej.: una granja educativa">
+              </div>
+              <div class="campo campo--ancho">
+                <label for="pNombre">Tu nombre</label>
+                <input id="pNombre" name="nombre" type="text" autocomplete="name" required aria-describedby="pNombreError" placeholder="Para saber con quién hablamos">
+                <p class="campo__error" id="pNombreError" hidden>Dejanos tu nombre para armar el mensaje.</p>
+              </div>
+            </div>
+          </div>
+          <div class="pasaje__talon">
+            <dl class="pasaje__datos">
+              <div><dt>Pasajero</dt><dd data-p="nombre">—</dd></div>
+              <div><dt>Viaje</dt><dd data-p="tipo">Jardín</dd></div>
+              <div><dt>Pax</dt><dd data-p="pax">30</dd></div>
+              <div><dt>Salida</dt><dd data-p="mes">A definir</dd></div>
+              <div class="pasaje__dest"><dt>Destino</dt><dd data-p="destino">A definir</dd></div>
+            </dl>
+            <div class="pasaje__pie">
+              <span class="pasaje__codigo" aria-hidden="true"></span>
+              <button class="btn btn--cta" type="submit">Enviar por WhatsApp</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="contacto" id="contacto" aria-labelledby="contactoTitulo">
+    <div class="container">
+      <div class="seccion-cab">
+        <span class="franja" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+        <h2 id="contactoTitulo" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Dónde estamos, cuándo atendemos y quién ya viajó</h2>
+      </div>
+      <div class="info">
+        <article class="info__card info__card--mapa" id="ubicacion" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <div class="info__texto">
+            <h3 class="info__titulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>Ubicación</h3>
+            <p class="info__dato"><strong>Oficina en Quilmes, Buenos Aires</strong> · dirección a confirmar</p>
+            <p class="refs__label">Puntos de encuentro de las salidas</p>
+            <ul class="encuentros">
+              <li><span class="encuentros__pin">1</span>Jumbo Calchaquí <small>Quilmes Oeste</small></li>
+              <li><span class="encuentros__pin">2</span>Cruce Varela <small>Florencio Varela</small></li>
+              <li><span class="encuentros__pin encuentros__pin--sin">3</span>Rotonda Alpargatas <small>según la salida</small></li>
+            </ul>
+          </div>
+          <div class="mapa" id="mapa"></div>
+        </article>
+        <article class="info__card info__card--horario" id="horarios" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <h3 class="info__titulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Horarios de atención</h3>
+          <p class="estado" id="estado"><span class="estado__punto" aria-hidden="true"></span><span id="estadoTxt">Lunes a viernes de 9 a 18 h</span></p>
+          <ul class="horario">
+            <li data-dias="1,2,3,4,5"><span>Lunes a viernes</span><span>9 a 18 h</span></li>
+            <li data-dias="6"><span>Sábados</span><span>9 a 13 h</span></li>
+            <li data-dias="0"><span>Domingos</span><span>Cerrado</span></li>
+          </ul>
+          <p class="info__nota">Las salidas grupales parten en el horario de cada viaje, también fines de semana.</p>
+          <a class="info__wsp" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener">+54 9 11 4444-5228</a>
+        </article>
+        <article class="info__card info__card--refs" id="referencias" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <h3 class="info__titulo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>Referencias</h3>
+          <blockquote class="refs__cita">«Lo que pasa en un viaje escolar queda en el corazón para siempre.»</blockquote>
+          <p class="refs__label">Ya viajamos con grupos a</p>
+          <ul class="refs__lista">
+            <li><span>Temaikèn</span><small>Salida educativa</small></li>
+            <li><span>Planetario Galileo Galilei</span><small>Salida educativa</small></li>
+            <li><span>Termas de Dolores</span><small>Escapada de un día</small></li>
+          </ul>
+          <a class="btn btn--linea btn--chico" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20antes%20de%20decidir%20quiero%20pedirles%20referencias%20de%20grupos%20que%20ya%20viajaron." target="_blank" rel="noopener">Pedir referencias</a>
+          <a class="refs__ig" href="https://www.instagram.com/alontourestudiantil/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg>Fotos de cada salida en @alontourestudiantil</a>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
+      <span class="wordmark wordmark--claro">Alon</span>
+      <span class="brand__sub">turismo y viajes</span>
+      <p>Viajes estudiantiles y turismo en general desde Quilmes, Buenos Aires.</p>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Viajes</p>
+      <ul>
+        <li><a href="#viajes">Jardín y primaria</a></li>
+        <li><a href="#viajes">Viajes de egresados</a></li>
+        <li><a href="#salidas">Próximas salidas</a></li>
+        <li><a href="#salidas">Chárter y alquiler de micro</a></li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Contacto</p>
+      <ul>
+        <li><a href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener">+54 9 11 4444-5228</a></li>
+        <li><a href="https://www.instagram.com/alontourestudiantil/" target="_blank" rel="noopener">@alontourestudiantil</a></li>
+        <li>Quilmes, Buenos Aires</li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <p class="footer__titulo">Horario</p>
+      <ul>
+        <li>Lunes a viernes, 9 a 18 h</li>
+        <li>Sábados, 9 a 13 h</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <span>© 2026 Alon turismo y viajes · Imágenes ilustrativas</span>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491144445228?text=Hola%20Alon%2C%20quiero%20consultar%20por%20un%20viaje." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
