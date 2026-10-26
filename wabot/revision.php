@@ -42,8 +42,9 @@ const WABOT_REVISION_INTENTOS = 3;              // fallas de OpenAI con el mismo
  * lugar los avisos automáticos de las charlas que atiende Pablo. v3: el estado
  * de la charla es el del momento del aviso, no el de ahora. v4 (10-oct): la
  * ficha del admin no es "ya pagó", y el adelanto del horario de los avisos.
- * Desde la v4 se vuelve a revisar desde ayer (30 h) y se aparta lo de ayer y hoy. */
-const WABOT_REVISION_V = 4;
+ * Desde la v4 se vuelve a revisar desde ayer (30 h) y se aparta lo de ayer y hoy.
+ * v5 (26-oct): el pago único va primero en los precios y el internacional lo pasa Pablo. */
+const WABOT_REVISION_V = 5;
 const WABOT_REVISION_RECHEQUEO_SEG = 30 * 3600;
 
 /* ─────────────────────────────── Ajustes y archivos ─────────────────────────────── */
@@ -225,13 +226,13 @@ function wabot_revision_precios_texto($cfg) {
     $nombres = [
         'informativa' => 'Plan informativa (web informativa, sin panel)',
         'panel' => 'Plan con panel (tienda, catálogo, cursos, inmobiliaria, reservas de turnos, informativa con panel)',
-        'internacional' => 'Plan internacional (la web le cobra a clientes del exterior)',
+        'internacional' => 'Plan internacional (la web le cobra a clientes del exterior; desde el 26-oct el bot no lo cotiza: lo pasa Pablo, salvo repetir uno ya dado)',
     ];
     $l = [];
     foreach ($nombres as $plan => $nombre) {
         $m = wabot_comercial_montos_lista($plan, $cfg);
         $l[] = "- $nombre: anual {$m['anual']}, mensual {$m['mensual']}"
-            . ($m['unico'] !== '' ? ", pago único {$m['unico']} (solo si pidió comprar la web o no tener suscripción)" : '')
+            . ($m['unico'] !== '' ? ", pago único {$m['unico']} (desde el 26-oct va primero en el bloque de precios, para todos)" : '')
             . ($m['sena'] !== '' && $plan !== 'internacional' ? ", seña del anual {$m['sena']}" : '');
     }
     // Dos webs juntas (10-oct): la suma con descuento, como la calcula el bot.
@@ -254,7 +255,8 @@ function wabot_revision_textos_fijos($cfg) {
         'Planes del plan informativa' => $c['planes_informativa'] ?? '',
         'Planes del plan con panel' => $c['planes_panel'] ?? '',
         'Planes del plan internacional' => $c['planes_internacional'] ?? '',
-        'Pago único (debajo de los planes, solo si pidió comprar la web)' => $c['pago_unico'] ?? '',
+        'Planes de una charla cotizada antes del 26-oct, sin pago único (informativa / con panel)' => trim((string)($c['planes_informativa_sin_unico'] ?? '')) . ' / ' . trim((string)($c['planes_panel_sin_unico'] ?? '')),
+        'Pago único (debajo de los planes de antes del 26-oct, solo si pidió comprar la web)' => $c['pago_unico'] ?? '',
         'Oferta de la demo (después de los planes)' => $c['oferta_demo'] ?? '',
         'Pregunta de los turnos (rubros con turnos que no dijeron cómo los quieren)' => $c['pregunta_turnos'] ?? '',
         'Los dos precios, sin y con reservas (si pide el precio sin contestar lo de los turnos)' => trim((string)($c['dos_planes_intro'] ?? '')) === '' ? ''

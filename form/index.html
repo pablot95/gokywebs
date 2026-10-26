@@ -125,15 +125,16 @@
                             <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
                             <!-- script.js muestra abajo la descripción elegida.
                                  Los valores mensual/unico los valida wabot/form-lead.php
-                                 ('unico' es el plan anual). La opción 'propia' se sacó del
-                                 formulario el 6-oct-2026: el servidor la sigue aceptando
-                                 de formularios en caché y de /formb. -->
+                                 ('unico' es el plan anual, 'propia' el pago único). La opción
+                                 'propia' se sacó del formulario el 6-oct-2026 y volvió el
+                                 26-oct, primera, en el orden de los precios del bot. -->
                             <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
                                 <option value="" disabled selected>Elegí una opción</option>
-                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
+                                <option value="propia" data-desc="Pagás la web una sola vez: arrancás con una seña y el resto lo pagás al entregar la web. La web queda 100% tuya e incluye el primer año de hosting y dominio.">Pago único</option>
                                 <option value="unico" data-desc="Arrancás con una seña de $60.000, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción. Incluye el mantenimiento y un cambio por mes.">Plan anual</option>
+                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
                             </select>
-                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan mensual y plan anual.</p>
+                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre pago único, plan anual y plan mensual.</p>
                         </div>
 
                         <!-- Dos colores (2-oct, sin el de fondos). El que no se toca no viaja:
@@ -298,6 +299,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261009-colores-mas"></script>
+    <script type="module" src="script.js?v=20261026-pago-unico"></script>
 </body>
 </html>

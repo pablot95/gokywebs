@@ -351,7 +351,7 @@ function wabot_comercial_info($cfg) {
     $l[] = '- informativa → plan "informativa" (el más económico). Incluye el desarrollo completo de la web, adaptada para celular, preparada para Google, un cambio por mes (lo hacemos nosotros), hosting, dominio, actualizaciones y soporte técnico. NO tiene panel: el cliente no edita nada solo.';
     $l[] = '- informativa_panel → plan "con panel": la misma web informativa, pero con panel para que el cliente cambie él mismo textos, fotos y servicios. Corresponde si dice que quiere manejar o actualizar el contenido por su cuenta.';
     $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas, con calendario, horarios y, si la quiere, la seña por Mercado Pago para confirmar el turno (en la propuesta, solo lo que el cliente pidió). Las reservas de turnos online, con o sin seña, son siempre del plan con panel: salen lo mismo que una tienda.';
-    $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: el sistema usa el plan internacional, con sus montos. Una web que solo se ve desde otros países sin cobrar no es internacional.';
+    $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: ese precio no se cotiza, lo pasa una persona. Una web que solo se ve desde otros países sin cobrar no es internacional.';
     $l[] = '- Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.';
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
     $l[] = '- Dos webs distintas para el mismo cliente (dos negocios o dos sitios separados): se cotizan juntas con descuento sobre la suma de los dos planes. Marcá solucion (una) y segunda_solucion (la otra): el sistema arma el precio de las dos. Vos nunca escribís esos montos.';
@@ -1376,6 +1376,13 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $d['motivo'] = 'Proyecto con cobros internacionales que pide pago único (sin precio de lista)';
         $ajustes[] = 'internacional_pago_unico';
     }
+    /* Pablo, 26-oct: "internacional lo sacamos de opción, eso lo doy yo dado el
+     * caso". Una web que cobra en el exterior sin precio dado no se cotiza. */
+    if ($d['internacional'] && $d['accion'] === 'cotizar' && !wabot_comercial_cotizacion($conv, $cfg)) {
+        $d['accion'] = 'humano';
+        $d['motivo'] = 'Proyecto con cobros internacionales: el precio lo pasa Pablo';
+        $ajustes[] = 'internacional_humano';
+    }
     // Muchos productos: se pueden cargar miles, avisando antes (9-oct). Si lo menciona, va la respuesta oficial.
     if (in_array($d['accion'], ['responder', 'cotizar', 'formulario'], true) && (int)wabot_ficha($conv)['cantidad_productos'] >= 300
         && !in_array('muchos_productos', $d['info_claves'], true) && empty($conv['comercial_muchos_avisado'])) {
@@ -1398,14 +1405,22 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
 
 /* ─────────────────────────────── Construcción de los mensajes ─────────────────────────────── */
 
-/** El bloque de planes de la solución con los montos de ESTA cotización (anual primero, como aprobó Pablo). */
+/**
+ * El bloque de planes de la solución con los montos de ESTA cotización. Desde
+ * el 26-oct (Pablo) el pago único va primero, para todos; una cotización sin
+ * pago único (congelada antes, o la internacional) sale con el bloque de antes
+ * (anual primero) y el pago único abajo solo si lo pidió.
+ */
 function wabot_comercial_planes_texto($solucion, $cotizacion, $cfg, $conPagoUnico = false) {
     $plan = (string)($cotizacion['plan'] ?? (wabot_comercial_soluciones()[$solucion]['plan'] ?? 'panel'));
     $bloque = ['informativa' => 'planes_informativa', 'internacional' => 'planes_internacional'][$plan] ?? 'planes_panel';
+    $unico = trim((string)($cotizacion['unico'] ?? ''));
+    if ($unico === '' && isset($cfg['comercial'][$bloque . '_sin_unico'])) $bloque .= '_sin_unico';
     $plantilla = trim((string)($cfg['comercial'][$bloque] ?? ''));
     if ($plantilla === '' || trim((string)($cotizacion['anual'] ?? '')) === '' || trim((string)($cotizacion['mensual'] ?? '')) === '') return '';
+    if (strpos($plantilla, '{unico}') !== false) return strtr($plantilla, ['{unico}' => $unico, '{anual}' => $cotizacion['anual'], '{mensual}' => $cotizacion['mensual']]);
     $texto = strtr($plantilla, ['{anual}' => $cotizacion['anual'], '{mensual}' => $cotizacion['mensual']]);
-    if ($conPagoUnico && trim((string)($cotizacion['unico'] ?? '')) !== '') {
+    if ($conPagoUnico && $unico !== '') {
         $unico = trim((string)($cfg['comercial']['pago_unico'] ?? ''));
         if ($unico !== '') $texto .= "\n\n" . str_replace('{unico}', $cotizacion['unico'], $unico);
     }
@@ -1557,9 +1572,9 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                     $intro = trim((string)($cfg['comercial']['dos_planes_intro'] ?? ''));
                     if ($intro !== '') $msgs[] = ['t' => $intro, 'efecto' => 'texto'];
                     $sin = trim((string)($cfg['comercial']['sin_reservas'] ?? ''));
-                    if ($sin !== '' && preg_match('/^Podés elegir/u', $planes)) $planes = wabot_comercial_pegar_confirmacion($sin, $planes);
+                    if ($sin !== '' && preg_match('/^(Podés elegir|Tenemos distintas)/u', $planes)) $planes = wabot_comercial_pegar_confirmacion($sin, $planes);
                     $msgs[] = ['t' => $planes, 'efecto' => 'planes'];
-                    $msgs[] = ['t' => strtr($con, ['{anual}' => $panel['anual'], '{mensual}' => $panel['mensual']]), 'efecto' => 'alternativa'];
+                    $msgs[] = ['t' => strtr($con, ['{unico}' => $panel['unico'], '{anual}' => $panel['anual'], '{mensual}' => $panel['mensual']]), 'efecto' => 'alternativa'];
                     break;
                 }
             }
@@ -1588,8 +1603,9 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 break;
             }
             $plan = wabot_comercial_soluciones()[$sol]['plan'];
-            // Cobros a clientes del exterior: plan internacional (9-oct, noche), si sus montos están cargados.
-            if ($d['internacional'] && wabot_comercial_montos_lista('internacional', $cfg)['mensual'] !== '') $plan = 'internacional';
+            /* Cobros a clientes del exterior: plan internacional (9-oct, noche). Desde el 26-oct
+             * no se cotiza de cero (pasa a Pablo, arriba): solo se repite el que ya se le dio. */
+            if ($d['internacional'] && $cot && ($cot['plan'] ?? '') === 'internacional') $plan = 'internacional';
             if ($cot && $cot['plan'] === $plan && !wabot_comercial_pide_precio_otra_vez($texto)) {
                 /* Ya cotizado con el mismo plan y no pidió el precio de nuevo (aclaró
                  * la solución: "solo quiero mostrarlos"): los planes no se repiten,

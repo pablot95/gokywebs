@@ -4497,7 +4497,8 @@ function wabot_planes_paginas() {
         'landing'      => [
             'mensual' => ['pagina' => 'mensual20000', 'monto' => '$20.000'],
             'anual'   => ['pagina' => 'anual140',  'monto' => '$140.000'],
-            'unico'   => ['pagina' => 'unico220',  'monto' => '$220.000'],
+            // 26-oct: el pago único del sitio sube a $240.000; unico220 sigue en línea para los que ya lo tenían.
+            'unico'   => ['pagina' => 'unico240',  'monto' => '$240.000'],
         ],
         'ecommerce'    => $tienda,
         'elearning'    => $tienda,
@@ -7139,9 +7140,10 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!function_exists('wabot_modalidad_elegida_en')) return false;
     if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
-    // "1" es el plan mensual en la imagen y en el texto de hoy; donde vio el anual primero, es el anual.
-    $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']),
-        function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv));
+    // "1" es lo primero que vio: el pago único desde el 26-oct, el anual en el texto del 9-oct, el mensual en las imágenes.
+    $orden = function_exists('wabot_modalidades_unico_primero') && wabot_modalidades_unico_primero($conv) ? 'unico'
+        : (function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv));
+    $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']), $orden);
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;
     if ($elegida === 'propia') $conv['quiere_web_propia'] = true;

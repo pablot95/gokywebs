@@ -774,6 +774,9 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
     if (isset($v) && ($v['modelo'] ?? '') !== 'doble' && !empty($conv['precio_cotizado']) && isset($montos['{' . $tipo . '_anual}'])
         && wabot_monto_a_numero($v['precio']) > 0) {
         $montos['{' . $tipo . '_anual}'] = (string)$v['precio'];
+        // Lo mismo con el pago único (26-oct: el del sitio subió de $220.000 a $240.000).
+        $unicoCharla = wabot_precio_unico_vigente($v, $cfg);
+        if (wabot_monto_a_numero($unicoCharla) > 0 && !empty($conv['precio_unico_cotizado'])) $montos['{' . $tipo . '_unico}'] = $unicoCharla;
     }
     foreach (['mensual', 'anual', 'unico'] as $modalidad) {
         $montos['{link_' . $modalidad . '}'] = wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg, $conv);
@@ -921,6 +924,56 @@ function wabot_rr_anual_24oct(array $categorias, $ruta) {
     return $categorias;
 }
 
+/* 26-oct (Pablo): el precio va con el pago único primero y después la suscripción con los dos
+   planes, en el bot y en las respuestas rápidas. Una sola vez (marca en data/migrated/): los dos
+   bloques de precio "Podés elegir entre dos planes" con sus marcadores pasan al texto nuevo (con
+   las mismas líneas de "incluyen" que tenía cada uno) y a "Planes" se suman los dos mensajes del
+   pago único con su página, seña ($80.000 / $100.000) y resto. Lo que Pablo cambie después queda. */
+const WABOT_RR_PAGO_UNICO_26OCT = [
+    "Te paso el pago único del sitio profesional, con todas las condiciones y los datos para la transferencia. \n\nPara arrancar con todas las modificaciones son \$80.000 y el resto (\$160.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/unico240",
+    "Te paso el pago único con todas las condiciones y los datos para la transferencia. \n\nPara arrancar con todas las modificaciones son \$100.000 y el resto (\$230.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/unico330",
+];
+
+/** "Podés elegir entre dos planes: 1) Plan anual: {landing_anual}…" → el bloque del 26-oct, o null si no es uno de esos. */
+function wabot_rr_bloque_precio_26oct($texto) {
+    $texto = (string)$texto;
+    if (!str_starts_with($texto, 'Podés elegir entre dos planes:')) return null;
+    if (!preg_match('/\{(landing|ecommerce|elearning|inmobiliaria)_anual\}/u', $texto, $m)) return null;
+    $g = $m[1];
+    $corte = mb_strpos($texto, 'Ambos incluyen todo:');
+    if ($corte === false) return null;
+    return "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n"
+        . '1) Pago único: {' . $g . "_unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n"
+        . "O por suscripción, con dos planes:\n"
+        . '2) Plan anual: {' . $g . "_anual}\n"
+        . '3) Plan mensual: {' . $g . "_mensual}\n\n"
+        . 'Los dos planes incluyen todo:' . mb_substr($texto, $corte + mb_strlen('Ambos incluyen todo:'));
+}
+
+function wabot_rr_pago_unico_26oct(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-pago-unico-26oct';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$texto) {
+            $nuevo = wabot_rr_bloque_precio_26oct($texto);
+            if ($nuevo !== null) { $texto = $nuevo; $cambio = true; }
+        }
+        unset($texto);
+        if (($categoria['titulo'] ?? '') === 'Planes' && empty($categoria['oculta'])) {
+            $faltan = array_diff(WABOT_RR_PAGO_UNICO_26OCT, $categoria['items']);
+            if ($faltan) { $categoria['items'] = array_merge($categoria['items'], array_values($faltan)); $cambio = true; }
+        }
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
+
 function wabot_rr_planes_17oct(array $categorias, $ruta) {
     $marca = WABOT_DATA . '/migrated/respuestas-rapidas-planes-17oct';
     if (is_file($marca)) return $categorias;
@@ -1002,7 +1055,7 @@ function wabot_respuestas_rapidas_load() {
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

@@ -3184,15 +3184,17 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
-// 6-oct-2026 (Pablo): mensual $20.000 / $30.000 (del 5 al 6-oct fue $22.000 / $32.000); anual $140.000 / $210.000 (24-oct: la tienda, cursos, inmobiliaria y noticias suben de $190.000; el sitio sigue igual. $140.000 / $190.000 desde el 9-oct a la noche; el 9-oct a la mañana subió a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, antes $140.000 / $220.000); pago único $220.000 / $330.000.
-// La seña es de $60.000 para el anual y el pago único. El mensual y el anual incluyen un cambio por mes;
+// 6-oct-2026 (Pablo): mensual $20.000 / $30.000 (del 5 al 6-oct fue $22.000 / $32.000); anual $140.000 / $210.000 (24-oct: la tienda, cursos, inmobiliaria y noticias suben de $190.000; el sitio sigue igual. $140.000 / $190.000 desde el 9-oct a la noche; el 9-oct a la mañana subió a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, antes $140.000 / $220.000); pago único $240.000 / $330.000 (26-oct: el del sitio subió de $220.000).
+// `sena` es la del plan anual, $60.000. Desde el 26-oct-2026 la seña del pago único es otra ($80.000 el sitio,
+// $100.000 el resto) pero acá no es un dato aparte: el panel sigue usando `sena` también para el pago único.
+// Desde el 26-oct el pago único vuelve a la oferta pública (pago único, anual y mensual). El mensual y el anual incluyen un cambio por mes;
 // el plan con cambios ya no existe. Desde el 3-oct el pago único sale de la oferta pública (solo para
 // quien pide la titularidad del código; lo maneja Pablo a mano): sigue acá para poder cotizarlo, pero
 // los detalles sin modalidad elegida muestran solo el mensual y el anual.
 // `unico` es el precio del plan anual; `propia`, el del pago único. A los
 // clientes que ya tienen un plan, planDe les toma los montos guardados en el doc.
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    unico: 140000, sena: 60000, mensual: 20000, propia: 220000 },
+    profesional:  { label: "Sitio profesional",    unico: 140000, sena: 60000, mensual: 20000, propia: 240000 },
     ecommerce:    { label: "Ecommerce",            unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
     cursos:       { label: "Plataforma de cursos", unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
     inmobiliaria: { label: "Inmobiliaria",         unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
@@ -6476,7 +6478,7 @@ function limpiarChatBoilerplate(chat) {
             if (/gokywebs\.com\/form/i.test(cuerpoOriginal)) return "";
 
             const inicioPlanes = cuerpoOriginal.search(
-                /(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas|Pod[eé]s contratarla de dos maneras|Pod[eé]s elegir entre dos planes)\s*[:,]?/i
+                /(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas|Pod[eé]s contratarla de dos maneras|Pod[eé]s elegir entre dos planes|Tenemos distintas modalidades de pago)\s*[:,]?/i
             );
             if (inicioPlanes >= 0) {
                 const descripcion = cuerpoOriginal.slice(0, inicioPlanes).trim();

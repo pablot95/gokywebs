@@ -3,8 +3,8 @@
    con una de tres modalidades: el plan mensual por suscripción de Mercado Pago,
    el plan anual (una seña para arrancar, el resto al entregar la web y después
    se renueva cada año, contado desde la seña) o el pago único (una seña para
-   arrancar y el resto al entregar la web). La seña es la misma para el plan
-   anual y el pago único. Este archivo arma la preferencia de Checkout Pro solo
+   arrancar y el resto al entregar la web). Desde el 26-oct-2026 la seña del
+   pago único es otra que la del plan anual (ver $SENAS_PAGO_UNICO). Este archivo arma la preferencia de Checkout Pro solo
    para la seña: la llama handlePayment('unico' o 'propia') de
    presupuesto/script.js y Mercado Pago vuelve a exito.html con payment_id; de
    cuál de las dos modalidades es la seña lo sabe exito.html por la modalidad
@@ -33,16 +33,21 @@ $email     = filter_var(trim($body['email']           ?? ''), FILTER_SANITIZE_EM
 $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
 
 // Seña del plan anual o del pago único, recalculada server-side a partir del
-// siteType: nunca se confía en un monto mandado desde el cliente. Es $60.000
-// para todos los tipos y para las dos modalidades (sitio profesional, clave
-// 'landing', ecommerce, inmobiliaria y elearning).
-// Tiene que coincidir con SENA de presupuesto/script.js y de
+// siteType y la modalidad: nunca se confía en un monto mandado desde el cliente.
+// Plan anual ('unico'): $60.000 para todos los tipos. Pago único ('propia'),
+// desde el 26-oct-2026: $80.000 el sitio profesional (clave 'landing') y
+// $100.000 ecommerce, inmobiliaria y elearning. Sin modalidad (script.js viejo
+// en caché) se toma la del plan anual, como hasta ahora.
+// Tiene que coincidir con SENA / SENA_PAGO_UNICO de presupuesto/script.js y de
 // presupuesto/exito.html. Un tipo desconocido no cobra nada, antes que cobrar
 // una seña que no corresponde.
-$SENAS    = ['landing' => 60000, 'ecommerce' => 60000, 'inmobiliaria' => 60000, 'elearning' => 60000];
-$siteType = is_string($body['siteType'] ?? null) ? trim($body['siteType']) : '';
+$SENAS            = ['landing' => 60000, 'ecommerce' => 60000,  'inmobiliaria' => 60000,  'elearning' => 60000];
+$SENAS_PAGO_UNICO = ['landing' => 80000, 'ecommerce' => 100000, 'inmobiliaria' => 100000, 'elearning' => 100000];
+$siteType  = is_string($body['siteType'] ?? null) ? trim($body['siteType']) : '';
+$modalidad = is_string($body['modalidad'] ?? null) ? trim($body['modalidad']) : '';
 if (!isset($SENAS[$siteType])) { http_response_code(400); echo json_encode(['error' => 'Tipo de web inválido']); exit; }
-$sena = $SENAS[$siteType];
+$esPagoUnico = $modalidad === 'propia';
+$sena = $esPagoUnico ? $SENAS_PAGO_UNICO[$siteType] : $SENAS[$siteType];
 
 // El plan mensual no se cobra acá: es una suscripción de Mercado Pago
 // (preapproval) y el link del plan lo abre directo presupuesto/script.js. Las altas
@@ -52,7 +57,9 @@ $preference = [
     'items' => [[
         'id'          => 'sena-web-gokywebs',
         'title'       => 'Seña — Desarrollo Web Gokywebs',
-        'description' => 'Seña de tu sitio web, con el plan anual o el pago único. El resto se abona al entregar la web.',
+        'description' => $esPagoUnico
+            ? 'Seña de tu sitio web, con el pago único. El resto se abona al entregar la web.'
+            : 'Seña de tu sitio web, con el plan anual. El resto se abona al entregar la web.',
         'quantity'    => 1,
         'currency_id' => 'ARS',
         'unit_price'  => $sena

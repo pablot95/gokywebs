@@ -309,8 +309,8 @@ const params        = new URLSearchParams(window.location.search);
 /* Tres modalidades (26-sep-2026). La vuelta de Mercado Pago dice cuál fue: la
    suscripción del plan mensual vuelve con preapproval_id, solo si el plan de
    Mercado Pago tiene esta página como URL de retorno; la seña vuelve de
-   Checkout Pro con payment_id (y collection_id), y como es la misma seña para
-   el plan anual y el pago único, de cuál de las dos es lo dice la modalidad
+   Checkout Pro con payment_id (y collection_id), y de cuál de las dos señas
+   es (plan anual o pago único; desde el 26-oct-2026 no valen lo mismo) lo dice la modalidad
    que guardó script.js al tocar el botón ('unico' = plan anual, 'propia' =
    pago único; si no está, es la del plan anual). Sin ninguno de los dos IDs
    se usa esa modalidad guardada. */
@@ -356,8 +356,9 @@ const modalidad   = preapprovalId ? 'mensual'
    script.js) y solo se muestra. Sin siteType no se muestra ningún monto, antes
    que afirmar uno que no se leyó. */
 const PRECIO_ANUAL      = { landing: 140000, ecommerce: 210000, inmobiliaria: 210000, elearning: 210000 }; // plan anual, 24-oct-2026 (la tienda, cursos e inmobiliaria subieron de $190.000)
-const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 }; // pago único, 3-oct-2026
-const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
+const PRECIO_PAGO_UNICO = { landing: 240000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 }; // pago único, 26-oct-2026 (el sitio profesional estaba en $220.000)
+const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };  // plan anual
+const SENA_PAGO_UNICO   = { landing: 80000,  ecommerce: 100000, inmobiliaria: 100000, elearning: 100000 }; // pago único, 26-oct-2026
 const MENSUALIDAD       = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 }; // 6-oct-2026
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const borradorNuevo  = Number(presupuesto.precioUnico) > 0;
@@ -367,7 +368,9 @@ const senaVal        = (borradorNuevo && Number(presupuesto.sena)) || SENA[tipoW
 const saldoVal       = precioUnicoVal ? Math.max(precioUnicoVal - senaVal, 0) : 0;
 const mensualidadVal = (borradorNuevo && Number(presupuesto.mensualidad)) || MENSUALIDAD[tipoWeb] || 0;
 const pagoUnicoVal      = PRECIO_PAGO_UNICO[tipoWeb] || 0;
-const saldoPagoUnicoVal = pagoUnicoVal ? Math.max(pagoUnicoVal - senaVal, 0) : 0;
+const senaPagoUnicoVal  = SENA_PAGO_UNICO[tipoWeb] || 0;
+const saldoPagoUnicoVal = pagoUnicoVal ? Math.max(pagoUnicoVal - senaPagoUnicoVal, 0) : 0;
+const senaPagoUnicoFmt  = senaPagoUnicoVal ? fmtARS(senaPagoUnicoVal) : '—';
 const precioUnicoFmt = precioUnicoVal ? fmtARS(precioUnicoVal) : '—';
 const senaFmt        = senaVal ? fmtARS(senaVal) : '—';
 const saldoFmt       = saldoVal ? fmtARS(saldoVal) : '—';
@@ -385,9 +388,9 @@ if (modalidad === 'unico') {
     setText('pendingText', 'Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
 } else if (modalidad === 'propia') {
     setText('exitoBadge', '✓ Seña confirmada');
-    setText('exitoDesc', `Ya recibimos la seña de tu pago único${senaVal ? ', ' + senaFmt : ''}. ${saldoPagoUnicoVal ? 'El resto, ' + saldoPagoUnicoFmt + ',' : 'El resto'} lo abonás al entregar la web, que queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
+    setText('exitoDesc', `Ya recibimos la seña de tu pago único${senaPagoUnicoVal ? ', ' + senaPagoUnicoFmt : ''}. ${saldoPagoUnicoVal ? 'El resto, ' + saldoPagoUnicoFmt + ',' : 'El resto'} lo abonás al entregar la web, que queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
     setText('pagoPillLabel', 'Seña');
-    setText('pagoPillValor', senaVal ? senaFmt + ' ✓' : '✓');
+    setText('pagoPillValor', senaPagoUnicoVal ? senaPagoUnicoFmt + ' ✓' : '✓');
     setText('pendingTitle', '⏳ Pago en proceso');
     setText('pendingText', 'Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
 } else if (modalidad === 'mensual') {
@@ -556,7 +559,8 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
             const totalFmt       = esPagoUnico ? pagoUnicoFmt : precioUnicoFmt;
             const saldoMailFmt   = esPagoUnico ? saldoPagoUnicoFmt : saldoFmt;
             const modalidadTexto = { mensual: 'Plan mensual', unico: 'Plan anual', propia: 'Pago único' }[modalidad] || '—';
-            const primerPagoFmt  = modalidad === 'unico' || esPagoUnico ? senaFmt : (modalidad === 'mensual' ? mensualidadFmt : '—');
+            const senaMailFmt    = esPagoUnico ? senaPagoUnicoFmt : senaFmt;
+            const primerPagoFmt  = modalidad === 'unico' || esPagoUnico ? senaMailFmt : (modalidad === 'mensual' ? mensualidadFmt : '—');
             const pagesLabel   = { '1': '1 pagina (hasta 5 secciones)', '2-4': '2 a 4 paginas', 'mas5': 'mas de 5 paginas' };
             const pagesText    = pagesLabel[briefData.pages] || briefData.pages || '—';
             const objText      = Array.isArray(briefData.objectives) ? briefData.objectives.join(', ') : '—';
@@ -572,7 +576,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
                 mensualidad:  mensualidadFmt,
                 modalidad:    modalidadTexto,
                 precio_unico: totalFmt,
-                sena:         senaFmt,
+                sena:         senaMailFmt,
                 saldo:        saldoMailFmt,
                 negocio:      briefData.negocio || briefData.businessType,
                 payment_id:   paymentId
@@ -591,7 +595,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
                 mensualidad:     mensualidadFmt,
                 modalidad:       modalidadTexto,
                 precio_unico:    totalFmt,
-                sena:            senaFmt,
+                sena:            senaMailFmt,
                 saldo:           saldoMailFmt,
                 payment_id:      paymentId,
                 payment_status:  briefData.paymentStatus || 'approved',

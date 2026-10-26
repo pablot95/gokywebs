@@ -39,7 +39,7 @@ $p = wabot_precio_vigente($c, $cfg);
 caso('cotización original de septiembre se mantiene aunque las tarifas nuevas sean menores (9-oct)', $p['precio'] === '$180.000' && $p['mensualidad'] === '$25.000' && $p['precio_unico'] === '$240.000', json_encode($p));
 $cfgLista = $cfg; $cfgLista['cotizacion_conservar'] = false;
 $pLista = wabot_precio_vigente($c, $cfgLista);
-caso('con el ajuste apagado toma las nuevas tarifas menores (regla del 26-sep)', $pLista['precio'] === '$140.000' && $pLista['mensualidad'] === '$20.000' && $pLista['precio_unico'] === '$220.000');
+caso('con el ajuste apagado toma las nuevas tarifas menores (regla del 26-sep)', $pLista['precio'] === '$140.000' && $pLista['mensualidad'] === '$20.000' && $pLista['precio_unico'] === '$240.000');
 $c2 = pp_conv('ecommerce');
 $c2['precio_cotizado'] = '$190.000'; $c2['mensualidad_cotizada'] = '$29.900'; $c2['precio_unico_cotizado'] = '$290.000';
 $p2 = wabot_precio_vigente($c2, $cfg);
@@ -121,10 +121,10 @@ function pp_silencio($c, $r) {
         && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']);
 }
 
-foreach (['landing' => ['$20.000', '$140.000', '$220.000', '$80.000', '$140.000'],
-    'ecommerce' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000'],
-    'elearning' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000'],
-    'inmobiliaria' => ['$30.000', '$210.000', '$330.000', '$150.000', '$270.000']]
+foreach (['landing' => ['$20.000', '$140.000', '$240.000', '$80.000', '$160.000'],
+    'ecommerce' => ['$30.000', '$210.000', '$330.000', '$150.000', '$230.000'],
+    'elearning' => ['$30.000', '$210.000', '$330.000', '$150.000', '$230.000'],
+    'inmobiliaria' => ['$30.000', '$210.000', '$330.000', '$150.000', '$230.000']]
     as $tipo => [$mes, $anual, $unico, $saldo, $saldoUnico]) {
     $c = pp_conv($tipo);
     $p = wabot_precio_vigente($c, $cfg, $tipo);
@@ -232,7 +232,7 @@ foreach (['Gracias', '👍', 'Gracias por comunicarte, nuestro horario de atenci
     caso('acuse o respuesta automática no inventa avance: ' . $texto, $r === [] && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
 // El pago único ya no se ofrece (3-oct), pero al que lo elige igual se le manda su página.
-foreach (['landing' => ['anual140', 'unico220'], 'ecommerce' => ['anual210', 'unico330']] as $tipo => [$anual, $propia]) {
+foreach (['landing' => ['anual140', 'unico240'], 'ecommerce' => ['anual210', 'unico330']] as $tipo => [$anual, $propia]) {
     foreach (['El plan anual' => [$anual, 'plan anual'], 'El pago único' => [$propia, 'pago único']] as $texto => [$pagina, $nombre]) {
         $c = pp_conv($tipo, ['presentado_ts' => time()]);
         pp_api(pp_decision(['pago_link']));

@@ -359,18 +359,26 @@ function wabot_textos_default() {
      * breve (la redacta el modelo, adaptada al negocio), los planes del bloque
      * que corresponde (anual primero) y la oferta de la demo. El sí se lleva
      * `prediseno_link` (el formulario). {anual} y {mensual} los resuelve
-     * wabot_comercial_planes_texto() con los montos de ESA charla. */
+     * wabot_comercial_planes_texto() con los montos de ESA charla.
+     * 26-oct (Pablo): el pago único va primero y después la suscripción con los
+     * dos planes (1 pago único, 2 anual, 3 mensual). Una cotización congelada
+     * sin pago único (las de antes, o la internacional) sale con los de
+     * *_sin_unico, que son los textos de hasta hoy. */
     'comercial' => [
-        'planes_informativa' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
-        'planes_panel' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'planes_informativa' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'planes_panel' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'planes_informativa_sin_unico' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+        'planes_panel_sin_unico' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
         'oferta_demo' => 'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?',
         /* Proyectos que cobran a clientes del exterior (PayPal u otra pasarela):
          * $40.000 por mes (Pablo, 9-oct a la noche). El anual sale del caso que
          * Pablo cotizó así y lo confirmó el 9-oct: $240.000. Sin pago único:
-         * si lo pide, lo ve Pablo. */
+         * si lo pide, lo ve Pablo. Desde el 26-oct el bot ya no lo cotiza
+         * ("internacional lo sacamos de opción, eso lo doy yo"): pasa a Pablo.
+         * Los montos quedan para las charlas que ya lo tenían. */
         'internacional' => ['mensual' => '$40.000', 'anual' => '$240.000'],
         'planes_internacional' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Cobros internacionales (PayPal u otra pasarela)\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
-        // Debajo de los planes, solo si pidió comprar la web, el código propio o no tener suscripción (plan del 9-oct).
+        // Debajo de los planes *_sin_unico, solo si pidió comprar la web, el código propio o no tener suscripción (plan del 9-oct).
         'pago_unico' => 'Y si preferís comprarla, está el pago único: {unico}. Pagás la web una sola vez y el código queda tuyo al abonar el total.',
         // Si el modelo no dejó una pregunta usable para saber el negocio.
         'pregunta_negocio' => 'Te consulto, a qué te dedicás o qué vendés?',
@@ -398,7 +406,7 @@ function wabot_textos_default() {
          * reservas" / "Sin reservas podés elegir…" / "Con reservas quedaría en:"). */
         'dos_planes_intro' => 'Es otro plan si incluye reservas',
         'sin_reservas' => 'Sin reservas',
-        'con_reservas' => "Con reservas quedaría en:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}",
+        'con_reservas' => "Con reservas quedaría en:\n\n1) Pago único: {unico}\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}",
         /* Dos webs distintas para el mismo cliente (Pablo, 10-oct): la suma de las
          * dos con $10.000 menos por mes y $50.000 menos por año (20+20 → 30,
          * 20+30 → 40, 30+30 → 50; 140+140 → 230, 140+190 → 280, 190+190 → 330). */
@@ -614,7 +622,8 @@ function wabot_textos_default() {
         'landing' => [
             'label' => 'Sitio profesional',
             'precio' => '$140.000',
-            'precio_unico' => '$220.000',
+            // 26-oct (Pablo): el pago único vuelve a ofrecerse a todos y el del sitio profesional sube de $220.000 a $240.000.
+            'precio_unico' => '$240.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
             'reconocimiento_que' => 'tus servicios',

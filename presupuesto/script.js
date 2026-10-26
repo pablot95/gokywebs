@@ -545,18 +545,17 @@ function _restorePills(containerId, values) {
 }
 
 /* Paso 3 (10-sep-2026): ya no hay pills de adicionales — el modelo es "todo
-   incluido" y los adicionales (productos, el mantenimiento aparte del pago
-   único) se coordinan por WhatsApp. El paso queda como el panel de qué incluye
+   incluido" y los adicionales (productos) se coordinan por WhatsApp. El paso queda como el panel de qué incluye
    la web + las tres modalidades, plan mensual, plan anual y pago único
    (26-sep-2026). */
 function renderStep3Context() {
     const type     = getSiteType();
     const items    = INCLUDES[type] || INCLUDES.landing;
     const included = document.getElementById('func-included');
-    const { precioAnual, precioPagoUnico, sena, mensualidad, mantenimiento, sinPrecio } = getPlanInfo(type);
+    const { precioAnual, precioPagoUnico, senaPagoUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Plan mensual de <strong style="color:var(--navy)">${fmt(mensualidad)} por mes</strong>, sin pago inicial y con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. Plan anual de <strong style="color:var(--navy)">${fmt(precioAnual)} por año</strong>, también con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. O pago único de <strong style="color:var(--navy)">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(sena)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y el mantenimiento se contrata aparte, por ${fmt(mantenimiento)} por mes. Con cualquiera la web queda lista en unos 7 días.`;
+        : `Plan mensual de <strong style="color:var(--navy)">${fmt(mensualidad)} por mes</strong>, sin pago inicial y con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. Plan anual de <strong style="color:var(--navy)">${fmt(precioAnual)} por año</strong>, también con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. O pago único de <strong style="color:var(--navy)">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(senaPagoUnico)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y la web queda 100% tuya. Con cualquiera la web queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -750,10 +749,10 @@ function mensajeMuestraWsp(nombreNegocio) {
     if (state.sinPrecio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
-        const { precioPagoUnico } = getPlanInfo(state.siteType || getSiteType());
+        const { precioPagoUnico, senaPagoUnico } = getPlanInfo(state.siteType || getSiteType());
         lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes`);
         lineas.push(`💰 Plan anual: ${fmt(state.precioUnico)} por año (seña de ${fmt(state.sena)})`);
-        lineas.push(`💰 Pago único: ${fmt(precioPagoUnico)} (seña de ${fmt(state.sena)})`);
+        lineas.push(`💰 Pago único: ${fmt(precioPagoUnico)} (seña de ${fmt(senaPagoUnico)})`);
     }
     lineas.push('', 'Gracias!');
     return lineas.join('\n');
@@ -788,23 +787,26 @@ function getSiteType() {
      Incluye el mismo mantenimiento que el mensual. Viaja como precioUnico /
      modalidad 'unico' porque son los nombres que lee el admin (ahí 'unico' es
      el plan anual y precioUnico su precio por año).
-   · Pago único: la misma seña y el resto al entregar la web; se puede pagar en
-     cuotas con intereses. Incluye el primer año de hosting y dominio; el
-     mantenimiento no, se contrata aparte (MANTENIMIENTO_APARTE, por mes). Es la
-     modalidad 'propia' del admin y NO tiene campo propio en Firestore:
-     PRECIO_PAGO_UNICO solo se muestra (pantalla y WhatsApp).
-   La seña del plan anual y la del pago único es SENA: si se cobra con Checkout
-   Pro, el monto lo recalcula server-side api/crear-preferencia.php a partir
-   del siteType, así que SENA tiene que coincidir con lo que hay ahí y con SENA
-   de exito.html (lo mismo PRECIO_ANUAL y PRECIO_PAGO_UNICO con los de
-   exito.html). Son montos que nunca se suman entre sí. Clave 'landing' = sitio
-   profesional.
-   Montos al 6-oct-2026, los mismos que wabot/textos.php y las páginas de
-   /pago: mensual $20.000 / $30.000, anual $140.000 / $210.000 (24-oct; la tienda, cursos e inmobiliaria estaban en $190.000 desde el 9-oct a la noche) y pago único
-   $220.000 / $330.000. */
+   · Pago único: una seña propia (SENA_PAGO_UNICO) y el resto al entregar la
+     web; se puede pagar en cuotas con intereses. Incluye el primer año de
+     hosting y dominio y la web queda 100% del cliente. Es la modalidad 'propia'
+     del admin y NO tiene campo propio en Firestore: PRECIO_PAGO_UNICO y
+     SENA_PAGO_UNICO solo se muestran (pantalla y WhatsApp) y se cobran por
+     Checkout Pro. MANTENIMIENTO_APARTE queda como dato, sin mostrarse.
+   La seña del plan anual es SENA y la del pago único SENA_PAGO_UNICO (desde el
+   26-oct-2026 ya no son la misma): si se cobran con Checkout Pro, el monto lo
+   recalcula server-side api/crear-preferencia.php a partir del siteType y la
+   modalidad, así que tienen que coincidir con lo que hay ahí y con exito.html
+   (lo mismo PRECIO_ANUAL y PRECIO_PAGO_UNICO). Son montos que nunca se suman
+   entre sí. Clave 'landing' = sitio profesional.
+   Montos al 26-oct-2026, los mismos que wabot/textos.php y las páginas de
+   /pago: mensual $20.000 / $30.000, anual $140.000 / $210.000 (seña $60.000) y
+   pago único $240.000 / $330.000 (seña $80.000 / $100.000; hasta el 26-oct el
+   del sitio profesional era $220.000 y las dos señas, $60.000). */
 const PRECIO_ANUAL      = { landing: 140000, ecommerce: 210000, inmobiliaria: 210000, elearning: 210000 };
-const PRECIO_PAGO_UNICO = { landing: 220000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
+const PRECIO_PAGO_UNICO = { landing: 240000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
+const SENA_PAGO_UNICO   = { landing: 80000,  ecommerce: 100000, inmobiliaria: 100000, elearning: 100000 };
 const MENSUALIDAD       = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
 const MANTENIMIENTO_APARTE = { landing: 15000, ecommerce: 15000, inmobiliaria: 15000, elearning: 15000 };
 const SUSCRIPCION_SITIO = 'https://mpago.la/1pfejMG';   // $20.000 por mes
@@ -819,11 +821,13 @@ function getPlanInfo(type) {
     const precioAnual     = PRECIO_ANUAL[type] || 0;
     const precioPagoUnico = PRECIO_PAGO_UNICO[type] || 0;
     const sena            = SENA[type] || 0;
+    const senaPagoUnico   = SENA_PAGO_UNICO[type] || 0;
     return {
         precioAnual,
         saldoAnual: Math.max(precioAnual - sena, 0),
         precioPagoUnico,
-        saldoPagoUnico: Math.max(precioPagoUnico - sena, 0),
+        senaPagoUnico,
+        saldoPagoUnico: Math.max(precioPagoUnico - senaPagoUnico, 0),
         sena,
         mensualidad: MENSUALIDAD[type] || 0,
         mantenimiento: MANTENIMIENTO_APARTE[type] || 0,
@@ -866,7 +870,7 @@ function renderResult() {
     const type = getSiteType();
     state.siteType = type;
 
-    const { precioAnual, saldoAnual, precioPagoUnico, saldoPagoUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
+    const { precioAnual, saldoAnual, precioPagoUnico, senaPagoUnico, saldoPagoUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
     /* Plan mensual, plan anual o pago único (26-sep-2026). Campos que lee el
        admin: precioUnico (el precio por año del plan anual), sena, saldo (el
        resto del plan anual), mensualidad y modalidad; totalPrice y basePrice
@@ -897,7 +901,7 @@ function renderResult() {
     setT('priceAnual',            sinPrecio ? 'A coordinar' : `${fmt(precioAnual)}/año`);
     setT('priceAnualDetalle',     sinPrecio ? 'seña y el resto al entregar la web' : `seña de ${fmt(sena)} y el resto (${fmt(saldoAnual)}) al entregar la web; se renueva cada año`);
     setT('pricePagoUnico',        sinPrecio ? 'A coordinar' : fmt(precioPagoUnico));
-    setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y el resto al entregar la web' : `seña de ${fmt(sena)} y el resto (${fmt(saldoPagoUnico)}) al entregar la web`);
+    setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y el resto al entregar la web' : `seña de ${fmt(senaPagoUnico)} y el resto (${fmt(saldoPagoUnico)}) al entregar la web`);
 
     const includesList = document.getElementById('includesList');
     const items = INCLUDES[type] || INCLUDES.landing;
@@ -1092,9 +1096,9 @@ function validateCheckout() {
      sitio profesional y $30.000/mes el resto. Mercado Pago vuelve a exito.html
      con preapproval_id solo si el plan tiene esa URL de retorno configurada
      (eso se define en el plan, en la cuenta de Mercado Pago, no acá).
-   · 'unico' (plan anual) y 'propia' (pago único) → la seña por Checkout Pro,
-     que es la misma para las dos: api/crear-preferencia.php la recalcula a
-     partir del siteType y Mercado Pago vuelve a exito.html con payment_id.
+   · 'unico' (plan anual) y 'propia' (pago único) → la seña por Checkout Pro
+     (SENA o SENA_PAGO_UNICO): api/crear-preferencia.php la recalcula a partir
+     del siteType y la modalidad, y Mercado Pago vuelve a exito.html con payment_id.
      exito.html sabe de cuál de las dos es la seña por la modalidad que queda
      en `gky_presupuesto`. El resto se abona al entregar la web, fuera de esta
      página.
@@ -1159,7 +1163,8 @@ async function handlePayment(modalidad) {
         const res = await fetch('api/crear-preferencia.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre, email, reference, siteType: type })
+            // modalidad: la seña del pago único ('propia') no es la del plan anual.
+            body: JSON.stringify({ nombre, email, reference, siteType: type, modalidad })
         });
         const data = await res.json();
         if (data.init_point) {
@@ -1179,11 +1184,14 @@ async function handlePayment(modalidad) {
 const MODALIDADES_CHECKOUT = ['mensual', 'unico', 'propia'];
 const BOTON_PAGO = { mensual: 'btnPayMensual', unico: 'btnPaySenaAnual', propia: 'btnPaySenaUnico' };
 
-// La seña es la misma para el plan anual ('unico') y el pago único ('propia'):
-// cada botón dice de cuál es.
+// Cada botón dice de cuál es la seña: la del plan anual ('unico') es state.sena
+// y la del pago único ('propia') sale del tipo de web (SENA_PAGO_UNICO, 26-oct-2026).
 function etiquetaPagarSena(modalidad) {
     const de = modalidad === 'propia' ? 'del pago único' : 'del plan anual';
-    return state.sena ? `Pagar la seña ${de}, ${fmt(state.sena)}` : `Pagar la seña ${de}`;
+    const monto = modalidad === 'propia'
+        ? (state.sinPrecio ? 0 : getPlanInfo(state.siteType || getSiteType()).senaPagoUnico)
+        : state.sena;
+    return monto ? `Pagar la seña ${de}, ${fmt(monto)}` : `Pagar la seña ${de}`;
 }
 
 function etiquetaSuscribirme() {

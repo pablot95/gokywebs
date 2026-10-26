@@ -3309,15 +3309,10 @@ function burbujaCita(t, chat) {
                         <?php /* 6-oct: de nuevo $20.000 y $30.000 (pago/mensual20000 y pago/mensual30000); del 5 al 6-oct fueron $22.000 y $32.000. */ ?>
                         <?php /* Plan $20.000 / $30.000 / Anual $140.000 / $190.000 (desde el 24-oct, $210.000): pasaron de botones
                                del encabezado a la categoría "Planes" (editable) de las respuestas rápidas (Pablo, 17-oct). */ ?>
-                        <?php if (wabot_rr_03oct_pidio_codigo($conv)): ?>
-                        <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/unico220 y pago/unico330). Desde el
-                               3-oct no se ofrecen: solo para el que pide el código propio. */ ?>
-                        <button type="button" class="sec" id="btnUnico240"
-                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $220.000</button>
-                        <button type="button" class="sec" id="btnUnico360"
-                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $330.000</button>
-                        <?php endif; ?>
+                        <?php /* Los botones "Único $220.000 / $330.000" (29-sep, solo para el que pedía el
+                               código propio) se sacaron el 26-oct: el pago único vuelve a ofrecerse a
+                               todos y sus mensajes (unico240 y unico330) están en "Planes" de las
+                               respuestas rápidas (wabot_rr_pago_unico_26oct). */ ?>
                         <?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -4358,16 +4353,6 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             txt.focus();
             txt.setSelectionRange(cursor, cursor);
         }
-
-        /* Los del pago único (29-sep), con el mismo formato: la página tiene las
-         * condiciones y los datos para la transferencia; el mensaje adelanta la
-         * seña y el resto. */
-        document.getElementById('btnUnico240')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único del sitio profesional ($220.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico220');
-        });
-        document.getElementById('btnUnico360')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único ($330.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($270.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330');
-        });
 
         function rrElegir(indice) {
             const elegida = rrCoincidencias[indice];

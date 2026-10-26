@@ -30,10 +30,13 @@ $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
 $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
 $GLOBALS['TC_DICE_RUBRO'] = true;   // la bienvenida fija no sale: el primer mensaje ya cuenta el rubro
 
-const PLANES_PANEL = "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
-const PLANES_INFO = "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
+const PLANES_PANEL = "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
+const PLANES_INFO = "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
 const OFERTA = 'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?';
-function planes($cual, $anual, $mensual) { return strtr($cual === 'panel' ? PLANES_PANEL : PLANES_INFO, ['{anual}' => $anual, '{mensual}' => $mensual]); }
+// 26-oct: el pago único va primero; si no se dice cuál, el de lista del plan.
+function planes($cual, $anual, $mensual, $unico = null) {
+    return strtr($cual === 'panel' ? PLANES_PANEL : PLANES_INFO, ['{unico}' => $unico ?? ($cual === 'panel' ? '$330.000' : '$240.000'), '{anual}' => $anual, '{mensual}' => $mensual]);
+}
 
 /** Una decisión del modelo, con lo que no se pasa en blanco. */
 function dc(array $d = []) {
@@ -370,7 +373,7 @@ caso('los cupones de descuento de SU tienda no se confunden con pedir rebaja', c
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'pago_unico' => true, 'mensajes' => ['Perfecto, te podemos armar una web con tus servicios y el contacto directo.'], 'ficha' => ['rubro' => 'tu estudio contable']])]);
 $r = turno('Soy contador. No quiero suscripción, quiero comprar la web', $c, $cfg);
-caso('«quiero comprarla» → los planes más el pago único ($220.000) debajo', strpos($r[1] ?? '', planes('informativa', '$140.000', '$20.000')) === 0 && strpos($r[1] ?? '', 'pago único: $220.000') !== false && !empty($c['quiere_web_propia']), $r[1] ?? '');
+caso('«quiero comprarla» → el bloque con el pago único ($240.000) primero, sin repetirlo abajo', ($r[1] ?? '') === planes('informativa', '$140.000', '$20.000') && !empty($c['quiere_web_propia']), $r[1] ?? '');
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto, te podemos armar una tienda online.'], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Vendo ropa', $c, $cfg);
@@ -414,7 +417,7 @@ foreach (['$180.000' => 'por encima', '$120.000' => 'por debajo'] as $congelado 
     caso("congelado $como de la lista ($congelado) se mantiene en wabot_precio_vigente", $v['precio'] === $congelado, $v['precio']);
     oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['De nuevo.']])]);
     $r = turno('cuánto era?', $c, $cfg);
-    caso("y en los planes que se repiten", ($r[0] ?? '') === planes('informativa', $congelado, '$20.000'), $r[0] ?? '');
+    caso("y en los planes que se repiten", ($r[0] ?? '') === planes('informativa', $congelado, '$20.000', '$220.000'), $r[0] ?? '');
 }
 $cfgLista = $cfg; $cfgLista['cotizacion_conservar'] = false;
 $c = cv('5491100009006TEST', ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$180.000', 'precio_modelo' => 'anual']);
@@ -540,7 +543,7 @@ $GLOBALS['TC_DICE_RUBRO'] = true;
 caso('anual de lista (24-oct): $140.000 la informativa y $210.000 el resto; mantenimiento del pago único $15.000 para todos',
     $cfg['tipos']['landing']['precio'] === '$140.000' && $cfg['tipos']['ecommerce']['precio'] === '$210.000' && $cfg['tipos']['elearning']['precio'] === '$210.000'
     && $cfg['tipos']['inmobiliaria']['precio'] === '$210.000' && $cfg['tipos']['landing']['mantenimiento'] === '$15.000' && $cfg['tipos']['ecommerce']['mantenimiento'] === '$15.000');
-caso('pago único sigue $220.000 / $330.000', $cfg['tipos']['landing']['precio_unico'] === '$220.000' && $cfg['tipos']['ecommerce']['precio_unico'] === '$330.000');
+caso('pago único $240.000 / $330.000 (26-oct)', $cfg['tipos']['landing']['precio_unico'] === '$240.000' && $cfg['tipos']['ecommerce']['precio_unico'] === '$330.000');
 caso('las páginas de pago del anual son anual140 y anual210 (24-oct; antes anual190)', wabot_planes_paginas()['landing']['anual']['pagina'] === 'anual140' && wabot_planes_paginas()['ecommerce']['anual']['pagina'] === 'anual210');
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa_panel', 'mensajes' => ['Perfecto, te podemos armar una web para tu estudio, con un panel para que cambies vos los textos y las fotos.'], 'ficha' => ['rubro' => 'tu estudio de arquitectura']])]);
@@ -560,8 +563,9 @@ caso('la propuesta de respaldo de la informativa no nombra un panel', mb_stripos
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'internacional' => true, 'mensajes' => ['Perfecto, te podemos armar una web para tus cursos, con inscripción y pago online desde cualquier país.'], 'ficha' => ['que_vende' => 'cursos de ayurveda']])]);
 $r = turno('Doy cursos de ayurveda online para toda Latinoamérica y necesito cobrar desde otros países', $c, $cfg);
-caso('cobros internacionales → plan internacional $40.000 por mes, con su bloque', strpos($r[1] ?? '', '2) Plan mensual: $40.000') !== false && strpos($r[1] ?? '', 'Cobros internacionales') !== false
-    && ($c['comercial_cotizacion']['plan'] ?? '') === 'internacional' && ($c['mensualidad_cotizada'] ?? '') === '$40.000', json_encode($r, JSON_UNESCAPED_UNICODE));
+// 26-oct (Pablo): "internacional lo sacamos de opción, eso lo doy yo dado el caso".
+caso('cobros internacionales → para Pablo, sin cotizar el plan internacional', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano'
+    && empty($c['comercial_cotizacion']) && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 $cot = wabot_comercial_cotizacion(['transcript' => [['q' => 'humano', 't' => "Podés elegir entre dos planes:\n\n1) Plan anual: \$240.000\n2) Plan mensual: \$40.000", 'ts' => time()]]], $cfg);
 caso('una cotización internacional pegada a mano se reconoce por el mensual de $40.000', ($cot['plan'] ?? '') === 'internacional', json_encode($cot));
 $c = cv();
@@ -677,13 +681,13 @@ foreach (['Cuánto sale?' => true, 'Si tiene un costo' => true, 'Precio?' => tru
           'Y cuánto tardan en hacerla?' => false, 'Y hacen logos también?' => false] as $m => $esperado) {
     caso("¿pregunta el costo? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_pregunta_costo($m) === $esperado);
 }
-$conConReservas = "Con reservas quedaría en:\n\n1) Plan anual: \$210.000\n2) Plan mensual: \$30.000";
+$conConReservas = "Con reservas quedaría en:\n\n1) Pago único: \$330.000\n2) Plan anual: \$210.000\n3) Plan mensual: \$30.000";
 $c = cv_turnos();
 oa([dc($propPelu + ['accion' => 'responder', 'mensajes' => ['Depende de cómo quieras los turnos']])]);
 $r = turno('Si tiene un costo', $c, $cfg);
 caso('turnos sin contestar + "Si tiene un costo" → "Es otro plan si incluye reservas", sin reservas y con reservas, sin oferta todavía',
     count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas'
-    && $r[1] === 'Sin reservas p' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1) && $r[2] === $conConReservas
+    && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1) && $r[2] === $conConReservas
     && !empty($c['precio_dado']) && ($c['comercial_cotizacion']['plan'] ?? '') === 'informativa' && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
 $cDos = $c;
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu peluquería']])]);
@@ -718,7 +722,7 @@ wabot_conv_transcript($c, 'bot', "Buenísimo. Podemos armarte una web para mostr
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tus masajes']])]);
 $r = turno('Que escriba por Whatsapp solamente', $c, $cfg);
 caso('la pregunta de Pablo contestada → "Perfecto, entonces podés elegir entre dos planes:" + la oferta (dos mensajes)',
-    count($r) === 2 && $r[0] === 'Perfecto, entonces p' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+    count($r) === 2 && $r[0] === 'Perfecto, entonces t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv('5491100009005TEST');
 wabot_conv_transcript($c, 'cliente', 'Tengo un gabinete de estética y vendo mi línea de cosmética');
 wabot_conv_transcript($c, 'bot', "Buenísimo. Podemos armarte una web para mostrar los tratamientos y vender tu línea de cosmética\n\nTe consulto: querés que la gente pueda reservar turnos directamente desde la página también?");
@@ -737,7 +741,7 @@ wabot_conv_transcript($c, 'bot', "Podemos armarte una web para presentar tu trab
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu trabajo en psicología']])]);
 $r = turno('Directamente si', $c, $cfg);
 caso('"Directamente si" a la pregunta de los turnos → se cotiza con reservas (planes con panel + oferta), no se repregunta',
-    count($r) === 2 && $r[0] === 'Perfecto, entonces p' . mb_substr(planes('panel', '$210.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+    count($r) === 2 && $r[0] === 'Perfecto, entonces t' . mb_substr(planes('panel', '$210.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // 19-oct, una masajista: "Ambas opciones son buenas" se llevó solo la informativa, y "Sería para turnos señado?" quedó para Pablo,
 // que le pasó el plan de la tienda ($30.000 / $210.000) con la seña por Mercado Pago incluida.
@@ -755,7 +759,7 @@ $c = cv_masajista();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno('Ambas opciones son buenas', $c, $cfg);
 caso('"Ambas opciones son buenas" a la pregunta de los turnos → los dos precios (sin y con reservas = el de la tienda), sin oferta todavía',
-    count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && $r[1] === 'Sin reservas p' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
+    count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
     && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno('Con reservas, sería para turnos señado?', $c, $cfg);
@@ -771,7 +775,7 @@ $antesOferta = (int)($c['comercial_oferta_ts'] ?? 0);
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['En ese caso'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno("Si también\nSería para turnos señado?", $c, $cfg);
 caso('informativa ya cotizada + "Sería para turnos señado?" → la seña y "En ese caso podés elegir…" con el plan de la tienda, sin volver a ofrecer la demo',
-    $antesOferta > 0 && count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && $r[1] === 'En ese caso p' . mb_substr(planes('panel', '$210.000', '$30.000'), 1)
+    $antesOferta > 0 && count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && $r[1] === 'En ese caso t' . mb_substr(planes('panel', '$210.000', '$30.000'), 1)
     && !in_array(OFERTA, $r, true) && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['precio_cotizado'] ?? '') === '$210.000'
     && !empty($c['landing_con_panel']) && empty($c['comercial_pausa']) && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la seña de los turnos es una respuesta oficial (corta) y las instrucciones dicen que las reservas salen lo mismo que una tienda',
@@ -1249,6 +1253,21 @@ caso('las instrucciones dicen que gastronomía es tienda sin preguntar y que pub
     strpos(wabot_comercial_instrucciones_comportamiento(), '"gastronomía" a secas') !== false
     && strpos(wabot_comercial_instrucciones_comportamiento(), 'Pedir publicidad, marketing') !== false
     && strpos(wabot_comercial_instrucciones_comportamiento(), 'DESPUÉS DEL FORMULARIO') !== false);
+
+echo "\n— 26-oct: el número que elige es el del bloque con el pago único primero —\n";
+$bloque = planes('informativa', '$140.000', '$20.000');
+$cvNum = ['precio_dado' => true, 'transcript' => [['q' => 'bot', 't' => "Podés elegir entre dos planes:\n\n1) Plan anual: \$140.000\n2) Plan mensual: \$20.000", 'ts' => time() - 9000], ['q' => 'bot', 't' => $bloque, 'ts' => time() - 60]]];
+caso('lo último que vio fue el bloque nuevo: "1) Pago único" primero', wabot_modalidades_unico_primero($cvNum) && !wabot_modalidades_anual_primero($cvNum));
+caso('"la 1" es el pago único, "2" el anual, "el 3" el mensual', wabot_modalidad_elegida_en('la 1', true, 'unico') === 'propia'
+    && wabot_modalidad_elegida_en('2', true, 'unico') === 'unico' && wabot_modalidad_elegida_en('el 3', true, 'unico') === 'mensual');
+$cvViejo = ['precio_dado' => true, 'transcript' => [$cvNum['transcript'][0]]];
+caso('una charla que solo vio el de antes sigue con 1 anual, 2 mensual', !wabot_modalidades_unico_primero($cvViejo) && wabot_modalidades_anual_primero($cvViejo)
+    && wabot_modalidad_elegida_en('1', true, wabot_modalidades_anual_primero($cvViejo)) === 'unico');
+$cvAnota = $cvNum + ['tipo' => 'landing'];
+wabot_modalidad_anotar('la 1', $cvAnota, $cfg);
+caso('al anotarla, "la 1" queda como pago único y web propia', ($cvAnota['modalidad_elegida'] ?? '') === 'propia' && !empty($cvAnota['quiere_web_propia']), json_encode(array_intersect_key($cvAnota, array_flip(['modalidad_elegida', 'quiere_web_propia']))));
+$sinUnico = wabot_comercial_planes_texto('cursos', ['plan' => 'internacional', 'anual' => '$240.000', 'mensual' => '$40.000', 'unico' => ''], $cfg);
+caso('una cotización sin pago único (la internacional ya dada) sale con el bloque de antes', str_starts_with($sinUnico, 'Podés elegir entre dos planes:') && strpos($sinUnico, 'Pago único') === false, $sinUnico);
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);

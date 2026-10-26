@@ -8,8 +8,10 @@
    cliente: la seña o el resto del plan anual o del pago único, una carga de
    productos, etc.). /presupuestos/* no traen botones a esta página (el plan
    anual y el pago único se piden por WhatsApp); desde el 26-sep-2026 la tabla
-   de acá ofrece la seña del plan anual o del pago único (60000, la misma para
-   las dos modalidades y para todos los tipos de web) con ?monto=.
+   de acá ofrece la seña del plan anual (60000, la misma para todos los tipos de
+   web) con ?monto=. Desde el 26-oct-2026 la seña del pago único ya no es la
+   misma: $80.000 el sitio profesional (/pago/unico240) y $100.000 el resto
+   (/pago/unico330).
    Desde el 14-sep-2026 no hay monto por defecto (el que había era el del
    modelo anterior): sin ?monto= válido no se ofrece el pago con
    Mercado Pago, porque no hay importe que cobrar, y quedan la transferencia y

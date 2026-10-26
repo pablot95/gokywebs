@@ -2582,6 +2582,8 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false, $anualPrimero
      * 27-sep de 00:15 a la tarde— es "1 plan anual, 2 plan mensual"
      * ($anualPrimero, wabot_modalidades_anual_primero). */
     if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([123])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
+        // 26-oct: "1) Pago único, 2) Plan anual, 3) Plan mensual" ($anualPrimero === 'unico', wabot_modalidades_unico_primero).
+        if ($anualPrimero === 'unico') return ['1' => 'propia', '2' => 'unico', '3' => 'mensual'][$m[2]];
         return ($anualPrimero ? ['1' => 'unico', '2' => 'mensual', '3' => 'propia'] : ['1' => 'mensual', '2' => 'unico', '3' => 'propia'])[$m[2]];
     }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
@@ -6179,6 +6181,7 @@ function wabot_modalidades_anual_primero($conv) {
         if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
         $t = (string)($fila['t'] ?? '');
         if (strpos($t, '[Imagen: modalidades de pago') === 0) return strpos($t, '1 anual') !== false;
+        if (preg_match('/(^|\n)1[.)] Pago [uú]nico\b/u', $t)) return false;
         if (preg_match('/(^|\n)1[.)] (?:Plan anual|Anual)\b/u', $t)) return true;
         if (preg_match('/(^|\n)1[.)] (?:Plan mensual|Mensual)\b/u', $t)) return false;
     }
@@ -6186,6 +6189,23 @@ function wabot_modalidades_anual_primero($conv) {
     // Antes de la imagen del 25-sep (13:20:44, -03:00), el texto con el anual
     // primero; del 27-sep 00:15 a las 15:30, las imágenes con el anual primero.
     return ($ts > 0 && $ts < 1790353244) || ($ts >= 1790478900 && $ts < 1790533800);
+}
+
+/**
+ * ¿Lo último que vio la charla fue el bloque del 26-oct, con el pago único
+ * primero ("1) Pago único, 2) Plan anual, 3) Plan mensual")? Vale el último
+ * texto o imagen de modalidades que se le mostró.
+ */
+function wabot_modalidades_unico_primero($conv) {
+    if (!is_array($conv)) return false;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        $t = (string)($fila['t'] ?? '');
+        if (strpos($t, '[Imagen: modalidades de pago') === 0) return false;
+        if (preg_match('/(^|\n)1[.)] Pago [uú]nico\b/u', $t)) return true;
+        if (preg_match('/(^|\n)1[.)] (?:Plan anual|Anual|Plan mensual|Mensual)\b/u', $t)) return false;
+    }
+    return false;
 }
 
 /** "plan mensual de $20.000 o plan anual de $160.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */

@@ -59,7 +59,6 @@ RewriteRule ^pago/mensual(20|25|30)(/.*)?$ /pago/mensual20000/ [R=301,L]
 RewriteRule ^pago/mensual(35|40)(/.*)?$ /pago/mensual30000/ [R=301,L]
 RewriteRule ^pago/anual180(/.*)?$ /pago/anual140/ [R=301,L]
 RewriteRule ^pago/anual250(/.*)?$ /pago/anual190/ [R=301,L]
-RewriteRule ^pago/unico240(/.*)?$ /pago/unico220/ [R=301,L]
 RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 
 # 7-oct-2026 (Pablo): el anual general es $120.000 / $190.000. El plan de
@@ -73,6 +72,10 @@ RewriteRule ^pago/unico360(/.*)?$ /pago/unico330/ [R=301,L]
 # 24-oct-2026 (Pablo): el anual de tienda, cursos e inmobiliaria sube de $190.000 a $210.000
 # (pago/anual210); el sitio profesional sigue en $140.000. /pago/anual190 sigue en línea, sin 301,
 # para los que ya tenían ese precio.
+# 26-oct-2026 (Pablo): el pago único del sitio profesional sube de $220.000 a $240.000
+# (pago/unico240, seña $80.000); se sacó el 301 viejo de unico240 → unico220 (era de
+# fines de septiembre). /pago/unico220 sigue en línea, sin 301, para los que ya tenían
+# ese precio. Vuelven a ofrecerse las tres modalidades: pago único, anual y mensual.
 # 9-oct-2026 a la noche (Pablo): el anual baja a $140.000 / $190.000 (saldos
 # $80.000 / $130.000, seña $60.000). /pago/anual140 vuelve a ser una página real
 # (se sacó su 301 a anual120) y /pago/anual190 es la del resto. Los links viejos

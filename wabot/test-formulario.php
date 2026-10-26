@@ -463,11 +463,13 @@ caso('una forma inventada se sigue rechazando',
 
 $htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
 $htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
-/* 6-oct: el formulario principal ya no ofrece el pago único (Pablo); quedan
- * el plan mensual y el anual. El servidor sigue aceptando "propia" (arriba). */
-caso('el formulario principal ofrece solo el plan mensual y el plan anual',
-    strpos($htmlPrincipal, '<option value="mensual"') !== false && strpos($htmlPrincipal, '<option value="unico"') !== false
-    && strpos($htmlPrincipal, 'value="propia"') === false && stripos($htmlPrincipal, 'pago único') === false);
+/* 6-oct: el formulario principal dejó de ofrecer el pago único; el 26-oct
+ * (Pablo) vuelve, primero, en el orden de los precios: pago único, anual, mensual. */
+$posPropia = strpos($htmlPrincipal, '<option value="propia"');
+$posAnual = strpos($htmlPrincipal, '<option value="unico"');
+$posMensual = strpos($htmlPrincipal, '<option value="mensual"');
+caso('el formulario principal ofrece pago único, plan anual y plan mensual, en ese orden (26-oct)',
+    $posPropia !== false && $posAnual !== false && $posMensual !== false && $posPropia < $posAnual && $posAnual < $posMensual);
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',
