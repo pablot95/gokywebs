@@ -462,6 +462,33 @@ file_put_contents($ruta, json_encode([['ico' => '💰', 'titulo' => 'Precios', '
 caso('si Pablo lo borra, no vuelve', !in_array(WABOT_RR_DETALLE_MODALIDADES, wabot_respuestas_rapidas_load()[0]['items'], true));
 if ($marcaDetalleRespaldo === null) @unlink($marcaDetalle); else file_put_contents($marcaDetalle, $marcaDetalleRespaldo);
 
+echo "\n— 26-oct: el pago único primero y sus mensajes en Planes —\n";
+// Los dos bloques como están en el server el 26-oct (editados por Pablo: espacio antes del salto).
+$bloqueSitio = "Podés elegir entre dos planes:\n\n1) Plan anual: {landing_anual} \n2) Plan mensual: {landing_mensual} \n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
+$bloqueTienda = str_replace(['{landing_', '✓ Adaptada para celular'], ['{ecommerce_', '✓ Panel para autogestionar contenido'], $bloqueSitio);
+$marcaUnico = WABOT_DATA . '/migrated/respuestas-rapidas-pago-unico-26oct';
+$marcaUnicoRespaldo = is_file($marcaUnico) ? file_get_contents($marcaUnico) : null;
+@unlink($marcaUnico);
+$antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['link mensual']],
+          ['ico' => '💬', 'titulo' => 'Respuestas', 'items' => [$bloqueSitio, $bloqueTienda, 'Mi texto']],
+          ['ico' => '💰', 'titulo' => 'Precios', 'items' => [$bloqueSitio], 'oculta' => true]];
+$despues = wabot_rr_pago_unico_26oct($antes, $ruta);
+$nuevoSitio = $despues[1]['items'][0];
+caso('el bloque del sitio pasa al del 26-oct, con el pago único primero y sus marcadores',
+    str_starts_with($nuevoSitio, "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {landing_unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {landing_anual}\n3) Plan mensual: {landing_mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular")
+    && str_ends_with($nuevoSitio, '✓ Soporte técnico') && !str_contains($nuevoSitio, 'mantenimiento es'), $nuevoSitio);
+caso('el de la tienda conserva su línea del panel', str_contains($despues[1]['items'][1], '1) Pago único: {ecommerce_unico}') && str_contains($despues[1]['items'][1], '✓ Panel para autogestionar contenido'));
+caso('lo escrito a mano y las categorías ocultas: el texto propio queda, el bloque oculto también se pasa', $despues[1]['items'][2] === 'Mi texto' && str_starts_with($despues[2]['items'][0], 'Tenemos distintas'));
+caso('a Planes se suman los dos mensajes del pago único (unico240 con $80.000 + $160.000; unico330 con $100.000 + $230.000)',
+    $despues[0]['items'] === array_merge(['link mensual'], WABOT_RR_PAGO_UNICO_26OCT)
+    && str_contains(WABOT_RR_PAGO_UNICO_26OCT[0], "\n\nPara arrancar") && str_contains(WABOT_RR_PAGO_UNICO_26OCT[0], '$80.000 y el resto ($160.000)') && str_contains(WABOT_RR_PAGO_UNICO_26OCT[0], 'pago/unico240')
+    && str_contains(WABOT_RR_PAGO_UNICO_26OCT[1], '$100.000 y el resto ($230.000)') && str_contains(WABOT_RR_PAGO_UNICO_26OCT[1], 'pago/unico330'));
+caso('corre una sola vez: con la marca, lo que Pablo cambie después queda', is_file($marcaUnico) && wabot_rr_pago_unico_26oct($antes, $ruta) === $antes);
+$cvSitio = ['tipo' => 'landing', 'transcript' => []];
+$conMontos = wabot_respuestas_rapidas_montos($nuevoSitio, $cvSitio, wabot_textos_default());
+caso('en una charla sin cotizar: $240.000 / $140.000 / $20.000', str_contains($conMontos, "1) Pago único: \$240.000\n") && str_contains($conMontos, "2) Plan anual: \$140.000\n") && str_contains($conMontos, '3) Plan mensual: $20.000'), $conMontos);
+if ($marcaUnicoRespaldo === null) @unlink($marcaUnico); else file_put_contents($marcaUnico, $marcaUnicoRespaldo);
+
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 if ($marcaRespaldo === null) @unlink($marca); else file_put_contents($marca, $marcaRespaldo);
 todo_ok();

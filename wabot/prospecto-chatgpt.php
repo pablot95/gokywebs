@@ -76,7 +76,7 @@ function prospecto_chatgpt_chat(string $chat): string {
         }
         $cuerpo = $m[2];
         if (preg_match('~gokywebs\.com/form~i', $cuerpo)) continue;
-        if (preg_match('/(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas|Pod[eé]s contratarla de dos maneras|Pod[eé]s elegir entre dos planes)\s*[:,]?/iu', $cuerpo, $plan, PREG_OFFSET_CAPTURE)) {
+        if (preg_match('/(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas|Pod[eé]s contratarla de dos maneras|Pod[eé]s elegir entre dos planes|Tenemos distintas modalidades de pago)\s*[:,]?/iu', $cuerpo, $plan, PREG_OFFSET_CAPTURE)) {
             $descripcion = trim(substr($cuerpo, 0, $plan[0][1]));
             if ($descripcion !== '') $limpios[] = $m[1] . $descripcion . "\n";
             continue;

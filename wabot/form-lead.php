@@ -125,8 +125,7 @@ function formlead_extras($payload, &$motivo = null) {
     if (array_key_exists('modalidad', $payload)) {
         $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
         /* 'unico' es el plan anual, 'mensual' el plan mensual y 'propia' el
-         * pago único. El formulario principal ya no ofrece el pago único
-         * (6-oct): 'propia' llega de /formb o de un formulario en caché. */
+         * pago único (sacado del formulario el 6-oct, de vuelta el 26-oct). */
         if (!in_array($modalidad, ['unico', 'mensual', 'propia'], true)) {
             $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
         }

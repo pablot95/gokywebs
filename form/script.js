@@ -228,7 +228,7 @@ function cerrarModelo() {
     mfOverlay.hidden = true;
     mfEscenario.innerHTML = '';
     document.body.style.overflow = '';
-    mfVer.volverA?.focus();
+    if (mfVer.volverA) mfVer.volverA.focus();
 }
 
 mfOverlay.querySelector('.mf-seg').addEventListener('click', e => {
@@ -291,7 +291,7 @@ track('enter');
     const form = document.getElementById('propuestaForm');
     if (!form) return;
 
-    const value = id => document.getElementById(id)?.value.trim() || '';
+    const value = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
 
     function trackMilestones() {
         const phoneDigits = value('telefono').replace(/\D/g, '');
@@ -330,7 +330,7 @@ function mostrarTelefono() {
     telefonoAviso.hidden = true;
     telefonoInput.focus();
 }
-telefonoCorregir?.addEventListener('click', mostrarTelefono);
+if (telefonoCorregir) telefonoCorregir.addEventListener('click', mostrarTelefono);
 
 telefonoInput.addEventListener('input', () => {
     telefonoInput.value = telefonoInput.value.replace(/[^\d+\s()-]/g, '').slice(0, 18);
@@ -393,7 +393,8 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
     aviso.textContent = _desdeInstagram
         ? '✓ Ya cargamos algunos datos con lo que nos contaste por Instagram — revisá que estén bien.'
         : '✓ Ya cargamos algunos datos con lo que nos contaste por WhatsApp — revisá que estén bien.';
-    document.querySelector('.form-section')?.insertAdjacentElement('beforebegin', aviso);
+    const primeraSeccion = document.querySelector('.form-section');
+    if (primeraSeccion) primeraSeccion.insertAdjacentElement('beforebegin', aviso);
 })();
 
 // Evita que Enter recargue la página vía submit nativo.
@@ -407,7 +408,8 @@ document.getElementById('propuestaForm').addEventListener('submit', (e) => e.pre
 const PASOS = [...document.querySelectorAll('.form-step')];
 
 function pasoDe(el) {
-    return Number(el?.closest('.form-step')?.dataset.step || 1);
+    const paso = el && el.closest('.form-step');
+    return Number((paso && paso.dataset.step) || 1);
 }
 
 const PASO3 = document.querySelector('.form-step[data-step="3"]');
@@ -420,13 +422,16 @@ let introModelosVista = false;
  * volver a mostrarlos alcanza con poner esto en true. */
 const MOSTRAR_MODELOS = false;
 if (!MOSTRAR_MODELOS) {
-    document.querySelector('.step-dot[data-s="3"]')?.setAttribute('hidden', '');
-    [...document.querySelectorAll('.step-connector')].at(-1)?.setAttribute('hidden', '');
+    const punto3 = document.querySelector('.step-dot[data-s="3"]');
+    if (punto3) punto3.setAttribute('hidden', '');
+    const conectores = document.querySelectorAll('.step-connector');
+    if (conectores.length) conectores[conectores.length - 1].setAttribute('hidden', '');
     document.querySelectorAll('.form-step:not([data-step="3"]) .step-header-badge').forEach(b => { b.textContent = b.textContent.replace('de 3', 'de 2'); });
     // /formb usa este mismo script: todo con guardas por si falta algo.
     const enviar2 = document.getElementById('btnSiguiente2');
     if (enviar2) enviar2.textContent = 'Enviar →';
-    enviar2?.closest('.step-nav')?.insertAdjacentHTML('afterend',
+    const nav2 = enviar2 && enviar2.closest('.step-nav');
+    if (nav2) nav2.insertAdjacentHTML('afterend',
         '<p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>');
 }
 
@@ -445,10 +450,11 @@ function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     const conIntro = n === 3 && !introModelosVista;
     PASO3.classList.toggle('con-intro', conIntro);
     // Un textarea oculto mide 0 de alto: se ajusta recién ahora que se ve.
-    paso?.querySelectorAll('textarea.autosize').forEach(autoGrow);
+    if (paso) paso.querySelectorAll('textarea.autosize').forEach(autoGrow);
     if (scroll) document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     // En el paso 3 hay dos títulos: el de la intro y el de los modelos (hijo directo).
-    if (enfocar) paso?.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
+    const titulo = enfocar && paso ? paso.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title') : null;
+    if (titulo) titulo.focus({ preventScroll: true });
     // El paso de modelos necesita más ancho que los campos.
     document.body.classList.toggle('paso-modelos', n === 3 && !conIntro);
     if (n === 2) track('step2');
@@ -560,7 +566,7 @@ function validarPaso2() {
 
     const modalidad = document.getElementById('modalidad');
     if (!modalidad.value) {
-        markError(modalidad, 'Elegí el plan mensual o el plan anual.');
+        markError(modalidad, 'Elegí el pago único, el plan anual o el plan mensual.');
         if (!firstError) firstError = modalidad;
     }
 
@@ -596,7 +602,7 @@ function clearErrors() {
 }
 
 function buildPayload() {
-    const get = id => (document.getElementById(id)?.value ?? '').trim();
+    const get = id => { const el = document.getElementById(id); return el && el.value != null ? String(el.value).trim() : ''; };
 
     // Los color pickers (type="color") siempre traen un valor: el que sigue en
     // el que viene puesto no es un color de marca y no viaja (2-oct). Los que
@@ -644,7 +650,8 @@ function mostrarErrorEnvio(msg) {
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 function limpiarErrorEnvio() {
-    document.getElementById('formEnvioError')?.remove();
+    const errorPrevio = document.getElementById('formEnvioError');
+    if (errorPrevio) errorPrevio.remove();
 }
 
 // Resumen e incluir: 2000 (Pablo, 9-oct: "1000 es poco"; venían en 600).
@@ -852,9 +859,9 @@ function pintarInstagram() {
     t = t.replace(/^@+/, '').replace(/\s+/g, '');
     instagramAyuda.textContent = 'Queda así: instagram.com/' + (t || 'tunegocio');
 }
-instagramInput?.addEventListener('input', pintarInstagram);
+if (instagramInput) instagramInput.addEventListener('input', pintarInstagram);
 
-// Lo mismo con la forma de pago: qué implica cada una de las dos opciones.
+// Lo mismo con la forma de pago: qué implica cada una de las opciones.
 const planSelect = document.getElementById('modalidad');
 const planAyuda = document.getElementById('modalidadDetalle');
 const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';
@@ -864,7 +871,7 @@ function pintarPlan() {
     const op = planSelect.selectedOptions[0];
     planAyuda.textContent = op && op.value ? (op.dataset.desc || '') : PLAN_AYUDA_INICIAL;
 }
-planSelect?.addEventListener('change', pintarPlan);
+if (planSelect) planSelect.addEventListener('change', pintarPlan);
 pintarPlan();
 
 const DRAFT_KEY = 'gky_form_draft';

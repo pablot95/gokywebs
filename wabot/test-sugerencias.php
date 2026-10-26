@@ -146,7 +146,7 @@ oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['envi
 $env = entra($tel, 'Hacen envíos?', $cfg);
 $s3 = wabot_sugerencia_leer($tel);
 caso('con la charla en control manual las sugerencias siguen (es la prueba)', $env === [] && $s3 && $s3['estado'] === 'pendiente' && $s3['accion'] === 'responder' && count($s3['mensajes']) === 1 && $s3['mensajes'][0]['efecto'] === 'info');
-caso('y el contexto le contó al modelo que ya le pasamos el precio', strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'YA LE PASAMOS EL PRECIO') !== false && strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'Gokywebs (persona): Podés elegir entre dos planes') !== false);
+caso('y el contexto le contó al modelo que ya le pasamos el precio', strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'YA LE PASAMOS EL PRECIO') !== false && strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'Gokywebs (persona): Tenemos distintas modalidades de pago') !== false);
 
 echo "— 4. Editada: vale lo que salió de verdad —\n";
 $tel = $tels[1];
