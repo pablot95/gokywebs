@@ -45,6 +45,22 @@ caso('«te hablo el martes» un martes es el martes que viene',
 caso('«mañana te aviso» a la 1:30 es el día que ya empezó (corte de las 3 AM)',
     wabot_fecha_prometida('mañana te aviso', $ar('2026-10-11 01:30:00')) === '2026-10-11');
 
+/* Romi (25-oct): "entre lunes y miércoles te vuelvo a escribir" es un margen,
+ * vale el último día; antes lo borraba el filtro de horarios. */
+$dom25 = $ar('2026-10-25 21:57:00');
+foreach ([
+    'Entre lunes y miércoles te vuelvo a escribir'           => '2026-10-28',
+    'entre el lunes y el miércoles te escribo'               => '2026-10-28',
+    'entre jueves y lunes te confirmo'                       => '2026-11-02',
+    'trabajo de lunes a miércoles'                           => '',
+    'abro lunes y miércoles, te escribo mañana'              => '2026-10-26',
+] as $texto => $esperado) {
+    $dia = wabot_fecha_prometida($texto, $dom25);
+    caso("domingo 25-oct: «{$texto}» → " . ($esperado ?: 'sin fecha'), $dia === $esperado, $dia ?: 'sin fecha');
+}
+caso('un martes, «entre el lunes y el miércoles te escribo» es la semana que viene',
+    wabot_fecha_prometida('entre el lunes y el miércoles te escribo', $ar('2026-10-27 10:00:00')) === '2026-11-04');
+
 echo "\n=== La fecha en la charla ===\n";
 $c = conv_nueva('TESTRETOMAR');
 wabot_retomar_fijar($c, '2026-10-13', 'cliente', 'te hablo el martes', $ar('2026-10-08 15:00:00'));

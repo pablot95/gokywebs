@@ -5839,9 +5839,21 @@ function wabot_fecha_prometida($texto, $ts = null) {
               'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
     $c = [];
 
+    $nDia = ['lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'domingo' => 7];
+    /* "Entre lunes y miércoles te vuelvo a escribir" (Romi, 25-oct) es un
+     * margen, no un horario: vale el último día, contado desde el primero (un
+     * martes, "entre el lunes y el miércoles" es la semana que viene). Antes
+     * el filtro de horarios lo borraba entero y le salía el recordatorio. */
+    $diaRe = '(lunes|martes|miercoles|jueves|viernes|sabado|domingo)';
+    $t = preg_replace_callback('/\bentre\s+(el\s+)?' . $diaRe . '\s+y\s+(el\s+)?' . $diaRe . '\b/u',
+        function ($x) use (&$c, $nDia, $hoy, $dow) {
+            $d1 = ($nDia[$x[2]] - $dow + 7) % 7;
+            $d1 = $d1 === 0 ? 7 : $d1;
+            $c[] = $hoy + $d1 + ($nDia[$x[4]] - $nDia[$x[2]] + 7) % 7;
+            return ' ';
+        }, $t);
     // Días de la semana, menos los horarios ("de lunes a viernes", "los sábados").
     $sinRangos = preg_replace('/\b(de\s+)?(lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\s+(a|al|y)\s+(lunes|martes|miercoles|jueves|viernes|sabado|domingo)s?\b|\b(todos\s+)?los\s+(lunes|martes|miercoles|jueves|viernes|sabados|domingos)\b/u', ' ', $t);
-    $nDia = ['lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'domingo' => 7];
     if (preg_match_all('/\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/u', $sinRangos, $m)) {
         foreach ($m[1] as $nombre) { $delta = ($nDia[$nombre] - $dow + 7) % 7; $c[] = $hoy + ($delta === 0 ? 7 : $delta); }
     }

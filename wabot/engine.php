@@ -2057,22 +2057,54 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
         'internet'      => '(internet|conexion|offline|sin señal|sin senal|wifi|se corta)',
         'cupones'       => '(cupon|cupones|codigo de descuento|codigos de descuento)',
         'cobros_tienda' => '(mercado pago|mercadopago)',
+        /* Flavia (25-oct): "quiero vender unos talleres x la web para llegar a
+         * más almas" se llevó "Publicidad y redes no hacemos" del modelo, y
+         * Jaqueline lo mismo por buscar más clientes. Sale si nombra la
+         * publicidad, las redes o cómo mover la web. "Vi tu anuncio" (el primer
+         * mensaje de casi todos) no cuenta: "hacen anuncios?" o "los anuncios" sí. */
+        'marketing'     => '(publicidad|propaganda|marketing|pauta|(?<!tu )(?<!su )(?<!tus )(?<!sus )(?<!el )(?<!un )(?<!este )anuncio|ads|redes|red social|instagram|facebook|tik ?tok'
+                         . '|community|seguidores|posteo|campana|promocion|promocionar|promocionamos|promocionen|mueven|muevan|moverla|moverlo)',
+        /* Jardín maternal (26-oct): preguntaba dónde la encuentran y el modelo
+         * le contestó "te vinculamos Google Analytics". */
+        'estadisticas'  => '(estadistica|metrica|analitica|analytics|visitas|visitan|cuanta gente|cuantos entran|cuantas personas entran'
+                         . '|trafico|leads|cuanto vend)',
     ];
     if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
 
     $re = '/\b' . $rastros[$clave] . '\w*/u';
-    // Sin los links: el dominio de una URL no es un rastro de nada. Ver
-    // wabot_texto_sin_urls().
-    if (preg_match($re, wabot_normalizar_frase(wabot_texto_sin_urls((string)$texto)))) return true;
+    $limpio = function ($t) use ($clave) {
+        // Sin los links: el dominio de una URL no es un rastro de nada. Ver
+        // wabot_texto_sin_urls().
+        $t = wabot_normalizar_frase(wabot_texto_sin_urls((string)$t));
+        return $clave === 'bilingue' ? wabot_texto_sin_idioma_del_rubro($t) : $t;
+    };
+    if (preg_match($re, $limpio($texto))) return true;
 
     // Puede haberlo preguntado un turno antes.
     $vistos = 0;
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
         if (($fila['q'] ?? '') !== 'cliente') continue;
-        if (preg_match($re, wabot_normalizar_frase(wabot_texto_sin_urls((string)($fila['t'] ?? ''))))) return true;
+        if (preg_match($re, $limpio($fila['t'] ?? ''))) return true;
         if (++$vistos >= 3) break;
     }
     return false;
+}
+
+/**
+ * Sin el idioma que es parte del rubro: "Educación Bilingüe Intercultural"
+ * (Gaby, CEAPI, 25-oct) o "instituto de inglés" dicen a qué se dedica, no que
+ * quiera la web en otro idioma, y le salía "se puede traducir hasta a 3
+ * idiomas". "La quiero también en inglés" sigue contando. Recibe el texto ya
+ * normalizado.
+ */
+function wabot_texto_sin_idioma_del_rubro($t) {
+    $idioma = '(ingles|portugues|italiano|frances|aleman|chino|japones|idiomas?|lenguas?|bilingue|trilingue)';
+    return trim(preg_replace([
+        '/\b(bilingue|trilingue) intercultural\b|\bintercultural (bilingue|trilingue)\b/u',
+        '/\b(educacion|escuela|colegio|jardin|instituto|academia|programa|ensenanza|formacion|profesora?|profesores|profesoras'
+            . '|docentes?|maestras?|maestros?|clases?|cursos?|talleres?|capacitaciones?)( de| en)? ' . $idioma . '\b/u',
+        '/\b(traductora?s?|traductores|traductorado|interprete)\b/u',
+    ], ' ', (string)$t));
 }
 
 function wabot_texto_dice_sin_web($texto) {

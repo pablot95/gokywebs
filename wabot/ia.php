@@ -840,6 +840,7 @@ function wabot_ia_aplicar($d, $texto, &$conv, $cfg) {
 
     // responder: primero las respuestas oficiales, con los mismos filtros que el motor.
     $claves = wabot_info_claves_web_propia($d['info_claves'], $texto, $conv, $cfg);
+    $claves = wabot_ia_claves_con_rastro($claves, $texto, $conv);
     $claves = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa($claves, $texto));
     $lineas = [];
     foreach ($claves as $k) {
@@ -864,6 +865,18 @@ function wabot_ia_pregunta_negocio($m) {
 }
 
 /**
+ * Las claves angostas que el cliente nunca nombró se descartan, igual que en
+ * el motor (wabot_info_clave_tiene_rastro). El modelo se llevaba "Publicidad y
+ * redes no hacemos" por "llegar a más almas", Google Analytics por "dónde me
+ * encuentran" y los 3 idiomas por "Educación Bilingüe Intercultural" (25/26-oct).
+ */
+function wabot_ia_claves_con_rastro(array $claves, $texto, $conv) {
+    return array_values(array_filter($claves, function ($k) use ($texto, $conv) {
+        return wabot_info_clave_tiene_rastro($k, $texto, $conv);
+    }));
+}
+
+/**
  * Las respuestas oficiales que pidió el modelo al cotizar, sin las del precio
  * (el precio fijo ya lo dice todo): "tenés algún ejemplo para ver?" se quedaba
  * sin contestar porque cotizar descartaba todo lo demás (28-sep, Luciana).
@@ -876,7 +889,8 @@ function wabot_ia_info_de_paso($d, $texto, &$conv, $cfg, $salida = []) {
     if (in_array('publicidad', $avisado, true)) $delPrecio[] = 'marketing';
     if (in_array('logo', $avisado, true)) { $delPrecio[] = 'logo'; $delPrecio[] = 'sin_logo'; }
     $textos = array_values(array_filter((array)$salida, function ($m) { return is_string($m) && !wabot_es_marcador_imagen_precio($m); }));
-    $claves = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa((array)($d['info_claves'] ?? []), $texto));
+    $claves = wabot_ia_claves_con_rastro((array)($d['info_claves'] ?? []), $texto, $conv);
+    $claves = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa($claves, $texto));
     $lineas = [];
     foreach ($claves as $k) {
         if (in_array($k, $delPrecio, true)) continue;
