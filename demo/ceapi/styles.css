@@ -326,7 +326,7 @@ h3 { font-size: var(--fs-h3); font-weight: 600; line-height: 1.15; }
 .hero__centro h1 { max-width: 20ch; margin-inline: auto; }
 .hero__centro .hero-lead { margin-inline: auto; max-width: 40rem; }
 .hero__centro .hero-ctas { justify-content: center; }
-.hero__ancha { position: relative; z-index: 3; max-width: 1040px; margin-top: clamp(2.4rem, 5vw, 3.6rem); margin-bottom: calc(-1 * var(--solape-foto)); }
+.hero__ancha { position: relative; z-index: 3; max-width: 1040px; margin-top: calc(clamp(1.6rem, 3.4vw, 2.6rem) + var(--sello-w) / 2); margin-bottom: calc(-1 * var(--solape-foto)); }
 .hero__foto-ancha { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: calc(var(--radius) + 4px); }
 .hero--centrado .sello--hero { position: absolute; z-index: 2; top: calc(var(--sello-w) / -2); left: calc(50% - var(--sello-w) / 2); }
 
