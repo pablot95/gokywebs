@@ -1098,6 +1098,12 @@ body {
     color: var(--blue);
 }
 
+/* Con los modelos ocultos (MOSTRAR_MODELOS) el script le pone hidden al paso 3:
+   el display:flex de arriba lo pisaba y el «3 Modelos» seguía a la vista. */
+.step-dot[hidden] {
+    display: none;
+}
+
 .step-connector {
     flex: 1;
     height: 2px;
