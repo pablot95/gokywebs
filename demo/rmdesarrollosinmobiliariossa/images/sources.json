@@ -1,0 +1,25 @@
+{
+  "nota": "01-09_imagen.png y 10_mockup_720x480.png vienen del zip de Pablo (Descargas, 26-oct). Las fotos de Pexels (licencia Pexels, uso libre) completan propiedades de demo que no tienen foto en el zip; cada una es la única foto de su propiedad.",
+  "zip": {
+    "casa-dos-plantas.webp": "01_imagen.png",
+    "barrio-aereo.webp": "02_imagen.png",
+    "lote-arbolado.webp": "03_imagen.png",
+    "casa-ladrillo.webp": "04_imagen.png",
+    "depto-living.webp": "05_imagen.png",
+    "edificio-ituzaingo.webp": "06_imagen.png",
+    "obra-en-construccion.webp": "07_imagen.png",
+    "contrato-llaves.webp": "08_imagen.png",
+    "casa-pileta.webp": "09_imagen.png",
+    "casa-pileta-galeria.webp": "09_imagen.png (recorte de la galería con parrilla)",
+    "casa-pileta-living.webp": "09_imagen.png (recorte del living)",
+    "og.jpg": "02_imagen.png (recorte 1200x630)"
+  },
+  "pexels": {
+    "duplex-a-estrenar.webp": "https://www.pexels.com/photo/30580640/ (recortada: sin el auto de la izquierda)",
+    "fraccion-campo.webp": "https://www.pexels.com/photo/35383651/",
+    "uf-a-estrenar.webp": "https://www.pexels.com/photo/8146330/",
+    "loft-ladrillo.webp": "https://www.pexels.com/photo/8082324/",
+    "depto-cocina.webp": "https://www.pexels.com/photo/7511695/",
+    "depto-living-azul.webp": "https://www.pexels.com/photo/7546648/"
+  }
+}
