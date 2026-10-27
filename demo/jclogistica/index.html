@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J&amp;C Logística — Transporte de cargas a todo el país</title>
+<meta name="description" content="Transporte de cargas y logística desde CABA y GBA a todo el país, con entregas express en Zona Sur. Planificá tu envío y pedí presupuesto por WhatsApp.">
+<link rel="canonical" href="https://gokywebs.com/demo/jclogistica/">
+<meta name="theme-color" content="#0B0B0A">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="J&amp;C Logística">
+<meta property="og:title" content="J&amp;C Logística — Transporte de cargas a todo el país">
+<meta property="og:description" content="Transporte de cargas y logística desde CABA y GBA a todo el país, con entregas express en Zona Sur. Planificá tu envío y pedí presupuesto por WhatsApp.">
+<meta property="og:url" content="https://gokywebs.com/demo/jclogistica/">
+<meta property="og:image" content="https://gokywebs.com/demo/jclogistica/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,700..800&amp;family=Hanken+Grotesk:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/semirremolque-ruta.webp" fetchpriority="high">
+<link rel="stylesheet" href="styles.css?v=2">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "LocalBusiness", "name": "J&C Logística", "description": "Transporte de cargas y logística en CABA, GBA y todo el país.", "slogan": "Vamos más lejos, llegamos juntos", "url": "https://gokywebs.com/demo/jclogistica/", "image": "https://gokywebs.com/demo/jclogistica/images/og.jpg", "logo": "https://gokywebs.com/demo/jclogistica/images/logo-jc.webp", "telephone": "+5491136814656", "email": "jycenmovimiento@gmail.com", "areaServed": [{"@type": "City", "name": "Ciudad Autónoma de Buenos Aires"}, {"@type": "State", "name": "Provincia de Buenos Aires"}, {"@type": "Country", "name": "Argentina"}], "sameAs": ["https://www.instagram.com/llgisticajyc/"], "makesOffer": [{"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Transporte", "description": "Trasladamos tu carga de forma segura y eficiente, en Buenos Aires y a nivel nacional."}}, {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Logística", "description": "Carga, descarga y manejo de pallets para que tu mercadería salga ordenada y llegue completa."}}, {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Coordinación de envíos", "description": "Planificación y seguimiento para que tu carga llegue a destino en la fecha acordada."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿Hasta dónde llegan?", "acceptedAnswer": {"@type": "Answer", "text": "Trabajamos en CABA, todo el Gran Buenos Aires y con viajes a cualquier punto del país. En Zona Sur hacemos entregas express."}}, {"@type": "Question", "name": "¿Qué datos necesitan para cotizar?", "acceptedAnswer": {"@type": "Answer", "text": "Origen, destino, qué vas a enviar (cajas, pallets o carga completa), medidas o peso aproximados y la fecha. Con eso te respondemos por WhatsApp."}}, {"@type": "Question", "name": "¿Qué unidad mandan?", "acceptedAnswer": {"@type": "Answer", "text": "La definimos según el volumen: utilitario para cajas y envíos chicos, camión con caja para mercadería paletizada y semirremolque para cargas completas."}}, {"@type": "Question", "name": "¿Puedo seguir el viaje?", "acceptedAnswer": {"@type": "Answer", "text": "Sí. Coordinamos todo por WhatsApp y te avisamos cuando la carga sale y cuando se entrega."}}]}</script>
+</head>
+<body class="m1">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+<header class="site-header" id="top">
+  <div class="container header__in">
+    <a class="brand" href="./" aria-label="J&amp;C Logística, inicio">
+      <img class="brand__logo" src="images/logo-jc.webp" alt="Logo de J&amp;C Logística" width="600" height="600">
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <a href="#servicios">Servicios</a>
+      <a href="#cobertura">Cobertura</a>
+      <a href="#galeria">Galería</a>
+      <a href="#contacto">Contacto</a>
+      <a class="nav-wsp" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>+54 9 11 3681-4656</span></a>
+    </nav>
+    <a class="btn btn--dark header__cta" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener">Pedir presupuesto <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </div>
+  <span class="franjas franjas--header" aria-hidden="true"><i></i><i></i></span>
+</header>
+<main>
+<section class="hero hero--split" aria-labelledby="h1">
+  <div class="hero__texto">
+      <p class="hero-eyebrow"><span class="rombo" aria-hidden="true"></span>J&amp;C Logística · CABA · GBA · Todo el país</p>
+      <h1 id="h1">Logística y transporte <span class="h1-sub">en todo Buenos Aires y a nivel nacional</span></h1>
+      <p class="hero-kicker">Vamos más lejos, llegamos juntos</p>
+      <p class="hero-lead">Cobertura logística terrestre segura y puntual: viajes en CABA y GBA, envíos al interior y entregas express en Zona Sur.</p>
+      <div class="hero-ctas">
+        <a class="btn btn--dark btn--lg" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Pedir presupuesto por WhatsApp</span></a>
+        <a class="btn btn--line btn--lg" href="#cobertura"><span>Planificar mi envío</span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      </div>
+  </div>
+  <div class="hero__foto">
+    <div class="hero__marco">
+      <img data-hero-img data-parallax src="images/semirremolque-ruta.webp" alt="Camión semirremolque blanco con lona circulando por una ruta entre campos" width="1600" height="900" fetchpriority="high">
+    </div>
+    <span class="franjas franjas--hero" aria-hidden="true"><i></i><i></i></span>
+    <span class="hero__nota">Imágenes ilustrativas</span>
+  </div>
+</section>
+<section class="servicios" id="servicios" aria-labelledby="serv-t">
+  <div class="container">
+    <h2 class="sr-only" id="serv-t">Qué hacemos con tu carga</h2>
+    <ul class="serv-lista">
+      <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="serv__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg></span>
+        <div class="serv__cuerpo">
+          <h3>Transporte</h3>
+          <p>Trasladamos tu carga de forma segura y eficiente, en Buenos Aires y a nivel nacional.</p>
+          <ul class="serv__items"><li>Viajes en CABA y GBA</li><li>Envíos al interior del país</li><li>Unidad según el volumen</li></ul>
+          <a class="serv__link" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20cotizar%20un%20transporte%20de%20carga." target="_blank" rel="noopener">Cotizar un transporte <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+      </li>
+      <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="serv__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
+        <div class="serv__cuerpo">
+          <h3>Logística</h3>
+          <p>Carga, descarga y manejo de pallets para que tu mercadería salga ordenada y llegue completa.</p>
+          <ul class="serv__items"><li>Carga y descarga</li><li>Mercadería paletizada</li><li>Entregas en varios puntos</li></ul>
+          <a class="serv__link" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20consultar%20por%20carga%2C%20descarga%20y%20manejo%20de%20pallets." target="_blank" rel="noopener">Consultar por logística <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+      </li>
+      <li class="serv" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <span class="serv__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span>
+        <div class="serv__cuerpo">
+          <h3>Coordinación de envíos</h3>
+          <p>Planificación y seguimiento para que tu carga llegue a destino en la fecha acordada.</p>
+          <ul class="serv__items"><li>Fecha y horario acordados</li><li>Seguimiento por WhatsApp</li><li>Aviso al entregar</li></ul>
+          <a class="serv__link" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20coordinar%20un%20env%C3%ADo." target="_blank" rel="noopener">Coordinar un envío <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+<section class="galeria-sec" id="galeria" aria-labelledby="gal-t">
+  <div class="container sec-head sec-head--fila">
+    <div>
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="rombo" aria-hidden="true"></span>Imágenes ilustrativas</p>
+      <h2 id="gal-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">Unidades y operación</h2>
+      <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Del utilitario para entregas en el día al camión con caja para mercadería paletizada.</p>
+    </div>
+  </div>
+  <div class="galeria-vp">
+    <ul class="galeria" id="galeria-lista">
+      <li class="foto foto--alta" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="0" aria-label="Ampliar foto: Camión con caja">
+          <span class="media"><img src="images/camion-caja.webp" alt="Camión con caja blanco estacionado frente a un depósito" width="900" height="1600"></span>
+          <span class="foto__pie"><strong>Camión con caja</strong><span>Mercadería protegida en todo el recorrido.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="1" aria-label="Ampliar foto: Utilitario">
+          <span class="media"><img src="images/utilitario.webp" alt="Utilitario blanco estacionado en una calle arbolada" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Utilitario</strong><span>Entregas urbanas y envíos express.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="2" aria-label="Ampliar foto: Depósito">
+          <span class="media"><img src="images/deposito-autoelevador.webp" alt="Autoelevador moviendo cajas en un depósito con un camión en el muelle" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Depósito</strong><span>Carga con autoelevador directo al muelle.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="3" aria-label="Ampliar foto: Pallets">
+          <span class="media"><img src="images/pallet.webp" alt="Pallet con cajas envueltas en film sobre una zorra hidráulica" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Pallets</strong><span>Mercadería envuelta en film y lista para viajar.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="4" aria-label="Ampliar foto: Muelle de carga">
+          <span class="media"><img src="images/muelle-atardecer.webp" alt="Camión con caja estacionado en el muelle de carga al atardecer" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Muelle de carga</strong><span>Unidad en el muelle, lista para cargar.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="5" aria-label="Ampliar foto: Amarre">
+          <span class="media"><img src="images/amarre-carga.webp" alt="Operario ajustando cintas de amarre sobre cajas dentro de un camión" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Amarre</strong><span>Cada carga sujeta con cintas antes de salir.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+      <li class="foto" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <button type="button" class="foto__btn" data-i="6" aria-label="Ampliar foto: Carga y descarga">
+          <span class="media"><img src="images/carga-utilitario.webp" alt="Operario con guantes cargando una caja en un utilitario" width="1254" height="1254"></span>
+          <span class="foto__pie"><strong>Carga y descarga</strong><span>Cajas acomodadas según el orden de entrega.</span></span>
+          <span class="foto__zoom"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6"/><path d="M8 11h6"/></svg></span>
+        </button>
+      </li>
+    </ul>
+  </div>
+</section>
+<section class="proceso" id="proceso" aria-labelledby="pro-t">
+  <div class="container proceso__grid">
+    <div class="proceso__fotos">
+      <figure class="proceso__foto proceso__foto--a" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/amarre-carga.webp" alt="Operario ajustando cintas de amarre sobre cajas dentro de un camión" width="1254" height="1254"></figure>
+      <figure class="proceso__foto proceso__foto--b" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/coordinacion.webp" alt="Coordinadora revisando la hoja de ruta con la computadora en la oficina del depósito" width="1254" height="1254"></figure>
+    </div>
+    <div class="proceso__texto">
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="rombo" aria-hidden="true"></span>Cómo trabajamos</p>
+      <h2 id="pro-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">De la consulta a la entrega, en cuatro pasos</h2>
+      <ol class="pasos">
+        <li class="pasos__linea" aria-hidden="true" data-animate="linea" style="transform:scaleY(0)"></li>
+        <li class="paso" data-animate="der" style="opacity:0;transform:translateX(48px)"><span class="paso__n">01</span><div><h3>Contanos qué hay que mover</h3><p>Origen, destino, tipo de carga y fecha. Podés mandarlo armado desde la hoja de ruta.</p></div></li>
+        <li class="paso" data-animate="der" style="opacity:0;transform:translateX(48px)"><span class="paso__n">02</span><div><h3>Te pasamos el presupuesto</h3><p>Te respondemos por WhatsApp con el valor y la unidad que corresponde a tu carga.</p></div></li>
+        <li class="paso" data-animate="der" style="opacity:0;transform:translateX(48px)"><span class="paso__n">03</span><div><h3>Cargamos con amarre</h3><p>La mercadería viaja sujeta y protegida, con el cuidado que pide cada carga.</p></div></li>
+        <li class="paso" data-animate="der" style="opacity:0;transform:translateX(48px)"><span class="paso__n">04</span><div><h3>Seguimiento hasta la entrega</h3><p>Te avisamos cuando la carga sale y cuando llega a destino.</p></div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+<section class="empresa" id="empresa" aria-labelledby="emp-t">
+  <div class="empresa__sello" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><img src="images/logo-jc.webp" alt="Sello de J&amp;C Logística" width="600" height="600"></div>
+  <div class="container empresa__grid">
+    <figure class="empresa__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/carga-utilitario.webp" alt="Operario con guantes cargando una caja en un utilitario" width="1254" height="1254"></figure>
+    <div class="empresa__texto">
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="rombo" aria-hidden="true"></span>La empresa</p>
+      <h2 id="emp-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">Logística terrestre que va más lejos</h2>
+      <p class="empresa__lema" data-animate="subir" style="opacity:0;transform:translateY(40px)">Cobertura logística terrestre en todo el país, segura, puntual y confiable para tu carga.</p>
+      <p class="empresa__txt" data-animate="subir" style="opacity:0;transform:translateY(24px)">Trabajamos en CABA, el Gran Buenos Aires y en viajes al interior, con entregas express en Zona Sur. Cada envío se coordina por WhatsApp, de la carga a la entrega.</p>
+      <ul class="pilares">
+        <li class="pilar" data-animate="subir" style="opacity:0;transform:translateY(40px)"><svg class="ico pilar__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg><div><strong>Seguridad</strong><span>Carga sujeta y protegida en cada viaje.</span></div></li>
+        <li class="pilar" data-animate="subir" style="opacity:0;transform:translateY(40px)"><svg class="ico pilar__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg><div><strong>Cobertura</strong><span>CABA, GBA y todo el país.</span></div></li>
+        <li class="pilar" data-animate="subir" style="opacity:0;transform:translateY(40px)"><svg class="ico pilar__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><div><strong>Puntualidad</strong><span>Fecha y horario que se cumplen.</span></div></li>
+        <li class="pilar" data-animate="subir" style="opacity:0;transform:translateY(40px)"><svg class="ico pilar__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg><div><strong>Soluciones</strong><span>La unidad que tu carga necesita.</span></div></li>
+      </ul>
+      <div class="agenda" data-animate="cortina" style="clip-path:inset(0 100% 0 0)">
+        <svg class="ico agenda__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+        <div><span class="agenda__fecha">7 de noviembre de 2026</span><span>Presentes en el 2.º Congreso de Logística y Transporte de la UNaB.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="ruta" id="cobertura" aria-labelledby="ruta-t">
+  <div class="container ruta__grid">
+    <div class="ruta__intro">
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="rombo" aria-hidden="true"></span>Cobertura · CABA, GBA y todo el país</p>
+      <h2 id="ruta-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">Planificá tu envío</h2>
+      <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Elegí origen y destino —también tocando un punto del mapa— y mandanos la hoja de ruta por WhatsApp.</p>
+    </div>
+    <form class="hoja" id="hoja" novalidate data-animate="izq" style="opacity:0;transform:translateX(-48px)">
+      <p class="hoja__titulo"><span class="rombo" aria-hidden="true"></span>Hoja de ruta</p>
+      <div class="hoja__par">
+        <div class="campo"><label for="origen">Origen</label><select id="origen" name="origen"><optgroup label="Buenos Aires (AMBA)"><option value="caba" data-ll="-34.6037,-58.3816">CABA</option><option value="sur" data-ll="-34.7609,-58.4062" selected>Zona Sur (GBA)</option><option value="oeste" data-ll="-34.6534,-58.6198">Zona Oeste (GBA)</option><option value="norte" data-ll="-34.4708,-58.5286">Zona Norte (GBA)</option><option value="laplata" data-ll="-34.9214,-57.9545">La Plata</option></optgroup><optgroup label="Interior del país"><option value="rosario" data-ll="-32.9442,-60.6505">Rosario</option><option value="santafe" data-ll="-31.6333,-60.7">Santa Fe</option><option value="cordoba" data-ll="-31.4201,-64.1888">Córdoba</option><option value="mdp" data-ll="-38.0055,-57.5426">Mar del Plata</option><option value="bahia" data-ll="-38.7183,-62.2663">Bahía Blanca</option><option value="sanluis" data-ll="-33.295,-66.3356">San Luis</option><option value="mendoza" data-ll="-32.8895,-68.8458">Mendoza</option><option value="neuquen" data-ll="-38.9516,-68.0591">Neuquén</option><option value="tucuman" data-ll="-26.8083,-65.2176">San Miguel de Tucumán</option><option value="salta" data-ll="-24.7821,-65.4232">Salta</option><option value="corrientes" data-ll="-27.4692,-58.8306">Corrientes</option><option value="posadas" data-ll="-27.3671,-55.8961">Posadas</option><option value="comodoro" data-ll="-45.8641,-67.4966">Comodoro Rivadavia</option></optgroup></select></div>
+        <div class="campo"><label for="destino">Destino</label><select id="destino" name="destino" aria-describedby="destino-err"><optgroup label="Buenos Aires (AMBA)"><option value="caba" data-ll="-34.6037,-58.3816">CABA</option><option value="sur" data-ll="-34.7609,-58.4062">Zona Sur (GBA)</option><option value="oeste" data-ll="-34.6534,-58.6198">Zona Oeste (GBA)</option><option value="norte" data-ll="-34.4708,-58.5286">Zona Norte (GBA)</option><option value="laplata" data-ll="-34.9214,-57.9545">La Plata</option></optgroup><optgroup label="Interior del país"><option value="rosario" data-ll="-32.9442,-60.6505">Rosario</option><option value="santafe" data-ll="-31.6333,-60.7">Santa Fe</option><option value="cordoba" data-ll="-31.4201,-64.1888" selected>Córdoba</option><option value="mdp" data-ll="-38.0055,-57.5426">Mar del Plata</option><option value="bahia" data-ll="-38.7183,-62.2663">Bahía Blanca</option><option value="sanluis" data-ll="-33.295,-66.3356">San Luis</option><option value="mendoza" data-ll="-32.8895,-68.8458">Mendoza</option><option value="neuquen" data-ll="-38.9516,-68.0591">Neuquén</option><option value="tucuman" data-ll="-26.8083,-65.2176">San Miguel de Tucumán</option><option value="salta" data-ll="-24.7821,-65.4232">Salta</option><option value="corrientes" data-ll="-27.4692,-58.8306">Corrientes</option><option value="posadas" data-ll="-27.3671,-55.8961">Posadas</option><option value="comodoro" data-ll="-45.8641,-67.4966">Comodoro Rivadavia</option></optgroup></select><p class="campo__err" id="destino-err" hidden>Elegí un destino distinto del origen.</p></div>
+      </div>
+      <fieldset class="campo campo--chips"><legend>Qué vas a enviar</legend><div class="chips"><label class="chip"><input type="radio" name="carga" value="cajas"><span>Cajas o paquetería</span></label><label class="chip"><input type="radio" name="carga" value="pallets" checked><span>Pallets</span></label><label class="chip"><input type="radio" name="carga" value="completa"><span>Carga completa</span></label><label class="chip"><input type="radio" name="carga" value="otra"><span>Otra carga</span></label></div></fieldset>
+      <div class="hoja__par">
+        <div class="campo"><label for="fecha">Fecha</label><input type="date" id="fecha" name="fecha"></div>
+        <div class="campo"><label for="detalle">Detalle <span>(opcional)</span></label><input type="text" id="detalle" name="detalle" placeholder="Ej.: 6 pallets de 1,20 m" autocomplete="off"></div>
+      </div>
+      <div class="hoja__resumen" aria-live="polite">
+        <div><span>Distancia aprox.</span><strong id="rutaKm">—</strong></div>
+        <div><span>Unidad sugerida</span><strong id="rutaUnidad">—</strong></div>
+      </div>
+      <button type="submit" class="btn btn--dark btn--block"><svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Enviar hoja de ruta por WhatsApp</span></button>
+      <p class="hoja__nota">Kilómetros aproximados por ruta. El valor final lo confirmamos por WhatsApp.</p>
+    </form>
+    <div class="ruta__mapa" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+      <div class="mapa" id="mapa" title="Mapa de cobertura: tocá una ciudad para elegirla como destino"></div>
+      <p class="chip-express"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg><span>Entregas express en Zona Sur</span></p>
+    </div>
+  </div>
+</section>
+<section class="faq" id="preguntas" aria-labelledby="faq-t">
+  <div class="container faq__grid">
+    <div class="faq__intro">
+      <p class="eyebrow" data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="rombo" aria-hidden="true"></span>Preguntas frecuentes</p>
+      <h2 id="faq-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">Antes de cotizar</h2>
+      <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">¿Otra duda? Escribinos y te respondemos por WhatsApp.</p>
+    </div>
+    <div class="faq__lista">
+      <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <summary>¿Hasta dónde llegan?<span class="faq__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span></summary>
+        <p>Trabajamos en CABA, todo el Gran Buenos Aires y con viajes a cualquier punto del país. En Zona Sur hacemos entregas express.</p>
+      </details>
+      <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <summary>¿Qué datos necesitan para cotizar?<span class="faq__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span></summary>
+        <p>Origen, destino, qué vas a enviar (cajas, pallets o carga completa), medidas o peso aproximados y la fecha. Con eso te respondemos por WhatsApp.</p>
+      </details>
+      <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <summary>¿Qué unidad mandan?<span class="faq__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span></summary>
+        <p>La definimos según el volumen: utilitario para cajas y envíos chicos, camión con caja para mercadería paletizada y semirremolque para cargas completas.</p>
+      </details>
+      <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+        <summary>¿Puedo seguir el viaje?<span class="faq__ico"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span></summary>
+        <p>Sí. Coordinamos todo por WhatsApp y te avisamos cuando la carga sale y cuando se entrega.</p>
+      </details>
+    </div>
+  </div>
+</section>
+<section class="cierre" id="contacto" aria-labelledby="cie-t">
+  <div class="container cierre__grid">
+    <div class="cierre__texto">
+      <h2 id="cie-t" data-animate="subir" style="opacity:0;transform:translateY(40px)">¿Qué carga tenés que mover?</h2>
+      <p class="cierre__bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Escribinos con origen, destino y fecha, y coordinamos el viaje.</p>
+    </div>
+    <div class="cierre__contacto" data-animate="der" style="opacity:0;transform:translateX(48px)">
+      <a class="cierre__numero" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener"><svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span><small>Consultanos por WhatsApp</small><strong>+54 9 11 3681-4656</strong></span></a>
+      <ul class="redes">
+        <li><a href="https://www.instagram.com/llgisticajyc/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></svg><span>@llgisticajyc</span></a></li>
+        <li><a href="https://www.facebook.com/" target="_blank" rel="noopener"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg><span>Facebook</span></a></li>
+        <li><a href="mailto:jycenmovimiento@gmail.com"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg><span>jycenmovimiento@gmail.com</span></a></li>
+      </ul>
+    </div>
+  </div>
+  <span class="franjas franjas--cierre" aria-hidden="true"><i></i><i></i></span>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__marca" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+      <a href="./" class="footer__logo" aria-label="J&amp;C Logística, inicio"><img src="images/logo-jc.webp" alt="Logo de J&amp;C Logística" width="600" height="600"></a>
+      <p><strong>J&amp;C Logística</strong><span>Vamos más lejos, llegamos juntos</span></p>
+    </div>
+    <nav class="footer__col" aria-label="Secciones" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+      <p class="footer__tit">Secciones</p>
+      <ul><li><a href="#servicios">Servicios</a></li><li><a href="#cobertura">Cobertura</a></li><li><a href="#galeria">Galería</a></li><li><a href="#contacto">Contacto</a></li></ul>
+    </nav>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+      <p class="footer__tit">Contacto</p>
+      <ul>
+        <li><a href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener">WhatsApp +54 9 11 3681-4656</a></li>
+        <li><a href="mailto:jycenmovimiento@gmail.com">jycenmovimiento@gmail.com</a></li>
+        <li><a href="https://www.instagram.com/llgisticajyc/" target="_blank" rel="noopener">Instagram @llgisticajyc</a></li>
+        <li><a href="https://www.facebook.com/" target="_blank" rel="noopener">Facebook</a></li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+      <p class="footer__tit">Cobertura</p>
+      <ul><li>CABA y Gran Buenos Aires</li><li>Viajes a todo el país</li><li>Entregas express en Zona Sur</li></ul>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <span>© 2026 J&amp;C Logística · Imágenes ilustrativas</span>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+<div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Foto ampliada" hidden>
+  <div class="visor__fondo" data-cerrar></div>
+  <figure class="visor__fig">
+    <img id="visorImg" src="images/utilitario.webp" alt="" width="1254" height="1254">
+    <figcaption id="visorPie"></figcaption>
+  </figure>
+  <button type="button" class="visor__btn visor__btn--cerrar" data-cerrar aria-label="Cerrar"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <button type="button" class="visor__btn visor__btn--prev" aria-label="Foto anterior"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+  <button type="button" class="visor__btn visor__btn--next" aria-label="Foto siguiente"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+</div>
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491136814656?text=Hola%20J%26C%20Log%C3%ADstica%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20env%C3%ADo." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=2"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
