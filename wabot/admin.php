@@ -1788,14 +1788,15 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-cat { flex:none; display:flex; align-items:center; gap:5px; padding:5px 10px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer; }
 .rr-cat:hover, .rr-cat:focus-visible, .rr-cat[aria-expanded="true"] { color:var(--tx); border-color:var(--ac); background:var(--card-2); outline:0; }
 .rr-cat-ico { font-size:14px; line-height:1; }
-.rr-pop { position:absolute; left:0; right:0; bottom:calc(100% + 6px); z-index:40; max-height:min(55vh, 460px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:0 8px 8px; }
+.rr-pop { position:absolute; left:0; right:0; bottom:calc(100% + 6px); z-index:40; max-height:min(78vh, 760px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:0 8px 8px; }
 .rr-pop[hidden] { display:none; }
 .rr-pop-cab { position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 7px; padding:9px 2px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
 .rr-pop-cerrar { padding:2px 8px; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--dim); font:inherit; font-size:12px; cursor:pointer; }
 .rr-pop-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap:7px; }
-/* Cada mensaje en 4 líneas como mucho (4-oct: "no hace falta que se vea
-   todo"); el texto entero aparece al pasar el mouse y es el que va al editor. */
-.rr-item { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:4; overflow:hidden; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
+/* Cada mensaje en 9 líneas como mucho (27-oct: eran 4 y no alcanzaba para
+   distinguir un plan de otro); el texto entero aparece al pasar el mouse y es
+   el que va al editor. */
+.rr-item { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:9; overflow:hidden; width:100%; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13px; line-height:1.45; white-space:pre-line; cursor:pointer; }
 .rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
 /* La franja derecha del escritorio ahora es solo de la navegación (.tabs-nav). */
 @media (min-width: 1181px) and (hover: hover) {
