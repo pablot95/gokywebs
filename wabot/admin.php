@@ -2982,7 +2982,7 @@ function burbujaCita(t, chat) {
             <?php $sombraGuardada = $cfg['openai_revisor_sombra'] ?? null; ?>
             <div class="fila" style="gap:14px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
                 <div><label>Modelo del revisor de cada respuesta</label><input type="text" name="openai_modelo_revisor" value="<?= $e((string)($cfg['openai_modelo_revisor'] ?? '')) ?>" placeholder="el mismo" style="width:170px" autocomplete="off"></div>
-                <div><label>Revisor en sombra (solo compara)</label><input type="text" name="openai_revisor_sombra" value="<?= $e($sombraGuardada === null ? 'gpt-6-luna' : (string)$sombraGuardada) ?>" placeholder="apagado" style="width:170px" autocomplete="off"></div>
+                <div><label>Revisor en sombra (solo compara)</label><input type="text" name="openai_revisor_sombra" value="<?= $e((string)($sombraGuardada ?? '')) ?>" placeholder="apagado" style="width:170px" autocomplete="off"></div>
             </div>
             <p class="meta" style="margin-top:6px">El revisor lee cada respuesta del flujo comercial antes de que salga. Vacío = el mismo modelo de arriba. La sombra revisa lo mismo con otro modelo cuando el cliente ya tiene su respuesta, sin decidir nada, para comparar en la pestaña <a href="admin.php?tab=ia">IA</a> si un modelo más barato alcanza. Vacío = apagada.</p>
             <div class="fila" style="gap:14px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">

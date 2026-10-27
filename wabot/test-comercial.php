@@ -33,8 +33,6 @@ $GLOBALS['TC_DICE_RUBRO'] = true;   // la bienvenida fija no sale: el primer men
 const PLANES_PANEL = "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nPor suscripción, con dos opciones:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
 const PLANES_INFO = "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nPor suscripción, con dos opciones:\n2) Plan anual: {anual}\n3) Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
 const OFERTA = 'Si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?';
-// 26/27-oct: al pasar la charla a Pablo ya no se calla del todo: un aviso corto, una vez por charla.
-const AVISO = 'Eso lo ve el desarrollador directamente: le paso tu mensaje y te escribe por acá.';
 // 26-oct: el pago único va primero; si no se dice cuál, el de lista del plan.
 function planes($cual, $anual, $mensual, $unico = null) {
     return strtr($cual === 'panel' ? PLANES_PANEL : PLANES_INFO, ['{unico}' => $unico ?? ($cual === 'panel' ? '$330.000' : '$240.000'), '{anual}' => $anual, '{mensual}' => $mensual]);
@@ -114,8 +112,8 @@ caso('arranca apagado de fábrica (la activación no es un efecto del deploy)', 
 caso('es un ajuste del panel', in_array('flujo_comercial', wabot_ajustes_claves(), true));
 caso('un modo inventado vuelve a off', (function () { unset($GLOBALS['WABOT_TEST_FLUJO_COMERCIAL']); $m = wabot_flujo_comercial(['flujo_comercial' => 'turbo']); $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto'; return $m; })() === 'off');
 caso('los bloques aprobados están tal cual', ($cfg['comercial']['oferta_demo'] ?? '') === OFERTA && trim((string)$cfg['comercial']['planes_panel']) === PLANES_PANEL && trim((string)$cfg['comercial']['planes_informativa']) === PLANES_INFO);
-caso('el aviso de derivación y el del link que no abre están configurados', ($cfg['comercial']['aviso_humano'] ?? '') === AVISO && strpos((string)($cfg['comercial']['link_no_abre'] ?? ''), '{link}') !== false
-    && strpos((string)($cfg['comercial']['plan_elegido'] ?? ''), '{plan}') !== false);
+caso('los textos del link que no abre y del plan elegido están configurados (26/27-oct)', strpos((string)($cfg['comercial']['link_no_abre'] ?? ''), '{link}') !== false
+    && strpos((string)($cfg['comercial']['plan_elegido'] ?? ''), '{plan}') !== false && !isset($cfg['comercial']['aviso_humano']));
 caso('el texto del formulario es el aprobado', str_starts_with((string)$cfg['prediseno_link'], 'Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: {link}'));
 $ins = wabot_comercial_instrucciones_comportamiento();
 foreach (['catalogo', 'reservas', 'crm', 'dos webs', 'descuento', 'pago_unico', 'formulario', 'presenciales'] as $p) {
@@ -304,7 +302,7 @@ echo "— 6. Casos para Pablo: silencio con motivo —\n";
 $c = cv();
 oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM para su equipo de ventas'])]);
 $r = turno('Necesito un CRM para gestionar a mis vendedores y el seguimiento de clientes', $c, $cfg);
-caso('CRM → solo el aviso de derivación, sin precio, para Pablo con el motivo', $r === [AVISO] && empty($c['precio_dado']) && ($c['comercial_pausa'] ?? '') === 'humano'
+caso('CRM → solo el aviso de derivación, sin precio, para Pablo con el motivo', $r === [] && empty($c['precio_dado']) && ($c['comercial_pausa'] ?? '') === 'humano'
     && ($c['comercial_motivo'] ?? '') === 'Pide un CRM para su equipo de ventas' && !empty($c['control_manual']) && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']), json_encode($c['comercial_ultimo'] ?? []));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te armamos una tienda.']])]);
 $r = turno('Y si fuera una tienda cuánto sale?', $c, $cfg);
@@ -315,7 +313,7 @@ caso('solo "Encender bot" la devuelve', empty($c['comercial_pausa']) && empty($c
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'crm', 'mensajes' => ['Te armamos el sistema.']])]);
 $r = turno('Quiero un sistema para gestionar el stock del depósito', $c, $cfg);
-caso('cotizar con solución crm lo corrige la red: humano', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano');
+caso('cotizar con solución crm lo corrige la red: humano', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano');
 
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto, te podemos armar una tienda online con tus productos y el stock desde el panel.'], 'ficha' => ['que_vende' => 'bazar']])]);
@@ -326,7 +324,7 @@ $c = cv_cotizada();
 $c['ficha']['senales'] = ['mercadolibre'];
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
 $r = turno('Dale, y que se sincronice con Mercado Libre', $c, $cfg);
-caso('una conexión no aprobada frena el formulario aunque acepte la demo', $r === [AVISO] && empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'Mercado Libre') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('una conexión no aprobada frena el formulario aunque acepte la demo', $r === [] && empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'Mercado Libre') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Dos webs (Pablo, 10-oct): juntas con $10.000 menos por mes y $50.000 menos por año sobre la suma.
 foreach ([['informativa', 'informativa', '$230.000', '$30.000'], ['informativa', 'tienda', '$300.000', '$40.000'], ['tienda', 'reservas', '$370.000', '$50.000'],
@@ -357,7 +355,7 @@ caso('acepta la demo y pide otra web en el mismo mensaje → el precio de las do
 $c = cv_cotizada();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'segunda_solucion' => 'crm'])]);
 $r = turno('Y aparte quiero un sistema para manejar los clientes', $c, $cfg);
-caso('la otra es un sistema de gestión → para Pablo, con el motivo', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'sistema de gestión') !== false);
+caso('la otra es un sistema de gestión → para Pablo, con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'sistema de gestión') !== false);
 
 $c = cv_cotizada();
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'No puede abrir el formulario'])]);
@@ -569,14 +567,14 @@ $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'internacional' => true, 'mensajes' => ['Perfecto, te podemos armar una web para tus cursos, con inscripción y pago online desde cualquier país.'], 'ficha' => ['que_vende' => 'cursos de ayurveda']])]);
 $r = turno('Doy cursos de ayurveda online para toda Latinoamérica y necesito cobrar desde otros países', $c, $cfg);
 // 26-oct (Pablo): "internacional lo sacamos de opción, eso lo doy yo dado el caso".
-caso('cobros internacionales → para Pablo, sin cotizar el plan internacional', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano'
+caso('cobros internacionales → para Pablo, sin cotizar el plan internacional', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano'
     && empty($c['comercial_cotizacion']) && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 $cot = wabot_comercial_cotizacion(['transcript' => [['q' => 'humano', 't' => "Podés elegir entre dos planes:\n\n1) Plan anual: \$240.000\n2) Plan mensual: \$40.000", 'ts' => time()]]], $cfg);
 caso('una cotización internacional pegada a mano se reconoce por el mensual de $40.000', ($cot['plan'] ?? '') === 'internacional', json_encode($cot));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'internacional' => true, 'pago_unico' => true, 'mensajes' => ['Te armamos la tienda.'], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Vendo ropa a todo el mundo y quiero comprar la web, no suscripción', $c, $cfg);
-caso('internacional con pago único (sin precio de lista) → para Pablo', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('internacional con pago único (sin precio de lista) → para Pablo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto, te podemos armar una tienda online con todos tus repuestos.'], 'ficha' => ['que_vende' => 'repuestos']])]);
 $r = turno('Vendo repuestos de autos, tengo unos 3000 productos', $c, $cfg);
@@ -863,7 +861,7 @@ caso('y sus instrucciones traen la información comercial (para ver si inventa)'
 $c = cv_cotizada('tienda');
 oa([$decMal, $decMal], [$revMal, $revMal]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
-caso('si lo corregido sigue mal (grave), en automático sale solo el aviso de derivación y lo ve Pablo con el motivo', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano'
+caso('si lo corregido sigue mal (grave), en automático sale solo el aviso de derivación y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano'
     && str_starts_with((string)($c['comercial_motivo'] ?? ''), 'Revisión: ') && !empty($c['handoff_pendiente']), json_encode([$r, $c['comercial_motivo'] ?? ''], JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada('tienda');
 oa([$decBien, $decBien], [$revRepite, $revRepite]);
@@ -921,7 +919,7 @@ $sombraOff = wabot_comercial_revisor_sombra_modelo(['openai_revisor_sombra' => '
 $sombraIgual = wabot_comercial_revisor_sombra_modelo(['openai_revisor_sombra' => 'gpt-6-sol', 'openai_modelo' => 'gpt-6-sol', 'openai_modelo_revisor' => ''] + $cfg);
 $GLOBALS['WABOT_TEST_OPENAI_HTTP'] = $httpAntes;
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
-caso('de fábrica la sombra es gpt-6-luna; vacía, apagada; igual al revisor, no corre', $sombraDef === 'gpt-6-luna' && $sombraOff === '' && $sombraIgual === '',
+caso('de fábrica la sombra está apagada (27-oct); vacía, apagada; igual al revisor, no corre', $sombraDef === '' && $sombraOff === '' && $sombraIgual === '',
     json_encode([$sombraDef, $sombraOff, $sombraIgual]));
 
 $c = cv_cotizada('tienda');
@@ -1014,13 +1012,13 @@ $decCotiza = dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' 
 $c = cv();
 oa([$decCotiza, $decCotiza], [$revFalta, $revFalta]);
 $r = turno('Cuánto sale hacer una web para una entidad de artes marciales? Cómo es el tema?', $c, $cfg);
-caso('cotizando, una duda sin resolver frena la salida y queda para Pablo con el detalle', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano' && empty($c['precio_dado'])
+caso('cotizando, una duda sin resolver frena la salida y queda para Pablo con el detalle', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && empty($c['precio_dado'])
     && ($c['comercial_pendientes'] ?? []) === ['cómo es el tema'] && strpos($c['comercial_motivo'] ?? '', 'cómo es el tema') !== false
     && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'frenada', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada('tienda');
 oa([$decMal, $decMal], [$revFalta, $revFalta]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
-caso('contestando una duda, lo que queda sin contestar sí la frena (lo ve Pablo)', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('contestando una duda, lo que queda sin contestar sí la frena (lo ve Pablo)', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
 // "Renovación de hosting y dominio, no sé qué vendría a ser eso": respuesta oficial con las dos cosas.
 caso('respuesta oficial que_es_hosting: hosting y dominio, incluidos, corta y ofrecida al modelo', mb_stripos((string)($cfg['info']['que_es_hosting'] ?? ''), 'servidor') !== false
     && mb_stripos((string)$cfg['info']['que_es_hosting'], 'dominio') !== false && mb_strlen((string)$cfg['info']['que_es_hosting']) <= 260
@@ -1053,7 +1051,7 @@ caso('instrucciones: "te hago el pago ya" / el link de pago lo sigue Pablo; preg
 $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'intencion' => 'acepta', 'motivo' => 'Quiere pagar el anual ya'])]);
 $r = turno('Va a ser anual. Te hago el pago ya para todo el año', $c, $cfg);
-caso('"te hago el pago ya" → solo el aviso de derivación y lo ve Pablo con el motivo', $r === [AVISO] && ($c['comercial_pausa'] ?? '') === 'humano' && ($c['comercial_motivo'] ?? '') === 'Quiere pagar el anual ya', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('"te hago el pago ya" → solo el aviso de derivación y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && ($c['comercial_motivo'] ?? '') === 'Quiere pagar el anual ya', json_encode($r, JSON_UNESCAPED_UNICODE));
 
 
 echo "— 14. Todas las dudas y seguimiento de pendientes (10-oct) —\n";
@@ -1115,7 +1113,7 @@ caso('aceptar la demo con cuatro dudas → contesta todas antes del formulario',
     && ($c['comercial_pausa'] ?? '') === 'formulario', json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Quiere pagar ya'])]);
 $r = turno('Te transfiero ahora, pasame los datos', $c, $cfg);
-caso('después del formulario, lo que es para Pablo avisa una vez y frena el recordatorio hasta que él conteste', $r === [AVISO] && !empty($c['handoff_pendiente'])
+caso('después del formulario, lo que es para Pablo avisa una vez y frena el recordatorio hasta que él conteste', $r === [] && !empty($c['handoff_pendiente'])
     && ($c['comercial_pausa'] ?? '') === 'formulario' && (int)($c['form_duda_pablo_ts'] ?? 0) >= (int)($c['form_link_mandado_ts'] ?? 1), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Las reglas que agregan una respuesta prioritaria tampoco pueden borrar las otras.
@@ -1150,7 +1148,7 @@ caso('el revisor pide completar y la respuesta corregida resuelve todas las duda
 $c = cv_cotizada('tienda');
 oa([$parcial, $parcial], [$faltaDos, $faltaDos]);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('si no se corrige, conserva las dos dudas y las muestra en el motivo para Pablo', $r === [AVISO]
+caso('si no se corrige, conserva las dos dudas y las muestra en el motivo para Pablo', $r === []
     && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && !empty($c['handoff_pendiente'])
     && strpos($c['comercial_motivo'], 'Qué plataforma usan?') !== false && strpos($c['comercial_motivo'], 'Quién carga los productos?') !== false);
 caso('los pendientes llegan al contexto del turno siguiente', strpos(wabot_comercial_contexto('Hola', $c, $cfg), 'DUDAS QUE QUEDARON PENDIENTES') !== false
@@ -1166,27 +1164,27 @@ caso('al resolver pendientes verificados se limpian y no quedan arrastrados', co
 $c = cv_cotizada('tienda');
 oa([$parcial, $completa], [$faltaDos, 'falla']);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('si falla la segunda revisión, no se da por resuelta una omisión conocida', $r === [AVISO]
+caso('si falla la segunda revisión, no se da por resuelta una omisión conocida', $r === []
     && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && ($c['comercial_pausa'] ?? '') === 'humano');
 
 $c = cv_cotizada('tienda');
 $c['comercial_pendientes'] = ['Quién carga los productos?'];
 oa([$completa], ['falla']);
 $r = turno('Y lo que te pregunté?', $c, $cfg);
-caso('si falla la primera revisión con pendientes previos, los conserva para Pablo', $r === [AVISO]
+caso('si falla la primera revisión con pendientes previos, los conserva para Pablo', $r === []
     && ($c['comercial_pendientes'] ?? []) === ['Quién carga los productos?'] && ($c['comercial_pausa'] ?? '') === 'humano');
 
 $c = cv_cotizada('tienda');
 oa([$parcial, dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pablo debe confirmar el caso'])], [$faltaDos]);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('derivar durante la corrección conserva las preguntas para que Pablo las conteste', $r === [AVISO]
+caso('derivar durante la corrección conserva las preguntas para que Pablo las conteste', $r === []
     && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && strpos($c['comercial_motivo'], 'Pablo debe confirmar el caso') !== false);
 
 $c = cv_cotizada('tienda');
 $revInconsistente = $faltaDos; $revInconsistente['ok'] = true;
 oa([$parcial, $parcial], [$revInconsistente, $revInconsistente]);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('ok=true no oculta un falta_contestar no vacío', $r === [AVISO] && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar']);
+caso('ok=true no oculta un falta_contestar no vacío', $r === [] && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar']);
 
 $c = cv_cotizada('tienda');
 oa([$parcial, $parcial], [$faltaDos, $faltaDos]);
@@ -1351,20 +1349,11 @@ oa([dc(['accion' => 'responder', 'solucion' => 'cursos', 'info_claves' => ['host
 $r = turno('[audio] Hola, todo bien? Entiendo que el hosting es el almacenamiento, no? Y qué sería el mantenimiento? Y pagando el total manejaría todo yo?', $c, $cfg);
 caso('tres oficiales y dos del modelo no salen como cinco mensajes: las oficiales van juntas', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
 
-// Martin (pastor) y Pau: al derivar, el bot se callaba del todo.
+// Al derivar, el bot sigue en silencio (Pablo, 27-oct: "que se siga callando").
 $c = cv();
 oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM'])]);
 $r = turno('Necesito un CRM', $c, $cfg);
-caso('al derivar sale el aviso una vez', $r === [AVISO] && !empty($c['comercial_aviso_humano_ts']));
-wabot_conv_encender_manual($c);
-oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Sigue pidiendo el CRM'])]);
-$r = turno('Y el CRM entonces?', $c, $cfg);
-caso('…y no dos', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
-$cfgSin = $cfg; $cfgSin['comercial']['aviso_humano'] = '';
-$c = cv();
-oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM'])]);
-$r = turno('Necesito un CRM', $c, $cfgSin);
-caso('con el texto vacío vuelve el silencio de antes', $r === []);
+caso('al derivar no sale nada: lo sigue Pablo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && !isset($c['comercial_aviso_humano_ts']));
 
 // Sabrina (Instagram): "no puedo abrir el link" quedó sin respuesta.
 $c = cv_cotizada('tienda');
@@ -1380,6 +1369,15 @@ foreach (['No me abre el link del formulario', 'el link no anda', 'no me carga l
 foreach (['Ya lo completé', 'no quiero el formulario ahora', 'lo lleno más tarde', 'Qué formulario?', 'no entendí el formulario'] as $t) {
     caso("«{$t}» no", !wabot_comercial_link_no_abre($t));
 }
+// El saludo duplicado: 8 de las 13 correcciones del revisor del 26-oct eran "Muy bien, gracias. Bien, gracias!" o volver a saludar.
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Todo bien, gracias! Podemos armarte una tienda online para tus perfumes'], 'ficha' => ['que_vende' => 'perfumes']])]);
+$r = turno('Hola, cómo estás? Vendo perfumes', $c, $cfg);
+caso('si el modelo ya contestó cómo está, no se le antepone otro "Muy bien, gracias"', str_starts_with((string)($r[0] ?? ''), 'Todo bien, gracias!') && strpos((string)($r[0] ?? ''), 'Muy bien') === false
+    && !empty($c['saludo_devuelto']), $r[0] ?? '');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting'], 'mensajes' => ['Hola, buenas tardes! Cualquier otra duda me decís']])]);
+$r = turno('Y el hosting?', $c, $cfg);
+caso('ya saludado, el "Hola, buenas tardes!" del modelo se saca', ($r[1] ?? '') === 'Cualquier otra duda me decís', json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('un mensaje de sistema de WhatsApp no se contesta; el texto, la foto y el request_welcome sí', wabot_wa_tipo_ignorado('system')
     && !wabot_wa_tipo_ignorado('text') && !wabot_wa_tipo_ignorado('image') && !wabot_wa_tipo_ignorado('request_welcome'));
 caso('las instrucciones traen las reglas del 26/27-oct', mb_stripos($ins, 'hoy debería ser plan mensual') !== false && mb_stripos($ins, 'Toowebs') !== false

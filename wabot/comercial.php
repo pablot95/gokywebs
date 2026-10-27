@@ -790,9 +790,12 @@ function wabot_comercial_revisor_modelo($cfg) {
 }
 
 /**
- * El modelo que revisa en sombra, o '' si está apagada. De fábrica gpt-6-luna;
- * vacío en Ajustes la apaga. Los tests y las simulaciones (API simulada o sin
- * red) no la corren salvo que la pidan con WABOT_TEST_REVISOR_SOMBRA.
+ * El modelo que revisa en sombra, o '' si está apagada. De fábrica APAGADA
+ * (27-oct: la comparación con gpt-6-luna ya se hizo —739 casos al 21-oct,
+ * frenaba de más el 25% y dejaba pasar 30 de 120— y seguía corriendo en cada
+ * turno, 722 llamadas en 8 días sin que nadie las mirara); un modelo en Ajustes
+ * la prende. Los tests y las simulaciones (API simulada o sin red) no la corren
+ * salvo que la pidan con WABOT_TEST_REVISOR_SOMBRA.
  */
 function wabot_comercial_revisor_sombra_modelo($cfg) {
     if (array_key_exists('WABOT_TEST_REVISOR_SOMBRA', $GLOBALS)) {
@@ -800,8 +803,7 @@ function wabot_comercial_revisor_sombra_modelo($cfg) {
     } elseif (isset($GLOBALS['WABOT_TEST_OPENAI_HTTP']) || !empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
         return '';
     } else {
-        $guardado = wabot_ia_ajuste($cfg, 'openai_revisor_sombra');
-        $m = $guardado === null ? 'gpt-6-luna' : (string)$guardado;
+        $m = (string)(wabot_ia_ajuste($cfg, 'openai_revisor_sombra') ?? '');
     }
     $m = trim($m);
     return wabot_openai_modelo_valido($m) && $m !== wabot_comercial_revisor_modelo($cfg) ? $m : '';
@@ -1080,18 +1082,6 @@ function wabot_comercial_link_no_abre($texto) {
     return (bool)(preg_match('/\b(no|nunca|tampoco)\b.{0,25}\b' . $falla . '\b.{0,35}\b' . $cosa . '\b/u', $t)
         || preg_match('/\b' . $cosa . '\b.{0,35}\b(no|nunca|tampoco)\b.{0,20}\b' . $falla . '\b/u', $t)
         || preg_match('/\b' . $cosa . '\b.{0,25}\b(roto|caido|caida|error|mal)\b|\b(error|roto|caido)\b.{0,25}\b' . $cosa . '\b/u', $t));
-}
-
-/**
- * El aviso de que la charla la sigue el desarrollador, una vez por charla (26-oct:
- * al derivar, el bot se callaba del todo y el cliente quedaba hablando solo). ''
- * si ya salió o está apagado (texto vacío en comercial.aviso_humano).
- */
-function wabot_comercial_aviso_humano(&$conv, $cfg) {
-    $t = trim((string)($cfg['comercial']['aviso_humano'] ?? ''));
-    if ($t === '' || !empty($conv['comercial_aviso_humano_ts'])) return '';
-    $conv['comercial_aviso_humano_ts'] = time();
-    return $t;
 }
 
 /** La repregunta de la demo (22-oct), también para volver a ofrecerla después de las dudas. */
@@ -1646,9 +1636,9 @@ function wabot_comercial_es_solo_saludo($m) {
     return $t !== '' && (bool)preg_match('/^(hola+|holis|buenas|buen dia|buenos dias|buenas tardes|buenas noches|que tal|como estas|todo bien|bien|muy bien|gracias|bien gracias|muy bien gracias)( (y )?(vos|a vos|usted|ustedes))?[ ,.!]*$/u', $t);
 }
 
-/** "Buenas! Te podemos armar…" → "Te podemos armar…". */
+/** "Buenas! Te podemos armar…" → "Te podemos armar…"; también "Hola, buenas tardes! …" (los dos saludos juntos). */
 function wabot_comercial_sin_saludo_inicial($m) {
-    $limpio = preg_replace('/^\s*[¡!]?\s*(hola+|buenas( tardes| noches)?|buen d[ií]a|buenos d[ií]as)\b[^\p{L}]*/iu', '', (string)$m, 1);
+    $limpio = preg_replace('/^\s*[¡!]?\s*((buenas( tardes| noches)?|buen d[ií]a|buenos d[ií]as|hola+)\b[^\p{L}]*){1,2}/iu', '', (string)$m, 1);
     $limpio = trim((string)$limpio);
     return $limpio === '' ? trim((string)$m) : mb_strtoupper(mb_substr($limpio, 0, 1)) . mb_substr($limpio, 1);
 }
@@ -1937,6 +1927,17 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
         $msgs = $juntos;
     }
 
+    /* Ya lo saludamos en la charla y el modelo vuelve a arrancar con "Hola, buenas
+     * tardes!": ese saludo sobra (26-oct: el revisor lo marcaba "repite" y hacía
+     * corregir, una llamada de más cada vez). */
+    if (!empty($c['saludo_devuelto'])) {
+        foreach ($msgs as $i => $m) {
+            if (!in_array($m['efecto'], ['texto', 'propuesta'], true)) continue;
+            $sin = wabot_comercial_sin_saludo_inicial($m['t']);
+            if ($sin !== trim((string)$m['t'])) $msgs[$i]['t'] = $sin;
+            break;
+        }
+    }
     // El saludo se devuelve una vez por charla, al principio del primer mensaje nuestro; nunca pegado a un bloque aprobado (planes, oferta, formulario).
     if ($msgs && in_array($msgs[0]['efecto'], ['texto', 'info', 'propuesta'], true) && function_exists('wabot_saludo_devolver')) {
         $textos = array_map(function ($m) { return $m['t']; }, $msgs);
@@ -2190,25 +2191,18 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'humano', 'motivo' => (string)$b['motivo'],
                                      'ajustes' => $res['ajustes'], 'revision' => $res['revision']];
         wabot_log('comercial_post_form_pablo', ['tel' => $conv['tel'] ?? '', 'motivo' => mb_substr((string)$b['motivo'], 0, 160)]);
-        $aviso = wabot_comercial_aviso_humano($conv, $cfg);
-        if ($aviso === '') return [];
-        $conv['_comercial_salida'] = true;
-        return [$aviso];
+        return [];
     }
     $conv = $b['conv'];
     $conv['comercial_ultimo']['ajustes'] = $res['ajustes'];
     $conv['comercial_ultimo']['revision'] = $res['revision'];
-    $salida = array_map(function ($m) { return $m['t']; }, $b['mensajes']);
+    // Al derivar, en silencio: lo sigue Pablo (27-oct: "que se siga callando").
     if ($b['accion'] === 'humano') {
         wabot_conv_tomar_control($conv);
         $conv['handoff_pendiente'] = true;
-        /* Antes se callaba del todo (26-oct: Pau aceptó la demo a las 00:10 y
-         * nadie le contestó hasta las 09:15; Martin escribió "??" a las 4 h). */
-        $aviso = wabot_comercial_aviso_humano($conv, $cfg);
-        $salida = $aviso !== '' ? [$aviso] : [];
     }
     // Si llega otro mensaje antes de mandar esto, el webhook lo descarta y vuelve a pensar con todo.
     $conv['_ia_recalculable'] = true;
     $conv['_comercial_salida'] = true;
-    return $salida;
+    return array_map(function ($m) { return $m['t']; }, $b['mensajes']);
 }

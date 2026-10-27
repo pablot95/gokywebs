@@ -996,7 +996,11 @@ function wabot_saludo_devolver($texto, $salida, &$conv) {
     if ($eco === '') return $salida;
     $primero = (string)$salida[0];
     $conv['saludo_devuelto'] = true;
-    if (preg_match('/^\s*[¡!]?\s*(hola|buen d[ií]a|buenas|muy bien)\b/iu', $primero)) return $salida;
+    /* Si el modelo ya saludó o ya contestó cómo está ("Todo bien, gracias!",
+     * "Bien, gracias Tomás!"), no se le antepone otro: salía "Muy bien, gracias.
+     * Bien, gracias!" y el revisor lo frenaba por repetido, con una llamada de
+     * corrección cada vez (26-oct: 8 de las 13 correcciones del día). */
+    if (preg_match('/^\s*[¡!]?\s*(hola|buen d[ií]a|buenas|muy bien|todo bien|bien[,!]|bien gracias|genial|excelente|joya|barbaro|bárbaro|todo (tranqui|en orden|ok|joya))\b/iu', $primero)) return $salida;
     $salida[0] = $eco . ' ' . ltrim($primero);
     return $salida;
 }

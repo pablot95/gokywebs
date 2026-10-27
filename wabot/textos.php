@@ -401,12 +401,9 @@ function wabot_textos_default() {
          * 9-oct): si pregunta otra cosa y el modelo igual quiere cotizar, sale
          * esto (la pregunta de Pablo en sus chats) y no los planes. */
         'pregunta_turnos' => 'Y te consulto: querés que la gente solamente te escriba por WhatsApp o también que pueda reservar turnos desde la página?',
-        /* Charlas del 26/27-oct. Al pasar la charla a Pablo el bot se callaba del
-         * todo (Pau aceptó la demo a las 00:10 y nadie le contestó hasta las
-         * 09:15; Martin escribió "??" a las 4 h): un aviso corto, una vez por
-         * charla. Vacío lo apaga. */
-        'aviso_humano' => 'Eso lo ve el desarrollador directamente: le paso tu mensaje y te escribe por acá.',
-        /* "No puedo abrir el link" con el formulario mandado (Sabrina, Instagram): se
+        /* Charlas del 26/27-oct (al pasar la charla a Pablo el bot sigue en
+         * silencio: Pablo, 27-oct, "que se siga callando").
+         * "No puedo abrir el link" con el formulario mandado (Sabrina, Instagram): se
          * reenvía el mismo link en vez de callarse. {link} es obligatorio. */
         'link_no_abre' => 'Probá con este link; si no se abre al tocarlo, copialo y pegalo en el navegador: {link}',
         /* Eligió un plan después de los precios ("Hoy debería ser plan mensual"): es
