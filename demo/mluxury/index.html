@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLuxury — Joyas enchapadas en oro en Moreno</title>
+<meta name="description" content="Aros, collares, pulseras y anillos enchapados en oro para todos los días y para ocasiones especiales. Fotos, precios y pedidos online desde Moreno.">
+<link rel="canonical" href="https://gokywebs.com/demo/mluxury/">
+<meta name="theme-color" content="#F8F9FC">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="MLuxury">
+<meta property="og:title" content="MLuxury — Joyas enchapadas en oro en Moreno">
+<meta property="og:description" content="Aros, collares, pulseras y anillos enchapados en oro para todos los días y para ocasiones especiales. Fotos, precios y pedidos online desde Moreno.">
+<meta property="og:url" content="https://gokywebs.com/demo/mluxury/">
+<meta property="og:image" content="https://gokywebs.com/demo/mluxury/images/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23172245'/%3E%3Ctext x='32' y='43' text-anchor='middle' font-family='Georgia,serif' font-style='italic' font-size='30' fill='%23FFD9AD'%3EML%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500;1,600&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css?v=5">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "JewelryStore", "name": "MLuxury", "description": "Joyas enchapadas en oro para todos los días y para ocasiones especiales: aros, collares, pulseras y anillos.", "url": "https://gokywebs.com/demo/mluxury/", "image": "https://gokywebs.com/demo/mluxury/images/og.jpg", "telephone": "+5491133482078", "address": {"@type": "PostalAddress", "addressLocality": "Moreno", "addressRegion": "Buenos Aires", "addressCountry": "AR"}, "geo": {"@type": "GeoCoordinates", "latitude": -34.6509, "longitude": -58.7896}, "areaServed": "Moreno, Buenos Aires", "sameAs": ["https://www.instagram.com/mluxury_1/"]}</script>
+</head>
+<body class="m1" data-pagina="home" data-catalogo="catalogo.html" data-inicio="./">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="index.html" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="./" aria-label="MLuxury, joyas enchapadas en oro, inicio"><span class="wordmark"><span class="wm-nombre"><em>ML</em>uxury</span><span class="wm-sub">Joyas enchapadas en oro</span></span></a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div class="nav-cats" data-cats>
+        <button type="button" class="nav-cats-btn" aria-expanded="false" aria-haspopup="true" aria-controls="menu-cats">Colección <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-cats-panel" id="menu-cats" hidden>
+          <div><p class="nav-cats-t">Por tipo</p><ul data-menu-cats></ul></div>
+          <div class="nav-mom"><p class="nav-cats-t">Por momento</p><ul data-menu-momentos></ul></div>
+          <a class="nav-cats-todo" href="catalogo.html">Ver toda la colección</a>
+        </div>
+      </div>
+      <a href="#ubicacion">Ubicación</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="header-acciones">
+      <a class="icon-btn" href="catalogo.html#buscar" aria-label="Buscar en la colección"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+      <button type="button" class="icon-btn cart-btn" data-abrir-carrito aria-label="Abrir el carrito"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg><span class="cart-badge" data-cart-count hidden>0</span></button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--banner" aria-labelledby="hero-t">
+    <div class="hero-foto" data-parallax><img src="images/hero-collar.webp" alt="Collar con dije circular enchapado en oro sobre piedra clara" width="1600" height="900" fetchpriority="high" data-hero-img></div>
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Joyería en Moreno, Buenos Aires</p>
+        <h1 id="hero-t">Joyas enchapadas en oro para todos tus momentos</h1>
+        <p class="hero-kicker">Los buenos siempre brillan.</p>
+        <p class="hero-lead">Aros, collares, pulseras y anillos para usar todos los días o lucir en una fecha especial. Miralos con fotos, precio y detalle, y hacé tu pedido desde la web.</p>
+        <div class="hero-ctas">
+          <a class="btn btn--cta" href="catalogo.html">Ver la colección <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn btn--wsp" href="https://wa.me/5491133482078?text=Hola%21%20Quiero%20hacer%20un%20pedido%20en%20MLuxury." target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Pedir por WhatsApp</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="spot spot--m1" data-spot="collar-dije-circular" aria-labelledby="spot-t">
+    <div class="container">
+      <div class="spot-card" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+        <div class="galeria" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <div class="gal-track" data-gal-track><figure class="gal-foto"><img src="images/p-collar-dije-circular.webp" alt="Collar con dije circular enchapado en oro, foto 1 de 3" width="1000" height="1000"></figure><figure class="gal-foto"><img src="images/p-collar-dije-circular-2.webp" alt="Collar con dije circular enchapado en oro, foto 2 de 3" width="1000" height="1000"></figure><figure class="gal-foto"><img src="images/p-collar-dije-circular-3.webp" alt="Collar con dije circular enchapado en oro, foto 3 de 3" width="1000" height="1000"></figure></div>
+          <span class="gal-cuenta" data-gal-cuenta>1 / 3</span>
+          <div class="gal-thumbs"><button type="button" class="gal-thumb on" data-gal-thumb="0" aria-pressed="true" aria-label="Ver foto 1"><img src="images/p-collar-dije-circular.webp" alt="" width="1000" height="1000"></button><button type="button" class="gal-thumb" data-gal-thumb="1" aria-pressed="false" aria-label="Ver foto 2"><img src="images/p-collar-dije-circular-2.webp" alt="" width="1000" height="1000"></button><button type="button" class="gal-thumb" data-gal-thumb="2" aria-pressed="false" aria-label="Ver foto 3"><img src="images/p-collar-dije-circular-3.webp" alt="" width="1000" height="1000"></button></div>
+        </div>
+        <div class="spot-info">
+          <p class="eyebrow">Pieza destacada</p>
+          <h2 id="spot-t">Collar con dije circular</h2>
+          <p class="spot-sub">Enchapado en oro</p>
+          <span class="filete" aria-hidden="true"></span>
+          <p class="spot-desc">Cadena fina con una medalla lisa y redonda. Queda sola o combinada con otras cadenas, y va con todo: remera, camisa o vestido.</p>
+          <div class="spot-compra" data-spot-compra aria-live="polite"></div>
+          <div class="spot-otros-wrap">
+            <p class="spot-otros-t">Otros productos</p>
+            <div class="spot-otros" data-spot-otros="anillo-ancho,pulsera-eslabones"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cats-sec" aria-labelledby="cats-t">
+    <div class="container">
+      <div class="sec-head sec-head--fila">
+        <div data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(16px)"><h2 id="cats-t">Elegí por tipo de joya</h2></div>
+        <a class="link-ver" href="catalogo.html" data-animate="subir" style="opacity:0;transform:translateY(24px)">Ver toda la colección <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="cats">
+        <a class="cat-tile" href="catalogo.html?cat=aros" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cat-tile-foto"><img src="images/p-aros-gota-cubic-2.webp" alt="" width="1000" height="1000"></span>
+          <span class="cat-tile-txt"><span class="cat-tile-nombre">Aros</span><small data-cuenta-cat="aros">&nbsp;</small><span class="cat-tile-ir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+        </a><a class="cat-tile" href="catalogo.html?cat=collares" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cat-tile-foto"><img src="images/p-collar-corazon-nacar-2.webp" alt="" width="1000" height="1000"></span>
+          <span class="cat-tile-txt"><span class="cat-tile-nombre">Collares</span><small data-cuenta-cat="collares">&nbsp;</small><span class="cat-tile-ir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+        </a><a class="cat-tile" href="catalogo.html?cat=pulseras" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cat-tile-foto"><img src="images/p-esclava-abierta-2.webp" alt="" width="1000" height="1000"></span>
+          <span class="cat-tile-txt"><span class="cat-tile-nombre">Pulseras</span><small data-cuenta-cat="pulseras">&nbsp;</small><span class="cat-tile-ir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+        </a><a class="cat-tile" href="catalogo.html?cat=anillos" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <span class="cat-tile-foto"><img src="images/p-anillo-sello-2.webp" alt="" width="1000" height="1000"></span>
+          <span class="cat-tile-txt"><span class="cat-tile-nombre">Anillos</span><small data-cuenta-cat="anillos">&nbsp;</small><span class="cat-tile-ir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cuidados" aria-labelledby="cuid-t">
+    <div class="container cuid-grid">
+      <figure class="cuid-foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"><img src="images/ed-plato.webp" alt="Collares, pulseras, aros y anillos dorados sobre un plato blanco" width="1200" height="1600"></figure>
+      <div class="cuid-txt">
+        <div data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(16px)"><h2 id="cuid-t">Cómo cuidar tus joyas enchapadas en oro</h2></div>
+        <p data-animate="subir" style="opacity:0;transform:translateY(24px)">Cada pieza de MLuxury está enchapada en oro. Con estos cuatro gestos, el brillo te acompaña mucho más tiempo.</p>
+        <ol class="cuid-lista"><li data-animate="subir" style="opacity:0;transform:translateY(32px)"><span class="cuid-num">01</span><h3>Último paso, primera en salir</h3><p>Ponetelas después del perfume, la crema y el maquillaje, y sacatelas antes de dormir.</p></li><li data-animate="subir" style="opacity:0;transform:translateY(32px)"><span class="cuid-num">02</span><h3>Lejos del agua</h3><p>Sacatelas para bañarte, ir a la pileta o al mar, y para entrenar.</p></li><li data-animate="subir" style="opacity:0;transform:translateY(32px)"><span class="cuid-num">03</span><h3>Cada una en su lugar</h3><p>Guardalas por separado, en una bolsita o en su caja, para que no se rayen entre sí.</p></li><li data-animate="subir" style="opacity:0;transform:translateY(32px)"><span class="cuid-num">04</span><h3>Un paño suave</h3><p>Después de usarlas, pasales un paño seco y suave. Nada de productos de limpieza.</p></li></ol>
+        <a class="link-ver" href="catalogo.html" data-animate="subir" style="opacity:0;transform:translateY(24px)">Elegir mis joyas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="coleccion" data-momentos aria-labelledby="col-t">
+    <div class="container">
+      <div class="sec-head sec-head--fila">
+        <div data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(16px)"><h2 id="col-t">La colección</h2></div>
+        <div class="seg" role="tablist" aria-label="Filtrar la colección por momento" data-animate="escala" style="opacity:0;transform:scale(.94)">
+          <button type="button" class="seg-btn" role="tab" id="tab-todas" data-momento="" aria-selected="true" aria-controls="col-grid">Todas</button>
+          <button type="button" class="seg-btn" role="tab" id="tab-diario" data-momento="diario" aria-selected="false" aria-controls="col-grid" tabindex="-1">Todos los días</button>
+          <button type="button" class="seg-btn" role="tab" id="tab-especial" data-momento="especial" aria-selected="false" aria-controls="col-grid" tabindex="-1">Ocasiones especiales</button>
+        </div>
+      </div>
+      <div class="prod-grid" id="col-grid" role="tabpanel" data-momentos-grid data-limite="8" data-estilo="grid" data-excluir="collar-dije-circular,anillo-ancho,pulsera-eslabones"></div>
+      <div class="coleccion-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)"><a class="btn btn--line" href="catalogo.html" data-momentos-link><span>Ver toda la colección</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></div>
+    </div>
+  </section>
+
+  <section class="ubic" id="ubicacion" aria-labelledby="ubic-t">
+    <div class="container">
+      <div class="ubic-card">
+        <div class="mapa" data-mapa data-animate="mascara" style="clip-path:inset(100% 0 0 0)"></div>
+        <div class="ubic-info" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+          <div data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(16px)"><h2 id="ubic-t">Dónde estamos y cómo pagás</h2></div>
+          <p>Estamos en Moreno, provincia de Buenos Aires. Hacé tu pedido desde la web y coordinamos la entrega o el retiro por WhatsApp.</p>
+          <dl class="datos">
+            <div><dt>Ubicación</dt><dd>Moreno, Buenos Aires</dd></div>
+            <div><dt>Medios de pago</dt><dd><ul class="pagos"><li>Mercado Pago</li><li>Transferencia</li><li>Efectivo al retirar</li></ul></dd></div>
+            <div><dt>Cómo pedir</dt><dd><ol class="pasos"><li>Elegí tus joyas y sumalas al carrito.</li><li>Pagá con Mercado Pago o mandanos el pedido por WhatsApp.</li><li>Coordinamos la entrega o el retiro en Moreno.</li></ol></dd></div>
+            <div><dt>WhatsApp</dt><dd><a href="https://wa.me/5491133482078?text=Hola%21%20Vi%20la%20web%20de%20MLuxury%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 11 3348-2078</a></dd></div>
+          </dl>
+          <div class="ubic-ctas">
+            <a class="btn btn--cta" href="https://wa.me/5491133482078?text=Hola%21%20Quiero%20hacer%20un%20pedido%20en%20MLuxury." target="_blank" rel="noopener"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><span>Hacer mi pedido</span></a>
+            <a class="link-ver" href="catalogo.html">Ver la colección <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="contacto">
+  <div class="footer-datos">
+    <ul class="container">
+      <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg><strong>Ubicación</strong><a href="#ubicacion">Moreno, Buenos Aires</a></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg><strong>Medios de pago</strong><span>Mercado Pago, transferencia y efectivo</span></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg><strong>WhatsApp</strong><a href="https://wa.me/5491133482078?text=Hola%21%20Vi%20la%20web%20de%20MLuxury%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 11 3348-2078</a></li>
+      <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></svg><strong>Instagram</strong><a href="https://www.instagram.com/mluxury_1/" target="_blank" rel="noopener">@mluxury_1</a></li>
+    </ul>
+  </div>
+  <div class="container footer-grid">
+    <div class="footer-marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+      <a class="brand" href="./" aria-label="MLuxury, inicio"><span class="wordmark wordmark--claro"><span class="wm-nombre"><em>ML</em>uxury</span><span class="wm-sub">Joyas enchapadas en oro</span></span></a>
+      <p>Joyas enchapadas en oro para todos los días y para ocasiones especiales. Los buenos siempre brillan.</p>
+    </div>
+    <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+      <h2 class="footer-t">Colección</h2>
+      <ul>
+        <li><a href="catalogo.html?cat=aros">Aros</a></li>
+        <li><a href="catalogo.html?cat=collares">Collares</a></li>
+        <li><a href="catalogo.html?cat=pulseras">Pulseras</a></li>
+        <li><a href="catalogo.html?cat=anillos">Anillos</a></li>
+        <li><a href="catalogo.html?nuevo=1">Lo nuevo</a></li>
+      </ul>
+    </div>
+    <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+      <h2 class="footer-t">Para cada momento</h2>
+      <ul>
+        <li><a href="catalogo.html?momento=diario">Para todos los días</a></li>
+        <li><a href="catalogo.html?momento=especial">Para ocasiones especiales</a></li>
+        <li><a href="#ubicacion">Dónde estamos y cómo pagás</a></li>
+        <li><a href="https://wa.me/5491133482078?text=Hola%21%20Vi%20la%20web%20de%20MLuxury%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">Escribinos por WhatsApp</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+    <p>Fotos ilustrativas · precios y stock de muestra.</p>
+    <p>© 2026 MLuxury · <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito" data-abrir-carrito>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5491133482078?text=Hola%21%20Vi%20la%20web%20de%20MLuxury%20y%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=5"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

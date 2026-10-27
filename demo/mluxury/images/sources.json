@@ -1,0 +1,36 @@
+{
+  "cliente": {
+    "01_imagen.png": ["p-collar-dije-circular.webp", "p-collar-dije-circular-3.webp"],
+    "02_imagen.png": ["hero-collar.webp", "og.jpg", "p-collar-dije-circular-2.webp"],
+    "03_imagen.png": ["p-argollas-gruesas.webp", "p-argollas-gruesas-2.webp"],
+    "04_imagen.png": ["p-pulsera-eslabones.webp", "p-pulsera-eslabones-2.webp"],
+    "05_imagen.png": ["p-anillo-ancho.webp", "p-anillo-ancho-2.webp"],
+    "06_imagen.png": ["p-aros-disco.webp", "p-aros-disco-2.webp"],
+    "07_imagen.png": ["p-collar-eslabones-alargados.webp", "p-collar-eslabones-alargados-2.webp"],
+    "08_imagen.png": ["p-esclava-abierta.webp", "p-esclava-abierta-2.webp"],
+    "09_imagen.png": ["p-aros-gota-cubic.webp", "p-aros-gota-cubic-2.webp"],
+    "10_mockup_720x480.png": "referencia de diseño, no se publica en la web"
+  },
+  "nota": "Los archivos -2 y -3 son recortes de detalle de la misma foto (segunda foto de cada producto).",
+  "pexels": [
+    { "archivo": "p-collar-corazon-abierto.webp", "id": 17368728, "url": "https://www.pexels.com/photo/17368728/", "uso": "producto ilustrativo" },
+    { "archivo": "p-conjunto-corazones.webp", "id": 17368723, "url": "https://www.pexels.com/photo/17368723/", "uso": "producto ilustrativo" },
+    { "archivo": "p-collar-corazon-nacar.webp", "id": 19821929, "url": "https://www.pexels.com/photo/19821929/", "uso": "producto ilustrativo" },
+    { "archivo": "p-aros-medalla-perla.webp", "id": 23495776, "url": "https://www.pexels.com/photo/23495776/", "uso": "producto ilustrativo" },
+    { "archivo": "p-aros-corazon-perla.webp", "id": 31605846, "url": "https://www.pexels.com/photo/31605846/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillo-sello.webp", "id": 15176501, "url": "https://www.pexels.com/photo/15176501/", "uso": "producto ilustrativo" },
+    { "archivo": "p-anillos-cintillo-cubic.webp", "id": 30541169, "url": "https://www.pexels.com/photo/30541169/", "uso": "producto ilustrativo" },
+    { "archivo": "p-pulsera-candado-corazon.webp", "id": 35270148, "url": "https://www.pexels.com/photo/35270148/", "uso": "producto ilustrativo" },
+    { "archivo": "p-collar-cruz.webp", "id": 9173457, "url": "https://www.pexels.com/photo/9173457/", "uso": "producto ilustrativo" },
+    { "archivo": "p-aros-circulo-nacar.webp", "id": 10457796, "url": "https://www.pexels.com/photo/10457796/", "uso": "producto ilustrativo" },
+    { "archivo": "p-pulsera-barbada-dijes.webp", "id": 12753202, "url": "https://www.pexels.com/photo/12753202/", "uso": "producto ilustrativo" },
+    { "archivo": "p-argollas-torneadas.webp", "id": 12452943, "url": "https://www.pexels.com/photo/12452943/", "uso": "producto ilustrativo" },
+    { "archivo": "ed-plato.webp", "id": 8105117, "url": "https://www.pexels.com/photo/8105117/", "uso": "foto de los cuidados" }
+  ],
+  "descartadas": {
+    "12168883": "aros chiquitos en el cuadro, no se leen",
+    "32797484": "fondo verde oscuro, fuera del tono del set",
+    "34372585": "fondo frío de piedra gris",
+    "8165657": "pulsera casi igual a la 04 del cliente"
+  }
+}
