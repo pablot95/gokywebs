@@ -1,0 +1,12 @@
+{
+  "base": "01_imagen.png a 09_imagen.png y 10_mockup_720x480.png: zip SAMAY_YAMPA de Descargas (ilustrativas)",
+  "pexels": [
+    { "archivo": "quebrada-canon.webp", "id": 13146661, "url": "https://www.pexels.com/photo/13146661/", "nota": "cañón rojo en Villa San Agustín, Valle Fértil" },
+    { "archivo": "noche-estrellas.webp", "id": 13344264, "url": "https://www.pexels.com/photo/13344264/", "nota": "vía láctea sobre cerros de La Rioja" },
+    { "archivo": "cabalgata.webp", "id": 36803616, "url": "https://www.pexels.com/photo/36803616/", "nota": "cabalgata por sendero de montaña, Jujuy" },
+    { "archivo": "ischigualasto-bochas.webp", "id": 8043782, "url": "https://www.pexels.com/photo/8043782/", "nota": "cancha de bochas, Ischigualasto" },
+    { "archivo": "ischigualasto-formaciones.webp", "id": 31725158, "url": "https://www.pexels.com/photo/31725158/", "nota": "formaciones de Ischigualasto" },
+    { "archivo": "condor.webp", "id": 6916497, "url": "https://www.pexels.com/photo/6916497/", "nota": "cóndor andino en vuelo" },
+    { "archivo": "cascada.webp", "id": 6814974, "url": "https://www.pexels.com/photo/6814974/", "nota": "cascada entre rocas (ilustrativa de las cascadas de Astica)" }
+  ]
+}
