@@ -1305,6 +1305,16 @@ $r = turno("Hoy debería ser plan mensual\nNecesito trabajar y generar ingresos"
 caso('elegir un plan después del precio es aceptar la demo: confirmación del plan + formulario, sin el desaliento del modelo', count($r) === 2
     && $r[0] === 'Perfecto, anotamos el plan mensual' && con_form([$r[1]]) && !empty($c['link_form_enviado']) && ($c['modalidad_elegida'] ?? '') === 'mensual'
     && in_array('plan_elegido_formulario', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode($r, JSON_UNESCAPED_UNICODE));
+// En vivo (27-oct, nutricionista): el modelo ya elegía el formulario con "Prefiero el mensual", pero el plan no se anotaba ni salía el acuse.
+$c = cv_cotizada('informativa');
+oa([dc(['accion' => 'formulario', 'solucion' => 'informativa', 'mensajes' => []])]);
+$r = turno('Prefiero el mensual', $c, $cfg);
+caso('si el modelo ya eligió el formulario, el plan igual se anota y sale el acuse', count($r) === 2
+    && $r[0] === 'Perfecto, anotamos el plan mensual' && con_form([$r[1]]) && ($c['modalidad_elegida'] ?? '') === 'mensual', json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'mensajes' => []])]);
+$r = turno('Dale, armala', $c, $cfg);
+caso('y un sí sin plan sigue mandando solo el formulario', count($r) === 1 && con_form($r) && empty($c['modalidad_elegida']), json_encode($r, JSON_UNESCAPED_UNICODE));
 foreach (['Hoy debería ser plan mensual' => 'mensual', 'me quedo con el anual' => 'unico', 'la 1' => 'propia', 'Voy con el pago único' => 'propia', 'Dale, el mensual' => 'mensual'] as $t => $esp) {
     caso("«{$t}» elige $esp", wabot_comercial_elige_plan($t, $c) === $esp, (string)wabot_comercial_elige_plan($t, $c));
 }

@@ -1401,11 +1401,13 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     /* Eligió un plan después de los precios ("Hoy debería ser plan mensual",
      * 26-oct): con la demo ofrecida y sin formulario, es aceptarla. El modelo lo
      * leía como "no acepta la demo" y encima la desalentaba ("No hace falta que
-     * decidas una inversión ahora"); el formulario lo mandó Pablo a la mañana. */
+     * decidas una inversión ahora"); el formulario lo mandó Pablo a la mañana.
+     * También cuando el modelo ya eligió el formulario (27-oct, "Prefiero el
+     * mensual" en vivo): así se anota el plan y sale el acuse. */
     $planElegido = null;
     if ($yaCotizado && wabot_comercial_estado($conv) === 'atencion' && wabot_comercial_oferta_hecha($conv, $cfg)
         && !in_array($d['intencion'], ['rechaza', 'posterga', 'condiciona'], true)
-        && (in_array($d['accion'], ['responder', 'esperar'], true) || ($d['accion'] === 'cotizar' && !wabot_comercial_pide_precio_otra_vez($texto)))) {
+        && (in_array($d['accion'], ['responder', 'esperar', 'formulario'], true) || ($d['accion'] === 'cotizar' && !wabot_comercial_pide_precio_otra_vez($texto)))) {
         $planElegido = wabot_comercial_elige_plan($texto, $conv);
     }
     if ($planElegido !== null) {
