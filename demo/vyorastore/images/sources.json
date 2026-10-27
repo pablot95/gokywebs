@@ -1,0 +1,24 @@
+{
+  "origen": "Zip del cliente Vyora_store_kxpgjp1A52tIU9aaZHp2.zip (26-oct-2026). Sin fotos de bancos.",
+  "derivadas": {
+    "t-lavanda.webp": "07_imagen.png",
+    "t-salvia.webp": "03_imagen.png",
+    "t-rosa.webp": "04_imagen.png",
+    "t-crudo.webp": "05_imagen.png",
+    "t-marino.webp": "06_imagen.png",
+    "t-terracota.webp": "08_imagen.png",
+    "t-grafito.webp": "09_imagen.png",
+    "t-negro.webp": "02_imagen.png (recorte cuadrado con el mármol espejado arriba y abajo)",
+    "negro-marmol.webp": "02_imagen.png",
+    "blanca-percha.webp": "01_imagen.png",
+    "g-cuello-lavanda.webp": "07_imagen.png (recorte)",
+    "g-manga-terracota.webp": "08_imagen.png (recorte)",
+    "g-cuello-grafito.webp": "09_imagen.png (recorte)",
+    "g-ruedo-salvia.webp": "03_imagen.png (recorte)",
+    "g-hombro-marino.webp": "06_imagen.png (recorte)",
+    "g-percha-rosa.webp": "04_imagen.png (recorte)",
+    "g-hombro-crudo.webp": "05_imagen.png (recorte)",
+    "og.jpg": "02_imagen.png"
+  },
+  "estampas": "Las frases sobre las remeras son texto HTML (.estampa en styles.css), no están en las fotos."
+}
