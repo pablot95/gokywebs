@@ -475,7 +475,7 @@ $antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['link mensual']],
 $despues = wabot_rr_pago_unico_26oct($antes, $ruta);
 $nuevoSitio = $despues[1]['items'][0];
 caso('el bloque del sitio pasa al del 26-oct, con el pago único primero y sus marcadores',
-    str_starts_with($nuevoSitio, "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {landing_unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nO por suscripción, con dos planes:\n2) Plan anual: {landing_anual}\n3) Plan mensual: {landing_mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular")
+    str_starts_with($nuevoSitio, "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {landing_unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\nPor suscripción, con dos opciones:\n2) Plan anual: {landing_anual}\n3) Plan mensual: {landing_mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular")
     && str_ends_with($nuevoSitio, '✓ Soporte técnico') && !str_contains($nuevoSitio, 'mantenimiento es'), $nuevoSitio);
 caso('el de la tienda conserva su línea del panel', str_contains($despues[1]['items'][1], '1) Pago único: {ecommerce_unico}') && str_contains($despues[1]['items'][1], '✓ Panel para autogestionar contenido'));
 caso('lo escrito a mano y las categorías ocultas: el texto propio queda, el bloque oculto también se pasa', $despues[1]['items'][2] === 'Mi texto' && str_starts_with($despues[2]['items'][0], 'Tenemos distintas'));
@@ -488,6 +488,15 @@ $cvSitio = ['tipo' => 'landing', 'transcript' => []];
 $conMontos = wabot_respuestas_rapidas_montos($nuevoSitio, $cvSitio, wabot_textos_default());
 caso('en una charla sin cotizar: $240.000 / $140.000 / $20.000', str_contains($conMontos, "1) Pago único: \$240.000\n") && str_contains($conMontos, "2) Plan anual: \$140.000\n") && str_contains($conMontos, '3) Plan mensual: $20.000'), $conMontos);
 if ($marcaUnicoRespaldo === null) @unlink($marcaUnico); else file_put_contents($marcaUnico, $marcaUnicoRespaldo);
+// 26-oct noche: los bloques ya pasados con "O por suscripción, con dos planes:".
+$marcaOpciones = WABOT_DATA . '/migrated/respuestas-rapidas-dos-opciones-26oct';
+$marcaOpcionesRespaldo = is_file($marcaOpciones) ? file_get_contents($marcaOpciones) : null;
+@unlink($marcaOpciones);
+$yaPasado = str_replace("\nPor suscripción, con dos opciones:\n", "\nO por suscripción, con dos planes:\n", $nuevoSitio);
+$opciones = wabot_rr_dos_opciones_26oct([['ico' => '💬', 'titulo' => 'Respuestas', 'items' => [$yaPasado, 'Mi texto']]], $ruta);
+caso('"O por suscripción, con dos planes:" ya migrado pasa a "Por suscripción, con dos opciones:"',
+    $opciones[0]['items'] === [$nuevoSitio, 'Mi texto'] && is_file($marcaOpciones));
+if ($marcaOpcionesRespaldo === null) @unlink($marcaOpciones); else file_put_contents($marcaOpciones, $marcaOpcionesRespaldo);
 
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 if ($marcaRespaldo === null) @unlink($marca); else file_put_contents($marca, $marcaRespaldo);
