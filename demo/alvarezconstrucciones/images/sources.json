@@ -1,0 +1,15 @@
+{
+  "cliente": {
+    "01_imagen.png": ["obra-albanileria.webp"],
+    "02_imagen.png": ["casa-terminada.webp", "og.jpg"],
+    "03_imagen.png": ["techos.webp"],
+    "04_imagen.png": ["pintura.webp"],
+    "05_imagen.png": ["refaccion.webp"],
+    "06_imagen.png": ["durlock.webp"],
+    "07_imagen.png": ["electricidad.webp"],
+    "08_imagen.png": ["plomeria.webp"],
+    "09_imagen.png": ["bano.webp"],
+    "10_mockup_720x480.png": "referencia de diseño, no se publica en la web"
+  },
+  "pexels": []
+}
