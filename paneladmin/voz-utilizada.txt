@@ -1,0 +1,2 @@
+Voz: Microsoft es-AR-TomasNeural (argentino masculino). Generación: ritmo -15%, tono -2 Hz. La pista se aceleró 1,5x para el video final. Fuente de narración: narracion-argentina-base.mp3.
+
