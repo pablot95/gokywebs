@@ -420,8 +420,8 @@ function wabot_textos_default() {
          * 20+30 → 40, 30+30 → 50; 140+140 → 230, 140+190 → 280, 190+190 → 330). */
         'dos_webs_descuento' => ['mensual' => 10000, 'anual' => 50000],
         'dos_webs_planes' => "Por las dos webs ({webs}) quedaría en:\n\n1) Plan anual: {anual} por las dos (en vez de {anual_lista})\n2) Plan mensual: {mensual} por mes por las dos (en vez de {mensual_lista})\n\nCada una incluye todo lo de su plan: desarrollo completo, preparada para Google, un cambio por mes, renovación de hosting y dominio, actualizaciones y soporte técnico",
-        // Cuántos mensajes recientes ve el modelo y el tope de mensajes propios por turno.
-        'historial' => 30,
+        // Cuántos mensajes recientes ve el modelo enteros (lo anterior va resumido) y el tope de mensajes propios por turno. 27-oct: 30 → 20 (gasto).
+        'historial' => 20,
         'max_mensajes' => 2,
         // Segundos entre cada mensaje cuando Pablo manda una sugerencia de varios (9-oct: "un delay de 4 segundos entre cada uno").
         'demora_entre_sugeridos' => 4,

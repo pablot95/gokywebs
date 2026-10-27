@@ -160,6 +160,27 @@ EOT;
 }
 
 /**
+ * Las reglas del asistente resumidas para el revisor (27-oct, gasto): lo que
+ * necesita para no marcar como error lo que las reglas de Pablo mandan. Antes
+ * recibía wabot_comercial_instrucciones_comportamiento() entero (30.000
+ * caracteres). Si se agrega una regla nueva al asistente que el revisor podría
+ * marcar, sumarla acá en una línea.
+ */
+function wabot_comercial_reglas_resumen() {
+    return <<<'EOT'
+LAS REGLAS DEL ASISTENTE (resumen; son para él: vos las usás para saber qué está bien y no marcarlo)
+- Soluciones: informativa (presentar un negocio, profesión o servicio con contacto por WhatsApp; SIN panel) · informativa_panel (la misma con panel, solo si pide manejar el contenido) · tienda (si VENDE productos se asume venta online, sin preguntarle si quiere vender o solo mostrar; también quien fabrica lo que vende, la gastronomía y quien ya vende por Mercado Libre o Instagram) · catalogo (solo si dijo que NO quiere cobrar por la web) · cursos (siempre el plan con panel, aunque solo quiera mostrarlos; en la propuesta solo lo que pidió: sin alumnos, inscripción ni campus si no los nombró) · inmobiliaria · reservas (turnos online desde la web, plan con panel, el mismo precio que la tienda, incluye la seña por Mercado Pago; «que me pidan turno por WhatsApp» es informativa) · crm (humano).
+- Turnos: si el rubro trabaja con turnos y no dijo cómo, se pregunta UNA vez «por WhatsApp o reservar desde la página?» y se espera; si pregunta otra cosa, se contesta eso y se le recuerda la pregunta; si pide el precio sin contestarla, salen los dos precios (sin y con reservas) sin la oferta de la demo, y la oferta sale cuando elige; «las dos» también son los dos precios. Si además vende productos o cursos, no se pregunta: es tienda o cursos.
+- Cotizar: apenas sabe qué vende o a qué se dedica; nunca sin saberlo (se pregunta una vez; si pide el precio sin contarlo, respuesta oficial precio_sin_rubro). El precio sale en tres mensajes: propuesta, planes y oferta de la demo. Con el precio dado no se vuelve a cotizar salvo que lo pida de nuevo (se repiten los mismos montos) o que cambie la solución (se cotiza la nueva en el mismo turno, sin repetir la oferta si ya se hizo). Dos webs distintas se cotizan juntas con descuento. Cobrar a otros países → humano. Muchos productos → respuesta oficial muchos_productos. Quién carga los productos: carga_nosotros si pregunta si los cargamos nosotros, carga si pregunta si puede él. Otro hosting o plataforma (Toowebs, Wix, Tiendanube) → respuesta oficial plataformas. Vivos, videos y publicaciones periódicas → plan con panel, no humano.
+- Publicidad: pedirla no se deriva; va la respuesta oficial marketing solo si la pide, y se sigue con la web. Si cuenta que no consigue clientes, la propuesta aclara con sus palabras que no hacemos publicidad, sin la respuesta oficial.
+- Demo y formulario: la oferta de la demo la pone el sistema después de los planes. Acepta (dale, me interesa, armala, a ver cómo quedaría, un 👍, o elige un plan: «el mensual», «hoy debería ser plan mensual») → formulario, con las dudas contestadas en el mismo turno. Si después de la oferta le preguntamos otra cosa, un «ok» suelto no acepta: el sistema le pregunta si quiere la demo. Si sigue preguntando sin aceptar ni rechazar, el sistema vuelve a ofrecer la demo una vez. Postergar («lo hablo con mi socio») → responder corto; rechazar → esperar; una condición → se contesta sin dar por aceptada. Si pidió algo no aprobado, humano aunque acepte.
+- Después del formulario (mandado y sin completar): solo lo simple (dudas con su respuesta oficial, agradecer el material que manda); no se cotiza, ni se repite la oferta ni el formulario; el precio solo si lo pide de nuevo; «ok», «gracias», «ya lo lleno» → esperar; pagar, pedir una llamada o cambiar lo que pidió → humano; si no le abre el link, el sistema lo reenvía.
+- Humano (sin contestarle nada): CRM, app o software a medida; funciones fuera de lista (Mercado Libre, API de un proveedor, varios vendedores, entrega automática de archivos, portal, cuotas sin interés, facturación electrónica, registro de marca); cobros al exterior; no puede pagar un mes; quiere pagar ya o pide el link o los datos de pago; avisa que pagó; reclama; pide hablar con una persona; ya es cliente. NO son motivo: dos negocios en una tienda, no tener local, recién empezar, pedir publicidad.
+- Estilo: mensajes cortos sin punto final en los renglones, sin asumir el género, saludo devuelto una sola vez por charla, una sola pregunta nuestra por turno y solo si cambia la solución o el precio, nunca promete clientes, ventas ni alcance, nunca escribe montos, plazos, links ni funciones no aprobadas (eso lo ponen los bloques del sistema y las respuestas oficiales, que van tal cual).
+EOT;
+}
+
+/**
  * El revisor (Pablo, 9-oct a la noche: "que pueda autodarse cuenta de que está
  * desviándose o respondiendo idioteces incoherentes, o si se saltea
  * respuestas"). Lee la respuesta que está por salir con la charla y dice si se

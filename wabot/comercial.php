@@ -358,9 +358,12 @@ function wabot_comercial_info($cfg) {
     $l[] = '- Tecnología: desarrollo a medida (HTML, CSS y JavaScript), no WordPress, Tiendanube ni Wix. Se puede tomar una web de referencia visual.';
     $l[] = "\nLO QUE NO HACEMOS O NO ES DE LISTA (accion humano, sin contestar): publicidad, redes sociales y marketing (eso es aparte: la web complementa las redes); diseño de logos; registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales, filtros o noticias; apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
     $l[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema con los montos de esta charla). Pedilas en info_claves; nunca las copies ni las parafrasees:";
+    /* Sin los ejemplos de «lo preguntan así» (Pablo, 27-oct): eran 88 renglones,
+     * 35.800 caracteres, la mitad del prompt, y se pagaban en cada llamada. La
+     * clave y el texto de cada respuesta alcanzan para que el modelo la elija. */
     foreach ((array)($cfg['info'] ?? []) + wabot_comercial_info_extra($cfg) as $k => $t) {
         if (!in_array($k, wabot_comercial_info_claves($cfg), true)) continue;
-        $l[] = "- $k: " . mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t)), 0, 260) . wabot_consultas_ejemplos_texto($k);
+        $l[] = "- $k: " . mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t)), 0, 260);
     }
     return implode("\n", $l);
 }
@@ -373,8 +376,9 @@ function wabot_comercial_instrucciones($cfg) {
  * La parte C: los hechos confirmados, el estado comercial (cotización previa,
  * oferta, formulario, Pablo), los mensajes recientes de los dos lados con sus
  * citas, un resumen de lo anterior que conserva lo nuestro y el mensaje nuevo.
- * Más historial y menos recorte que antes (30 mensajes, 1500 caracteres cada
- * uno, 6000 el nuevo): un audio largo no pierde el final.
+ * Los últimos 20 mensajes enteros (27-oct, antes 30: cada uno se paga en cada
+ * llamada), lo anterior resumido; el mensaje nuevo hasta 6000 caracteres: un
+ * audio largo no pierde el final.
  */
 function wabot_comercial_contexto($texto, $conv, $cfg) {
     $f = wabot_ficha($conv);
@@ -394,7 +398,7 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
         if (($t['q'] ?? '') === 'bot') $yaHablo = true;
         if (($t['q'] ?? '') === 'humano') { $yaHablo = true; $hablóPablo = true; }
     }
-    $limite = max(6, min(80, (int)($cfg['comercial']['historial'] ?? 30)));
+    $limite = max(6, min(80, (int)($cfg['comercial']['historial'] ?? 20)));
     $viejos = array_slice($sesion, 0, max(0, count($sesion) - $limite));
     $recientes = array_slice($sesion, -$limite);
 
@@ -726,13 +730,21 @@ function wabot_comercial_hay_que_revisar(array $b, $texto) {
  * (null: no se pudo revisar), 'problemas' => [[tipo, detalle]], 'falta' => [...],
  * 'gastado' => ...]. Un "no" sin nada concreto no frena.
  */
+/**
+ * Lo que lee el revisor: sus reglas, un RESUMEN de las del asistente (sin las de
+ * Pablo marcaba como error lo que ellas mandan: preguntar "mostrar o vender" a
+ * quien vende productos, rebajar cursos a informativa, los dos precios) y la
+ * información comercial. Hasta el 27-oct recibía las reglas del asistente tal
+ * cual (30.000 caracteres) y los ejemplos: 19k tokens por llamada para marcar
+ * algo en el 8 % de los casos; ahora son ~4k.
+ */
+function wabot_comercial_instrucciones_revisor_completas($cfg) {
+    return wabot_comercial_instrucciones_revisor()
+        . "\n\n" . wabot_comercial_reglas_resumen() . "\n\n" . wabot_comercial_info($cfg);
+}
+
 function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') {
-    /* El revisor sabe lo mismo que el asistente: sin las reglas de Pablo, marcaba
-     * como error lo que ellas mandan (preguntar "mostrar o vender" a quien vende
-     * productos, rebajar cursos a informativa, pedir la oferta con los dos precios). */
-    $instrucciones = wabot_comercial_instrucciones_revisor()
-        . "\n\nLAS REGLAS DEL ASISTENTE (lo que recibió el asistente, tal cual; son para él: vos las usás para saber qué está bien y no marcarlo)\n<<<\n"
-        . wabot_comercial_instrucciones_comportamiento() . "\n>>>\n\n" . wabot_comercial_info($cfg);
+    $instrucciones = wabot_comercial_instrucciones_revisor_completas($cfg);
     $motivo = trim((string)($b['motivo'] ?? ''));
     $borrador = wabot_comercial_borrador_texto((array)($b['mensajes'] ?? []));
     $entrada = wabot_comercial_contexto($texto, $conv, $cfg)

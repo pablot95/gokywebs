@@ -122,7 +122,13 @@ foreach (['catalogo', 'reservas', 'crm', 'dos webs', 'descuento', 'pago_unico', 
 caso('las instrucciones viejas no se cargan en este flujo (nada de "vender o mostrar")', mb_stripos($ins, 'solo mostrar?') === false && mb_stripos($ins, 'Después del precio no conversás') === false);
 $info = wabot_comercial_info($cfg);
 caso('la descripción de las soluciones y planes no trae montos', strpos((string)strstr($info, 'RESPUESTAS OFICIALES', true), '$') === false);
-caso('y lista las respuestas oficiales (incluido el descuento) con cómo las preguntan', strpos($info, '- descuento:') !== false && strpos($info, '- pago_antes_demo:') !== false && strpos($info, 'lo preguntan así') !== false);
+caso('y lista las respuestas oficiales (incluido el descuento), sin los ejemplos de cómo preguntan (27-oct, gasto)', strpos($info, '- descuento:') !== false && strpos($info, '- pago_antes_demo:') !== false && strpos($info, 'lo preguntan así') === false);
+// 27-oct: sin los ejemplos el prompt del asistente pasó de 72.600 a 49.400 caracteres; el del revisor, de 78.000 a 29.500.
+caso('el prompt del asistente no vuelve a crecer (menos de 55.000 caracteres)', mb_strlen(wabot_comercial_instrucciones($cfg)) < 55000, (string)mb_strlen(wabot_comercial_instrucciones($cfg)));
+$insRevC = wabot_comercial_instrucciones_revisor_completas($cfg);
+caso('el revisor lee sus reglas, el resumen de las del asistente y la información comercial, no las reglas enteras', strpos($insRevC, 'LAS REGLAS DEL ASISTENTE (resumen') !== false
+    && strpos($insRevC, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false && strpos($insRevC, 'CÓMO ESCRIBIR') === false && mb_strlen($insRevC) < 33000, (string)mb_strlen($insRevC));
+caso('el modelo ve los últimos 20 mensajes enteros (27-oct, antes 30)', (int)($cfg['comercial']['historial'] ?? 0) === 20);
 caso('el descuento y "pagar antes?" se pueden pedir por clave', in_array('descuento', wabot_comercial_info_claves($cfg), true) && in_array('pago_antes_demo', wabot_comercial_info_claves($cfg), true));
 caso('el esquema exige todos los campos (con la segunda web, 10-oct)', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
 
@@ -630,8 +636,9 @@ $cn = (string)($cfg['info']['carga_nosotros'] ?? '');
 caso('carga_nosotros: con las palabras de Pablo (costo adicional según la cantidad), corta y sin monto',
     mb_stripos($cn, 'costo adicional según la cantidad') !== false && mb_strlen($cn) <= 260 && strpos($cn, '$') === false, $cn);
 $infoTxt = wabot_comercial_info($cfg);
-caso('carga_nosotros se le ofrece al modelo, con cómo lo preguntan', in_array('carga_nosotros', wabot_comercial_info_claves($cfg), true)
-    && strpos($infoTxt, '- carga_nosotros:') !== false && strpos($infoTxt, 'Se pueden cargar todos ustedes?') !== false);
+// 27-oct: los ejemplos de cómo preguntan ya no van en el prompt (gasto); la regla de quién carga la aplica la red de abajo.
+caso('carga_nosotros se le ofrece al modelo y sus ejemplos siguen en consultas-ejemplos.php', in_array('carga_nosotros', wabot_comercial_info_claves($cfg), true)
+    && strpos($infoTxt, '- carga_nosotros:') !== false && in_array('Se pueden cargar todos ustedes?', wabot_consultas_ejemplos('carga_nosotros', 15), true));
 foreach (['Se pueden cargar todos ustedes?' => true, 'Los articulos los cargan ustedes o lo debo hacer yo?' => true, 'yo te paso los precios, los ponés vos?' => true,
           'los productos vienen ya cargados?' => true, 'y vos me cargás los productos?' => true, 'El contenido lo cargan ustedes?' => true,
           'Los productos los cargo yo?' => false, 'Ustedes hacen la demo sin cargo?' => false, 'Ustedes ponen el dominio?' => false,
