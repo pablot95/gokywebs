@@ -222,8 +222,8 @@ body.no-scroll { overflow: hidden; }
 .hero--split .hero-inner { position: relative; z-index: 3; min-height: clamp(540px, 82svh, 760px); display: flex; align-items: center; padding-block: clamp(2.6rem, 6vw, 4.4rem) clamp(5.5rem, 10vw, 8rem); }
 .hero--split .hero-copy { width: min(560px, 42%); }
 .hero--split h1 { margin-top: 18px; }
-.hero--split .hero-lead { margin-top: 18px; }
-.hero--split .sello { left: calc(43% - clamp(52px, 5vw, 68px)); bottom: clamp(96px, 16%, 150px); }
+.hero--split .hero-lead { margin-top: 18px; max-width: 40ch; }
+.hero--split .sello { left: calc(43% + clamp(16px, 2vw, 28px)); bottom: clamp(96px, 16%, 150px); }
 .hero-ondas { position: absolute; left: 0; bottom: 0; width: 46%; height: 42%; z-index: 0; pointer-events: none; opacity: .9; }
 .hero-ondas path { fill: none; stroke: var(--color-primary-soft); stroke-width: 2; }
 @media (max-width: 860px) {
