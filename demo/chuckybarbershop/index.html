@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chucky Barber Shop — Cortes y barba con turno en Jesús María</title>
+<meta name="description" content="Barbería en Jesús María: cortes en degradé, clásicos con tijera, barba, cejas, diseños free style, tratamientos y peinados. Pedí tu turno por WhatsApp.">
+<link rel="canonical" href="https://gokywebs.com/demo/chuckybarbershop/">
+<meta name="theme-color" content="#0E0E0E">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Chucky Barber Shop">
+<meta property="og:title" content="Chucky Barber Shop — Cortes y barba con turno en Jesús María">
+<meta property="og:description" content="Tu estilo. Tu lugar. Degradé, tijera, barba y diseños free style con turno por WhatsApp.">
+<meta property="og:url" content="https://gokywebs.com/demo/chuckybarbershop/">
+<meta property="og:image" content="https://gokywebs.com/demo/chuckybarbershop/images/og-chucky.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="images/logo-blanco.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600..800&amp;family=Schibsted+Grotesk:wght@400;600&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/local-sillon.webp" imagesrcset="images/local-sillon-960.webp 960w, images/local-sillon.webp 1600w" imagesizes="(max-width: 900px) 100vw, 60vw">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"HairSalon","name":"Chucky Barber Shop","alternateName":"La Barbería de Chucky","description":"Barbería: cortes en degradé, cortes clásicos con tijera, recorte de barba, perfilado de cejas, diseños free style, cortes de moda, tratamientos capilares y peinados.","url":"https://gokywebs.com/demo/chuckybarbershop/","image":"https://gokywebs.com/demo/chuckybarbershop/images/og-chucky.jpg","logo":"https://gokywebs.com/demo/chuckybarbershop/images/logo-negro.png","telephone":"+54 9 3525 43-8456","priceRange":"$$","address":{"@type":"PostalAddress","addressLocality":"Jesús María","addressRegion":"Córdoba","addressCountry":"AR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Tuesday","Wednesday","Thursday","Friday","Saturday"],"opens":"09:00","closes":"13:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":["Tuesday","Wednesday","Thursday","Friday","Saturday"],"opens":"16:00","closes":"21:00"}],"sameAs":["https://www.instagram.com/chucky_barberia1105/"],"makesOffer":[{"@type":"Offer","name":"Corte en degradé","price":"14000","priceCurrency":"ARS"},{"@type":"Offer","name":"Corte clásico con tijera","price":"13000","priceCurrency":"ARS"},{"@type":"Offer","name":"Corte de moda","price":"15000","priceCurrency":"ARS"},{"@type":"Offer","name":"Recorte de barba","price":"8000","priceCurrency":"ARS"},{"@type":"Offer","name":"Perfilado de cejas","price":"3500","priceCurrency":"ARS"},{"@type":"Offer","name":"Diseño free style","price":"3000","priceCurrency":"ARS"},{"@type":"Offer","name":"Tratamiento capilar","price":"9000","priceCurrency":"ARS"},{"@type":"Offer","name":"Peinado","price":"6000","priceCurrency":"ARS"}]}
+</script>
+</head>
+<body class="m1">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+
+<header class="site-header" id="top">
+  <div class="container header-inner">
+    <a class="brand" href="./" aria-label="Chucky Barber Shop, inicio">
+      <img class="brand__logo" src="images/logo-negro.webp" width="1290" height="1130" alt="Chucky Barber Shop">
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#servicios">Servicios</a>
+      <a href="#precios">Precios</a>
+      <a href="#trabajos">Estilos</a>
+      <a href="#horarios">Horarios</a>
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn--negro btn--sm" href="#turno">
+        <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.920 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+        <span class="btn__txt">Pedir turno</span>
+      </a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero hero--split" aria-label="Portada">
+    <div class="hero__media">
+      <img data-hero-img src="images/local-sillon.webp" srcset="images/local-sillon-960.webp 960w, images/local-sillon.webp 1600w" sizes="(max-width: 900px) 100vw, 60vw" width="1600" height="900" alt="Sillón de barbero negro frente al espejo en el local" fetchpriority="high">
+      <img class="hero__sello" src="images/logo-blanco.webp" width="908" height="784" alt="">
+    </div>
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <p class="hero-eyebrow">Barbería · Jesús María, Córdoba</p>
+        <h1>Cortes, barba y diseños con turno</h1>
+        <p class="hero__kicker">Tu estilo. Tu lugar.</p>
+        <p class="hero-lead">Degradé, tijera, barba, cejas y diseños free style en una barbería nueva. Elegí el servicio y coordinamos tu horario.</p>
+        <div class="hero-ctas">
+          <a class="btn btn--negro" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener">
+            <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.920 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+            Reservar por WhatsApp
+          </a>
+          <a class="btn btn--linea" href="#precios">Ver precios</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="destacados" id="servicios" aria-labelledby="servicios-t">
+    <div class="container destacados__lift">
+      <h2 class="sr-only" id="servicios-t">Servicios de la barbería</h2>
+      <ul class="dest-grid">
+        <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="dest-card" href="#precios">
+            <span class="dest-card__foto"><img src="images/corte-degrade-640.webp" srcset="images/corte-degrade-640.webp 640w, images/corte-degrade.webp 1200w" sizes="(max-width: 700px) 100vw, 380px" width="1200" height="1200" alt="Corte en degradé visto de atrás, con la nuca rebajada a cero"></span>
+            <span class="dest-card__txt"><span class="dest-card__t">Cortes en degradé</span>
+            <span class="dest-card__d">Fade bajo, medio o alto, con terminación a navaja.</span></span>
+          </a>
+        </li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="dest-card" href="#precios">
+            <span class="dest-card__foto"><img src="images/barba-perfilada-640.webp" srcset="images/barba-perfilada-640.webp 640w, images/barba-perfilada.webp 1200w" sizes="(max-width: 700px) 100vw, 380px" width="1200" height="1200" alt="Barba recortada con la línea del cuello marcada"></span>
+            <span class="dest-card__txt"><span class="dest-card__t">Barba y perfilado</span>
+            <span class="dest-card__d">Rebaje, línea a navaja y cejas con forma natural.</span></span>
+          </a>
+        </li>
+        <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <a class="dest-card" href="#precios">
+            <span class="dest-card__foto"><img src="images/corte-tijera-640.webp" srcset="images/corte-tijera-640.webp 640w, images/corte-tijera.webp 1017w" sizes="(max-width: 700px) 100vw, 380px" width="1017" height="1017" alt="Barbero cortando con tijera el pelo largo de un cliente"></span>
+            <span class="dest-card__txt"><span class="dest-card__t">Cortes clásicos</span>
+            <span class="dest-card__d">Todo a tijera, para un acabado prolijo que dura.</span></span>
+          </a>
+        </li>
+      </ul>
+      <div class="franja">
+        <div class="franja__item" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span><span class="franja__t">Martes a sábados</span><span class="franja__d">9 a 13 h y 16 a 21 h</span><span class="estado" data-estado>Martes a sábados</span></span>
+        </div>
+        <a class="franja__item" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <svg class="ico" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.920 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span><span class="franja__t">Turnos por WhatsApp</span><span class="franja__d">+54 9 3525 43-8456</span></span>
+        </a>
+        <a class="franja__item" href="#horarios" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+          <span><span class="franja__t">Jesús María, Córdoba</span><span class="franja__d">Ver en el mapa</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="precios" id="precios" aria-labelledby="precios-t">
+    <div class="container precios__grid">
+      <div class="precios__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+        <img src="images/local-sillon-vertical.webp" srcset="images/local-sillon-vertical-540.webp 540w, images/local-sillon-vertical.webp 900w" sizes="(max-width: 900px) 100vw, 380px" width="900" height="1600" alt="Sillón de barbero junto a la ventana y las repisas con productos">
+      </div>
+      <div class="precios__col">
+        <div class="sec-head">
+          <span class="poste" aria-hidden="true" data-animate="linea" style="transform:scaleX(0)"></span>
+          <div data-animate="subir" style="opacity:0;transform:translateY(36px)"><h2 id="precios-t">Precios y servicios</h2></div>
+          <p class="sec-head__lead" data-animate="subir" style="opacity:0;transform:translateY(20px)">Elegí el servicio y pedí tu turno por WhatsApp.</p>
+        </div>
+        <div class="carta" id="carta"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="estilos" id="trabajos" aria-labelledby="estilos-t">
+    <div class="container">
+      <div class="sec-head sec-head--fila">
+        <div data-animate="subir" style="opacity:0;transform:translateY(36px)"><h2 id="estilos-t">Estilos que hacemos</h2></div>
+        <p class="sec-head__lead" data-animate="subir" style="opacity:0;transform:translateY(20px)">Traé una foto de referencia y lo adaptamos a tu pelo.</p>
+      </div>
+      <ul class="galeria" id="galeria">
+        <li class="galeria__item galeria__item--a" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <button type="button" class="galeria__btn" data-visor="images/diseno-freestyle.webp" data-visor-txt="Diseño free style">
+            <img src="images/diseno-freestyle-640.webp" srcset="images/diseno-freestyle-640.webp 640w, images/diseno-freestyle.webp 1200w" sizes="(max-width: 700px) 100vw, 400px" width="1200" height="1200" alt="Corte con degradé y un diseño de línea quebrada al costado">
+            <span class="galeria__cap">Diseño free style</span>
+          </button>
+        </li>
+        <li class="galeria__item galeria__item--b" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <button type="button" class="galeria__btn" data-visor="images/corte-moda.webp" data-visor-txt="Corte de moda texturizado">
+            <img src="images/corte-moda-640.webp" srcset="images/corte-moda-640.webp 640w, images/corte-moda.webp 1200w" sizes="(max-width: 700px) 100vw, 400px" width="1200" height="1200" alt="Corte de moda con volumen arriba y costados rebajados">
+            <span class="galeria__cap">Corte de moda texturizado</span>
+          </button>
+        </li>
+        <li class="galeria__item galeria__item--c" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <button type="button" class="galeria__btn" data-visor="images/lavacabezas.webp" data-visor-txt="Lavado y tratamiento capilar">
+            <img src="images/lavacabezas-640.webp" srcset="images/lavacabezas-640.webp 640w, images/lavacabezas.webp 1092w" sizes="(max-width: 700px) 100vw, 400px" width="1092" height="1092" alt="Lavacabezas negro con toallas y productos para el pelo">
+            <span class="galeria__cap">Lavado y tratamiento capilar</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="turno" id="turno" aria-labelledby="turno-t">
+    <div class="container">
+      <div class="sec-head">
+        <span class="poste" aria-hidden="true" data-animate="linea" style="transform:scaleX(0)"></span>
+        <div data-animate="subir" style="opacity:0;transform:translateY(36px)"><h2 id="turno-t">Pedí tu turno</h2></div>
+        <p class="sec-head__lead" data-animate="subir" style="opacity:0;transform:translateY(20px)">Marcá qué te hacés y cuándo te queda bien. El horario exacto lo confirmamos por WhatsApp.</p>
+      </div>
+      <div class="turno__grid">
+        <div class="turno__form" data-animate="izq" style="opacity:0;transform:translateX(-40px)">
+          <fieldset>
+            <legend>¿Qué te hacés?</legend>
+            <div class="chips" id="turnoServicios"></div>
+          </fieldset>
+          <fieldset>
+            <legend>¿Qué día?</legend>
+            <div class="chips" id="turnoDias"></div>
+          </fieldset>
+          <fieldset>
+            <legend>¿En qué horario?</legend>
+            <div class="chips">
+              <label class="chip"><input type="radio" name="franja" value="a la mañana"><span>Mañana · 9 a 13 h</span></label>
+              <label class="chip"><input type="radio" name="franja" value="a la tarde"><span>Tarde · 16 a 21 h</span></label>
+            </div>
+          </fieldset>
+          <div class="campo">
+            <label for="turnoNombre">Tu nombre <span class="opcional">(opcional)</span></label>
+            <input id="turnoNombre" type="text" autocomplete="given-name" placeholder="Ej.: Nico">
+          </div>
+        </div>
+        <aside class="turno__resumen" data-animate="der" style="opacity:0;transform:translateX(40px)" aria-live="polite">
+          <div class="turno__foto"><img src="images/herramientas-640.webp" width="640" height="640" alt="Tijeras, peine y brocha sobre una toalla negra"></div>
+          <div class="turno__cuerpo">
+            <p class="turno__t">Tu turno</p>
+            <ul class="turno__lista" id="turnoLista"><li class="turno__vacio">Todavía no elegiste ningún servicio.</li></ul>
+            <p class="turno__total"><span>Total estimado</span> <strong id="turnoTotal">—</strong></p>
+            <p class="turno__cuando" id="turnoCuando">Elegí el día y el horario.</p>
+            <a class="btn btn--blanco" id="turnoWsp" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener">
+              <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.920 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              Pedir turno por WhatsApp
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="horarios" id="horarios" aria-labelledby="horarios-t">
+    <div class="container horarios__grid">
+      <div class="horarios__info">
+        <div class="sec-head">
+          <span class="poste" aria-hidden="true" data-animate="linea" style="transform:scaleX(0)"></span>
+          <div data-animate="subir" style="opacity:0;transform:translateY(36px)"><h2 id="horarios-t">Horarios y ubicación</h2></div>
+          <p class="estado estado--grande" data-estado data-animate="subir" style="opacity:0;transform:translateY(20px)">Martes a sábados</p>
+        </div>
+        <table class="tabla-horario" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+          <caption class="sr-only">Horarios de atención</caption>
+          <tbody>
+            <tr data-dia="2"><th scope="row">Martes</th><td>9 a 13 h · 16 a 21 h</td></tr>
+            <tr data-dia="3"><th scope="row">Miércoles</th><td>9 a 13 h · 16 a 21 h</td></tr>
+            <tr data-dia="4"><th scope="row">Jueves</th><td>9 a 13 h · 16 a 21 h</td></tr>
+            <tr data-dia="5"><th scope="row">Viernes</th><td>9 a 13 h · 16 a 21 h</td></tr>
+            <tr data-dia="6"><th scope="row">Sábado</th><td>9 a 13 h · 16 a 21 h</td></tr>
+            <tr data-dia="0" class="cerrado"><th scope="row">Domingo y lunes</th><td>Cerrado</td></tr>
+          </tbody>
+        </table>
+        <ul class="datos" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <li><span class="datos__t">WhatsApp</span><a class="datos__v" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener">+54 9 3525 43-8456</a></li>
+          <li><span class="datos__t">Instagram</span><a class="datos__v" href="https://www.instagram.com/chucky_barberia1105/" target="_blank" rel="noopener">@chucky_barberia1105</a></li>
+          <li><span class="datos__t">Dónde</span><span class="datos__v">Jesús María, Córdoba</span></li>
+        </ul>
+      </div>
+      <div class="mapa-box" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+        <div class="mapa" id="mapa" role="img" aria-label="Mapa de Jesús María, Córdoba"></div>
+        <span class="mapa__nota">Jesús María · dirección a confirmar</span>
+      </div>
+    </div>
+    <div class="container cierre-wrap">
+      <div class="cierre" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+        <p class="cierre__t">Tu estilo. Tu lugar.</p>
+        <a class="btn btn--negro" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.920 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          Reservar por WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer__grid">
+    <div class="footer__marca" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+      <a class="footer__logo" href="#top" aria-label="Chucky Barber Shop, volver arriba"><img src="images/logo-blanco.webp" width="908" height="784" alt="Chucky Barber Shop"></a>
+      <p class="footer__lema">Cortes y diseños nuevos. Turnos por WhatsApp.</p>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+      <p class="footer__t">Secciones</p>
+      <ul>
+        <li><a href="#precios">Precios</a></li>
+        <li><a href="#trabajos">Estilos</a></li>
+        <li><a href="#turno">Pedí tu turno</a></li>
+        <li><a href="#horarios">Horarios</a></li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+      <p class="footer__t">Turnos</p>
+      <ul>
+        <li><a href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener">+54 9 3525 43-8456</a></li>
+        <li><a href="https://www.instagram.com/chucky_barberia1105/" target="_blank" rel="noopener">@chucky_barberia1105</a></li>
+      </ul>
+    </div>
+    <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(36px)">
+      <p class="footer__t">Horarios</p>
+      <p>Martes a sábados</p>
+      <p>9 a 13 h · 16 a 21 h</p>
+      <span class="estado" data-estado>Martes a sábados</span>
+    </div>
+  </div>
+  <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(20px)">
+    <span>© <span data-anio>2026</span> Chucky Barber Shop · Jesús María · Imágenes ilustrativas</span>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Foto ampliada" hidden>
+  <button type="button" class="visor__cerrar" id="visorCerrar" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <figure class="visor__fig">
+    <img id="visorImg" src="images/diseno-freestyle.webp" width="1200" height="1200" alt="">
+    <figcaption id="visorTxt">Diseño free style</figcaption>
+  </figure>
+</div>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5493525438456?text=Hola%20Chucky%2C%20quiero%20pedir%20un%20turno." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=1"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
