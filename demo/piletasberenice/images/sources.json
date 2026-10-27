@@ -1,0 +1,16 @@
+{
+  "origen": "Zip Piletas_berenice de Descargas (fotos del pedido de demo, 26-oct-2026)",
+  "archivos": {
+    "01_imagen.png": "vertical 9:16, rectangular larga con escalera de ancho completo -> vertical-andarivel.webp, p-andarivel.webp",
+    "02_imagen.png": "horizontal 16:9, rectangular con escalera lateral -> hero-pileta.webp, p-clasica.webp, og.jpg",
+    "03_imagen.png": "1:1 oval -> p-oval.webp",
+    "04_imagen.png": "1:1 forma libre (riñón) -> p-rinon.webp",
+    "05_imagen.png": "1:1 redonda -> p-redonda.webp",
+    "06_imagen.png": "1:1 rectangular con escalera romana -> p-romana.webp",
+    "07_imagen.png": "1:1 compacta de patio -> p-patio.webp",
+    "08_imagen.png": "1:1 rectangular con escalera en esquina -> p-esquina.webp",
+    "09_imagen.png": "1:1 rectangular con escalera de ancho completo -> p-terraza.webp, cierre-terraza.webp",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se publica en la web)"
+  },
+  "bancos": []
+}
