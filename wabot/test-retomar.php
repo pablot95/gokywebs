@@ -68,6 +68,19 @@ caso('los avisos vuelven dos días después: el jueves 15 a las 00:00',
     $c['retomar_ts'] === $ar('2026-10-15 00:00:00') && wabot_retomar_vuelve_dia($c) === '2026-10-15');
 caso('en el panel: «mar 13/10» y «jue 15/10»',
     wabot_retomar_dia_corto('2026-10-13') === 'mar 13/10' && wabot_retomar_dia_corto(wabot_retomar_vuelve_dia($c)) === 'jue 15/10');
+/* Giancarlo (26-oct): "más tarde lo voy a hacer" es una promesa para hoy; frenaba
+ * los avisos hasta el 28 y no le salió el recordatorio del formulario. */
+$g = conv_nueva('TESTRETOMARHOY');
+$lun26 = $ar('2026-10-26 15:31:00');
+caso('«más tarde lo voy a hacer… y vemos» promete hoy', wabot_fecha_prometida('Dale, perfecto. Bueno, más tarde lo voy a hacer, voy a llenar eso y vemos si no hay ningún asterisco', $lun26) === '2026-10-26');
+wabot_retomar_fijar($g, '2026-10-26', 'cliente', 'más tarde lo voy a hacer', $lun26);
+caso('una promesa para hoy frena solo hasta mañana a las 00:00, no dos días',
+    $g['retomar_ts'] === $ar('2026-10-27 00:00:00') && wabot_retomar_vuelve_dia($g) === '2026-10-27', (string)wabot_retomar_vuelve_dia($g));
+caso('a la 1:30, "hoy" sigue siendo el día que ya empezó (corte de las 3 AM)', (function () use ($ar) {
+    $c = conv_nueva('TESTRETOMAR');
+    wabot_retomar_fijar($c, '2026-10-26', 'cliente', 'hoy a la noche te escribo', $ar('2026-10-27 01:30:00'));
+    return $c['retomar_ts'] === $ar('2026-10-27 00:00:00');
+})());
 caso('activa el miércoles a la noche, no el jueves',
     wabot_retomar_activo($c, $ar('2026-10-14 23:59:00')) && !wabot_retomar_activo($c, $ar('2026-10-15 00:00:01')));
 wabot_retomar_fijar($c, '', '');

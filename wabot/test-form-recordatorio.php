@@ -49,6 +49,11 @@ foreach ([
     caso("no le escribe a uno $que", !wabot_form_recordatorio_corresponde(fr_conv(12.5, $extra), $cfg, $ahora));
 }
 caso('apagado en el panel, no', !wabot_form_recordatorio_corresponde(fr_conv(12.5), array_merge($cfg, ['form_recordatorio_activo' => false]), $ahora));
+// Sabrina (26-oct): "no puedo abrir el link" quedó para Pablo y a la mañana le salió igual el recordatorio.
+caso('con una duda que quedó para Pablo después del link, espera a que él conteste',
+    !wabot_form_recordatorio_corresponde(fr_conv(12.5, ['form_duda_pablo_ts' => $ahora - 11 * 3600]), $cfg, $ahora));
+caso('una duda anterior a este link no lo frena',
+    wabot_form_recordatorio_corresponde(fr_conv(12.5, ['form_duda_pablo_ts' => $ahora - 14 * 3600]), $cfg, $ahora));
 
 echo "Texto\n";
 $c = fr_conv(12.5);
@@ -71,6 +76,18 @@ $ul = conv_nueva('999TEST999', ['fase' => 'reconocimiento', 'ultimo_cliente_ts' 
 caso('la última llamada sale sola', wabot_ultima_llamada_corresponde($ul, $cfg, $ahora));
 $ul['auto_ultimo_ts'] = $ahora - 2 * 3600;
 caso('…pero no si hace 2 h salió otro automático', !wabot_ultima_llamada_corresponde($ul, $cfg, $ahora));
+/* Ignacio (26-oct): dijo "Bueno" a la demo a las 07:32 y a las 19:00 (la marca de
+ * 23 h caía de noche y se adelantó) recibió "Te escribo por última vez…" en vez
+ * del recordatorio del formulario, que era lo que tocaba. */
+$ulf = conv_nueva('999TEST999', ['fase' => 'prediseno', 'precio_dado' => true, 'precio_cotizado' => '$210.000', 'nombre' => 'Cliente',
+    'ultimo_cliente_ts' => $ahora - 23.2 * 3600, 'form_link_mandado_ts' => $ahora - 12.5 * 3600, 'transcript' => [
+    ['q' => 'cliente', 't' => 'Bueno', 'ts' => $ahora - 23.2 * 3600],
+    ['q' => 'bot', 't' => 'Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: https://gokywebs.com/form/?c=AB12', 'ts' => $ahora - 12.5 * 3600],
+]]);
+caso('con el link mandado y su recordatorio todavía pendiente, la última llamada espera', !wabot_ultima_llamada_corresponde($ulf, $cfg, $ahora));
+$ulf2 = $ulf; $ulf2['form_recordatorio_auto_ts'] = $ahora - 11 * 3600;
+caso('…ya mandado el recordatorio, sale', wabot_ultima_llamada_corresponde($ulf2, $cfg, $ahora));
+caso('…y con el recordatorio apagado en el panel, también', wabot_ultima_llamada_corresponde($ulf, array_merge($cfg, ['form_recordatorio_activo' => false]), $ahora));
 // Las plantillas de las 18 h, igual.
 $demo = conv_nueva('999TEST999', ['presentado_ts' => $ahora - 80 * 3600, 'presentado_via_bot' => true, 'auto_ultimo_ts' => $ahora - 3600,
     'transcript' => [['q' => 'bot', 't' => 'Te paso la demo', 'ts' => $ahora - 80 * 3600]]]);

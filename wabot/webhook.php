@@ -731,6 +731,11 @@ foreach (($payload['entry'] ?? []) as $entry) {
 
             $clave = preg_replace('/[^0-9]/', '', $de);
             $tipo  = $msg['type'] ?? '';
+            // Un evento del sistema no es el cliente escribiendo: nada que contestar.
+            if (wabot_wa_tipo_ignorado($tipo)) {
+                wabot_log('tipo_ignorado', ['tel' => $clave, 'tipo' => $tipo]);
+                continue;
+            }
 
             wabot_procesar_entrante([
                 'canal'            => 'whatsapp',

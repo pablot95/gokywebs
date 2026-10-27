@@ -2476,6 +2476,15 @@ function wabot_wa_adjunto($msg, $tipo) {
     return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
 }
 
+/**
+ * Los tipos de mensaje de WhatsApp que no escribe una persona: un "system"
+ * (cambió de número, etc.) llegaba como "[system]" y el bot le contestaba la
+ * bienvenida, que Meta devolvía como no entregable (26-oct, 11 3044-0071).
+ */
+function wabot_wa_tipo_ignorado($tipo) {
+    return in_array((string)$tipo, ['system'], true);
+}
+
 /* Los eventos que la API de conversiones acepta para mensajería (doc de Meta,
  * "Conversions API for Business Messaging"). El bot usa LeadSubmitted (llenó el
  * form), QualifiedLead (le llegó la demo) y Purchase (pasó a Cliente). */
@@ -5905,7 +5914,14 @@ function wabot_retomar_fijar(&$conv, $dia, $origen, $texto = '', $ts = null) {
         $conv['retomar_marcado_ts'] = 0;
         return;
     }
-    $conv['retomar_ts'] = (int)strtotime($dia . ' 00:00:00 -03:00') + WABOT_RETOMAR_DIAS_DESPUES * 86400;
+    /* Una promesa para el mismo día ("más tarde lo hago", "hoy a la noche te
+     * escribo") no frena dos días: los avisos vuelven a la mañana siguiente
+     * (Giancarlo, 26-oct: "más tarde lo voy a hacer" le frenó el recordatorio
+     * del formulario hasta el 28). El día del cliente arranca a las 3 AM, como
+     * en wabot_fecha_prometida. */
+    $hoy = gmdate('Y-m-d', (int)floor((($ts ?? time()) - 6 * 3600) / 86400) * 86400);
+    $dias = $dia === $hoy ? 1 : WABOT_RETOMAR_DIAS_DESPUES;
+    $conv['retomar_ts'] = (int)strtotime($dia . ' 00:00:00 -03:00') + $dias * 86400;
     $conv['retomar_dia'] = $dia;
     $conv['retomar_origen'] = $origen;
     $conv['retomar_texto'] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$texto)), 0, 140);
@@ -5953,6 +5969,11 @@ function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     if (!empty($cv['archivado']) || !empty($cv['seguimiento_bloqueado']) || !empty($cv['contexto_consulta'])) return false;
     if (in_array((string)($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
+    /* Después del link preguntó o avisó algo que quedó para Pablo (Sabrina,
+     * 26-oct: "no puedo abrir el link" a las 19:10 y a las 08:00 le salió igual
+     * "¿pudiste completar el formulario? Si tuviste algún problema, avisame"):
+     * hasta que él le conteste, el recordatorio no corresponde. */
+    if ((int)($cv['form_duda_pablo_ts'] ?? 0) >= $link) return false;
     $horas = max(1, (float)($cfg['form_recordatorio_horas'] ?? 12));
     if ($ahora - $link < $horas * 3600) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
@@ -6204,6 +6225,13 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     if (!empty($cv['handoff_pendiente'])) return false;
     if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
+    /* Con el formulario mandado y su recordatorio todavía pendiente, primero va
+     * el recordatorio (Ignacio, 26-oct: dijo "Bueno" a la demo a las 07:32 y a
+     * las 19:00, con la marca de 23 h adelantada por caer de noche, recibió "Te
+     * escribo por última vez…" en vez de "¿pudiste completar el formulario?"). */
+    if (!empty($cfg['form_recordatorio_activo']) && (int)($cv['form_link_mandado_ts'] ?? 0) > 0
+        && (int)($cv['form_completado_ts'] ?? 0) <= 0 && empty($cv['lead_creado'])
+        && (int)($cv['form_recordatorio_auto_ts'] ?? 0) < (int)$cv['form_link_mandado_ts']) return false;
     // Solo los que mostraron interés y no cerraron nada, o los que escribieron
     // y no llegaron al precio (2-oct).
     if (!wabot_conv_interesado($cv) && !wabot_conv_sin_precio_seguible($cv)) return false;
