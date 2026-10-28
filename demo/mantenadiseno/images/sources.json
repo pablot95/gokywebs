@@ -1,0 +1,30 @@
+{
+  "zip_descargas": {
+    "archivo": "Mantena_diseno_kEEfHVtVqJ0FDXI90iDl.zip",
+    "originales": ["01_imagen.png", "02_imagen.png", "03_imagen.png", "04_imagen.png", "05_imagen.png", "06_imagen.png", "07_imagen.png", "08_imagen.png", "09_imagen.png", "10_mockup_720x480.png"],
+    "derivadas": {
+      "hero-banco.webp": "02_imagen.png",
+      "origen-zafu.webp": "01_imagen.png",
+      "modo-zafu.webp": "03_imagen.png",
+      "modo-banco.webp": "04_imagen.png",
+      "modo-poltrona.webp": "05_imagen.png",
+      "detalle-canto.webp": "06_imagen.png",
+      "ambiente-living.webp": "07_imagen.png (sin usar)",
+      "ambiente-recepcion.webp": "08_imagen.png",
+      "detalle-enchapado.webp": "09_imagen.png",
+      "og.jpg": "02_imagen.png"
+    }
+  },
+  "tienda_del_cliente": {
+    "origen": "https://mantenadiseno.mitiendanube.com/productos/ (fotos de producto de la propia marca, 1024 px como máximo)",
+    "archivos": {
+      "p-mecedora.webp, g-mecedora.webp": "Mecedora Zen Línea Chamán (U-ROCKER)",
+      "p-banqueta.webp, g-banqueta.webp": "Banqueta Modular Línea Ancestral (U-BENCH)",
+      "p-cacique.webp, g-cacique.webp, g-cacique-oficina.webp": "Línea Cacique (U-CONTOUR)",
+      "p-mesa.webp, modo-mesa.webp, g-mesa.webp, g-mesa-living.webp, g-mesa-redonda.webp": "Mesa de centro de cristal Línea Coalición (U-CRISTAL)",
+      "p-duo.webp, g-duo.webp, g-duo-oficina.webp": "Set Corporativo Duo Línea Prestigio (g-duo recortada para sacar una marca de agua de la esquina)",
+      "p-senorio.webp, g-senorio.webp, g-senorio-alto.webp, g-senorio-terraza.webp, g-senorio-ventanal.webp": "Set Señorío Máximo Línea Premium",
+      "enchapado-guatambu.webp, enchapado-paraiso.webp": "muestras de enchapado de las fichas"
+    }
+  }
+}
