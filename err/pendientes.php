@@ -104,6 +104,7 @@ const ERR_REPOS = [
     'alvarezconstrucciones.com.ar' => 'pablot95/alvarezconstrucciones',
     'fresastore.com.ar' => 'pablot95/fresastore',
     'mluxury.com.ar' => 'pablot95/mluxury',
+    'drhooks.com.ar' => 'pablot95/drhooks',
     'piscioneinmobiliaria.com.ar' => 'pablot95/piscioneinmobiliaria',
 ];
 
