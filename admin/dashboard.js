@@ -468,11 +468,17 @@ function erroresDeLaWeb(d) {
 
 const ERRORES_FIRESTORE = /missing or insufficient permissions|quota exceeded|resource[-_ ]exhausted/i;
 
+// Scripts que el navegador interno de una app mete en la página (28-oct: Instagram/Facebook
+// en iPhone, "window._META.IABInnerFrame" en micoloridomundo). El archivo figura como la
+// propia web, pero el código no es nuestro.
+const ERRORES_INYECTADOS = /_META\b|IABInnerFrame|__gCrWeb|webkit\.messageHandlers/;
+
 function erroresEsCritico(d) {
     if (d.nivel !== "alto" || erroresEsBot(d.ua)) return false;
     if (d.tipo === "fetch") return true;
     if (d.tipo === "recurso") return /^HTTP \d{3}$/.test(String(d.detalle || ""));
     if (erroresNavegadorViejo(d.ua, d.msg)) return false;
+    if (ERRORES_INYECTADOS.test(String(d.msg || "") + " " + String(d.stack || ""))) return false;
     return erroresDeLaWeb(d) || ERRORES_FIRESTORE.test(String(d.msg || ""));
 }
 
@@ -490,6 +496,7 @@ function erroresPorQueMenor(d) {
         return /^No cargó img/.test(d.msg || "") ? "imagen que no cargó en ese momento" : "no cargó en ese momento (conexión o bloqueador)";
     }
     if (d.tipo === "fetch") return "falló un servicio externo";
+    if (ERRORES_INYECTADOS.test(String(d.msg || "") + " " + String(d.stack || ""))) return "lo mete el navegador de Instagram/Facebook";
     return "no viene del código de la web";
 }
 
