@@ -1,0 +1,28 @@
+{
+  "cliente": [
+    "02-imagen.jpg (logo)",
+    "04-imagen.jpg",
+    "05-imagen.jpg",
+    "06-imagen.jpg",
+    "07-imagen.jpg",
+    "08-imagen.jpg",
+    "09-imagen.jpg",
+    "10-imagen.jpg",
+    "11-imagen.jpg",
+    "12-imagen.jpg",
+    "13-imagen.jpg",
+    "14-imagen.jpg",
+    "imagen.jpg"
+  ],
+  "set_pablo": [
+    "01_imagen.png",
+    "02_imagen.png",
+    "03_imagen.png",
+    "04_imagen.png",
+    "05_imagen.png",
+    "06_imagen.png",
+    "07_imagen.png",
+    "08_imagen.png"
+  ],
+  "bancos": []
+}
