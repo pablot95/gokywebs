@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261026-mant-botones">
+    <link rel="stylesheet" href="styles.css?v=20261028-presentar-varios">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -142,11 +142,13 @@
             <div class="search-row">
                 <input type="search" id="searchPropuestas" placeholder="Buscar por marca, rubro o contacto...">
                 <button type="button" id="copyCarpetasBtn" class="btn-ghost" title="Copiar el prompt para crear las carpetas de imágenes de los bocetos que se ven en la lista">Copiar carpetas</button>
+                <button type="button" id="presentarSeleccionadosBtn" class="btn-presentada-prop" hidden>Presentar seleccionados</button>
             </div>
             <div class="table-wrapper">
                 <table class="clients-table">
                     <thead>
                         <tr>
+                            <th class="prop-col-sel"><input type="checkbox" id="propSelTodos" aria-label="Marcar todos los bocetos de la lista" title="Marcar / desmarcar todos los de la lista"></th>
                             <th>Fecha</th>
                             <th class="prop-col-marca">Marca / Negocio</th>
                             <th class="prop-col-contacto">Contacto</th>
@@ -158,7 +160,7 @@
                         </tr>
                     </thead>
                     <tbody id="propuestasTbody">
-                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1392,6 +1394,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261026-pago-unico"></script>
+    <script type="module" src="dashboard.js?v=20261028-presentar-varios"></script>
 </body>
 </html>

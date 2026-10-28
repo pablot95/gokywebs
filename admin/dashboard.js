@@ -5934,6 +5934,39 @@ function getPropuestaFechaInfo(p) {
 // no perderse en cada re-render (búsqueda, llegada de datos nuevos).
 const fechasSeleccionadas = new Set();
 
+// Bocetos marcados con la casilla para presentarlos todos juntos (28-oct).
+// Igual que las fechas, sobrevive a los re-renders; los que ya no existen
+// (presentados, borrados) se sueltan solos.
+const propuestasSeleccionadas = new Set();
+
+function actualizarSeleccionPropuestas() {
+    for (const id of [...propuestasSeleccionadas]) {
+        if (!propuestas.some(p => p.id === id)) propuestasSeleccionadas.delete(id);
+    }
+    const n = propuestasSeleccionadas.size;
+    const btn = document.getElementById("presentarSeleccionadosBtn");
+    if (btn && !btn.disabled) {
+        btn.hidden = n === 0;
+        btn.textContent = `Presentar seleccionados (${n})`;
+    }
+    const todos = document.getElementById("propSelTodos");
+    if (todos) {
+        const visibles = propuestasListaVisible;
+        const marcados = visibles.filter(p => propuestasSeleccionadas.has(p.id)).length;
+        todos.checked = visibles.length > 0 && marcados === visibles.length;
+        todos.indeterminate = marcados > 0 && marcados < visibles.length;
+    }
+}
+
+document.getElementById("propSelTodos")?.addEventListener("change", e => {
+    // Marca o desmarca solo los que se ven (búsqueda + fechas marcadas).
+    for (const p of propuestasListaVisible) {
+        if (e.target.checked) propuestasSeleccionadas.add(p.id);
+        else propuestasSeleccionadas.delete(p.id);
+    }
+    renderPropuestas();
+});
+
 function renderFechaChips() {
     const cont = document.getElementById("propFechaChips");
     if (!cont) return;
@@ -6014,7 +6047,8 @@ function renderPropuestas() {
             : fechasSeleccionadas.size ? " en las fechas marcadas"
             : term ? " para esa búsqueda"
             : " recibidas aún";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay propuestas${motivo}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No hay propuestas${motivo}.</td></tr>`;
+        actualizarSeleccionPropuestas();
         return;
     }
 
@@ -6027,7 +6061,8 @@ function renderPropuestas() {
         const tipoWeb = getPropuestaTipoWeb(p);
         const aviso = estadoAvisoBoceto(p);
         return `
-            <tr class="client-row" data-row-prop-id="${p.id}" style="cursor:pointer">
+            <tr class="client-row${propuestasSeleccionadas.has(p.id) ? " prop-seleccionado" : ""}" data-row-prop-id="${p.id}" style="cursor:pointer">
+                <td class="prop-col-sel"><input type="checkbox" data-prop-sel="${p.id}"${propuestasSeleccionadas.has(p.id) ? " checked" : ""} aria-label="Marcar ${escapeHtml(nombreNegocio || "este boceto")} para presentar"></td>
                 <td>
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
@@ -6091,7 +6126,7 @@ function renderPropuestas() {
 
     tbody.querySelectorAll("[data-row-prop-id]").forEach(row => {
         row.addEventListener("click", (e) => {
-            if (e.target.closest("a, button, input, textarea, .actions-col, .notes-col, .phone-copy")) return;
+            if (e.target.closest("a, button, input, textarea, .actions-col, .notes-col, .phone-copy, .prop-col-sel")) return;
             if (window.getSelection().toString().length > 0) return;
             openPropuestaModal(row.dataset.rowPropId);
         });
@@ -6165,6 +6200,15 @@ function renderPropuestas() {
     tbody.querySelectorAll("[data-prop-presentada]").forEach(btn => {
         btn.addEventListener("click", () => presentarPropuesta(btn.dataset.propPresentada));
     });
+    tbody.querySelectorAll("[data-prop-sel]").forEach(box => {
+        box.addEventListener("change", () => {
+            if (box.checked) propuestasSeleccionadas.add(box.dataset.propSel);
+            else propuestasSeleccionadas.delete(box.dataset.propSel);
+            box.closest("tr").classList.toggle("prop-seleccionado", box.checked);
+            actualizarSeleccionPropuestas();
+        });
+    });
+    actualizarSeleccionPropuestas();
     tbody.querySelectorAll("[data-prop-del]").forEach(btn => {
         btn.addEventListener("click", () => removePropuesta(btn.dataset.propDel));
     });
@@ -7144,7 +7188,14 @@ function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
     document.getElementById("closePresentacionManualBtn").focus();
 }
 
-function cerrarPresentacionManual() { presentacionManualModal.hidden = true; }
+// Al presentar varios juntos, los que hay que mandar a mano se muestran de a
+// uno: al cerrar el modal aparece el siguiente.
+const presentacionesManualesPendientes = [];
+function cerrarPresentacionManual() {
+    presentacionManualModal.hidden = true;
+    const sig = presentacionesManualesPendientes.shift();
+    if (sig) mostrarPresentacionManual(sig.p, sig.envio, sig.enSeguimiento);
+}
 document.getElementById("closePresentacionManualBtn").addEventListener("click", cerrarPresentacionManual);
 document.getElementById("cerrarPresentacionManualBtn").addEventListener("click", cerrarPresentacionManual);
 presentacionManualModal.addEventListener("click", e => { if (e.target === presentacionManualModal) cerrarPresentacionManual(); });
@@ -7376,6 +7427,60 @@ async function presentarPropuesta(propId) {
         if (mostrarCopiaManual) mostrarPresentacionManual(p, envio);
     }
 }
+
+/* Presentar varios a la vez (28-oct): los bocetos marcados con la casilla, de a
+   uno y con el mismo envío que el botón Presentar, pero con una sola
+   confirmación. Si el bot no pudo mandar alguno, pasa igual a Seguimiento (como
+   "pasarla igual" en el individual) y al final se muestran, de a uno, el número
+   y el texto para mandarlos a mano. */
+async function presentarSeleccionados() {
+    const lista = propuestas.filter(p => propuestasSeleccionadas.has(p.id));
+    if (!lista.length) return;
+    const nombres = lista.map(p => "• " + (p.nombre_negocio || p.rubro || "(sin nombre)")).join("\n");
+    if (!confirm(`Presentar ${lista.length} boceto${lista.length === 1 ? "" : "s"} y pasarlos a Seguimiento?\n\n${nombres}`)) return;
+
+    const btn = document.getElementById("presentarSeleccionadosBtn");
+    btn.disabled = true;
+    const enviados = [], manuales = [], errores = [];
+    try {
+        for (const [i, p] of lista.entries()) {
+            const nombre = p.nombre_negocio || p.rubro || "(sin nombre)";
+            btn.textContent = `Presentando ${i + 1} de ${lista.length}…`;
+            try {
+                if (p.autoPresentada?.demo_ok && p.autoPresentada.clienteId) {
+                    // Ya le llegó la demo sola: solo pasa a Seguimiento, sin mandarla de nuevo.
+                    await pasarPropuestaASeguimiento(p, p.autoPresentada.clienteId, { presentadaAuto: p.autoPresentada.ts || "" });
+                    enviados.push(nombre);
+                } else {
+                    const clienteRef = doc(collection(db, "clientes"));
+                    const envio = await enviarMuestraWhatsapp(p, clienteRef.id);
+                    await pasarPropuestaASeguimiento(p, clienteRef.id);
+                    if (envio?.enviado && !envio.error) enviados.push(nombre);
+                    else {
+                        manuales.push(nombre);
+                        presentacionesManualesPendientes.push({ p, envio, enSeguimiento: true });
+                    }
+                }
+                propuestasSeleccionadas.delete(p.id);
+            } catch (err) {
+                console.error("No se pudo presentar", p.id, err);
+                errores.push(`${nombre}: ${err.message}`);
+            }
+        }
+    } finally {
+        btn.disabled = false;
+        actualizarSeleccionPropuestas();
+    }
+
+    let resumen = "";
+    if (enviados.length) resumen += `Quedaron en Seguimiento con la demo enviada por el bot (${enviados.length}):\n${enviados.map(n => "• " + n).join("\n")}\n\n`;
+    if (manuales.length) resumen += `Quedaron en Seguimiento pero hay que mandarles la demo a mano (${manuales.length}):\n${manuales.map(n => "• " + n).join("\n")}\nAl cerrar este aviso vas a ver el número y el texto de cada uno.\n\n`;
+    if (errores.length) resumen += `No se pudieron pasar, siguen en Bocetos y marcados (${errores.length}):\n${errores.map(n => "• " + n).join("\n")}`;
+    alert(resumen.trim());
+    const primero = presentacionesManualesPendientes.shift();
+    if (primero) mostrarPresentacionManual(primero.p, primero.envio, primero.enSeguimiento);
+}
+document.getElementById("presentarSeleccionadosBtn").addEventListener("click", presentarSeleccionados);
 
 // --- Presupuestos ---
 const presupuestoModal      = document.getElementById("presupuestoModal");

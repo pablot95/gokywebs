@@ -1177,6 +1177,20 @@ select.prop-type-input option {
     min-width: 165px;
 }
 
+/* Casilla para presentar varios bocetos a la vez (28-oct). */
+.clients-table .prop-col-sel {
+    width: 34px;
+    padding-right: 0;
+    text-align: center;
+}
+.prop-col-sel input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent-green, #4ade80);
+    cursor: pointer;
+}
+.clients-table tr.prop-seleccionado td { background: rgba(74, 222, 128, 0.06); }
+
 .business-name-copy {
     max-width: 100%;
     padding: 0;
