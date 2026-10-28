@@ -612,6 +612,14 @@
 
   /* El portfolio de la home lo arma portfolio/visor.js (el mismo de /portfolio/). */
 
+  /* "Ver los N trabajos" del hero: N sale del catálogo, no queda viejo al sumar webs.
+     portfolio/data.js carga DESPUÉS de este archivo: se cuenta con el DOM listo. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var link = document.getElementById('hero-ver-trabajos');
+    if (!link || typeof GW_TRABAJOS === 'undefined') return;
+    link.firstChild.nodeValue = 'Ver los ' + GW_TRABAJOS.length + ' trabajos ';
+  });
+
   /* ---------- Menú mobile ---------- */
   (function () {
     var toggle = document.getElementById('nav-toggle');
