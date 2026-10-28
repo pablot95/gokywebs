@@ -1,0 +1,18 @@
+{
+  "vibraciones.webp": {
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/road-construction-workers-using-jackhammers-on-asphalt-33484880/",
+    "autor": "Thomas Fuhrmann",
+    "licencia": "Pexels License",
+    "slot": "Mediciones: vibraciones mano-brazo",
+    "tratamiento": "recorte cuadrado del lado izquierdo, 1200 px"
+  },
+  "hero-planta.webp": {
+    "fuente": "zip del cliente (02_imagen.png)",
+    "tratamiento": "espejada para que el técnico quede a la derecha del texto, como en el mock up"
+  },
+  "logo-claro.webp, logo-oscuro.webp, logo-completo-claro.webp, logo-completo-oscuro.webp, escudo.webp, favicon.png": {
+    "fuente": "tarjeta que el cliente mandó por WhatsApp el 27-oct (tarjeta-whatsapp.jpg)",
+    "tratamiento": "fondo azul pasado a transparente; la versión oscura recolorea solo el texto"
+  }
+}
