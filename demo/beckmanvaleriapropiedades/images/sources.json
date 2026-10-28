@@ -1,0 +1,22 @@
+{
+  "cliente": ["01_imagen.webp", "02_imagen.webp", "03_imagen.webp", "04_imagen.webp", "05_imagen.webp", "06_imagen.webp", "07_imagen.webp", "08_imagen.webp", "09_imagen.webp"],
+  "pexels": [
+    { "archivo": "casa-matheu-1.webp", "id": 7031581, "url": "https://www.pexels.com/photo/7031581/", "uso": "Casa a estrenar en Matheu (portada)" },
+    { "archivo": "casa-matheu-2.webp", "id": 7031599, "url": "https://www.pexels.com/photo/7031599/", "uso": "Casa a estrenar en Matheu" },
+    { "archivo": "casa-matheu-3.webp", "id": 7031621, "url": "https://www.pexels.com/photo/7031621/", "uso": "Casa a estrenar en Matheu" },
+    { "archivo": "casa-matheu-4.webp", "id": 7031840, "url": "https://www.pexels.com/photo/7031840/", "uso": "Casa a estrenar en Matheu (baño)" },
+    { "archivo": "depto-centro-1.webp", "id": 8146158, "url": "https://www.pexels.com/photo/8146158/", "uso": "Depto 2 ambientes a estrenar (portada)" },
+    { "archivo": "depto-centro-2.webp", "id": 8146156, "url": "https://www.pexels.com/photo/8146156/", "uso": "Depto 2 ambientes a estrenar" },
+    { "archivo": "depto-centro-3.webp", "id": 8146144, "url": "https://www.pexels.com/photo/8146144/", "uso": "Depto 2 ambientes a estrenar" },
+    { "archivo": "duplex-garin-1.webp", "id": 8146330, "url": "https://www.pexels.com/photo/8146330/", "uso": "Dúplex en Garín (portada)" },
+    { "archivo": "duplex-garin-2.webp", "id": 8146336, "url": "https://www.pexels.com/photo/8146336/", "uso": "Dúplex en Garín" },
+    { "archivo": "duplex-garin-3.webp", "id": 8146337, "url": "https://www.pexels.com/photo/8146337/", "uso": "Dúplex en Garín" },
+    { "archivo": "casa-pileta-1.webp", "id": 8134747, "url": "https://www.pexels.com/photo/8134747/", "uso": "Casa con pileta en Maschwitz (portada)" },
+    { "archivo": "casa-pileta-2.webp", "id": 8134750, "url": "https://www.pexels.com/photo/8134750/", "uso": "Casa con pileta en Maschwitz" },
+    { "archivo": "casa-galeria-1.webp", "id": 7061662, "url": "https://www.pexels.com/photo/7061662/", "uso": "Chalet con galería (portada)" },
+    { "archivo": "casa-galeria-2.webp", "id": 7061676, "url": "https://www.pexels.com/photo/7061676/", "uso": "Chalet con galería" },
+    { "archivo": "casa-quincho-1.webp", "id": 7546775, "url": "https://www.pexels.com/photo/7546775/", "uso": "Casa con quincho en Maquinista Savio" },
+    { "archivo": "lote-maschwitz-1.webp", "id": 33356449, "url": "https://www.pexels.com/photo/33356449/", "uso": "Lote en Maschwitz" },
+    { "archivo": "casa-moderna-1.webp", "id": 7587878, "url": "https://www.pexels.com/photo/7587878/", "uso": "Casa moderna en Garín" }
+  ]
+}
