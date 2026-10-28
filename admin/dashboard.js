@@ -849,7 +849,11 @@ Deja de aparecer en la lista y no suma al contador. Podés volver a mostrarla de
    dejó (o el mismo tel, en whatsapp). Pablo, 9-oct: "Suan Baby no aparece en
    Inversión". El WhatsApp que dejó en el form no era el del chat, y solo se
    probaba ese. Ahora va primero la ficha a la que se le presentó la demo
-   (cliente_id) y después los dos teléfonos. */
+   (cliente_id) y después los dos teléfonos.
+   Pablo, 28-oct: "Fresa store figura en esta semana porque pagó esta semana pero
+   es un cliente viejo". Un cliente que ya lo era antes de la semana en que escribió
+   por primera vez (seña del 2-sep, charla del 26-oct) no es conversión de ese
+   contacto: no cuenta en ninguna semana ni anuncio. */
 function buscadorClienteDeContacto() {
     const clientePorTel = new Map();
     const clientePorId = new Map();
@@ -862,8 +866,12 @@ function buscadorClienteDeContacto() {
     return (k) => {
         const tels = [k.tel_whatsapp, k.canal === "instagram" ? "" : k.tel]
             .map(cleanArgPhone).filter(t => t.length >= 8);
-        return (k.cliente_id && clientePorId.get(k.cliente_id))
+        const c = (k.cliente_id && clientePorId.get(k.cliente_id))
             || tels.map(t => clientePorTel.get(t)).find(Boolean) || null;
+        const ts = Number(k.inicio_ts ?? k.ts) || 0;   // Por anuncio lo manda como ts
+        const desde = c && ts ? fechaPasoACliente(c) : null;
+        if (desde && _diaDe(desde) < semanaClave(ts)) return null;
+        return c;
     };
 }
 
