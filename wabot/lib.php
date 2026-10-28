@@ -4682,6 +4682,62 @@ function wabot_wa_send_image($tel, $mediaId, $caption = '') {
     return true;
 }
 
+/* PDFs que salen del panel (Pablo, 28-oct: "el wabot solo manda imágenes, tendría que poder
+ * mandar pdf", para un presupuesto). WhatsApp acepta documentos de hasta 100 MB; el
+ * límite real lo pone la subida del hosting, que es bastante menos. */
+define('WABOT_DOCUMENTO_MAX_BYTES', 100 * 1024 * 1024);
+
+/** true si los bytes son un PDF (firma %PDF-, no lo que declaró el navegador). */
+function wabot_es_pdf($bytes) {
+    return substr((string)$bytes, 0, 5) === '%PDF-';
+}
+
+/** El nombre con que el cliente ve el archivo: sin rutas ni caracteres raros y con .pdf al final. */
+function wabot_documento_nombre($nombre) {
+    $n = trim(basename(str_replace('\\', '/', (string)$nombre)));
+    $n = preg_replace('/[\x00-\x1F\x7F"<>|:*?]/u', '', $n);
+    $n = preg_replace('/\.pdf$/i', '', $n);
+    $n = mb_substr(trim($n), 0, 100);
+    return ($n !== '' ? $n : 'documento') . '.pdf';
+}
+
+function wabot_wa_document_body($tel, $mediaId, $nombre, $caption = '') {
+    $doc = ['id' => $mediaId, 'filename' => wabot_documento_nombre($nombre)];
+    $caption = trim((string)$caption);
+    if ($caption !== '') $doc['caption'] = mb_substr($caption, 0, 1024);
+    return [
+        'messaging_product' => 'whatsapp',
+        'to'       => $tel,
+        'type'     => 'document',
+        'document' => $doc,
+    ];
+}
+
+function wabot_wa_send_document($tel, $mediaId, $nombre, $caption = '') {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, '[documento] ' . wabot_documento_nombre($nombre) . ($caption !== '' ? ' ' . $caption : '')]; return true; }
+    if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') return false;
+
+    $url = 'https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . WABOT_PHONE_NUMBER_ID . '/messages';
+    $body = json_encode(wabot_wa_document_body($tel, $mediaId, $nombre, $caption), JSON_UNESCAPED_UNICODE);
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . WABOT_META_TOKEN, 'Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        wabot_log('error', ['donde' => 'wa_send_document', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        return false;
+    }
+    wabot_salida_anotar(json_decode((string)$res, true)['messages'][0]['id'] ?? '');
+    return true;
+}
+
 /**
  * Lee el PNG del deploy, lo sube como media de WhatsApp y lo manda. Solo
  * WhatsApp: Instagram todavía no tiene un envío de media saliente propio,

@@ -956,6 +956,61 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['ok' => true, 'bot_off' => true]);
         exit;
     }
+    /* Enviar un PDF desde el chat (Pablo, 28-oct: "el wabot solo manda imágenes, tendría que
+     * poder mandar pdf"). Mismo camino que la imagen: sale con su nombre y el texto del recuadro
+     * como epígrafe, solo por WhatsApp y con la ventana abierta, y el bot se calla en ese chat. */
+    if ($a === 'responder_documento' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $subida = $_FILES['documento'] ?? null;
+        if (!$subida || ($subida['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($subida['tmp_name'])) {
+            $tope = in_array($subida['error'] ?? 0, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true);
+            echo json_encode(['error' => $tope ? 'El PDF pesa más de lo que deja subir el servidor (' . ini_get('upload_max_filesize') . ').' : 'No llegó el PDF. Probá elegirlo de nuevo.']);
+            exit;
+        }
+        if ((int)$subida['size'] > WABOT_DOCUMENTO_MAX_BYTES) {
+            echo json_encode(['error' => 'El PDF pesa más de 100 MB, que es el máximo que acepta WhatsApp.']);
+            exit;
+        }
+
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_canal($conv) === 'instagram') {
+            echo json_encode(['error' => 'Por ahora los PDF solo salen por WhatsApp.']);
+            exit;
+        }
+        if (wabot_ventana_restante($conv) <= 0) {
+            echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.']);
+            exit;
+        }
+
+        $bytes = (string)@file_get_contents($subida['tmp_name']);
+        if ($bytes === '') { echo json_encode(['error' => 'El PDF llegó vacío.']); exit; }
+        if (!wabot_es_pdf($bytes)) {
+            echo json_encode(['error' => 'Ese archivo no es un PDF.']);
+            exit;
+        }
+
+        $nombre = wabot_documento_nombre($subida['name'] ?? '');
+        $caption = mb_substr(trim((string)($_POST['caption'] ?? '')), 0, 1024);
+        $mediaId = wabot_wa_media_subir($bytes, 'application/pdf', $nombre);
+        if (!$mediaId) {
+            echo json_encode(['error' => 'WhatsApp no aceptó el PDF al subirlo. Revisá el log en wabot/data/log/.']);
+            exit;
+        }
+        if (!wabot_wa_send_document(wabot_channel_user_id($conv), $mediaId, $nombre, $caption)) {
+            echo json_encode(['error' => 'El PDF se subió pero WhatsApp rechazó el envío. Revisá el log en wabot/data/log/.']);
+            exit;
+        }
+
+        $guardado = wabot_media_guardar(wabot_conversation_key($conv), $bytes, 'application/pdf', 'documento', $nombre);
+        wabot_conv_tomar_control($conv);
+        wabot_conv_transcript($conv, 'humano', $caption !== '' ? $caption : '[documento] ' . $nombre, $guardado);
+        wabot_conv_save($conv);
+        wabot_log('respuesta_panel_documento', ['tel' => $conv['tel'], 'nombre' => $nombre, 'bytes' => strlen($bytes), 'con_texto' => $caption !== '']);
+
+        echo json_encode(['ok' => true, 'bot_off' => true]);
+        exit;
+    }
     if ($a === 'transcript' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $conv = wabot_conv_load($_POST['tel']);
@@ -1523,6 +1578,8 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .adjuntando-lista { display:flex; gap:8px; flex-wrap:wrap; }
 .adj-item { position:relative; }
 .adj-item img { display:block; width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+.adj-pdf { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; width:96px; height:56px; padding:4px 6px; border-radius:8px; border:1px solid var(--line); background:var(--card); font-size:20px; line-height:1; }
+.adj-pdf span { max-width:100%; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .adj-item button { position:absolute; top:-6px; right:-6px; width:18px; height:18px; padding:0; border-radius:50%; font-size:12px; line-height:1; }
 .adjuntando button { padding:7px 14px; font-size:13px; }
 .adjuntando #adjuntarEnviar { margin-left:auto; }
@@ -3424,17 +3481,17 @@ function burbujaCita(t, chat) {
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
-                        <button id="respAdjuntar" class="sec" type="button" title="Enviar una imagen (también podés pegarla con Ctrl+V)" aria-label="Enviar una imagen">📎</button>
-                        <input type="file" id="respArchivo" accept="image/*" multiple hidden>
+                        <button id="respAdjuntar" class="sec" type="button" title="Enviar una imagen o un PDF (las imágenes también se pueden pegar con Ctrl+V)" aria-label="Enviar una imagen o un PDF">📎</button>
+                        <input type="file" id="respArchivo" accept="image/*,application/pdf,.pdf" multiple hidden>
                         <button id="respGrabar" class="sec" type="button" title="Grabar una nota de voz" aria-label="Grabar una nota de voz">🎤</button>
                         <?php endif; ?>
                         <button id="respEnviar">Enviar</button>
                     </div>
                     <div id="adjuntando" class="adjuntando" hidden>
                         <div id="adjuntandoLista" class="adjuntando-lista"></div>
-                        <span class="grabando-hint" id="adjuntandoHint">Lo que escribas arriba va como texto de la primera imagen.</span>
-                        <button type="button" id="adjuntarCancelar" class="sec" title="Descartar las imágenes">Cancelar</button>
-                        <button type="button" id="adjuntarEnviar" title="Enviar las imágenes">Enviar imagen</button>
+                        <span class="grabando-hint" id="adjuntandoHint">Lo que escribas arriba va como texto del primer archivo.</span>
+                        <button type="button" id="adjuntarCancelar" class="sec" title="Descartar los archivos">Cancelar</button>
+                        <button type="button" id="adjuntarEnviar" title="Enviar los archivos">Enviar imagen</button>
                     </div>
                     <div id="grabando" class="grabando" hidden>
                         <span class="grabando-punto"></span>
@@ -5155,33 +5212,44 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
         const cajaAdj = document.getElementById('adjuntando');
         const listaAdj = document.getElementById('adjuntandoLista');
         const ADJ_MAX = 6;
-        let adjuntos = [];      // [{ file, url }]
+        let adjuntos = [];      // [{ file, url, pdf }]
+        // Pablo, 28-oct: también PDFs (un presupuesto). Salen tal cual, como documento con su nombre.
+        const esPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
 
         function pintarAdjuntos() {
             listaAdj.innerHTML = '';
             adjuntos.forEach((a, i) => {
                 const it = document.createElement('div'); it.className = 'adj-item';
-                const img = document.createElement('img'); img.src = a.url; img.alt = 'Imagen por enviar';
+                let vista;
+                if (a.pdf) {
+                    vista = document.createElement('div'); vista.className = 'adj-pdf'; vista.title = a.file.name;
+                    const nom = document.createElement('span'); nom.textContent = a.file.name;
+                    vista.append('📄', nom);
+                } else {
+                    vista = document.createElement('img'); vista.src = a.url; vista.alt = 'Imagen por enviar';
+                }
                 const x = document.createElement('button'); x.type = 'button'; x.className = 'sec'; x.textContent = '×';
-                x.title = 'Sacar esta imagen'; x.setAttribute('aria-label', 'Sacar esta imagen');
-                x.addEventListener('click', () => { URL.revokeObjectURL(a.url); adjuntos.splice(i, 1); pintarAdjuntos(); });
-                it.append(img, x); listaAdj.appendChild(it);
+                x.title = 'Sacar este archivo'; x.setAttribute('aria-label', 'Sacar este archivo');
+                x.addEventListener('click', () => { if (a.url) URL.revokeObjectURL(a.url); adjuntos.splice(i, 1); pintarAdjuntos(); });
+                it.append(vista, x); listaAdj.appendChild(it);
             });
             cajaAdj.hidden = adjuntos.length === 0;
-            document.getElementById('adjuntarEnviar').textContent = adjuntos.length > 1 ? 'Enviar ' + adjuntos.length + ' imágenes' : 'Enviar imagen';
+            const hayPdf = adjuntos.some(a => a.pdf), hayImg = adjuntos.some(a => !a.pdf);
+            const cosa = hayPdf && hayImg ? ['archivo', 'archivos'] : hayPdf ? ['PDF', 'PDF'] : ['imagen', 'imágenes'];
+            document.getElementById('adjuntarEnviar').textContent = adjuntos.length > 1 ? 'Enviar ' + adjuntos.length + ' ' + cosa[1] : 'Enviar ' + cosa[0];
         }
         function agregarAdjuntos(files) {
-            const imgs = Array.from(files || []).filter(f => f && /^image\//.test(f.type));
-            if (!imgs.length) { avisar('Elegí un archivo de imagen.', true); return; }
+            const imgs = Array.from(files || []).filter(f => f && (/^image\//.test(f.type) || esPdf(f)));
+            if (!imgs.length) { avisar('Elegí una imagen o un PDF.', true); return; }
             for (const f of imgs) {
-                if (adjuntos.length >= ADJ_MAX) { avisar('Hasta ' + ADJ_MAX + ' imágenes por vez.', true); break; }
-                adjuntos.push({ file: f, url: URL.createObjectURL(f) });
+                if (adjuntos.length >= ADJ_MAX) { avisar('Hasta ' + ADJ_MAX + ' archivos por vez.', true); break; }
+                adjuntos.push(esPdf(f) ? { file: f, url: '', pdf: true } : { file: f, url: URL.createObjectURL(f) });
             }
             pintarAdjuntos();
             if (ventana <= 0) avisar('Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.', true);
         }
         function limpiarAdjuntos() {
-            adjuntos.forEach(a => URL.revokeObjectURL(a.url));
+            adjuntos.forEach(a => { if (a.url) URL.revokeObjectURL(a.url); });
             adjuntos = []; pintarAdjuntos();
         }
         /* JPEG de hasta 1600 px por lado (fondo blanco si traía transparencia). Un JPEG chico se manda tal cual. */
@@ -5206,30 +5274,36 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             let enviadas = 0;
             try {
                 while (adjuntos.length) {
-                    avisar('Enviando imagen ' + (enviadas + 1) + ' de ' + total + '…', false);
                     const a = adjuntos[0];
-                    let blob;
-                    try { blob = await imagenAJpeg(a.file); }
-                    catch (e) { avisar('No se pudo leer "' + (a.file.name || 'la imagen') + '": probá con una foto JPEG o PNG.', true); break; }
+                    avisar('Enviando ' + (a.pdf ? 'PDF' : 'imagen') + ' ' + (enviadas + 1) + ' de ' + total + '…', false);
                     const fd = new FormData();
-                    fd.append('accion', 'responder_imagen');
                     fd.append('tel', TEL);
-                    if (enviadas === 0) fd.append('caption', txt.value.trim());   // el texto va con la primera
-                    fd.append('imagen', blob, 'imagen.jpg');
+                    if (enviadas === 0) fd.append('caption', txt.value.trim());   // el texto va con el primero
+                    if (a.pdf) {
+                        fd.append('accion', 'responder_documento');
+                        fd.append('documento', a.file, a.file.name || 'documento.pdf');
+                    } else {
+                        let blob;
+                        try { blob = await imagenAJpeg(a.file); }
+                        catch (e) { avisar('No se pudo leer "' + (a.file.name || 'la imagen') + '": probá con una foto JPEG o PNG.', true); break; }
+                        fd.append('accion', 'responder_imagen');
+                        fd.append('imagen', blob, 'imagen.jpg');
+                    }
                     const r = await fetch('admin.php', { method: 'POST', body: fd });
                     const j = await r.json();
-                    if (!j.ok) { avisar(j.error || 'No se pudo enviar la imagen.', true); break; }
+                    if (!j.ok) { avisar(j.error || 'No se pudo enviar ' + (a.pdf ? 'el PDF.' : 'la imagen.'), true); break; }
                     if (enviadas === 0 && txt.value.trim()) { txt.value = ''; txt.dispatchEvent(new Event('input', { bubbles: true })); }
-                    URL.revokeObjectURL(a.url); adjuntos.shift(); enviadas++;
+                    if (a.url) URL.revokeObjectURL(a.url);
+                    adjuntos.shift(); enviadas++;
                     pintarAdjuntos();
                     document.getElementById('handoffPill')?.remove();
                 }
                 if (enviadas) {
                     await refrescar(); await refrescarLista();
-                    if (!adjuntos.length) avisar((enviadas > 1 ? enviadas + ' imágenes enviadas' : 'Imagen enviada') + '. El bot queda en silencio en este chat.', false);
+                    if (!adjuntos.length) avisar((enviadas > 1 ? enviadas + ' archivos enviados' : 'Enviado') + '. El bot queda en silencio en este chat.', false);
                 }
             } catch (e) {
-                avisar('Error de red al enviar la imagen: ' + e + (enviadas ? ' Ya salieron ' + enviadas + '.' : ''), true);
+                avisar('Error de red al enviar: ' + e + (enviadas ? ' Ya salieron ' + enviadas + '.' : ''), true);
             }
             enviando = false;
             btn.disabled = ventana <= 0;
