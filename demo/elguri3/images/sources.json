@@ -1,0 +1,12 @@
+{
+  "base": "Las 9 fotos y el mock up vienen del zip del cliente (01_imagen.png a 10_mockup_720x480.png). Los p-*.webp de esas fotos son recortes propios.",
+  "extra": [
+    { "archivo": "p-carne-picada.webp", "fuente": "Pexels", "id": "128401", "url": "https://www.pexels.com/photo/128401/", "uso": "Carne picada especial" },
+    { "archivo": "p-pollo-entero.webp", "fuente": "Pexels", "id": "10842249", "url": "https://www.pexels.com/photo/10842249/", "uso": "Pollo entero" },
+    { "archivo": "p-chorizo.webp", "fuente": "Pexels", "id": "15082943", "url": "https://www.pexels.com/photo/15082943/", "uso": "Chorizo puro cerdo" },
+    { "archivo": "p-huevos.webp", "fuente": "Pexels", "id": "6827029", "url": "https://www.pexels.com/photo/6827029/", "uso": "Huevos blancos x 12" },
+    { "archivo": "p-agua.webp", "fuente": "Pexels", "id": "2479095", "url": "https://www.pexels.com/photo/2479095/", "uso": "Agua mineral sin gas" },
+    { "archivo": "p-papel.webp", "fuente": "Pexels", "id": "5729364", "url": "https://www.pexels.com/photo/5729364/", "uso": "Papel higiénico" },
+    { "archivo": "p-lavandina.webp", "fuente": "Pexels", "id": "5217898", "url": "https://www.pexels.com/photo/5217898/", "uso": "Lavandina" }
+  ]
+}
