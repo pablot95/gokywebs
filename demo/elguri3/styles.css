@@ -28,7 +28,7 @@ input, textarea, [contenteditable] { -webkit-user-select: text; user-select: tex
   --color-cta-hover: #172257;
   --color-cta-text: #FFFFFF;
   --color-dark: #141A2C;
-  --hero-bg: #EDEEF2;
+  --hero-bg: #F0F1F5;
   --line: color-mix(in srgb, var(--color-text) 11%, transparent);
   --line-strong: color-mix(in srgb, var(--color-text) 20%, transparent);
   --font-display: "Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
@@ -196,7 +196,7 @@ body.no-scroll { overflow: hidden; }
 }
 .hero--m1 .hero__texto { grid-column: b / c; grid-row: 1; align-self: center; position: relative; z-index: 2; padding: clamp(2.25rem, 5vw, 3.25rem) 1.5rem calc(var(--cruce) + 2.75rem) 0; }
 .hero--m1 .hero__foto { grid-column: c / e; grid-row: 1; position: relative; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%); mask-image: linear-gradient(90deg, transparent 0, #000 14%); }
-.hero--m1 .hero__foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 45% 40%; }
+.hero--m1 .hero__foto img { position: absolute; inset: 0; top: clamp(10px, 2.2vw, 28px); width: 100%; height: calc(100% - clamp(10px, 2.2vw, 28px)); object-fit: cover; object-position: 45% 40%; }
 .hero-etiqueta-wrap { grid-column: c / d; grid-row: 1; position: relative; z-index: 3; align-self: start; justify-self: end; margin-top: clamp(1.5rem, 4vw, 3rem); margin-right: clamp(0px, 2vw, 1.5rem); }
 @media (max-width: 860px) {
   .hero--m1 { grid-template-columns: minmax(0, 1fr); min-height: 0; }
