@@ -5746,10 +5746,14 @@ caso('el .pdf del logo entra: un logo llega tanto en .png como en vectores',
     in_array('20260901-140100-dddddddd.pdf', array_column($imgs, 'archivo'), true));
 
 $nombresImg = wabot_imagenes_nombres($imgs);
-caso('la que el boceto tomó como logo va primera y se llama así',
-    $nombresImg[0] === '01-logo.webp');
-caso('una sola se llama "logo": el resto conserva su nombre o queda numerada',
-    count(array_filter($nombresImg, function ($n) { return strpos($n, '-logo.') !== false; })) === 1);
+caso('la primera foto que manda el cliente NO se llama logo si no lo dijo (29-oct)',
+    count(array_filter($nombresImg, function ($n) { return strpos($n, '-logo.') !== false; })) === 0
+    && wabot_logo_nombre($convImg, '20260901-140000-cccccccc.webp') === 'imagen.webp');
+$convImgLogo = $convImg;
+$convImgLogo['transcript'][0]['t'] = 'Te paso el logo';
+$nombresImgLogo = wabot_imagenes_nombres(wabot_imagenes_cliente($convImgLogo));
+caso('si dijo "logo" al mandarla, va primera y se llama así',
+    $nombresImgLogo[0] === '01-logo.webp' && wabot_logo_nombre($convImgLogo, '20260901-140000-cccccccc.webp') === 'logo.webp');
 caso('y el nombre que le puso el cliente se conserva, sin acentos ni espacios',
     in_array('04-logo-final.pdf', $nombresImg, true));
 caso('ningún nombre se repite adentro del paquete',

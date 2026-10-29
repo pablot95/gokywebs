@@ -3222,6 +3222,26 @@ function wabot_logo_cliente($cv) {
 function wabot_logo_url($clave, $archivo) {
     return 'https://gokywebs.com/wabot/admin.php?accion=media&tel=' . urlencode($clave) . '&archivo=' . urlencode($archivo);
 }
+/**
+ * ¿El cliente dijo que ESTA foto es su logo? Sin eso la primera imagen que
+ * manda casi nunca lo es (Pablo, 29-oct): sirve de enlace para bajar las
+ * imágenes pero no se nombra "logo".
+ */
+function wabot_logo_declarado($cv, $archivo) {
+    if (!$archivo) return false;
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (($fila['media']['archivo'] ?? null) !== $archivo) continue;
+        if (preg_match('/\blogo\b/iu', (string)($fila['t'] ?? ''))) return true;
+    }
+    return false;
+}
+
+/** Nombre con que viaja la imagen elegida en el boceto: "logo" solo si el cliente lo dijo. */
+function wabot_logo_nombre($cv, $archivo) {
+    return (wabot_logo_declarado($cv, $archivo) ? 'logo.' : 'imagen.') . strtolower(pathinfo((string)$archivo, PATHINFO_EXTENSION));
+}
+
 
 /**
  * Qué extensiones cuentan como "una imagen que mandó el cliente" para el
@@ -3292,7 +3312,7 @@ function wabot_imagenes_cliente($cv) {
         $fila = [
             'archivo' => $arch,
             'nombre'  => (string)($meta[$arch]['nombre'] ?? ''),
-            'es_logo' => $arch === $logoElegido,
+            'es_logo' => $arch === $logoElegido && wabot_logo_declarado($cv, $arch),
         ];
         if ($fila['es_logo']) array_unshift($out, $fila);
         else $out[] = $fila;
@@ -6748,7 +6768,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
 
     $archivoLogo = wabot_logo_cliente($conv);
     $logoUrl = $archivoLogo !== null ? wabot_logo_url(wabot_conversation_key($conv), $archivoLogo) : '';
-    $logoNombre = $archivoLogo !== null ? ('logo.' . strtolower(pathinfo($archivoLogo, PATHINFO_EXTENSION))) : '';
+    $logoNombre = $archivoLogo !== null ? wabot_logo_nombre($conv, $archivoLogo) : '';
 
     $telefono = wabot_canal($conv) === 'instagram'
         ? (string)($conv['telefono_wsp'] ?? '')
@@ -7200,7 +7220,7 @@ function wabot_logo_sincronizar(&$conv) {
 
     $campos = [
         'logoUrl'    => ['stringValue' => wabot_logo_url(wabot_conversation_key($conv), $archivo)],
-        'logoNombre' => ['stringValue' => 'logo.' . strtolower(pathinfo($archivo, PATHINFO_EXTENSION))],
+        'logoNombre' => ['stringValue' => wabot_logo_nombre($conv, $archivo)],
         'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
     ];
     $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
