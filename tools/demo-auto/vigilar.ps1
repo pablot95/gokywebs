@@ -2,8 +2,9 @@
 # (Pablo, 18-oct-2026: "cuando llega el zip con las imagenes, que crees la carpeta en demo
 # y crees el demo, obteniendo la info de cada prospecto (boton Copiar)... dejar la PC prendida").
 #
-# Lo corre una tarea de Windows cada 5 minutos (instalar-tarea.ps1). En cada corrida:
-#   1. Busca en Descargas un .zip nuevo (posterior a la instalacion), ya bajado del todo,
+# Lo corre una tarea de Windows cada 20 minutos (instalar-tarea.ps1; 29-oct: "con Opus extra,
+# que se creen solos cuando esten las imagenes descargadas, cada 20 mins"). En cada corrida:
+#   1. Busca en Descargas un .zip nuevo (posterior a la instalacion), bajado hace +15 min,
 #      con al menos 5 imagenes adentro. Si trae otros zips adentro ("Descargar todas"),
 #      los abre en Descargas y se procesan como zips sueltos.
 #   2. preparar.php encuentra el prospecto (id o nombre del negocio en el nombre del zip)
@@ -91,6 +92,7 @@ function Marcar($zip, [string]$resultado) {
 # hay $Maximo demos en curso. Tambien deja el slot de esta corrida.
 function Reclamar-Siguiente {
     Bajo-Candado {
+        # 15 min: tools/chatgpt-zips/subir.py (cada 10 min) ya lo subio a la ficha antes de moverlo.
         Get-ChildItem -LiteralPath $Slots -File | Where-Object { -not (Get-Process -Id ([int]$_.BaseName) -ErrorAction SilentlyContinue) } | Remove-Item -Force
         $ajenos = @(Get-ChildItem -LiteralPath $Slots -File | Where-Object { $_.BaseName -ne [string]$PID })
         if ($ajenos.Count -ge $Maximo) { return $null }
@@ -98,7 +100,7 @@ function Reclamar-Siguiente {
         $desde = [datetime]::Parse($e.desde)
         $hechos = @($e.hechos | ForEach-Object { $_.zip + '|' + $_.tam })
         $zips = Get-ChildItem -LiteralPath $Descargas -Filter '*.zip' -File |
-            Where-Object { $_.LastWriteTime -gt $desde -and $_.LastWriteTime -lt (Get-Date).AddSeconds(-90) -and ($hechos -notcontains ($_.Name + '|' + $_.Length)) } |
+            Where-Object { $_.LastWriteTime -gt $desde -and $_.LastWriteTime -lt (Get-Date).AddMinutes(-15) -and ($hechos -notcontains ($_.Name + '|' + $_.Length)) } |
             Sort-Object LastWriteTime
         foreach ($z in $zips) {
             if (-not (Libre $z.FullName)) { continue }   # todavia se esta bajando
