@@ -56,10 +56,12 @@ $e = formlead_extras(['modalidad' => 'mensual', 'hora_demo' => '18'], $m, $ar('2
 caso('las 18 a las 9 h queda con la hora de ese día', ($e['demo_hora_ts'] ?? 0) === $ar('2026-10-30', 18), json_encode($e));
 $e = formlead_extras(['modalidad' => 'mensual', 'hora_demo' => 1], $m, $ar('2026-10-30', 12));
 caso('la 1 elegida a las 12 h es la de esa noche', ($e['demo_hora_ts'] ?? 0) === $ar('2026-10-31', 1));
-foreach (['', 'abc', '13.5', '25', '-1', null] as $malo) {
+foreach (['abc', '13.5', '25', '-1', null] as $malo) {
     $m = null;
     caso('se rechaza ' . json_encode($malo), formlead_extras(['hora_demo' => $malo], $m, $ar('2026-10-30', 9)) === null && ($m['motivo'] ?? '') === 'hora_demo');
 }
+$e = formlead_extras(['modalidad' => 'mensual', 'hora_demo' => ''], $m, $ar('2026-10-30', 9));
+caso('vacío = «Cualquier horario»: se acepta, sin hora programada (es opcional)', $e === ['modalidad_elegida' => 'mensual'], json_encode($e));
 caso('el formulario viejo (sin el campo) sigue andando', formlead_extras(['modalidad' => 'mensual']) === ['modalidad_elegida' => 'mensual']);
 
 @unlink(WABOT_DATA . '/conv/5493810009077.json');

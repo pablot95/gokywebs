@@ -140,13 +140,14 @@
                         <!-- A qué hora quiere la demo (29-oct). script.js arma las opciones
                              según la hora en que lo completa (de 11 a 14, de 14 a 01 o de 17
                              a 01) y wabot/form-lead.php lo vuelve a validar; la demo sale sola
-                             a esa hora (wabot/presentar.php). -->
+                             a esa hora (wabot/presentar.php). Opcional (Pablo, 29-oct): lo
+                             predeterminado es "Cualquier horario". -->
                         <div class="field-group" id="horaDemoGroup">
-                            <label class="field-label" for="hora_demo">¿A qué hora preferís recibir la demo? <span class="req">*</span></label>
-                            <select id="hora_demo" name="hora_demo" class="field-input" required aria-describedby="horaDemoAyuda">
-                                <option value="" disabled selected>Elegí un horario</option>
+                            <label class="field-label" for="hora_demo">¿A qué hora preferís recibir la demo? <span class="optional">(opcional)</span></label>
+                            <select id="hora_demo" name="hora_demo" class="field-input" aria-describedby="horaDemoAyuda">
+                                <option value="" selected>Cualquier horario</option>
                             </select>
-                            <p class="field-hint" id="horaDemoAyuda">Te la mandamos por WhatsApp a esa hora.</p>
+                            <p class="field-hint" id="horaDemoAyuda">Si elegís una hora, te la mandamos por WhatsApp a esa hora.</p>
                         </div>
 
                         <!-- Dos colores (2-oct, sin el de fondos). El que no se toca no viaja:
@@ -311,6 +312,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261029-hora-demo"></script>
+    <script type="module" src="script.js?v=20261029-hora-opcional"></script>
 </body>
 </html>

@@ -164,7 +164,8 @@ function formlead_extras($payload, &$motivo = null, $ahora = null) {
         // pago único por chat: con ella la ficha y el precio del boceto lo dicen.
         if ($modalidad === 'propia') $extras['quiere_web_propia'] = true;
     }
-    if (array_key_exists('hora_demo', $payload)) {
+    // Es opcional: vacío = "Cualquier horario" (Pablo, 29-oct), sin hora programada.
+    if (array_key_exists('hora_demo', $payload) && trim((string)(is_scalar($payload['hora_demo']) ? $payload['hora_demo'] : 'x')) !== '') {
         /* A qué hora quiere recibir la demo (29-oct): una hora entera de la
          * ventana que corresponde a AHORA (wabot_demo_horas_ventana). Si el
          * formulario quedó abierto y la ventana cambió, se le pide que elija

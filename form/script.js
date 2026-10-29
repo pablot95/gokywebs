@@ -570,14 +570,8 @@ function validarPaso2() {
         if (!firstError) firstError = modalidad;
     }
 
-    // /formb no tiene el horario: solo se pide donde está el campo.
-    if (horaDemoSelect) {
-        pintarHorasDemo();
-        if (!horaDemoSelect.value) {
-            markError(horaDemoSelect, 'Elegí a qué hora querés recibir la demo.');
-            if (!firstError) firstError = horaDemoSelect;
-        }
-    }
+    // El horario es opcional (29-oct): solo se refresca la lista por si cambió la ventana.
+    if (horaDemoSelect) pintarHorasDemo();
 
     ['referencia', 'incluir'].forEach(id => {
         const el = document.getElementById(id);
@@ -638,8 +632,8 @@ function buildPayload() {
         // lo vio el cliente (nuevos.js arma las letras en el navegador).
         ...(MOSTRAR_MODELOS ? { modelos: modelosSeleccionados.map(id => ({ id, nombre: modeloPorId(id).nombre })) } : {}),
     };
-    // La hora de la demo (29-oct): el servidor la vuelve a validar con su reloj.
-    if (horaDemoSelect) payload.hora_demo = get('hora_demo');
+    // La hora de la demo (29-oct), si eligió una: el servidor la vuelve a validar con su reloj.
+    if (horaDemoSelect && get('hora_demo') !== '') payload.hora_demo = get('hora_demo');
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
 }
@@ -701,7 +695,7 @@ function mostrarErrorServidor(json) {
         horaDemoSelect.value = '';
         pintarHorasDemo();
         verPasoDe(horaDemoSelect);
-        markError(horaDemoSelect, 'Ese horario ya no está disponible: elegí otro.');
+        markError(horaDemoSelect, 'Ese horario ya no está disponible: elegí otro o dejá "Cualquier horario".');
         horaDemoSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return true;
     }
@@ -902,7 +896,8 @@ pintarPlan();
  *   03:00 a 10:59 → de 14 a 01 h
  *   11:00 a 14:59 → de 17 a 01 h
  * Es la misma cuenta que wabot_demo_horas_ventana (wabot/lib.php): si cambia
- * allá, cambiar acá. El valor es la hora (0-23); el servidor arma la fecha. */
+ * allá, cambiar acá. El valor es la hora (0-23); el servidor arma la fecha.
+ * Es opcional (Pablo, 29-oct): lo predeterminado es "Cualquier horario" (''). */
 const horaDemoSelect = document.getElementById('hora_demo');
 
 function horasDemo(ahora = Date.now()) {
@@ -932,7 +927,7 @@ function pintarHorasDemo() {
     if (horaDemoSelect.dataset.firma === firma) return;
     const elegida = horaDemoSelect.value;
     horaDemoSelect.dataset.firma = firma;
-    horaDemoSelect.innerHTML = '<option value="" disabled>Elegí un horario</option>'
+    horaDemoSelect.innerHTML = '<option value="">Cualquier horario</option>'
         + horas.map(o => `<option value="${o.hora}">${o.texto}</option>`).join('');
     horaDemoSelect.value = horas.some(o => String(o.hora) === elegida) ? elegida : '';
 }
