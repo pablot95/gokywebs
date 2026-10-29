@@ -144,6 +144,28 @@ if (Test-Path $Candado) {
     Remove-Item $Candado -Force
 }
 
+# --- Imagenes de los prospectos nuevos a Descargas\imagenes-prospectos\<negocio> (29-oct) ---
+# Una corrida por vez (la baja cada 5 min alcanza); si falla, no frena las demos.
+function Bajar-Imagenes-Prospectos {
+    try {
+        $ErrorActionPreference = 'Continue'
+        $lineas = @(& php (Join-Path $PSScriptRoot 'bajar-imagenes.php') 2>$null)
+        $ErrorActionPreference = 'Stop'
+        foreach ($l in $lineas) {
+            if (-not "$l".Trim().StartsWith('{')) { continue }
+            $r = "$l" | ConvertFrom-Json
+            $dest = Join-Path $Descargas ('imagenes-prospectos\' + $r.slug)
+            New-Item -ItemType Directory -Force -Path $dest | Out-Null
+            Expand-Archive -LiteralPath $r.zip -DestinationPath $dest -Force
+            Remove-Item -LiteralPath $r.zip -Force
+            Anotar ('Imagenes de ' + $r.nombre + ' -> ' + $dest)
+            Avisar 'Imagenes del prospecto' ($r.nombre + ' - ya estan en Descargas')
+        }
+    } catch { Anotar ('No se pudieron bajar las imagenes de los prospectos: ' + $_.Exception.Message) }
+    finally { $ErrorActionPreference = 'Stop' }
+}
+Bajar-Imagenes-Prospectos
+
 $zip = $null
 try {
     while ($zip = Reclamar-Siguiente) {
