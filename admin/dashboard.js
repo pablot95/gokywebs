@@ -3626,6 +3626,22 @@ async function downloadImagenesCliente(logoUrl, negocio) {
 }
 window.downloadImagenesCliente = downloadImagenesCliente;
 
+/* El zip de imágenes que armó ChatGPT («Gokywebs Copiar 10») para el boceto
+   (29-oct): lo sube la PC (tools/chatgpt-zips) y queda en el panel del bot. */
+async function downloadImagenesIa(id, nombre) {
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch('../wabot/admin.php?accion=imagenes_ia&id=' + encodeURIComponent(id) + '&nombre=' + encodeURIComponent(nombre || ''),
+                                { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('El panel del bot no devolvió el zip');
+        guardarBlobComoArchivo(await res.blob(), nombreDeLaRespuesta(res, nombre || ('imagenes-ia-' + id + '.zip')));
+    } catch (err) {
+        console.error(err);
+        alert('No se pudo descargar el zip de imágenes de ChatGPT.');
+    }
+}
+window.downloadImagenesIa = downloadImagenesIa;
+
 function initRealtime() {
     const q = query(collection(db, "clientes"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
@@ -6111,7 +6127,10 @@ function renderPropuestas() {
                 <td class="center">
                     ${p.logoUrl
                         ? `<button type="button" onclick="downloadImagenesCliente('${escapeHtml(p.logoUrl)}','${escapeHtml(slugNegocio(nombreNegocio) || '')}')" class="btn-ghost" style="font-size:12px;padding:4px 8px" title="Descargar todas las imágenes que mandó el cliente${Number(p.imagenes_recibidas || 0) > 1 ? ` (${Number(p.imagenes_recibidas)})` : ''}">Imágenes${Number(p.imagenes_recibidas || 0) > 1 ? ` (${Number(p.imagenes_recibidas)})` : ''}</button>`
-                        : `<span class="muted" style="font-size:12px">—</span>`}
+                        : (p.imagenesIa ? "" : `<span class="muted" style="font-size:12px">—</span>`)}
+                    ${p.imagenesIa
+                        ? `<button type="button" onclick="downloadImagenesIa('${escapeHtml(p.id)}','${escapeHtml(p.imagenesIa.nombre || '')}')" class="btn-ghost" style="font-size:12px;padding:4px 8px;margin-top:4px" title="Las imágenes y el mock up que armó ChatGPT (Copiar 10)">Zip IA</button>`
+                        : ""}
                 </td>
                 <td class="notes-col">
                     <div class="notes-cell" data-note-id="${p.id}">
@@ -6298,6 +6317,10 @@ function openPropuestaModal(id) {
     const logoRow = p.logoUrl
         ? `<div class="prop-row"><span class="prop-label">Imágenes</span><span><button onclick="downloadImagenesCliente('${escapeHtml(p.logoUrl)}','${escapeHtml(slugNegocio(negocioFields.nombreNegocio) || '')}')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar ${cuantasImgs > 1 ? `las ${cuantasImgs} imágenes` : 'la imagen'}</button> <span class="muted" style="font-size:11px">(${cuantasImgs > 1 ? 'en un zip, el logo primero' : escapeHtml(p.logoNombre || '')})</span></span></div>`
         : `<div class="prop-row"><span class="prop-label">Imágenes</span><span class="muted">No mandó ninguna</span></div>`;
+    // El zip que armó ChatGPT con «Copiar 10» (29-oct), si la PC ya lo subió.
+    const iaRow = p.imagenesIa
+        ? `<div class="prop-row"><span class="prop-label">Imágenes IA</span><span><button onclick="downloadImagenesIa('${escapeHtml(p.id)}','${escapeHtml(p.imagenesIa.nombre || '')}')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar el zip de ChatGPT</button> <span class="muted" style="font-size:11px">(${escapeHtml(p.imagenesIa.nombre || '')})</span></span></div>`
+        : "";
 
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const adicionalesTexto = cleanFieldValue(p.adicionales_texto);
@@ -6393,6 +6416,7 @@ function openPropuestaModal(id) {
         ${p.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[p.catalogQty] || p.catalogQty)}</span></div>` : ""}
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
         ${logoRow}
+        ${iaRow}
         <div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha</span><span>${escapeHtml(p.fecha || "—")}</span></div>
     `;
     propuestaForm.dataset.propId = p.id;

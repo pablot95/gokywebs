@@ -292,6 +292,28 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
+ * El zip de imágenes que armó ChatGPT («Gokywebs Copiar 10») para un boceto,
+ * subido desde la PC por imagenes-ia-subir.php (29-oct). El id se valida (20
+ * letras y números), así que no hay ruta que manipular.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'imagenes_ia') {
+    $idIa = (string)($_GET['id'] ?? '');
+    $rutaIa = WABOT_DATA . '/imagenes-ia/' . $idIa . '.zip';
+    if (!preg_match('/^[A-Za-z0-9]{20}$/', $idIa) || !is_file($rutaIa)) {
+        http_response_code(404);
+        exit('no hay zip para este boceto');
+    }
+    $nombreIa = preg_replace('/[^\w.\-]+/', '_', (string)($_GET['nombre'] ?? '')) ?: ('imagenes-ia-' . $idIa . '.zip');
+    header('Content-Type: application/zip');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Length: ' . filesize($rutaIa));
+    header('Content-Disposition: attachment; filename="' . $nombreIa . '"');
+    header('Cache-Control: private, max-age=0, no-store');
+    readfile($rutaIa);
+    exit;
+}
+
+/**
  * Exporta las conversaciones activas en los últimos N días como un .txt
  * legible, para pasarlas afuera del panel y revisar errores de a muchas.
  * Se incluye la charla ENTERA de cualquier conversación con al menos un

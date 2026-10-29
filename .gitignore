@@ -33,3 +33,5 @@ tools/demo-auto/data/
 # Topes anti-spam de err/log.php (se regeneran solos)
 err/data/*
 !err/data/.htaccess
+# Zips de ChatGPT (tools/chatgpt-zips): perfil de Chrome con la sesion de ChatGPT, zips y estado de la PC
+tools/chatgpt-zips/data/
