@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Gokywebs - zips de ChatGPT",
+  "version": "1.0.0",
+  "description": "Baja a Descargas los zips de imágenes de la tarea «Gokywebs Copiar 10» de ChatGPT, cada 10 minutos.",
+  "permissions": ["alarms", "downloads", "storage", "scripting", "tabs"],
+  "host_permissions": ["https://chatgpt.com/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Zips de ChatGPT: tocá para revisar ahora" }
+}
