@@ -20,8 +20,18 @@
 # Este archivo va sin tildes (PowerShell 5.1 lee los .ps1 sin BOM como ANSI); los textos con
 # tildes estan en instrucciones.md.
 
+# Desde el 29-oct la demo la hace una sesion de Claude Desktop (Pablo: "no figuraban en las
+# sesiones de Claude Code escritorio"), con estos modos:
+#   -Modo tomar     reclama el proximo zip, deja las imagenes y el pedido, e imprime un JSON
+#                   {ok, zip, id, nombre, slug, pedido} (o {ok:false}). Lo llama la tarea
+#                   programada de Desktop "Demo automatica" al empezar cada corrida.
+#   -Modo terminar -ZipNombre <nombre> -Resultado "DEMO OK ..."  mueve el zip, anota, marca el
+#                   boceto hecho y avisa. Lo llama la misma sesion al final.
+#   -Modo imagenes  solo baja las imagenes que mandaron los prospectos (tarea de Windows).
+#   -Modo claude    lo de antes: lanza claude -p sin ventana (no aparece en Desktop).
 # -Simular: hace todo menos lanzar Claude. -Descargas / -Datos: otras carpetas (para probar).
-param([switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'))
+param([ValidateSet('claude', 'tomar', 'terminar', 'imagenes')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '',
+      [switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'))
 
 $ErrorActionPreference = 'Stop'
 $Repo       = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -92,14 +102,17 @@ function Marcar($zip, [string]$resultado) {
 # hay $Maximo demos en curso. Tambien deja el slot de esta corrida.
 function Reclamar-Siguiente {
     Bajo-Candado {
-        # 15 min: tools/chatgpt-zips/subir.py (cada 10 min) ya lo subio a la ficha antes de moverlo.
         Get-ChildItem -LiteralPath $Slots -File | Where-Object { -not (Get-Process -Id ([int]$_.BaseName) -ErrorAction SilentlyContinue) } | Remove-Item -Force
         $ajenos = @(Get-ChildItem -LiteralPath $Slots -File | Where-Object { $_.BaseName -ne [string]$PID })
         if ($ajenos.Count -ge $Maximo) { return $null }
         $e = Leer-Estado
+        # Las de Desktop no tienen slot: cuentan las 'en proceso' de las ultimas 6 horas.
+        $enCurso = @($e.hechos | Where-Object { $_.resultado -eq 'en proceso' -and [datetime]::Parse($_.fecha) -gt (Get-Date).AddHours(-6) })
+        if ($enCurso.Count -ge $Maximo) { return $null }
         $desde = [datetime]::Parse($e.desde)
         $hechos = @($e.hechos | ForEach-Object { $_.zip + '|' + $_.tam })
         $zips = Get-ChildItem -LiteralPath $Descargas -Filter '*.zip' -File |
+            # 15 min: tools/chatgpt-zips/subir.py (cada 10 min) ya lo subio a la ficha antes de moverlo.
             Where-Object { $_.LastWriteTime -gt $desde -and $_.LastWriteTime -lt (Get-Date).AddMinutes(-15) -and ($hechos -notcontains ($_.Name + '|' + $_.Length)) } |
             Sort-Object LastWriteTime
         foreach ($z in $zips) {
@@ -166,7 +179,33 @@ function Bajar-Imagenes-Prospectos {
     } catch { Anotar ('No se pudieron bajar las imagenes de los prospectos: ' + $_.Exception.Message) }
     finally { $ErrorActionPreference = 'Stop' }
 }
-Bajar-Imagenes-Prospectos
+if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; exit 0 }
+if ($Modo -eq 'claude') { Bajar-Imagenes-Prospectos }
+
+# --- Fin de una demo hecha por una sesion de Desktop ---
+if ($Modo -eq 'terminar') {
+    $e = Bajo-Candado { Leer-Estado }
+    $anotado = @($e.hechos | Where-Object { $_.zip -eq $ZipNombre }) | Select-Object -Last 1
+    if (-not $anotado) { Write-Output ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); exit 1 }
+    $ruta = Join-Path $Descargas $ZipNombre
+    # Nombre y tamanio como se reclamo (Marcar los usa de clave; el FileInfo ya movido no da Length).
+    $z = [pscustomobject]@{ Name = $ZipNombre; Length = $anotado.tam; FullName = $(if (Test-Path -LiteralPath $ruta) { $ruta } else { $null }) }
+    if ($z.FullName) { Mover-Zip $z 'procesados' }
+    Marcar $z $Resultado
+    $slug = if ($Resultado -match '/demo/([^/]+)/') { $Matches[1] } else { $ZipNombre }
+    Anotar ('Termino (Desktop) ' + $slug + ': ' + $Resultado)
+    if ($Resultado -match '^DEMO OK' -and $ZipNombre -match '_([A-Za-z0-9]{20})(?: \(\d+\))?\.zip$') {
+        $ErrorActionPreference = 'Continue'
+        $m = (& php (Join-Path $PSScriptRoot 'marcar-boceto.php') $Matches[1] 2>$null | Out-String)
+        $ErrorActionPreference = 'Stop'
+        Anotar ('Boceto hecho de ' + $slug + ': ' + $m.Trim())
+        Avisar ('Demo lista: ' + $slug) $Resultado
+    }
+    elseif ($Resultado -match '^DEMO OK') { Avisar ('Demo lista: ' + $slug) ($Resultado + ' (marca Boceto hecho a mano: el zip no trae el id)') }
+    else { Avisar ('Demo con problemas: ' + $ZipNombre) $Resultado }
+    Write-Output 'ok'
+    exit 0
+}
 
 $zip = $null
 try {
@@ -233,6 +272,12 @@ try {
         [IO.File]::WriteAllText($pedido, $texto, $Utf8)
         $relativo = if ($pedido.StartsWith($Repo + '\')) { $pedido.Substring($Repo.Length + 1).Replace('\', '/') } else { $pedido }
 
+        if ($Modo -eq 'tomar') {
+            Anotar ('Tomado por una sesion de Desktop: ' + $r.slug + ' (pedido ' + $relativo + ')')
+            [pscustomobject]@{ ok = $true; zip = $zip.Name; id = $r.id; nombre = $r.nombre; slug = $r.slug; pedido = $relativo } | ConvertTo-Json -Compress
+            exit 0
+        }
+
         if ($Simular) {
             Anotar ('SIMULADO: no se lanzo Claude. Pedido en ' + $relativo)
             Marcar $zip 'simulado'
@@ -269,10 +314,14 @@ try {
         else { Avisar ('Demo con problemas: ' + $r.nombre) $final }
         # sigue el while: toma el proximo zip libre si hay lugar
     }
+    if ($Modo -eq 'tomar') { '{"ok":false}' }
 } catch {
     Anotar ('ERROR: ' + $_.Exception.Message)
     Avisar 'Demo automatica: error' $_.Exception.Message
     if ($zip) { try { Marcar $zip ('error: ' + $_.Exception.Message) } catch {} }
+    if ($Modo -eq 'tomar') { [pscustomobject]@{ ok = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress }
 } finally {
     Remove-Item -LiteralPath (Join-Path $Slots ([string]$PID)) -Force -ErrorAction SilentlyContinue
 }
+
+exit 0
