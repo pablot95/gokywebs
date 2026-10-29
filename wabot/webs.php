@@ -7,7 +7,7 @@
  * Dos plantillas de Utilidad (ver plantillas-meta.md):
  *   - `reporte_mensual_web`: a partir del día 1 (de 10 a 20 h), a cada cliente
  *     con mantenimiento, el resumen del mes anterior de su web: disponibilidad,
- *     visitas, errores y certificado de seguridad. Una vez por mes y por cliente.
+ *     visitas y errores. Una vez por mes y por cliente.
  *   - `web_caida_resuelta`: cuando una web que estuvo caída vuelve a responder,
  *     el aviso de que pasó y ya está. Solo si estuvo caída un rato de verdad
  *     (WABOT_WEBS_CAIDA_MIN), en horario de contacto (si fue de noche, sale a la
@@ -531,7 +531,6 @@ function wabot_webs_reporte_correr($cfg, $ahora, array $estado, array $monitor, 
             'disponibilidad' => $datos['disponibilidad'],
             'visitas'        => $datos['visitas'],
             'errores'        => $datos['errores'],
-            'ssl'            => $datos['ssl'],
         ];
         $r = wabot_webs_enviar($f, 'reporte_mensual_web', $valores, $cfg, $enviar);
         if ($r === 'ocupado') continue;   // otro proceso tiene el chat: la próxima pasada

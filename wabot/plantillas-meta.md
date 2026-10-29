@@ -77,24 +77,21 @@ recibe un push con cuántos salieron y a quiénes no se les pudo mandar.
 | **Nombre en Meta** | `reporte_mensual_web` |
 | **Idioma** | `es_AR` |
 | **Categoría** | Utilidad |
-| **Variables** | {{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores, {{7}} certificado |
+| **Variables** | {{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores |
 
 **Cuerpo para cargar en Meta:**
 
 ```
 Hola {{1}}, te paso el resumen de {{2}} de la web de {{3}}:
-
 ✅ Disponibilidad: {{4}}
 👥 Visitas: {{5}}
 🛠️ Errores: {{6}}
-🔒 Certificado de seguridad: {{7}}
 
-Todo esto es parte del mantenimiento. Si querés hacer algún cambio en la web, escribinos por acá.
+Si necesitas ayuda con algo o hacer alguna modificacion, escribinos al 1125068578
 ```
 
 Ejemplos de valores (Meta los pide al cargar la plantilla): `Juan`, `octubre`,
-`Panadería Sol`, `100 % (online todo el mes)`, `312 visitas`, `ninguno detectado`,
-`vigente hasta el 15/01/2027`. Otros valores posibles: `99,8 % (una caída de 1 hora,
+`Panadería Sol`, `100 % (online todo el mes)`, `312 visitas`, `ninguno detectado`. Otros valores posibles: `99,8 % (una caída de 1 hora,
 ya resuelta)`, `sin visitas registradas`, `3 detectados, 2 corregidos, 1 en revisión`.
 
 De dónde sale cada número:
@@ -107,8 +104,6 @@ De dónde sale cada número:
   qué hizo con cada uno la rutina de Claude (`err/data/estados.json`): `pr`/`rama`
   cuentan como corregidos; `descartado`/`no_reproduce`/`sin_repo` como revisados sin
   impacto; el resto, en revisión.
-- **Certificado**: la fecha de vencimiento que devuelve el servidor al pedir la
-  portada por https.
 
 ### Web caída y resuelta
 

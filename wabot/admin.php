@@ -3214,7 +3214,7 @@ function burbujaCita(t, chat) {
             ];
             $plantillasVariables = [
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
-                'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores, {{7}} certificado',
+                'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
             ];
             $plantillasCuando = [

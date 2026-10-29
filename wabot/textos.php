@@ -572,8 +572,8 @@ function wabot_textos_default() {
             'categoria' => 'UTILITY',
             'activa' => false,
             'automatico' => true,
-            'params' => ['nombre', 'mes', 'negocio', 'disponibilidad', 'visitas', 'errores', 'ssl'],
-            'texto' => "Hola {nombre}, te paso el resumen de {mes} de la web de {negocio}:\n\n✅ Disponibilidad: {disponibilidad}\n👥 Visitas: {visitas}\n🛠️ Errores: {errores}\n🔒 Certificado de seguridad: {ssl}\n\nTodo esto es parte del mantenimiento. Si querés hacer algún cambio en la web, escribinos por acá.",
+            'params' => ['nombre', 'mes', 'negocio', 'disponibilidad', 'visitas', 'errores'],
+            'texto' => "Hola {nombre}, te paso el resumen de {mes} de la web de {negocio}:\n✅ Disponibilidad: {disponibilidad}\n👥 Visitas: {visitas}\n🛠️ Errores: {errores}\n\nSi necesitas ayuda con algo o hacer alguna modificacion, escribinos al 1125068578",
         ],
         // Utilidad (29-oct): cuando una web que estuvo caída vuelve a responder (webs.php).
         'web_caida_resuelta' => [
