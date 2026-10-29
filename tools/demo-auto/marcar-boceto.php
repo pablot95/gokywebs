@@ -1,12 +1,14 @@
 <?php
 /**
  * tools/demo-auto/marcar-boceto.php — deja prendido «Boceto hecho» en el prospecto cuando la
- * demo automática salió bien (Pablo, 18-oct: «boceto hecho no está marcado»).
+ * demo automática salió bien (Pablo, 18-oct: «boceto hecho no está marcado»), y también
+ * «Copiar 10» (29-oct: «marcá el botón de Copiar 10 y Boceto hecho cuando esté terminado,
+ * así se sabe también cuándo entregar un prospecto»).
  *
  *   php tools/demo-auto/marcar-boceto.php <id de la propuesta>
  *
- * Escribe solo `bocetoHecho: true` en `propuestas/<id>` (el mismo campo del botón del admin,
- * que es solo visual) con la cuenta de servicio. Si el prospecto ya pasó a Clientes (la
+ * Escribe solo `imgLanCopiado: true` y `bocetoHecho: true` en `propuestas/<id>` (los campos
+ * de los dos botones del admin, que son solo visuales) con la cuenta de servicio. Si el prospecto ya pasó a Clientes (la
  * propuesta se borra al convertirla) no hay botón que marcar y sale sin tocar nada.
  * Lo llama vigilar.ps1; devuelve un JSON {ok, ...}.
  */
@@ -27,11 +29,11 @@ if (realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
     $sa = wabot_push_cuenta();
     $url = 'https://firestore.googleapis.com/v1/projects/' . rawurlencode($sa['project_id'])
          . '/databases/(default)/documents/propuestas/' . rawurlencode($id)
-         . '?updateMask.fieldPaths=bocetoHecho&currentDocument.exists=true';
+         . '?updateMask.fieldPaths=imgLanCopiado&updateMask.fieldPaths=bocetoHecho&currentDocument.exists=true';
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_CUSTOMREQUEST => 'PATCH',
-        CURLOPT_POSTFIELDS => json_encode(['fields' => ['bocetoHecho' => ['booleanValue' => true]]]),
+        CURLOPT_POSTFIELDS => json_encode(['fields' => ['imgLanCopiado' => ['booleanValue' => true], 'bocetoHecho' => ['booleanValue' => true]]]),
         CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . prospecto_chatgpt_access_token(), 'Content-Type: application/json'],
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 30,
