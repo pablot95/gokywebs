@@ -243,7 +243,7 @@ $pl = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
 caso('el reporte va con sus 6 variables en orden', $okP && ($pl[1] ?? '') === 'reporte_mensual_web' && ($pl[3] ?? []) === ['Juan', 'octubre', 'Panadería Sol', '100 % (online todo el mes)', '312 visitas', 'ninguno detectado'], json_encode($pl, JSON_UNESCAPED_UNICODE));
 $ult = end($cv['transcript']);
 caso('en el chat queda el texto con los datos', strpos((string)($ult['t'] ?? ''), "Hola Juan, te paso el resumen de octubre de la web de Panadería Sol:\n✅ Disponibilidad: 100 % (online todo el mes)\n👥 Visitas: 312 visitas") === 0, (string)($ult['t'] ?? ''));
-caso('el texto termina con el WhatsApp de Pablo, sin certificado', str_ends_with((string)($ult['t'] ?? ''), "Errores: ninguno detectado\n\nSi necesitas ayuda con algo o hacer alguna modificacion, escribinos al 1125068578") && mb_stripos((string)$ult['t'], 'certificado') === false, (string)($ult['t'] ?? ''));
+caso('el texto termina con el saludo de Pablo, sin certificado', str_ends_with((string)($ult['t'] ?? ''), "Errores: ninguno detectado\n\nSi necesitas algo, escribime, saludos!") && mb_stripos((string)$ult['t'], 'certificado') === false, (string)($ult['t'] ?? ''));
 caso('y el bot queda apagado en ese chat (contesta Pablo)', !empty($cv['bot_off']));
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $cv2 = conv_nueva();

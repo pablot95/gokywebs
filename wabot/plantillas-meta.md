@@ -87,7 +87,7 @@ Hola {{1}}, te paso el resumen de {{2}} de la web de {{3}}:
 👥 Visitas: {{5}}
 🛠️ Errores: {{6}}
 
-Si necesitas ayuda con algo o hacer alguna modificacion, escribinos al 1125068578
+Si necesitas algo, escribime, saludos!
 ```
 
 Ejemplos de valores (Meta los pide al cargar la plantilla): `Juan`, `octubre`,
