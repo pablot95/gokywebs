@@ -35,6 +35,7 @@ let currentModalDateKey = null;
 let currentModalData = null;
 let editingTaskId = null; // task del resumen "por task" que se está editando con el lápiz
 let taskTypeNames = ['CP', 'PT', 'O'];
+let calendarProjects = []; // proyectos del usuario (colección categories) para cambiar el de una task
 let doneDays = {}; // dateKey -> true. Independiente de "finalized" (que se resetea con cualquier edición).
 
 // Interpreta "HH:MM:SS", "MM:SS" o minutos sueltos → segundos (null si es inválido)
@@ -98,6 +99,23 @@ export function setCalendarTaskTypes(names = []) {
     taskTypeNames = [...new Set(names.map(name => String(name).trim()).filter(Boolean))];
     if (!taskTypeNames.length) taskTypeNames = ['CP', 'PT', 'O'];
     if (currentModalData) renderDayModal();
+}
+
+export function setCalendarProjects(list = []) {
+    calendarProjects = list.map(c => ({ id: c.id, name: c.name || '' }));
+    if (currentModalData) renderDayModal();
+}
+
+// Opciones del select de proyecto: los actuales + el que tenía la task ese día si ya no existe
+function projectOptionsFor(p) {
+    const opts = calendarProjects.map(c => ({ id: c.id, name: c.name }));
+    if (p.categoryId && !opts.some(o => o.id === p.categoryId)) {
+        opts.push({ id: p.categoryId, name: p.categoryName || 'Proyecto borrado' });
+    }
+    return `
+        <option value="">Sin proyecto</option>
+        ${opts.map(o => `<option value="${escAttr(o.id)}" ${p.categoryId === o.id ? 'selected' : ''}>${escHtml(o.name)}</option>`).join('')}
+    `;
 }
 
 function getDayTaskTypeNames(data) {
@@ -305,8 +323,11 @@ function renderDayModal() {
                         ${editing
                             ? `<input class="modal-task-name-input" data-edit-task-name="${escAttr(id)}" maxlength="80" value="${escAttr(p.name || 'Task')}" aria-label="Editar nombre de la task">`
                             : `<span class="name">${escHtml(p.name || 'Task')}</span>`}
-                        <span class="cat-label">${escHtml(p.categoryName || 'Sin proyecto')}</span>
-                        ${p.completed ? '<span class="completed-label">completada</span>' : ''}
+                        ${editing
+                            ? `<select class="modal-task-project-select" data-edit-task-project="${escAttr(id)}" aria-label="Proyecto de la task">${projectOptionsFor(p)}</select>
+                               <label class="modal-task-completed"><input type="checkbox" data-edit-task-completed="${escAttr(id)}" ${p.completed ? 'checked' : ''}> Completada</label>`
+                            : `<span class="cat-label">${escHtml(p.categoryName || 'Sin proyecto')}</span>
+                               ${p.completed ? '<span class="completed-label">completada</span>' : ''}`}
                     </div>
                     <div class="modal-task-tipo">
                         <select class="modal-task-tipo-select" data-edit-task-tipo="${escAttr(id)}" aria-label="Categoría de la task" ${editing ? '' : 'disabled'}>
@@ -317,7 +338,9 @@ function renderDayModal() {
                         ? `<input class="modal-task-time-input" data-edit-task-time="${escAttr(id)}" value="${formatTime(p.seconds || 0)}" inputmode="numeric" aria-label="Editar tiempo de la task">`
                         : `<span class="time">${fmtTime(taskDisplaySeconds(p))}</span>`}
                     <button class="modal-task-edit${editing ? ' is-done' : ''}" data-${editing ? 'done' : 'edit'}-task="${escAttr(id)}" type="button" aria-label="${editing ? 'Guardar cambios' : 'Editar task'}" title="${editing ? 'Guardar' : 'Editar task'}">${editing ? '✓' : '✎'}</button>
-                    ${p.comment ? `<p class="task-comment">${escHtml(p.comment)}</p>` : ''}
+                    ${editing
+                        ? `<textarea class="modal-task-comment-input" data-edit-task-comment="${escAttr(id)}" rows="2" maxlength="1000" placeholder="Comentario (opcional)" aria-label="Comentario de la task">${escHtml(p.comment || '')}</textarea>`
+                        : (p.comment ? `<p class="task-comment">${escHtml(p.comment)}</p>` : '')}
                 </div>
             `;
             }).join('');
@@ -338,9 +361,10 @@ function renderDayModal() {
         });
 
         // Enter guarda, Escape cancela la edición
-        projectsEl.querySelectorAll('[data-edit-task-name], [data-edit-task-time]').forEach(inp => {
+        projectsEl.querySelectorAll('[data-edit-task-name], [data-edit-task-time], [data-edit-task-comment]').forEach(inp => {
             inp.addEventListener('keydown', e => {
-                if (e.key === 'Enter') { e.preventDefault(); saveDayTaskEdits(editingTaskId); }
+                // en el comentario Enter hace salto de línea; Ctrl/Cmd+Enter guarda
+                if (e.key === 'Enter' && (!inp.matches('textarea') || e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDayTaskEdits(editingTaskId); }
                 if (e.key === 'Escape') { e.preventDefault(); editingTaskId = null; renderDayModal(); }
             });
         });
@@ -405,7 +429,8 @@ function renderDayModal() {
 }
 
 // Guarda los cambios hechos con el lápiz en una task del resumen "por task":
-// nombre, tiempo y categoría, todo en una sola escritura.
+// nombre, proyecto, categoría, tiempo, completada y comentario, todo en una sola escritura.
+// Solo toca el registro de ese día (no el proyecto actual de la task en "Hoy").
 async function saveDayTaskEdits(projId) {
     if (!currentModalDateKey || !currentModalData || !projId) {
         editingTaskId = null; renderDayModal(); return;
@@ -417,6 +442,9 @@ async function saveDayTaskEdits(projId) {
     const nameInput = row?.querySelector('[data-edit-task-name]');
     const timeInput = row?.querySelector('[data-edit-task-time]');
     const tipoSelect = row?.querySelector('[data-edit-task-tipo]');
+    const projectSelect = row?.querySelector('[data-edit-task-project]');
+    const completedInput = row?.querySelector('[data-edit-task-completed]');
+    const commentInput = row?.querySelector('[data-edit-task-comment]');
 
     const patch = {};
     let secondsChanged = false;
@@ -448,6 +476,32 @@ async function saveDayTaskEdits(projId) {
         if (newTipo !== curTipo) {
             patch[`projects.${projId}.tipo`] = newTipo === null ? deleteField() : newTipo;
             if (newTipo === null) delete proj.tipo; else proj.tipo = newTipo;
+        }
+    }
+
+    if (projectSelect) {
+        const newCatId = projectSelect.value || null;
+        if (newCatId !== (proj.categoryId || null)) {
+            const opt = projectSelect.selectedOptions[0];
+            const newCatName = newCatId ? (calendarProjects.find(c => c.id === newCatId)?.name || opt?.textContent.trim() || null) : null;
+            patch[`projects.${projId}.categoryId`] = newCatId;
+            patch[`projects.${projId}.categoryName`] = newCatName;
+            proj.categoryId = newCatId;
+            proj.categoryName = newCatName;
+        }
+    }
+
+    if (completedInput && completedInput.checked !== !!proj.completed) {
+        patch[`projects.${projId}.completed`] = completedInput.checked;
+        proj.completed = completedInput.checked;
+        secondsChanged = true; // completada redondea a cuarto de hora → cambia el total contado
+    }
+
+    if (commentInput) {
+        const newComment = commentInput.value.trim();
+        if (newComment !== (proj.comment || '')) {
+            patch[`projects.${projId}.comment`] = newComment ? newComment : deleteField();
+            if (newComment) proj.comment = newComment; else delete proj.comment;
         }
     }
 

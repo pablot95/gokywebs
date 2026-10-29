@@ -6,7 +6,7 @@ import {
     onSnapshot, query, orderBy, serverTimestamp, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { formatTime, escHtml, getDateKey, getDisplayDateLabel, toast, roundSecondsToQuarterHour } from './utils.js';
-import { initCalendar, refreshCalendar, setCalendarTaskTypes } from './calendar.js';
+import { initCalendar, refreshCalendar, setCalendarTaskTypes, setCalendarProjects } from './calendar.js';
 
 const $ = id => document.getElementById(id);
 
@@ -588,6 +588,7 @@ function listenCategories(uid) {
 
     onSnapshot(q, snap => {
         categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setCalendarProjects(categories);
         renderCategories(uid);
         renderCategorySelect();
         renderProjects(uid);

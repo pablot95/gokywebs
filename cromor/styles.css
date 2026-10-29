@@ -1875,6 +1875,45 @@ input.clock-digital[readonly] {
     outline: none;
 }
 
+.modal-task-project-select {
+    width: 100%;
+    border: 1.5px solid var(--amarillo-fuerte);
+    border-radius: 8px;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: inherit;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .3rem .45rem;
+    outline: none;
+    cursor: pointer;
+}
+
+.modal-task-completed {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    width: fit-content;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--texto-claro);
+    cursor: pointer;
+}
+
+.modal-task-comment-input {
+    flex-basis: 100%;
+    width: 100%;
+    border: 1.5px solid var(--amarillo-fuerte);
+    border-radius: 8px;
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: inherit;
+    font-size: .8rem;
+    padding: .4rem .55rem;
+    resize: vertical;
+    outline: none;
+}
+
 /* ── "Por proyecto": un proyecto agrupa varias categorías, cada una con su tiempo sumado ── */
 .modal-combo-group {
     display: flex;
