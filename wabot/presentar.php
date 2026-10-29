@@ -15,6 +15,13 @@
  * que devuelve el botón + el id del cliente) y el admin, al abrirse, la pasa a
  * Seguimiento con el mismo código del botón (dashboard.js,
  * finalizarAutoPresentadas). Así el plan y los precios no se copian a PHP.
+ *
+ * Hora elegida (Pablo, 29-oct: «quiero que envíes automáticamente cada boceto,
+ * si está terminado, en cada horario seleccionado»): el formulario pregunta a
+ * qué hora quiere la demo (wabot_demo_horas_ventana) y el boceto la trae en
+ * `demoProgramadaAt`. Esos salen a esa hora aunque la presentación de las
+ * 18/14 h siga apagada (`presentar_hora_elegida: false` los apaga). Si a la
+ * hora la demo no está publicada, avisa a Pablo enseguida y sale apenas esté.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -299,10 +306,13 @@ function wabot_presentar_fs_marcar($id, array $marca) {
 function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $presentar = null, $marcar = null, $hayDemo = null, $avisar = null) {
     $ahora = $ahora ?? time();
     $res = ['revisadas' => 0, 'presentadas' => 0, 'sin_enviar' => 0, 'esperando_demo' => 0, 'detalle' => []];
-    // Apagada desde el 20-oct (Pablo): solo corre con `presentar_auto: true` en la config.
-    if (empty(((array)$cfg)['presentar_auto'])) return $res + ['apagado' => true];
+    // La de las 18/14 h, apagada desde el 20-oct (Pablo): solo con `presentar_auto: true`.
+    // La de la hora que eligió el cliente (29-oct) corre salvo `presentar_hora_elegida: false`.
+    $porTurno = !empty(((array)$cfg)['presentar_auto']);
+    $porHora = (((array)$cfg)['presentar_hora_elegida'] ?? true) !== false;
+    if (!$porTurno && !$porHora) return $res + ['apagado' => true];
     $hora = wabot_hora_local($ahora);
-    if ($hora < 9 || $hora >= 22) return $res;
+    $horaDecente = $hora >= 9 && $hora < 22;
 
     $presentar = $presentar ?? function ($datos) use ($cfg) { return wabot_presentar_muestra($datos, $cfg); };
     $marcar = $marcar ?? 'wabot_presentar_fs_marcar';
@@ -323,9 +333,28 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
         if (!empty($p['autoPresentada'])) continue;
         $creado = strtotime((string)($p['createdAt'] ?? ''));
         if (!$creado || $creado < $desde) continue;
+        // La hora que eligió en el formulario manda; sin ella, el turno de las 18/14 h.
+        $programada = (int)strtotime((string)($p['demoProgramadaAt'] ?? ''));
+        if ($programada > 0 ? !$porHora : !$porTurno) continue;
         $res['revisadas']++;
-        $turno = wabot_presentar_turno($creado);
-        if ($ahora < $turno) continue;
+        $turno = $programada > 0 ? $programada : wabot_presentar_turno($creado);
+        if ($ahora < $turno) {
+            // Falta una hora para la que eligió y la demo no está: aviso a Pablo (una vez).
+            if ($programada > 0 && $turno - $ahora <= 3600 && empty($espera['antes:' . $id])) {
+                $negocio = trim((string)($p['nombre_negocio'] ?? '')) ?: trim((string)($p['rubro'] ?? ''));
+                $slug = wabot_slug_demo($negocio);
+                if ($slug !== '' && !$hayDemo($slug)) {
+                    $avisar('Demo para las ' . sprintf('%02d:00', wabot_hora_local($turno)), $negocio . ' pidió la demo a esa hora y todavía no está demo/' . $slug . '/. Sale sola apenas la publiques.');
+                    $espera['antes:' . $id] = $ahora;
+                    $esperaCambio = true;
+                }
+            }
+            continue;
+        }
+        /* Fuera de 9 a 22 h no sale nada... salvo en las 2 horas que siguen a la
+         * hora que eligió él (puede elegir hasta la 1 de la mañana). Una demo
+         * que se publica tarde sale a la mañana. */
+        if (!$horaDecente && !($programada > 0 && $ahora < $turno + 2 * 3600)) continue;
 
         $negocio = trim((string)($p['nombre_negocio'] ?? '')) ?: trim((string)($p['rubro'] ?? ''));
         $tel = trim((string)($p['telefono'] ?? '')) ?: trim((string)($p['contacto_cel'] ?? ''));
@@ -333,8 +362,11 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
         if ($slug !== '' && !$hayDemo($slug)) {
             $res['esperando_demo']++;
             $res['detalle'][] = ['id' => $id, 'slug' => $slug, 'estado' => 'esperando_demo'];
-            if ($ahora - $turno >= 4 * 3600 && empty($espera[$id])) {
-                $avisar('Demo sin publicar', 'Le tocaba presentarse a ' . $negocio . ' y no está demo/' . $slug . '/. Presentala a mano cuando esté.');
+            // A la hora que eligió él, el aviso es enseguida: ya se le prometió.
+            if ($ahora - $turno >= ($programada > 0 ? 0 : 4 * 3600) && empty($espera[$id])) {
+                $avisar('Demo sin publicar', $programada > 0
+                    ? 'A ' . $negocio . ' le prometimos la demo a las ' . sprintf('%02d:00', wabot_hora_local($turno)) . ' y no está demo/' . $slug . '/. Sale sola apenas la publiques.'
+                    : 'Le tocaba presentarse a ' . $negocio . ' y no está demo/' . $slug . '/. Presentala a mano cuando esté.');
                 $espera[$id] = $ahora;
                 $esperaCambio = true;
             }
@@ -349,6 +381,7 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
         $marca = [
             'ts' => gmdate('Y-m-d\TH:i:s\Z', $ahora),
             'turno' => gmdate('Y-m-d\TH:i:s\Z', $turno),
+            'hora_elegida' => $programada > 0,
             'clienteId' => $clienteId,
             'slug' => (string)($envio['slug'] ?? $slug),
             'demo_ok' => !empty($envio['demo_ok']),

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/redactor.php';
+require_once __DIR__ . '/presentar.php';
 
 /* ── Paso 2 del formulario (10-sep) ───────────────────────────────────────────
  * Web de referencia y lo que quiere incluir sí o sí. El estilo de página se
@@ -75,11 +76,40 @@ function formlead_instagram_sincronizar($clave) {
 }
 
 /**
+ * La hora en que pidió la demo (29-oct), en `demoProgramadaAt` del boceto: es la
+ * que usa la presentación automática (presentar.php). El boceto nuevo ya nace
+ * con ella (wabot_lead_campos); esto es para el que ya existía. Va con la
+ * cuenta de servicio porque las reglas no dejan que el formulario sume campos.
+ */
+function formlead_demo_hora_sincronizar($clave) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    if ($clave === '') return false;
+    $conv = wabot_conv_load($clave);
+    $ts = (int)($conv['demo_hora_ts'] ?? 0);
+    if ($ts <= time() || empty($conv['lead_creado']) || empty($conv['lead_doc'])) return false;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) return true;
+    try {
+        $ch = curl_init('https://firestore.googleapis.com/v1/' . $conv['lead_doc']
+            . '?updateMask.fieldPaths=demoProgramadaAt&currentDocument.exists=true');
+        curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode(['fields' => ['demoProgramadaAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z', $ts)]]]),
+            CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . wabot_presentar_fs_token(), 'Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20]);
+        $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    } catch (Throwable $e) {
+        $res = $e->getMessage(); $code = 0;
+    }
+    if ($code >= 200 && $code < 300) return true;
+    if ($code !== 404) wabot_log('error', ['donde' => 'firestore_demo_hora', 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+    return false;
+}
+
+/**
  * Los campos del paso 2 que vinieron, limpios. null (con $motivo) si alguno se
  * pasa del tope. El formulario viejo que quedó en caché no los manda: el campo
  * que no viene no aparece en el resultado y la charla no se toca.
  */
-function formlead_extras($payload, &$motivo = null) {
+function formlead_extras($payload, &$motivo = null, $ahora = null) {
     $motivo = null;
     $extras = [];
     // Incluir hasta 2000 (Pablo, 9-oct; era 600). Mismo tope en form/script.js.
@@ -134,6 +164,18 @@ function formlead_extras($payload, &$motivo = null) {
         // pago único por chat: con ella la ficha y el precio del boceto lo dicen.
         if ($modalidad === 'propia') $extras['quiere_web_propia'] = true;
     }
+    if (array_key_exists('hora_demo', $payload)) {
+        /* A qué hora quiere recibir la demo (29-oct): una hora entera de la
+         * ventana que corresponde a AHORA (wabot_demo_horas_ventana). Si el
+         * formulario quedó abierto y la ventana cambió, se le pide que elija
+         * de nuevo: el formulario vuelve a armar la lista. */
+        $hora = $payload['hora_demo'];
+        $ventana = wabot_demo_horas_ventana($ahora);
+        if (!is_numeric($hora) || (string)(int)$hora !== trim((string)$hora) || !isset($ventana[(int)$hora])) {
+            $motivo = ['motivo' => 'hora_demo', 'campo' => 'hora_demo']; return null;
+        }
+        $extras['demo_hora_ts'] = $ventana[(int)$hora];
+    }
     if (array_key_exists('modelos', $payload)) {
         /* Paso 3 (16-sep): llegan como [{id, nombre}]. No hay catálogo del lado
          * del servidor —nuevos.js arma las letras en el navegador—, así que se
@@ -185,7 +227,8 @@ function formlead_extras_guardar($base, $extras) {
     if ($aplicar) {
         foreach ($extras as $campo => $valor) {
             if ($valor === '') continue;   // vacío no borra lo que ya se sabía
-            if ($soloCompletar && !empty($conv[$campo])) continue;
+            // La hora de la demo es la de este envío, aunque hubiera una de antes.
+            if ($soloCompletar && !empty($conv[$campo]) && $campo !== 'demo_hora_ts') continue;
             $conv[$campo] = $valor;
         }
         // El formulario ya se la preguntó: el chat no se la vuelve a pedir.
@@ -201,6 +244,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
     if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único'][$extras['modalidad_elegida']] ?? 'Plan mensual');
+    if (!empty($extras['demo_hora_ts'])) $partes[] = 'Demo: ' . wabot_demo_hora_frase($extras['demo_hora_ts']) . ' (eligió la hora)';
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
     elseif (array_key_exists('modalidad_elegida', $extras)) $partes[] = 'Modelos: a elección del diseñador (dos)';
     if ($partes) {
@@ -293,8 +337,11 @@ if ($base !== null) {
 }
 
 $res = wabot_form_lead_procesar($payload, $cfg);
-// Con el boceto ya creado, el Instagram que dejó en el formulario (28-sep).
-if (!empty($res['ok']) && $base !== null) formlead_instagram_sincronizar($base['clave'] ?? '');
+// Con el boceto ya creado, el Instagram que dejó en el formulario (28-sep) y la hora de la demo (29-oct).
+if (!empty($res['ok']) && $base !== null) {
+    formlead_instagram_sincronizar($base['clave'] ?? '');
+    formlead_demo_hora_sincronizar($base['clave'] ?? '');
+}
 
 if (empty($res['ok']) && !empty($res['reintentar'])) {
     http_response_code(200);

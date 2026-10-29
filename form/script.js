@@ -570,6 +570,15 @@ function validarPaso2() {
         if (!firstError) firstError = modalidad;
     }
 
+    // /formb no tiene el horario: solo se pide donde está el campo.
+    if (horaDemoSelect) {
+        pintarHorasDemo();
+        if (!horaDemoSelect.value) {
+            markError(horaDemoSelect, 'Elegí a qué hora querés recibir la demo.');
+            if (!firstError) firstError = horaDemoSelect;
+        }
+    }
+
     ['referencia', 'incluir'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.value.trim().length > LIMITES[id]) {
@@ -629,6 +638,8 @@ function buildPayload() {
         // lo vio el cliente (nuevos.js arma las letras en el navegador).
         ...(MOSTRAR_MODELOS ? { modelos: modelosSeleccionados.map(id => ({ id, nombre: modeloPorId(id).nombre })) } : {}),
     };
+    // La hora de la demo (29-oct): el servidor la vuelve a validar con su reloj.
+    if (horaDemoSelect) payload.hora_demo = get('hora_demo');
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
 }
@@ -657,7 +668,7 @@ function limpiarErrorEnvio() {
 // Resumen e incluir: 2000 (Pablo, 9-oct: "1000 es poco"; venían en 600).
 const LIMITES = { nombre_negocio: 80, instagram: 100, resumen: 2000, colores: 200, referencia: 300, incluir: 2000 };
 const NOMBRES_CAMPO = { nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
-    referencia: 'la referencia web', incluir: 'lo que querés incluir' };
+    referencia: 'la referencia web', incluir: 'lo que querés incluir', hora_demo: 'el horario de la demo' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
  * campo, no se tira un "ocurrió un error" genérico. Si el campo está en el otro
@@ -683,6 +694,15 @@ function mostrarErrorServidor(json) {
         irAPaso(3, { enfocar: false });
         pintarElegidos('Volvé a elegir tus modelos: no pudimos leer los que marcaste.');
         mfAviso.classList.add('error');
+        return true;
+    }
+    // El formulario quedó abierto y el horario elegido ya no está: se rearma la lista.
+    if (json.motivo === 'hora_demo' && horaDemoSelect) {
+        horaDemoSelect.value = '';
+        pintarHorasDemo();
+        verPasoDe(horaDemoSelect);
+        markError(horaDemoSelect, 'Ese horario ya no está disponible: elegí otro.');
+        horaDemoSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return true;
     }
     if (json.motivo === 'telefono') {
@@ -759,6 +779,8 @@ async function enviarFormulario() {
  * llegaron al prospecto y lo contactamos nosotros. */
 function showSuccess() {
     const card = document.getElementById('formCard');
+    // "Hoy a las 18:00" → "hoy a las 18:00", para la frase de abajo.
+    const horaTexto = horaDemoSelect && horaDemoSelect.value ? horaDemoSelect.selectedOptions[0].textContent.replace(/^./, c => c.toLowerCase()) : '';
     document.body.classList.remove('paso-modelos');
     try { sessionStorage.removeItem('gw-modelos'); } catch (_) {}
     card.innerHTML = `
@@ -767,7 +789,7 @@ function showSuccess() {
             <h2 class="success-title">Listo, recibimos tus datos!</h2>
             <span class="success-badge">Recibimos tus preferencias</span>
             <p class="success-desc">
-                Vamos a revisar tus datos y los modelos que elegiste. Te escribimos por WhatsApp para coordinar los próximos pasos.
+                ${horaTexto ? `Vamos a preparar tu demo y te la mandamos por WhatsApp ${horaTexto}.` : 'Vamos a revisar tus datos y los modelos que elegiste. Te escribimos por WhatsApp para coordinar los próximos pasos.'}
             </p>
             <a href="https://www.gokywebs.com" class="success-link">Mientras tanto, explorá nuestros trabajos →</a>
         </div>
@@ -873,6 +895,52 @@ function pintarPlan() {
 }
 if (planSelect) planSelect.addEventListener('change', pintarPlan);
 pintarPlan();
+
+/* A qué hora quiere la demo (Pablo, 29-oct). Según la hora argentina en que lo
+ * completa (UTC-3 fijo, como el servidor):
+ *   15:00 a 02:59 → de 11 a 14 h (del día siguiente; de madrugada, de ese mismo día)
+ *   03:00 a 10:59 → de 14 a 01 h
+ *   11:00 a 14:59 → de 17 a 01 h
+ * Es la misma cuenta que wabot_demo_horas_ventana (wabot/lib.php): si cambia
+ * allá, cambiar acá. El valor es la hora (0-23); el servidor arma la fecha. */
+const horaDemoSelect = document.getElementById('hora_demo');
+
+function horasDemo(ahora = Date.now()) {
+    const ar = new Date(ahora - 3 * 3600 * 1000);
+    const h = ar.getUTCHours();
+    const [desde, hasta] = h >= 15 || h < 3 ? [11, 14] : (h < 11 ? [14, 25] : [17, 25]);
+    const horas = [];
+    for (let x = desde; x <= hasta; x++) {
+        const hora = x % 24;
+        const hhmm = String(hora).padStart(2, '0') + ':00';
+        // Como lo dice el bot (wabot_demo_hora_frase): de madrugada sigue siendo "mañana".
+        let texto;
+        if (hora < 3) texto = (hora === 1 ? 'Esta noche a la ' : 'Esta noche a las ') + hhmm;
+        else if (h >= 3 && h < 15) texto = 'Hoy a las ' + hhmm;
+        else texto = 'Mañana a las ' + hhmm;
+        horas.push({ hora, texto });
+    }
+    return horas;
+}
+
+/* Rearma la lista solo si cambió (el formulario puede quedar abierto horas):
+ * lo elegido se conserva si sigue en la lista nueva. */
+function pintarHorasDemo() {
+    if (!horaDemoSelect) return;
+    const horas = horasDemo();
+    const firma = horas.map(o => o.texto).join('|');
+    if (horaDemoSelect.dataset.firma === firma) return;
+    const elegida = horaDemoSelect.value;
+    horaDemoSelect.dataset.firma = firma;
+    horaDemoSelect.innerHTML = '<option value="" disabled>Elegí un horario</option>'
+        + horas.map(o => `<option value="${o.hora}">${o.texto}</option>`).join('');
+    horaDemoSelect.value = horas.some(o => String(o.hora) === elegida) ? elegida : '';
+}
+pintarHorasDemo();
+if (horaDemoSelect) {
+    setInterval(pintarHorasDemo, 60 * 1000);
+    horaDemoSelect.addEventListener('focus', pintarHorasDemo);
+}
 
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.

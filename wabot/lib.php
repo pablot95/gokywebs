@@ -391,7 +391,9 @@ function wabot_personalizar($texto, $conv) {
     // {entrega} = "hoy" o "mañana" según la hora en que se cerró el prediseño.
     if (strpos($texto, '{entrega}') !== false) {
         $cuando = wabot_dia_entrega(time());
-        $texto = str_replace('{entrega}', $cuando['palabra'], $texto);
+        // La hora que eligió en el formulario (29-oct), si todavía no pasó.
+        $palabra = (int)($conv['demo_hora_ts'] ?? 0) > time() ? wabot_demo_hora_frase((int)$conv['demo_hora_ts']) : $cuando['palabra'];
+        $texto = str_replace('{entrega}', $palabra, $texto);
     }
     if (strpos($texto, '{nombre}') === false) return $texto;
     $primero = wabot_primer_nombre($conv);
@@ -1607,6 +1609,8 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
               'estilo', 'incluir', 'objetivos',
               // La forma de pago que eligió también (15-sep), y la web propia (19-sep).
               'modalidad_elegida', 'quiere_web_propia',
+              // Y la hora en que pidió la demo (29-oct).
+              'demo_hora_ts',
               // El precio congelado viaja con el tipo (10-sep): sin él, la
               // punta nueva de la charla cotizaba con otra lista.
               'precio_cotizado', 'sena_cotizada', 'mensualidad_cotizada', 'precio_unico_cotizado', 'precio_modelo', 'precio_cotizado_ts'] as $k) {
@@ -5843,6 +5847,44 @@ function wabot_dia_entrega($ts = null) {
     return ['palabra' => 'mañana', 'fecha' => gmdate('Y-m-d', $localTs + 86400)];
 }
 
+/**
+ * Las horas en que el cliente puede pedir la demo, según cuándo completa el
+ * formulario (Pablo, 29-oct: «si son las 11am no puede elegir 13pm; si son las
+ * 10pm no puede elegir 11pm, porque no llego, y al otro día se rompe la ventana»):
+ *   15:00 a 02:59 → de 11 a 14 h (del día siguiente; de madrugada, de ese mismo día)
+ *   03:00 a 10:59 → de 14 a 01 h
+ *   11:00 a 14:59 → de 17 a 01 h
+ * Reloj argentino, UTC-3 fijo. Devuelve [hora (0-23) => timestamp], en orden.
+ * form/script.js arma la misma lista en el navegador: si cambia acá, cambiar allá.
+ */
+function wabot_demo_horas_ventana($ahora = null) {
+    $local = (int)($ahora ?? time()) - 3 * 3600;
+    $hora = (int)gmdate('G', $local);
+    [$a, $m, $d] = array_map('intval', explode('-', gmdate('Y-m-d', $local)));
+    if ($hora >= 15)     [$dia, $desde, $hasta] = [$d + 1, 11, 14];
+    elseif ($hora < 3)   [$dia, $desde, $hasta] = [$d, 11, 14];
+    elseif ($hora < 11)  [$dia, $desde, $hasta] = [$d, 14, 25];
+    else                 [$dia, $desde, $hasta] = [$d, 17, 25];
+    $horas = [];
+    for ($h = $desde; $h <= $hasta; $h++) $horas[$h % 24] = gmmktime($h + 3, 0, 0, $m, $dia, $a);
+    return $horas;
+}
+
+/**
+ * La hora de la demo en palabras del cliente, para la confirmación del
+ * formulario y el «ya lo tengo»: "hoy a las 18:00", "mañana a las 11:00",
+ * "esta noche a la 01:00". Mismo corte de las 3 h que wabot_dia_entrega.
+ */
+function wabot_demo_hora_frase($ts, $ahora = null) {
+    $ahora = (int)($ahora ?? time());
+    $h = wabot_hora_local((int)$ts);
+    $hhmm = sprintf('%02d:00', $h);
+    $a = ($h === 1 ? 'a la ' : 'a las ') . $hhmm;
+    if ($h < 3) return 'esta noche ' . $a;
+    $mismoDia = wabot_mismo_dia_ar($ts, $ahora);
+    return ($mismoDia && wabot_hora_local($ahora) >= 3 ? 'hoy ' : 'mañana ') . $a;
+}
+
 /** ¿Los dos timestamps caen el mismo día calendario argentino (UTC-3 fijo)? */
 function wabot_mismo_dia_ar($ts1, $ts2) {
     if ((int)$ts1 <= 0 || (int)$ts2 <= 0) return false;
@@ -6168,6 +6210,8 @@ function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
      * las 3) sigue siendo "mañana": para el cliente el día todavía no empezó (mismo corte que
      * wabot_dia_entrega). Se resuelve ya, así el transcript guarda lo que leyó el cliente. */
     $entrega = ($h >= 3 && $h < 15) ? 'hoy a la tarde' : 'mañana';
+    // Eligió la hora en el formulario (29-oct): se le confirma esa.
+    if ((int)($cv['demo_hora_ts'] ?? 0) > $ahora) $entrega = wabot_demo_hora_frase((int)$cv['demo_hora_ts'], $ahora);
     return trim(wabot_personalizar(strtr($plantilla, ['{saludo}' => $saludo, '{entrega}' => $entrega]), $cv));
 }
 
@@ -6846,6 +6890,10 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     // que mostrar, así que el campo directamente no viaja.
     if (!empty($conv['chat_started_ts'])) {
         $campos['primerMensajeAt'] = ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z', (int)$conv['chat_started_ts'])];
+    }
+    // La hora en que pidió la demo en el formulario (29-oct): con ella sale sola (presentar.php).
+    if ((int)($conv['demo_hora_ts'] ?? 0) > time()) {
+        $campos['demoProgramadaAt'] = ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z', (int)$conv['demo_hora_ts'])];
     }
     return $campos;
 }

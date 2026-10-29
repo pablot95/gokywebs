@@ -116,7 +116,7 @@
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Cómo te gustaría pagar y tus colores.</p>
+                            <p class="step-header-desc">Cómo te gustaría pagar, cuándo querés la demo y tus colores.</p>
                         </div>
 
                         <!-- "¿Qué querés lograr con tu web?" se sacó el 2-oct: no cambiaba la web. -->
@@ -135,6 +135,18 @@
                                 <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
                             </select>
                             <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre pago único, plan anual y plan mensual.</p>
+                        </div>
+
+                        <!-- A qué hora quiere la demo (29-oct). script.js arma las opciones
+                             según la hora en que lo completa (de 11 a 14, de 14 a 01 o de 17
+                             a 01) y wabot/form-lead.php lo vuelve a validar; la demo sale sola
+                             a esa hora (wabot/presentar.php). -->
+                        <div class="field-group" id="horaDemoGroup">
+                            <label class="field-label" for="hora_demo">¿A qué hora preferís recibir la demo? <span class="req">*</span></label>
+                            <select id="hora_demo" name="hora_demo" class="field-input" required aria-describedby="horaDemoAyuda">
+                                <option value="" disabled selected>Elegí un horario</option>
+                            </select>
+                            <p class="field-hint" id="horaDemoAyuda">Te la mandamos por WhatsApp a esa hora.</p>
                         </div>
 
                         <!-- Dos colores (2-oct, sin el de fondos). El que no se toca no viaja:
@@ -299,6 +311,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261026-pago-unico"></script>
+    <script type="module" src="script.js?v=20261029-hora-demo"></script>
 </body>
 </html>

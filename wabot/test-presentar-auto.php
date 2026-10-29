@@ -80,7 +80,7 @@ $antes = count($marcas);
 $props['H'] = ['createdAt' => $iso($ar('2026-10-20', 9)), 'nombre_negocio' => 'Hora tarde', 'telefono' => '1150000008'];
 wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 22, 30), $props, $presentar, $marcar, $hayDemo, $avisar);
 caso('de noche (22 h en adelante) no sale nada', count($marcas) === $antes);
-$r4 = wabot_presentar_auto_correr(['presentar_auto' => false], $ar('2026-10-21', 10), $props, $presentar, $marcar, $hayDemo, $avisar);
+$r4 = wabot_presentar_auto_correr(['presentar_auto' => false, 'presentar_hora_elegida' => false], $ar('2026-10-21', 10), $props, $presentar, $marcar, $hayDemo, $avisar);
 caso('apagada en los ajustes, no hace nada', !empty($r4['apagado']) && count($marcas) === $antes);
 wabot_presentar_auto_correr($cfg, $ar('2026-10-21', 9, 1), $props, $presentar, $marcar, $hayDemo, $avisar);
 caso('a la mañana siguiente sale la que se pasó de hora', ($marcas['H']['demo_ok'] ?? false) === true);
