@@ -9399,6 +9399,7 @@ function _mantContactoHTML(c, m) {
             : destino
                 ? `<button type="button" class="btn-ghost btn-sm" ${destino} data-dom-valor="">+ Agregar dominio</button>`
                 : `<span class="muted">—</span>`) + _mantErroresHTML(c, m, dominio)
+              + _mantWebBotHTML(dominio, m ? `mantenimiento:${m.id}` : c ? `clientes:${c.id}` : "")
     };
 }
 
@@ -9658,6 +9659,108 @@ async function sincronizarRenovaciones(forzar = false) {
 }
 // Los avisos que salieron hoy aparecen sin recargar; la lista va igual solo si cambió.
 setInterval(() => sincronizarRenovaciones(true), 30 * 60 * 1000);
+
+/* ── Webs en mantenimiento → el bot (Pablo, 29-oct: "hacer visible lo invisible, lo vamos a mandar por
+   wabot a través de plantilla así se automatiza") ──
+   wabot/webs.php pide la portada de cada dominio cada media hora, avisa por plantilla cuando una web
+   que estuvo caída vuelve, y desde el día 1 manda a cada cliente el resumen del mes anterior de su web
+   (disponibilidad, visitas, errores, certificado). Igual que la renovación, el bot no sabe quiénes son:
+   cada vez que cambia la lista (los mensuales activos, con o sin suscripción, y los del plan anual) se
+   le pasa (webs_sync), y la respuesta trae cómo está cada web, los números del mes en curso y qué
+   reporte salió, que van debajo del dominio en la tabla. */
+let websBot = null;   // { plantillas: {reporte, caida}, mes, webs: {dominio: {...}}, reportes: {"coleccion:id": {mes, ts, ok, resultado}} }
+let websBotFirma = "";
+let websBotTimer = null;
+function _websFilas() {
+    if (!clientesCargados || !mantenimientoCargado) return null;
+    const clientePorMant = _clientePorSuscripcion();
+    const filas = new Map();
+    const agregar = (coleccion, ref, c, m, plan, desde) => {
+        const id = `${coleccion}:${ref.id}`;
+        if (filas.has(id)) return;
+        filas.set(id, {
+            id,
+            tel: String(_telefonoMantenimiento(c, m) || ""),
+            // Con proyecto, `negocio` es el negocio y `persona` quién lo tiene; sin proyecto, solo la persona.
+            persona: String(c?.nombre || m?.nombre || ""),
+            negocio: String(c?.proyecto || "").trim(),
+            dominio: _dominioMantenimiento(c, m) || _dominioDeErrores(c, m) || "",
+            plan,
+            desde: desde ? _diaDe(desde) : ""
+        });
+    };
+    _mantFilas().filter(f => f.m && f.clave === "activo")
+        .forEach(f => agregar("mantenimiento", f.m, clientePorMant.get(f.m.id) || null, f.m, "mensual", f.alta));
+    const { anual, mensual } = _clientesEnMantenimiento();
+    mensual.filter(c => !mantenimientoDeCliente(c) && suscripcionDe(c).estado === "activa")
+        .forEach(c => agregar("clientes", c, c, null, "mensual", suscripcionDe(c).desde));
+    anual.forEach(c => agregar("clientes", c, c, null, "anual", suscripcionDe(c).desde || mantToDate(c.entregadoAt)));
+    return [...filas.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+function programarSyncWebs() {
+    clearTimeout(websBotTimer);
+    websBotTimer = setTimeout(sincronizarWebs, 3000);
+}
+async function sincronizarWebs(forzar = false) {
+    if (!currentUser) return;
+    const filas = _websFilas();
+    if (!filas) return;
+    const firma = JSON.stringify(filas);
+    if (!forzar && firma === websBotFirma && websBot) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "webs_sync", lista: firma }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (!data?.ok) throw new Error("respuesta sin ok");
+        websBotFirma = firma;
+        websBot = { plantillas: data.plantillas || {}, mes: data.mes || "", webs: data.webs || {}, reportes: data.reportes || {} };
+        if (activeTab === "mantenimiento") renderMantenimiento();
+    } catch (e) {
+        console.warn("No se pudo pasarle al bot la lista de las webs en mantenimiento:", e);
+    }
+}
+// El estado de cada web se refresca solo (el bot chequea cada media hora); la lista va igual solo si cambió.
+setInterval(() => sincronizarWebs(true), 30 * 60 * 1000);
+
+const WEBS_MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+function _websMesNombre(ym) {
+    return WEBS_MESES[Number(String(ym || "").slice(5, 7)) - 1] || String(ym || "");
+}
+function _websFechaHora(ts) {
+    const d = new Date(ts * 1000);
+    return `${fechaCortaJs(d).slice(0, 5)} ${String(d.getHours())}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+// Debajo del dominio: cómo está la web ahora, lo que va a decir el resumen del mes y qué reporte salió.
+function _mantWebBotHTML(dominio, id) {
+    if (!websBot) return "";
+    const partes = [];
+    const w = dominio ? websBot.webs?.[erroresDominio(dominio)] : null;
+    if (w && w.ultimo_ts) {
+        const hace = Math.max(0, Math.round((Date.now() / 1000 - w.ultimo_ts) / 60));
+        const haceTxt = hace < 60 ? `hace ${hace} min` : `hace ${Math.round(hace / 60)} h`;
+        if (w.ok) {
+            partes.push(`<div class="muted" style="font-size:11px" title="El bot pide la portada cada media hora${w.ssl_hasta_ts ? `. Certificado de seguridad hasta el ${fechaCortaJs(new Date(w.ssl_hasta_ts * 1000))}` : ""}">🟢 Online · chequeada ${escapeHtml(haceTxt)}</div>`);
+        } else {
+            partes.push(`<div class="mp-vinculo mp-vinculo--falta" title="El bot no pudo cargar la portada. Te avisó por push y le avisa al cliente cuando vuelva (si la plantilla está activa).">🔴 No responde desde el ${escapeHtml(_websFechaHora(w.desde_ts))}${w.motivo ? ` · ${escapeHtml(w.motivo)}` : ""}</div>`);
+        }
+        if (w.mes) partes.push(`<div class="muted" style="font-size:11px" title="Lo que va a decir el resumen mensual del bot (${w.mes.dias} ${w.mes.dias === 1 ? "día monitoreado" : "días monitoreados"})">📊 ${escapeHtml(_websMesNombre(websBot.mes))}: ${escapeHtml(w.mes.disponibilidad)} · ${escapeHtml(w.mes.visitas)} · errores: ${escapeHtml(w.mes.errores)}</div>`);
+    }
+    const r = id ? websBot.reportes?.[id] : null;
+    if (r && r.mes) {
+        const cuando = fechaCortaJs(new Date(r.ts * 1000)).slice(0, 5);
+        const motivos = { sin_chat: "sin teléfono", telefono: "teléfono raro", ambiguo: "dos chats con ese número", error: "WhatsApp no lo aceptó",
+            sin_dominio: "sin dominio cargado", sin_datos: "sin datos de ese mes", pocos_datos: "pocos días monitoreados" };
+        partes.push(r.ok
+            ? `<div class="muted" style="font-size:11px">📨 Resumen de ${escapeHtml(_websMesNombre(r.mes))} enviado el ${escapeHtml(cuando)}</div>`
+            : `<div class="muted" style="font-size:11px" title="El bot lo intentó el ${escapeHtml(cuando)} y no salió">Resumen de ${escapeHtml(_websMesNombre(r.mes))} sin enviar: ${escapeHtml(motivos[r.resultado] || r.resultado || "error")}</div>`);
+    }
+    return partes.join("");
+}
 
 function _renovacionNota(id) {
     const e = renovaciones?.enviados?.[id];
@@ -9958,8 +10061,10 @@ function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
     const term = (searchMantInput?.value || "").trim().toLowerCase();
-    // Con cada cambio de Clientes o Mantenimiento: el bot avisa la renovación a los que pagan por afuera.
+    // Con cada cambio de Clientes o Mantenimiento: el bot avisa la renovación a los que pagan por afuera,
+    // y monitorea y reporta las webs de todos los que están en mantenimiento (29-oct).
     programarSyncRenovaciones();
+    programarSyncWebs();
     // El plan mensual muestra con qué pagó cada uno (los cobros de Intentos de cobro, 25-oct).
     if (activeTab === "mantenimiento" && (mantPlan === "mensual" || mantPlan === "vincular") && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
 

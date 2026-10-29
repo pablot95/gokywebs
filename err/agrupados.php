@@ -53,6 +53,43 @@ function err_json_leer($nombre) {
     return is_array($datos) ? $datos : [];
 }
 
+/*
+ * Sumas del mes por web (29-oct), para el resumen mensual que el bot le manda a
+ * cada cliente por WhatsApp (wabot/webs.php):
+ * - data/visitas-YYYY-MM.json  { site: { total, dias: { "YYYY-MM-DD": n } } }
+ *     una visita = el ping de err.js (uno por navegador por día), sin bots.
+ * - data/errores-YYYY-MM.json  { site: { veces, grupos: { hash: n } } }
+ *     "errores distintos" = grupos; qué pasó con cada uno lo dice estados.json.
+ * Mes y día en hora argentina (log.php fija la zona). Tope de webs por archivo
+ * para que un dominio inventado no lo haga crecer sin fin.
+ */
+const ERR_MES_MAX_WEBS = 500;
+
+function err_sumar_visita($site, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $dia = date('Y-m-d', $ahora);
+    err_json_editar('visitas-' . substr($dia, 0, 7) . '.json', function ($v) use ($site, $dia) {
+        if (!isset($v[$site]) && count($v) >= ERR_MES_MAX_WEBS) return $v;
+        $w = is_array($v[$site] ?? null) ? $v[$site] : ['total' => 0, 'dias' => []];
+        $w['total'] = (int)($w['total'] ?? 0) + 1;
+        $w['dias'][$dia] = (int)($w['dias'][$dia] ?? 0) + 1;
+        $v[$site] = $w;
+        return $v;
+    });
+}
+
+function err_sumar_error($site, $hash, $ahora = null) {
+    $ahora = $ahora ?? time();
+    err_json_editar('errores-' . date('Y-m', $ahora) . '.json', function ($v) use ($site, $hash) {
+        if (!isset($v[$site]) && count($v) >= ERR_MES_MAX_WEBS) return $v;
+        $w = is_array($v[$site] ?? null) ? $v[$site] : ['veces' => 0, 'grupos' => []];
+        $w['veces'] = (int)($w['veces'] ?? 0) + 1;
+        $w['grupos'][$hash] = (int)($w['grupos'][$hash] ?? 0) + 1;
+        $v[$site] = $w;
+        return $v;
+    });
+}
+
 /**
  * Suma una aparición del error $e (los campos que guarda log.php) a su grupo.
  * $visitante: identificador corto y anónimo (hash de IP + navegador).

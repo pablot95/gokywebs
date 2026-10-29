@@ -7,6 +7,8 @@
  *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes;
  *   - la presentación automática de la demo: 18 h o 14 h del día siguiente (presentar.php, 18-oct);
  *   - el aviso de renovación del día del cobro a los que pagan por afuera (renovacion.php, 25-oct);
+ *   - el monitoreo de las webs en mantenimiento, el aviso de caída resuelta y el
+ *     resumen mensual de cada web (webs.php, 29-oct);
  *   - el re-aviso a Pablo (push) de las charlas que le tocan y siguen sin respuesta.
  *
  * Desde el hosting, cada 5-30 minutos (zona horaria argentina para las plantillas):
@@ -24,6 +26,7 @@ require_once __DIR__ . '/engine.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/renovacion.php';
+require_once __DIR__ . '/webs.php';
 
 if (php_sapi_name() !== 'cli') {
     $auth = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');
@@ -51,6 +54,8 @@ $plantillas = wabot_plantillas_auto_correr($cfg);
 $presentarAuto = wabot_presentar_auto_correr($cfg);
 // El día del cobro, la plantilla de renovación a los que pagan por afuera de Mercado Pago (25-oct).
 $renovacion = wabot_renovacion_correr($cfg);
+// Las webs en mantenimiento: ¿responden? Avisa las caídas resueltas y, desde el día 1, el resumen del mes (29-oct).
+$webs = wabot_webs_correr($cfg);
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
 $reaviso = wabot_push_reaviso_correr();
 
@@ -66,5 +71,6 @@ echo json_encode([
     'oferta_entrega' => $ofertaEntrega,
     'presentar_auto' => $presentarAuto,
     'renovacion' => $renovacion,
+    'webs' => $webs,
     'push_reaviso' => $reaviso,
 ], JSON_UNESCAPED_UNICODE) . "\n";

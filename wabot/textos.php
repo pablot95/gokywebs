@@ -563,6 +563,28 @@ function wabot_textos_default() {
             'params' => ['nombre', 'negocio', 'monto'],
             'texto' => 'Hola {nombre}, hoy se renueva el plan mensual de {negocio}: {monto}. Podés transferir al alias pablotravi y mandarnos el comprobante por este chat. ¡Gracias!',
         ],
+        // Utilidad (29-oct, "hacer visible lo invisible"): desde el día 1, a cada
+        // cliente con mantenimiento, el resumen del mes anterior de su web (webs.php).
+        // Apagada hasta que Meta la apruebe.
+        'reporte_mensual_web' => [
+            'nombre' => 'reporte_mensual_web',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => false,
+            'automatico' => true,
+            'params' => ['nombre', 'mes', 'negocio', 'disponibilidad', 'visitas', 'errores', 'ssl'],
+            'texto' => "Hola {nombre}, te paso el resumen de {mes} de la web de {negocio}:\n\n✅ Disponibilidad: {disponibilidad}\n👥 Visitas: {visitas}\n🛠️ Errores: {errores}\n🔒 Certificado de seguridad: {ssl}\n\nTodo esto es parte del mantenimiento. Si querés hacer algún cambio en la web, escribinos por acá.",
+        ],
+        // Utilidad (29-oct): cuando una web que estuvo caída vuelve a responder (webs.php).
+        'web_caida_resuelta' => [
+            'nombre' => 'web_caida_resuelta',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => false,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio', 'desde', 'hasta'],
+            'texto' => 'Hola {nombre}, te aviso que la web de {negocio} dejó de responder {desde} y {hasta} ya estaba funcionando otra vez. Lo detectó nuestro monitoreo y quedó registrado. Si ves algo raro, escribinos por acá.',
+        ],
         // Marketing, solo a mano desde el chat (21-oct): abre la conversación con un saludo.
         'saludo' => [
             'nombre' => 'saludo',

@@ -133,17 +133,24 @@ if (mt_rand(1, 50) === 1) {
     foreach (glob($dir . '/{ip-*.json,dia-*.txt}', GLOB_BRACE) ?: [] as $f) { if (@filemtime($f) < $now - 172800) @unlink($f); }
 }
 
-/* ── Resumen en disco para la rutina de Claude (err/agrupados.php, err/pendientes.php) ── */
-if (!$esPing) {
-    require_once __DIR__ . '/agrupados.php';
-    try {
+/* ── Resumen en disco para la rutina de Claude (err/agrupados.php, err/pendientes.php) y las
+ *    sumas del mes por web (visitas y errores) para el resumen mensual del bot (wabot/webs.php) ── */
+require_once __DIR__ . '/agrupados.php';
+try {
+    if ($esPing) {
+        // Los bots mandan la señal de vida (así la web aparece en el panel) pero no son visitas.
+        $esBot = preg_match('#bot\b|crawl|spider|slurp|facebookexternalhit|meta-externalagent|meta-webindexer|headless|lighthouse|pagespeed|inspectiontool|curl/|wget#i', $uaVisitante)
+            && !preg_match('/cubot/i', $uaVisitante);
+        if (!$esBot) err_sumar_visita($id, $now);
+    } else {
         err_agrupar($hash, [
             'site' => $id, 'tipo' => $tipo, 'nivel' => $nivel, 'msg' => $msg, 'src' => $src,
             'line' => $line, 'col' => $col, 'stack' => $stack, 'url' => $url, 'ua' => $ua, 'detalle' => $detalle,
         ], substr(md5($ip . '|' . $ua), 0, 10), $now);  // visitante anónimo
-    } catch (Throwable $t) {
-        error_log('[err/log.php] agrupados: ' . $t->getMessage());
+        err_sumar_error($id, $hash, $now);
     }
+} catch (Throwable $t) {
+    error_log('[err/log.php] agrupados: ' . $t->getMessage());
 }
 
 /* ── Guardar en Firestore (typed values del REST API) ── */

@@ -12,6 +12,7 @@ require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/renovacion.php';
+require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
 require_once __DIR__ . '/meta-gasto.php';
@@ -605,7 +606,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'reporte_mensual_web', 'web_caida_resuelta'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -1287,6 +1288,18 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'plantilla_activa' => wabot_plantilla_config('renovacion_por_fuera', $cfg) !== null,
             'enviados' => $estado['enviados'],
         ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    /* La lista de las webs en mantenimiento, que manda admin/dashboard.js cada
+     * vez que cambia (29-oct): con ella webs.php monitorea cada dominio, avisa
+     * las caídas resueltas y manda el resumen mensual. Devuelve cómo está cada
+     * web y qué reporte salió, para mostrarlo debajo del dominio. */
+    if ($a === 'webs_sync') {
+        header('Content-Type: application/json; charset=utf-8');
+        $lista = json_decode((string)($_POST['lista'] ?? ''), true);
+        if (!is_array($lista)) { echo json_encode(['ok' => false]); exit; }
+        $estado = wabot_webs_sync($lista);
+        echo json_encode(['ok' => true] + wabot_webs_resumen_admin($estado, $cfg), JSON_UNESCAPED_UNICODE);
         exit;
     }
     // Lo consulta admin/dashboard.js (Seguimiento) para reflejar en Firestore
@@ -3196,6 +3209,18 @@ function burbujaCita(t, chat) {
                 'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
                 'saludo' => 'Saludo · Marketing (solo a mano desde el chat)',
                 'renovacion_por_fuera' => 'Renovación del plan mensual · Utilidad (pagan por afuera)',
+                'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
+                'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
+            ];
+            $plantillasVariables = [
+                'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
+                'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores, {{7}} certificado',
+                'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
+            ];
+            $plantillasCuando = [
+                'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
+                'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
+                'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -3205,7 +3230,7 @@ function burbujaCita(t, chat) {
                     </div>
                     <div><label>Idioma</label><input type="text" name="plantilla_<?= $e($clavePlant) ?>_idioma" value="<?= $e((string)($p['idioma'] ?? 'es_AR')) ?>" style="width:90px"></div>
                     <?php if ($clavePlant === 'seguimiento_interesado' || $clavePlant === 'saludo'): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Marketing</span><?php endif; ?>
-                    <?php if ($clavePlant === 'renovacion_por_fuera'): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Utilidad · {{1}} nombre, {{2}} negocio, {{3}} monto</span><?php endif; ?>
+                    <?php if (isset($plantillasVariables[$clavePlant])): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Utilidad · <?= $e($plantillasVariables[$clavePlant]) ?></span><?php endif; ?>
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_activa" <?= !empty($p['activa']) ? 'checked' : '' ?>>
                         Activa
@@ -3213,7 +3238,7 @@ function burbujaCita(t, chat) {
                     <?php if ($clavePlant !== 'saludo'): ?>
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_automatico" <?= !array_key_exists('automatico', $p) || !empty($p['automatico']) ? 'checked' : '' ?>>
-                        <?= $clavePlant === 'renovacion_por_fuera' ? 'Automática el día del cobro (desde las 10 h)' : 'Automática a las 18 h' ?>
+                        <?= $e($plantillasCuando[$clavePlant] ?? 'Automática a las 18 h') ?>
                     </label>
                     <?php endif; ?>
                 </div>
