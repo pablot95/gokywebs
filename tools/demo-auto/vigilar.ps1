@@ -116,6 +116,9 @@ function Reclamar-Siguiente {
             Where-Object { $_.LastWriteTime -gt $desde -and $_.LastWriteTime -lt (Get-Date).AddMinutes(-15) -and ($hechos -notcontains ($_.Name + '|' + $_.Length)) } |
             Sort-Object LastWriteTime
         foreach ($z in $zips) {
+            # Desktop (tomar) solo toma los de ChatGPT, que traen el id: un zip bajado a mano
+            # ("sosahnos imagenes.zip", 30-oct) es de Pablo y no se mueve.
+            if ($Modo -eq 'tomar' -and $z.Name -notmatch '_[A-Za-z0-9]{20}(?: \(\d+\))?\.zip$') { continue }
             if (-not (Libre $z.FullName)) { continue }   # todavia se esta bajando
             [IO.File]::WriteAllText((Join-Path $Slots ([string]$PID)), $z.Name, $Utf8)
             $e.hechos = @($e.hechos) + [pscustomobject]@{ zip = $z.Name; tam = $z.Length; fecha = (Get-Date).ToString('o'); resultado = 'en proceso' }
