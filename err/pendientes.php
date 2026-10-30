@@ -109,6 +109,7 @@ const ERR_REPOS = [
     'xn--espacioacompaarte-rxb.com.ar' => 'pablot95/acompanarte',
     'sosahnos.com.ar' => 'pablot95/sosahnos',
     'universoresilientepsico.com.ar' => 'pablot95/universoresilientepsico',
+    'mundoconfronteras.com.ar' => 'pablot95/mundoconfronteras',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
