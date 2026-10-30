@@ -1,0 +1,66 @@
+{
+  "origen": "Zip de imágenes de ChatGPT (Copiar 10) puesto por la demo automática el 30-oct-2026; los PNG originales quedan sin tocar.",
+  "imagenes": [
+    {
+      "archivo": "calculadora-escritorio.webp",
+      "original": "01_imagen.png",
+      "ratio": "9:16",
+      "uso": "hero del Modelo 1"
+    },
+    {
+      "archivo": "reunion-empresa.webp",
+      "original": "02_imagen.png",
+      "ratio": "16:9",
+      "uso": "hero del Modelo 2 y cierre"
+    },
+    {
+      "archivo": "papeles-auditoria.webp",
+      "original": "03_imagen.png",
+      "ratio": "1:1",
+      "uso": "servicio Auditoría"
+    },
+    {
+      "archivo": "notas-gestion.webp",
+      "original": "04_imagen.png",
+      "ratio": "1:1",
+      "uso": "servicio Gestión de empresas"
+    },
+    {
+      "archivo": "graficos-finanzas.webp",
+      "original": "05_imagen.png",
+      "ratio": "1:1",
+      "uso": "servicio Finanzas"
+    },
+    {
+      "archivo": "procesos-notas.webp",
+      "original": "06_imagen.png",
+      "ratio": "1:1",
+      "uso": "servicio Análisis de procesos"
+    },
+    {
+      "archivo": "escritorio-cenital.webp",
+      "original": "07_imagen.png",
+      "ratio": "1:1",
+      "uso": "bloque Un solo interlocutor"
+    },
+    {
+      "archivo": "planilla-contable.webp",
+      "original": "08_imagen.png",
+      "ratio": "1:1",
+      "uso": "servicio Contabilidad"
+    },
+    {
+      "archivo": "entrega-propuesta.webp",
+      "original": "09_imagen.png",
+      "ratio": "1:1",
+      "uso": "bloque Cómo trabajo"
+    },
+    {
+      "archivo": "og.jpg",
+      "original": "02_imagen.png",
+      "ratio": "1200x630",
+      "uso": "imagen para compartir"
+    }
+  ],
+  "referencia_diseno": "10_mockup_720x480.png"
+}
