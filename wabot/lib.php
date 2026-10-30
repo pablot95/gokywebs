@@ -3222,10 +3222,6 @@ function wabot_logo_cliente($cv) {
     return $ultimaConLogo ?? $ultimaImagen;
 }
 
-/** URL protegida (requiere sesión del panel) para bajar una imagen que mandó el cliente. */
-function wabot_logo_url($clave, $archivo) {
-    return 'https://gokywebs.com/wabot/admin.php?accion=media&tel=' . urlencode($clave) . '&archivo=' . urlencode($archivo);
-}
 /**
  * ¿El cliente dijo que ESTA foto es su logo? Sin eso la primera imagen que
  * manda casi nunca lo es (Pablo, 29-oct): sirve de enlace para bajar las
@@ -3246,6 +3242,10 @@ function wabot_logo_nombre($cv, $archivo) {
     return (wabot_logo_declarado($cv, $archivo) ? 'logo.' : 'imagen.') . strtolower(pathinfo((string)$archivo, PATHINFO_EXTENSION));
 }
 
+/** URL protegida (requiere sesión del panel) para bajar una imagen que mandó el cliente. */
+function wabot_logo_url($clave, $archivo) {
+    return 'https://gokywebs.com/wabot/admin.php?accion=media&tel=' . urlencode($clave) . '&archivo=' . urlencode($archivo);
+}
 
 /**
  * Qué extensiones cuentan como "una imagen que mandó el cliente" para el
