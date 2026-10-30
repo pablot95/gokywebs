@@ -569,7 +569,12 @@
                 <div>
                     <h1>Inversión</h1>
                 </div>
-                <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
+                <div class="fila" style="gap:10px;align-items:center">
+                    <label class="muted" style="display:flex;align-items:center;gap:6px;margin:0" title="Pesos por dólar para los US$ que van al lado de los totales">
+                        Dólar $ <input type="number" id="inversionDolar" min="1" step="1" inputmode="decimal" value="1510" style="width:80px">
+                    </label>
+                    <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
+                </div>
             </div>
             <!-- 11-oct-2026: el calendario de ingresos (cobros por día) pasó a la pestaña Calendario. dashboard.js: renderCal / ingresosPorDia. -->
             <nav class="subtab-nav" id="inversionNav">
@@ -1394,6 +1399,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261030-dominio"></script>
+    <script type="module" src="dashboard.js?v=20261030-dolar"></script>
 </body>
 </html>
