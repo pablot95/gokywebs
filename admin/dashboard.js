@@ -530,7 +530,10 @@ function erroresResumen(datos = erroresDatos) {
         const mant = enMant.has(c);
         if (!dom) {
             const claves = [...new Set([erroresNorm(c.nombre), erroresNorm(c.proyecto)])].filter(k => k.length >= 4);
-            if (claves.length) sinDominio.push({ nombre, persona, tieneEmpresa, claves, mant, doc: c });
+            // Dentro del dominio solo se busca el negocio: el nombre de la persona, si hay negocio, tiene que
+            // ser el dominio entero (29-oct: «Emmanuel» de TIENDADEBOTINES_ARG se quedó con institutoemmanuel.com.ar).
+            const parciales = tieneEmpresa ? [erroresNorm(c.proyecto)] : claves;
+            if (claves.length) sinDominio.push({ nombre, persona, tieneEmpresa, claves, parciales, mant, doc: c });
             continue;
         }
         if (porWeb.has(dom)) {
@@ -548,7 +551,8 @@ function erroresResumen(datos = erroresDatos) {
     const clientePorNombre = (host) => {
         const label = erroresNorm(host.replace(/^www\./, "").split(".")[0]);
         if (!label) return null;
-        const coincidencias = sinDominio.filter(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k)) || (label.length >= 10 && k.startsWith(label))));
+        const coincidencias = sinDominio.filter(x => x.claves.includes(label)
+            || x.parciales.some(k => (k.length >= 6 && label.includes(k)) || (label.length >= 10 && k.startsWith(label))));
         if (!coincidencias.length) return null;
         const elegida = coincidencias.find(x => x.tieneEmpresa) || coincidencias[0];
         return { ...elegida, mant: coincidencias.some(x => x.mant), fichas: new Set(coincidencias.map(x => x.doc)) };
