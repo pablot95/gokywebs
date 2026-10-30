@@ -106,8 +106,12 @@ const ERR_REPOS = [
     'mluxury.com.ar' => 'pablot95/mluxury',
     'drhooks.com.ar' => 'pablot95/drhooks',
     'piscioneinmobiliaria.com.ar' => 'pablot95/piscioneinmobiliaria',
+    'xn--espacioacompaarte-rxb.com.ar' => 'pablot95/acompanarte',
     'sosahnos.com.ar' => 'pablot95/sosahnos',
     'universoresilientepsico.com.ar' => 'pablot95/universoresilientepsico',
+    'mundoconfronteras.com.ar' => 'pablot95/mundoconfronteras',
+    'hizteriktienda.com.ar' => 'pablot95/hizteriktienda',
+    'tiendadebotinesarg.com.ar' => 'pablot95/tiendadebotinesarg',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
