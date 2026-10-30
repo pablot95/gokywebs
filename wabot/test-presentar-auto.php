@@ -17,12 +17,14 @@ $ar = function ($dia, $hora, $min = 0) { [$a, $m, $d] = array_map('intval', expl
 $iso = function ($ts) { return gmdate('Y-m-d\TH:i:s\Z', $ts); };
 
 echo "Turno\n";
-caso('creado a las 10 h → 18 h del mismo día', wabot_presentar_turno($ar('2026-10-20', 10)) === $ar('2026-10-20', 18));
+caso('creado a las 10 h → 14 h del mismo día', wabot_presentar_turno($ar('2026-10-20', 10)) === $ar('2026-10-20', 14));
+caso('a las 10:59 todavía son las 14 h', wabot_presentar_turno($ar('2026-10-20', 10, 59)) === $ar('2026-10-20', 14));
+caso('a las 11:00 ya son las 18 h', wabot_presentar_turno($ar('2026-10-20', 11)) === $ar('2026-10-20', 18));
 caso('a las 14:59 todavía es el mismo día a las 18 h', wabot_presentar_turno($ar('2026-10-20', 14, 59)) === $ar('2026-10-20', 18));
 caso('a las 15:00 ya es al día siguiente a las 14 h', wabot_presentar_turno($ar('2026-10-20', 15)) === $ar('2026-10-21', 14));
 caso('a las 23 h → 14 h del día siguiente', wabot_presentar_turno($ar('2026-10-20', 23, 30)) === $ar('2026-10-21', 14));
 caso('de madrugada (1 h) → 14 h de ese mismo día', wabot_presentar_turno($ar('2026-10-21', 1)) === $ar('2026-10-21', 14));
-caso('a las 3 h ya cuenta como mañana del día → 18 h', wabot_presentar_turno($ar('2026-10-21', 3)) === $ar('2026-10-21', 18));
+caso('a las 3 h → 14 h de ese día', wabot_presentar_turno($ar('2026-10-21', 3)) === $ar('2026-10-21', 14));
 caso('fin de mes: el 31 a la noche pasa al 1', wabot_presentar_turno($ar('2026-10-31', 16)) === $ar('2026-11-01', 14));
 
 echo "Tipo de web (como el admin)\n";
@@ -36,7 +38,7 @@ $espera = WABOT_DATA . '/presentar-auto-espera.json';
 $esperaPrevia = @file_get_contents($espera);
 @unlink($espera);
 $props = [
-    'A' => ['createdAt' => $iso($ar('2026-10-20', 10)), 'nombre_negocio' => 'Kiosco Ana', 'telefono' => '1150000001', 'tipo_web' => 'Ecommerce'],
+    'A' => ['createdAt' => $iso($ar('2026-10-20', 12)), 'nombre_negocio' => 'Kiosco Ana', 'telefono' => '1150000001', 'tipo_web' => 'Ecommerce'],
     'B' => ['createdAt' => $iso($ar('2026-10-19', 16)), 'nombre_negocio' => 'Bar Beto', 'telefono' => '1150000002', 'nombre' => 'Beto'],
     'C' => ['createdAt' => $iso($ar('2026-10-20', 1)), 'nombre_negocio' => 'Café Caro', 'telefono' => '1150000003'],
     'D' => ['createdAt' => $iso($ar('2026-10-19', 10)), 'nombre_negocio' => 'Dulces Dani', 'telefono' => '1150000004'],
@@ -72,7 +74,7 @@ $r2 = wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 14, 32), $props, $pres
 caso('la corrida siguiente no repite nada ni vuelve a avisar', $r2['presentadas'] === 0 && $r2['sin_enviar'] === 0 && !$avisos, json_encode($r2['detalle']));
 
 $r3 = wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 18, 1), $props, $presentar, $marcar, $hayDemo, $avisar);
-caso('a las 18 h sale la de la mañana', ($marcas['A']['demo_ok'] ?? false) === true && $r3['presentadas'] === 1);
+caso('a las 18 h sale la del mediodía', ($marcas['A']['demo_ok'] ?? false) === true && $r3['presentadas'] === 1);
 caso('sin teléfono no se manda nada: queda marcada con el motivo', ($marcas['G']['demo_ok'] ?? true) === false
     && strpos($marcas['G']['error'], 'Falta teléfono') !== false && count(array_filter($enviadas, fn($d) => $d['negocio'] === 'Sin teléfono')) === 0);
 

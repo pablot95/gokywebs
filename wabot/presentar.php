@@ -3,9 +3,9 @@
  * wabot/presentar.php — el botón «Presentar» del admin (mandarle la demo al
  * cliente por el bot) y su versión automática.
  *
- * Presentación automática (Pablo, 18-oct): «los bocetos hechos ANTES de las
- * 15hs, mandalos automáticamente con el botón Presentar a las 18hs. Los que se
- * hagan después de las 15hs, al día siguiente a las 14hs». El boceto es la
+ * Presentación automática (Pablo, 18-oct; turnos del 30-oct en
+ * wabot_presentar_turno: antes de las 11 → 14 h, de 11 a 15 → 18 h, desde las
+ * 15 → 14 h del día siguiente). El boceto es la
  * propuesta que nace con el formulario, así que manda su createdAt: es la misma
  * hora con la que el bot le prometió «hoy a la tarde» o «mañana»
  * (wabot_form_confirmacion_texto, corte de las 15 h). Lo corre seguimiento.php
@@ -148,17 +148,19 @@ function wabot_presentar_muestra(array $in, $cfg) {
 
 /**
  * El momento en que se presenta un boceto creado en $creadoTs (reloj argentino,
- * UTC-3 fijo, como wabot_dia_entrega):
- *   03:00 a 14:59 → ese día a las 18:00
+ * UTC-3 fijo, como wabot_dia_entrega). Pablo, 30-oct: «si lo llenó antes de las
+ * 11, a las 14 h; entre las 11 y las 15, a las 18 h; desde las 15 hasta las 11
+ * del día siguiente, a las 14 h»:
+ *   00:00 a 10:59 → ese día a las 14:00
+ *   11:00 a 14:59 → ese día a las 18:00
  *   15:00 a 23:59 → al día siguiente a las 14:00
- *   00:00 a 02:59 → ese mismo día a las 14:00 (para el cliente todavía es la noche anterior)
  */
 function wabot_presentar_turno($creadoTs) {
     $local = (int)$creadoTs - 3 * 3600;
     $hora = (int)gmdate('G', $local);
     [$a, $m, $d] = array_map('intval', explode('-', gmdate('Y-m-d', $local)));
-    if ($hora >= 3 && $hora < 15) return gmmktime(18 + 3, 0, 0, $m, $d, $a);
-    if ($hora < 3) return gmmktime(14 + 3, 0, 0, $m, $d, $a);
+    if ($hora < 11) return gmmktime(14 + 3, 0, 0, $m, $d, $a);
+    if ($hora < 15) return gmmktime(18 + 3, 0, 0, $m, $d, $a);
     return gmmktime(14 + 3, 0, 0, $m, $d + 1, $a);
 }
 
@@ -306,9 +308,10 @@ function wabot_presentar_fs_marcar($id, array $marca) {
 function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $presentar = null, $marcar = null, $hayDemo = null, $avisar = null) {
     $ahora = $ahora ?? time();
     $res = ['revisadas' => 0, 'presentadas' => 0, 'sin_enviar' => 0, 'esperando_demo' => 0, 'detalle' => []];
-    // La de las 18/14 h, apagada desde el 20-oct (Pablo): solo con `presentar_auto: true`.
+    // La del turno (sin hora elegida): apagada el 20-oct y prendida otra vez el 30-oct (Pablo:
+    // «prendela»); corre salvo `presentar_auto: false`.
     // La de la hora que eligió el cliente (29-oct) corre salvo `presentar_hora_elegida: false`.
-    $porTurno = !empty(((array)$cfg)['presentar_auto']);
+    $porTurno = (((array)$cfg)['presentar_auto'] ?? true) !== false;
     $porHora = (((array)$cfg)['presentar_hora_elegida'] ?? true) !== false;
     if (!$porTurno && !$porHora) return $res + ['apagado' => true];
     $hora = wabot_hora_local($ahora);
