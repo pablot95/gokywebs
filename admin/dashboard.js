@@ -237,13 +237,13 @@ let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> { ingresado, total, recargo }
 const INGRESO_MENSUAL_BASE = 27100;  // el costo se muestra por cada tanto de ingreso mensual (Pablo, 12-oct), no por suscriptor; $27.100 desde el 23-oct (antes 26.500), también en las semanas viejas
 const COSTO_POR_PAGINA = 10000;     // lo que cuesta cada página hecha, se suma al costo del cliente
-/* Los totales de Inversión llevan al lado cuánto son en dólares (Pablo, 30-oct): a 1510 y
+/* Los números verdes de Inversión (el costo por cada $27.100) llevan al lado cuánto son en dólares (Pablo, 30-oct): a 1510 y
    editable en la casilla junto a "Actualizar". Se guarda en gastoPublicidad/_cotizacionDolar
    (las semanas se buscan por su domingo, así que ese doc no se mezcla con ellas). */
 const COTIZACION_DOLAR_DOC = "_cotizacionDolar";
 let cotizacionDolar = 1510;
 const enDolares = pesos => cotizacionDolar > 0 && pesos
-    ? ` <span class="muted">(US$ ${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(pesos / cotizacionDolar)})</span>` : "";
+    ? ` <span class="muted" style="font-size:.6em;font-weight:500">(US$${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(pesos / cotizacionDolar)})</span>` : "";
 /* Desde el 11-oct Pablo tipea el gasto de la semana sin impuestos y lo que cuenta es
    ese número × 1,23. Se guarda lo tipeado con `recargo: 1.23` y el recargo se aplica
    al calcular. Lo cargado antes (sin `recargo`) ya incluía los impuestos: cuenta tal
@@ -342,7 +342,6 @@ document.getElementById("inversionDolar")?.addEventListener("change", async e =>
     if (!(valor > 0)) { e.target.value = cotizacionDolar; return; }
     cotizacionDolar = valor;
     renderInversion();
-    if (inversionVista === "anuncios") renderAnuncios();
     try {
         await setDoc(doc(db, "gastoPublicidad", COTIZACION_DOLAR_DOC), { valor, updatedAt: serverTimestamp() });
     } catch (err) {
@@ -979,9 +978,9 @@ function rangoInversionHtml(semanas) {
         + tarjeta("Pago único", r.unicos, "web propia", "");
     const divisor = r.tramos > 0 ? ` ÷ ${n(r.tramos)} (${fmtMoney(r.ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})` : " · sin ingreso mensual todavía";
     const por = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
-    const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) : "—",
-        `Gasto + páginas ${fmtMoney(r.gastoTotal)}${enDolares(r.gastoTotal)}, se restan ${fmtMoney(r.sumaPagoUnico)} → costo neto ${fmtMoney(r.costoNeto)}` + divisor)
-        + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por} · según el total de la venta`, r.tramos > 0 ? fmtMoney(r.porTramoTotal) : "—",
+    const tarjetas = r.gastoTotal > 0 ? tarjeta(`${por} · según lo cobrado (seña)`, r.tramos > 0 ? fmtMoney(r.porTramo) + enDolares(r.porTramo) : "—",
+        `Gasto + páginas ${fmtMoney(r.gastoTotal)}, se restan ${fmtMoney(r.sumaPagoUnico)} → costo neto ${fmtMoney(r.costoNeto)}` + divisor)
+        + (r.sumaVentaTotal > r.sumaPagoUnico ? tarjeta(`${por} · según el total de la venta`, r.tramos > 0 ? fmtMoney(r.porTramoTotal) + enDolares(r.porTramoTotal) : "—",
         `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor) : "") : "";
     const rapidos = [["Desde el 04-oct", "2026-10-04"], ["Últimos 30 días", ymdAgregarDias(hoy, -29)]];
     // Arranca minimizado y se expande con un clic; queda como lo dejó al redibujar (Pablo, 24-oct).
@@ -1088,12 +1087,12 @@ function renderInversion() {
         const tarjetas = [];
         if (gastoTotal > 0) {
             tarjetas.push(tarjeta(`${porIngreso} · según lo cobrado (seña)`,
-                tramos > 0 ? fmtMoney(costoPorSuscriptor) : "—",
+                tramos > 0 ? fmtMoney(costoPorSuscriptor) + enDolares(costoPorSuscriptor) : "—",
                 (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
                     + divisor, verde));
             if (sumaVentaTotal > sumaPagoUnico) {
                 tarjetas.push(tarjeta(`${porIngreso} · según el total de la venta`,
-                    tramos > 0 ? fmtMoney(costoPorSuscriptorTotal) : "—",
+                    tramos > 0 ? fmtMoney(costoPorSuscriptorTotal) + enDolares(costoPorSuscriptorTotal) : "—",
                     `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
                         + divisor, verde));
             }
@@ -1126,9 +1125,9 @@ function renderInversion() {
                 </label>
                 ${origenGasto}
                 ${!gastoIngresado ? "" : gastoSemana.recargo
-                    ? `<span class="muted">× ${String(gastoSemana.recargo).replace(".", ",")} = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong>${convertidos.length ? "" : enDolares(gasto)}</span>`
+                    ? `<span class="muted">× ${String(gastoSemana.recargo).replace(".", ",")} = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>`
                     : `<span class="muted" title="Se cargó con los impuestos incluidos. Si lo cambiás, el número nuevo se toma sin impuestos (× 1,23).">ya incluye impuestos</span>`}
-                ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong>${enDolares(gastoTotal)}</span>` : ""}
+                ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong></span>` : ""}
             </div>
             ${tarjetasCosto}
             ${convertidos.length ? `
@@ -1281,8 +1280,7 @@ function renderAnuncios() {
                 <tr class="anu-detalle"${abierto ? "" : " hidden"}><td colspan="${etapas.length + 2 + (hayGasto ? 1 : 0)}"><ul class="anu-contactos">${contactos || '<li class="muted">Sin contactos.</li>'}</ul></td></tr>`;
         }).join("");
         // En el total, el gasto se reparte solo entre los que vinieron de un anuncio.
-        const totalUsd = hayGasto ? enDolares((Number(meta.total) || 0) * RECARGO_PUBLICIDAD) : "";
-        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong>${totalUsd ? `<div>${totalUsd}</div>` : ""}</td>${celdaGasto(Number(meta.total) || 0, contactosAnuncios, bocetosAnuncios, clientesAnuncios)}${celdas(d.total, clientesTotal)}</tr>` : "";
+        const total = d.total?.etapas ? `<tr class="anu-total"><td><strong>Total</strong></td>${celdaGasto(Number(meta.total) || 0, contactosAnuncios, bocetosAnuncios, clientesAnuncios)}${celdas(d.total, clientesTotal)}</tr>` : "";
         if (meta.error) html += `<p class="muted">⚠ Gasto de Meta: ${escapeHtml(meta.error)}</p>`;
         html += filasVista.length
             ? `<div class="table-wrapper"><table class="clients-table anu-tabla"><thead>${cabecera}</thead><tbody>${cuerpo}${total}</tbody></table></div>`
@@ -3704,7 +3702,6 @@ function initRealtime() {
         if (cot > 0) cotizacionDolar = cot;
         const inputCot = document.getElementById("inversionDolar");
         if (inputCot && document.activeElement !== inputCot) inputCot.value = cotizacionDolar;
-        if (activeTab === "inversion" && inversionVista === "anuncios") renderAnuncios();
         if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
     }, (err) => {
         console.error("Gasto publicidad error:", err);
