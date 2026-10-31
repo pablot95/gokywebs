@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de imágenes de ChatGPT (Copiar 10) puesto por la demo automática el 30-oct-2026; los JPG originales quedan sin tocar. Todas se muestran como «Imágenes ilustrativas».",
+  "cliente": "La única imagen que mandó la clienta por WhatsApp es el folleto (Descargas/imagenes-prospectos/neurotest/01-imagen.jpg): de ahí salen la Tec. Sofía Arce MN 234171, el informe en 48 h y los motivos (clínicos, laborales, ingreso a fuerzas). No se usa como imagen.",
+  "imagenes": [
+    { "archivo": "tecnica-eeg-gorro.webp", "original": "01_imagen.jpg", "ratio": "9:16", "uso": "hero del Modelo 1 y galería de fotos" },
+    { "archivo": "consultorio-eeg.webp", "original": "02_imagen.jpg", "ratio": "16:9", "uso": "hero del Modelo 2, «En internación» y og.jpg" },
+    { "archivo": "gorro-electrodos.webp", "original": "03_imagen.jpg", "ratio": "1:1", "uso": "estudio Electroencefalograma (tarjeta del Modelo 1 y pestaña del Modelo 2)" },
+    { "archivo": "poligrafia-noche.webp", "original": "04_imagen.jpg", "ratio": "1:1", "uso": "estudio Poligrafía respiratoria" },
+    { "archivo": "cpap-mesa-de-luz.webp", "original": "05_imagen.jpg", "ratio": "1:1", "uso": "estudio Titulación de CPAP" },
+    { "archivo": "mascara-cpap.webp", "original": "06_imagen.jpg", "ratio": "1:1", "uso": "galería de fotos" },
+    { "archivo": "registro-monitor.webp", "original": "07_imagen.jpg", "ratio": "1:1", "uso": "estudio Mapeo cerebral computarizado" },
+    { "archivo": "equipo-a-domicilio.webp", "original": "08_imagen.jpg", "ratio": "1:1", "uso": "«A domicilio»" },
+    { "archivo": "sala-de-espera.webp", "original": "09_imagen.jpg", "ratio": "1:1", "uso": "«En el consultorio» y galería de fotos" }
+  ],
+  "mockup": "10_mockup_720x480.png (referencia del Modelo 1)",
+  "bancos": "Ninguna foto de bancos libres."
+}
