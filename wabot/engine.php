@@ -6356,6 +6356,11 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
         $t = str_replace('{dos_formas}', $bloque, $t);
     }
     $d = $cfg['tipos'][$v['tipo']] ?? [];
+    // {inicial}: el pago inicial del modelo B de la prueba de precios (31-oct, ab-precios.php).
+    if (strpos($t, '{inicial}') !== false) {
+        $inicial = function_exists('wabot_ab_inicial') ? wabot_ab_inicial($conv, $cfg, (string)$v['tipo']) : '';
+        $t = str_replace('{inicial}', $inicial !== '' ? $inicial : 'el pago inicial', $t);
+    }
     $unicoVigente = wabot_precio_unico_vigente($v, $cfg);
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(

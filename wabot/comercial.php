@@ -26,6 +26,7 @@
  */
 
 require_once __DIR__ . '/comercial-instrucciones.php';
+require_once __DIR__ . '/ab-precios.php';
 
 /* ─────────────────────────────── Modo y catálogo ─────────────────────────────── */
 
@@ -60,6 +61,18 @@ function wabot_comercial_soluciones() {
     ];
 }
 
+/** Los montos de una cotización en una línea, para el modelo y la revisión: "pago único $330.000 y mensual $30.000". */
+function wabot_comercial_cotizacion_resumen($cot) {
+    $p = [];
+    if (trim((string)($cot['inicial'] ?? '')) !== '') $p[] = 'pago inicial ' . $cot['inicial'] . ' (sin seña) y mensualidad ' . $cot['mensual'] . ' desde el mes siguiente';
+    else {
+        if (trim((string)($cot['anual'] ?? '')) !== '') $p[] = 'anual ' . $cot['anual'];
+        elseif (trim((string)($cot['unico'] ?? '')) !== '') $p[] = 'pago único ' . $cot['unico'];
+        $p[] = 'mensual ' . $cot['mensual'];
+    }
+    return implode(' y ', $p);
+}
+
 /** ¿Es una solución estándar, con plan y precio de lista? */
 function wabot_comercial_solucion_estandar($solucion) {
     return !empty(wabot_comercial_soluciones()[(string)$solucion]['plan']);
@@ -82,14 +95,47 @@ function wabot_comercial_montos_lista($plan, $cfg) {
         'mensual' => trim((string)($t['mensualidad'] ?? '')),
         'unico'   => trim((string)($t['precio_unico'] ?? '')),
         'sena'    => trim((string)($t['sena'] ?? '')),
+        // El pago inicial del modelo B de la prueba de precios (31-oct, ab-precios.php); '' fuera de ese grupo.
+        'inicial' => trim((string)($t['inicial'] ?? '')),
     ];
     if ($plan === 'internacional') {
         $i = (array)($cfg['comercial']['internacional'] ?? []);
         $m['anual'] = trim((string)($i['anual'] ?? ''));
         $m['mensual'] = trim((string)($i['mensual'] ?? ''));
         $m['unico'] = '';
+        $m['inicial'] = '';
     }
     return $m;
+}
+
+/**
+ * Una cotización nueva de un plan con los montos de lista. En la prueba de
+ * precios (31-oct) lleva el modelo del grupo: en A y B no hay plan anual; en B,
+ * el pago inicial.
+ */
+function wabot_comercial_cotizacion_nueva($plan, $cfg) {
+    $l = wabot_comercial_montos_lista($plan, $cfg);
+    $c = ['origen' => 'bot', 'plan' => $plan, 'anual' => $l['anual'], 'mensual' => $l['mensual'], 'unico' => $l['unico'], 'ts' => time()];
+    $grupo = wabot_ab_grupo_cfg($cfg);
+    if ($plan !== 'internacional' && in_array($grupo, ['a', 'b'], true)) {
+        $c['modelo'] = $grupo;
+        $c['anual'] = '';
+        if ($grupo === 'b') $c['inicial'] = $l['inicial'];
+    }
+    return $c;
+}
+
+/** ¿Tiene montos para mostrar? El mensual y al menos uno de anual, pago único o pago inicial. */
+function wabot_comercial_cotizacion_valida($c) {
+    if (!is_array($c) || trim((string)($c['mensual'] ?? '')) === '') return false;
+    foreach (['anual', 'unico', 'inicial'] as $k) if (trim((string)($c[$k] ?? '')) !== '') return true;
+    return false;
+}
+
+/** El primer pago de una cotización: el anual, el pago inicial (B) o el pago único (A). */
+function wabot_comercial_cotizacion_primer_pago($c) {
+    foreach (['anual', 'inicial', 'unico'] as $k) if (trim((string)($c[$k] ?? '')) !== '') return trim((string)$c[$k]);
+    return '';
 }
 
 /**
@@ -122,7 +168,7 @@ function wabot_comercial_plan_por_montos($mensual, $anual, $cfg) {
 function wabot_comercial_montos_de_texto($texto) {
     $t = (string)$texto;
     $num = function ($m) { return wabot_moneda(wabot_monto_a_numero($m)); };
-    $r = ['anual' => '', 'mensual' => '', 'unico' => ''];
+    $r = ['anual' => '', 'mensual' => '', 'unico' => '', 'inicial' => ''];
     if (preg_match('/plan anual:?\s*\$\s*([\d.]{5,})/iu', $t, $m)
         || preg_match('/\$\s*([\d.]{5,})\s*(por|al|x)\s*a[ñn]o\b/iu', $t, $m)
         || preg_match('/\banual\s*(de|es|sale|son|:)\s*\$\s*([\d.]{5,})/iu', $t, $mm) && ($m = [1 => $mm[2]])) {
@@ -130,10 +176,13 @@ function wabot_comercial_montos_de_texto($texto) {
     }
     if (preg_match('/plan mensual:?\s*\$\s*([\d.]{5,})/iu', $t, $m)
         || preg_match('/\$\s*([\d.]{5,})\s*(por|al|x)\s*mes\b/iu', $t, $m)
+        || preg_match('/\$\s*([\d.]{5,})\s*mensuales\b/iu', $t, $m)
         || preg_match('/\bmensual\s*(de|es|sale|son|:)\s*\$\s*([\d.]{5,})/iu', $t, $mm) && ($m = [1 => $mm[2]])) {
         $r['mensual'] = $num($m[1]);
     }
     if (preg_match('/pago [uú]nico\s*(de|es|sale|son|:)?\s*\$\s*([\d.]{5,})/iu', $t, $m)) $r['unico'] = $num($m[2]);
+    // El modelo B de la prueba de precios (31-oct): "precio inicial de $100.000".
+    if (preg_match('/(precio|pago) inicial\s*(de|es|:)?\s*\$\s*([\d.]{5,})/iu', $t, $m)) $r['inicial'] = $num($m[3]);
     return $r;
 }
 
@@ -146,7 +195,7 @@ function wabot_comercial_montos_de_texto($texto) {
  */
 function wabot_comercial_cotizacion($conv, $cfg) {
     $c = $conv['comercial_cotizacion'] ?? null;
-    if (is_array($c) && trim((string)($c['anual'] ?? '')) !== '') return $c;
+    if (wabot_comercial_cotizacion_valida($c)) return $c;
     if (!empty($conv['precio_dado']) && trim((string)($conv['precio_cotizado'] ?? '')) !== '') {
         $anual = trim((string)$conv['precio_cotizado']);
         $mensual = trim((string)($conv['mensualidad_cotizada'] ?? ''));
@@ -158,12 +207,14 @@ function wabot_comercial_cotizacion($conv, $cfg) {
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
         if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
         $m = wabot_comercial_montos_de_texto((string)($fila['t'] ?? ''));
-        if ($m['anual'] === '' && $m['mensual'] === '') continue;
+        if ($m['anual'] === '' && $m['mensual'] === '' && $m['inicial'] === '') continue;
         $plan = wabot_comercial_plan_por_montos($m['mensual'], $m['anual'], $cfg);
         $lista = wabot_comercial_montos_lista($plan, $cfg);
-        return ['origen' => 'chat', 'plan' => $plan, 'anual' => $m['anual'] !== '' ? $m['anual'] : $lista['anual'],
+        return array_merge(['origen' => 'chat', 'plan' => $plan, 'anual' => $m['anual'] !== '' ? $m['anual'] : $lista['anual'],
                 'mensual' => $m['mensual'] !== '' ? $m['mensual'] : $lista['mensual'], 'unico' => $m['unico'] !== '' ? $m['unico'] : $lista['unico'],
-                'ts' => (int)($fila['ts'] ?? 0)];
+                'ts' => (int)($fila['ts'] ?? 0)],
+            // Pablo le pegó el texto del modelo B a mano: pago inicial y mensualidad, sin anual.
+            $m['inicial'] !== '' ? ['modelo' => 'b', 'inicial' => $m['inicial'], 'anual' => ''] : []);
     }
     return null;
 }
@@ -352,7 +403,10 @@ function wabot_comercial_info($cfg) {
     $l[] = '- informativa_panel → plan "con panel": la misma web informativa, pero con panel para que el cliente cambie él mismo textos, fotos y servicios. Corresponde si dice que quiere manejar o actualizar el contenido por su cuenta.';
     $l[] = '- tienda, catalogo, cursos, inmobiliaria y reservas → plan "con panel". Incluye lo de la informativa más el panel para autogestionar el contenido: agregar y sacar productos, cambiar precios, imágenes, stock, categorías, banners y ver los pedidos en la tienda; cursos, alumnos y ventas en cursos; propiedades en la inmobiliaria; turnos en reservas, con calendario, horarios y, si la quiere, la seña por Mercado Pago para confirmar el turno (en la propuesta, solo lo que el cliente pidió). Las reservas de turnos online, con o sin seña, son siempre del plan con panel: salen lo mismo que una tienda.';
     $l[] = '- Si la web tiene que cobrarle a clientes del exterior (PayPal u otra pasarela internacional, ventas o cursos para otros países), marcá internacional = true: ese precio no se cotiza, lo pasa una persona. Una web que solo se ve desde otros países sin cobrar no es internacional.';
-    $l[] = '- Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.';
+    // En la prueba de precios (31-oct) cada grupo tiene sus modalidades (comercial.modalidades_gpt de ab-precios).
+    $modalidades = trim((string)($cfg['comercial']['modalidades_gpt'] ?? ''));
+    $l[] = '- ' . ($modalidades !== '' ? $modalidades
+        : 'Las dos modalidades de cada plan son anual (seña y el resto al entregar, renovación al cumplir el año) y mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web). Son alternativas, no se suman. Pago único: solo si pidió comprar la web (pago_unico); el mantenimiento del pago único es opcional y aparte.');
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
     $l[] = '- Dos webs distintas para el mismo cliente (dos negocios o dos sitios separados): se cotizan juntas con descuento sobre la suma de los dos planes. Marcá solucion (una) y segunda_solucion (la otra): el sistema arma el precio de las dos. Vos nunca escribís esos montos.';
     $l[] = '- Tecnología: desarrollo a medida (HTML, CSS y JavaScript), no WordPress, Tiendanube ni Wix. Se puede tomar una web de referencia visual.';
@@ -424,7 +478,7 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
     $cot = wabot_comercial_cotizacion($conv, $cfg);
     if ($cot) {
         $c[] = '- YA LE PASAMOS EL PRECIO' . ($cot['origen'] === 'chat' ? ' (lo mandó una persona del equipo en la charla)' : '')
-            . ': plan ' . ($cot['plan'] === 'informativa' ? 'informativa' : 'con panel') . ', anual ' . $cot['anual'] . ' y mensual ' . $cot['mensual']
+            . ': plan ' . ($cot['plan'] === 'informativa' ? 'informativa' : 'con panel') . ', ' . wabot_comercial_cotizacion_resumen($cot)
             . '. Esos montos se mantienen. No vuelvas a cotizar salvo que pida el precio otra vez (ahí accion cotizar y el sistema repite los mismos planes).';
     } else {
         $c[] = '- Todavía no le pasamos el precio.';
@@ -912,6 +966,8 @@ function wabot_comercial_revision_pedido(array $revision) {
  * Devuelve ['ok', 'error', 'decision', 'ajustes', 'b', 'modelo', 'revision', 'gastado', 'segundos'].
  */
 function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
+    // Los textos y montos del grupo de la prueba de precios (31-oct) para todo el turno.
+    $cfg = wabot_ab_cfg($cfg, $conv);
     $inicio = microtime(true);
     $gastado = ['llamadas' => 0, 'costo_usd' => 0.0];
     $sumar = function ($g) use (&$gastado) {
@@ -1064,6 +1120,27 @@ function wabot_comercial_si_claro($texto) {
  * pregunta, negación ni pedido de información.
  */
 function wabot_comercial_elige_plan($texto, $conv) {
+    /* Prueba de precios (31-oct): en A las opciones son 1) pago único y 2) plan
+     * mensual, sin anual; en B hay una sola (pago inicial + mensualidad), así que
+     * elegir "el mensual" es elegir esa ('inicial') y el pago único sigue valiendo. */
+    $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
+    if ($modelo !== '') {
+        $num = preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([12])\)?$/u', wabot_normalizar_frase(trim((string)$texto)), $mm) ? $mm[2] : '';
+        if ($modelo === 'a' && $num !== '') return $num === '1' ? 'propia' : 'mensual';
+        if ($modelo === 'b' && $num === '1') return 'inicial';
+        $e = wabot_comercial_elige_plan_lista($texto, $conv);
+        if ($e === 'unico') return $modelo === 'b' ? 'inicial' : null;
+        if ($modelo === 'b' && $e === 'mensual') return 'inicial';
+        if ($modelo === 'b' && $e === null && preg_match('/\b(pago inicial|el inicial|ese plan|esa opcion|esa modalidad)\b/u', wabot_normalizar_frase((string)$texto))
+            && preg_match('/\b(quiero|queremos|vamos|voy|dale|listo|arranco|arrancamos|prefiero|me quedo|nos quedamos|elijo|hago|hacemos)\b/u', wabot_normalizar_frase((string)$texto))
+            && strpos((string)$texto, '?') === false && !preg_match('/\b(no|ni|nunca)\b/u', wabot_normalizar_frase((string)$texto))) return 'inicial';
+        return $e;
+    }
+    return wabot_comercial_elige_plan_lista($texto, $conv);
+}
+
+/** El detector de siempre, con las modalidades de antes de la prueba (mensual / unico = anual / propia). */
+function wabot_comercial_elige_plan_lista($texto, $conv) {
     $crudo = trim((string)$texto);
     if ($crudo === '' || mb_strlen($crudo) > 200) return null;
     if (strpos($crudo, '?') !== false || strpos($crudo, '¿') !== false) return null;
@@ -1375,6 +1452,11 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
             $ajustes[] = 'dos_webs_humano';
         } elseif (!wabot_comercial_solucion_estandar($seg)) {
             $d['segunda_solucion'] = null;
+        } elseif (wabot_ab_grupo_cfg($cfg) !== '' && empty($conv['comercial_dos_webs'])) {
+            // Durante la prueba de precios (31-oct) el descuento de dos webs no está definido para A ni B: lo cotiza Pablo.
+            $d['accion'] = 'humano';
+            $d['motivo'] = 'Pide dos webs: durante la prueba de precios las cotiza Pablo';
+            $ajustes[] = 'dos_webs_prueba_precios';
         }
     }
     // Lo que la ficha ya marcó como fuera de lista (Mercado Libre, 500 productos…) frena la cotización y el formulario.
@@ -1576,11 +1658,17 @@ function wabot_comercial_planes_texto($solucion, $cotizacion, $cfg, $conPagoUnic
     $plan = (string)($cotizacion['plan'] ?? (wabot_comercial_soluciones()[$solucion]['plan'] ?? 'panel'));
     $bloque = ['informativa' => 'planes_informativa', 'internacional' => 'planes_internacional'][$plan] ?? 'planes_panel';
     $unico = trim((string)($cotizacion['unico'] ?? ''));
+    // Prueba de precios (31-oct): el bloque del grupo trae {inicial} (B) o el pago único sin el anual (A).
     if ($unico === '' && isset($cfg['comercial'][$bloque . '_sin_unico'])) $bloque .= '_sin_unico';
     $plantilla = trim((string)($cfg['comercial'][$bloque] ?? ''));
-    if ($plantilla === '' || trim((string)($cotizacion['anual'] ?? '')) === '' || trim((string)($cotizacion['mensual'] ?? '')) === '') return '';
-    if (strpos($plantilla, '{unico}') !== false) return strtr($plantilla, ['{unico}' => $unico, '{anual}' => $cotizacion['anual'], '{mensual}' => $cotizacion['mensual']]);
-    $texto = strtr($plantilla, ['{anual}' => $cotizacion['anual'], '{mensual}' => $cotizacion['mensual']]);
+    $anual = trim((string)($cotizacion['anual'] ?? ''));
+    $inicial = trim((string)($cotizacion['inicial'] ?? ''));
+    if ($plantilla === '' || trim((string)($cotizacion['mensual'] ?? '')) === '') return '';
+    if ((strpos($plantilla, '{anual}') !== false && $anual === '') || (strpos($plantilla, '{inicial}') !== false && $inicial === '')
+        || (strpos($plantilla, '{unico}') !== false && $unico === '')) return '';
+    $marcas = ['{anual}' => $anual, '{mensual}' => $cotizacion['mensual'], '{inicial}' => $inicial, '{web}' => wabot_ab_nombre_web($solucion)];
+    if (strpos($plantilla, '{unico}') !== false) return strtr($plantilla, $marcas + ['{unico}' => $unico]);
+    $texto = strtr($plantilla, $marcas);
     if ($conPagoUnico && $unico !== '') {
         $unico = trim((string)($cfg['comercial']['pago_unico'] ?? ''));
         if ($unico !== '') $texto .= "\n\n" . str_replace('{unico}', $cotizacion['unico'], $unico);
@@ -1737,17 +1825,18 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             if (!empty($d['dos_planes']) && !$cot) {
                 $info = wabot_comercial_montos_lista('informativa', $cfg);
                 $panel = wabot_comercial_montos_lista('panel', $cfg);
-                $nueva = ['origen' => 'bot', 'plan' => 'informativa', 'anual' => $info['anual'], 'mensual' => $info['mensual'], 'unico' => $info['unico'], 'ts' => time()];
+                $nueva = wabot_comercial_cotizacion_nueva('informativa', $cfg);
                 $planes = wabot_comercial_planes_texto('informativa', $nueva, $cfg);
                 $con = trim((string)($cfg['comercial']['con_reservas'] ?? ''));
-                if ($planes !== '' && $con !== '' && $panel['anual'] !== '' && $panel['mensual'] !== '') {
+                $cotPanel = wabot_comercial_cotizacion_nueva('panel', $cfg);
+                if ($planes !== '' && $con !== '' && wabot_comercial_cotizacion_valida($cotPanel)) {
                     $resumen['cotizacion'] = $nueva;
                     $intro = trim((string)($cfg['comercial']['dos_planes_intro'] ?? ''));
                     if ($intro !== '') $msgs[] = ['t' => $intro, 'efecto' => 'texto'];
                     $sin = trim((string)($cfg['comercial']['sin_reservas'] ?? ''));
                     if ($sin !== '' && preg_match('/^(Podés elegir|Tenemos distintas)/u', $planes)) $planes = wabot_comercial_pegar_confirmacion($sin, $planes);
                     $msgs[] = ['t' => $planes, 'efecto' => 'planes'];
-                    $msgs[] = ['t' => strtr($con, ['{unico}' => $panel['unico'], '{anual}' => $panel['anual'], '{mensual}' => $panel['mensual']]), 'efecto' => 'alternativa'];
+                    $msgs[] = ['t' => strtr($con, ['{unico}' => $cotPanel['unico'], '{anual}' => $cotPanel['anual'], '{mensual}' => $cotPanel['mensual'], '{inicial}' => (string)($cotPanel['inicial'] ?? '')]), 'efecto' => 'alternativa'];
                     break;
                 }
             }
@@ -1760,7 +1849,7 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 } else {
                     $plan1 = wabot_comercial_soluciones()[$sol]['plan'];
                     $lista1 = wabot_comercial_montos_lista($plan1, $cfg);
-                    $resumen['cotizacion'] = ['origen' => 'bot', 'plan' => $plan1, 'anual' => $lista1['anual'], 'mensual' => $lista1['mensual'], 'unico' => $lista1['unico'], 'ts' => time()];
+                    $resumen['cotizacion'] = wabot_comercial_cotizacion_nueva($plan1, $cfg);
                     $resumen['congelar_sin_planes'] = true;
                 }
                 $resumen['dos_webs'] = $dos['resumen'];
@@ -1811,8 +1900,9 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             if ($cot && $plan === 'panel' && ($cot['plan'] ?? '') === 'informativa' && !empty($c['comercial_dos_planes_ts'])
                 && !wabot_comercial_oferta_hecha($c, $cfg) && !wabot_comercial_pide_precio_otra_vez($texto)) {
                 $panel = wabot_comercial_montos_lista('panel', $cfg);
-                if ($panel['anual'] !== '' && $panel['mensual'] !== '') {
-                    $resumen['cotizacion'] = ['origen' => 'bot', 'plan' => 'panel', 'anual' => $panel['anual'], 'mensual' => $panel['mensual'], 'unico' => $panel['unico'], 'ts' => time()];
+                $cotPanel = wabot_comercial_cotizacion_nueva('panel', $cfg);
+                if (wabot_comercial_cotizacion_valida($cotPanel)) {
+                    $resumen['cotizacion'] = $cotPanel;
                     $resumen['congelar_sin_planes'] = true;
                     $confirma = '';
                     foreach ($d['mensajes'] as $m) {
@@ -1838,7 +1928,7 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                 break;
             }
             $lista = wabot_comercial_montos_lista($plan, $cfg);
-            $nueva = ['origen' => 'bot', 'plan' => $plan, 'anual' => $lista['anual'], 'mensual' => $lista['mensual'], 'unico' => $lista['unico'], 'ts' => time()];
+            $nueva = wabot_comercial_cotizacion_nueva($plan, $cfg);
             $resumen['cotizacion'] = $nueva;
             $propuesta = trim((string)($d['mensajes'][0] ?? ''));
             // El saludo lo devuelve el sistema al principio del primer mensaje: si la propuesta no va primera, sin su propio saludo.
@@ -1869,7 +1959,7 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             // Eligió un plan ("Hoy debería ser plan mensual"): se le confirma y va el formulario (26-oct).
             if (!empty($d['plan_elegido'])) {
                 $ack = trim((string)($cfg['comercial']['plan_elegido'] ?? ''));
-                $nombre = ['mensual' => 'plan mensual', 'unico' => 'plan anual', 'propia' => 'pago único'][$d['plan_elegido']] ?? '';
+                $nombre = ['mensual' => 'plan mensual', 'unico' => 'plan anual', 'propia' => 'pago único', 'inicial' => 'plan'][$d['plan_elegido']] ?? '';
                 if ($ack !== '' && $nombre !== '') $msgs[] = ['t' => strtr($ack, ['{plan}' => $nombre]), 'efecto' => 'texto'];
                 $resumen['plan_elegido'] = $d['plan_elegido'];
             }
@@ -1903,7 +1993,8 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
         if (is_array($cotInfo)) {
             $paraInfo['precio_dado'] = true;
             $paraInfo['comercial_cotizacion'] = $cotInfo;
-            $paraInfo['precio_cotizado'] = $cotInfo['anual'];
+            $paraInfo['precio_cotizado'] = wabot_comercial_cotizacion_primer_pago($cotInfo);
+            $paraInfo['inicial_cotizado'] = (string)($cotInfo['inicial'] ?? '');
             $paraInfo['mensualidad_cotizada'] = $cotInfo['mensual'];
             $paraInfo['precio_unico_cotizado'] = $cotInfo['unico'] ?? '';
             $paraInfo['sena_cotizada'] = wabot_comercial_montos_lista($cotInfo['plan'], $cfg)['sena'];
@@ -1993,7 +2084,7 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     if (!empty($resumen['pago_unico'])) $conv['quiere_web_propia'] = true;
     if (!empty($resumen['internacional'])) $conv['comercial_internacional'] = true;
     // El plan que eligió queda anotado como siempre (panel, ficha, boceto).
-    if (!empty($resumen['plan_elegido']) && in_array($resumen['plan_elegido'], ['mensual', 'unico', 'propia'], true)) {
+    if (!empty($resumen['plan_elegido']) && in_array($resumen['plan_elegido'], ['mensual', 'unico', 'propia', 'inicial'], true)) {
         $conv['modalidad_elegida'] = (string)$resumen['plan_elegido'];
         if ($resumen['plan_elegido'] === 'propia') $conv['quiere_web_propia'] = true;
         if (function_exists('wabot_modalidad_sincronizar')) wabot_modalidad_sincronizar($conv);
@@ -2010,10 +2101,11 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     /* Congela el precio que vio el cliente: con el bloque de planes o, si eligió
      * "con reservas" después de los dos precios, sin repetirlo (congelar_sin_planes). */
     $congelar = function (array $cot) use (&$conv, $sol, $cfg, $ahora) {
-        if (trim((string)($cot['anual'] ?? '')) === '' || trim((string)($cot['mensual'] ?? '')) === '') return;
+        if (!wabot_comercial_cotizacion_valida($cot)) return;
         // Ya congelada con los mismos montos (no cuenta lo leído de la charla: puede ser este mismo mensaje recién anotado).
         $previa = is_array($conv['comercial_cotizacion'] ?? null) ? $conv['comercial_cotizacion'] : null;
-        if ($previa && ($previa['plan'] ?? '') === ($cot['plan'] ?? '') && ($previa['anual'] ?? '') === $cot['anual'] && ($previa['mensual'] ?? '') === $cot['mensual']) return;
+        if ($previa && ($previa['plan'] ?? '') === ($cot['plan'] ?? '') && ($previa['mensual'] ?? '') === $cot['mensual']
+            && ($previa['anual'] ?? '') === ($cot['anual'] ?? '') && ($previa['inicial'] ?? '') === ($cot['inicial'] ?? '') && ($previa['modelo'] ?? '') === ($cot['modelo'] ?? '')) return;
         $cot['origen'] = (string)($cot['origen'] ?? 'bot');
         $cot['ts'] = $ahora;
         $cot['plan'] = (string)($cot['plan'] ?? 'panel');
@@ -2025,11 +2117,21 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         $conv['tipo'] = $tipo;
         // Una informativa cotizada con el plan con panel (reservas, informativa con panel) sí tiene panel (9-oct).
         $conv['landing_con_panel'] = $tipo === 'landing' && $cot['plan'] !== 'informativa';
-        $conv['precio_cotizado'] = $cot['anual'];
+        $conv['precio_cotizado'] = wabot_comercial_cotizacion_primer_pago($cot);
         $conv['mensualidad_cotizada'] = $cot['mensual'];
         $conv['precio_unico_cotizado'] = (string)($cot['unico'] ?? $lista['unico']);
         $conv['sena_cotizada'] = $lista['sena'];
         $conv['precio_modelo'] = 'anual';
+        /* Prueba de precios (31-oct): el grupo y el modelo quedan anotados para el
+         * panel, el formulario y la medición. En B no hay seña: el pago inicial. */
+        $modelo = (string)($cot['modelo'] ?? '');
+        if ($modelo !== '') {
+            $conv['ab_grupo'] = $modelo;
+            $conv['precio_modelo'] = $modelo === 'b' ? 'inicial' : 'unico_mensual';
+            $conv['inicial_cotizado'] = (string)($cot['inicial'] ?? '');
+            if ($modelo === 'b') $conv['sena_cotizada'] = (string)($cot['inicial'] ?? '');
+            if (empty($conv['ab_grupo_ts'])) $conv['ab_grupo_ts'] = $ahora;
+        }
         $conv['precio_cotizado_ts'] = $ahora;
         $conv['precio_dado'] = true;
         $conv['precio_turnos_desde'] = 0;
@@ -2054,7 +2156,7 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
             // Lo que de verdad vio el cliente manda: si el texto trae otros montos (Pablo lo editó), valen esos.
             $visto = wabot_comercial_montos_de_texto($t);
             if ($cot === null) $cot = ['plan' => wabot_comercial_soluciones()[$sol]['plan'] ?? 'panel'];
-            foreach (['anual', 'mensual', 'unico'] as $k) if ($visto[$k] !== '') $cot[$k] = $visto[$k];
+            foreach (['anual', 'mensual', 'unico', 'inicial'] as $k) if ($visto[$k] !== '') $cot[$k] = $visto[$k];
             $congelar($cot);
         } elseif ($efecto === 'alternativa') {
             // Le pasamos los dos precios (sin reservas / con reservas): falta que elija.

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/respuestas-rapidas-03oct.php';
+require_once __DIR__ . '/ab-precios.php';
 /**
  * Respuestas manuales del panel. Se guardan fuera del código para poder
  * administrarlas desde Wabot sin publicar archivos de nuevo.
@@ -790,12 +791,18 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
 /** Lo que va al costado del chat y al buscador /: sin las ocultas y con los montos de esa charla. */
 function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
     $salida = [];
+    /* Prueba de precios (31-oct, ab-precios.php): arriba, el precio del grupo de
+     * esta charla; y las guardadas que nombran el plan anual no se muestran (no
+     * se ofrece más). Lo guardado no se toca: sin la prueba, todo vuelve. */
+    $ab = function_exists('wabot_ab_rr_categoria') ? wabot_ab_rr_categoria($conv, $cfg) : null;
+    if ($ab) $salida[] = $ab;
     foreach ((array)$categorias as $categoria) {
         if (!empty($categoria['oculta'])) continue;
         if (($categoria['titulo'] ?? '') === 'Propiedad absoluta del código'
             && !wabot_rr_03oct_pidio_codigo($conv)) continue;
         $items = [];
         foreach ((array)($categoria['items'] ?? []) as $texto) {
+            if ($ab && wabot_ab_rr_menciona_anual($texto)) continue;
             $items[] = wabot_respuestas_rapidas_montos($texto, $conv, $cfg);
         }
         if (!$items) continue;

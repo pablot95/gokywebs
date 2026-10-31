@@ -712,6 +712,84 @@ function wabot_textos_default() {
             'sena' => '$60.000',
         ],
     ],
+    /* Prueba A/B de precios (Pablo, 31-oct-2026; ver ab-precios.php). Cada
+     * modelo pisa, solo para las charlas de su grupo, los textos y montos de
+     * arriba. En los dos ya no se ofrece el plan anual. Los textos de B que
+     * dictó Pablo van tal cual (planes_*); el resto son adaptaciones de las
+     * respuestas oficiales de siempre, sin el anual. */
+    'ab_precios' => [
+        'activo' => true,
+        'modelos' => [
+            'a' => [
+                'comercial' => [
+                    'planes_informativa' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n2) Plan mensual: {mensual}\nIncluye todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    'planes_panel' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n2) Plan mensual: {mensual}\nIncluye todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    'con_reservas' => "Con reservas quedaría en:\n\n1) Pago único: {unico}\n2) Plan mensual: {mensual}",
+                    'modalidades_gpt' => 'Las modalidades son dos: 1) pago único (seña y el resto al entregar; la web queda del cliente, incluye el primer año de hosting y dominio y el mantenimiento es opcional y aparte) y 2) plan mensual (suscripción por Mercado Pago, sin permanencia, no son cuotas de la web; incluye hosting, dominio, mantenimiento y soporte). Son alternativas, no se suman. El plan anual YA NO EXISTE: no lo ofrezcas ni lo nombres; si lo pide, las opciones son esas dos (respuesta oficial pago).',
+                ],
+                'info' => [
+                    'pago' => 'Hay 2 modalidades: pago único de {precio_unico}, que arranca con una seña y el resto va al entregar, o plan mensual de {mensualidad} por mes, por Mercado Pago y sin permanencia.',
+                    'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual; con el pago único es opcional, por {mantenimiento_mes}.',
+                    'pago_generico' => 'Hay 2 modalidades: pago único o plan mensual. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
+                    'titularidad' => 'El código pasa a ser tuyo con el pago único al abonar el total y con el plan mensual a los 18 meses. Hasta ahí es de Gokywebs.',
+                    'entrega_codigo' => 'Sí: con el pago único es tuyo al abonar el total y con el plan mensual a los 18 meses.',
+                    'pago_sin_precio' => 'Hay 2 modalidades: pago único, con el primer año de hosting y dominio incluido, o plan mensual por Mercado Pago, sin permanencia, que incluye hosting, dominio, mantenimiento y soporte.',
+                    'que_incluye' => 'Con el plan mensual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para cargar los productos.',
+                    'que_incluye_sin_productos' => 'Con el plan mensual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para editarla.',
+                    'que_incluye_sitio' => 'Con el plan mensual está todo incluido: la web a medida, adaptada a celular, preparada para Google, hosting, dominio, mantenimiento, soporte y un cambio por mes.',
+                    'plan_es_servicio' => 'Entonces te conviene el pago único{precio_web_propia}: pagás la web una sola vez y queda tuya.',
+                    'un_solo_pago' => 'Sí: con el pago único{precio_web_propia} pagás la web una sola vez y queda tuya. Incluye el primer año de hosting y dominio; el mantenimiento es aparte y opcional.',
+                    'recomendar_plan' => 'Si querés arrancar con poca inversión, el plan mensual; si preferís pagar la web una sola vez y que quede tuya, el pago único.',
+                    'cambios_extra' => 'Sí: sumando $10.000 por mes tenés 3 cambios por mes.',
+                    'medios_pago' => 'El pago único lo podés pagar por transferencia, con tarjeta o por Mercado Pago. El plan mensual es una suscripción de Mercado Pago, con cualquier tarjeta.',
+                ],
+                'cambios_plan' => 'El plan mensual incluye un cambio por mes en la web.',
+                'hosting_renovacion' => 'Con el plan mensual no hay renovación aparte: el hosting, el dominio, el mantenimiento y el soporte van incluidos mientras el plan esté activo.',
+                'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, elegís el pago único o el plan mensual y arrancamos.',
+                'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. El plan mensual funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",
+                'respuesta_plan_obligatorio' => 'No: el plan mensual es una de las 2 modalidades para contratar la web. Si preferís no pagar todos los meses, está el pago único, que pagás una sola vez.',
+            ],
+            'b' => [
+                'tipos' => [
+                    'landing' => ['inicial' => '$80.000'],
+                    'ecommerce' => ['inicial' => '$100.000'],
+                    'elearning' => ['inicial' => '$100.000'],
+                    'inmobiliaria' => ['inicial' => '$100.000'],
+                ],
+                'comercial' => [
+                    // Texto de Pablo (31-oct), tal cual; {web} = "tienda online", "sitio profesional"…
+                    'planes_informativa' => "Para tu {web}, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
+                    'planes_panel' => "Para tu {web}, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
+                    'con_reservas' => "Con reservas, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
+                    'modalidades_gpt' => 'Hay UNA sola modalidad: un pago inicial que cubre todo el desarrollo (sin seña ni saldo: con ese pago se hace toda la web) y, al mes de ese pago, una mensualidad por Mercado Pago que incluye hosting, dominio, mantenimiento y soporte. Con el pago inicial NO compra la web: la titularidad del código la puede pedir a partir del mes 12, y si deja de pagar la mensualidad la web se suspende. No hay plan anual ni otras opciones: no las ofrezcas ni las nombres. El pago único existe solo si pide comprar la web o el código (marcá pago_unico).',
+                ],
+                'info' => [
+                    'pago' => 'Arrancás con un pago inicial de {inicial} y con eso hacemos toda la web, sin seña ni saldo. Al mes de ese pago empieza la mensualidad de {mensualidad}, por Mercado Pago.',
+                    'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en la mensualidad.',
+                    'pago_generico' => 'Es un pago inicial por el desarrollo y después una mensualidad. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
+                    'titularidad' => 'Con el pago inicial no estás comprando la web: el código es de Gokywebs, y el dominio y el servidor también. A partir del mes 12 podés pedir la titularidad del código.',
+                    'entrega_codigo' => 'Sí: a partir del mes 12 podés pedir la titularidad del código. Hasta ahí es de Gokywebs.',
+                    'pago_sin_precio' => 'Es un pago inicial por el desarrollo completo y después una mensualidad que incluye hosting, dominio, mantenimiento y soporte.',
+                    'que_incluye' => 'Con la mensualidad está todo incluido: hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para cargar los productos. El desarrollo de la web lo cubre el pago inicial.',
+                    'que_incluye_sin_productos' => 'Con la mensualidad está todo incluido: hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para editarla. El desarrollo de la web lo cubre el pago inicial.',
+                    'que_incluye_sitio' => 'Con la mensualidad está todo incluido: hosting, dominio, mantenimiento, soporte y un cambio por mes. El desarrollo de la web, adaptada a celular y preparada para Google, lo cubre el pago inicial.',
+                    'plan_es_servicio' => 'Si preferís no tener mensualidad, está el pago único{precio_web_propia}: pagás la web una sola vez y queda tuya.',
+                    'un_solo_pago' => 'Sí: con el pago único{precio_web_propia} pagás la web una sola vez y queda tuya. Incluye el primer año de hosting y dominio; el mantenimiento es aparte y opcional.',
+                    'recomendar_plan' => 'Es un pago inicial y después la mensualidad: arrancás con poca inversión y tenés hosting, dominio, mantenimiento y soporte incluidos.',
+                    'cambios_extra' => 'Sí: sumando $10.000 por mes tenés 3 cambios por mes.',
+                    'medios_pago' => 'El pago inicial lo podés pagar por transferencia, con tarjeta o por Mercado Pago. La mensualidad es una suscripción de Mercado Pago, con cualquier tarjeta.',
+                    // Pablo, 31-oct: con el primer pago no compran la web; si deja de pagar, suspendida.
+                    'suspension' => 'Si la mensualidad queda sin pagar, la web se suspende hasta que se regularice. Con el pago inicial no estás comprando la web: hasta el mes 12 el código, el dominio y el servidor son de Gokywebs.',
+                ],
+                'cambios_plan' => 'La mensualidad incluye un cambio por mes en la web.',
+                'hosting_renovacion' => 'No hay renovación aparte: el hosting, el dominio, el mantenimiento y el soporte van incluidos en la mensualidad.',
+                'devolucion' => 'El pago inicial no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
+                'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, hacés el pago inicial y arrancamos.',
+                'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. La mensualidad funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",
+                'respuesta_plan_obligatorio' => 'Sí: la web se contrata con el pago inicial y la mensualidad, que es lo que la mantiene online. Si preferís no tener mensualidad, está el pago único, que pagás una sola vez.',
+            ],
+        ],
+    ],
     'ultima_llamada' => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',
     /* Al que escribió y no llegó al precio, el mismo aviso antes de que cierre
      * la ventana de 24 h, con el texto de Pablo (2-oct). Sin el portfolio si ya

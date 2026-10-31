@@ -468,8 +468,9 @@ $htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
 $posPropia = strpos($htmlPrincipal, '<option value="propia"');
 $posAnual = strpos($htmlPrincipal, '<option value="unico"');
 $posMensual = strpos($htmlPrincipal, '<option value="mensual"');
-caso('el formulario principal ofrece pago único, plan anual y plan mensual, en ese orden (26-oct)',
-    $posPropia !== false && $posAnual !== false && $posMensual !== false && $posPropia < $posAnual && $posAnual < $posMensual);
+// 31-oct (prueba de precios): el plan anual ya no se ofrece; quedan el pago único y el mensual, en ese orden.
+caso('el formulario principal ofrece pago único y plan mensual, en ese orden, sin el plan anual (31-oct)',
+    $posPropia !== false && $posAnual === false && $posMensual !== false && $posPropia < $posMensual);
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',

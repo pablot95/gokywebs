@@ -156,7 +156,8 @@ function formlead_extras($payload, &$motivo = null, $ahora = null) {
         $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
         /* 'unico' es el plan anual, 'mensual' el plan mensual y 'propia' el
          * pago único (sacado del formulario el 6-oct, de vuelta el 26-oct). */
-        if (!in_array($modalidad, ['unico', 'mensual', 'propia'], true)) {
+        // 'inicial' = pago inicial + mensualidad, el modelo B de la prueba de precios (31-oct); 'unico' queda para formularios en caché.
+        if (!in_array($modalidad, ['unico', 'mensual', 'propia', 'inicial'], true)) {
             $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
         }
         $extras['modalidad_elegida'] = $modalidad;
@@ -244,7 +245,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
-    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único'][$extras['modalidad_elegida']] ?? 'Plan mensual');
+    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único', 'inicial' => 'Pago inicial + mensualidad'][$extras['modalidad_elegida']] ?? 'Plan mensual');
     if (!empty($extras['demo_hora_ts'])) $partes[] = 'Demo: ' . wabot_demo_hora_frase($extras['demo_hora_ts']) . ' (eligió la hora)';
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
     elseif (array_key_exists('modalidad_elegida', $extras)) $partes[] = 'Modelos: a elección del diseñador (dos)';

@@ -3279,6 +3279,20 @@ const DIAS_AVISO_RENOVACION = 30;
 // Modelo del 10-sep-2026: el plan arrancaba a los 7 días del primer pago. Solo
 // cuenta para los clientes que tienen el primer pago registrado.
 const DIAS_HASTA_EL_PLAN = 7;
+/* Prueba de precios (31-oct-2026, wabot/ab-precios.php): el grupo B paga un
+   pago inicial (primerPago, sin seña) y la mensualidad arranca al mes. El bot
+   deja `grupoPrecios` en el boceto ('a', 'b' o ''). */
+function grupoPreciosDe(c) {
+    return c?.grupoPrecios || c?.propuestaSnapshot?.grupoPrecios || "";
+}
+// Días entre el primer pago y el arranque del plan: un mes en el grupo B, 7 en el modelo del 10-sep.
+function diasHastaElPlan(c) {
+    return grupoPreciosDe(c) === "b" ? 30 : DIAS_HASTA_EL_PLAN;
+}
+// Los del cliente abierto en el modal (los deja abrirModalCliente en el campo del primer pago).
+function diasHastaElPlanModal() {
+    return Number(document.getElementById("primerPagoAt")?.dataset.dias) || DIAS_HASTA_EL_PLAN;
+}
 
 function _num(v) {
     const n = Number(v);
@@ -3439,6 +3453,7 @@ function planDe(src, extra = null) {
         saldo:      Math.max(0, unico - sena),
         mensual:    _num(s.montoMensual) || _num(s.mensualidad) || _num(x.montoMensual) || _num(x.mensualidad) || base.mensual,
         primerPago: _num(s.primerPago) || _num(x.primerPago) || senaAnterior(s) || senaAnterior(x),
+        grupoB:     grupoPreciosDe(s) === "b" || grupoPreciosDe(x) === "b",
     };
 }
 
@@ -3487,7 +3502,7 @@ function suscripcionDe(c) {
     const aviso = avisoMantDe(mant || c);
     const primerPagoAt = mantToDate(c.primerPagoAt);
     const inicio = mantToDate(c.suscripcionDesde)
-        || (primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : null)
+        || (primerPagoAt ? _sumarDias(primerPagoAt, diasHastaElPlan(c)) : null)
         || mantToDate(mant?.createdAt);
     const desde = inicio ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()) : null;
     const mantActivo = !!mant && !aviso && (mant.estado || "activo") === "activo";
@@ -3521,8 +3536,8 @@ function _planRowsHTML(plan) {
     const fila = (label, valor) => `<div class="prop-row"><span class="prop-label">${label}</span><span>${valor}</span></div>`;
     return `<div class="prop-row"><span class="prop-label">Plan</span><span style="font-weight:700;color:#4ade80">${escapeHtml(plan.label || "Sin definir")}</span></div>
         ${plan.modalidad ? fila("Modalidad", MODALIDAD_LABELS[plan.modalidad]) : ""}
-        ${plan.primerPago ? fila("Primer pago (modelo anterior)", fmtMoney(plan.primerPago)) : ""}
-        ${!plan.modalidad || plan.modalidad === "mensual" ? fila("Plan mensual", `${fmtMoney(plan.mensual)}/mes${plan.primerPago ? `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago` : ", sin pago inicial"}`) : ""}
+        ${plan.primerPago ? fila(plan.grupoB ? "Pago inicial (grupo B)" : "Primer pago (modelo anterior)", fmtMoney(plan.primerPago)) : ""}
+        ${!plan.modalidad || plan.modalidad === "mensual" ? fila("Plan mensual", `${fmtMoney(plan.mensual)}/mes${plan.primerPago ? (plan.grupoB ? ", arranca al mes del pago inicial" : `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago`) : ", sin pago inicial"}`) : ""}
         ${!plan.modalidad || plan.modalidad === "unico" ? fila("Plan anual", `${fmtMoney(plan.unico)} por año: seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año, sin suscripción`) : ""}
         ${plan.modalidad === "propia" ? fila("Pago único", `${fmtMoney(plan.propia)}: seña de ${fmtMoney(plan.sena)} para arrancar y el resto al entregar; incluye el primer año de hosting y dominio, el mantenimiento va aparte`) : ""}`;
 }
@@ -5620,7 +5635,7 @@ function sincronizarModalidadModal() {
 function sincronizarDesdeAuto() {
     const pago = _fechaDeInput(document.getElementById("primerPagoAt").value);
     const desdeEl = document.getElementById("suscripcionDesde");
-    const auto = pago ? mantDateKey(_sumarDias(pago, DIAS_HASTA_EL_PLAN)) : "";
+    const auto = pago ? mantDateKey(_sumarDias(pago, diasHastaElPlanModal())) : "";
     if (!desdeEl.value || desdeEl.value === desdeEl.dataset.auto) desdeEl.value = auto;
     desdeEl.dataset.auto = auto;
 }
@@ -5675,10 +5690,11 @@ function cargarPlanEnModal(c) {
     const pagoAt = s?.primerPagoAt ? mantDateKey(s.primerPagoAt) : "";
     $("primerPagoAt").value = pagoAt;
     $("primerPagoAt").dataset.original = pagoAt;
+    $("primerPagoAt").dataset.dias = String(diasHastaElPlan(c || s));
 
     const desdeGuardado = c ? mantToDate(c.suscripcionDesde) : null;
     const desdeKey = desdeGuardado ? mantDateKey(desdeGuardado) : "";
-    const auto = s?.primerPagoAt ? mantDateKey(_sumarDias(s.primerPagoAt, DIAS_HASTA_EL_PLAN)) : "";
+    const auto = s?.primerPagoAt ? mantDateKey(_sumarDias(s.primerPagoAt, diasHastaElPlanModal())) : "";
     $("suscripcionDesde").value = desdeKey || auto;
     $("suscripcionDesde").dataset.original = desdeKey;
     $("suscripcionDesde").dataset.auto = auto;
@@ -5788,7 +5804,7 @@ form.addEventListener("submit", async (e) => {
         if (!id || pagoEl.value !== pagoEl.dataset.original) data.primerPagoAt = primerPagoAt;
         if (!id || desdeEl.value !== desdeEl.dataset.original) {
             data.suscripcionDesde = _fechaDeInput(desdeEl.value)
-                || (primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : null);
+                || (primerPagoAt ? _sumarDias(primerPagoAt, diasHastaElPlanModal()) : null);
         }
         /* Campos viejos, por compatibilidad: en un cliente mensual `valorTotal` = primer
            pago y `abono` = lo cobrado de ese primer pago. Se siguen escribiendo mientras
@@ -5804,7 +5820,7 @@ form.addEventListener("submit", async (e) => {
         // Pasar a Cliente con el plan mensual = ya se suscribió (Pablo, 16-oct): el select se pone en activa al
         // elegir Cliente (listener de estadoCliente) y, si no se cargó la fecha, corre desde hoy.
         if (pasaACliente && data.estadoSuscripcion === "activa" && !_fechaDeInput(desdeEl.value) && !mantToDate(actual?.suscripcionDesde)) {
-            data.suscripcionDesde = primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : _fechaDeInput(mantDateKey(new Date()));
+            data.suscripcionDesde = primerPagoAt ? _sumarDias(primerPagoAt, diasHastaElPlanModal()) : _fechaDeInput(mantDateKey(new Date()));
         }
         // Mismo pedido que en el selector de estado: el nombre en Mercado Pago para vincular la suscripción.
         if (pasaACliente && !data.preapprovalId) {

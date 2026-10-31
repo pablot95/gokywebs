@@ -18,6 +18,8 @@ $GLOBALS['WABOT_TEST_FALLAS'] = 0;
 $GLOBALS['WABOT_TEST_TOTAL']  = 0;
 // Las suites prueban la charla completa: el modo "solo bienvenida" (3-oct) se prueba en test-solo-bienvenida.php.
 if (!isset($GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'])) $GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = false;
+// La prueba de precios A/B (31-oct, ab-precios.php) va apagada salvo en test-ab-precios.php: el resto prueba lo de siempre.
+if (!isset($GLOBALS['WABOT_TEST_SIN_AB'])) $GLOBALS['WABOT_TEST_SIN_AB'] = true;
 
 require_once __DIR__ . '/redactor.php';
 

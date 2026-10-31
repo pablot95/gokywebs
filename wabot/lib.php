@@ -1181,6 +1181,8 @@ function wabot_form_link(&$conv, $cfg) {
      * dice al formulario que muestre y pida el número en vez de darlo por
      * sabido. */
     $link = 'https://gokywebs.com/form/?c=' . $codigo;
+    // Prueba de precios (31-oct): el formulario muestra solo las formas de pago del grupo (&m=b: pago inicial + mensualidad).
+    if (($conv['comercial_cotizacion']['modelo'] ?? '') === 'b') $link .= '&m=b';
     return wabot_canal($conv) === 'instagram' ? $link . '&ig=1' : $link;
 }
 
@@ -2344,7 +2346,7 @@ function wabot_form_info($cv, &$ts = null) {
      * hermana trae form_completado_ts sin transcript del form): lo guardado. */
     if (!$info && (int)($cv['form_completado_ts'] ?? 0) > 0) {
         $ts = (int)$cv['form_completado_ts'];
-        $modalidad = ['unico' => 'Plan anual', 'propia' => 'Pago único', 'mensual' => 'Plan mensual'][$cv['modalidad_elegida'] ?? ''] ?? '';
+        $modalidad = ['unico' => 'Plan anual', 'propia' => 'Pago único', 'mensual' => 'Plan mensual', 'inicial' => 'Pago inicial + mensualidad'][$cv['modalidad_elegida'] ?? ''] ?? '';
         foreach (['Nombre' => $cv['nombre'] ?? '', 'Negocio' => $cv['nombre_negocio'] ?? '', 'Resumen' => $cv['descripcion'] ?? '',
                   'Colores' => $cv['colores'] ?? '', 'Instagram' => ($cv['instagram'] ?? '') !== '' ? 'instagram.com/' . $cv['instagram'] : '',
                   'Referencia' => $cv['referencia'] ?? '', 'Incluir sí o sí' => $cv['incluir'] ?? '', 'Forma de pago' => $modalidad] as $etiqueta => $valor) {
@@ -6870,9 +6872,13 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'saldo'              => ['integerValue' => $montoLead($vLead['saldo'] ?? '')],
         'mensualidad'        => ['integerValue' => $montoLead($vLead['mensualidad'] ?? '')],
         // La forma que eligió por chat, si eligió (15-sep); vacía, el admin muestra las dos.
-        'modalidad'          => ['stringValue' => in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual', 'propia'], true)
-                                    ? (string)$conv['modalidad_elegida'] : ''],
-        'primerPago'         => ['integerValue' => '0'],
+        /* El modelo B de la prueba de precios (31-oct) va al admin como plan mensual
+         * con primer pago: el pago inicial, y la mensualidad desde el mes siguiente. */
+        'modalidad'          => ['stringValue' => ($conv['modalidad_elegida'] ?? '') === 'inicial' ? 'mensual'
+                                    : (in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual', 'propia'], true) ? (string)$conv['modalidad_elegida'] : '')],
+        'primerPago'         => ['integerValue' => (($conv['comercial_cotizacion']['modelo'] ?? '') === 'b') ? $montoLead($conv['comercial_cotizacion']['inicial'] ?? '') : '0'],
+        // Grupo de la prueba de precios (31-oct): 'a' (pago único o mensual), 'b' (inicial + mensual) o '' (cotizada antes).
+        'grupoPrecios'       => ['stringValue' => (string)($conv['comercial_cotizacion']['modelo'] ?? '')],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],
         'sistema_usuarios'   => ['stringValue' => (string)($conv['sistema_usuarios'] ?? '')],
@@ -7324,7 +7330,7 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
  */
 function wabot_modalidad_sincronizar(&$conv) {
     $modalidad = (string)($conv['modalidad_elegida'] ?? '');
-    if (empty($conv['lead_creado']) || !in_array($modalidad, ['unico', 'mensual', 'propia'], true)) return false;
+    if (empty($conv['lead_creado']) || !in_array($modalidad, ['unico', 'mensual', 'propia', 'inicial'], true)) return false;
     if ($modalidad === (string)($conv['modalidad_sincronizada'] ?? '')) return false;
     $doc = trim((string)($conv['lead_doc'] ?? ''));
     if ($doc === '') return false;
@@ -7338,7 +7344,8 @@ function wabot_modalidad_sincronizar(&$conv) {
     curl_setopt_array($ch, [
         CURLOPT_CUSTOMREQUEST => 'PATCH',
         CURLOPT_POSTFIELDS => json_encode(['fields' => [
-            'modalidad' => ['stringValue' => $modalidad],
+            // El modelo B (31-oct) es, para el admin, el plan mensual con primer pago.
+            'modalidad' => ['stringValue' => $modalidad === 'inicial' ? 'mensual' : $modalidad],
             'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
         ]], JSON_UNESCAPED_UNICODE),
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'],

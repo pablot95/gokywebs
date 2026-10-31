@@ -127,14 +127,15 @@
                                  Los valores mensual/unico los valida wabot/form-lead.php
                                  ('unico' es el plan anual, 'propia' el pago único). La opción
                                  'propia' se sacó del formulario el 6-oct-2026 y volvió el
-                                 26-oct, primera, en el orden de los precios del bot. -->
+                                 26-oct, primera, en el orden de los precios del bot. El plan
+                                 anual ('unico') se sacó el 31-oct; con ?m=b (modelo B de la
+                                 prueba de precios) script.js deja solo 'inicial'. -->
                             <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
                                 <option value="" disabled selected>Elegí una opción</option>
                                 <option value="propia" data-desc="Pagás la web una sola vez: arrancás con una seña y el resto lo pagás al entregar la web. La web queda 100% tuya e incluye el primer año de hosting y dominio.">Pago único</option>
-                                <option value="unico" data-desc="Arrancás con una seña de $60.000, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción. Incluye el mantenimiento y un cambio por mes.">Plan anual</option>
                                 <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
                             </select>
-                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre pago único, plan anual y plan mensual.</p>
+                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre pago único y plan mensual.</p>
                         </div>
 
                         <!-- A qué hora quiere la demo (29-oct). script.js arma las opciones
@@ -263,7 +264,7 @@
             </div>
             <div class="que-es-body">
                 <p class="que-es-intro">Contanos sobre tu negocio, elegí la forma de pago y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
-                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si elegís el plan anual, se arranca con una seña de $60.000 que no se devuelve y el resto se paga al entregar la web; después se renueva cada año, contado desde la seña. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con el plan mensual y con el anual, después de la entrega tenés un cambio por mes incluido.</p></div>
+                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con la mensualidad, después de la entrega tenés un cambio por mes incluido.</p></div>
             </div>
         </div>
     </div>
@@ -312,6 +313,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261029-hora-opcional"></script>
+    <script type="module" src="script.js?v=20261031-ab-precios"></script>
 </body>
 </html>

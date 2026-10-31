@@ -359,7 +359,7 @@ function wabot_revision_contexto($cv, array $lineas, array $tramo, $cfg) {
     if ($cot && (int)($cot['ts'] ?? 0) > $hasta) $cot = null;
     $c[] = $cot
         ? '- Precio que se le pasó: plan ' . ($cot['plan'] === 'informativa' ? 'informativa' : ($cot['plan'] === 'internacional' ? 'internacional' : 'con panel'))
-          . ', anual ' . $cot['anual'] . ', mensual ' . $cot['mensual'] . (($cot['origen'] ?? '') === 'chat' ? ' (leído de la charla)' : '')
+          . ', ' . wabot_comercial_cotizacion_resumen($cot) . (($cot['origen'] ?? '') === 'chat' ? ' (leído de la charla)' : '')
         : '- Todavía no se le había pasado el precio (salvo que figure en la charla).';
     $dosWebs = is_array($cv['comercial_dos_webs'] ?? null) ? $cv['comercial_dos_webs'] : null;
     if ($dosWebs && $yaEstaba($dosWebs['ts'] ?? 0)) {

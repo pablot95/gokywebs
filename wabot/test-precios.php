@@ -159,6 +159,8 @@ foreach ($paginasTipo as $t => $slugs) {
         // 26-oct: las tres páginas tienen las tres pestañas, en el orden de los precios: pago único, anual, mensual.
         $pestanas = [$slugs[2], $slugs[1], $slugs[0]];
         $nombres = ['Pago único', 'Anual', 'Mensual'];
+        // 31-oct (prueba de precios): el anual ya no se ofrece; su página sigue en línea con las tres, las otras dos ya no lo muestran.
+        if ($slug !== $slugs[1]) { $pestanas = [$slugs[2], $slugs[0]]; $nombres = ['Pago único', 'Mensual']; }
         caso("pago/$slug: arriba tiene las pestañas " . implode(', ', $nombres) . " del mismo tipo de web, con la suya marcada",
             array_column($m, 1) === $pestanas && array_column($m, 3) === $nombres && $marcadas === [$slug],
             json_encode($m, JSON_UNESCAPED_UNICODE));

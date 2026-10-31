@@ -566,7 +566,7 @@ function validarPaso2() {
 
     const modalidad = document.getElementById('modalidad');
     if (!modalidad.value) {
-        markError(modalidad, 'Elegí el pago único, el plan anual o el plan mensual.');
+        markError(modalidad, 'Elegí la forma de pago.');
         if (!firstError) firstError = modalidad;
     }
 
@@ -880,6 +880,15 @@ if (instagramInput) instagramInput.addEventListener('input', pintarInstagram);
 // Lo mismo con la forma de pago: qué implica cada una de las opciones.
 const planSelect = document.getElementById('modalidad');
 const planAyuda = document.getElementById('modalidadDetalle');
+
+/* Prueba de precios (Pablo, 31-oct): al modelo B el bot le manda el link con
+ * &m=b y acá queda una sola forma de pago, la que le pasó: pago inicial y
+ * mensualidad desde el mes siguiente (form-lead.php la guarda como 'inicial').
+ * Sin el parámetro, pago único o plan mensual. */
+if (planSelect && _paramsInicial.get('m') === 'b') {
+    planSelect.innerHTML = '<option value="inicial" selected data-desc="Arrancás con un pago inicial que cubre todo el desarrollo de la web, sin seña ni saldo. Al mes de ese pago empieza la mensualidad, que incluye hosting, dominio, mantenimiento y soporte.">Pago inicial + mensualidad</option>';
+    if (planAyuda) planAyuda.textContent = 'Es la forma de pago que te pasamos por WhatsApp.';
+}
 const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';
 
 function pintarPlan() {

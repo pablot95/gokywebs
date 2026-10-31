@@ -3400,6 +3400,13 @@ function burbujaCita(t, chat) {
                               $formTs = null; $formInfo = wabot_form_info($conv, $formTs); ?>
                         <button type="button" class="sec" id="btnVerInfo"<?= $formInfo ? '' : ' disabled' ?>
                             title="<?= $formInfo ? 'Lo que llenó en el formulario' : 'Todavía no completó el formulario' ?>">Ver info</button>
+                        <?php /* Prueba de precios (31-oct, ab-precios.php): qué modelo le toca a esta charla,
+                               para contestarle a mano con los mismos precios que el bot. */
+                              $abGrupo = function_exists('wabot_ab_grupo') ? wabot_ab_grupo($conv, $cfg) : '';
+                              if ($abGrupo !== ''): ?>
+                        <span class="sec" style="display:inline-flex;align-items:center;padding:6px 10px;border:1px dashed var(--ac);border-radius:8px;color:var(--ac);font-size:12px"
+                            title="<?= $e($abGrupo === 'b' ? 'Modelo B: pago inicial ($100.000 / $80.000) sin seña y la mensualidad desde el mes siguiente. El pago único, solo si lo pide.' : 'Modelo A: pago único o plan mensual. Sin plan anual.') ?>">🧪 Grupo <?= strtoupper($abGrupo) ?> · <?= $abGrupo === 'b' ? 'inicial + mensual' : 'único o mensual' ?><?= empty($conv['ab_grupo']) ? ' (sin precio todavía)' : '' ?></span>
+                        <?php endif; ?>
                         <?php /* Pablo, 6-oct: copia los últimos 10 mensajes y, si llenó el formulario, su resumen arriba. */ ?>
                         <button type="button" class="sec" id="btnCopiarMsjs"
                             title="Copia los últimos 10 mensajes del chat<?= $formInfo ? ' y lo que llenó en el formulario' : '' ?>">Copiar msjs</button>
