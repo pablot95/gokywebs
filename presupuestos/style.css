@@ -508,6 +508,15 @@ a { color: inherit; text-decoration: none; }
 .mods-card + .mods-card { margin-top: 1rem; }
 .mods-card .btn-modalidad { margin-top: 1rem; }
 
+/* 31-oct: lo que no entra en ninguna modalidad, al pie del presupuesto. */
+.pres-no-incluye {
+    margin-top: -1.6rem;
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.6;
+}
+.pres-no-incluye strong { color: var(--ink); }
+
 .prep-support {
     width: min(680px, calc(100% - 2.5rem));
     margin: -.4rem auto 0;

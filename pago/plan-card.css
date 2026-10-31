@@ -138,6 +138,7 @@ main {
     line-height: 1.55;
 }
 .plan-note strong { color: var(--ink); }
+.plan-note + .plan-no-incluye { margin-top: .6rem; padding-top: 0; border-top: 0; }
 
 .plan-cta { margin-top: 1.8rem; }
 
