@@ -164,7 +164,17 @@
   <div class="modal-overlay" id="dayModal">
     <div class="modal-box modal-box--wide">
       <button class="btn-icon btn-icon--delete modal-close" id="dayModalClose" aria-label="Cerrar">✕</button>
-      <h3 id="dayModalTitle">—</h3>
+      <div class="day-modal-head">
+        <label class="day-modal-done" title="Marcar día como completado">
+          <input type="checkbox" id="dayModalDone">
+          <span>Completado</span>
+        </label>
+        <div class="day-modal-nav">
+          <button class="calendar-nav-btn" id="dayModalPrev" type="button" aria-label="Día anterior">‹</button>
+          <h3 id="dayModalTitle">—</h3>
+          <button class="calendar-nav-btn" id="dayModalNext" type="button" aria-label="Día siguiente">›</button>
+        </div>
+      </div>
       <p class="modal-subtitle">Resumen del trabajo realizado</p>
 
       <div class="day-export-row" style="margin-bottom:14px">

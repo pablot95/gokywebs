@@ -87,6 +87,27 @@ async function loadDoneDays() {
         doneDays = {};
     }
 }
+// Marca/desmarca el día (desde la celda o desde el check del modal) y refleja el
+// cambio en la celda del mes; si falla la escritura vuelve todo para atrás.
+function setDayDone(dateKey, checked) {
+    if (!dateKey) return;
+    applyDayDone(dateKey, checked);
+    toggleDayDone(dateKey, checked).catch(e => {
+        console.error(e);
+        applyDayDone(dateKey, !checked);
+        toast('No se pudo guardar', 'error');
+    });
+}
+function applyDayDone(dateKey, checked) {
+    if (checked) doneDays[dateKey] = true; else delete doneDays[dateKey];
+    const cell = document.querySelector(`.calendar-day[data-date="${dateKey}"]`);
+    if (cell) {
+        cell.classList.toggle('is-done', checked);
+        const chk = cell.querySelector('.cal-day-done input');
+        if (chk) chk.checked = checked;
+    }
+    if (currentModalDateKey === dateKey) $('dayModalDone').checked = checked;
+}
 async function toggleDayDone(dateKey, checked) {
     if (checked) {
         await setDoc(doneDaysRef(), { days: { [dateKey]: true } }, { merge: true });
@@ -137,6 +158,15 @@ export async function initCalendar(userId) {
     $('dayModal').addEventListener('click', e => { if (e.target.id === 'dayModal') closeModal(); });
     $('dayModalExportBtn').addEventListener('click', exportDayToExcel);
     $('calendarExportAllBtn').addEventListener('click', exportAllToExcel);
+    $('dayModalPrev').addEventListener('click', () => shiftModalDay(-1));
+    $('dayModalNext').addEventListener('click', () => shiftModalDay(1));
+    $('dayModalDone').addEventListener('change', e => setDayDone(currentModalDateKey, e.target.checked));
+    document.addEventListener('keydown', e => {
+        if (!$('dayModal').classList.contains('open') || editingTaskId) return;
+        if (e.target.closest?.('input, textarea, select')) return;
+        if (e.key === 'ArrowLeft') shiftModalDay(-1);
+        if (e.key === 'ArrowRight') shiftModalDay(1);
+    });
 
     await loadDoneDays();
     renderCalendar();
@@ -194,7 +224,9 @@ async function renderCalendar() {
 
         const el = document.createElement('div');
         el.className = 'calendar-day';
+        el.dataset.date = dateKey;
         if (dateKey === todayKey) el.classList.add('is-today');
+        if (doneDays[dateKey]) el.classList.add('is-done');
 
         const num = document.createElement('span');
         num.className = 'cal-day-num';
@@ -228,16 +260,7 @@ function buildDoneCheckbox(dateKey) {
     chk.type = 'checkbox';
     chk.checked = !!doneDays[dateKey];
     chk.setAttribute('aria-label', `Marcar ${dateKey} como hecho`);
-    chk.addEventListener('change', () => {
-        const checked = chk.checked;
-        if (checked) doneDays[dateKey] = true; else delete doneDays[dateKey];
-        toggleDayDone(dateKey, checked).catch(e => {
-            console.error(e);
-            if (checked) delete doneDays[dateKey]; else doneDays[dateKey] = true;
-            chk.checked = !checked;
-            toast('No se pudo guardar', 'error');
-        });
-    });
+    chk.addEventListener('change', () => setDayDone(dateKey, chk.checked));
 
     wrap.appendChild(chk);
     return wrap;
@@ -269,8 +292,39 @@ function openDayModal(dateKey, data) {
     $('dayModalTitle').textContent = dateObj.toLocaleDateString('es-AR', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
+    $('dayModalDone').checked = !!doneDays[dateKey];
     renderDayModal();
     $('dayModal').classList.add('open');
+}
+
+// Flechas del modal: pasa al día anterior/siguiente (aunque no tenga tasks) y, si
+// cambia de mes, la grilla de atrás lo acompaña.
+let dayNavToken = 0;
+async function shiftModalDay(delta) {
+    if (!currentModalDateKey) return;
+    const [y, m, d] = currentModalDateKey.split('-').map(Number);
+    const next = new Date(y, m - 1, d + delta);
+    const dateKey = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
+    const token = ++dayNavToken;
+
+    let data = { projects: {}, generalSeconds: 0 };
+    try {
+        const snap = await getDoc(doc(db, 'users', uid, 'days', dateKey));
+        // igual que la grilla: solo cuentan los días finalizados
+        if (snap.exists() && snap.data().finalized) data = snap.data();
+    } catch (e) {
+        console.error(e);
+        toast('No se pudo cargar el día', 'error');
+        return;
+    }
+    if (token !== dayNavToken || !$('dayModal').classList.contains('open')) return;
+
+    openDayModal(dateKey, data);
+    if (next.getFullYear() !== viewYear || next.getMonth() !== viewMonth) {
+        viewYear = next.getFullYear();
+        viewMonth = next.getMonth();
+        renderCalendar();
+    }
 }
 
 function renderDayModal() {
