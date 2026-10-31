@@ -444,6 +444,8 @@ function erroresNorm(s) {
    - fetch/XHR: el servidor de la propia web respondió 5xx (err.js lo manda "alto").
    - recurso: un script o CSS propio que err.js confirmó que no está en el servidor
      (detalle "HTTP 404"). Sin confirmar es la conexión del visitante o un bloqueador.
+   - En los dos, el hosting que no atendió un momento (429/502/503/504 sin motivo) es
+     aviso menor hasta que se repite 3 veces en el mes (erroresMomentaneo).
    - error/promesa: salió de un archivo de la propia web, en un navegador actual; o
      Firestore sin cuota o sin permisos, que deja la web sin datos.
    El resto es aviso menor: plegado y sin contar. Los bots ni aparecen (log.php ya no
@@ -492,8 +494,21 @@ const ERRORES_FIRESTORE = /missing or insufficient permissions|quota exceeded|re
 // propia web, pero el código no es nuestro.
 const ERRORES_INYECTADOS = /_META\b|IABInnerFrame|__gCrWeb|webkit\.messageHandlers/;
 
+// El hosting que no atiende un momento (31-oct: Hostinger dio 429 a tienda.js en Hizterik y
+// Tienda de Botines, y 503 a integraciones.php en Reina Momo; al rato todo daba 200): 429 es que
+// frenó muchas cargas seguidas, 502/503/504 que no respondió. En un fetch cuenta solo si la
+// respuesta no trajo motivo: un 503 de nuestro PHP (Firestore sin cuota) sí lo trae y es crítico.
+// Una vez es aviso menor; si se repite (ERRORES_MOMENTANEO_VECES en el mes) pasa a crítico.
+const ERRORES_MOMENTANEO_VECES = 3;
+function erroresMomentaneo(d) {
+    if (d.tipo === "recurso") return /^HTTP (429|50[234])$/.test(String(d.detalle || ""));
+    if (d.tipo === "fetch") return /^HTTP (429|50[234]) en /.test(String(d.msg || "")) && !d.detalle;
+    return false;
+}
+
 function erroresEsCritico(d) {
     if (d.nivel !== "alto" || erroresEsBot(d.ua)) return false;
+    if (erroresMomentaneo(d)) return false;
     if (d.tipo === "fetch") return true;
     if (d.tipo === "recurso") return /^HTTP \d{3}$/.test(String(d.detalle || ""));
     if (erroresNavegadorViejo(d.ua, d.msg)) return false;
@@ -503,12 +518,16 @@ function erroresEsCritico(d) {
 
 // Qué es, en criollo, para la lista (un crítico) o por qué no cuenta (un aviso menor).
 function erroresQueEs(d) {
+    if (erroresMomentaneo(d)) return "el hosting no responde seguido";
     if (d.tipo === "fetch") return "falla el servidor de la web";
-    if (d.tipo === "recurso") return "falta el archivo en el servidor";
+    if (d.tipo === "recurso") return /^HTTP 4/.test(String(d.detalle || "")) ? "falta el archivo en el servidor" : "falla el servidor de la web";
     return ERRORES_FIRESTORE.test(String(d.msg || "")) ? "Firestore sin cuota o sin permisos" : "error en el código de la web";
 }
 function erroresPorQueMenor(d) {
     if ((d.tipo === "error" || d.tipo === "promesa") && erroresNavegadorViejo(d.ua, d.msg)) return "navegador viejo";
+    if (d.nivel === "alto" && erroresMomentaneo(d)) {
+        return /429/.test(String(d.detalle || d.msg || "")) ? "el hosting frenó muchas cargas seguidas" : "el hosting no respondió en ese momento";
+    }
     if (d.tipo === "recurso") {
         const propio = /^https?:/i.test(d.src || "") && erroresDeLaWeb(d);
         if (!propio) return "de un servicio externo";
@@ -600,16 +619,24 @@ function erroresResumen(datos = erroresDatos) {
         const pendiente = !resueltos.has(w.id) || at > resueltos.get(w.id);
         const critico = erroresEsCritico(d);
         let g = w.grupos.get(d.hash);
-        if (!g) { g = { msg: d.msg, tipo: d.tipo, url: d.url, src: d.src, line: d.line, count: 0, criticos: 0, critPend: 0, que: "", porQue: "", last: at, detalle: "", detalleAt: null }; w.grupos.set(d.hash, g); }
+        if (!g) { g = { msg: d.msg, tipo: d.tipo, url: d.url, src: d.src, line: d.line, count: 0, criticos: 0, critPend: 0, momentaneos: 0, momPend: 0, queMom: "", que: "", porQue: "", last: at, detalle: "", detalleAt: null }; w.grupos.set(d.hash, g); }
         g.count++;
         // Un mismo error puede venir de un navegador viejo y de uno actual: es crítico si lo es una vez.
         if (critico) { g.criticos++; if (pendiente) g.critPend++; g.que = g.que || erroresQueEs(d); }
         else g.porQue = g.porQue || erroresPorQueMenor(d);
+        if (d.nivel === "alto" && erroresMomentaneo(d)) { g.momentaneos++; if (pendiente) g.momPend++; g.queMom = g.queMom || erroresQueEs(d); }
         if (at > g.last) g.last = at;
         // El motivo de un 5xx (lo que respondió la web en "error"): se muestra el último.
         if (d.detalle && (!g.detalleAt || at > g.detalleAt)) { g.detalle = d.detalle; g.detalleAt = at; }
     }
     return [...porWeb.values()].map(w => {
+        // El hosting que no atiende una vez es aviso menor; si se repite en el mes, crítico.
+        for (const g of w.grupos.values()) {
+            if (g.momentaneos < ERRORES_MOMENTANEO_VECES) continue;
+            g.criticos += g.momentaneos;
+            g.critPend += g.momPend;
+            g.que = g.que || g.queMom;
+        }
         const grupos = [...w.grupos.values()].sort((a, b) => b.last - a.last);
         const criticos = grupos.filter(g => g.criticos > 0);
         return {
