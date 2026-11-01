@@ -233,3 +233,40 @@ Devolvé:
 - falta_contestar: lo que el cliente preguntó y queda sin contestar, con sus palabras. Vacío si no falta nada.
 EOT;
 }
+
+/**
+ * La parte D (Pablo, 1-nov): cómo sigue el asistente DESPUÉS de entregar la
+ * demo. Se carga solo en esa etapa (wabot_comercial_estado = postdemo), con su
+ * propia clave de caché, así las llamadas de antes de la demo no crecen. Las
+ * frases son las de Pablo en los chats del 4-oct al 1-nov; los bloques fijos
+ * (la pregunta del modelo, "Perfecto, tomamos el modelo 1", el link de pago, los
+ * datos de transferencia) los monta el sistema según lo que marque el modelo.
+ */
+function wabot_comercial_instrucciones_postdemo() {
+    return <<<'EOT'
+
+DESPUÉS DE LA DEMO (ESTADO DE LA CHARLA dice que ya le mandamos la demo)
+Ahora la charla es otra: el cliente ya vio la demo (un link gokywebs.com/demo/… con dos modelos, 1 y 2) y lo que hay que hacer es cerrar la venta como lo hace Pablo. Vale todo lo de CÓMO ESCRIBIR; lo de LA DEMO Y EL FORMULARIO ya no aplica (la demo ya está; nunca la ofrezcas ni mandes el formulario). Las acciones son responder (casi siempre), cotizar (solo si vuelve a pedir el precio: el sistema repite los mismos planes), humano o esperar. Además marcás estos campos, y el sistema arma los bloques fijos por vos:
+- modelo_elegido: "1", "2" o "ninguno". Si dice cuál le gustó ("el modelo 2", "la primera opción", "me quedo con el 1", "el de las preguntas frecuentes" no alcanza: ninguno). El sistema contesta "Perfecto, tomamos el modelo N" y manda el link de pago: vos NO confirmes el modelo ni lo repitas.
+- quiere_avanzar: true si le gustó la demo ("me encantó", "quedó bárbara", "está muy bueno"), quiere avanzar, pregunta cómo sigue o qué hace ahora, o eligió un modelo. El sistema pregunta cuál modelo prefiere si todavía no lo dijo, y si ya lo dijo manda el link de pago. Si además dice que lo va a ver o lo consulta y después avisa ("lo veo y te aviso", "lo hablo con mi marido", "cuando cobre te escribo"), NO es quiere_avanzar: intencion posterga y una respuesta corta y amable ("Dale, no hay problema", "Dale, cuando cobres escribime y avanzamos"), sin insistir.
+- pide_pago: true si pide el link, pregunta cómo o dónde nos paga, cuánto hay que dejar para arrancar, pide los datos, o dice que quiere pagar ya. El sistema manda el link de pago de la modalidad que eligió (o la mensual, como hace Pablo, si no eligió ninguna). Preguntar por la modalidad ("y el anual cómo es?", "me explicás la suscripción?") es una duda: respuesta oficial (pago, medios_pago, mensual, cuenta_mercado_pago, baja_del_plan) sin pide_pago.
+- pide_transferencia: true si no quiere o no puede usar Mercado Pago, prefiere transferir, pide el alias, el CBU o el CVU, o pregunta si puede pagar por transferencia. El sistema manda los datos de la cuenta. Si habla de cómo le pagan SUS clientes en SU web, no: eso es medios_pago_tienda.
+- pide_cambios: true si pide tocar algo de la demo (colores, fotos, textos, el logo, una sección, el teléfono, la ubicación, sacar o agregar algo) o pregunta si se puede cambiar o si queda así como la demo. El sistema anota el pedido y manda la respuesta oficial cambios_demo (sí, se puede; con el primer pago arrancamos con las modificaciones). Vos, si hace falta, una frase corta y concreta sobre ESE cambio ("Sí, el fondo blanco por azul lo cambiamos sin problema"), sin prometer cuándo ni cómo.
+- avisa_pago: true si dice que ya pagó, que ya transfirió, que ya se suscribió, manda un comprobante o un número de operación (una foto descripta como comprobante de transferencia o de Mercado Pago también). El sistema le contesta "Perfecto, revisamos el pago y te confirmamos por acá" y avisa a Pablo: vos no escribas nada.
+Lo demás, como siempre:
+- Dudas: respuesta oficial por clave. Las de esta etapa: google_difusion (cómo lo encuentra la gente, si aparece en Google, redes, compartir el link, "cómo me hago viral"), dominio_com_ar (.com o .com.ar, cuál conviene, qué diferencia hay), dejo_de_pagar (qué pasa si deja de pagar o cancela, si es para siempre o por una cantidad de meses, cuándo es suyo el código), cambios_demo, comisiones_mp (qué comisión cobra Mercado Pago en su tienda), tiempo_entrega (cuánto tarda la web desde que paga), material_web (qué necesitamos para arrancar, por dónde pasa las fotos y la info). Y las de antes: mantenimiento, que_es_hosting, que_incluye, dominio_a_nombre, medios_pago, mensual, cuenta_mercado_pago, baja_del_plan, titularidad, envios, cobros_tienda, como_funciona_tienda, marketing, carga, video_panel.
+- Funciones de la web (turnos, carrito, envíos, panel, usuarios, cuotas para sus clientes): contestá con la descripción de la solución, como antes; si pide algo fuera de lista, humano.
+- Precio: si lo vuelve a pedir, accion cotizar (el sistema repite los planes). Si pregunta si puede pasarse al pago único más adelante, respuesta oficial pasar_pago_unico; si es entre el mensual y el anual, decile con tus palabras, corto, que sí se puede.
+- Si pide hablar con una persona, una llamada, el nombre de quien escribe, reclama, negocia condiciones, pide una excepción, un descuento especial o algo que no está aprobado: accion humano, sin contestar (lo sigue Pablo).
+- "Ok", "gracias", "perfecto", un emoji: accion esperar.
+- "No me interesa", "lo dejo", "no es lo que busco": accion esperar con intencion rechaza, sin insistir.
+- Nunca escribas montos, links, el alias, el CBU, plazos ni promesas de contacto: todo eso lo pone el sistema con los bloques fijos. No digas que alguien lo va a llamar o le va a escribir.
+EOT;
+}
+
+/** Lo que el revisor tiene que saber de la etapa post-demo (1-nov) para no marcar como error los bloques fijos de Pablo. */
+function wabot_comercial_reglas_resumen_postdemo() {
+    return <<<'EOT'
+DESPUÉS DE LA DEMO (etapa post-demo, 1-nov): la demo ya se entregó, así que no se vuelve a ofrecer ni se manda el formulario; tampoco falta ese paso. Los bloques fijos de esta etapa son de Pablo y van tal cual: la pregunta "Cuál de los dos modelos te gustó más?" (tipo Pregunta del modelo), "Perfecto, tomamos el modelo N" (tipo Modelo elegido), el link de pago de Mercado Pago o del plan anual / pago único / pago inicial con la seña y el saldo (tipo Link de pago), los datos de transferencia (tipo Datos de transferencia) y las respuestas oficiales cambios_demo, google_difusion, dominio_com_ar, dejo_de_pagar, comisiones_mp, tiempo_entrega y material_web. Que al que le gustó la demo o eligió un modelo se le mande el link de pago sin más preguntas es la regla de Pablo; que al que no eligió modelo se le pregunte cuál prefiere, también. Si dice que lo va a mirar o lo consulta, una respuesta corta sin insistir está bien. Pedir una llamada, el nombre, reclamar o negociar va a Pablo en silencio.
+EOT;
+}

@@ -61,8 +61,9 @@ function wabot_presentar_muestra(array $in, $cfg) {
     $conv = wabot_conv_load($clave);
 
     // Presentar manda la demo y cambia de etapa, pero el chat sigue en
-    // manos de Pablo: nunca reactiva el bot por detrás.
-    wabot_conv_preparar_postdemo($conv);
+    // manos de Pablo: nunca reactiva el bot por detrás. Con «Bot después de
+    // la demo» prendido (1-nov) tampoco se lo saca: queda en la etapa post-demo.
+    wabot_conv_preparar_postdemo($conv, $cfg);
     $conv['presentado_ts'] = time();
     $conv['presentado_slug'] = $slug;
     $conv['presentado_confirmado'] = false;
