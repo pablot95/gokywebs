@@ -55,7 +55,7 @@ const Tienda = crearTienda([
     desc: 'Vela aromática en vaso de vidrio con tapa de bambú, para tenerla tapada cuando no está encendida. Elegí el aroma que más te guste.',
     datos: [['Envase', 'Vaso de vidrio'], ['Tapa', 'Bambú'], ['Aroma', 'A elección']] },
   { id: 'souvenir-frasco', nombre: 'Souvenir vela en frasco con moño y etiqueta', cat: 'souvenirs', aromas: TODOS, perso: true, unidad: 'c/u', precio: 3400, descuento: 0, stock: 300, alta: 29, rango: 2,
-    img: 'images/p-souvenir-frasco.webp', galeria: ['images/etiqueta.webp'],
+    img: 'images/p-souvenir-frasco.webp', galeria: ['images/etiqueta-souvenir.webp'],
     alt: 'Tres velas souvenir en frascos de vidrio con moño de hilo de yute y etiqueta de papel madera',
     desc: 'Vela en frasco de vidrio con moño de hilo de yute y etiqueta de papel madera con los nombres y la fecha de tu evento. Precio por unidad.',
     datos: [['Envase', 'Frasco de vidrio'], ['Detalle', 'Moño de yute y etiqueta'], ['Etiqueta', 'Con nombres y fecha']] },
