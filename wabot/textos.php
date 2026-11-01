@@ -317,6 +317,17 @@ function wabot_textos_default() {
         'horarios_entrega' => 'Sí, en la tienda se pueden poner las franjas horarias de entrega que quieras, y el cliente elige una al comprar.',
         'logo_version' => 'La versión del logo (por ejemplo en blanco y negro) nos la tenés que pasar vos: usamos el logo tal como nos lo mandás.',
         'banners_publicidad' => 'Sí, con el plan con panel podés tener espacios de publicidad en la web y cambiar los banners vos mismo desde el panel.',
+        /* Después de la demo (Pablo, 1-nov): sus respuestas de los chats del
+         * 4-oct al 1-nov, tal cual. Solo las pide el flujo comercial en la etapa
+         * post-demo (wabot_comercial_info_claves_postdemo); el rastro de cada una
+         * está en wabot_info_clave_tiene_rastro (engine.php). */
+        'google_difusion' => 'La web va a tener su propio link, que podés compartir por WhatsApp, Instagram, Facebook o donde quieras. También la dejamos preparada e indexada para Google, sin costo adicional, aunque la posición y el tiempo en aparecer dependen de Google',
+        'dominio_com_ar' => 'La diferencia es que el .com.ar está orientado a Argentina, mientras que el .com es internacional. Los dos funcionan igual para tu web y ambos pueden aparecer en Google. El .com.ar está incluido en el plan sin costo adicional; el .com tiene un costo aparte',
+        'dejo_de_pagar' => 'Si en algún momento cancelás el plan mensual, la página deja de estar publicada una vez finalizado el período abonado. Igualmente tenés 1 mes de gracia si algún mes no podés pagar, y después de 18 meses con el plan activo podés solicitar la titularidad del código de la web',
+        'cambios_demo' => 'Sí, por supuesto! La demo es una muestra inicial, así que podemos modificar las imágenes, los colores, los textos y todos los detalles necesarios para adaptarla a tu proyecto. Con el primer pago comenzamos con todas las modificaciones y el desarrollo final de la web',
+        'comisiones_mp' => 'La comisión es la que cobra Mercado Pago. Si querés que se te acredite al instante cobra algo de 6%; si elegís plazos más largos, por ejemplo recibir la plata a 18 o 35 días, la comisión se reduce',
+        'tiempo_entrega' => 'Con el primer pago arrancamos y en menos de 7 días dejamos la web terminada y publicada. Durante esos días vamos ajustando todos los detalles que quieras',
+        'material_web' => 'Para empezar necesitaría tus datos reales para reemplazar lo de la demo: logo si tenés, fotos, número de WhatsApp, horarios, ubicación y la información que quieras agregar. No hace falta que tengas todo listo: con el primer pago arrancamos y me vas pasando el material a medida que lo tengas',
     ],
     'leer_imagenes' => true,
     /* Atención automática posterior al precio (postprecio.php, 1-oct). El 2-oct
@@ -328,6 +339,14 @@ function wabot_textos_default() {
      * demo manda el formulario. Con false contesta wabot_oferta_diseno_responder()
      * (redactor.php): solo el sí a la demo. Se apaga desde Ajustes del panel. */
     'postprecio_activo' => true,
+    /* Bot después de la demo (Pablo, 1-nov): el flujo comercial (comercial.php)
+     * sigue conversando y vendiendo después del formulario completo y después
+     * de entregar la demo (etapa post-demo: modelo elegido, link de pago, datos
+     * de transferencia, cambios, dudas, "ya pagué"). Con false, lo de siempre:
+     * el formulario completo apaga el bot en el chat, Presentar toma el control
+     * y lo que llega después lo contesta Pablo. Arranca APAGADO: se prende desde
+     * Ajustes del panel. Ver wabot_postdemo_bot_activo(). */
+    'bot_postdemo_activo' => false,
     /* Solo bienvenida (Pablo, 3-oct): en la charla el bot solo saluda al que
      * escribe por primera vez y el resto lo contesta Pablo. Formularios,
      * demos, plantillas y avisos automáticos siguen. Se apaga desde Ajustes
@@ -429,6 +448,27 @@ function wabot_textos_default() {
          * autodarse cuenta de que está desviándose… o si se saltea respuestas").
          * Una llamada más por turno; false lo apaga. */
         'revisor' => true,
+        /* Después de la demo (Pablo, 1-nov): los bloques fijos de la etapa
+         * post-demo, con sus frases de los chats del 4-oct al 1-nov tal cual. Los
+         * monta el código (wabot_comercial_construir): {link} es la página de
+         * pago/ que cobra los montos de ESTA charla (si no hay una, el link lo
+         * manda Pablo), {sena} y {saldo} salen de la cotización congelada. */
+        'postdemo' => [
+            'pregunta_modelo' => 'Cuál de los dos modelos te gustó más?',
+            'modelo_elegido' => 'Perfecto, tomamos el modelo {modelo}',
+            'link_mensual' => 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}',
+            'link_anual' => 'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}',
+            'link_unico' => 'Te paso el pago único con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}',
+            // Modelo B de la prueba de precios (31-oct): un solo pago inicial, sin seña ni saldo.
+            'link_inicial' => 'Te paso el detalle con todas las condiciones y los datos para la transferencia del pago inicial: {link}',
+            // Si no quiere Mercado Pago o pide el alias / CBU: los mismos datos que figuran en las páginas de pago/.
+            'transferencia_cbu' => "Te paso los datos para la transferencia:
+Alias: pablotravi
+CVU: 0000003100053462800156
+Nombre: Pablo Travi
+
+Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos con las modificaciones",
+        ],
     ],
     'mantenimiento_planes' => [
         'landing' => [
@@ -665,6 +705,8 @@ function wabot_textos_default() {
             // El mantenimiento opcional del pago único: $15.000 para todos (Pablo, 9-oct; antes $10.000 el sitio profesional).
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
+            // La seña del pago único es otra (1-nov): la que cobra pago/unico240.
+            'sena_unico' => '$80.000',
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
@@ -680,6 +722,7 @@ function wabot_textos_default() {
             'mensualidad' => '$30.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
+            'sena_unico' => '$100.000',
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
@@ -695,6 +738,7 @@ function wabot_textos_default() {
             'mensualidad' => '$30.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
+            'sena_unico' => '$100.000',
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
@@ -710,6 +754,7 @@ function wabot_textos_default() {
             'mensualidad' => '$30.000',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
+            'sena_unico' => '$100.000',
         ],
     ],
     /* Prueba A/B de precios (Pablo, 31-oct-2026; ver ab-precios.php). Cada

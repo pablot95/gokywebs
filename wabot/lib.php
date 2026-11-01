@@ -199,6 +199,8 @@ function wabot_gemini_modelo($cfg = null) {
  */
 function wabot_ajustes_claves() {
     return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida', 'flujo_comercial',
+            // Bot después de la demo (1-nov): ver wabot_postdemo_bot_activo().
+            'bot_postdemo_activo',
             'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
@@ -958,7 +960,13 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
 
     // Toda plantilla abre una conversación que continúa Pablo. Hacerlo acá
     // evita que un envío nuevo olvide apagar el bot en este chat.
-    wabot_conv_tomar_control($conv);
+    /* Salvo la de la demo (seguimiento_demo_72h) con «Bot después de la demo»
+     * prendido (1-nov): es el bot preguntando qué le pareció, y si el cliente
+     * contesta lo atiende la etapa post-demo (comercial.php). Si Pablo ya tenía
+     * la charla, la sigue teniendo; si él escribe, el eco lo pausa como siempre. */
+    if (!($clave === 'confirmacion_demo_48h' && empty($conv['control_manual']) && wabot_postdemo_bot_activo($cfg))) {
+        wabot_conv_tomar_control($conv);
+    }
 
     $texto = (string)($p['texto'] ?? '');
     foreach (array_merge($valores, $valoresBoton) as $campo => $v) {
@@ -3919,6 +3927,19 @@ function wabot_postprecio_encendido($cfg = null) {
     return !empty($cfg['postprecio_activo']);
 }
 
+/**
+ * ¿Está prendido el bot después de la demo (Pablo, 1-nov; Ajustes → «Bot
+ * después de la demo», `bot_postdemo_activo`)? Prendido: el formulario completo
+ * no apaga el bot, Presentar no toma el control y el flujo comercial sigue en
+ * la etapa post-demo (comercial.php). Apagado de fábrica.
+ */
+function wabot_postdemo_bot_activo($cfg = null) {
+    // Los tests lo prenden sin tocar la config.
+    if (isset($GLOBALS['WABOT_TEST_BOT_POSTDEMO'])) return (bool)$GLOBALS['WABOT_TEST_BOT_POSTDEMO'];
+    if ($cfg === null) $cfg = wabot_config_load();
+    return !empty($cfg['bot_postdemo_activo']);
+}
+
 /** Única forma de devolverle una conversación al bot: una acción manual. */
 function wabot_conv_encender_manual(&$cv) {
     $cv['control_manual'] = false;
@@ -3934,11 +3955,16 @@ function wabot_conv_encender_manual(&$cv) {
     $cv['pausado_hasta'] = 0;
 }
 
-/** Presentar cambia de etapa, pero no le devuelve el control al bot. */
-function wabot_conv_preparar_postdemo(&$cv) {
+/**
+ * Presentar cambia de etapa, pero no le devuelve el control al bot. Con «Bot
+ * después de la demo» prendido (1-nov) tampoco se lo saca: la charla queda en
+ * la etapa post-demo del flujo comercial (comercial.php) tal como estaba (si
+ * Pablo ya la tenía, la sigue teniendo).
+ */
+function wabot_conv_preparar_postdemo(&$cv, $cfg = null) {
     $automatico = !empty($cv['postprecio_auto']) && empty($cv['control_manual']) && empty($cv['bot_off'])
         && wabot_postprecio_encendido();
-    if (!$automatico) wabot_conv_tomar_control($cv);
+    if (!$automatico && !wabot_postdemo_bot_activo($cfg)) wabot_conv_tomar_control($cv);
     $cv['seguimiento_bloqueado'] = $automatico || !empty($cv['postprecio_derivacion']);
     $cv['contestado_ts'] = 0;
     $cv['fase'] = 'postdemo';
@@ -6211,10 +6237,22 @@ function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
      * automática de presentar.php, 18 h el mismo día o 14 h del siguiente). De madrugada (antes de
      * las 3) sigue siendo "mañana": para el cliente el día todavía no empezó (mismo corte que
      * wabot_dia_entrega). Se resuelve ya, así el transcript guarda lo que leyó el cliente. */
+    $entrega = wabot_form_entrega_frase($cv, $ahora);
+    return trim(wabot_personalizar(strtr($plantilla, ['{saludo}' => $saludo, '{entrega}' => $entrega]), $cv));
+}
+
+/**
+ * Cuándo le llega la demo, como se lo dice la confirmación del formulario
+ * ("hoy a la tarde", "mañana" o la hora que eligió). También lo usa el flujo
+ * comercial para contestar "cuándo está?" entre el formulario y la demo (1-nov).
+ */
+function wabot_form_entrega_frase($cv, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $h = wabot_hora_local($ahora);
     $entrega = ($h >= 3 && $h < 15) ? 'hoy a la tarde' : 'mañana';
     // Eligió la hora en el formulario (29-oct): se le confirma esa.
     if ((int)($cv['demo_hora_ts'] ?? 0) > $ahora) $entrega = wabot_demo_hora_frase((int)$cv['demo_hora_ts'], $ahora);
-    return trim(wabot_personalizar(strtr($plantilla, ['{saludo}' => $saludo, '{entrega}' => $entrega]), $cv));
+    return $entrega;
 }
 
 function wabot_form_confirmacion_correr($cfg, $ahora = null) {
@@ -7139,9 +7177,16 @@ function wabot_form_lead_procesar($payload, $cfg) {
     /* Con el formulario completo el bot se apaga en ese chat (Pablo, 10-oct): de
      * ahí en adelante contesta él. Es el mismo apagado del panel (bot_off): el
      * handoff queda pendiente para que lo vea, y solo se lo devuelve al bot a
-     * mano (wabot_conv_encender_manual). */
-    $conv['bot_off'] = true;
-    wabot_log('bot_off_form', ['tel' => $clave]);
+     * mano (wabot_conv_encender_manual). Con «Bot después de la demo» prendido
+     * (1-nov) no se apaga: el flujo comercial contesta lo simple hasta la demo
+     * (wabot_comercial_post_form_permitido) y la confirmación de los 5 minutos
+     * sigue igual. */
+    if (!wabot_postdemo_bot_activo($cfg)) {
+        $conv['bot_off'] = true;
+        wabot_log('bot_off_form', ['tel' => $clave]);
+    } else {
+        wabot_log('form_bot_sigue', ['tel' => $clave]);
+    }
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);
