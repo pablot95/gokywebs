@@ -15,7 +15,7 @@
  *   2. escribe data/sesiones/<ts>-<slug>-produccion.md = instrucciones-produccion.md
  *      + el pedido: carpeta demo/<slug>/, modelo elegido, brief original del
  *      formulario (propuestaSnapshot, el mismo texto del botón Copiar), todo el
- *      onboarding (factura, dominios deseados, email del panel, cambios, datos),
+ *      onboarding (modelo, email del panel si hay login, logo y fotos, cambios),
  *      los archivos bajados, qué prompt_completar_<tipo>.md seguir y la
  *      checklist de lo que hace Pablo a mano (Firebase, dominio, DNS, factura);
  *   3. marca produccion.pedidoAt en el doc y produccion.pedido_ts en la charla
@@ -96,14 +96,11 @@ function produccion_pedido_texto(array $c, string $id, string $slug, string $tip
     $negocio = trim((string)($c['proyecto'] ?? '')) ?: trim((string)($snap['nombre_negocio'] ?? '')) ?: $slug;
     $pago = (array)($c['pagoBot'] ?? []);
     $modalidad = ['mensual' => 'plan mensual', 'anual' => 'plan anual', 'unico' => 'pago único', 'inicial' => 'pago inicial + mensual'][(string)($pago['modalidad'] ?? '')] ?? (string)($c['modalidad'] ?? '');
-    $modelo = (int)($valor('modelo') ?? 0);
-    $factura = (array)($valor('factura') ?? []);
-    $dominios = array_values(array_filter(array_map('strval', (array)($valor('dominio') ?? []))));
+    $modelo = (string)($valor('modelo') ?? '');
     $email = trim((string)($valor('email') ?? ''));
     $cambios = trim((string)($valor('cambios') ?? ''));
-    $datos = trim((string)($valor('datos') ?? ''));
     $logos = array_values(array_filter($archivos, fn($a) => strpos($a, 'logo') === 0));
-    $fotos = array_values(array_filter($archivos, fn($a) => strpos($a, 'foto') === 0));
+    $fotos = array_values(array_filter($archivos, fn($a) => strpos($a, 'foto') === 0 || strpos($a, 'imagen') === 0));
     $tel = trim((string)($c['telefono'] ?? ''));
     $clave = (string)($ob['conversationKey'] ?? '');
 
@@ -117,24 +114,25 @@ function produccion_pedido_texto(array $c, string $id, string $slug, string $tip
     $L[] = '';
     $L[] = '## Qué hacer';
     $L[] = '- La demo está en `Gokywebsweb/demo/' . $slug . '/` (si no está en este checkout, `git pull` primero). Es la base: el front se mantiene, el backend se adopta del template.';
-    $L[] = '- Modelo elegido: ' . ($modelo > 0 ? '**modelo ' . $modelo . '**' . ($modelo === 2 ? ' (modelo-2.html pasa a ser index.html)' : '') . '. Sacar el otro modelo y la barra Modelo 1 / Modelo 2.' : 'no eligió (' . ($nota('modelo') ?: 'quedó a elección del diseñador') . '): usar el modelo 1.');
+    if ($modelo === 'ambos') $L[] = '- Modelo elegido: **una mezcla de los dos**. Lo que dijo: «' . ($nota('modelo') ?: 'cosas de los dos') . '». Partir del modelo 1 y traer de modelo-2.html lo que nombra; sacar la barra Modelo 1 / Modelo 2.';
+    elseif ($modelo === '1' || $modelo === '2') $L[] = '- Modelo elegido: **modelo ' . $modelo . '**' . ($modelo === '2' ? ' (modelo-2.html pasa a ser index.html)' : '') . '. Sacar el otro modelo y la barra Modelo 1 / Modelo 2.';
+    else $L[] = '- Modelo elegido: no eligió (' . ($nota('modelo') ?: 'quedó a elección del diseñador') . '): usar el modelo 1.';
     $L[] = '- Seguir el prompt de producción: `' . produccion_prompt_de($tipo) . '` (y `' . PRODUCCION_MEMORIA . '\\prompt_panel_editor_visual.md` para el panel).';
-    $L[] = '- Dominio: ' . ($dominios ? 'quiere ' . implode(', ', array_map(fn($x) => '`' . $x . '`', $dominios)) . '. TODAVÍA NO ESTÁ COMPRADO: lo elige y compra Pablo. Usar `' . $dominios[0] . '` como provisorio, en un solo lugar (SITE_URL), para cambiarlo con un reemplazo.' : 'no propuso nombres (' . ($nota('dominio') ?: 'queda para Pablo') . '). Dejar SITE_URL con un valor provisorio claro.');
-    $L[] = '- Email del admin del panel: ' . ($email !== '' ? '`' . $email . '` (ADMIN_EMAIL, firestore.rules, admin/firebase-config.js; la cuenta la crea Pablo en Firebase Auth).' : 'no lo dio: dejar el del template y anotarlo como pendiente de Pablo.');
-    $L[] = '- Logo: ' . ($logos ? implode(', ', array_map(fn($x) => '`' . $x . '`', $logos)) . ' en `' . $carpetaArchivos . '`' . (array_filter($logos, fn($x) => str_ends_with($x, '.pdf')) ? ' (viene en PDF: extraerlo en alta)' : '') : 'no tiene (' . ($nota('logo') ?: 'armar un logotipo tipográfico como en la demo') . ').');
-    $L[] = '- Fotos del cliente: ' . ($fotos ? count($fotos) . ' en `' . $carpetaArchivos . '` (' . implode(', ', $fotos) . '): reemplazan a las de la demo donde corresponda.' : 'no mandó: quedan las de la demo.');
+    $L[] = '- Dominio: lo define Pablo con el cliente (el bot no lo pide). Dejar SITE_URL con un valor provisorio claro, en un solo lugar, para cambiarlo con un reemplazo.';
+    $L[] = '- Email del admin del panel: ' . ($email !== '' ? '`' . $email . '` (ADMIN_EMAIL, firestore.rules, admin/firebase-config.js; la cuenta la crea Pablo en Firebase Auth).' : ($tipo === 'landing' ? 'la informativa no tiene panel con login: no hace falta.' : 'no lo dio: dejar el del template y anotarlo como pendiente de Pablo.'));
+    $L[] = '- Logo: ' . ($logos ? implode(', ', array_map(fn($x) => '`' . $x . '`', $logos)) . ' en `' . $carpetaArchivos . '`' . (array_filter($logos, fn($x) => str_ends_with($x, '.pdf')) ? ' (viene en PDF: extraerlo en alta)' : '') : 'no mandó uno aparte (' . ($nota('imagenes') ?: 'si entre las imágenes hay un logo, usarlo; si no, armar un logotipo tipográfico como en la demo') . ').');
+    $L[] = '- Imágenes del cliente: ' . ($fotos ? count($fotos) . ' en `' . $carpetaArchivos . '` (' . implode(', ', $fotos) . '): reemplazan a las de la demo donde corresponda.' : 'no mandó: quedan las de la demo.');
     $L[] = '- Cambios que pidió respecto de la demo: ' . ($cambios !== '' ? "\n  > " . str_replace("\n", "\n  > ", $cambios) : 'ninguno (' . ($nota('cambios') ?: 'está bien así') . ').');
-    $L[] = '- Horarios, dirección y redes: ' . ($datos !== '' ? "\n  > " . str_replace("\n", "\n  > ", $datos) : 'no los dio: dejar los de la demo marcados como a confirmar.');
-    $L[] = '- Datos para la factura (NO van en la web; son para Pablo): ' . ($factura ? implode(' · ', array_filter([trim((string)($factura['razon_social'] ?? '')), ($factura['cuit'] ?? '') !== '' ? 'CUIT/CUIL ' . $factura['cuit'] : '', (string)($factura['iva'] ?? '')])) : 'no los dio (' . ($nota('factura') ?: 'pendiente') . ').');
+    $L[] = '- Horarios, dirección, redes y datos para la factura: NO se le piden por el bot; los ve Pablo con el cliente (lo que haya en el brief del formulario, abajo).';
     $L[] = '';
     $L[] = '## Brief original (lo que llenó en el formulario)';
     $L[] = $snap ? prospecto_chatgpt_datos($snap) : '(sin propuestaSnapshot en la ficha: mirar el chat ' . $clave . ')';
     $L[] = '';
     $L[] = '## Lo que hace Pablo a mano (checklist)';
-    $L[] = '- [ ] Crear el proyecto de Firebase para ' . $negocio . ' (Firestore + Authentication con email y contraseña' . ($email !== '' ? ', usuario ' . $email : '') . '), pegar la config web en `admin/firebase-config.js`, bajar la cuenta de servicio al server del cliente (`config/service-account.json`, fuera del repo) y publicar `firestore.rules`.';
-    $L[] = '- [ ] Elegir y comprar el dominio' . ($dominios ? ' entre ' . implode(', ', $dominios) : '') . ' (.com.ar incluido en el plan; .com tiene adicional), apuntar los DNS a Hostinger (o Cloudflare delante) y poner el definitivo en SITE_URL, canonical, OG, JSON-LD, robots.txt y sitemap.xml.';
+    $L[] = '- [ ] ' . ($tipo === 'landing' && $email === '' ? 'Si la web lleva panel: crear' : 'Crear') . ' el proyecto de Firebase para ' . $negocio . ' (Firestore + Authentication con email y contraseña' . ($email !== '' ? ', usuario ' . $email : '') . '), pegar la config web en `admin/firebase-config.js`, bajar la cuenta de servicio al server del cliente (`config/service-account.json`, fuera del repo) y publicar `firestore.rules`.';
+    $L[] = '- [ ] Definir el dominio con el cliente y comprarlo (.com.ar incluido en el plan; .com tiene adicional), apuntar los DNS a Hostinger (o Cloudflare delante) y poner el definitivo en SITE_URL, canonical, OG, JSON-LD, robots.txt y sitemap.xml.';
     $L[] = '- [ ] Crear el sitio en Hostinger y el repo privado del cliente; configurar el deploy.';
-    $L[] = '- [ ] Emitir la Factura C' . ($factura ? ' a ' . implode(', ', array_filter([trim((string)($factura['razon_social'] ?? '')), (string)($factura['cuit'] ?? ''), (string)($factura['iva'] ?? '')])) : ' (pedir los datos: el cliente no los pasó)') . '.';
+    $L[] = '- [ ] Pedirle los datos para la Factura C y emitirla (el bot no los pide).';
     $L[] = '- [ ] Revisar la web terminada, mandarle el acceso al panel al cliente y marcar la entrega en el admin.';
     $L[] = '';
     return implode("\n", $L);

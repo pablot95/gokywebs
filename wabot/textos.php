@@ -891,23 +891,19 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.',
     /* Después del pago (1-nov, pagos.php + onboarding.php). pagos_auto apaga el poller de Mercado Pago;
      * onboarding_activo, que el bot pida lo que falta para la web. Las preguntas van UNA por vez, en el
-     * orden de WABOT_ONBOARDING_PASOS, con las palabras de Pablo (sus respuestas rápidas): la apertura ya
-     * no dice "te escribo desde otro número", porque se sigue por este chat. */
+     * orden de WABOT_ONBOARDING_PASOS: modelo (1, 2 o una mezcla), email solo si la web tiene panel con
+     * login, logo y fotos, cambios. Pablo (1-nov a la noche): "nunca tiene que pedir datos para
+     * facturar"; dominios y horarios tampoco. La apertura ya no dice "te escribo desde otro número". */
     'pagos_auto' => true,
     'onboarding_activo' => true,
     // Antes de que cierre la ventana de 24 h de WhatsApp (a las 24 h ya no se puede escribir).
     'onboarding_recordatorio_horas' => 22,
     'onboarding_apertura' => '¡Genial, ya me llegó el pago! Seguimos por acá: por este chat me pasás el logo, las imágenes y todo lo que quieras cambiar, y vamos avanzando. Te voy pidiendo de a una cosa.',
-    'onboarding_modelo' => '¿Cuál de los dos modelos te gustó más, el 1 o el 2? Lo tomamos como base.',
-    'onboarding_factura' => 'Para hacerte la factura, ¿me pasás el nombre o la razón social, el CUIT o CUIL y la condición frente al IVA? Facturamos con Factura C.',
-    'onboarding_factura_falta' => 'Me falta {falta} para la factura. ¿Me lo pasás?',
-    'onboarding_dominio' => 'El dominio lo definimos juntos: pasame 2 o 3 nombres que te gusten y me fijo cuáles están disponibles, porque son únicos y puede que alguno ya esté registrado.',
+    'onboarding_modelo' => '¿Cuál de los dos modelos te gustó más, el 1 o el 2? Si te gustan cosas de los dos, decime qué de cada uno y los combinamos.',
     'onboarding_email' => '¿Qué email querés usar para entrar al panel de tu web? Con ese te creamos el acceso.',
-    'onboarding_logo' => '¿Tenés logo? Mandámelo por acá en la mejor calidad que tengas (si lo tenés en PDF o PNG, mejor). Si no tenés, avisame y seguimos.',
-    'onboarding_fotos' => 'Ahora pasame 5 o 6 fotos de tu negocio o de tus productos para usar en la web. Mandalas por acá, de a una o todas juntas; cuando termines, avisame.',
-    'onboarding_fotos_faltan' => 'Recibí {recibidas}. Si tenés más, mandámelas; si no, decime "listo" y seguimos.',
+    'onboarding_imagenes' => 'Pasame el logo (en la mejor calidad que tengas) y 5 o 6 fotos de tu negocio o de tus productos para la web. Mandalas por acá, de a una o todas juntas; cuando termines, avisame.',
+    'onboarding_imagenes_faltan' => 'Recibí {recibidas}. Si tenés más, mandámelas; si no, decime "listo" y seguimos.',
     'onboarding_cambios' => '¿Hay textos o cosas de la demo que quieras cambiar? Contame todo lo que quieras modificar o agregar. Si está bien así, decime "está bien así".',
-    'onboarding_datos' => 'Por último, pasame los horarios de atención, la dirección (si atendés al público) y tus redes (Instagram, Facebook) para ponerlos en la web.',
     'onboarding_ok' => 'Perfecto, anotado.',
     'onboarding_completo' => '¡Listo, ya tengo todo! Con esto arrancamos con la versión final de la web y en menos de 7 días te la paso terminada por acá. Cualquier cosa que quieras sumar, escribime.',
     'onboarding_recordatorio' => '{saludo}, ¿pudiste ver lo que te pedí? Cuando puedas mandámelo por acá y seguimos avanzando con la web.',

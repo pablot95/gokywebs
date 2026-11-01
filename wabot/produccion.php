@@ -22,26 +22,34 @@ function wabot_produccion_firma(string $clave, string $accion): string {
 }
 
 /**
- * Los archivos del onboarding con un nombre legible: el logo (logo.ext, logo-2.ext…)
- * y las fotos (foto-1.ext…). [['nombre', 'ruta']] con lo que existe en disco.
+ * Los archivos del onboarding con un nombre legible: los PDF (y los archivos que
+ * el cliente dijo que eran el logo) como logo.ext, logo-2.ext…; el resto,
+ * imagen-1.ext… [['nombre', 'ruta']] con lo que existe en disco. También lee
+ * los campos logo/fotos de la primera versión del onboarding.
  */
 function wabot_produccion_archivos(array $conv): array {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)($conv['conversation_key'] ?? $conv['tel'] ?? ''));
     $carpeta = WABOT_DATA . '/media/' . $clave . '/';
     $datos = (array)($conv['onboarding']['datos'] ?? []);
+    // Qué archivos dijo que eran el logo (la fila del transcript nombra "logo").
+    $dichoLogo = [];
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') === 'cliente' && !empty($fila['media']['archivo']) && preg_match('/\blogo/iu', (string)($fila['t'] ?? ''))) $dichoLogo[basename((string)$fila['media']['archivo'])] = true;
+    }
+    $logos = []; $imagenes = [];
+    foreach (array_merge((array)($datos['logo']['valor']['archivos'] ?? []), (array)($datos['imagenes']['valor']['archivos'] ?? []), (array)($datos['fotos']['valor']['archivos'] ?? [])) as $a) {
+        $a = basename((string)$a);
+        if ($a === '' || !is_file($carpeta . $a) || in_array($a, $logos, true) || in_array($a, $imagenes, true)) continue;
+        $esLogo = isset($dichoLogo[$a]) || strtolower(pathinfo($a, PATHINFO_EXTENSION)) === 'pdf' || isset($datos['logo']) && in_array($a, (array)($datos['logo']['valor']['archivos'] ?? []), true);
+        if ($esLogo) $logos[] = $a; else $imagenes[] = $a;
+    }
     $out = [];
-    $agregar = function ($archivos, $prefijo) use (&$out, $carpeta) {
-        $i = 0;
-        foreach ((array)$archivos as $a) {
-            $a = basename((string)$a);
-            if ($a === '' || !is_file($carpeta . $a)) continue;
-            $i++;
+    foreach ([[$logos, 'logo'], [$imagenes, 'imagen']] as [$lista, $prefijo]) {
+        foreach ($lista as $i => $a) {
             $ext = strtolower(pathinfo($a, PATHINFO_EXTENSION)) ?: 'bin';
-            $out[] = ['nombre' => $prefijo . ($prefijo === 'logo' && $i === 1 ? '' : '-' . $i) . '.' . $ext, 'ruta' => $carpeta . $a];
+            $out[] = ['nombre' => $prefijo . ($prefijo === 'logo' && $i === 0 ? '' : '-' . ($i + 1)) . '.' . $ext, 'ruta' => $carpeta . $a];
         }
-    };
-    $agregar($datos['logo']['valor']['archivos'] ?? [], 'logo');
-    $agregar($datos['fotos']['valor']['archivos'] ?? [], 'foto');
+    }
     return $out;
 }
 

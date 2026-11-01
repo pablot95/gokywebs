@@ -3465,7 +3465,7 @@ function burbujaCita(t, chat) {
                 <h2 style="margin:0">Nuevos <span class="pill on"><?= count($cliDatos['nuevos']) ?></span></h2>
                 <span class="meta">Datos de las <?= $e($cliFecha($cliDatos['ts'] ?? 0)) ?> · <a href="admin.php?tab=clientes&actualizar=1">Actualizar</a></span>
             </div>
-            <p class="meta">Los chats con el pago confirmado y en qué etapa está su web: el bot junta los datos (modelo, factura, dominios, email, logo, fotos, cambios), cuando los tiene queda listo para producción, y de ahí el pedido para el agente que arma la web.</p>
+            <p class="meta">Los chats con el pago confirmado y en qué etapa está su web: el bot junta los datos (el modelo, el email del panel si la web tiene login, el logo y las fotos, los cambios), cuando los tiene queda listo para producción, y de ahí el pedido para el agente que arma la web.</p>
             <?php if (!$cliDatos['nuevos']): ?><p class="meta">Todavía no hay ningún pago confirmado por el bot.</p><?php else: ?>
             <div class="ad-scroll"><table>
                 <tr><th>Cliente</th><th>Pagó</th><th>Modalidad</th><th>Etapa</th><th>Bot</th><th></th></tr>
@@ -3719,7 +3719,7 @@ function burbujaCita(t, chat) {
                               if (wabot_onboarding_activo($conv, $cfg) && (!empty($conv['control_manual']) || !empty($conv['bot_off']))): ?>
                         <form method="post" onsubmit="return confirm('Que el bot siga pidiéndole lo que falta para la web? Le manda ahora la pregunta pendiente.')">
                             <input type="hidden" name="accion" value="onboarding_retomar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec" title="El bot se pausó porque escribiste vos. Con esto vuelve a pedirle lo que falta (modelo, factura, dominios, email, logo, fotos, cambios).">🧩 Que siga el bot</button>
+                            <button class="sec" title="El bot se pausó porque escribiste vos. Con esto vuelve a pedirle lo que falta (modelo, email del panel, logo y fotos, cambios).">🧩 Que siga el bot</button>
                         </form>
                         <?php endif; ?>
                         <?php /* "Confirmar pago" (1-nov, pagos.php): para la transferencia que no apareció sola en MP o el
