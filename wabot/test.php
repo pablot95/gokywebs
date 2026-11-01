@@ -2465,7 +2465,7 @@ foreach ([
     caso("\"$msjPlata\" no se lleva ningún dato de pago",
         strpos($saliP, '0720071788000003618268') === false
         && mb_stripos($saliP, 'Banco Santander') === false
-        && mb_stripos($saliP, 'pablotravis') === false
+        && mb_stripos($saliP, 'pablotravi') === false
         && strpos($saliP, 'pago?monto=') === false
         && mb_stripos($saliP, 'cuotas sin inter') === false);
 }

@@ -22,7 +22,7 @@
    reusar esa clave para el monto lo pisaría. */
 
 const WHATSAPP_NUMBER = '5491140688675'; // número real de Gokywebs (mismo que el resto del sitio)
-const ALIAS = 'pablotravis';
+const ALIAS = 'pablotravi';
 
 function getMontoFromQuery() {
     const raw = new URLSearchParams(window.location.search).get('monto');
