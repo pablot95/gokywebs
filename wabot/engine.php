@@ -5885,18 +5885,13 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
-    if ($clave === 'un_solo_pago' || ($clave === 'plan_es_servicio' && strpos($texto, '{precio_un_solo_pago}') !== false)) {
-        $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
-        // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
-        if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
-        return $texto;
-    }
     /* La web propia (19-sep) dice el pago único del tipo. La charla cotizada
      * con el pago único de antes recibe sus propias condiciones. */
     if ($clave === 'web_propia' && is_array($conv) && !empty($conv['precio_dado'])
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'doble') {
         return wabot_diferencia_pagos_texto($conv, $cfg);
     }
+    // Antes del un_solo_pago, que en la prueba de precios (31-oct) también dice el pago único.
     if (strpos($texto, '{precio_web_propia}') !== false) {
         $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
         // El pago único de ESTA charla: el congelado, o el de lista (26-sep).
@@ -5904,6 +5899,12 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
         $texto = str_replace('{precio_web_propia}', $unico !== '' ? ', de ' . $unico : '', $texto);
         // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
         if ($clave === 'web_propia' && $unico === '') $texto .= ' Contame a qué te dedicás y te paso el valor.';
+    }
+    if ($clave === 'un_solo_pago' || ($clave === 'plan_es_servicio' && strpos($texto, '{precio_un_solo_pago}') !== false)) {
+        $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
+        // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
+        if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
+        return $texto;
     }
     // {min}/{max}: el rango real de la lista de precios, puesto por el código.
     // "Depende del tipo de página" era la respuesta a "¿cuánto cuesta?" del

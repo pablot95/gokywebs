@@ -583,6 +583,8 @@
                 <button type="button" class="subtab-btn" data-inv="anuncios">📣 Por anuncio</button>
                 <!-- 13-oct-2026: clientes según quién hizo su demo, Claude o ChatGPT (desde el 4-oct). dashboard.js: renderAutores. -->
                 <button type="button" class="subtab-btn" data-inv="autores">🤖 Claude vs ChatGPT</button>
+                <!-- 1-nov-2026: la prueba de precios A/B (wabot/ab-precios.php) con los cobros de cada grupo. dashboard.js: renderAb. -->
+                <button type="button" class="subtab-btn" data-inv="ab">🧪 Precios A vs B</button>
             </nav>
             <div id="invVistaContactos">
                 <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta (se trae solo de la API de Meta, o lo cargás a mano), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
@@ -591,6 +593,7 @@
             </div>
             <div id="invVistaAnuncios" hidden></div>
             <div id="invVistaAutores" hidden></div>
+            <div id="invVistaAb" hidden></div>
         </section>
 
         <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
@@ -1399,6 +1402,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261031-ab-precios"></script>
+    <script type="module" src="dashboard.js?v=20261101-ab-inversion"></script>
 </body>
 </html>

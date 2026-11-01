@@ -185,6 +185,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
  * contacto, los teléfonos y la ficha: el admin los cruza con `clientes` igual
  * que en Contactos y clientes.
  */
+// La prueba de precios A/B (ab-precios.php): el embudo por grupo y las charlas una por una,
+// para que Inversión → Precios A vs B las cruce con los clientes y sus cobros (1-nov).
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'ab_json') {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(wabot_ab_reporte_calcular() + ['activa' => wabot_ab_activa($cfg)], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'anuncios_json') {
     $fechaJson = function ($v) { return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) === 1; };
     $desdeJson = $fechaJson($_GET['desde'] ?? null) ? strtotime($_GET['desde'] . ' 00:00:00') : strtotime(date('Y-m-d', strtotime('-29 days')) . ' 00:00:00');

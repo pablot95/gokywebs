@@ -108,6 +108,10 @@ $bs = charla('5491100009003');
 $r = cotizar_charla($bs, 'informativa', 'Soy contadora');
 caso('sitio profesional: $80.000 y $20.000', strpos(junto($r), 'Para tu sitio profesional, el desarrollo completo tiene un precio inicial de $80.000') !== false && strpos(junto($r), '$20.000 mensuales') !== false, junto($r));
 
+// «No tienen para pagar una sola vez?» en vivo (31-oct): salía «{precio_web_propia}» sin el monto.
+$u = wabot_texto_info('un_solo_pago', wabot_ab_cfg($cfg, $bs), $bs);
+caso('B: el pago único lo pide → dice el monto, sin la llave suelta', strpos($u, '{') === false && preg_match('/pago único, de \$[\d.]+, pagás/u', $u), $u);
+
 echo "— 4. Modelo A —\n";
 $a = charla('5491100009002');
 $r = cotizar_charla($a, 'tienda');

@@ -8,7 +8,7 @@
  * demo, cuántas recibieron el link del formulario y cuántas lo completaron.
  * El formulario se cuenta dentro de las 72 h del precio y solo sobre las
  * charlas que ya cumplieron esas 72 h, para no castigar a las más nuevas.
- * Los cobros se miran en el admin (el boceto lleva `grupoPrecios`).
+ * Los cobros se cruzan en el admin: Inversión → Precios A vs B (1-nov).
  *
  * Uso:
  *   https://gokywebs.com/wabot/ab-reporte.php?clave=VERIFY_TOKEN
@@ -29,41 +29,10 @@ if (php_sapi_name() !== 'cli') {
 }
 $formato = (string)($_GET['formato'] ?? (php_sapi_name() === 'cli' ? 'json' : 'html'));
 
-/** Las cuentas de la prueba, leyendo las charlas guardadas. */
-function wabot_ab_reporte_calcular($ahora = null) {
-    $ahora = $ahora ?? time();
-    $ventana = 72 * 3600;
-    $filas = [];
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $archivo) {
-        $cv = json_decode((string)@file_get_contents($archivo), true);
-        if (!is_array($cv)) continue;
-        $cot = is_array($cv['comercial_cotizacion'] ?? null) ? $cv['comercial_cotizacion'] : [];
-        $grupo = (string)($cot['modelo'] ?? '');
-        if (!in_array($grupo, ['a', 'b'], true)) continue;
-        $plan = ($cot['plan'] ?? '') === 'informativa' ? 'sitio' : 'con_panel';
-        $desde = (int)($cv['ab_grupo_ts'] ?? ($cot['ts'] ?? 0));
-        $clave = $grupo . '|' . $plan;
-        $f = $filas[$clave] ?? ['grupo' => $grupo, 'plan' => $plan, 'precio' => 0, 'demo_ofrecida' => 0, 'link_form' => 0,
-                                'form' => 0, 'maduras_72h' => 0, 'form_72h' => 0, 'eligio_pago_unico' => 0];
-        $f['precio']++;
-        if (!empty($cv['comercial_oferta_ts']) || !empty($cv['oferta_diseno_ts'])) $f['demo_ofrecida']++;
-        if (!empty($cv['form_link_mandado_ts'])) $f['link_form']++;
-        $formTs = (int)($cv['form_completado_ts'] ?? 0);
-        if ($formTs > 0) $f['form']++;
-        if (($cv['modalidad_elegida'] ?? '') === 'propia') $f['eligio_pago_unico']++;
-        if ($desde > 0 && $ahora - $desde >= $ventana) {
-            $f['maduras_72h']++;
-            if ($formTs > 0 && $formTs - $desde <= $ventana) $f['form_72h']++;
-        }
-        $filas[$clave] = $f;
-    }
-    ksort($filas);
-    foreach ($filas as &$f) $f['conversion_72h'] = $f['maduras_72h'] > 0 ? round(100 * $f['form_72h'] / $f['maduras_72h'], 1) : null;
-    unset($f);
-    return array_values($filas);
-}
+// Las cuentas están en ab-precios.php: el admin las muestra en Inversión → Precios A vs B (1-nov).
+require_once __DIR__ . '/ab-precios.php';
 
-$filas = wabot_ab_reporte_calcular();
+$filas = wabot_ab_reporte_calcular()['filas'];
 if ($formato === 'json') {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($filas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
@@ -94,7 +63,7 @@ header('Content-Type: text/html; charset=utf-8');
 </head>
 <body>
 <h1>Prueba de precios A/B</h1>
-<p class="nota">Charlas que recibieron el precio desde que arrancó la prueba. La conversión es formulario completado dentro de las 72 h del precio, sobre las charlas que ya cumplieron 72 h. Los cobros se ven en el admin: el boceto lleva el grupo.</p>
+<p class="nota">Charlas que recibieron el precio desde que arrancó la prueba. La conversión es formulario completado dentro de las 72 h del precio, sobre las charlas que ya cumplieron 72 h. Los cobros, cruzados con los clientes, se ven en el admin: Inversión → Precios A vs B.</p>
 <div class="tabla"><table>
 <tr><th>Grupo</th><th>Plan</th><th>Precio</th><th>Demo ofrecida</th><th>Link del form</th><th>Form (total)</th><th>Con 72 h</th><th>Form en 72 h</th><th>Conversión 72 h</th><th>Pidió pago único</th></tr>
 <?php foreach ($filas as $f): ?>

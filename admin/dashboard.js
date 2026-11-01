@@ -352,6 +352,7 @@ document.getElementById("inversionDolar")?.addEventListener("change", async e =>
 document.getElementById("inversionRecargarBtn")?.addEventListener("click", () => {
     abrirInversion(true);
     if (inversionVista === "anuncios") cargarAnuncios(true);
+    if (inversionVista === "ab") cargarAb(true);
 });
 
 /* ── Errores de las webs (pestaña Errores) ──
@@ -2227,13 +2228,14 @@ document.getElementById("tabFinanzas")?.addEventListener("click", async e => {
 /* Inversión: Contactos y clientes · Por anuncio (los cobros por día pasaron a Calendario). */
 function renderInversionVista() {
     document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.classList.toggle("active", b.dataset.inv === inversionVista));
-    const vistas = { contactos: "invVistaContactos", anuncios: "invVistaAnuncios", autores: "invVistaAutores" };
+    const vistas = { contactos: "invVistaContactos", anuncios: "invVistaAnuncios", autores: "invVistaAutores", ab: "invVistaAb" };
     for (const [clave, id] of Object.entries(vistas)) {
         const el = document.getElementById(id);
         if (el) el.hidden = clave !== inversionVista;
     }
     if (inversionVista === "anuncios") cargarAnuncios();
     if (inversionVista === "autores") renderAutores();
+    if (inversionVista === "ab") cargarAb();
 }
 
 /* ── Quién hizo cada demo: Claude o ChatGPT (Pablo, 13-oct-2026, desde el 4-oct) ──
@@ -2344,6 +2346,112 @@ function renderAutores() {
             alert("No se pudo guardar: " + err.message);
         }
     }));
+}
+
+/* ── Prueba de precios A/B (Pablo, 31-oct-2026; wabot/ab-precios.php) ──
+   El embudo de cada grupo sale de wabot/admin.php?accion=ab_json: las charlas que
+   recibieron el precio de la prueba, con el formulario contado dentro de las 72 h
+   y solo sobre las que ya las cumplieron. La plata sale de los clientes de acá: el
+   grupo lo deja el bot en el boceto (grupoPrecios) y, si falta, se busca la charla
+   por teléfono. Lo que decide cuál gana es la plata por charla, no los formularios. */
+const AB_GRUPOS = { a: "A · pago único o mensual", b: "B · pago inicial + mensualidad" };
+const AB_PLANES = { sitio: "Sitio profesional", con_panel: "Tienda y con panel" };
+let abDatos = null;
+let abCargando = false;
+let abError = "";
+
+async function cargarAb(forzar = false) {
+    if (!currentUser || abCargando) return;
+    if (abDatos && !forzar) { renderAb(); return; }
+    abCargando = true;
+    abError = "";
+    renderAb();
+    try {
+        try { await wabotAuthHandshake(); } catch (e) { /* el fetch de abajo falla con un error claro */ }
+        const res = await fetch("../wabot/admin.php?accion=ab_json", { credentials: "same-origin" });
+        if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
+        abDatos = await res.json();
+    } catch (e) {
+        console.error(e);
+        abError = e.message || "error";
+    } finally {
+        abCargando = false;
+    }
+    renderAb();
+}
+
+/* Los clientes (y entregas en Completados) de cada grupo, con lo cobrado y la mensualidad activa. */
+function abClientes(charlas) {
+    const charlaPorTel = new Map();
+    for (const k of charlas) {
+        const t = cleanArgPhone(k.tel);
+        if (t.length >= 8 && !charlaPorTel.has(t)) charlaPorTel.set(t, k);
+    }
+    const out = [];
+    const ids = new Set((clients || []).map(c => c.id));
+    const docs = [...(clients || []).map(c => ({ c, tipo: "cliente" })),
+                  ...(completados || []).filter(c => !(c.clienteId && ids.has(c.clienteId))).map(c => ({ c, tipo: "entregado" }))];
+    for (const { c, tipo } of docs) {
+        const charla = charlaPorTel.get(cleanArgPhone(c.telefono)) || null;
+        const grupo = grupoPreciosDe(c) || charla?.grupo || "";
+        if (!AB_GRUPOS[grupo]) continue;
+        const cobrado = cobrosDeCliente(c).reduce((s, k) => s + k.monto, 0);
+        const sus = tipo === "cliente" && modalidadDe(c) === "mensual" ? suscripcionDe(c) : null;
+        const mensual = sus?.estado === "activa" ? sus.mensual : 0;
+        out.push({ c, tipo, grupo, cobrado, mensual, esCliente: tipo === "entregado" || getEstado(c) === "cliente" });
+    }
+    return out;
+}
+
+function renderAb() {
+    const cont = document.getElementById("invVistaAb");
+    if (!cont) return;
+    if (abError) { cont.innerHTML = `<p class="muted">No se pudo cargar: ${escapeHtml(abError)}</p>`; return; }
+    if (!abDatos) { cont.innerHTML = '<p class="muted">Cargando…</p>'; return; }
+
+    const filas = Array.isArray(abDatos.filas) ? abDatos.filas : [];
+    const clientesAb = abClientes(Array.isArray(abDatos.charlas) ? abDatos.charlas : []);
+    const suma = (lista, campo) => lista.reduce((s, f) => s + (Number(f[campo]) || 0), 0);
+    const pct = (n, d) => (d ? String(Math.round(n / d * 1000) / 10).replace(".", ",") + " %" : "—");
+
+    const tarjeta = g => {
+        const fs = filas.filter(f => f.grupo === g);
+        const cs = clientesAb.filter(f => f.grupo === g);
+        const charlas = suma(fs, "precio");
+        const cobrado = suma(cs, "cobrado");
+        const mensual = suma(cs, "mensual");
+        // A doce meses: lo cobrado más la mensualidad activa de cada mes (en B la primera arranca al mes).
+        const valor12 = cobrado + mensual * (g === "b" ? 11 : 12);
+        const nClientes = cs.filter(f => f.esCliente).length;
+        return `<div class="inv-card">
+            <span class="inv-card-titulo">${escapeHtml(AB_GRUPOS[g])}</span>
+            <span class="inv-card-valor">${charlas ? fmtMoney(valor12 / charlas) : "—"} <small class="muted" style="font-size:12px;font-weight:500">por charla a 12 meses</small></span>
+            <span class="inv-card-detalle">${charlas} charla${charlas === 1 ? "" : "s"} con precio · formulario en 72 h: ${pct(suma(fs, "form_72h"), suma(fs, "maduras_72h"))} (${suma(fs, "form_72h")} de ${suma(fs, "maduras_72h")})</span>
+            <span class="inv-card-detalle">${nClientes} cliente${nClientes === 1 ? "" : "s"} · cobrado ${fmtMoney(cobrado)} · mensualidades activas ${fmtMoney(mensual)}/mes</span>
+        </div>`;
+    };
+
+    const filaTabla = f => `<tr><td>${escapeHtml(AB_GRUPOS[f.grupo] || f.grupo)}</td><td>${escapeHtml(AB_PLANES[f.plan] || f.plan)}</td>
+        <td>${f.precio}</td><td>${f.demo_ofrecida}</td><td>${f.link_form}</td><td>${f.form}</td>
+        <td>${f.form_72h} de ${f.maduras_72h}</td><td>${pct(f.form_72h, f.maduras_72h)}</td><td>${f.eligio_pago_unico}</td></tr>`;
+    const modLabel = c => ({ mensual: "Mensual", unico: "Anual", propia: "Pago único" })[modalidadDe(c)] || "—";
+
+    cont.innerHTML = `
+        <p class="muted">Desde el 31/10, cada charla que recibe el precio queda en un grupo según el último dígito del teléfono (par A, impar B). "Por charla a 12 meses" es lo cobrado a sus clientes (pago único, seña, pago inicial) más 12 meses de las mensualidades activas (11 en B, que arranca al mes), dividido por las charlas que recibieron ese precio: es el número que decide. El formulario cuenta dentro de las 72 h del precio, solo sobre las charlas que ya las cumplieron.${abDatos.activa === false ? " <strong>La prueba está apagada.</strong>" : ""}</p>
+        <div class="inv-cards">${tarjeta("a")}${tarjeta("b")}</div>
+        ${filas.length ? `<div class="table-wrapper"><table class="clients-table">
+            <thead><tr><th>Grupo</th><th>Plan</th><th>Precio</th><th>Demo ofrecida</th><th>Link del form</th><th>Form</th><th>Form en 72 h</th><th>Conversión 72 h</th><th>Pidió pago único</th></tr></thead>
+            <tbody>${filas.map(filaTabla).join("")}</tbody></table></div>` : `<p class="muted">Todavía no hay charlas que hayan recibido el precio de la prueba.</p>`}
+        ${clientesAb.length ? `<h3 style="margin:18px 0 8px;font-size:15px">Clientes de la prueba</h3>
+        <div class="table-wrapper"><table class="clients-table">
+            <thead><tr><th>Cliente</th><th>Grupo</th><th>Plan</th><th>Cobrado</th><th>Mensualidad activa</th></tr></thead>
+            <tbody>${clientesAb.map(f => `<tr>
+                <td>${escapeHtml(f.c.proyecto || f.c.nombre || "—")}${f.tipo === "entregado" ? `<div class="muted" style="font-size:11px">entregado (en Completados)</div>` : f.esCliente ? "" : `<div class="muted" style="font-size:11px">todavía no es Cliente</div>`}</td>
+                <td>${f.grupo.toUpperCase()}</td>
+                <td>${f.grupo === "b" && modalidadDe(f.c) === "mensual" ? "Inicial + mensual" : escapeHtml(modLabel(f.c))}</td>
+                <td>${fmtMoney(f.cobrado)}</td>
+                <td>${f.mensual ? fmtMoney(f.mensual) + "/mes" : "—"}</td>
+            </tr>`).join("")}</tbody></table></div>` : ""}`;
 }
 
 document.querySelectorAll("#inversionNav .subtab-btn").forEach(b => b.addEventListener("click", () => {

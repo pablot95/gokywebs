@@ -118,3 +118,45 @@ function wabot_ab_nombre_web($solucion) {
                 'reservas' => 'web con reservas de turnos'];
     return $nombres[(string)$solucion] ?? 'web';
 }
+
+/**
+ * Las cuentas de la prueba, leyendo las charlas guardadas (ab-reporte.php y
+ * admin.php?accion=ab_json). `charlas` va una por una, para que el admin
+ * cruce cada teléfono con su cliente y sume los cobros por grupo.
+ */
+function wabot_ab_reporte_calcular($ahora = null) {
+    $ahora = $ahora ?? time();
+    $ventana = 72 * 3600;
+    $filas = [];
+    $charlas = [];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $archivo) {
+        $cv = json_decode((string)@file_get_contents($archivo), true);
+        // Las charlas de las pruebas locales (…TEST) no cuentan.
+        if (!is_array($cv) || str_ends_with(basename($archivo, '.json'), 'TEST')) continue;
+        $cot = is_array($cv['comercial_cotizacion'] ?? null) ? $cv['comercial_cotizacion'] : [];
+        $grupo = (string)($cot['modelo'] ?? '');
+        if (!in_array($grupo, ['a', 'b'], true)) continue;
+        $plan = ($cot['plan'] ?? '') === 'informativa' ? 'sitio' : 'con_panel';
+        $desde = (int)($cv['ab_grupo_ts'] ?? ($cot['ts'] ?? 0));
+        $clave = $grupo . '|' . $plan;
+        $f = $filas[$clave] ?? ['grupo' => $grupo, 'plan' => $plan, 'precio' => 0, 'demo_ofrecida' => 0, 'link_form' => 0,
+                                'form' => 0, 'maduras_72h' => 0, 'form_72h' => 0, 'eligio_pago_unico' => 0];
+        $f['precio']++;
+        if (!empty($cv['comercial_oferta_ts']) || !empty($cv['oferta_diseno_ts'])) $f['demo_ofrecida']++;
+        if (!empty($cv['form_link_mandado_ts'])) $f['link_form']++;
+        $formTs = (int)($cv['form_completado_ts'] ?? 0);
+        if ($formTs > 0) $f['form']++;
+        if (($cv['modalidad_elegida'] ?? '') === 'propia') $f['eligio_pago_unico']++;
+        if ($desde > 0 && $ahora - $desde >= $ventana) {
+            $f['maduras_72h']++;
+            if ($formTs > 0 && $formTs - $desde <= $ventana) $f['form_72h']++;
+        }
+        $filas[$clave] = $f;
+        $charlas[] = ['tel' => (string)($cv['tel'] ?? basename($archivo, '.json')), 'grupo' => $grupo, 'plan' => $plan,
+                      'precio_ts' => $desde, 'form_ts' => $formTs];
+    }
+    ksort($filas);
+    foreach ($filas as &$f) $f['conversion_72h'] = $f['maduras_72h'] > 0 ? round(100 * $f['form_72h'] / $f['maduras_72h'], 1) : null;
+    unset($f);
+    return ['filas' => array_values($filas), 'charlas' => $charlas];
+}
