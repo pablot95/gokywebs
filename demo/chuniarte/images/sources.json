@@ -1,0 +1,25 @@
+{
+  "origen": "Zip de ChatGPT CHUNI_ARTE_a159Z7OFez9fPoJY1Gxk.zip (9 imágenes + mock up), 1-nov-2026. La clienta no mandó fotos por WhatsApp (imagenes_recibidas: 0). Son imágenes ilustrativas: se reemplazan por fotos de los trabajos reales de Ceci con el mismo nombre de archivo.",
+  "recortes": {
+    "hero-mesa.webp": "02_imagen.jpg",
+    "topper-vertical.webp": "01_imagen.jpg",
+    "p-topper-torta.webp": "01_imagen.jpg (recorte 1:1)",
+    "p-toppers-cupcakes.webp": "03_imagen.jpg",
+    "p-bolsitas-manija.webp": "04_imagen.jpg",
+    "p-chocolatines.webp": "05_imagen.jpg",
+    "p-stickers.webp": "06_imagen.jpg",
+    "p-banderin.webp": "07_imagen.jpg",
+    "p-tubos-flor.webp": "08_imagen.jpg",
+    "p-flores-papel.webp": "09_imagen.jpg",
+    "p-bolsitas-broche.webp": "02_imagen.jpg (recorte 1:1 de las bolsitas)",
+    "p-banderin-nombre.webp": "07_imagen.jpg (recorte 1:1 de la guirnalda)",
+    "g-toppers.webp": "03_imagen.jpg (detalle 4:5)",
+    "g-bolsitas.webp": "04_imagen.jpg (detalle 4:5)",
+    "g-chocolatines.webp": "05_imagen.jpg (detalle 4:5)",
+    "g-stickers.webp": "06_imagen.jpg (detalle 4:5)",
+    "g-tubos.webp": "08_imagen.jpg (detalle 4:5)",
+    "g-flores.webp": "09_imagen.jpg (detalle 4:5)",
+    "og.jpg": "02_imagen.jpg"
+  },
+  "bancos": "Ninguna foto de bancos externos."
+}

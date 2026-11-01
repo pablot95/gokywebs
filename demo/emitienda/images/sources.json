@@ -17,7 +17,10 @@
   "videos": {
     "video-sarten.mp4": "Hecho con ffmpeg a partir de 07_imagen.jpg (acercamiento + detalle). Reemplazar por un video real del producto.",
     "video-utensilios.mp4": "Hecho con ffmpeg a partir de 02_imagen.jpg. Reemplazar por un video real del producto.",
-    "video-hermeticos.mp4": "Hecho con ffmpeg a partir de 03_imagen.jpg. Reemplazar por un video real del producto."
+    "video-hermeticos.mp4": "Hecho con ffmpeg a partir de 03_imagen.jpg. Reemplazar por un video real del producto.",
+    "video-sarten-poster.webp": "Primer cuadro de video-sarten.mp4 (poster).",
+    "video-utensilios-poster.webp": "Primer cuadro de video-utensilios.mp4 (poster).",
+    "video-hermeticos-poster.webp": "Primer cuadro de video-hermeticos.mp4 (poster)."
   },
   "bancos": "Ninguna foto de bancos externos."
 }

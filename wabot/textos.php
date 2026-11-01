@@ -310,6 +310,9 @@ function wabot_textos_default() {
         // "Renovación de hosting y dominio, no sé qué vendría a ser eso" (10-oct: el bot explicaba el dominio y no el hosting, y se callaba).
         'que_es_hosting' => 'El hosting es el servidor donde se guarda tu web para que esté online todo el día, y el dominio es su dirección (por ejemplo tunegocio.com.ar). Los dos van incluidos en el plan y los renovamos nosotros.',
         'demo_gratis' => 'No tiene costo ni compromiso: es un primer diseño para que veas cómo quedaría tu web antes de decidir.',
+        // "Cuánto tarda la demo?" (1-nov, charla en vivo): sin esta respuesta GPT la pasaba a Pablo y
+        // el chat quedaba en control manual para siempre. Plazo de Pablo: "La entregamos en menos de 24 hs".
+        'demo_tiempo' => 'La demo la entregamos en menos de 24 hs desde que completás el formulario, sin costo ni compromiso. Si después avanzamos, la web completa queda lista en unos 7 días.',
         'alternativas' => 'Son alternativas, elegís una sola: no se suman. Las dos incluyen el mantenimiento.',
         'plataformas' => 'No usamos Tiendanube, Shopify ni WordPress: te hacemos tu propia web a medida, con funciones parecidas (panel, carrito, Mercado Pago), y la armamos nosotros.',
         'recomendar_plan' => 'Si querés arrancar con poca inversión, el mensual; si preferís pagar una vez por año, el anual, que sale menos que doce meses.',
@@ -905,6 +908,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     'onboarding_imagenes_faltan' => 'Recibí {recibidas}. Si tenés más, mandámelas; si no, decime "listo" y seguimos.',
     'onboarding_cambios' => '¿Hay textos o cosas de la demo que quieras cambiar? Contame todo lo que quieras modificar o agregar. Si está bien así, decime "está bien así".',
     'onboarding_ok' => 'Perfecto, anotado.',
+    // Cuando lo que contesta no es lo que se le pidió (1-nov): se repregunta una vez antes de pasárselo a Pablo.
+    'onboarding_no_entendi' => 'Perdón, no me quedó claro.',
     'onboarding_completo' => '¡Listo, ya tengo todo! Con esto arrancamos con la versión final de la web y en menos de 7 días te la paso terminada por acá. Cualquier cosa que quieras sumar, escribime.',
     'onboarding_recordatorio' => '{saludo}, ¿pudiste ver lo que te pedí? Cuando puedas mandámelo por acá y seguimos avanzando con la web.',
     'ya_tengo_web' => 'Perfecto, pasame el link de tu página actual así la reviso y te digo qué conviene mejorar. También podés comparar con los modelos de gokywebs.com/modelos/.',

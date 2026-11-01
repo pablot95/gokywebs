@@ -229,14 +229,35 @@ function wabot_onboarding_turno(&$conv, $texto, $cfg, $ahora = null, array $deps
     wabot_evento_sesion_si_existe($conv, 'onboarding_' . $paso, ['estado' => $r['estado']]);
 
     if ($r['estado'] === 'no_entendi') {
-        /* No es la respuesta a lo que se pidió (una pregunta, otra cosa): lo
-         * ve Pablo —le suena el aviso— y el bot no insiste; a las 22 h el
-         * recordatorio vuelve a pedir lo que falta. */
-        $conv['handoff_pendiente'] = true;
+        /* No es la respuesta a lo que se pidió. Charla en vivo del 1-nov: se le
+         * pedía el modelo, contestó otra cosa y el bot se calló. Primero se mira
+         * si es la respuesta de OTRO paso que falta (el modelo, el email): se
+         * toma y se vuelve a pedir lo de ahora. Si no, se repregunta UNA vez.
+         * Recién la segunda seguida lo ve Pablo —le suena el aviso— y el bot no
+         * insiste; a las 22 h el recordatorio vuelve a pedir lo que falta. */
+        $otro = wabot_onboarding_paso_que_contesta($paso, $texto, $conv, $cfg, $ahora);
+        if ($otro !== null) {
+            [$pasoOtro, $rOtro] = $otro;
+            $ob['datos'][$pasoOtro] = ['valor' => $rOtro['dato'], 'ts' => $ahora, 'omitido' => false] + (isset($rOtro['extra']) ? $rOtro['extra'] : []);
+            $ob['sin_entender'] = 0;
+            unset($ob);
+            wabot_onboarding_fs_sync($conv, $deps);
+            $siguiente = wabot_onboarding_siguiente_paso($conv);
+            if ($siguiente === '') return wabot_onboarding_completar($conv, $cfg, $ahora, $deps);
+            wabot_onboarding_preguntar($conv, $siguiente, $ahora);
+            $conv['onboarding']['recordatorio_ts'] = 0;
+            return [trim(wabot_onboarding_texto('ok', $cfg, $conv) . ' ' . wabot_onboarding_pregunta($siguiente, $conv, $cfg))];
+        }
         $ob['sin_entender'] = (int)($ob['sin_entender'] ?? 0) + 1;
+        if ((int)$ob['sin_entender'] <= 1) {
+            unset($ob);
+            return [trim(wabot_onboarding_texto('no_entendi', $cfg, $conv) . ' ' . wabot_onboarding_pregunta($paso, $conv, $cfg))];
+        }
+        $conv['handoff_pendiente'] = true;
         unset($ob);
         return [];
     }
+    $ob['sin_entender'] = 0;
     if ($r['estado'] === 'esperando') {
         // Imágenes: llegaron algunas, faltan; se avisa cuántas van (una vez por tanda) o nada.
         unset($ob);
@@ -253,6 +274,21 @@ function wabot_onboarding_turno(&$conv, $texto, $cfg, $ahora = null, array $deps
     $ack = wabot_onboarding_texto('ok', $cfg, $conv);
     $pregunta = wabot_onboarding_pregunta($siguiente, $conv, $cfg);
     return [trim(($r['respuesta'] ?? $ack) . ' ' . $pregunta)];
+}
+
+/**
+ * ¿Lo que escribió es la respuesta de otro paso que todavía falta? Devuelve
+ * [paso, resultado] o null. Solo los que se reconocen sin dudas (el modelo, un
+ * email); los de texto libre y los de archivos no, porque se llevarían cualquier cosa.
+ */
+function wabot_onboarding_paso_que_contesta($pasoActual, $texto, $conv, $cfg, $ahora) {
+    $datos = (array)($conv['onboarding']['datos'] ?? []);
+    foreach (['modelo', 'email'] as $paso) {
+        if ($paso === $pasoActual || isset($datos[$paso]) || !in_array($paso, wabot_onboarding_pasos($conv), true)) continue;
+        $r = wabot_onboarding_interpretar($paso, $texto, $conv, $cfg, $ahora);
+        if (($r['estado'] ?? '') === 'ok') return [$paso, $r];
+    }
+    return null;
 }
 
 function wabot_evento_sesion_si_existe(&$conv, $evento, $datos = []) {

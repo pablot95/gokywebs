@@ -379,20 +379,20 @@ echo "— 9. Lo que sigue yendo a Pablo —\n";
 $c = cv_demo('ecommerce');
 oa([dc(['accion' => 'humano', 'motivo' => 'Pide el nombre de quien escribe'])]);
 $r = turno('Hola buenas tardes!! Nombre del que me está escribiendo!!', $c, $cfg);
-caso('pide el nombre → humano: silencio, control manual y pendiente', $r === [] && !empty($c['control_manual']) && !empty($c['handoff_pendiente']) && ($c['comercial_pausa'] ?? '') === 'humano');
+caso('pide el nombre → humano: silencio y pendiente para Pablo, sin tomar el control (1-nov: "solo calla en esa")', $r === [] && empty($c['control_manual']) && !empty($c['handoff_pendiente']) && ($c['comercial_pausa'] ?? '') === 'humano' && wabot_comercial_estado($c) === 'humano');
 oa([dc(['mensajes' => ['no']])]);
 $r = turno('Hola?', $c, $cfg);
-caso('y de ahí en más no contesta hasta que Pablo encienda el bot', $r === [] && count(pedidos()) === 0);
+caso('si vuelve a escribir y Pablo no contestó, el flujo sigue (la pausa era solo para esa pregunta)', count(pedidos()) === 1 && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_demo('ecommerce');
 oa([dc(['accion' => 'humano', 'motivo' => 'Pide una llamada'])]);
 $r = turno('Podemos hablar por teléfono? Me decís tu nombre y apellido, de dónde sos?', $c, $cfg);
-caso('pide una llamada → humano', $r === [] && !empty($c['control_manual']));
+caso('pide una llamada → humano: silencio, pendiente, sin control', $r === [] && empty($c['control_manual']) && !empty($c['handoff_pendiente']));
 // Sin página de pago/ que cobre sus montos, el link lo manda Pablo.
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1', 'comercial_cotizacion' => ['origen' => 'chat', 'plan' => 'panel', 'anual' => '$250.000', 'mensual' => '$25.000', 'unico' => '$360.000', 'ts' => time() - 7200],
                            'mensualidad_cotizada' => '$25.000', 'precio_cotizado' => '$250.000', 'precio_unico_cotizado' => '$360.000']);
 oa([dc(['pide_pago' => true, 'mensajes' => []])]);
 $r = turno('Pasame el link de pago', $c, $cfg);
-caso('pide el link y ningún pago/ cobra $25.000 → humano, en silencio, con el motivo', $r === [] && !empty($c['control_manual']) && strpos((string)($c['comercial_motivo'] ?? ''), 'no hay página en pago/') !== false);
+caso('pide el link y ningún pago/ cobra $25.000 → humano, en silencio, con el motivo', $r === [] && empty($c['control_manual']) && !empty($c['handoff_pendiente']) && strpos((string)($c['comercial_motivo'] ?? ''), 'no hay página en pago/') !== false);
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1', 'comercial_cotizacion' => ['origen' => 'chat', 'plan' => 'panel', 'anual' => '$250.000', 'mensual' => '$25.000', 'unico' => '$360.000', 'ts' => time() - 7200],
                            'mensualidad_cotizada' => '$25.000', 'precio_cotizado' => '$250.000', 'precio_unico_cotizado' => '$360.000']);
 oa([dc(['quiere_avanzar' => true, 'mensajes' => ['Me alegro!']])]);
@@ -423,7 +423,7 @@ caso('la cotización sigue saliendo en tres mensajes con el prompt y el esquema 
     && strpos((string)pedidos()[0]['instructions'], 'DESPUÉS DE LA DEMO') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Quiere pagar ya'])]);
 $r = turno('Dale, pasame el link que lo pago ya', $c, $cfg);
-caso('antes de la demo, pedir el link sigue siendo para Pablo', $r === [] && !empty($c['control_manual']));
+caso('antes de la demo, pedir el link sigue siendo para Pablo (en silencio, sin control)', $r === [] && empty($c['control_manual']) && !empty($c['handoff_pendiente']));
 
 echo "— 11. De punta a punta por el webhook —\n";
 $src = (string)file_get_contents(__DIR__ . '/webhook.php');

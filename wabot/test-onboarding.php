@@ -62,7 +62,10 @@ caso('lo que salió quedó en el chat como mensajes del bot', end($c['transcript
 
 echo "El turno, paso a paso\n";
 $r = cliente($c, 'cuánto tarda la web?', $T, null, $cfg);
-caso('una pregunta en el medio no se toma como respuesta: se calla y queda para Pablo (handoff), el paso sigue', $r === [] && !empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'email');
+caso('una pregunta en el medio no se toma como respuesta: repregunta una vez (1-nov) y el paso sigue', count($r) === 1 && strpos($r[0], $cfg['onboarding_no_entendi']) === 0 && dice($r, 'email', $cfg) && empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'email', json_encode($r));
+$r = cliente($c, 'y el hosting lo pagan ustedes?', $T, null, $cfg);
+caso('la segunda seguida sin respuesta: se calla y queda para Pablo (handoff), el paso sigue', $r === [] && !empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'email');
+$c['handoff_pendiente'] = false;
 $r = cliente($c, 'ana@kioscoana.com', $T, null, $cfg);
 caso('el email; pide el logo y las fotos en un solo mensaje', ($c['onboarding']['datos']['email']['valor'] ?? '') === 'ana@kioscoana.com' && $c['onboarding']['paso'] === 'imagenes' && count($r) === 1 && strpos($r[0], $cfg['onboarding_ok']) === 0 && dice($r, 'imagenes', $cfg), json_encode($r));
 caso('cada dato se refleja en el doc de clientes (campo onboarding, con slug, clave y tipo)', count($fsEscrito) >= 1 && end($fsEscrito)[0] === 'CLI1' && (end($fsEscrito)[1]['onboarding']['datos']['email']['valor'] ?? '') === 'ana@kioscoana.com' && end($fsEscrito)[1]['onboarding']['tipo'] === 'ecommerce');
@@ -179,6 +182,22 @@ caso('por wabot_responder (flujo off): también', $c8['onboarding']['paso'] === 
 $c8['control_manual'] = true;
 $out = turno('sacá el banner', $c8, $cfg);
 caso('si Pablo escribió (control manual), el bot se calla como siempre y el onboarding espera', $out === [] && $c8['onboarding']['paso'] === 'cambios');
+
+echo "Contesta otro paso del que se le pidió (charla en vivo del 1-nov)\n";
+$GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
+$c9 = conv_nueva('5491111TEST10', ['nombre' => 'Carlo', 'nombre_negocio' => 'Pizzería Don Carlo', 'tipo' => 'ecommerce', 'presentado_ts' => $ahora - 90000, 'cliente_id' => 'CLI9', 'ultimo_cliente_ts' => $ahora - 600]);
+$c9['transcript'] = [['q' => 'bot', 't' => 'Acá está tu demo', 'ts' => $ahora - 90000], ['q' => 'cliente', 't' => 'ya me suscribí al mensual', 'ts' => $ahora - 600]];
+$enviados9 = [];
+wabot_pago_confirmar($c9, ['id' => 'p9', 'monto' => 30000, 'ts' => $ahora - 300, 'tipo' => 'suscripcion', 'modo' => 'monto_avisado', 'suscripcion' => 's9'], 'mensual', $cfg,
+    ['ahora' => $ahora, 'enviar' => function (&$cv, $t) use (&$enviados9) { $enviados9[] = $t; return true; }, 'firestore' => fn($conv, $campos) => ['ok' => true, 'id' => 'CLI9', 'creado' => false, 'error' => ''], 'fs_onboarding' => fn($id, $campos) => true, 'avisar' => fn($t, $cu) => 1]);
+caso('sin modelo elegido, arranca pidiendo el modelo', $c9['onboarding']['paso'] === 'modelo' && dice($enviados9, 'modelo', $cfg));
+$r = cliente($c9, 'carlo@donCarlo.com', $T, null, $cfg);
+caso('contesta el email cuando se le pedía el modelo: se toma igual y se vuelve a pedir el modelo, sin callarse', ($c9['onboarding']['datos']['email']['valor'] ?? '') === 'carlo@doncarlo.com' && $c9['onboarding']['paso'] === 'modelo'
+    && count($r) === 1 && strpos($r[0], $cfg['onboarding_ok']) === 0 && dice($r, 'modelo', $cfg) && empty($c9['handoff_pendiente']), json_encode($r));
+$r = cliente($c9, 'me gusta más el diseño claro', $T, null, $cfg);
+caso('un texto que no dice el modelo ni otro dato: repregunta una vez', count($r) === 1 && strpos($r[0], $cfg['onboarding_no_entendi']) === 0 && dice($r, 'modelo', $cfg) && $c9['onboarding']['paso'] === 'modelo', json_encode($r));
+$r = cliente($c9, 'el 2', $T, null, $cfg);
+caso('con el modelo, salta el email (ya contestado) y pide las imágenes; el contador de "no entendí" se limpia', ($c9['onboarding']['datos']['modelo']['valor'] ?? '') === '2' && $c9['onboarding']['paso'] === 'imagenes' && dice($r, 'imagenes', $cfg) && ($c9['onboarding']['sin_entender'] ?? 0) === 0, json_encode($r));
 
 array_map('unlink', glob($tmp . '/*') ?: []); @rmdir($tmp);
 todo_ok();
