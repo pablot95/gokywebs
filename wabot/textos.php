@@ -334,11 +334,11 @@ function wabot_textos_default() {
          * está en wabot_info_clave_tiene_rastro (engine.php). */
         'google_difusion' => 'La web va a tener su propio link, que podés compartir por WhatsApp, Instagram, Facebook o donde quieras. También la dejamos preparada e indexada para Google, sin costo adicional, aunque la posición y el tiempo en aparecer dependen de Google',
         'dominio_com_ar' => 'La diferencia es que el .com.ar está orientado a Argentina, mientras que el .com es internacional. Los dos funcionan igual para tu web y ambos pueden aparecer en Google. El .com.ar está incluido en el plan sin costo adicional; el .com tiene un costo aparte',
-        'dejo_de_pagar' => 'Si en algún momento cancelás el plan mensual, la página deja de estar publicada una vez finalizado el período abonado. Igualmente tenés 1 mes de gracia si algún mes no podés pagar, y después de 18 meses con el plan activo podés solicitar la titularidad del código de la web',
-        'cambios_demo' => 'Sí, por supuesto! La demo es una muestra inicial, así que podemos modificar las imágenes, los colores, los textos y todos los detalles necesarios para adaptarla a tu proyecto. Con el primer pago comenzamos con todas las modificaciones y el desarrollo final de la web',
+        'dejo_de_pagar' => 'Si cancelás el plan mensual, la página deja de estar publicada al terminar el período abonado. Igualmente tenés 1 mes de gracia si algún mes no podés pagar, y después de 18 meses con el plan activo podés solicitar la titularidad del código de la web',
+        'cambios_demo' => 'Sí, por supuesto! La demo es una muestra inicial: podemos modificar las imágenes, los colores, los textos y todos los detalles para adaptarla a tu proyecto. Con el primer pago comenzamos con todas las modificaciones y el desarrollo final de la web',
         'comisiones_mp' => 'La comisión es la que cobra Mercado Pago. Si querés que se te acredite al instante cobra algo de 6%; si elegís plazos más largos, por ejemplo recibir la plata a 18 o 35 días, la comisión se reduce',
         'tiempo_entrega' => 'Con el primer pago arrancamos y en menos de 7 días dejamos la web terminada y publicada. Durante esos días vamos ajustando todos los detalles que quieras',
-        'material_web' => 'Para empezar necesitaría tus datos reales para reemplazar lo de la demo: logo si tenés, fotos, número de WhatsApp, horarios, ubicación y la información que quieras agregar. No hace falta que tengas todo listo: con el primer pago arrancamos y me vas pasando el material a medida que lo tengas',
+        'material_web' => 'Para empezar necesitaría tus datos reales para reemplazar lo de la demo: logo si tenés, fotos, WhatsApp, horarios, ubicación y lo que quieras agregar. No hace falta tener todo listo: con el primer pago arrancamos y me vas pasando el material cuando lo tengas',
     ],
     'leer_imagenes' => true,
     /* Atención automática posterior al precio (postprecio.php, 1-oct). El 2-oct
