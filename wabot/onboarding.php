@@ -527,7 +527,7 @@ function wabot_onboarding_fs_sync(array $conv, array $deps = []) {
     $id = trim((string)($conv['cliente_id'] ?? ''));
     $ob = (array)($conv['onboarding'] ?? []);
     if ($id === '' || !$ob) return false;
-    $campos = ['onboarding' => wabot_onboarding_para_firestore($ob)];
+    $campos = ['onboarding' => wabot_onboarding_para_firestore($ob, $conv)];
     // El turno llega del webhook sin dependencias: en los tests, el gancho global.
     $gancho = $deps['fs_onboarding'] ?? ($GLOBALS['WABOT_TEST_ONBOARDING_FS'] ?? null);
     if ($gancho) return (bool)$gancho($id, $campos);
@@ -545,10 +545,17 @@ function wabot_onboarding_fs_sync(array $conv, array $deps = []) {
     }
 }
 
-/** El onboarding como lo lee el admin y el pedido de producción: fechas legibles, dato por dato. */
-function wabot_onboarding_para_firestore(array $ob) {
+/**
+ * El onboarding como lo leen el admin y el pedido de producción
+ * (tools/demo-auto/preparar-produccion.php): fechas legibles, dato por dato, y
+ * de la charla lo que el pedido necesita (la carpeta de la demo, la clave del
+ * chat para bajar los archivos, el tipo de web).
+ */
+function wabot_onboarding_para_firestore(array $ob, array $conv = []) {
     $iso = function ($ts) { return (int)$ts > 0 ? gmdate('Y-m-d\TH:i:s\Z', (int)$ts) : ''; };
-    $out = ['inicioAt' => $iso($ob['inicio_ts'] ?? 0), 'completoAt' => $iso($ob['completo_ts'] ?? 0), 'paso' => (string)($ob['paso'] ?? ''), 'datos' => []];
+    $out = ['inicioAt' => $iso($ob['inicio_ts'] ?? 0), 'completoAt' => $iso($ob['completo_ts'] ?? 0), 'paso' => (string)($ob['paso'] ?? ''),
+            'slug' => (string)($conv['presentado_slug'] ?? ''), 'conversationKey' => (string)($conv['conversation_key'] ?? $conv['tel'] ?? ''),
+            'tipo' => (string)($conv['tipo'] ?? ''), 'datos' => []];
     foreach ((array)($ob['datos'] ?? []) as $paso => $d) {
         $out['datos'][(string)$paso] = ['valor' => $d['valor'] ?? null, 'at' => $iso($d['ts'] ?? 0), 'omitido' => !empty($d['omitido'])] + (isset($d['nota']) ? ['nota' => (string)$d['nota']] : []);
     }
