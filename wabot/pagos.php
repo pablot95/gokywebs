@@ -45,6 +45,8 @@
  * facturar-cobros.php: acá no se emite nada.
  *
  * Lo visto queda en data/pagos-mp.json (id del pago → qué pasó) para no repetir.
+ * La primera corrida solo anota lo que ya estaba (estado "anterior"), sin confirmar
+ * nada: esos pagos Pablo ya los atendió a mano.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -749,6 +751,18 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
         return $res + ['error' => $e->getMessage()];
     }
     $estado['error'] = '';
+
+    /* La primera corrida (sin estado) solo anota lo que ya estaba: esos pagos de
+     * los últimos días Pablo ya los atendió a mano, y confirmarlos ahora le
+     * escribiría "¡Genial, ya me llegó el pago!" a gente que ya recibió eso
+     * desde su otro número. Desde acá, solo lo nuevo. */
+    if (!$estado['pagos'] && $estado['corrida_ts'] === 0) {
+        foreach ($pagos as $p) $estado['pagos'][$p['id']] = $p + ['visto_ts' => $ahora, 'estado' => 'anterior'];
+        $estado['corrida_ts'] = $ahora;
+        wabot_pagos_guardar($estado);
+        wabot_log('pagos_primera_corrida', ['anteriores' => count($pagos)]);
+        return $res + ['primera_corrida' => true, 'anteriores' => count($pagos)];
+    }
 
     $candidatos = null;
     $buscarCandidatos = function () use (&$candidatos, $deps, $ahora, $cfg) {

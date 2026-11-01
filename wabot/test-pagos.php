@@ -208,6 +208,12 @@ caso('la codificación de Firestore: fechas, listas, booleanos, textos y nulos',
 
 echo "La corrida\n";
 @unlink($GLOBALS['WABOT_TEST_PAGOS_ARCHIVO']);
+// La primera corrida (sin estado) no confirma nada: anota lo que ya estaba y desde ahí solo lo nuevo.
+$viejos = [mp_suscripcion('90', 30000, $hace(5)), mp_transferencia('91', 60000, $hace(4))];
+$mpViejo = function ($ruta) use ($viejos, $YO) { return strpos($ruta, '/users/me') === 0 ? ['id' => $YO] : ['results' => $viejos, 'paging' => ['total' => 2]]; };
+$r0 = wabot_pagos_correr($cfg, $ahora - 3600, ['mp' => $mpViejo, 'candidatos' => [], 'cargar' => fn($k) => [], 'guardar' => fn($c) => true]);
+caso('la primera corrida solo anota lo que ya estaba, sin confirmar ni dejar sin asignar', !empty($r0['primera_corrida']) && $r0['anteriores'] === 2 && $r0['confirmados'] === 0 && $r0['sin_asignar'] === 0
+    && wabot_pagos_estado()['pagos']['90']['estado'] === 'anterior' && wabot_pagos_sin_asignar() === [], json_encode($r0));
 $convsDisco = ['5491111TEST01' => $convs['5491111TEST01'], '5491111TEST02' => $convs['5491111TEST02'], '5491111TEST03' => $convs['5491111TEST03']];
 $cola = [
     mp_suscripcion('100', 30000, $hace(1)),                 // Kiosco Ana avisó → se confirma
