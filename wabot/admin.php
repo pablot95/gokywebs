@@ -3417,7 +3417,7 @@ function burbujaCita(t, chat) {
                         <?php endif; ?>
                         <?php /* Pablo, 6-oct: copia los últimos 10 mensajes y, si llenó el formulario, su resumen arriba. */ ?>
                         <button type="button" class="sec" id="btnCopiarMsjs"
-                            title="Copia los últimos 10 mensajes del chat<?= $formInfo ? ' y lo que llenó en el formulario' : '' ?>">Copiar msjs</button>
+                            title="Copia los últimos 10 mensajes del chat<?= $abGrupo !== '' ? ', el grupo de precios' : '' ?><?= $formInfo ? ' y lo que llenó en el formulario' : '' ?>">Copiar msjs</button>
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
                             title="Pone en el chat el mensaje con el link del formulario (con el código de esta conversación), para revisarlo y enviarlo">Form al chat</button>
@@ -4340,6 +4340,11 @@ function burbujaCita(t, chat) {
             ? 'Formulario' . (!empty($formTs) ? ' (' . date('d/m/Y H:i', $formTs) . ')' : '') . ":\n"
                 . implode("\n", array_map(fn($d) => $d['etiqueta'] . ': ' . ($d['valor'] !== '' ? $d['valor'] : '—'), $formInfo))
             : '', JSON_UNESCAPED_UNICODE) ?>;
+        // El grupo de la prueba de precios A/B (Pablo, 1-nov), el mismo del chip.
+        const AB_GRUPO = <?= json_encode(!empty($abGrupo)
+            ? 'Grupo ' . strtoupper($abGrupo) . ' (' . ($abGrupo === 'b' ? 'pago inicial + mensual' : 'pago único o mensual') . ')'
+                . (empty($conv['ab_grupo']) ? ' — sin precio todavía' : '')
+            : '', JSON_UNESCAPED_UNICODE) ?>;
         function textoUltimosMensajes() {
             const dd = n => String(n).padStart(2, '0');
             const msjs = lineasChat.filter(t => ['cliente', 'bot', 'humano'].includes(t.q)).slice(-10).map(t => {
@@ -4348,7 +4353,7 @@ function burbujaCita(t, chat) {
                 const texto = String(t.t || '').trim() || (t.media && t.media.clase ? '[' + t.media.clase + ']' : '');
                 return '[' + dd(f.getDate()) + '/' + dd(f.getMonth() + 1) + ' ' + dd(f.getHours()) + ':' + dd(f.getMinutes()) + '] ' + quien + ': ' + texto;
             });
-            return (FORM_RESUMEN ? FORM_RESUMEN + '\n\n' : '') + 'Últimos mensajes:\n' + msjs.join('\n');
+            return (AB_GRUPO ? AB_GRUPO + '\n\n' : '') + (FORM_RESUMEN ? FORM_RESUMEN + '\n\n' : '') + 'Últimos mensajes:\n' + msjs.join('\n');
         }
         document.getElementById('btnCopiarMsjs')?.addEventListener('click', async (ev) => {
             const boton = ev.currentTarget;
