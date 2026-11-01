@@ -1,0 +1,18 @@
+{
+  "origen": "Zip de imágenes de ChatGPT (Copiar 10) puesto por la demo automática el 1-nov-2026; los JPG originales quedan sin tocar. Todas se muestran como «Imágenes ilustrativas».",
+  "cliente": "La clienta no mandó imágenes propias por WhatsApp. El Instagram del brief (@_editorialvocessuburbanas) no se puede ver sin iniciar sesión: no se usaron datos de ahí.",
+  "imagenes": [
+    { "archivo": "mesa-de-libros-editados.webp", "original": "02_imagen.jpg", "ratio": "16:9", "uso": "portada de los dos modelos y og.jpg" },
+    { "archivo": "libros-junto-a-la-ventana.webp", "original": "01_imagen.jpg", "ratio": "9:16", "uso": "«Cuatro años editando voces nuevas» (foto alta)" },
+    { "archivo": "libros-tapa-azul.webp", "original": "05_imagen.jpg", "ratio": "1:1", "uso": "«Cuatro años editando voces nuevas» (foto chica que cruza la costura)" },
+    { "archivo": "lectura-de-manuscrito.webp", "original": "04_imagen.jpg", "ratio": "1:1", "uso": "servicio Gestión literaria" },
+    { "archivo": "prensa-de-encuadernacion.webp", "original": "06_imagen.jpg", "ratio": "1:1", "uso": "servicio Publicación" },
+    { "archivo": "feria-del-libro.webp", "original": "07_imagen.jpg", "ratio": "1:1", "uso": "servicio Difusión" },
+    { "archivo": "manuscrito-abierto.webp", "original": "03_imagen.jpg", "ratio": "1:1", "uso": "«Cómo publicar con nosotros» (círculo)" },
+    { "archivo": "rincon-de-lectura.webp", "original": "09_imagen.jpg", "ratio": "1:1", "uso": "preguntas frecuentes (solo Modelo 1)" },
+    { "archivo": "envio-de-libros.webp", "original": "08_imagen.jpg", "ratio": "1:1", "uso": "cierre «¿Tenés un libro en camino?»" }
+  ],
+  "portadas_pendientes": "Las 15 tapas de la galería son bloques tipográficos de la colección. Cuando lleguen las portadas reales: images/libro-01.webp … images/libro-15.webp (2:3, mínimo 800×1200) y sumar el número a PORTADAS_LISTAS en script.js.",
+  "mockup": "10_mockup_720x480.png (referencia del Modelo 1)",
+  "bancos": "Ninguna foto de bancos libres."
+}
