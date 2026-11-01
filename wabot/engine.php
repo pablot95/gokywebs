@@ -2068,8 +2068,20 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
          * le contestó "te vinculamos Google Analytics". */
         'estadisticas'  => '(estadistica|metrica|analitica|analytics|visitas|visitan|cuanta gente|cuantos entran|cuantas personas entran'
                          . '|trafico|leads|cuanto vend)',
+        /* Las respuestas de después de la demo (1-nov, flujo comercial post-demo):
+         * cada una contesta algo puntual que el cliente tiene que haber nombrado. */
+        'google_difusion' => '(google|buscador|aparec|encuentr|encontr|indexa|posicion|seo|redes|instagram|facebook|tiktok|compartir|link|enlace|difusion|difund|viral|publicidad|llegar|llegue)',
+        'dominio_com_ar'  => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
+        'dejo_de_pagar'   => '(dej(o|e|ar|as|en) de pagar|no (puedo|pueda|llego|llegue) (a )?pagar|si no pago|un mes no|cancel|dar de baja|doy de baja|baja|corto el plan|dejo el plan|dejar el plan'
+                           . '|indefinid|cuantos meses|cantidad de meses|para siempre|de por vida|titularidad|18 meses|mes de gracia|pierdo la (web|pagina))',
+        'cambios_demo'    => '(cambi|modific|ajust|corr(e|i)g|sac(a|á)r|agreg|sum(a|á)r|reemplaz|poner|pon(e|é)r|quit|mover|otro color|otra foto|otras fotos|el logo|mi logo|textos?|fotos?|imagen|imagenes|colores?|diseno|dise[nñ]o|editar|a mi gusto|queda asi|como la demo)',
+        'comisiones_mp'   => '(comision|comisiones|mercado ?pago|acredit|porcentaje|cobran por venta|me cobran|se queda con)',
+        'tiempo_entrega'  => '(tard|demor|dias|semana|cuando (esta|estaria|la tengo|queda)|tiempo|plazo|lista|terminada|entrega|publicada|cuanto (lleva|falta))',
+        'material_web'    => '(fotos?|logo|textos?|imagen|imagenes|material|info|informacion|datos|que necesit|que te (paso|mando|tengo que)|por donde|como te (paso|mando)|te (paso|mando|envio)|pasarte|mandarte|enviarte|para (iniciar|empezar|arrancar))',
     ];
     if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
+    // ".com" y ".com.ar" se van con los links (wabot_texto_sin_urls): para el dominio vale el texto crudo.
+    if ($clave === 'dominio_com_ar' && preg_match('/\.(com|ar)\b/iu', (string)$texto)) return true;
 
     $re = '/\b' . $rastros[$clave] . '\w*/u';
     $limpio = function ($t) use ($clave) {

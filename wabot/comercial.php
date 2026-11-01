@@ -290,14 +290,18 @@ function wabot_comercial_oferta_sigue_abierta($conv, $cfg = null) {
  *   atencion   — se puede conversar y cotizar;
  *   formulario — el formulario ya salió (del bot o de Pablo): se callan las
  *                respuestas conversacionales; el recordatorio automático sigue;
+ *   postdemo   — la demo ya se entregó (1-nov): la etapa post-demo, que atiende
+ *                el flujo solo con «Bot después de la demo» prendido
+ *                (wabot_comercial_postdemo_elegible);
  *   humano     — derivada por un caso especial: no responde ni se reactiva sola;
  *   rechazo    — el cliente dijo que no: sin recordatorios para avanzar.
  */
 function wabot_comercial_estado($conv) {
     $p = (string)($conv['comercial_pausa'] ?? '');
     if ($p === 'humano' || $p === 'rechazo') return $p;
+    if (!empty($conv['presentado_ts'])) return 'postdemo';
     if ($p === 'formulario' || !empty($conv['link_form_enviado']) || !empty($conv['form_link_mandado_ts'])
-        || (int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']) || !empty($conv['presentado_ts'])) return 'formulario';
+        || (int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado'])) return 'formulario';
     return 'atencion';
 }
 
@@ -305,6 +309,7 @@ function wabot_comercial_estado($conv) {
 function wabot_comercial_elegible($conv, $cfg, $modo = 'auto') {
     if ($modo === 'auto' && (!empty($conv['control_manual']) || !empty($conv['bot_off']))) return [false, 'Lo sigue Pablo (control manual)'];
     $estado = wabot_comercial_estado($conv);
+    if ($estado === 'postdemo') return wabot_comercial_postdemo_elegible($conv, $cfg);
     if ($estado === 'formulario') return [false, 'Formulario enviado: lo sigue Pablo. El recordatorio automático sigue vigente.'];
     if ($estado === 'humano') return [false, 'Pendiente para Pablo: ' . (string)($conv['comercial_motivo'] ?? 'caso especial')];
     if ($estado === 'rechazo') return [false, 'El cliente no quiso avanzar'];
@@ -315,17 +320,37 @@ function wabot_comercial_elegible($conv, $cfg, $modo = 'auto') {
 }
 
 /**
+ * La etapa post-demo (Pablo, 1-nov): ¿le toca al flujo con la demo ya
+ * entregada? Solo con «Bot después de la demo» prendido. Termina cuando avisa
+ * que pagó (lo verifica Pablo) o cuando el pago está confirmado
+ * (`pago_confirmado_ts`: lo setea el onboarding al verificarlo en Mercado Pago,
+ * y desde ahí la charla es suya). `cliente_id` acá no frena: Presentar lo
+ * anota siempre (es la ficha del admin desde la que salió la demo), no un pago.
+ */
+function wabot_comercial_postdemo_elegible($conv, $cfg) {
+    if (!wabot_postdemo_bot_activo($cfg)) return [false, 'Demo presentada: lo sigue Pablo'];
+    if (!empty($conv['pago_confirmado_ts'])) return [false, 'Pago confirmado: ya es cliente'];
+    if (!empty($conv['pago_avisado_ts'])) return [false, 'Avisó que pagó: lo verifica Pablo'];
+    if (in_array((string)($conv['cierre'] ?? ''), ['baja', 'proveedor'], true)) return [false, 'Charla cerrada (' . $conv['cierre'] . ')'];
+    if (!empty($conv['contexto_consulta'])) return [false, 'No es una consulta de venta (' . str_replace('_', ' ', (string)$conv['contexto_consulta']) . ')'];
+    return [true, ''];
+}
+
+/**
  * ¿Puede contestar lo simple con el formulario ya mandado? (Pablo, 22-oct:
  * "¿tienen otros trabajos realizados?" quedaba sin respuesta.) Solo mientras
- * el link salió y no lo completó: completo, el bot se apaga en el chat (10-oct).
- * Ni con la charla en manos de Pablo, ni si él ya escribió después del link,
- * ni con la demo presentada, el pago avisado o un cliente.
+ * el link salió y no lo completó: completo, el bot se apaga en el chat (10-oct),
+ * salvo con «Bot después de la demo» prendido (1-nov): ahí también contesta lo
+ * simple entre el formulario completo y la demo (y la confirmación de los 5
+ * minutos sigue igual). Ni con la charla en manos de Pablo, ni si él ya escribió
+ * después del link, ni con la demo presentada, el pago avisado o un cliente.
  */
 function wabot_comercial_post_form_permitido($conv, $cfg) {
     if (array_key_exists('post_formulario', (array)($cfg['comercial'] ?? [])) && empty($cfg['comercial']['post_formulario'])) return false;
     if (wabot_comercial_estado($conv) !== 'formulario' || (string)($conv['comercial_pausa'] ?? '') === 'humano') return false;
     if (!empty($conv['control_manual']) || !empty($conv['bot_off']) || !empty($conv['archivado'])) return false;
-    if ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']) || !empty($conv['presentado_ts'])) return false;
+    if (!empty($conv['presentado_ts'])) return false;
+    if (((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado'])) && !wabot_postdemo_bot_activo($cfg)) return false;
     if (!empty($conv['pago_avisado_ts']) || !empty($conv['cliente_id']) || !empty($conv['contexto_consulta'])) return false;
     if (in_array((string)($conv['cierre'] ?? ''), ['baja', 'proveedor', 'rechazo'], true)) return false;
     $desde = (int)($conv['comercial_pausa_ts'] ?? 0) ?: (int)($conv['form_link_mandado_ts'] ?? 0);
@@ -386,17 +411,26 @@ function wabot_comercial_info_extra($cfg) {
     ], 'strlen');
 }
 
-/** Las claves de respuestas oficiales que puede pedir en este flujo. */
-function wabot_comercial_info_claves($cfg) {
-    $claves = array_values(array_filter(array_keys((array)($cfg['info'] ?? [])), function ($k) {
+/**
+ * Las respuestas oficiales que solo pide la etapa post-demo (1-nov): fuera de
+ * ella no entran al prompt ni al esquema, así las llamadas de antes no crecen.
+ */
+function wabot_comercial_info_claves_postdemo() {
+    return ['google_difusion', 'dominio_com_ar', 'dejo_de_pagar', 'cambios_demo', 'comisiones_mp', 'tiempo_entrega', 'material_web'];
+}
+
+/** Las claves de respuestas oficiales que puede pedir en este flujo ($postdemo: también las de después de la demo). */
+function wabot_comercial_info_claves($cfg, $postdemo = false) {
+    $claves = array_values(array_filter(array_keys((array)($cfg['info'] ?? [])), function ($k) use ($postdemo) {
+        if (!$postdemo && in_array($k, wabot_comercial_info_claves_postdemo(), true)) return false;
         // turnos dice "incluido, no se paga aparte", y las reservas online son del plan con panel (Pablo, 9-oct): la cubre la solución reservas.
         return !in_array($k, ['otra', 'rangos', 'turnos'], true);
     }));
     return array_values(array_unique(array_merge($claves, array_keys(wabot_comercial_info_extra($cfg)))));
 }
 
-/** La parte B: soluciones, qué incluye cada plan, qué no hacemos y las respuestas oficiales. Igual en cada llamada (caché). */
-function wabot_comercial_info($cfg) {
+/** La parte B: soluciones, qué incluye cada plan, qué no hacemos y las respuestas oficiales. Igual en cada llamada de la misma etapa (caché). */
+function wabot_comercial_info($cfg, $postdemo = false) {
     $l = ['INFORMACIÓN COMERCIAL DE GOKYWEBS (es la única fuente válida; no agregues nada)'];
     $l[] = "\nSOLUCIONES Y PLANES (los montos los pone el sistema; vos nunca los escribís):";
     $l[] = '- informativa → plan "informativa" (el más económico). Incluye el desarrollo completo de la web, adaptada para celular, preparada para Google, un cambio por mes (lo hacemos nosotros), hosting, dominio, actualizaciones y soporte técnico. NO tiene panel: el cliente no edita nada solo.';
@@ -415,15 +449,19 @@ function wabot_comercial_info($cfg) {
     /* Sin los ejemplos de «lo preguntan así» (Pablo, 27-oct): eran 88 renglones,
      * 35.800 caracteres, la mitad del prompt, y se pagaban en cada llamada. La
      * clave y el texto de cada respuesta alcanzan para que el modelo la elija. */
+    $claves = wabot_comercial_info_claves($cfg, $postdemo);
     foreach ((array)($cfg['info'] ?? []) + wabot_comercial_info_extra($cfg) as $k => $t) {
-        if (!in_array($k, wabot_comercial_info_claves($cfg), true)) continue;
+        if (!in_array($k, $claves, true)) continue;
         $l[] = "- $k: " . mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$t)), 0, 260);
     }
     return implode("\n", $l);
 }
 
-function wabot_comercial_instrucciones($cfg) {
-    return wabot_comercial_instrucciones_comportamiento() . "\n\n" . wabot_comercial_info($cfg);
+/** A (+ D después de la demo, 1-nov) + B. Cada etapa tiene su propia clave de caché (wabot_comercial_pensar). */
+function wabot_comercial_instrucciones($cfg, $postdemo = false) {
+    return wabot_comercial_instrucciones_comportamiento()
+        . ($postdemo ? "\n" . wabot_comercial_instrucciones_postdemo() : '')
+        . "\n\n" . wabot_comercial_info($cfg, $postdemo);
 }
 
 /**
@@ -493,9 +531,12 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
             ? '- Ya le ofrecimos la demo gratis y todavía no la aceptó: si este mensaje la acepta (aunque sea con otras palabras), accion formulario.'
             : '- Todavía no le ofrecimos la demo: sale sola después de los planes cuando cotizás.';
     } elseif (wabot_comercial_estado($conv) === 'formulario') {
-        $c[] = ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']) || !empty($conv['presentado_ts']))
-            ? '- Ya completó el formulario de la demo.'
+        $c[] = ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']))
+            ? '- Ya completó el formulario de la demo: la demo se la mandamos nosotros por acá, ' . (function_exists('wabot_form_entrega_frase') ? wabot_form_entrega_frase($conv) : 'en menos de 24 hs')
+                . '. Si pregunta cuándo llega, decile eso con tus palabras. No le pidas más datos ni le mandes nada más: lo simple se contesta como en DESPUÉS DEL FORMULARIO y lo demás es humano.'
             : '- YA LE MANDAMOS EL FORMULARIO DE LA DEMO y todavía no lo completó: seguí lo de DESPUÉS DEL FORMULARIO.';
+    } elseif (wabot_comercial_estado($conv) === 'postdemo') {
+        foreach (wabot_comercial_contexto_postdemo($conv, $cfg) as $linea) $c[] = $linea;
     }
     $c[] = '- ' . ($yaHablo ? 'Ya le escribimos antes en esta charla: no lo vuelvas a saludar.' : 'Todavía no le escribimos nada en esta charla.');
     if ($hablóPablo) $c[] = '- Una persona del equipo ya escribió en esta charla (figura como "Gokywebs (persona)"): lo que dijo vale como dicho por nosotros.';
@@ -534,18 +575,50 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
     return implode("\n", $c);
 }
 
-/** El formato de la decisión (Structured Outputs estricto). */
-function wabot_comercial_esquema($cfg) {
+/**
+ * El estado de la etapa post-demo para el modelo (1-nov): la demo, el modelo y
+ * la modalidad que eligió, lo que ya le mandamos (link de pago, datos de
+ * transferencia, la pregunta del modelo) y los cambios que pidió.
+ */
+function wabot_comercial_contexto_postdemo($conv, $cfg) {
+    $c = [];
+    $slug = trim((string)($conv['presentado_slug'] ?? ''));
+    $c[] = '- YA LE MANDAMOS LA DEMO' . ($slug !== '' ? ' (gokywebs.com/demo/' . $slug . ')' : '') . ' el ' . date('d/m H:i', (int)$conv['presentado_ts'])
+        . ', con dos modelos (1 y 2): seguí lo de DESPUÉS DE LA DEMO. Nunca la vuelvas a ofrecer ni mandes el formulario.';
+    $modelo = (string)($conv['modelo_elegido'] ?? '');
+    if ($modelo !== '') $c[] = '- Modelo que eligió: ' . $modelo . '.';
+    else $c[] = '- Todavía no dijo cuál de los dos modelos prefiere' . ((int)($conv['postdemo_pregunto_modelo_ts'] ?? 0) > 0 ? ' (ya se lo preguntamos: no se lo vuelvas a preguntar).' : '.');
+    $modalidad = ['mensual' => 'plan mensual', 'unico' => 'plan anual', 'propia' => 'pago único', 'inicial' => 'pago inicial + mensualidad'][(string)($conv['modalidad_elegida'] ?? '')] ?? '';
+    $c[] = $modalidad !== '' ? '- Modalidad que eligió: ' . $modalidad . '.' : '- Todavía no eligió modalidad de pago.';
+    if ((int)($conv['postdemo_link_pago_ts'] ?? 0) > 0) {
+        $c[] = '- Ya le mandamos el link de pago (' . (string)($conv['postdemo_link_pago'] ?? '') . ') el ' . date('d/m H:i', (int)$conv['postdemo_link_pago_ts']) . '.';
+    }
+    if ((int)($conv['postdemo_transferencia_ts'] ?? 0) > 0) $c[] = '- Ya le pasamos los datos para la transferencia.';
+    $cambios = trim((string)($conv['cambios_pedidos'] ?? ''));
+    if ($cambios !== '') $c[] = '- Cambios que pidió a la demo (ya anotados): ' . mb_substr(preg_replace('/\s+/u', ' ', $cambios), 0, 300);
+    return $c;
+}
+
+/** El formato de la decisión (Structured Outputs estricto). Después de la demo (1-nov), con los campos de esa etapa. */
+function wabot_comercial_esquema($cfg, $postdemo = false) {
     $texto = function () { return ['type' => ['string', 'null']]; };
+    $propiedadesPostdemo = $postdemo ? [
+        'modelo_elegido' => ['type' => 'string', 'enum' => ['1', '2', 'ninguno']],
+        'quiere_avanzar' => ['type' => 'boolean'],
+        'pide_pago' => ['type' => 'boolean'],
+        'pide_transferencia' => ['type' => 'boolean'],
+        'pide_cambios' => ['type' => 'boolean'],
+        'avisa_pago' => ['type' => 'boolean'],
+    ] : [];
     return [
         'type' => 'json_schema',
-        'name' => 'turno_comercial_v3',
+        'name' => $postdemo ? 'turno_postdemo_v1' : 'turno_comercial_v3',
         'strict' => true,
         'schema' => [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'],
-            'properties' => [
+            'required' => array_merge(['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'], array_keys($propiedadesPostdemo)),
+            'properties' => $propiedadesPostdemo + [
                 'accion' => ['type' => 'string', 'enum' => ['responder', 'cotizar', 'formulario', 'humano', 'esperar']],
                 'solucion' => ['type' => 'string', 'enum' => array_keys(wabot_comercial_soluciones())],
                 // La otra web, si pide dos distintas (Pablo, 10-oct): se cotizan juntas con descuento.
@@ -554,7 +627,7 @@ function wabot_comercial_esquema($cfg) {
                 'pago_unico' => ['type' => 'boolean'],
                 'internacional' => ['type' => 'boolean'],
                 'mensajes' => ['type' => 'array', 'items' => ['type' => 'string']],
-                'info_claves' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => wabot_comercial_info_claves($cfg)]],
+                'info_claves' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => wabot_comercial_info_claves($cfg, $postdemo)]],
                 'motivo' => $texto(),
                 'ficha' => [
                     'type' => 'object',
@@ -573,7 +646,7 @@ function wabot_comercial_esquema($cfg) {
 }
 
 /** Deja la decisión en un formato seguro: enums válidos, textos limpios y topes. */
-function wabot_comercial_normalizar($d, $cfg) {
+function wabot_comercial_normalizar($d, $cfg, $postdemo = false) {
     if (!is_array($d)) return null;
     $accion = in_array($d['accion'] ?? '', ['responder', 'cotizar', 'formulario', 'humano', 'esperar'], true) ? $d['accion'] : 'responder';
     $mensajes = [];
@@ -589,7 +662,7 @@ function wabot_comercial_normalizar($d, $cfg) {
     // Al cotizar, la propuesta sigue siendo un solo bloque, con todo lo que escribió el modelo.
     if ($accion === 'cotizar' && $mensajes) $mensajes = [implode("\n\n", $mensajes)];
     if (in_array($accion, ['humano', 'esperar'], true)) $mensajes = [];
-    $info = array_values(array_intersect(array_unique(array_filter((array)($d['info_claves'] ?? []), 'is_string')), wabot_comercial_info_claves($cfg)));
+    $info = array_values(array_intersect(array_unique(array_filter((array)($d['info_claves'] ?? []), 'is_string')), wabot_comercial_info_claves($cfg, $postdemo)));
     $ficha = is_array($d['ficha'] ?? null) ? $d['ficha'] : [];
     $limpiar = function ($v, $max) {
         if (!is_string($v)) return null;
@@ -608,6 +681,13 @@ function wabot_comercial_normalizar($d, $cfg) {
         'mensajes' => $mensajes,
         'info_claves' => $info,
         'motivo' => $limpiar($d['motivo'] ?? null, 200),
+        // La etapa post-demo (1-nov): lo que marcó el modelo; antes de la demo quedan vacíos.
+        'modelo_elegido' => in_array((string)($d['modelo_elegido'] ?? ''), ['1', '2'], true) ? (string)$d['modelo_elegido'] : null,
+        'quiere_avanzar' => !empty($d['quiere_avanzar']),
+        'pide_pago' => !empty($d['pide_pago']),
+        'pide_transferencia' => !empty($d['pide_transferencia']),
+        'pide_cambios' => !empty($d['pide_cambios']),
+        'avisa_pago' => !empty($d['avisa_pago']),
         'ficha' => [
             'nombre' => $limpiar($ficha['nombre'] ?? null, 60), 'negocio' => $limpiar($ficha['negocio'] ?? null, 80),
             'rubro' => $limpiar($ficha['rubro'] ?? null, 60), 'que_vende' => $limpiar($ficha['que_vende'] ?? null, 120),
@@ -686,7 +766,9 @@ function wabot_comercial_problemas($d) {
  */
 function wabot_comercial_pensar($texto, $conv, $cfg, $modo = 'real', $revision = null) {
     $clave = (string)wabot_conversation_key($conv);
-    $instrucciones = wabot_comercial_instrucciones($cfg);
+    // Después de la demo (1-nov): sus instrucciones, su esquema y su propia clave de caché; antes, todo igual que siempre.
+    $postdemo = wabot_comercial_estado($conv) === 'postdemo';
+    $instrucciones = wabot_comercial_instrucciones($cfg, $postdemo);
     $entrada = [['role' => 'user', 'content' => wabot_comercial_contexto($texto, $conv, $cfg)]];
     // Segunda vuelta pedida por el revisor: su decisión anterior y por qué no se puede mandar.
     if (is_array($revision) && trim((string)($revision['crudo'] ?? '')) !== '') {
@@ -697,11 +779,11 @@ function wabot_comercial_pensar($texto, $conv, $cfg, $modo = 'real', $revision =
     $gastado = ['llamadas' => 0, 'costo_usd' => 0.0];
     $inicio = microtime(true);
     for ($vuelta = 0; $vuelta < 2; $vuelta++) {
-        $r = wabot_openai_llamar('comercial', $instrucciones, $entrada, wabot_comercial_esquema($cfg), $cfg, $opciones);
+        $r = wabot_openai_llamar($postdemo ? 'comercial_postdemo' : 'comercial', $instrucciones, $entrada, wabot_comercial_esquema($cfg, $postdemo), $cfg, $opciones);
         if (!$r['ok']) return ['ok' => false, 'error' => $r['error'], 'gastado' => $gastado];
         $gastado['llamadas']++;
         $gastado['costo_usd'] += (float)($r['uso']['costo_usd'] ?? 0);
-        $d = wabot_comercial_normalizar($r['datos'], $cfg);
+        $d = wabot_comercial_normalizar($r['datos'], $cfg, $postdemo);
         if ($d === null) return ['ok' => false, 'error' => 'decision_invalida', 'gastado' => $gastado];
         $problemas = wabot_comercial_problemas($d);
         // Las dudas sobre la decisión piden una sola corrección; si insiste, vale lo suyo.
@@ -792,13 +874,16 @@ function wabot_comercial_hay_que_revisar(array $b, $texto) {
  * cual (30.000 caracteres) y los ejemplos: 19k tokens por llamada para marcar
  * algo en el 8 % de los casos; ahora son ~4k.
  */
-function wabot_comercial_instrucciones_revisor_completas($cfg) {
+function wabot_comercial_instrucciones_revisor_completas($cfg, $postdemo = false) {
     return wabot_comercial_instrucciones_revisor()
-        . "\n\n" . wabot_comercial_reglas_resumen() . "\n\n" . wabot_comercial_info($cfg);
+        . "\n\n" . wabot_comercial_reglas_resumen()
+        . ($postdemo ? "\n" . wabot_comercial_reglas_resumen_postdemo() : '')
+        . "\n\n" . wabot_comercial_info($cfg, $postdemo);
 }
 
 function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') {
-    $instrucciones = wabot_comercial_instrucciones_revisor_completas($cfg);
+    $postdemo = wabot_comercial_estado($conv) === 'postdemo';
+    $instrucciones = wabot_comercial_instrucciones_revisor_completas($cfg, $postdemo);
     $motivo = trim((string)($b['motivo'] ?? ''));
     $borrador = wabot_comercial_borrador_texto((array)($b['mensajes'] ?? []));
     $entrada = wabot_comercial_contexto($texto, $conv, $cfg)
@@ -806,7 +891,7 @@ function wabot_comercial_revisar($texto, $conv, $cfg, array $b, $modo = 'real') 
         . "\n\nRESPUESTA PROPUESTA (lo que va a recibir el cliente, en orden):\n" . $borrador;
     $clave = (string)wabot_conversation_key($conv);
     $opciones = ['usuario' => $clave, 'max_tokens' => 1800, 'esfuerzo' => 'low'];
-    $r = wabot_openai_llamar('comercial_revisor', $instrucciones, [['role' => 'user', 'content' => $entrada]], wabot_comercial_revision_esquema(), $cfg,
+    $r = wabot_openai_llamar($postdemo ? 'comercial_revisor_postdemo' : 'comercial_revisor', $instrucciones, [['role' => 'user', 'content' => $entrada]], wabot_comercial_revision_esquema(), $cfg,
         $opciones + ['modo' => $modo, 'modelo' => wabot_comercial_revisor_modelo($cfg)]);
     $res = wabot_comercial_revision_leer($r);
 
@@ -1517,13 +1602,15 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     }
     /* Con el formulario ya mandado (22-oct) se contestan dudas y se agradece el
      * material, pero no se vuelve a cotizar ni a mandar el link: el precio solo
-     * si lo pide otra vez. */
-    if (wabot_comercial_estado($conv) === 'formulario') {
+     * si lo pide otra vez. Después de la demo (1-nov), lo mismo. */
+    if (in_array(wabot_comercial_estado($conv), ['formulario', 'postdemo'], true)) {
         if ($d['accion'] === 'formulario' || ($d['accion'] === 'cotizar' && !wabot_comercial_pide_precio_otra_vez($texto))) {
             $d['accion'] = ($d['mensajes'] || $d['info_claves']) ? 'responder' : 'esperar';
             $ajustes[] = 'post_form_sin_repetir';
         }
     }
+    // La etapa post-demo (1-nov): lo que detectan las reglas (modelo, plan, pago, transferencia, cambios) manda sobre lo que marcó el modelo.
+    if (wabot_comercial_estado($conv) === 'postdemo') [$d, $ajustes] = wabot_comercial_validar_postdemo($d, $texto, $conv, $cfg, $ajustes);
     // Cotizar exige una solución estándar y saber a qué se dedica.
     if ($d['accion'] === 'cotizar' && !wabot_comercial_solucion_estandar($sol)) {
         $d['accion'] = 'responder';
@@ -1644,6 +1731,332 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $ajustes[] = 'pregunta_negocio_fija';
     }
     return [$d, $ajustes];
+}
+
+/* ───────────── La etapa post-demo (Pablo, 1-nov): lo que detectan las reglas ───────────── */
+
+/**
+ * ¿Dice cuál de los dos modelos de la demo eligió? "El modelo 2", "la primera
+ * opción", "me quedo con el 1", "Opción 2". Devuelve '1', '2' o null (no lo
+ * dice, nombra los dos, o pregunta sin elegir).
+ */
+function wabot_comercial_postdemo_modelo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 400) return null;
+    if (preg_match('/\b(los dos|las dos|ambos|ambas|cualquiera|los 2|las 2|me da igual|da lo mismo)\b/u', $t)) return null;
+    $uno = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n|el|la)\s+(1|uno|primera?|primero)\b|^(el |la |opcion |modelo )?(1|uno)$/u', $t);
+    $dos = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n|el|la)\s+(2|dos|segund[ao])\b|^(el |la |opcion |modelo )?(2|dos)$/u', $t);
+    if (($uno && $dos) || (!$uno && !$dos)) return null;
+    // "El 1 tiene carrito?" pregunta por un modelo, no lo elige.
+    if (strpos((string)$texto, '?') !== false && !preg_match('/\b(me gust\w*|me encant\w*|elijo|elegimos|prefiero|preferimos|me quedo|nos quedamos|vamos con|voy con|tomamos|quiero|queremos|avanzamos|avanzo)\b/u', $t)) return null;
+    return $uno ? '1' : '2';
+}
+
+/**
+ * Un acuse después de la demo: lo de siempre (wabot_es_acuse) más el "Perfecto,
+ * muchas gracias por la info" que Pablo no contesta (12 % de los turnos post-demo).
+ */
+function wabot_comercial_postdemo_es_acuse($texto) {
+    if (wabot_es_acuse($texto)) return true;
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$texto));
+    return $t !== '' && mb_strlen($t) <= 70
+        && (bool)preg_match('/^((hola|buen dia|buenas( tardes| noches)?|perfecto|dale|ok|okey|listo|genial|buenisimo|barbaro|joya|excelente|bueno|si)\s*)*(muchas |mil )?gracias( (por|x) (la |toda la )?(info|informacion|data|respuesta|atencion|ayuda|explicacion|todo))?( (pablo|igualmente|saludos|buen dia|buenas tardes|buenas noches|un abrazo))?$/u', $t);
+}
+
+/**
+ * ¿Avisa que ya pagó? Lo de siempre (wabot_dice_que_pago) más lo que apareció
+ * en los chats del 4-oct al 1-nov: "Pago realizado te dejo el número de
+ * operación", "Listo ya estoy suscripto", y la foto del comprobante (la
+ * descripción de la imagen dice "comprobante" o "transferencia").
+ */
+function wabot_comercial_postdemo_avisa_pago($texto) {
+    if (function_exists('wabot_dice_que_pago') && wabot_dice_que_pago($texto)) return true;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(pago realizado|pago (hecho|efectuado|aprobado|acreditado)|transferencia (realizada|hecha|enviada|exitosa|aprobada)|ya (esta|quedo) (pago|pagado|abonado|transferido)'
+        . '|(estoy|quede|ya estoy|ya quede) (suscripto|suscripta|suscrito|suscrita|adherido|adherida)|numero de operacion|n(ro|umero)? de (operacion|comprobante|transaccion)|comprobante'
+        . '|te (hice|mande|envie|deje) (el|la|un|una) (pago|transferencia|deposito|sena)|ahi (te )?(transferi|pague|deposite|hice la transferencia)|realice (el|la) (pago|transferencia))\b/u', $t);
+}
+
+/**
+ * ¿Pide pagar o el link? "Pasame el link", "cómo te pago", "cuánto hay que
+ * dejar para arrancar", "quiero avanzar", "cómo seguimos". Hablar de cómo le
+ * pagan SUS clientes en SU web no cuenta; preguntar por una modalidad tampoco
+ * (eso es una duda: pago, medios_pago).
+ */
+function wabot_comercial_postdemo_pide_pago($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 400) return false;
+    if (preg_match('/\b(mi|mis|su|sus)\b.{0,14}\b(web|pagina|sitio|tienda|negocio|clientes|compradores)\b|\b(cobrar|cobro|cobren|cobra|cobrarles|exterior|dolares|paypal)\b/u', $t)) return false;
+    // "Cuando cobre te pago", "la semana que viene te transfiero": posterga, no pide pagar ahora.
+    if (preg_match('/\b(cuando (cobre|pueda|tenga|me paguen|junte)|la semana que viene|el mes que viene|mas adelante|en unos dias|los primeros dias|a fin de mes|despues te|luego te)\b/u', $t)) return false;
+    if (function_exists('wabot_postdemo_avance_explicito') && wabot_postdemo_avance_explicito($texto)) return true;
+    return (bool)(preg_match('/\b(como|donde|de que forma)\b.{0,22}\b(te pago|les pago|te abono|hago para pagar|hago el pago|te transfiero|te deposito|pago|abono)\b/u', $t)
+        || preg_match('/\b(cuanto|que)\b.{0,20}\b(hay que|tengo que|debo|se)\b.{0,14}\b(dejar|pagar|abonar|adelantar)\b/u', $t)
+        || preg_match('/\b(sena|anticipo|adelanto|primer pago|pago inicial)\b/u', $t)
+        || preg_match('/\b(link|enlace)\b.{0,12}\b(pago|pagar|mercado ?pago|suscri\w*)|\b(pasame|mandame|enviame|dame) (el|un) link\b|\b(quiero|queremos|vamos a|voy a) (pagar|abonar|contratar|arrancar|avanzar)\b/u', $t));
+}
+
+/**
+ * ¿No quiere Mercado Pago o pide transferir? "No tengo Mercado Pago",
+ * "puedo hacer transferencia?", "pasame el alias / CBU". Lo que habla de cómo
+ * cobra él en su web no cuenta (medios_pago_tienda).
+ */
+function wabot_comercial_postdemo_pide_transferencia($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 400) return false;
+    if (preg_match('/\b(mi|mis|su|sus)\b.{0,14}\b(web|pagina|sitio|tienda|negocio|clientes|compradores)\b|\b(cobrar|cobro|cobren|cobra|cobrarles)\b/u', $t)) return false;
+    return (bool)(preg_match('/\b(transferencia|transferir|transfiero|transferirte|transferencia bancaria|cbu|cvu|alias)\b/u', $t)
+        || preg_match('/\b(no (tengo|uso|quiero|puedo con|manejo|me gusta)|sin|nada de)\b.{0,10}\b(mercado ?pago|mp|suscripcion)\b/u', $t)
+        || preg_match('/\bpagar(te|les)? (por|con) (transferencia|deposito|efectivo|banco|home ?banking)\b/u', $t));
+}
+
+/**
+ * La modalidad que elige después de la demo: la de siempre
+ * (wabot_comercial_elige_plan) o, como acá ya vio los planes, una frase corta
+ * que nombra UNA sola sin preguntar ni negar ("Hola, elegiría plan mensual",
+ * "Mensual", "plan anual"). mensual / unico (= anual) / propia (pago único) /
+ * inicial, o null.
+ */
+function wabot_comercial_postdemo_plan($texto, $conv) {
+    $t = wabot_normalizar_frase((string)$texto);
+    // Después de la demo "el 1" o "la 2" es un MODELO, no una modalidad: sin una palabra de plan no hay plan.
+    if ($t === '' || !preg_match('/\b(mensual|anual|unico|inicial|suscripcion|por mes|mes a mes|por ano|un solo pago|una sola vez)\b/u', $t)) return null;
+    /* Una frase que cuenta o pregunta algo del plan ("y si el pago mensual es
+     * indefinidamente o una cantidad de meses") no lo elige, aunque el detector
+     * de siempre lea el "si" como un sí. */
+    if (preg_match('/\b(no|ni|tampoco|nunca|cuanto|cuanta|saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?|diferencia|incluye|incluyen|incluido|dejo|dejar|cancel'
+        . '|es|y si|si el|si la|indefinid|cantidad|meses|despues|luego|tambien|como|seria|serian|cuando|pasa)\b/u', $t)) return null;
+    $e = wabot_comercial_elige_plan($texto, $conv);
+    if ($e !== null) return $e;
+    $crudo = trim((string)$texto);
+    if (mb_strlen($crudo) > 120 || strpos($crudo, '?') !== false || strpos($crudo, '¿') !== false) return null;
+    $m = preg_match('/\bmensual\b/u', $t);
+    $a = preg_match('/\banual\b/u', $t);
+    $p = preg_match('/\b(pago unico|unico pago|un solo pago)\b/u', $t);
+    $i = preg_match('/\b(pago inicial|el inicial)\b/u', $t);
+    if ($m + $a + $p + $i !== 1) return null;
+    $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
+    if ($modelo === 'b') return $p ? 'propia' : 'inicial';
+    if ($a && $modelo === 'a') return null;   // en el grupo A no hay plan anual: lo ve Pablo
+    return $m ? 'mensual' : ($a ? 'unico' : ($p ? 'propia' : 'inicial'));
+}
+
+/**
+ * Las reglas de la etapa post-demo sobre la decisión del modelo (1-nov). Lo
+ * que detectan las reglas se suma a lo que marcó el modelo; lo que pide pagar o
+ * avanzar ya no es un caso para Pablo (antes de la demo sí lo era); "lo veo y
+ * te aviso" nunca se lleva el link. Nunca escribe un texto libre nuevo: los
+ * bloques fijos los monta wabot_comercial_construir_postdemo().
+ */
+function wabot_comercial_validar_postdemo($d, $texto, $conv, $cfg, array $ajustes) {
+    $modelo = wabot_comercial_postdemo_modelo($texto);
+    if ($modelo !== null) {
+        $d['modelo_elegido'] = $modelo;
+        if ($modelo !== (string)($conv['modelo_elegido'] ?? '')) $ajustes[] = 'postdemo_modelo';
+    }
+    if (function_exists('wabot_postdemo_pide_cambios') && wabot_postdemo_pide_cambios($texto) && empty($d['pide_cambios'])) {
+        $d['pide_cambios'] = true;
+        $ajustes[] = 'postdemo_cambios';
+    }
+    if (wabot_comercial_postdemo_pide_transferencia($texto) && empty($d['pide_transferencia'])) {
+        $d['pide_transferencia'] = true;
+        $ajustes[] = 'postdemo_transferencia';
+    }
+    $pidePago = wabot_comercial_postdemo_pide_pago($texto);
+    if ($pidePago && empty($d['pide_pago'])) {
+        $d['pide_pago'] = true;
+        $ajustes[] = 'postdemo_pide_pago';
+    }
+    $plan = in_array($d['intencion'], ['rechaza', 'posterga'], true) ? null : wabot_comercial_postdemo_plan($texto, $conv);
+    if ($plan !== null) {
+        $d['plan_elegido'] = $plan;
+        $d['pide_pago'] = true;
+        $ajustes[] = 'postdemo_plan';
+    }
+    /* Le gustó o quiere avanzar (y no dijo que lo va a mirar): el sistema
+     * pregunta el modelo o manda el link. "Lo veo y te aviso" nunca se lleva el
+     * link, aunque el modelo lo haya marcado, salvo que lo pida con todas las letras. */
+    $laMira = (function_exists('wabot_postdemo_la_va_a_mirar') && wabot_postdemo_la_va_a_mirar($texto)) || $d['intencion'] === 'posterga';
+    if (!$laMira && empty($d['quiere_avanzar']) && $d['intencion'] !== 'rechaza'
+        && ((function_exists('wabot_postdemo_elogio') && wabot_postdemo_elogio($texto)) || (function_exists('wabot_postdemo_avance_explicito') && wabot_postdemo_avance_explicito($texto)))) {
+        $d['quiere_avanzar'] = true;
+        $ajustes[] = 'postdemo_avanza';
+    }
+    $pideLink = (bool)preg_match('/\b(link|enlace|alias|cbu|cvu|los datos)\b/u', wabot_normalizar_frase((string)$texto));
+    if ($laMira && !$pideLink && $plan === null && (!empty($d['quiere_avanzar']) || !empty($d['pide_pago']))) {
+        $d['quiere_avanzar'] = false;
+        $d['pide_pago'] = false;
+        $ajustes[] = 'postdemo_posterga';
+    }
+    $hayBloque = ($d['modelo_elegido'] ?? null) !== null || !empty($d['pide_cambios']) || !empty($d['pide_transferencia']) || !empty($d['pide_pago']) || !empty($d['quiere_avanzar']) || !empty($d['avisa_pago']);
+    if ($hayBloque && $d['accion'] === 'esperar') {
+        $d['accion'] = 'responder';
+        $ajustes[] = 'postdemo_responder';
+    }
+    // Quiere pagar, pide el link o eligió plan o modelo: antes de la demo iba a Pablo; acá lo cierra el sistema.
+    if ($d['accion'] === 'humano' && (!empty($d['pide_pago']) || !empty($d['pide_transferencia']) || $plan !== null || $modelo !== null || !empty($d['avisa_pago']))
+        && preg_match('/\b(pag\w*|link|transfer\w*|alias|cbu|cvu|avanzar|arrancar|modelo|plan|suscri\w*|comprobante)\b/iu', (string)$d['motivo'])) {
+        $d['accion'] = 'responder';
+        $d['motivo'] = null;
+        $ajustes[] = 'postdemo_no_humano';
+    }
+    if (!empty($d['pide_cambios']) && $d['accion'] === 'responder' && !in_array('cambios_demo', $d['info_claves'], true)) {
+        array_unshift($d['info_claves'], 'cambios_demo');
+    }
+    return [$d, $ajustes];
+}
+
+/**
+ * El link de pago de ESTA charla (1-nov), como lo manda Pablo: la página de
+ * pago/ que cobra exactamente los montos de su cotización congelada (mensual20000,
+ * anual210, unico330, inicial100…). Sin modalidad elegida, la mensual (o el
+ * pago inicial en el modelo B), como hace él. Si la modalidad que eligió no
+ * está en su cotización o no hay página que cobre ese monto, null: el link lo
+ * manda Pablo. {sena} y {saldo} del anual y del pago único salen de la
+ * cotización y de la seña de su tipo (sena / sena_unico de textos.php).
+ */
+function wabot_comercial_postdemo_pago($conv, $cfg, $modalidad = null) {
+    $cfg = wabot_ab_cfg($cfg, $conv);
+    $pd = (array)($cfg['comercial']['postdemo'] ?? []);
+    $cot = wabot_comercial_cotizacion($conv, $cfg);
+    if (!$cot) return null;
+    $tipo = (string)($conv['tipo'] ?? '');
+    if ($tipo === '' || $tipo === 'sistema') $tipo = (string)(wabot_comercial_soluciones()[(string)($conv['comercial_solucion'] ?? '')]['tipo'] ?? '');
+    if ($tipo === '' || $tipo === 'sistema') $tipo = wabot_comercial_plan_tipo((string)($cot['plan'] ?? 'panel'));
+    $m = (string)($modalidad ?: ($conv['modalidad_elegida'] ?? ''));
+    if ($m === '') $m = trim((string)($cot['inicial'] ?? '')) !== '' ? 'inicial' : 'mensual';
+    $campo = ['mensual' => 'mensual', 'unico' => 'anual', 'propia' => 'unico', 'inicial' => 'inicial'][$m] ?? null;
+    if ($campo === null) return null;
+    $n = wabot_monto_a_numero(trim((string)($cot[$campo] ?? '')));
+    if ($n <= 0 || $n % 1000 !== 0) return null;
+    $pagina = $campo === 'mensual' ? 'mensual' . $n : $campo . intdiv($n, 1000);
+    if (!is_file(__DIR__ . '/../pago/' . $pagina . '/index.html')) return null;
+    $plantilla = trim((string)($pd['link_' . $campo] ?? ''));
+    if ($plantilla === '' || strpos($plantilla, '{link}') === false) return null;
+    $sena = '';
+    $saldo = '';
+    if (strpos($plantilla, '{sena}') !== false) {
+        if ($campo === 'anual') $sena = trim((string)(wabot_precio_vigente($conv, $cfg, $tipo)['sena'] ?? '')) ?: trim((string)($cfg['tipos'][$tipo]['sena'] ?? ''));
+        if ($campo === 'unico') $sena = trim((string)($cfg['tipos'][$tipo]['sena_unico'] ?? ''));
+        $s = wabot_monto_a_numero($sena);
+        if ($s <= 0 || $s >= $n) return null;
+        $saldo = wabot_moneda($n - $s);
+    }
+    return ['t' => strtr($plantilla, ['{link}' => 'gokywebs.com/pago/' . $pagina, '{sena}' => $sena, '{saldo}' => $saldo]), 'modalidad' => $m, 'pagina' => $pagina];
+}
+
+/**
+ * Los mensajes de un turno post-demo (accion responder): las respuestas
+ * oficiales y lo que escribió el modelo, con los bloques fijos de Pablo
+ * alrededor según lo que marcó la decisión: "Perfecto, tomamos el modelo N"
+ * adelante; atrás, los datos de transferencia, el link de pago o la pregunta
+ * del modelo. El link va UNA vez por charla (otra vez solo si lo pide de
+ * nuevo o elige un plan), y la pregunta del modelo también. Si pide el link y no
+ * hay página que cobre sus montos, lo manda Pablo (accion humano).
+ */
+function wabot_comercial_construir_postdemo($d, $texto, $c, $cfg, array &$resumen) {
+    $msgs = [];
+    $pd = (array)($cfg['comercial']['postdemo'] ?? []);
+    if (!empty($d['avisa_pago'])) {
+        // El modelo lo vio y las reglas no: el mismo acuse, y lo verifica Pablo (wabot_comercial_turno avisa).
+        $t = trim((string)($cfg['postdemo_pago_avisado'] ?? ''));
+        $resumen['pago_avisado'] = true;
+        return $t !== '' ? [['t' => $t, 'efecto' => 'pago_avisado']] : [];
+    }
+    $modeloGuardado = (string)($c['modelo_elegido'] ?? '');
+    $modeloNuevo = ($d['modelo_elegido'] ?? null) !== null && (string)$d['modelo_elegido'] !== $modeloGuardado ? (string)$d['modelo_elegido'] : '';
+    if ($modeloNuevo !== '') {
+        $ack = trim((string)($pd['modelo_elegido'] ?? ''));
+        if ($ack !== '') $msgs[] = ['t' => strtr($ack, ['{modelo}' => $modeloNuevo]), 'efecto' => 'modelo'];
+        $resumen['modelo_elegido'] = $modeloNuevo;
+    }
+    $modeloConocido = $modeloNuevo !== '' || $modeloGuardado !== '';
+    if (!empty($d['pide_cambios'])) $resumen['cambios'] = true;
+
+    $propios = array_values(array_filter($d['mensajes'], function ($m) { return !wabot_comercial_es_solo_saludo($m); }));
+    foreach (wabot_comercial_info_textos($d['info_claves'], $c, $cfg, false, $texto, (bool)$propios) as $t) $msgs[] = ['t' => $t, 'efecto' => 'info'];
+    foreach ($propios as $m) $msgs[] = ['t' => $m, 'efecto' => 'texto'];
+
+    $plan = $d['plan_elegido'] ?? null;
+    if ($plan !== null) $resumen['plan_elegido'] = $plan;
+    $yaLink = (int)($c['postdemo_link_pago_ts'] ?? 0) > 0;
+    $pregunto = (int)($c['postdemo_pregunto_modelo_ts'] ?? 0) > 0;
+    $repite = wabot_comercial_pide_repetir($texto);
+    $pregunta = trim((string)($pd['pregunta_modelo'] ?? ''));
+    $pedirModelo = function () use (&$msgs, $pregunta) {
+        if ($pregunta !== '') $msgs[] = ['t' => $pregunta, 'efecto' => 'pregunta_modelo'];
+    };
+    $mandarLink = function ($modalidad) use (&$msgs, &$resumen, $c, $cfg) {
+        $pago = wabot_comercial_postdemo_pago($c, $cfg, $modalidad);
+        if ($pago === null) { $resumen['sin_link_pago'] = true; return false; }
+        $msgs[] = ['t' => $pago['t'], 'efecto' => 'pago'];
+        $resumen['link_pago'] = $pago['modalidad'];
+        return true;
+    };
+    if (!empty($d['pide_transferencia'])) {
+        $datos = trim((string)($pd['transferencia_cbu'] ?? ''));
+        if ($datos !== '' && ((int)($c['postdemo_transferencia_ts'] ?? 0) <= 0 || $repite)) $msgs[] = ['t' => $datos, 'efecto' => 'transferencia'];
+        if (!$modeloConocido && !$pregunto) $pedirModelo();
+    } elseif (!empty($d['pide_pago']) || $plan !== null) {
+        if (!$modeloConocido && !$pregunto) $pedirModelo();
+        if (!$yaLink || $repite || $plan !== null) $mandarLink($plan);
+    } elseif (!empty($d['quiere_avanzar']) || $modeloNuevo !== '') {
+        if ($modeloConocido) {
+            if (!$yaLink) $mandarLink(null);
+        } elseif (!$pregunto) {
+            $pedirModelo();
+        } elseif (!$yaLink) {
+            $mandarLink(null);
+        }
+    }
+    if (!empty($resumen['sin_link_pago'])) {
+        if (!empty($d['pide_pago']) || $plan !== null) {
+            // Pidió el link (o eligió un plan) y no hay página que cobre sus montos: lo manda Pablo, en silencio.
+            $resumen['accion'] = 'humano';
+            $resumen['motivo'] = 'Pide el link de pago y no hay página en pago/ que cobre los montos de su cotización';
+            return [];
+        }
+        // Le gustó y no hay link para mandarle: lo que escribió el modelo sale, y Pablo lo ve pendiente.
+        $resumen['pendiente_pablo'] = 'Le gustó la demo y no hay página en pago/ que cobre los montos de su cotización';
+    }
+    return $msgs;
+}
+
+/**
+ * "Ya pagué" / el comprobante después de la demo (1-nov): se le confirma que lo
+ * revisamos, queda marcado (pago_avisado_ts: la columna Pago del panel y el fin
+ * de la etapa post-demo) y se le avisa a Pablo. Sin pasar por el modelo.
+ */
+function wabot_comercial_postdemo_pago_avisado(&$conv, $cfg, $texto) {
+    $ahora = time();
+    $conv['pago_avisado_ts'] = $ahora;
+    $conv['handoff_pendiente'] = true;
+    $conv['comercial_ultimo'] = ['ts' => $ahora, 'accion' => 'responder', 'motivo' => 'Avisó que pagó: se le confirmó que lo revisamos y lo verifica Pablo',
+                                 'ajustes' => ['pago_avisado'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+    wabot_evento_sesion($conv, 'pago_avisado');
+    wabot_log('comercial_pago_avisado', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr((string)$texto, 0, 160)]);
+    wabot_comercial_postdemo_avisar_pablo($conv);
+    $conv['_comercial_salida'] = true;
+    $t = trim((string)($cfg['postdemo_pago_avisado'] ?? ''));
+    return $t !== '' ? [$t] : [];
+}
+
+/**
+ * El aviso a Pablo de que avisó que pagó: el de siempre (push.php, marcado
+ * «avisó que pagó» porque la charla ya está en la columna Pago). Se manda
+ * acá, antes de que nuestro acuse quede en el transcript: el webhook solo
+ * avisa al final del turno si el último mensaje es del cliente, y acá el
+ * último va a ser el nuestro.
+ */
+function wabot_comercial_postdemo_avisar_pablo($conv) {
+    if (!function_exists('wabot_push_avisar_si_corresponde')) return false;
+    try {
+        return (bool)wabot_push_avisar_si_corresponde($conv);
+    } catch (Throwable $e) {
+        wabot_log('error', ['donde' => 'push_pago_avisado', 'msg' => mb_substr($e->getMessage(), 0, 200)]);
+        return false;
+    }
 }
 
 /* ─────────────────────────────── Construcción de los mensajes ─────────────────────────────── */
@@ -1807,6 +2220,11 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
             break;
 
         case 'responder':
+            // Después de la demo (1-nov): los bloques fijos de Pablo alrededor de las respuestas.
+            if (wabot_comercial_estado($c) === 'postdemo') {
+                $msgs = wabot_comercial_construir_postdemo($d, $texto, $c, $cfg, $resumen);
+                break;
+            }
             $sinMontos = $cot === null;
             $propios = array_values(array_filter($d['mensajes'], function ($m) { return !wabot_comercial_es_solo_saludo($m); }));
             foreach (wabot_comercial_info_textos($d['info_claves'], $c, $cfg, $sinMontos, $texto, (bool)$propios) as $t) $msgs[] = ['t' => $t, 'efecto' => 'info'];
@@ -2015,6 +2433,11 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
         }
     }
 
+    // Con la demo entregada (1-nov) no se la vuelve a ofrecer ni se manda el formulario, salga por donde salga.
+    if (wabot_comercial_estado($c) === 'postdemo') {
+        $msgs = array_values(array_filter($msgs, function ($m) { return !in_array($m['efecto'], ['oferta', 'reoferta', 'formulario'], true); }));
+    }
+
     /* Todas las dudas se contestan (10-oct), pero cuatro o más respuestas oficiales
      * salen juntas en un solo mensaje (22-oct, Maxi: "esos puntos de los planes
      * a qué hacen referencia" recibió cinco mensajes uno atrás del otro). Lo
@@ -2091,6 +2514,17 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     }
     if (in_array('muchos_productos', (array)($resumen['info_claves'] ?? []), true)) {
         foreach ($mensajes as $m) if (($m['efecto'] ?? '') === 'info') { $conv['comercial_muchos_avisado'] = true; break; }
+    }
+    // La etapa post-demo (1-nov): el modelo que eligió y los cambios que pidió.
+    if (in_array((string)($resumen['modelo_elegido'] ?? ''), ['1', '2'], true)) {
+        $conv['modelo_elegido'] = (string)$resumen['modelo_elegido'];
+        wabot_evento_sesion($conv, 'postdemo_modelo_elegido', ['modelo' => $conv['modelo_elegido']]);
+    }
+    if (!empty($resumen['cambios']) && function_exists('wabot_cambios_anotar')) wabot_cambios_anotar($conv, $texto, 'postdemo');
+    // El modelo vio que avisó que pagó: la columna Pago del panel y el fin de la etapa post-demo (lo verifica Pablo).
+    if (!empty($resumen['pago_avisado'])) {
+        $conv['pago_avisado_ts'] = $ahora;
+        wabot_evento_sesion($conv, 'pago_avisado');
     }
     $sol = (string)($resumen['solucion'] ?? 'sin_definir');
     if (wabot_comercial_solucion_estandar($sol)) $conv['comercial_solucion'] = $sol;
@@ -2174,6 +2608,16 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         } elseif ($efecto === 'reoferta') {
             // Se la volvimos a ofrecer después de las dudas: una sola vez por charla.
             $conv['comercial_reoferta_ts'] = $ahora;
+        } elseif ($efecto === 'pregunta_modelo') {
+            // Le preguntamos cuál de los dos modelos prefiere (1-nov): una vez por charla.
+            $conv['postdemo_pregunto_modelo_ts'] = $ahora;
+        } elseif ($efecto === 'pago') {
+            // Le mandamos el link de pago (1-nov): el panel y el modelo lo saben.
+            $conv['postdemo_link_pago_ts'] = $ahora;
+            $conv['postdemo_link_pago'] = (string)($resumen['link_pago'] ?? '');
+            wabot_evento_sesion($conv, 'postdemo_link_pago', ['modalidad' => $conv['postdemo_link_pago']]);
+        } elseif ($efecto === 'transferencia') {
+            $conv['postdemo_transferencia_ts'] = $ahora;
         } elseif ($efecto === 'formulario') {
             if (!wabot_texto_tiene_link_form($t)) continue;
             $conv['link_form_enviado'] = true;
@@ -2211,6 +2655,12 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         // Había que contestar y no quedó nada para mandar: que lo vea Pablo.
         $conv['handoff_pendiente'] = true;
     }
+    // Después de la demo (1-nov): se le contestó, pero algo quedó para Pablo (avisó que pagó; le gustó y no hay link de pago para sus montos).
+    if (!empty($resumen['pago_avisado'])) $conv['handoff_pendiente'] = true;
+    if (!empty($resumen['pendiente_pablo'])) {
+        $conv['handoff_pendiente'] = true;
+        $conv['comercial_ultimo']['motivo'] = (string)$resumen['pendiente_pablo'];
+    }
 }
 
 /* ─────────────────────────────── El turno automático ─────────────────────────────── */
@@ -2218,7 +2668,10 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
 /** Qué etiqueta le ponemos a cada mensaje en el panel. */
 function wabot_comercial_etiqueta($efecto) {
     return ['propuesta' => 'Propuesta', 'planes' => 'Planes', 'oferta' => 'Oferta de demo', 'reoferta' => 'Oferta de demo', 'formulario' => 'Formulario',
-            'info' => 'Respuesta oficial', 'texto' => 'Mensaje', 'alternativa' => 'Planes con reservas', 'dos_webs' => 'Planes de las dos webs'][(string)$efecto] ?? 'Mensaje';
+            'info' => 'Respuesta oficial', 'texto' => 'Mensaje', 'alternativa' => 'Planes con reservas', 'dos_webs' => 'Planes de las dos webs',
+            // La etapa post-demo (1-nov).
+            'modelo' => 'Modelo elegido', 'pregunta_modelo' => 'Pregunta del modelo', 'pago' => 'Link de pago', 'transferencia' => 'Datos de transferencia',
+            'pago_avisado' => 'Pago avisado'][(string)$efecto] ?? 'Mensaje';
 }
 
 /**
@@ -2235,6 +2688,8 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         if (function_exists('wabot_web_propia_anotar')) wabot_web_propia_anotar($conv, $texto, $cfg);
     }
     $conv['ultimo_ts'] = time();
+    // Con la demo entregada, este mensaje es su respuesta (la columna del panel y el archivado dependen de la marca).
+    if (!empty($conv['presentado_ts']) && function_exists('wabot_presentado_marcar_respuesta')) wabot_presentado_marcar_respuesta($conv);
     [$ok, $motivo] = wabot_comercial_elegible($conv, $cfg, 'auto');
     // Con el link del formulario mandado y sin completar, contesta lo simple (22-oct).
     $postForm = !$ok && wabot_comercial_post_form_permitido($conv, $cfg);
@@ -2243,9 +2698,17 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         if (empty($conv['control_manual'])) $conv['handoff_pendiente'] = true;
         return [];
     }
+    // La etapa post-demo (1-nov): la demo ya se entregó y «Bot después de la demo» está prendido.
+    $postdemo = $ok && wabot_comercial_estado($conv) === 'postdemo';
     if (trim($texto) !== '' && wabot_texto_es_proveedor($texto)) {
         wabot_log('proveedor_ignorado', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr($texto, 0, 90)]);
         return wabot_cerrar_proveedor($conv);
+    }
+    /* "Ya pagué", "ya me suscribí", el comprobante: se le confirma que lo
+     * revisamos y lo verifica Pablo, sin gastar un turno del modelo (y antes
+     * de que "ya pagué" se lea como un cliente existente). */
+    if ($postdemo && trim($texto) !== '' && wabot_comercial_postdemo_avisa_pago($texto)) {
+        return wabot_comercial_postdemo_pago_avisado($conv, $cfg, $texto);
     }
     $contexto = trim($texto) !== '' ? wabot_contexto_consulta($texto, $conv) : null;
     if ($contexto !== null) {
@@ -2270,6 +2733,15 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         }
     }
     if (trim($texto) === '') { $conv['handoff_pendiente'] = true; return []; }
+
+    /* Un "ok", un "gracias" o un pulgar después de la demo no gasta un turno
+     * del modelo: se espera, como hace Pablo (1-nov). */
+    if ($postdemo && wabot_comercial_postdemo_es_acuse($texto)) {
+        $conv['handoff_pendiente'] = false;
+        $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Un acuse después de la demo',
+                                     'ajustes' => ['postdemo_acuse'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+        return [];
+    }
 
     /* "No puedo abrir el link" con el formulario mandado (Sabrina, Instagram,
      * 26-oct: quedó para Pablo en silencio y a la mañana le salió igual el
@@ -2316,6 +2788,11 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     if ($b['accion'] === 'humano') {
         wabot_conv_tomar_control($conv);
         $conv['handoff_pendiente'] = true;
+    }
+    // El modelo vio que avisó que pagó (1-nov): la marca ya la puso construir(); acá, el aviso a Pablo.
+    if ($postdemo && !empty($b['resumen']['pago_avisado'])) {
+        wabot_log('comercial_pago_avisado', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr($texto, 0, 160), 'por' => 'modelo']);
+        wabot_comercial_postdemo_avisar_pablo($conv);
     }
     // Si llega otro mensaje antes de mandar esto, el webhook lo descarta y vuelve a pensar con todo.
     $conv['_ia_recalculable'] = true;
