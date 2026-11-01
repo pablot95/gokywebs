@@ -1375,6 +1375,15 @@ oa([dc(['accion' => 'responder', 'solucion' => 'cursos', 'info_claves' => ['host
 $r = turno('[audio] Hola, todo bien? Entiendo que el hosting es el almacenamiento, no? Y qué sería el mantenimiento? Y pagando el total manejaría todo yo?', $c, $cfg);
 caso('tres oficiales y dos del modelo no salen como cinco mensajes: las oficiales van juntas', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Eliana (1-nov, lencería): tres oficiales al cotizar + propuesta, precio y demo salían como seis mensajes seguidos.
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['no_se_nada', 'logo', 'proceso'],
+        'mensajes' => ['Podemos armarte una tienda online para vender la lencería'], 'ficha' => ['que_vende' => 'lencería']])]);
+$r = turno('[audio] Estamos en cero, el rubro es lencería. Oriéntenme en valores, y si ustedes hacen el logo, cómo se manejan', $c, $cfg);
+caso('tres oficiales al cotizar van juntas en un mensaje, antes de la propuesta y el precio', count($r) === 4
+    && strpos($r[0], $cfg['info']['no_se_nada']) === 0 && strpos($r[0], $cfg['info']['logo']) !== false && strpos($r[0], 'primer diseño') !== false
+    && strpos($r[1], 'lencería') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+
 // Al derivar, el bot sigue en silencio (Pablo, 27-oct: "que se siga callando").
 $c = cv();
 oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM'])]);

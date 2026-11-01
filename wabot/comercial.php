@@ -2458,10 +2458,12 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
      * salen juntas en un solo mensaje (22-oct, Maxi: "esos puntos de los planes
      * a qué hacen referencia" recibió cinco mensajes uno atrás del otro). Lo
      * mismo si el turno entero pasaría de tres mensajes con dos o más oficiales
-     * (26-oct, Tomás: tres oficiales y dos del modelo, cinco seguidos). */
+     * (26-oct, Tomás: tres oficiales y dos del modelo, cinco seguidos). Y tres
+     * oficiales en un turno de cinco mensajes o más, contando propuesta, precio
+     * y oferta (1-nov, Eliana: al cotizar salían seis mensajes seguidos). */
     $infos = count(array_filter($msgs, function ($m) { return $m['efecto'] === 'info'; }));
     $propios = count(array_filter($msgs, function ($m) { return $m['efecto'] === 'texto'; }));
-    if ($infos > 3 || ($infos >= 2 && $infos + $propios >= 4)) {
+    if ($infos > 3 || ($infos >= 2 && $infos + $propios >= 4) || ($infos >= 3 && count($msgs) >= 5)) {
         $juntos = [];
         foreach ($msgs as $m) {
             $i = count($juntos) - 1;
