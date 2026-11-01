@@ -201,6 +201,8 @@ function wabot_ajustes_claves() {
     return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida', 'flujo_comercial',
             // Bot después de la demo (1-nov): ver wabot_postdemo_bot_activo().
             'bot_postdemo_activo',
+            // Pagos de Mercado Pago cruzados solos y el onboarding por el chat (pagos.php, onboarding.php, 1-nov).
+            'pagos_auto', 'onboarding_activo',
             'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
