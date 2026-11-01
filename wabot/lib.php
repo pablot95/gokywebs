@@ -205,7 +205,7 @@ function wabot_ajustes_claves() {
             'pagos_auto', 'onboarding_activo',
             'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
-            'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
+            'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id', 'capi_waba_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'form_confirmacion_activo', 'form_confirmacion_minutos',
@@ -2542,6 +2542,16 @@ function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
     $clid = trim((string)($conv['ctwa_clid'] ?? ''));
     if ($clid === '') return false;   // no vino de un anuncio: no hay nada que atribuir
 
+    /* Meta pide, además del clic, la cuenta de WhatsApp (1-nov: los tres
+     * LeadSubmitted del día volvieron 400, subcode 2804116, "Falta el
+     * identificador de la página o de la cuenta de WhatsApp"). Sin ese id el
+     * evento no se manda: iría a buscar el mismo 400. Ver wabot_waba_id(). */
+    $waba = wabot_waba_id($cfg);
+    if ($waba === '') {
+        wabot_log('error', ['donde' => 'capi', 'evento' => $evento, 'res' => 'falta el id de la cuenta de WhatsApp (WABA): llega solo con el webhook o se carga en Ajustes']);
+        return false;
+    }
+
     // Cada evento se manda UNA sola vez por conversacion: si el cron reintenta
     // o Pablo reabre el chat, Meta contaria la misma conversion dos veces y la
     // optimizacion se ensucia con datos inflados.
@@ -2554,7 +2564,7 @@ function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
         'event_time'        => time(),
         'action_source'     => 'business_messaging',
         'messaging_channel' => 'whatsapp',
-        'user_data'         => ['ctwa_clid' => $clid],
+        'user_data'         => ['ctwa_clid' => $clid, 'whatsapp_business_account_id' => $waba],
     ];
     if ($customData) $dato['custom_data'] = $customData;
 
@@ -2586,6 +2596,38 @@ function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
     $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
     wabot_log('capi_enviado', ['tel' => $conv['tel'] ?? '', 'evento' => $evento]);
     return true;
+}
+
+/**
+ * El id de la cuenta de WhatsApp Business (WABA), que la API de conversiones
+ * exige en cada evento de mensajería. Tres fuentes, en orden: la constante
+ * WABOT_WABA_ID de config/wabot-config.php, el ajuste `capi_waba_id` del
+ * panel, y lo que anota solo el webhook (data/waba-id.json): cada aviso de
+ * WhatsApp llega con `entry[].id`, que es justamente ese id, así que después
+ * del primer mensaje recibido ya no hace falta cargar nada.
+ */
+function wabot_waba_id_archivo() {
+    return (string)($GLOBALS['WABOT_TEST_WABA_ARCHIVO'] ?? (WABOT_DATA . '/waba-id.json'));
+}
+
+function wabot_waba_id($cfg = null) {
+    if (defined('WABOT_WABA_ID') && preg_match('/^\d{6,}$/', (string)WABOT_WABA_ID)) return (string)WABOT_WABA_ID;
+    $cfg = $cfg ?? wabot_config_load();
+    $id = preg_replace('/\D+/', '', (string)($cfg['capi_waba_id'] ?? ''));
+    if (strlen($id) >= 6) return $id;
+    $d = json_decode((string)@file_get_contents(wabot_waba_id_archivo()), true);
+    $id = preg_replace('/\D+/', '', (string)($d['id'] ?? ''));
+    return strlen($id) >= 6 ? $id : '';
+}
+
+/** El webhook lo anota al pasar; solo escribe si cambió. */
+function wabot_waba_id_guardar($id) {
+    $id = preg_replace('/\D+/', '', (string)$id);
+    if (strlen($id) < 6) return false;
+    $d = json_decode((string)@file_get_contents(wabot_waba_id_archivo()), true);
+    if (is_array($d) && (string)($d['id'] ?? '') === $id) return true;
+    wabot_ensure_dirs();
+    return wabot_json_guardar_atomico(wabot_waba_id_archivo(), json_encode(['id' => $id, 'ts' => time()]));
 }
 
 /**

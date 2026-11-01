@@ -134,7 +134,7 @@ $deps = [
 ];
 $pago = wabot_pagos_normalizar(mp_suscripcion('10', 30000, $hace(1)), $YO) + ['modo' => 'monto_avisado'];
 $convA['control_manual'] = true; $convA['bot_off'] = true; $convA['ctwa_clid'] = 'clid-123';
-$cfgCapi = array_merge($cfg, ['capi_dataset_id' => '1', 'capi_token' => 't']);
+$cfgCapi = array_merge($cfg, ['capi_dataset_id' => '1', 'capi_token' => 't', 'capi_waba_id' => '123456789012345']);
 $r = wabot_pago_confirmar($convA, $pago, 'mensual', $cfgCapi, $deps);
 caso('queda en la charla: cuándo, cuánto, qué y cómo', $r['ok'] && $convA['pago_confirmado_ts'] === $ahora && $convA['pago_id'] === '10' && $convA['pago_monto'] === 30000
     && $convA['pago_modalidad'] === 'mensual' && $convA['pago_tipo'] === 'suscripcion' && $convA['pago_modo'] === 'monto_avisado' && count($convA['pagos']) === 1, json_encode($r));
