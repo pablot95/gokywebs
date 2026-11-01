@@ -1,0 +1,19 @@
+{
+  "nota": "Imágenes de la demo de Instituto Renacer (1-nov-2026). Las 01-09 y el mock up vienen del zip de ChatGPT (Instituto_Renacer_wvafr6IQAcqlL7umqInH.zip); las dos fotos reales salen de la página actual de la clienta.",
+  "archivos": {
+    "hero-alumna.webp": "01_imagen.jpg (9:16), hero del Modelo 1",
+    "aula-clase.webp": "recorte 16:9 de 01_imagen.jpg, portada del reproductor del aula",
+    "escritorio-lago.webp": "02_imagen.jpg (16:9), hero del Modelo 2 y cierre del Modelo 1",
+    "taller-vinculos.webp": "recorte cuadrado de 02_imagen.jpg, taller de vínculos",
+    "constelaciones-familiares.webp": "03_imagen.jpg",
+    "tarot.webp": "04_imagen.jpg",
+    "constelaciones-fluviales.webp": "05_imagen.jpg",
+    "taller-arbol.webp": "06_imagen.jpg",
+    "taller-ordenes.webp": "07_imagen.jpg",
+    "sesion-online.webp": "08_imagen.jpg",
+    "consultorio.webp": "09_imagen.jpg",
+    "virginia-rezzia.webp": "foto real de Virginia Rezzia (recorte 4:5 sin la marca de agua) de https://be-simple.pro/lp/formacion-profesional-en-constelaciones-familiares (dktifnyyozvbvysvptar.supabase.co/.../1782236141459.jpg)",
+    "practica-grupal.webp": "foto real de una constelación grupal (recorte 4:3) de la misma página (…/1782243109852.jpg)",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg"
+  }
+}
