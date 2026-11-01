@@ -1,14 +1,20 @@
 <?php
 /**
- * wabot/push.php — notificaciones push al celular de Pablo cuando entra un
- * mensaje que el bot no contestó.
+ * wabot/push.php — avisos al celular de Pablo cuando entra un mensaje que el
+ * bot no contestó.
  *
  * Pablo, 24-sep: "que suene cada mensaje que entra que NO esté contestando el
  * bot". Ya no es solo el SL del 28-ago (demo entregada, derivado): también
  * suena con el bot apagado o pausado, cuando el bot eligió callarse, y cuando
  * su respuesta no salió. Si el bot contestó, no suena: eso lo resolvió él.
  *
- * Va por Firebase Cloud Messaging (gratis en el plan Spark) con la API HTTP v1,
+ * Desde el 1-nov el aviso principal va por WHATSAPP: el bot le escribe a Pablo
+ * a su número personal (wabot_aviso_whatsapp_enviar, más abajo). El push de
+ * Firebase que sigue acá quedó de respaldo: Chrome en Android lo demoraba
+ * minutos y terminaba dando de baja el permiso sin avisar; en el server había
+ * quedado registrada solo la PC. wabot_push_enviar() manda por los dos.
+ *
+ * El push va por Firebase Cloud Messaging (gratis en el plan Spark) con la API HTTP v1,
  * que pide un access token de OAuth2 firmado con la cuenta de servicio (las
  * server keys viejas las dio de baja Google). El JWT se firma con openssl, sin
  * librerías.
@@ -147,13 +153,14 @@ function wabot_push_token_borrar($token) {
 /* ── El envío ─────────────────────────────────────────────────────────── */
 
 /**
- * Manda la notificación a todos los dispositivos registrados. Los que Google
- * rechaza por token inválido se borran solos: un celular formateado no tiene
- * que hacer fallar los envíos para siempre.
+ * Manda la notificación PUSH a todos los dispositivos registrados. Los que
+ * Google rechaza por token inválido se borran solos: un celular formateado no
+ * tiene que hacer fallar los envíos para siempre.
  *
- * Devuelve a cuántos dispositivos llegó.
+ * Devuelve a cuántos dispositivos llegó. Los avisos del bot no llaman a esto
+ * directo sino a wabot_push_enviar(), que además manda el WhatsApp.
  */
-function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
+function wabot_push_fcm_enviar($titulo, $cuerpo, $datos = []) {
     $sa = wabot_push_cuenta();
     $tokens = wabot_push_tokens();
     if (!$sa || !$tokens) return 0;
@@ -211,6 +218,141 @@ function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
     return $enviados;
 }
 
+/* ── El aviso por WhatsApp (Pablo, 1-nov) ─────────────────────────────────
+ *
+ * "Las notificaciones de wabot en el celular ya no me llegan, se desactivan"
+ * y "llegaban re tarde". El push depende de Chrome y de Android: el sistema lo
+ * demora con el ahorro de batería y con el tiempo le saca el permiso al sitio.
+ * WhatsApp le suena al instante y no se desactiva, así que el bot le escribe a
+ * su número personal lo mismo que iba en la notificación, con el link al chat.
+ *
+ * Meta deja mandarle texto libre durante las 24 h siguientes al último mensaje
+ * que Pablo le mandó al bot (webhook.php lo anota acá, en data/aviso-pablo.json,
+ * y no lo trata como cliente). Fuera de esa ventana va la plantilla de utilidad
+ * `aviso_pablo` (textos.php), que no sale hasta que Meta la apruebe y esté con
+ * activa:true; mientras tanto, fuera de la ventana solo queda el push.
+ */
+
+define('WABOT_AVISO_PABLO', WABOT_DATA . '/aviso-pablo.json');
+
+/** Estado del canal: cuándo escribió Pablo por última vez y cómo salió el último aviso. */
+function wabot_aviso_estado() {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return (array)($GLOBALS['WABOT_TEST_AVISO_ESTADO'] ?? []);
+    $d = json_decode((string)@file_get_contents(WABOT_AVISO_PABLO), true);
+    return is_array($d) ? $d : [];
+}
+
+function wabot_aviso_estado_guardar(array $estado) {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_AVISO_ESTADO'] = $estado; return true; }
+    wabot_ensure_dirs();
+    return wabot_json_guardar_atomico(WABOT_AVISO_PABLO, json_encode($estado));
+}
+
+/** El número de Pablo al que van los avisos, solo dígitos (549…), o ''. */
+function wabot_aviso_tel($cfg = null) {
+    $cfg = $cfg ?? wabot_config_load();
+    $tel = preg_replace('/[^0-9]/', '', (string)($cfg['aviso_whatsapp_tel'] ?? ''));
+    return strlen($tel) >= 10 ? $tel : '';
+}
+
+function wabot_aviso_whatsapp_activo($cfg = null) {
+    $cfg = $cfg ?? wabot_config_load();
+    return !empty($cfg['aviso_whatsapp_activo']) && wabot_aviso_tel($cfg) !== '';
+}
+
+/** ¿Hay algún canal por el que avisarle? WhatsApp activo o el push configurado. */
+function wabot_aviso_configurado($cfg = null) {
+    return wabot_push_configurado() || wabot_aviso_whatsapp_activo($cfg);
+}
+
+/**
+ * Pablo le escribió al bot desde su celular: desde ahora y por 24 h el aviso
+ * puede ir como texto libre. Se guarda lo mínimo; el texto solo al log.
+ */
+function wabot_aviso_entrante_registrar($clave, $texto = '') {
+    $estado = wabot_aviso_estado();
+    $estado['entrante_ts'] = time();
+    $estado['entrante_tel'] = preg_replace('/[^0-9]/', '', (string)$clave);
+    wabot_aviso_estado_guardar($estado);
+    wabot_log('aviso_pablo_entrante', ['tel' => $estado['entrante_tel'], 'texto' => mb_substr((string)$texto, 0, 80)]);
+}
+
+/** Hasta cuándo (ts) está abierta la ventana de 24 h, con dos minutos de margen; 0 si nunca escribió. */
+function wabot_aviso_ventana_hasta() {
+    $ts = (int)(wabot_aviso_estado()['entrante_ts'] ?? 0);
+    return $ts > 0 ? $ts + 24 * 3600 - 120 : 0;
+}
+
+function wabot_aviso_ventana_abierta($ahora = null) {
+    return wabot_aviso_ventana_hasta() > ($ahora ?? time());
+}
+
+/**
+ * Le manda el aviso a Pablo por WhatsApp. Mismo título, cuerpo y link que la
+ * notificación push, en un solo mensaje. Devuelve true si salió por texto o
+ * por plantilla.
+ *
+ * En los tests no sale nada salvo que la suite lo pida con
+ * $GLOBALS['WABOT_TEST_AVISO_PABLO'] = true: las demás cuentan los envíos al
+ * cliente y un WhatsApp a Pablo les cambiaría la cuenta.
+ */
+function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null) {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && empty($GLOBALS['WABOT_TEST_AVISO_PABLO'])) return false;
+    $cfg = $cfg ?? wabot_config_load();
+    if (!wabot_aviso_whatsapp_activo($cfg)) return false;
+    $tel    = wabot_aviso_tel($cfg);
+    $titulo = trim((string)$titulo);
+    $cuerpo = trim((string)$cuerpo);
+    $link   = trim((string)($datos['link'] ?? 'https://www.gokywebs.com/wabot/admin.php'));
+    // La clave del chat, para el botón de la plantilla (?ver=…). Sin clave va el panel a secas.
+    $clave  = preg_replace('/[^0-9A-Za-z_-]/', '', (string)($datos['tel'] ?? ''));
+    if ($clave === '' && preg_match('/[?&]ver=([^&]+)/', $link, $m)) $clave = preg_replace('/[^0-9A-Za-z_-]/', '', rawurldecode($m[1]));
+
+    $estado = wabot_aviso_estado();
+    $via = '';
+    $ok = false;
+
+    if (wabot_aviso_ventana_abierta()) {
+        // WhatsApp corta los mensajes en 4096 caracteres; el link va siempre.
+        if (mb_strlen($cuerpo) > 3000) $cuerpo = '…' . mb_substr($cuerpo, -2999);
+        $texto = $titulo . ($cuerpo !== '' ? "\n" . $cuerpo : '') . "\n" . $link;
+        $ok = wabot_wa_send_text($tel, $texto);
+        $via = 'texto';
+    }
+    if (!$ok) {
+        // Fuera de la ventana (o Meta la dio por cerrada antes que nosotros): la plantilla.
+        $p = wabot_plantilla_config('aviso_pablo', $cfg);
+        if ($p !== null) {
+            // Las variables de una plantilla no admiten saltos de línea ni espacios de más.
+            $plano = function ($s) { return trim(preg_replace('/\s*\n\s*/u', ' · ', preg_replace('/[ \t]+/u', ' ', (string)$s))); };
+            $textoPlano = $plano($cuerpo !== '' ? $cuerpo : 'Te escribió y espera respuesta.');
+            if (mb_strlen($textoPlano) > 900) $textoPlano = mb_substr($textoPlano, 0, 899) . '…';
+            $ok = wabot_wa_send_template($tel, $p['nombre'], $p['idioma'] ?? 'es_AR',
+                                         [$plano($titulo) ?: 'Un cliente', $textoPlano], [$clave !== '' ? $clave : '-']);
+            $via = 'plantilla';
+        }
+    }
+    // El id de este envío no es de ninguna charla: que no se lo lleve el próximo renglón de un transcript.
+    wabot_salida_tomar();
+
+    $estado['ultimo_aviso_ts'] = time();
+    $estado['ultimo_aviso_ok'] = $ok;
+    $estado['ultimo_aviso_via'] = $ok ? $via : ($via !== '' ? $via : 'ninguna');
+    wabot_aviso_estado_guardar($estado);
+    wabot_log('aviso_pablo', ['via' => $estado['ultimo_aviso_via'], 'ok' => $ok, 'tel' => $clave]);
+    return $ok;
+}
+
+/**
+ * El aviso a Pablo por todos los canales: WhatsApp (el principal) y el push
+ * de respaldo. Devuelve a cuántos destinos llegó, igual que antes: el que
+ * llamaba con el push solo sigue funcionando sin cambios.
+ */
+function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
+    $n = wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos) ? 1 : 0;
+    return $n + (int)wabot_push_fcm_enviar($titulo, $cuerpo, $datos);
+}
+
 /* ── Cuándo avisar ────────────────────────────────────────────────────── */
 
 /**
@@ -252,7 +394,7 @@ function wabot_push_quien($cv) {
  * un mensaje que llega más tarde es otro aviso, que es lo que pidió Pablo.
  */
 function wabot_push_avisar_si_corresponde($cv) {
-    if (!wabot_push_configurado() || !wabot_push_debe_avisar($cv)) return false;
+    if (!wabot_aviso_configurado() || !wabot_push_debe_avisar($cv)) return false;
 
     // Todos los mensajes del cliente desde lo último que se le contestó.
     $pendientes = [];
@@ -401,7 +543,7 @@ function wabot_push_reaviso_correr($ahora = null, $convs = null, $enviar = null)
     $h = wabot_hora_local($ahora);
     if ($h < 9 || $h >= 22) return $res + ['motivo' => 'fuera_de_horario'];
     if ($enviar === null) {
-        if (!wabot_push_configurado()) return $res + ['motivo' => 'push_sin_configurar'];
+        if (!wabot_aviso_configurado()) return $res + ['motivo' => 'aviso_sin_configurar'];
         $enviar = 'wabot_push_enviar';
     }
     $estado = is_file(WABOT_PUSH_REAVISO) ? (array)json_decode((string)@file_get_contents(WABOT_PUSH_REAVISO), true) : [];

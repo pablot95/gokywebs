@@ -209,7 +209,9 @@ function wabot_ajustes_claves() {
             // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
             'revision_activa', 'revision_gasto_max_usd',
             // El gasto en publicidad leído de Meta para Inversión (meta-gasto.php, 13-oct).
-            'meta_ads_token', 'meta_ads_cuenta'],
+            'meta_ads_token', 'meta_ads_cuenta',
+            // Avisos a Pablo por WhatsApp y sus números propios (push.php, 1-nov).
+            'aviso_whatsapp_activo', 'aviso_whatsapp_tel', 'numeros_propios'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
 }
@@ -4065,6 +4067,24 @@ function wabot_salida_es_bot($id) {
     if ($id === '') return false;
     $m = json_decode((string)@file_get_contents(WABOT_DATA . '/salidas.json'), true);
     return is_array($m) && isset($m[$id]);
+}
+
+/**
+ * ¿Este número es de Pablo? Lo que escriba desde su celular personal al bot no
+ * es un cliente: no abre charla ni se contesta (webhook.php); solo cuenta para
+ * la ventana de 24 h de los avisos por WhatsApp (push.php). Se compara por los
+ * últimos 10 dígitos, así da igual con o sin el 549 adelante.
+ */
+function wabot_numero_propio($clave, $cfg = null) {
+    $d = preg_replace('/[^0-9]/', '', (string)$clave);
+    if (strlen($d) < 10) return false;
+    $cfg = $cfg ?? wabot_config_load();
+    foreach ((array)($cfg['numeros_propios'] ?? []) as $n) {
+        $n = preg_replace('/[^0-9]/', '', (string)$n);
+        if (strlen($n) < 10) continue;
+        if ($d === $n || substr($d, -10) === substr($n, -10)) return true;
+    }
+    return false;
 }
 
 /**

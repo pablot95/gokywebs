@@ -508,15 +508,29 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
      * a todos los dispositivos registrados. */
     if ($a === 'push_probar') {
         header('Content-Type: application/json; charset=utf-8');
-        if (!wabot_push_configurado()) {
-            echo json_encode(['ok' => false, 'error' => 'Falta config/service-account.json en el server.']);
+        if (!wabot_aviso_configurado($cfg)) {
+            echo json_encode(['ok' => false, 'error' => 'No hay ningún aviso configurado: ni el WhatsApp ni config/service-account.json en el server.']);
             exit;
         }
-        $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, las notificaciones andan.',
+        $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, los avisos andan.',
                                ['tel' => 'prueba', 'link' => 'https://www.gokywebs.com/wabot/admin.php?tab=estado']);
-        echo json_encode(['ok' => $n > 0, 'dispositivos' => $n,
-                          'error' => $n > 0 ? '' : 'No llegó a ningún dispositivo. ¿Tocaste "Activar acá" en el celular?']);
+        $via = (string)(wabot_aviso_estado()['ultimo_aviso_via'] ?? '');
+        echo json_encode(['ok' => $n > 0, 'dispositivos' => $n, 'via' => $via,
+                          'error' => $n > 0 ? '' : 'No salió por ningún lado. Por WhatsApp hace falta la ventana abierta o la plantilla aprobada; por push, "Activar acá" en el celular.']);
         exit;
+    }
+    /* Los avisos por WhatsApp (1-nov): prendido/apagado y el número de Pablo,
+     * desde la pestaña Estado. El número pasa a ser "propio": lo que escriba
+     * desde ahí no es un cliente (webhook.php). */
+    if ($a === 'aviso_guardar') {
+        $cfg['aviso_whatsapp_activo'] = !empty($_POST['aviso_whatsapp_activo']);
+        $telAviso = preg_replace('/[^0-9]/', '', (string)($_POST['aviso_whatsapp_tel'] ?? ''));
+        if (strlen($telAviso) >= 10) {
+            $cfg['aviso_whatsapp_tel'] = $telAviso;
+            $cfg['numeros_propios'] = [$telAviso];
+        }
+        wabot_config_save($cfg);
+        header('Location: admin.php?tab=estado'); exit;
     }
     if ($a === 'toggle_activo') {
         $cfg['activo'] = empty($cfg['activo']);
@@ -1470,6 +1484,11 @@ $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Bot WhatsApp — Gokywebs</title>
+<!-- Instalable en el celular (1-nov): con el panel como app, Android trata sus
+     notificaciones como las de una app y no las va apagando. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12141a">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
 /* Grises neutros, no azul saturado: el color queda libre para significar algo
    (verde = plata, ámbar = te toca, rojo = se enfrió). Antes todo era azul y
@@ -2221,15 +2240,54 @@ function burbujaCita(t, chat) {
                 </form>
             </div>
         </div>
+        <?php
+        /* Avisos a Pablo (1-nov): el principal es el WhatsApp a su número; el
+         * push de Firebase quedó de respaldo. Ver push.php. */
+        $avisoEstado   = wabot_aviso_estado();
+        $avisoTel      = wabot_aviso_tel($cfg);
+        $avisoActivo   = wabot_aviso_whatsapp_activo($cfg);
+        $avisoHasta    = wabot_aviso_ventana_hasta();
+        $avisoPlantilla = wabot_plantilla_config('aviso_pablo', $cfg);
+        $estiloCampo   = 'width:auto;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit';
+        ?>
         <div class="card">
             <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
                 <div>
-                    <strong>Notificaciones</strong>
-                    <p class="meta" id="pushEstado">Te suena el celular con cada mensaje que el bot no contestó, aunque tengas el panel cerrado.</p>
+                    <strong>Avisos por WhatsApp <?= $avisoActivo ? 'activos' : 'apagados' ?></strong>
+                    <p class="meta">El bot te escribe a tu WhatsApp (<?= $avisoTel !== '' ? htmlspecialchars(wabot_formatear_tel($avisoTel)) : 'sin número' ?>) con cada mensaje que no contestó, con el link al chat. Al instante y sin permisos que se desactiven.</p>
+                </div>
+                <form method="post" class="fila" style="gap:8px;flex-wrap:wrap;align-items:center">
+                    <input type="hidden" name="accion" value="aviso_guardar">
+                    <label class="meta" style="margin:0"><input type="checkbox" name="aviso_whatsapp_activo" value="1" <?= !empty($cfg['aviso_whatsapp_activo']) ? 'checked' : '' ?> style="width:auto"> Activo</label>
+                    <input type="text" name="aviso_whatsapp_tel" value="<?= htmlspecialchars($avisoTel) ?>" placeholder="549…" inputmode="numeric" style="<?= $estiloCampo ?>;width:17ch">
+                    <button class="sec">Guardar</button>
+                    <button type="button" class="sec" id="pushProbar">Probar</button>
+                </form>
+            </div>
+            <p class="meta">
+            <?php if ($avisoHasta > time()): ?>
+                Ventana de 24 h abierta hasta las <?= date('H:i', $avisoHasta) ?> (le escribiste al bot a las <?= date('H:i', (int)($avisoEstado['entrante_ts'] ?? 0)) ?>): los avisos salen como texto.
+            <?php else: ?>
+                Ventana de 24 h cerrada: Meta solo deja mandarte texto libre durante las 24 h siguientes a un mensaje tuyo. Mandale cualquier cosa al bot desde ese celular y se abre.
+            <?php endif; ?>
+            <?php if ($avisoPlantilla): ?>
+                Fuera de la ventana sale la plantilla <code><?= htmlspecialchars($avisoPlantilla['nombre']) ?></code>.
+            <?php else: ?>
+                Fuera de la ventana haría falta la plantilla <code>aviso_pablo_mensaje</code> aprobada en Meta y con <code>activa:true</code> en textos.php; hasta entonces, fuera de la ventana solo sale el push.
+            <?php endif; ?>
+            </p>
+            <?php if (!empty($avisoEstado['ultimo_aviso_ts'])): ?>
+                <p class="meta">Último aviso: <?= date('d/m H:i', (int)$avisoEstado['ultimo_aviso_ts']) ?>, por <?= htmlspecialchars((string)($avisoEstado['ultimo_aviso_via'] ?? '')) ?><?= !empty($avisoEstado['ultimo_aviso_ok']) ? ' ✓' : ' ✗ no salió' ?>.</p>
+            <?php endif; ?>
+        </div>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div>
+                    <strong>Notificaciones push (respaldo)</strong>
+                    <p class="meta">Las del navegador. Instalá el panel en el celular (menú de Chrome → «Agregar a la pantalla principal») para que Android no las apague.</p>
                 </div>
                 <div class="fila" style="gap:.5rem">
                     <button type="button" class="sec" id="pushActivar">Activar acá</button>
-                    <button type="button" class="sec" id="pushProbar">Probar</button>
                 </div>
             </div>
             <?php if (!wabot_push_configurado()): ?>
@@ -2237,8 +2295,18 @@ function burbujaCita(t, chat) {
             <?php elseif (wabot_push_vapid() === ''): ?>
                 <p class="meta" style="color:#b45309">Falta <code>WABOT_FCM_VAPID</code> en <code>config/wabot-config.php</code>: Firebase → Configuración del proyecto → Cloud Messaging → Certificados push web.</p>
             <?php else: ?>
-                <p class="meta"><?= count(wabot_push_tokens()) ?> dispositivo(s) registrado(s). Hay que activarlo una vez en cada uno.</p>
+                <?php
+                // Qué dispositivos hay, para ver de una si el celular sigue registrado.
+                $dispositivos = [];
+                foreach (wabot_push_tokens() as $meta) {
+                    $ag = (string)($meta['agente'] ?? '');
+                    $que = stripos($ag, 'iPhone') !== false ? 'iPhone' : (stripos($ag, 'Android') !== false ? 'Android' : (stripos($ag, 'Windows') !== false ? 'PC con Windows' : (stripos($ag, 'Macintosh') !== false ? 'Mac' : 'otro')));
+                    $dispositivos[] = $que . ' (' . date('d/m', (int)($meta['ts'] ?? 0)) . ')';
+                }
+                ?>
+                <p class="meta"><?= $dispositivos ? count($dispositivos) . ' dispositivo(s): ' . htmlspecialchars(implode(', ', $dispositivos)) : 'Ningún dispositivo registrado.' ?> Se registra solo al abrir el panel; si no aparece el celular, tocá «Activar acá» desde él.</p>
             <?php endif; ?>
+            <p class="meta" id="pushEstado"></p>
         </div>
         <div class="card">
             <div class="fila" style="justify-content:space-between">
@@ -3219,16 +3287,19 @@ function burbujaCita(t, chat) {
                 'renovacion_por_fuera' => 'Renovación del plan mensual · Utilidad (pagan por afuera)',
                 'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
                 'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
+                'aviso_pablo' => 'Aviso a Pablo fuera de las 24 h · Utilidad (va a tu número, no a clientes)',
             ];
             $plantillasVariables = [
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
+                'aviso_pablo' => '{{1}} quién escribió, {{2}} lo que escribió en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
             ];
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
                 'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
+                'aviso_pablo' => 'Automática con cada mensaje que el bot no contestó, solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -5849,13 +5920,15 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
 </script>
 <?php endif; ?>
 <script src="respuestas-rapidas.js?v=20260926-tres-modalidades"></script>
-<?php if ($logueado && $tab === 'estado'): ?>
+<?php if ($logueado): ?>
 <script type="module">
 /* Notificaciones push del panel.
  *
  * El navegador pide permiso una sola vez por dispositivo y devuelve un token
  * que hay que guardar en el server: es la dirección a la que FCM entrega. Los
- * tokens rotan, así que se refresca cada vez que se abre esta pestaña.
+ * tokens rotan, así que se refresca en CADA pestaña del panel (1-nov: antes
+ * solo en Estado, y el celular, que nunca la abría, quedó dado de baja en el
+ * server sin que nadie lo viera). Los botones existen solo en Estado.
  *
  * Todo esto es opcional: si falta la clave VAPID o el usuario dice que no, el
  * panel sigue funcionando igual y no se rompe nada. */
@@ -5920,7 +5993,7 @@ btnProbar?.addEventListener('click', async () => {
             body: new URLSearchParams({ accion: 'push_probar' }),
             credentials: 'same-origin'
         }).then(x => x.json());
-        decir(r.ok ? 'Salió a ' + r.dispositivos + ' dispositivo(s). Fijate si te llegó.'
+        decir(r.ok ? 'Salió a ' + r.dispositivos + ' destino(s)' + (r.via === 'texto' || r.via === 'plantilla' ? ', WhatsApp por ' + r.via : '') + '. Fijate si te llegó.'
                    : (r.error || 'No salió.'));
     } catch (e) {
         decir('Falló la prueba: ' + e.message);
