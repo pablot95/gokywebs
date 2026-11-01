@@ -1,0 +1,23 @@
+{
+  "origen": "Zip de ChatGPT Emi_Tienda_m04Wr7GOjUx1L9sYKZee.zip (9 imágenes + mock up), 1-nov-2026. El cliente no mandó fotos ni videos por WhatsApp.",
+  "recortes": {
+    "hero-utensilios.webp": "02_imagen.jpg",
+    "olla-vertical.webp": "01_imagen.jpg",
+    "p-olla.webp": "01_imagen.jpg (recorte 1:1)",
+    "p-utensilios.webp": "02_imagen.jpg (recorte 1:1)",
+    "p-hermeticos.webp": "03_imagen.jpg",
+    "p-vajilla.webp": "04_imagen.jpg",
+    "p-tazas.webp": "05_imagen.jpg",
+    "p-tabla.webp": "06_imagen.jpg",
+    "p-sarten.webp": "07_imagen.jpg",
+    "p-escurridor.webp": "08_imagen.jpg",
+    "p-repasadores.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg"
+  },
+  "videos": {
+    "video-sarten.mp4": "Hecho con ffmpeg a partir de 07_imagen.jpg (acercamiento + detalle). Reemplazar por un video real del producto.",
+    "video-utensilios.mp4": "Hecho con ffmpeg a partir de 02_imagen.jpg. Reemplazar por un video real del producto.",
+    "video-hermeticos.mp4": "Hecho con ffmpeg a partir de 03_imagen.jpg. Reemplazar por un video real del producto."
+  },
+  "bancos": "Ninguna foto de bancos externos."
+}
