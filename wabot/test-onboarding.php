@@ -69,7 +69,10 @@ caso('la factura completa en un mensaje: nombre, CUIT y condición; pasa a los d
     && $c['onboarding']['paso'] === 'dominio' && count($r) === 1 && strpos($r[0], $cfg['onboarding_ok']) === 0 && dice($r, 'dominio', $cfg), json_encode([$f, $r]));
 caso('cada dato se refleja en el doc de clientes (campo onboarding)', count($fsEscrito) >= 1 && end($fsEscrito)[0] === 'CLI1' && (end($fsEscrito)[1]['onboarding']['datos']['factura']['valor']['cuit'] ?? '') === '20123456789');
 $r = cliente($c, 'cuánto tarda la web?', $T, null, $cfg);
-caso('una pregunta en el medio no se toma como respuesta: se calla y queda para Pablo (handoff), el paso sigue', $r === [] && !empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'dominio');
+caso('una pregunta en el medio no se toma como respuesta: repregunta una vez (1-nov) y el paso sigue', count($r) === 1 && strpos($r[0], $cfg['onboarding_no_entendi']) === 0 && dice($r, 'dominio', $cfg) && empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'dominio', json_encode($r));
+$r = cliente($c, 'y el hosting lo pagan ustedes?', $T, null, $cfg);
+caso('la segunda seguida sin respuesta: se calla y queda para Pablo (handoff), el paso sigue', $r === [] && !empty($c['handoff_pendiente']) && $c['onboarding']['paso'] === 'dominio');
+$c['handoff_pendiente'] = false;
 $r = cliente($c, 'kioscoana.com.ar o kiosco ana', $T, null, $cfg);
 caso('los dominios: 2 nombres y sigue con el email', ($c['onboarding']['datos']['dominio']['valor'] ?? []) === ['kioscoana.com.ar'] || count($c['onboarding']['datos']['dominio']['valor']) === 2, json_encode($c['onboarding']['datos']['dominio'] ?? null));
 caso('… y pregunta el email', $c['onboarding']['paso'] === 'email' && dice($r, 'email', $cfg));
@@ -202,6 +205,26 @@ caso('por wabot_responder (flujo off): también', $c7['onboarding']['paso'] === 
 $c7['control_manual'] = true;
 $out = turno('flor@gmail.com', $c7, $cfg);
 caso('si Pablo escribió (control manual), el bot se calla como siempre y el onboarding espera', $out === [] && $c7['onboarding']['paso'] === 'email');
+
+echo "Contesta otro paso del que se le pidió (charla en vivo del 1-nov: la factura cuando se pedía el modelo)\n";
+$GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
+$c8 = conv_nueva('5491111TEST08', ['nombre' => 'Carlo', 'nombre_negocio' => 'Pizzería Don Carlo', 'tipo' => 'ecommerce', 'presentado_ts' => $ahora - 90000, 'cliente_id' => 'CLI8', 'ultimo_cliente_ts' => $ahora - 600]);
+$c8['transcript'] = [['q' => 'bot', 't' => 'Acá está tu demo', 'ts' => $ahora - 90000], ['q' => 'cliente', 't' => 'ya me suscribí al mensual', 'ts' => $ahora - 600]];
+$enviados8 = [];
+wabot_pago_confirmar($c8, ['id' => 'p8', 'monto' => 30000, 'ts' => $ahora - 300, 'tipo' => 'suscripcion', 'modo' => 'monto_avisado', 'suscripcion' => 's8'], 'mensual', $cfg,
+    ['ahora' => $ahora, 'enviar' => function (&$cv, $t) use (&$enviados8) { $enviados8[] = $t; return true; }, 'firestore' => fn($conv, $campos) => ['ok' => true, 'id' => 'CLI8', 'creado' => false, 'error' => ''], 'fs_onboarding' => fn($id, $campos) => true, 'avisar' => fn($t, $cu) => 1]);
+caso('sin modelo elegido, arranca pidiendo el modelo', $c8['onboarding']['paso'] === 'modelo' && dice($enviados8, 'modelo', $cfg));
+$r = cliente($c8, 'Carlo Bianchi, 20-98765432-1, responsable inscripto', $T, null, $cfg);
+caso('la factura se toma igual y se vuelve a pedir el modelo, sin callarse', ($c8['onboarding']['datos']['factura']['valor']['cuit'] ?? '') === '20987654321' && $c8['onboarding']['paso'] === 'modelo'
+    && count($r) === 1 && strpos($r[0], $cfg['onboarding_ok']) === 0 && dice($r, 'modelo', $cfg) && empty($c8['handoff_pendiente']), json_encode([$r, $c8['onboarding']['datos']['factura'] ?? null]));
+$r = cliente($c8, 'pizzeriadoncarlo.com', $T, null, $cfg);
+caso('un dominio con terminación también se toma, y sigue pidiendo el modelo', ($c8['onboarding']['datos']['dominio']['valor'] ?? []) === ['pizzeriadoncarlo.com'] && $c8['onboarding']['paso'] === 'modelo' && dice($r, 'modelo', $cfg), json_encode($r));
+$r = cliente($c8, 'el 2', $T, null, $cfg);
+caso('con el modelo, salta los pasos ya contestados: pide el email', ($c8['onboarding']['datos']['modelo']['valor'] ?? 0) === 2 && $c8['onboarding']['paso'] === 'email' && dice($r, 'email', $cfg), json_encode($r));
+$r = cliente($c8, 'me gusta más el diseño claro', $T, null, $cfg);
+caso('un texto que no es email ni otro dato: repregunta una vez', count($r) === 1 && strpos($r[0], $cfg['onboarding_no_entendi']) === 0 && dice($r, 'email', $cfg) && $c8['onboarding']['paso'] === 'email', json_encode($r));
+$r = cliente($c8, 'carlo@donCarlo.com', $T, null, $cfg);
+caso('y con la respuesta buena sigue (el contador de "no entendí" se limpia)', ($c8['onboarding']['datos']['email']['valor'] ?? '') === 'carlo@doncarlo.com' && ($c8['onboarding']['sin_entender'] ?? 0) === 0 && $c8['onboarding']['paso'] === 'logo');
 
 array_map('unlink', glob($tmp . '/uso/*') ?: []); @rmdir($tmp . '/uso');
 array_map('unlink', glob($tmp . '/*') ?: []); @rmdir($tmp);
