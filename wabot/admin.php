@@ -16,6 +16,7 @@ require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
 require_once __DIR__ . '/meta-gasto.php';
+require_once __DIR__ . '/pagos.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -135,9 +136,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
  * checkout del plan) y las páginas de pago/ y planmensual/ que lo llevan.
  */
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'links_pago_json') {
-    $codigos = ['2KGENxL' => 10000, '1pfejMG' => 20000, '2nEoNGN' => 22000, '28VK7Ev' => 25000, '2CQLnCv' => 32000, '1hYAiTM' => 35000, '2GhZD56' => 40000];
-    $planes = ['17321dd1a34e4ea0979175293297d60f' => 15000, 'ea40c15059ec42a7ac5b6293d77ae148' => 20000, '8df0842d799e40b5a0e9ef0696b47e8b' => 22000,
-        '56340e241c87402c81c02d43ce472fd7' => 25000, '36a67a7e42e7404989beb99703a0569b' => 30000, '4640949ef7694b5ab565d714326f04a2' => 32000, 'b7d653f4f61a445ba8859ae497e7ca66' => 35000];
+    // Los links cortos y los planes de MP con su mensualidad están en pagos.php (los usa también el cruce de pagos, 1-nov).
+    $codigos = wabot_pagos_codigos_mp();
+    $planes = wabot_pagos_planes_mp();
     $paginas = ['sitioprofesional' => 20000, 'tienda' => 30000];
     $montoDe = function ($texto) use ($codigos, $planes, $paginas) {
         if (preg_match('~mpago\.la/([A-Za-z0-9]+)~', $texto, $m)) return $codigos[$m[1]] ?? 0;

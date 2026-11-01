@@ -37,6 +37,22 @@ const MONTO_PARAM = getMontoFromQuery(); // null si no vino ?monto= o vino invá
 const MONTO = MONTO_PARAM; // sin default: sin monto no hay nada que cobrar por Mercado Pago
 const MONTO_FMT = MONTO !== null ? '$' + MONTO.toLocaleString('es-AR') : '';
 
+/* ?c=<código> (1-nov-2026): el código corto de la charla del bot (el mismo del link del
+   formulario, gokywebs.com/form/?c=XX). Viaja a Mercado Pago como external_reference
+   GKY-<código>-<ts>: así el bot ata el pago al chat del cliente apenas lo ve
+   (wabot/pagos.php). Sin él, la referencia genérica GKY-PAGO-… de siempre. */
+function getCodigoFromQuery() {
+    const raw = (new URLSearchParams(window.location.search).get('c') || '').trim().toUpperCase();
+    return /^[A-Z0-9]{1,12}$/.test(raw) ? raw : '';
+}
+const CODIGO = getCodigoFromQuery();
+function nuevaReferencia() {
+    const codigo = CODIGO;
+    return codigo
+        ? 'GKY-' + codigo + '-' + Date.now()
+        : 'GKY-PAGO-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+}
+
 function pintarMonto() {
     if (MONTO === null) {
         // Sin monto el form de Mercado Pago no tiene qué cobrar: se oculta (con
@@ -149,7 +165,7 @@ async function handlePayment(e) {
     const tel      = document.getElementById('mp-tel').value.trim();
     const whatsapp = pais + ' ' + tel;
 
-    const reference = 'GKY-PAGO-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const reference = nuevaReferencia();
 
     localStorage.setItem('gky_pago', JSON.stringify({ reference, nombre, whatsapp }));
 
@@ -198,7 +214,7 @@ function showFullPage() {
 }
 
 async function autoRedirectToMP() {
-    const reference = 'GKY-PAGO-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    const reference = nuevaReferencia();
     localStorage.setItem('gky_pago', JSON.stringify({ reference, nombre: '', whatsapp: '' }));
     try {
         const res = await fetch('api/crear-preferencia.php', {

@@ -19,7 +19,11 @@ if (!$body) { http_response_code(400); echo json_encode(['error' => 'Payload inv
 
 $nombre    = htmlspecialchars(trim($body['nombre']    ?? ''), ENT_QUOTES);
 $whatsapp  = htmlspecialchars(trim($body['whatsapp']  ?? ''), ENT_QUOTES);
-$reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-PAGO-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
+// La referencia que arma pago/script.js: GKY-<código de la charla del bot>-<ts> (1-nov-2026; con ella
+// el bot ata el pago al chat apenas lo ve en Mercado Pago, ver wabot/pagos.php) o la genérica
+// GKY-PAGO-… de siempre. Cualquier otra cosa se descarta y va la genérica.
+$reference = strtoupper(trim((string)($body['reference'] ?? '')));
+if (!preg_match('/^GKY-[A-Z0-9]{1,12}-[A-Z0-9-]{1,40}$/', $reference)) $reference = 'GKY-PAGO-' . time() . '-' . rand(1000,9999);
 
 // Monto dinámico (?monto= en pago/index.html → enviado acá en el body). Se valida
 // server-side por seguridad (nunca confiar en el unit_price que mandaría el cliente

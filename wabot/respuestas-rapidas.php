@@ -1050,7 +1050,10 @@ function wabot_respuestas_rapidas_link_modalidad($modalidad, $tipo, $cfg, $conv 
     $paginas = wabot_planes_paginas();
     // Con tipo, la página de su precio (la vieja si se le cotizó antes de un aumento: wabot_planes_paginas_de).
     if ($tipo !== '' && isset($paginas[$tipo]) && is_array($conv)) $paginas[$tipo] = wabot_planes_paginas_de($tipo, $conv, $cfg);
-    $link = static fn($t) => isset($paginas[$t][$modalidad]) ? 'gokywebs.com/pago/' . $paginas[$t][$modalidad]['pagina'] : '';
+    // Con el código corto de la charla (el del formulario) la página de pago manda a MP la referencia
+    // GKY-<código> y el bot ata el pago al chat solo (pagos.php, 1-nov). Sin código, el link de siempre.
+    $sufijo = is_array($conv) && preg_match('/^[A-Z0-9]{1,12}$/', (string)($conv['codigo'] ?? '')) ? '?c=' . $conv['codigo'] : '';
+    $link = static fn($t) => isset($paginas[$t][$modalidad]) ? 'gokywebs.com/pago/' . $paginas[$t][$modalidad]['pagina'] . $sufijo : '';
     if ($tipo !== '' && isset($paginas[$tipo])) return $link($tipo);
     $nombres = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda', 'elearning' => 'cursos', 'inmobiliaria' => 'inmobiliaria'];
     $porLink = [];

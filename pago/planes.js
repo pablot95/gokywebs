@@ -46,6 +46,27 @@
         }
     });
 
+    /* ── ?c=<código> viaja con la pestaña (1-nov-2026) ──
+     * El código corto de la charla del bot que trae el link (gokywebs.com/pago/anual140?c=XX)
+     * se mantiene al pasar de Mensual a Anual y en los links a la página general
+     * (../?monto=…), que es la que lo manda a Mercado Pago como referencia (ver pago/script.js). */
+    var codigo = (function () {
+        var raw = (new URLSearchParams(location.search).get('c') || '').trim().toUpperCase();
+        return /^[A-Z0-9]{1,12}$/.test(raw) ? raw : '';
+    })();
+    function conCodigo(href) {
+        if (!codigo || !href || /^(https?:)?\/\//i.test(href) && href.indexOf('gokywebs.com') === -1 || /[?&]c=/.test(href)) return href;
+        var partes = href.split('#');
+        partes[0] += (partes[0].indexOf('?') === -1 ? '?' : '&') + 'c=' + codigo;
+        return partes.join('#');
+    }
+    function propagarCodigo(raiz) {
+        if (!codigo) return;
+        var links = raiz.querySelectorAll('.plan-tabs a, a[href*="monto="]');
+        for (var i = 0; i < links.length; i++) links[i].setAttribute('href', conCodigo(links[i].getAttribute('href')));
+    }
+    propagarCodigo(zona);
+
     /* ── Cambio de pestaña sin recargar ── */
     if (!(window.fetch && window.Promise && window.DOMParser && window.history && history.pushState)) return;
 
@@ -87,6 +108,7 @@
 
     function mostrar(datos, hrefEnfocado) {
         zona.innerHTML = datos.html;
+        propagarCodigo(zona);
         document.title = datos.titulo;
         var meta = document.querySelector('meta[name="description"]');
         if (meta && datos.descripcion) meta.setAttribute('content', datos.descripcion);

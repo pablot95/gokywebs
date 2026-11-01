@@ -1899,7 +1899,9 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     // venderle desde cero a alguien que ya tenía la web armada. Si Pablo
     // quiere reabrirla, está el botón Resetear del panel.
     if (!empty($conv['presentado_ts']) || !empty($conv['control_manual'])
-        || !empty($conv['postprecio_auto']) || !empty($conv['postprecio_derivacion'])) return false;
+        || !empty($conv['postprecio_auto']) || !empty($conv['postprecio_derivacion'])
+        // Ni al que ya pagó (1-nov): el bot le está pidiendo lo que falta para la web.
+        || !empty($conv['pago_confirmado_ts'])) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
