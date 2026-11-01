@@ -298,7 +298,23 @@ function wabot_comercial_oferta_sigue_abierta($conv, $cfg = null) {
  */
 function wabot_comercial_estado($conv) {
     $p = (string)($conv['comercial_pausa'] ?? '');
-    if ($p === 'humano' || $p === 'rechazo') return $p;
+    if ($p === 'rechazo') return $p;
+    if ($p === 'humano') {
+        /* La pausa vale para ESA pregunta (Pablo, 1-nov: "solo calla en esa"): si
+         * el cliente volvió a escribir después, el flujo sigue; si Pablo le
+         * contestó, su eco ya puso control_manual y no se llega acá. Antes
+         * (27-oct) era para siempre, y una duda sin respuesta oficial dejaba
+         * mudo el chat aunque el cliente dijera "dale, quiero la demo". Las
+         * charlas pausadas antes de este cambio (sin comercial_pausa_n) siguen
+         * en control manual por el tomar_control de entonces. */
+        $n = (int)($conv['comercial_pausa_n'] ?? 0);
+        $t = (array)($conv['transcript'] ?? []);
+        $nuevo = false;
+        for ($i = count($t) - 1; $i >= $n; $i--) {
+            if (($t[$i]['q'] ?? '') === 'cliente') { $nuevo = true; break; }
+        }
+        if (!$nuevo) return 'humano';
+    }
     if (!empty($conv['presentado_ts'])) return 'postdemo';
     if ($p === 'formulario' || !empty($conv['link_form_enviado']) || !empty($conv['form_link_mandado_ts'])
         || (int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado'])) return 'formulario';
@@ -2635,6 +2651,8 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
     if ($accion === 'humano') {
         $conv['comercial_pausa'] = 'humano';
         $conv['comercial_pausa_ts'] = $ahora;
+        // Desde qué renglón del chat vale la pausa: un mensaje del cliente posterior la levanta (1-nov).
+        $conv['comercial_pausa_n'] = count((array)($conv['transcript'] ?? []));
         $conv['comercial_motivo'] = (string)($resumen['motivo'] ?? 'Caso especial');
         $conv['handoff_pendiente'] = true;
         $conv['seguimiento_bloqueado'] = true;
@@ -2693,6 +2711,13 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     // Pagó: el turno es del onboarding (onboarding.php, 1-nov) hasta que junte lo que falta para la web.
     if (function_exists('wabot_onboarding_activo') && wabot_onboarding_activo($conv, $cfg)) {
         return wabot_onboarding_turno($conv, $texto, $cfg);
+    }
+    // La pausa por «humano» valía para la pregunta anterior; con este mensaje nuevo se levanta (1-nov).
+    if ((string)($conv['comercial_pausa'] ?? '') === 'humano' && wabot_comercial_estado($conv) !== 'humano') {
+        $conv['comercial_pausa'] = '';
+        $conv['comercial_pausa_ts'] = 0;
+        $conv['seguimiento_bloqueado'] = false;
+        wabot_log('comercial_pausa_levantada', ['tel' => $conv['tel'] ?? '', 'motivo' => mb_substr((string)($conv['comercial_motivo'] ?? ''), 0, 120)]);
     }
     [$ok, $motivo] = wabot_comercial_elegible($conv, $cfg, 'auto');
     // Con el link del formulario mandado y sin completar, contesta lo simple (22-oct).
@@ -2788,9 +2813,11 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     $conv = $b['conv'];
     $conv['comercial_ultimo']['ajustes'] = $res['ajustes'];
     $conv['comercial_ultimo']['revision'] = $res['revision'];
-    // Al derivar, en silencio: lo sigue Pablo (27-oct: "que se siga callando").
+    /* Al derivar, en silencio (27-oct: "que se siga callando"), pero solo en ESA
+     * pregunta (1-nov: "solo calla en esa"): le suena el aviso a Pablo y, si el
+     * cliente vuelve a escribir sin que Pablo haya contestado, el flujo sigue.
+     * Ya no toma el control: eso lo hace el eco de Pablo cuando contesta. */
     if ($b['accion'] === 'humano') {
-        wabot_conv_tomar_control($conv);
         $conv['handoff_pendiente'] = true;
     }
     // El modelo vio que avisó que pagó (1-nov): la marca ya la puso construir(); acá, el aviso a Pablo.

@@ -308,13 +308,22 @@ echo "— 6. Casos para Pablo: silencio con motivo —\n";
 $c = cv();
 oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM para su equipo de ventas'])]);
 $r = turno('Necesito un CRM para gestionar a mis vendedores y el seguimiento de clientes', $c, $cfg);
-caso('CRM → solo el aviso de derivación, sin precio, para Pablo con el motivo', $r === [] && empty($c['precio_dado']) && ($c['comercial_pausa'] ?? '') === 'humano'
-    && ($c['comercial_motivo'] ?? '') === 'Pide un CRM para su equipo de ventas' && !empty($c['control_manual']) && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']), json_encode($c['comercial_ultimo'] ?? []));
+caso('CRM → silencio con el motivo para Pablo, sin precio y SIN tomar el control (1-nov: "solo calla en esa")', $r === [] && empty($c['precio_dado']) && ($c['comercial_pausa'] ?? '') === 'humano'
+    && ($c['comercial_motivo'] ?? '') === 'Pide un CRM para su equipo de ventas' && empty($c['control_manual']) && !empty($c['handoff_pendiente']) && !empty($c['seguimiento_bloqueado']), json_encode($c['comercial_ultimo'] ?? []));
+caso('mientras no escriba de nuevo, el estado sigue siendo «humano» (el panel lo muestra pendiente)', wabot_comercial_estado($c) === 'humano' && wabot_comercial_elegible($c, $cfg, 'auto')[0] === false);
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te armamos una tienda.']])]);
 $r = turno('Y si fuera una tienda cuánto sale?', $c, $cfg);
-caso('pasado un día sigue para Pablo: no se reactiva sola', $r === [] && count(pedidos()) === 0);
-wabot_conv_encender_manual($c);
-caso('solo "Encender bot" la devuelve', empty($c['comercial_pausa']) && empty($c['control_manual']) && empty($c['seguimiento_bloqueado']));
+caso('si el cliente vuelve a escribir y Pablo no contestó, el flujo sigue: la pausa se levanta y cotiza', count(pedidos()) === 1 && $r !== [] && empty($c['comercial_pausa']) && empty($c['seguimiento_bloqueado']), json_encode([$r, $c['comercial_pausa'] ?? null]));
+$c2 = cv('5491100009006TEST');
+oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM'])]);
+turno('Necesito un CRM', $c2, $cfg);
+wabot_conv_transcript($c2, 'humano', 'Hola, te cuento yo: un CRM no hacemos');
+wabot_conv_tomar_control($c2);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te armamos una tienda.']])]);
+$r = turno('Y una tienda?', $c2, $cfg);
+caso('si Pablo le contestó (su eco toma el control), el bot sigue callado como siempre', $r === [] && count(pedidos()) === 0 && !empty($c2['control_manual']));
+wabot_conv_encender_manual($c2);
+caso('"Encender bot" la devuelve limpia', empty($c2['comercial_pausa']) && empty($c2['control_manual']) && empty($c2['seguimiento_bloqueado']));
 
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'crm', 'mensajes' => ['Te armamos el sistema.']])]);
