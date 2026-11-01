@@ -10,7 +10,8 @@
  *   - el monitoreo de las webs en mantenimiento, el aviso de caída resuelta y el
  *     resumen mensual de cada web (webs.php, 29-oct);
  *   - el re-aviso a Pablo (push) de las charlas que le tocan y siguen sin respuesta.
- *   - los pagos que entraron en Mercado Pago, atados a su chat y confirmados (pagos.php, 1-nov).
+ *   - los pagos que entraron en Mercado Pago, atados a su chat y confirmados (pagos.php, 1-nov);
+ *   - el recordatorio al cliente que pagó y dejó a medias los datos para la web (onboarding.php, 1-nov).
  *
  * Desde el hosting, cada 5-30 minutos (zona horaria argentina para las plantillas):
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
@@ -29,6 +30,7 @@ require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/renovacion.php';
 require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/pagos.php';
+require_once __DIR__ . '/onboarding.php';
 
 if (php_sapi_name() !== 'cli') {
     $auth = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');
@@ -60,6 +62,8 @@ $renovacion = wabot_renovacion_correr($cfg);
 $webs = wabot_webs_correr($cfg);
 // Los pagos que entraron en Mercado Pago: atados al chat y confirmados, o a la lista de sin asignar (pagos.php, 1-nov).
 $pagos = wabot_pagos_correr($cfg);
+// Al que pagó y se cortó en el medio de los datos para la web, el recordatorio a las 24 h (onboarding.php).
+$onboarding = wabot_onboarding_recordatorio_correr($cfg);
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
 $reaviso = wabot_push_reaviso_correr();
 
@@ -78,4 +82,5 @@ echo json_encode([
     'webs' => $webs,
     'push_reaviso' => $reaviso,
     'pagos' => $pagos,
+    'onboarding' => $onboarding,
 ], JSON_UNESCAPED_UNICODE) . "\n";

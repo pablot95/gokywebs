@@ -2235,6 +2235,10 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         if (function_exists('wabot_web_propia_anotar')) wabot_web_propia_anotar($conv, $texto, $cfg);
     }
     $conv['ultimo_ts'] = time();
+    // Pagó: el turno es del onboarding (onboarding.php, 1-nov) hasta que junte lo que falta para la web.
+    if (function_exists('wabot_onboarding_activo') && wabot_onboarding_activo($conv, $cfg)) {
+        return wabot_onboarding_turno($conv, $texto, $cfg);
+    }
     [$ok, $motivo] = wabot_comercial_elegible($conv, $cfg, 'auto');
     // Con el link del formulario mandado y sin completar, contesta lo simple (22-oct).
     $postForm = !$ok && wabot_comercial_post_form_permitido($conv, $cfg);

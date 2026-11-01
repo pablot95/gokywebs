@@ -1483,6 +1483,21 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         header('Location: admin.php?tab=clientes&' . $aviso . '=1'); exit;
     }
+    /* El bot retoma los datos para la web (onboarding.php, 1-nov) después de que Pablo escribió en el chat. */
+    if ($a === 'onboarding_retomar' && !empty($_POST['tel'])) {
+        $tel = (string)$_POST['tel'];
+        $lock = wabot_lock_tomar($tel);
+        $aviso = 'onboarding_ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($tel);
+                $r = wabot_onboarding_retomar($conv, $cfg);
+                wabot_conv_save($conv);
+                $aviso = !empty($r['ok']) ? (!empty($r['ventana_cerrada']) ? 'onboarding_ventana' : 'onboarding_ok') : 'onboarding_error';
+            } finally { wabot_lock_soltar($lock); }
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $aviso . '=1'); exit;
+    }
     if ($a === 'pago_ignorar' && !empty($_POST['pago_id'])) {
         wabot_pagos_ignorar((string)$_POST['pago_id']);
         header('Location: admin.php?tab=clientes'); exit;
@@ -2249,6 +2264,10 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['pago_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo confirmar el pago. Revisá el log en wabot/data/log/.</p>'; ?>
     <?php if (isset($_GET['pago_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
     <?php if (isset($_GET['pago_asignado'])) echo '<p class="ok">Pago asignado y confirmado: el cliente ya figura en el admin y el bot le pide lo que falta.</p>'; ?>
+    <?php if (isset($_GET['onboarding_ok'])) echo '<p class="ok">Listo: el bot le volvió a pedir lo que falta para la web.</p>'; ?>
+    <?php if (isset($_GET['onboarding_ventana'])) echo '<p class="ok" style="color:var(--warn)">El bot sigue él, pero la ventana de 24 h de WhatsApp está cerrada: le pregunta apenas el cliente escriba.</p>'; ?>
+    <?php if (isset($_GET['onboarding_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo mandar la pregunta. Revisá el log en wabot/data/log/.</p>'; ?>
+    <?php if (isset($_GET['onboarding_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
     <?php foreach (['pago_asignar_sin_chat' => 'No hay ningún chat con ese número.', 'pago_asignar_ambiguo' => 'Hay más de un chat con ese número: abrí el chat y confirmá el pago desde ahí.',
                     'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.',
                     'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.'] as $k => $txt) {
@@ -3512,6 +3531,9 @@ function burbujaCita(t, chat) {
                               if ($pagoResumen !== ''): ?><span class="meta" style="color:var(--ac)">💰 <?= $e($pagoResumen) ?><?= !empty($conv['cliente_id']) && ($conv['pago_firestore'] ?? '') === 'ok' ? ' · cliente en el admin' : '' ?></span>
                         <?php elseif (!empty($conv['pago_avisado_ts'])): ?><span class="meta" style="color:var(--warn)">💰 Avisó que pagó el <?= $e(gmdate('j/n H:i', (int)$conv['pago_avisado_ts'] - 3 * 3600)) ?> · falta confirmarlo</span>
                         <?php endif; ?>
+                        <?php /* Lo que el bot le está pidiendo para la web (onboarding.php, 1-nov). */
+                              $obResumen = wabot_onboarding_resumen($conv);
+                              if ($obResumen !== ''): ?><span class="meta">🧩 <?= $e($obResumen) ?><?= wabot_onboarding_activo($conv, $cfg) && (!empty($conv['control_manual']) || !empty($conv['bot_off'])) ? ' · en pausa (lo seguís vos)' : '' ?></span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -3610,6 +3632,13 @@ function burbujaCita(t, chat) {
                         <form method="post" onsubmit="return confirm('Marcar la demo como entregada?\n\nNo se le manda ningún mensaje al cliente: es para las que ya entregaste por otro medio. Sale de \'Demos por diseñar\' y pasa a \'Demo entregada\'.')">
                             <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Ya la entregué</button></form>
+                        <?php endif; ?>
+                        <?php /* El bot retoma los datos para la web después de que escribiste vos (onboarding.php, 1-nov). */
+                              if (wabot_onboarding_activo($conv, $cfg) && (!empty($conv['control_manual']) || !empty($conv['bot_off']))): ?>
+                        <form method="post" onsubmit="return confirm('Que el bot siga pidiéndole lo que falta para la web? Le manda ahora la pregunta pendiente.')">
+                            <input type="hidden" name="accion" value="onboarding_retomar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec" title="El bot se pausó porque escribiste vos. Con esto vuelve a pedirle lo que falta (modelo, factura, dominios, email, logo, fotos, cambios).">🧩 Que siga el bot</button>
+                        </form>
                         <?php endif; ?>
                         <?php /* "Confirmar pago" (1-nov, pagos.php): para la transferencia que no apareció sola en MP o el
                                comprobante que ya viste. Con el monto y la modalidad que se le cotizó, editables. */

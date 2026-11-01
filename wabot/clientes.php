@@ -310,7 +310,8 @@ function wabot_clientes_nombre_de($clave) {
         $cv = wabot_conv_load($clave);
         $n = function_exists('wabot_nombre_agenda') ? wabot_nombre_agenda($cv) : trim((string)($cv['nombre'] ?? ''));
         $neg = trim((string)($cv['nombre_negocio'] ?? ''));
-        return trim($n . ($neg !== '' && $neg !== $n ? ' · ' . $neg : '')) ?: $clave;
+        // La agenda ya suele traer el negocio ("Beto - Bar Beto"): no repetirlo.
+        return trim($n . ($neg !== '' && mb_stripos($n, $neg) === false ? ' · ' . $neg : '')) ?: $clave;
     } catch (\Throwable $e) {
         return $clave;
     }

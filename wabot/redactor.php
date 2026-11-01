@@ -15,6 +15,7 @@ require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 require_once __DIR__ . '/postprecio.php';
 // El flujo comercial unificado y el modo de sugerencias (plan del 9-oct-2026).
 require_once __DIR__ . '/sugerencias.php';   // trae comercial.php
+require_once __DIR__ . '/onboarding.php';    // después del pago: el bot pide lo que falta para la web (1-nov)
 
 /* ── Después del precio: una sola respuesta (Pablo, 18-sep) ──────────────────
  *
@@ -430,6 +431,11 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     // Una intervención humana nunca vence por reloj ni por un mensaje nuevo.
     if (!empty($conv['control_manual'])) return [];
+    // Pagó y el bot le pide lo que falta (onboarding.php, 1-nov). En automático lo hace wabot_comercial_turno.
+    if (wabot_flujo_comercial($cfg) !== 'auto' && wabot_onboarding_activo($conv, $cfg)) {
+        wabot_turno_preparar($conv, $cfg, time());
+        return wabot_onboarding_turno($conv, $texto, $cfg);
+    }
     /* El flujo comercial unificado en automático (plan del 9-oct): un solo
      * criterio antes y después del precio, hasta el formulario. Se activa
      * desde Ajustes recién después de las pruebas; mientras, off. */
