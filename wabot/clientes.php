@@ -98,6 +98,7 @@ function wabot_clientes_chat_resumen(array $cv) {
         'pago_cuando'    => (int)($cv['pago_ts'] ?? $pagado),
         'pago_avisado'   => (int)($cv['pago_avisado_ts'] ?? 0),
         'pago_firestore' => (string)($cv['pago_firestore'] ?? ''),
+        'onboarding_inicio'   => (int)($ob['inicio_ts'] ?? 0),
         'onboarding_paso'     => (string)($ob['paso'] ?? ''),
         'onboarding_completo' => (int)($ob['completo_ts'] ?? 0),
         'onboarding_pausado'  => !empty($cv['control_manual']) || !empty($cv['bot_off']),
@@ -126,11 +127,12 @@ function wabot_clientes_chats($convs = null) {
     return $out;
 }
 
-/** En qué etapa está la web de un cliente nuevo. */
+/** En qué etapa está la web de un cliente nuevo. Sin onboarding (lo de fábrica desde el 1-nov), la sigue Pablo. */
 function wabot_clientes_etapa(array $r) {
     if (!empty($r['entregada_ts'])) return 'entregada';
     if (!empty($r['produccion_pedido'])) return 'en producción';
     if (!empty($r['onboarding_completo'])) return 'listo para producción';
+    if (empty($r['onboarding_inicio'])) return 'la sigue Pablo';
     return 'juntando datos';
 }
 

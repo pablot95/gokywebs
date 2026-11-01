@@ -900,7 +900,10 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
      * login, logo y fotos, cambios. Pablo (1-nov a la noche): "nunca tiene que pedir datos para
      * facturar"; dominios y horarios tampoco. La apertura ya no dice "te escribo desde otro número". */
     'pagos_auto' => true,
-    'onboarding_activo' => true,
+    // Apagado de fábrica (Pablo, 1-nov a la noche): al recibir el pago el bot manda `pago_recibido` y se calla.
+    'onboarding_activo' => false,
+    // El mensaje de Pablo al recibir el pago (sus chats), tal cual. El bot lo manda y no contesta más en ese chat.
+    'pago_recibido' => 'Genial, recibido. Ahora te escribo desde otro número (1125068578), desde ahora seguimos el desarrollo por ese número.',
     // Antes de que cierre la ventana de 24 h de WhatsApp (a las 24 h ya no se puede escribir).
     'onboarding_recordatorio_horas' => 22,
     'onboarding_apertura' => '¡Genial, ya me llegó el pago! Seguimos por acá: por este chat me pasás el logo, las imágenes y todo lo que quieras cambiar, y vamos avanzando. Te voy pidiendo de a una cosa.',

@@ -669,12 +669,19 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     if ((string)($conv['modalidad_elegida'] ?? '') === '' && $modalidad !== '') {
         $conv['modalidad_elegida'] = ['mensual' => 'mensual', 'anual' => 'unico', 'unico' => 'propia', 'inicial' => 'inicial'][$modalidad];
     }
-    /* El bot vuelve a tener el chat: ahora le toca pedir lo que falta para la
-     * web (onboarding.php). Lo que Pablo escriba lo vuelve a pausar, como
-     * siempre (el eco → control_manual). Los seguimientos de venta ya no van. */
-    $conv['control_manual'] = false;
-    $conv['bot_off'] = false;
-    $conv['pausado_hasta'] = 0;
+    /* Qué hace el bot después (Pablo, 1-nov a la noche: "que deje de contestar
+     * cuando reciba el pago, que mande el mensaje de genial recibido, ahora
+     * sigue la conversación Pablo desde [número]"): de fábrica manda ESE
+     * mensaje y se calla en el chat (control_manual, como cuando escribe Pablo).
+     * Solo si en Ajustes está prendido "Pedir por el chat los datos para la
+     * web" (onboarding_activo), en vez de callarse arranca el onboarding. Los
+     * seguimientos de venta ya no van. */
+    $onboarding = function_exists('wabot_onboarding_iniciar') && is_array($cfg) && !empty($cfg['onboarding_activo']);
+    if ($onboarding) {
+        $conv['control_manual'] = false;
+        $conv['bot_off'] = false;
+        $conv['pausado_hasta'] = 0;
+    }
     $conv['handoff_pendiente'] = false;
     $conv['seguimiento_bloqueado'] = true;
     if (function_exists('wabot_evento_sesion')) wabot_evento_sesion($conv, 'pago_confirmado', ['monto' => $conv['pago_monto'], 'modalidad' => $modalidad, 'modo' => $conv['pago_modo']]);
@@ -698,9 +705,11 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     // Meta: la compra, si el chat vino de un anuncio.
     $resultado['capi'] = function_exists('wabot_capi_compra') ? wabot_capi_compra($conv, $conv['pago_monto'], $cfg) : 'sin_funcion';
 
-    // El bot arranca a pedir lo que falta (etapa 3). Si el módulo no está, no pasa nada.
-    if (function_exists('wabot_onboarding_iniciar')) {
+    if ($onboarding) {
+        // Con el onboarding prendido en Ajustes: el bot pide lo que falta (onboarding.php).
         $resultado['mensajes'] = (array)wabot_onboarding_iniciar($conv, $cfg, $ahora, $deps);
+    } else {
+        $resultado['mensajes'] = wabot_pago_recibido_enviar($conv, $cfg, $ahora, $deps);
     }
 
     wabot_log('pago_confirmado', ['clave' => $conv['conversation_key'] ?? '', 'pago_id' => $conv['pago_id'], 'monto' => $conv['pago_monto'],
@@ -716,9 +725,36 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     $como = ['suscripcion' => 'suscripción de MP', 'checkout' => 'link de MP', 'transferencia' => 'transferencia', 'transferencia_mp' => 'transferencia desde MP', 'manual' => 'confirmado a mano'][$conv['pago_tipo']] ?? $conv['pago_tipo'];
     $cuerpo = 'Pagó ' . wabot_pagos_monto_texto($conv['pago_monto']) . ' (' . wabot_pagos_modalidad_label($modalidad) . ', ' . $como . ').'
         . ($conv['pago_firestore'] === 'ok' ? ' Ya figura como cliente en el admin.' : ' OJO: no se pudo pasar a Cliente en el admin; hacelo a mano.')
-        . ($resultado['mensajes'] ? ' El bot ya le pidió lo que falta.' : '');
+        . ($onboarding
+            ? ($resultado['mensajes'] ? ' El bot ya le pidió lo que falta.' : '')
+            : ($resultado['mensajes'] ? ' Le mandé el «Genial, recibido» y el bot se calló: seguís vos desde tu número.' : ' No le pude mandar el «Genial, recibido» (ventana de WhatsApp cerrada): escribile vos. El bot ya no contesta en ese chat.'));
     try { $avisar('Pago confirmado: ' . $quien, $cuerpo); } catch (\Throwable $e) { /* un aviso que falla no frena la confirmación */ }
     return $resultado;
+}
+
+/**
+ * El mensaje de Pablo al recibir el pago («Genial, recibido. Ahora te escribo
+ * desde otro número…», textos.php `pago_recibido`), y el bot se calla en ese
+ * chat: lo sigue Pablo desde su otro número. Devuelve lo que salió ([] si la
+ * ventana de 24 h de WhatsApp está cerrada o el envío falló).
+ */
+function wabot_pago_recibido_enviar(&$conv, $cfg, $ahora, array $deps = []) {
+    // Como cuando escribe Pablo: el bot no contesta más en este chat.
+    if (function_exists('wabot_conv_tomar_control')) wabot_conv_tomar_control($conv);
+    else { $conv['control_manual'] = true; $conv['bot_off'] = true; }
+    $texto = trim((string)(is_array($cfg) ? ($cfg['pago_recibido'] ?? '') : ''));
+    if ($texto === '') return [];
+    if (function_exists('wabot_personalizar')) $texto = wabot_personalizar($texto, $conv);
+    $ventana = isset($deps['ventana_abierta']) ? (bool)$deps['ventana_abierta'] : (wabot_ventana_restante($conv, $ahora) > 0);
+    if (!$ventana) {
+        wabot_log('pago_recibido_sin_ventana', ['clave' => $conv['conversation_key'] ?? '']);
+        return [];
+    }
+    $enviar = $deps['enviar'] ?? function (&$c, $t) { return wabot_enviar($c, $t); };
+    if (!$enviar($conv, $texto)) return [];
+    wabot_conv_transcript($conv, 'bot', $texto);
+    $conv['pago_recibido_ts'] = (int)$ahora;
+    return [$texto];
 }
 
 /* ── La corrida del cron ───────────────────────────────────────────────── */

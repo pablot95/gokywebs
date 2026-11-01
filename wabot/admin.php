@@ -3427,7 +3427,7 @@ function burbujaCita(t, chat) {
          * web, los de mantenimiento cruzados con Firestore, y los pagos de MP que quedaron sin dueño. */
         $cliDatos = wabot_clientes_datos(isset($_GET['actualizar']));
         $cliFecha = function ($ts) { return (int)$ts > 0 ? gmdate('j/n H:i', (int)$ts - 3 * 3600) : '—'; };
-        $cliPill = ['juntando datos' => 'pausa', 'listo para producción' => 'on', 'en producción' => 'tipo', 'entregada' => 'tipo'];
+        $cliPill = ['la sigue Pablo' => 'tipo', 'juntando datos' => 'pausa', 'listo para producción' => 'on', 'en producción' => 'tipo', 'entregada' => 'tipo'];
         $cliComo = ['suscripcion' => 'suscripción', 'checkout' => 'link de MP', 'transferencia' => 'transferencia', 'transferencia_mp' => 'transferencia desde MP', 'manual' => 'a mano'];
         $cliMotivo = ['sin_candidatos' => 'ningún chat recibió un link por ese monto en las últimas 72 h', 'ambiguo' => 'más de un chat recibió ese monto', 'sin_aviso' => 'el chat sugerido no avisó que pagó', 'ocupado' => 'el chat estaba ocupado'];
         $cliModalidades = ['mensual' => 'Plan mensual', 'anual' => 'Plan anual (seña)', 'unico' => 'Pago único (seña)', 'inicial' => 'Pago inicial + mensual'];
@@ -3473,7 +3473,7 @@ function burbujaCita(t, chat) {
                 <h2 style="margin:0">Nuevos <span class="pill on"><?= count($cliDatos['nuevos']) ?></span></h2>
                 <span class="meta">Datos de las <?= $e($cliFecha($cliDatos['ts'] ?? 0)) ?> · <a href="admin.php?tab=clientes&actualizar=1">Actualizar</a></span>
             </div>
-            <p class="meta">Los chats con el pago confirmado y en qué etapa está su web: el bot junta los datos (el modelo, el email del panel si la web tiene login, el logo y las fotos, los cambios), cuando los tiene queda listo para producción, y de ahí el pedido para el agente que arma la web.</p>
+            <p class="meta">Los chats con el pago confirmado. De fábrica el bot manda el «Genial, recibido…» y se calla: la web la seguís vos desde tu número. Si en Ajustes prendés «Pedir por el chat los datos para la web», el bot junta los datos (modelo, email del panel si hay login, logo y fotos, cambios) y la etapa pasa a listo para producción.</p>
             <?php if (!$cliDatos['nuevos']): ?><p class="meta">Todavía no hay ningún pago confirmado por el bot.</p><?php else: ?>
             <div class="ad-scroll"><table>
                 <tr><th>Cliente</th><th>Pagó</th><th>Modalidad</th><th>Etapa</th><th>Bot</th><th></th></tr>

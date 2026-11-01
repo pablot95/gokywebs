@@ -138,7 +138,10 @@ $cfgCapi = array_merge($cfg, ['capi_dataset_id' => '1', 'capi_token' => 't', 'ca
 $r = wabot_pago_confirmar($convA, $pago, 'mensual', $cfgCapi, $deps);
 caso('queda en la charla: cuándo, cuánto, qué y cómo', $r['ok'] && $convA['pago_confirmado_ts'] === $ahora && $convA['pago_id'] === '10' && $convA['pago_monto'] === 30000
     && $convA['pago_modalidad'] === 'mensual' && $convA['pago_tipo'] === 'suscripcion' && $convA['pago_modo'] === 'monto_avisado' && count($convA['pagos']) === 1, json_encode($r));
-caso('el bot recupera el chat (sin control manual ni apagado) y la modalidad elegida queda anotada', empty($convA['control_manual']) && empty($convA['bot_off']) && $convA['modalidad_elegida'] === 'mensual');
+caso('le manda el «Genial, recibido…» de Pablo (tal cual, con su número) y el bot se calla en ese chat: lo sigue Pablo', $r['mensajes'] === [$cfg['pago_recibido']] && strpos($cfg['pago_recibido'], '1125068578') !== false
+    && !empty($convA['control_manual']) && !empty($convA['bot_off']) && end($convA['transcript'])['t'] === $cfg['pago_recibido'] && !empty($convA['pago_recibido_ts']) && empty($convA['onboarding']), json_encode($r['mensajes']));
+caso('la modalidad elegida queda anotada', $convA['modalidad_elegida'] === 'mensual');
+caso('el aviso a Pablo dice que el recibido salió y que sigue él', strpos(end($avisos), 'seguís vos desde tu número') !== false, end($avisos));
 caso('en Firestore pasa a cliente como "pasar a Cliente" con el plan mensual: activa, desde hoy, con el id de la suscripción',
     $escrito['estadoCliente'] === 'cliente' && $escrito['modalidad'] === 'mensual' && $escrito['estadoSuscripcion'] === 'activa' && $escrito['preapprovalId'] === 'abc123'
     && $escrito['montoMensual'] === 30000 && $escrito['pagaPorFuera'] === false && $escrito['planLabel'] === 'Ecommerce' && $escrito['suscripcionDesde'] === ['_ts' => $hace(1)]
@@ -148,6 +151,14 @@ caso('a Meta le avisa la compra con lo que pagó', $r['capi'] === 'ok' && count(
 caso('a Pablo le llega el aviso con el nombre, el monto y la modalidad', count($avisos) === 1 && strpos($avisos[0], 'Kiosco Ana') !== false && strpos($avisos[0], '$30.000') !== false && strpos($avisos[0], 'plan mensual') !== false, json_encode($avisos));
 $r2 = wabot_pago_confirmar($convA, $pago, 'mensual', $cfg, $deps);
 caso('no se confirma dos veces', $r2['ok'] === false && $r2['motivo'] === 'ya_confirmado' && count($convA['pagos']) === 1);
+$convA2 = conv_nueva('5491111TEST11', ['nombre' => 'Vieja', 'tipo' => 'landing', 'ultimo_cliente_ts' => $ahora - 100000]);
+$avisos2 = [];
+$r2v = wabot_pago_confirmar($convA2, $pago, 'mensual', $cfg, ['ahora' => $ahora, 'firestore' => $deps['firestore'], 'avisar' => function ($t, $c) use (&$avisos2) { $avisos2[] = $c; return 1; }]);
+caso('con la ventana de WhatsApp cerrada no manda nada, igual se calla, y el aviso le dice a Pablo que le escriba él', $r2v['mensajes'] === [] && !empty($convA2['control_manual']) && strpos($avisos2[0], 'escribile vos') !== false, json_encode($avisos2));
+$convA3 = conv_nueva('5491111TEST12', ['nombre' => 'Con onboarding', 'tipo' => 'ecommerce', 'ultimo_cliente_ts' => $ahora - 600, 'modelo_elegido' => '1']);
+require_once __DIR__ . '/onboarding.php';
+$r3 = wabot_pago_confirmar($convA3, $pago, 'mensual', array_merge($cfg, ['onboarding_activo' => true]), $deps + ['enviar' => function (&$c, $t) { return true; }]);
+caso('con el onboarding prendido en Ajustes, en vez de callarse pide lo que falta', count($r3['mensajes']) === 2 && empty($convA3['control_manual']) && !empty($convA3['onboarding']['inicio_ts']), json_encode($r3['mensajes']));
 
 $escrito = null;
 $pagoT = wabot_pagos_normalizar(mp_transferencia('12', 60000, $hace(1)), $YO) + ['modo' => 'monto_avisado'];

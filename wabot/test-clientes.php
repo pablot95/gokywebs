@@ -18,15 +18,16 @@ $hace = function ($h) use ($ahora) { return $ahora - (int)($h * 3600); };
 echo "Resumen de una charla\n";
 $pagada = conv_nueva('5491111TEST01', ['nombre' => 'Ana', 'nombre_negocio' => 'Kiosco Ana', 'tipo' => 'ecommerce', 'presentado_slug' => 'kioscoana',
     'pago_confirmado_ts' => $hace(2), 'pago_ts' => $hace(3), 'pago_monto' => 30000, 'pago_modalidad' => 'mensual', 'pago_tipo' => 'suscripcion', 'cliente_id' => 'CLI1', 'pago_firestore' => 'ok',
-    'onboarding' => ['paso' => 'factura']]);
+    'onboarding' => ['inicio_ts' => $hace(2), 'paso' => 'imagenes']]);
 $r = wabot_clientes_chat_resumen($pagada);
-caso('trae nombre (el de la agenda), negocio, pago y onboarding', $r['nombre'] === wabot_nombre_agenda($pagada) && $r['negocio'] === 'Kiosco Ana' && $r['pago_monto'] === 30000 && $r['pago_modalidad'] === 'mensual' && $r['onboarding_paso'] === 'factura' && $r['cliente_id'] === 'CLI1' && $r['slug'] === 'kioscoana', json_encode($r));
+caso('trae nombre (el de la agenda), negocio, pago y onboarding', $r['nombre'] === wabot_nombre_agenda($pagada) && $r['negocio'] === 'Kiosco Ana' && $r['pago_monto'] === 30000 && $r['pago_modalidad'] === 'mensual' && $r['onboarding_paso'] === 'imagenes' && $r['onboarding_inicio'] > 0 && $r['cliente_id'] === 'CLI1' && $r['slug'] === 'kioscoana', json_encode($r));
 caso('una charla sin pago, sin cliente ni teléfono no es de un cliente', wabot_clientes_chat_resumen(conv_nueva('igTEST99', ['nombre' => 'X'])) === null);
 caso('una de WhatsApp sin pago sí puede serlo (por el teléfono)', wabot_clientes_chat_resumen(conv_nueva('5491150000002'))['tel'] === '5491150000002');
 
 echo "Etapas\n";
-caso('juntando datos', wabot_clientes_etapa($r) === 'juntando datos');
-caso('listo para producción', wabot_clientes_etapa($r + ['onboarding_completo' => 1] ) === 'juntando datos' && wabot_clientes_etapa(array_merge($r, ['onboarding_completo' => 1])) === 'listo para producción');
+caso('juntando datos (con el onboarding arrancado)', wabot_clientes_etapa($r + ['onboarding_inicio' => 1]) === 'juntando datos' || wabot_clientes_etapa(array_merge($r, ['onboarding_inicio' => 1])) === 'juntando datos');
+caso('sin onboarding (lo de fábrica): la sigue Pablo', wabot_clientes_etapa(array_merge($r, ['onboarding_inicio' => 0])) === 'la sigue Pablo');
+caso('listo para producción', wabot_clientes_etapa(array_merge($r, ['onboarding_completo' => 1])) === 'listo para producción');
 caso('en producción', wabot_clientes_etapa(array_merge($r, ['onboarding_completo' => 1, 'produccion_pedido' => 2])) === 'en producción');
 caso('entregada', wabot_clientes_etapa(array_merge($r, ['onboarding_completo' => 1, 'produccion_pedido' => 2, 'entregada_ts' => 3])) === 'entregada');
 

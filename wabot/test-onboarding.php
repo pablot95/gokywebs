@@ -16,6 +16,7 @@ $tmp = sys_get_temp_dir() . '/wabot-test-onboarding-' . getmypid();
 @mkdir($tmp, 0755, true);
 $GLOBALS['WABOT_TEST_PAGOS_ARCHIVO'] = $tmp . '/pagos-mp.json';
 $cfg = wabot_config_load();
+$cfg['onboarding_activo'] = true;   // apagado de fábrica desde el 1-nov a la noche: estas suites prueban el flujo prendido
 $ahora = gmmktime(15, 0, 0, 11, 2, 2026);   // 2-nov 12:00 Argentina
 $T = $ahora;
 
@@ -25,7 +26,7 @@ function cliente(&$c, $texto, &$T, $media = null, $cfg = null) {
     wabot_conv_transcript($c, 'cliente', $texto, $media);
     $c['transcript'][count($c['transcript']) - 1]['ts'] = $T;
     $c['ultimo_cliente_ts'] = $T;
-    $r = wabot_onboarding_turno($c, $texto, $cfg ?? wabot_config_load(), $T);
+    $r = wabot_onboarding_turno($c, $texto, $cfg ?? (wabot_config_load() + ['onboarding_activo' => true]), $T);
     foreach ((array)$r as $m) { wabot_conv_transcript($c, 'bot', $m); $c['transcript'][count($c['transcript']) - 1]['ts'] = $T; }
     return (array)$r;
 }
@@ -33,6 +34,7 @@ function dice($r, $clave, $cfg) { return (bool)array_filter((array)$r, fn($m) =>
 
 echo "Qué se pide y qué no\n";
 caso('cuatro pasos: modelo, email, imágenes, cambios; nada de factura, dominios ni horarios', WABOT_ONBOARDING_PASOS === ['modelo', 'email', 'imagenes', 'cambios'] && !isset($cfg['onboarding_factura']) && !isset($cfg['onboarding_dominio']) && !isset($cfg['onboarding_datos']));
+caso('de fábrica el onboarding está APAGADO (Pablo, 1-nov): al pagar, el bot manda el recibido y se calla', empty(wabot_config_load()['onboarding_activo']) && wabot_textos_default()['onboarding_activo'] === false);
 caso('el email solo con login: tienda, cursos, inmobiliaria o la informativa con panel', wabot_onboarding_pide_email(['tipo' => 'ecommerce']) && wabot_onboarding_pide_email(['tipo' => 'elearning']) && wabot_onboarding_pide_email(['tipo' => 'inmobiliaria'])
     && !wabot_onboarding_pide_email(['tipo' => 'landing']) && wabot_onboarding_pide_email(['tipo' => 'landing', 'landing_con_panel' => true]));
 caso('a un sitio profesional sin panel no se le pide email', wabot_onboarding_pasos(['tipo' => 'landing']) === ['modelo', 'imagenes', 'cambios']);
