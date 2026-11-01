@@ -1,0 +1,50 @@
+[
+  {
+    "archivo": "g-unas.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/7664093/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Manicura en tonos nude con detalles dibujados a mano"
+  },
+  {
+    "archivo": "g-pestanas.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/21412169/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Extensiones de pestañas volumen en primer plano"
+  },
+  {
+    "archivo": "g-facial-equipo.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/4586741/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Tratamiento facial con equipo de aparatología"
+  },
+  {
+    "archivo": "g-cejas.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/8558248/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Perfilado y peinado de cejas"
+  },
+  {
+    "archivo": "g-masajes.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/3230236/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Masaje descontracturante de espalda"
+  },
+  {
+    "archivo": "g-peluqueria.webp",
+    "fuente": "Pexels",
+    "url": "https://www.pexels.com/photo/7440133/",
+    "licencia": "Pexels License",
+    "uso": "Galería de trabajos (ilustrativa, no son trabajos de Isybell)",
+    "descripcion": "Brushing con cepillo y secador"
+  }
+]

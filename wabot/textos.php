@@ -64,6 +64,17 @@ function wabot_textos_default() {
     return [
     'aclarar_objetivo' => 'Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
     'activo' => true,
+    /* Avisos a Pablo por WhatsApp (1-nov): cada mensaje que el bot no contestó
+     * le llega como un WhatsApp del bot a su número personal, con el link al
+     * chat. Reemplaza al push como aviso principal (Chrome en Android lo
+     * demoraba y terminaba dando de baja el permiso; en el server quedaba
+     * registrada solo la PC); el push sigue de respaldo. Ver push.php.
+     * `numeros_propios` son los números de Pablo: lo que escriba desde ahí al
+     * bot no es un cliente, solo abre la ventana de 24 h en la que Meta deja
+     * mandarle texto libre. Se editan desde la pestaña Estado del panel. */
+    'aviso_whatsapp_activo' => true,
+    'aviso_whatsapp_tel' => '5491125068578',
+    'numeros_propios' => ['5491125068578'],
     'adicional_bilingue' => '$30.000',
     'baja' => 'Listo, no te escribimos más. Gracias por avisar.',
     'cambio_modalidad' => 'Arrancás con el plan que más te sirva hoy. Si más adelante querés pasarte de uno al otro, las condiciones de ese cambio las coordinás con el desarrollador.',
@@ -584,6 +595,20 @@ function wabot_textos_default() {
             'automatico' => true,
             'params' => ['nombre', 'negocio', 'desde', 'hasta'],
             'texto' => 'Hola {nombre}, te aviso que la web de {negocio} dejó de responder {desde} y {hasta} ya estaba funcionando otra vez. Lo detectó nuestro monitoreo y quedó registrado. Si ves algo raro, escribinos por acá.',
+        ],
+        // Utilidad (1-nov): el aviso a Pablo cuando pasaron más de 24 h desde su
+        // último mensaje al bot (push.php, wabot_aviso_whatsapp_enviar). El botón
+        // es la URL del panel con `?ver={clave}` al final. Apagada hasta que Meta
+        // la apruebe: mientras, fuera de la ventana solo sale el push.
+        'aviso_pablo' => [
+            'nombre' => 'aviso_pablo_mensaje',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => false,
+            'automatico' => true,
+            'params' => ['quien', 'texto'],
+            'boton' => ['clave'],
+            'texto' => "{quien} te escribió y el bot no le contestó:\n{texto}",
         ],
         // Marketing, solo a mano desde el chat (21-oct): abre la conversación con un saludo.
         'saludo' => [

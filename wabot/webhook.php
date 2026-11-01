@@ -662,6 +662,9 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 if (!$para) continue;
                 $clave = preg_replace('/[^0-9]/', '', (string)$para);
                 if ($clave === '') continue;
+                // Un mensaje a un número de Pablo (el aviso del bot, o él mismo
+                // escribiéndose) no es una charla con un cliente (1-nov).
+                if (wabot_numero_propio($clave, $cfg)) continue;
                 $textoEco = (string)($eco['text']['body'] ?? '[mensaje]');
 
                 // Mismo guard que en Instagram: el eco de un mensaje que mandó el
@@ -731,6 +734,14 @@ foreach (($payload['entry'] ?? []) as $entry) {
 
             $clave = preg_replace('/[^0-9]/', '', $de);
             $tipo  = $msg['type'] ?? '';
+            /* Pablo escribiéndole al bot desde su celular (1-nov): no es un
+             * cliente, así que no abre charla ni se le contesta. Lo único que
+             * hace es abrir la ventana de 24 h en la que Meta deja mandarle los
+             * avisos como texto libre (push.php). */
+            if (wabot_numero_propio($clave, $cfg)) {
+                wabot_aviso_entrante_registrar($clave, $tipo === 'text' ? (string)($msg['text']['body'] ?? '') : '[' . $tipo . ']');
+                continue;
+            }
             // Un evento del sistema no es el cliente escribiendo: nada que contestar.
             if (wabot_wa_tipo_ignorado($tipo)) {
                 wabot_log('tipo_ignorado', ['tel' => $clave, 'tipo' => $tipo]);
