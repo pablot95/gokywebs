@@ -162,6 +162,29 @@ Requiere a Pablo (el bot se calla y lo marca en el panel con el motivo):
   que ya trabajan con nosotros; conocidos y referidos; quien busca trabajo o vende algo.
 - Cualquier pregunta sin respuesta oficial.
 
+**Desde el 1-nov, «solo calla en esa» (Pablo):** cuando algo requiere a Pablo, el bot calla en ESE
+mensaje y le suena el aviso, pero no bloquea el chat: si el cliente vuelve a escribir y Pablo no
+contestó, el flujo sigue (`comercial_pausa_n`). Si Pablo contestó, su eco pone el control manual y el
+bot calla como siempre. Que el bot retome después de un silencio NO es un error.
+
+### Después de la demo (1-nov, casilla «Bot después de la demo», apagada de fábrica)
+Con la casilla prendida el bot sigue después del formulario completo y de la demo: pregunta cuál de
+los dos modelos le gustó y lo toma; con «me gustó» / «quiero avanzar» manda el link de pago de la
+modalidad elegida (mensual, anual con seña, único con seña, pago inicial en el grupo B), validado
+contra las páginas de `pago/`; si rechaza Mercado Pago, alias `pablotravi` + CVU; anota los cambios
+que pide y contesta `cambios_demo`; «ya pagué» o comprobante → «Perfecto, revisamos el pago y te
+confirmamos por acá» + aviso a Pablo; «lo veo y te aviso» → corto, sin link. Respuestas oficiales de
+esta etapa: `google_difusion`, `dominio_com_ar`, `dejo_de_pagar`, `cambios_demo`, `comisiones_mp`,
+`tiempo_entrega`, `material_web`; antes de la demo se sumó `demo_tiempo` («menos de 24 hs»).
+`dejo_de_pagar` nombra el mes de gracia y los 18 meses para la titularidad porque es lo que Pablo
+contestó en los chats de octubre (informe del 1-nov); contradice el punto de arriba del 9-oct y
+queda para que Pablo confirme cuál vale.
+
+### Después del pago (1-nov)
+El poller (`pagos.php`) cruza los cobros de Mercado Pago con los chats; al confirmar, el bot manda
+el «Genial, recibido… te escribo desde otro número» de Pablo y se calla (el onboarding por el chat
+—modelo, email si hay panel, logo y fotos, cambios— existe pero está apagado de fábrica).
+
 ## 5. Contradicciones y vacíos que necesitan decisión de Pablo
 
 **Resueltas el 9-oct a la noche:** la informativa no tiene panel (punto 9: las reservas online son
