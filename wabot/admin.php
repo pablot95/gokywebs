@@ -17,6 +17,7 @@ require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
 require_once __DIR__ . '/meta-gasto.php';
 require_once __DIR__ . '/pagos.php';
+require_once __DIR__ . '/clientes.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -48,6 +49,7 @@ $respuestasRapidas = wabot_respuestas_rapidas_load();
 $NAV_TABS = [
     'conversaciones' => 'Conversaciones',
     'live'           => 'Conversaciones live',
+    'clientes'       => 'Clientes',
     'revision'       => 'Revisión',
     'respuestas'     => 'Respuestas rápidas',
     'ajustes'        => 'Ajustes',
@@ -1446,6 +1448,45 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     // con lo que ya se haya conversado, tal como lo haría el cierre del bot.
     // Con `forzar` rehace uno que ya existía — wabot_prediseno_completo() saltea
     // la creación si lead_creado está en true, así que hay que bajarlo antes.
+    /* "Confirmar pago" de la ficha (1-nov, pagos.php): la transferencia que no apareció en Mercado Pago
+     * o el comprobante que Pablo ya vio. Mismo camino que la confirmación automática: pasa a Cliente en
+     * el admin, avisa la compra a Meta y el bot le pide lo que falta para la web. */
+    if ($a === 'pago_confirmar_manual' && !empty($_POST['tel'])) {
+        $tel = (string)$_POST['tel'];
+        $lock = wabot_lock_tomar($tel);
+        $aviso = 'pago_ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($tel);
+                $monto = (int)preg_replace('/\D/', '', (string)($_POST['monto'] ?? ''));
+                $modalidad = in_array((string)($_POST['modalidad'] ?? ''), ['mensual', 'anual', 'unico', 'inicial'], true) ? (string)$_POST['modalidad'] : '';
+                if (!empty($conv['pago_confirmado_ts'])) $aviso = 'pago_ya';
+                elseif ($monto < 1000) $aviso = 'pago_monto';
+                else {
+                    $r = wabot_pago_confirmar_manual($conv, $monto, $modalidad, $cfg);
+                    wabot_conv_save($conv);
+                    wabot_clientes_cache_borrar();
+                    $aviso = !empty($r['ok']) ? (!empty($r['firestore']['ok']) ? 'pago_ok' : 'pago_ok_sin_admin') : 'pago_error';
+                }
+            } finally { wabot_lock_soltar($lock); }
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $aviso . '=1'); exit;
+    }
+    /* Un pago que quedó sin asignar (pestaña Clientes): Pablo dice de quién es. */
+    if ($a === 'pago_asignar' && !empty($_POST['pago_id'])) {
+        $tel = trim((string)($_POST['tel'] ?? '')) ?: trim((string)($_POST['tel_otro'] ?? ''));
+        $aviso = 'pago_asignar_sin_chat';
+        if ($tel !== '') {
+            $r = wabot_pagos_asignar((string)$_POST['pago_id'], $tel, (string)($_POST['modalidad'] ?? ''), $cfg);
+            wabot_clientes_cache_borrar();
+            $aviso = !empty($r['ok']) ? 'pago_asignado' : 'pago_asignar_' . preg_replace('/[^a-z_]/', '', (string)($r['motivo'] ?? 'error'));
+        }
+        header('Location: admin.php?tab=clientes&' . $aviso . '=1'); exit;
+    }
+    if ($a === 'pago_ignorar' && !empty($_POST['pago_id'])) {
+        wabot_pagos_ignorar((string)$_POST['pago_id']);
+        header('Location: admin.php?tab=clientes'); exit;
+    }
     if ($a === 'conv_crear_boceto' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         if (!empty($_POST['forzar'])) $conv['lead_creado'] = false;
@@ -1983,6 +2024,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-retomar { color:var(--warn); }
 .conv-head form.conv-retomar-form { display:inline-flex; gap:4px; align-items:center; }
 .conv-retomar-form input[type=date] { background:var(--bg); color:var(--tx); border:1px solid var(--line); border-radius:6px; padding:3px 5px; font:inherit; font-size:11px; color-scheme:dark; }
+.conv-pago-form select, .conv-pago-form input[type=number] { background:var(--bg); color:var(--tx); border:1px solid var(--line); border-radius:6px; font:inherit; }
 /* En pantalla grande las acciones están siempre a la vista; el botón "⋯" solo
    existe para plegarlas en el celular, donde ocupaban 90px de alto y le comían
    el espacio al chat. Antes esto era un <details>, que en desktop se tragaba
@@ -2199,6 +2241,18 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['template_72_canal'])) echo '<p class="ok" style="color:var(--bad)">Este template es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_72_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó el template o no está activo en Ajustes.</p>'; ?>
     <?php if (isset($_GET['template_72_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
+    <?php /* El pago (1-nov, pagos.php). */ ?>
+    <?php if (isset($_GET['pago_ok'])) echo '<p class="ok">Pago confirmado: ya figura como cliente en el admin y el bot le pide lo que falta para la web.</p>'; ?>
+    <?php if (isset($_GET['pago_ok_sin_admin'])) echo '<p class="ok" style="color:var(--warn)">Pago confirmado en el chat, pero no se pudo escribir en el admin (Firestore): pasalo a Cliente a mano. Quedó en el log.</p>'; ?>
+    <?php if (isset($_GET['pago_ya'])) echo '<p class="ok" style="color:var(--warn)">Este chat ya tiene el pago confirmado.</p>'; ?>
+    <?php if (isset($_GET['pago_monto'])) echo '<p class="ok" style="color:var(--bad)">Falta el monto que pagó.</p>'; ?>
+    <?php if (isset($_GET['pago_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo confirmar el pago. Revisá el log en wabot/data/log/.</p>'; ?>
+    <?php if (isset($_GET['pago_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
+    <?php if (isset($_GET['pago_asignado'])) echo '<p class="ok">Pago asignado y confirmado: el cliente ya figura en el admin y el bot le pide lo que falta.</p>'; ?>
+    <?php foreach (['pago_asignar_sin_chat' => 'No hay ningún chat con ese número.', 'pago_asignar_ambiguo' => 'Hay más de un chat con ese número: abrí el chat y confirmá el pago desde ahí.',
+                    'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.',
+                    'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.'] as $k => $txt) {
+              if (isset($_GET[$k])) echo '<p class="ok" style="color:var(--bad)">' . $e($txt) . '</p>'; } ?>
     <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
     <?php if (isset($_GET['template_saludo_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_saludo_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó la plantilla «saludo» o no está activa en Ajustes.</p>'; ?>
@@ -3259,6 +3313,96 @@ function burbujaCita(t, chat) {
         </div>
         <button>Guardar ajustes</button>
         </form>
+    <?php elseif ($tab === 'clientes'):
+        /* Los chats de los clientes (1-nov, clientes.php): los que acaban de pagar y en qué etapa está su
+         * web, los de mantenimiento cruzados con Firestore, y los pagos de MP que quedaron sin dueño. */
+        $cliDatos = wabot_clientes_datos(isset($_GET['actualizar']));
+        $cliFecha = function ($ts) { return (int)$ts > 0 ? gmdate('j/n H:i', (int)$ts - 3 * 3600) : '—'; };
+        $cliPill = ['juntando datos' => 'pausa', 'listo para producción' => 'on', 'en producción' => 'tipo', 'entregada' => 'tipo'];
+        $cliComo = ['suscripcion' => 'suscripción', 'checkout' => 'link de MP', 'transferencia' => 'transferencia', 'transferencia_mp' => 'transferencia desde MP', 'manual' => 'a mano'];
+        $cliMotivo = ['sin_candidatos' => 'ningún chat recibió un link por ese monto en las últimas 72 h', 'ambiguo' => 'más de un chat recibió ese monto', 'sin_aviso' => 'el chat sugerido no avisó que pagó', 'ocupado' => 'el chat estaba ocupado'];
+        $cliModalidades = ['mensual' => 'Plan mensual', 'anual' => 'Plan anual (seña)', 'unico' => 'Pago único (seña)', 'inicial' => 'Pago inicial + mensual'];
+        $cliChatLink = function ($clave) use ($e) { return $clave !== '' ? '<a href="admin.php?tab=conversaciones&ver=' . $e(rawurlencode($clave)) . '">Ver chat</a>' : '<span class="meta">sin chat</span>'; };
+    ?>
+        <?php if ($cliDatos['sin_asignar']): ?>
+        <div class="card">
+            <h2 style="margin-top:0">Pagos sin asignar <span class="pill pausa"><?= count($cliDatos['sin_asignar']) ?></span></h2>
+            <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Elegí el chat (o escribí el número), la modalidad, y confirmá: pasa a Cliente en el admin y el bot le pide lo que falta. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
+            <div class="ad-scroll"><table>
+                <tr><th>Cuándo</th><th>Monto</th><th>Cómo</th><th>Por qué quedó acá</th><th>De quién es</th><th></th></tr>
+                <?php foreach ($cliDatos['sin_asignar'] as $p): ?>
+                <tr>
+                    <td><?= $e($cliFecha($p['ts'] ?? 0)) ?></td>
+                    <td><strong><?= $e(wabot_pagos_monto_texto($p['monto'] ?? 0)) ?></strong></td>
+                    <td><?= $e($cliComo[$p['tipo'] ?? ''] ?? (string)($p['tipo'] ?? '')) ?><?php if (!empty($p['email'])): ?><br><span class="meta"><?= $e($p['email']) ?></span><?php endif; ?></td>
+                    <td class="meta"><?= $e($cliMotivo[$p['motivo'] ?? ''] ?? (string)($p['motivo'] ?? '')) ?></td>
+                    <td>
+                        <form method="post" class="fila" style="gap:6px">
+                            <input type="hidden" name="accion" value="pago_asignar"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>">
+                            <?php if (!empty($p['sugeridos_info'])): ?>
+                            <select name="tel" aria-label="Chat" style="width:auto">
+                                <?php foreach ($p['sugeridos_info'] as $i => $sg): ?><option value="<?= $e($sg['clave']) ?>"<?= $i === 0 ? ' selected' : '' ?>><?= $e($sg['nombre']) ?></option><?php endforeach; ?>
+                                <option value="">Otro número…</option>
+                            </select>
+                            <?php endif; ?>
+                            <input type="text" name="tel_otro" placeholder="Número del chat" aria-label="Número del chat" style="width:150px;padding:6px 8px">
+                            <select name="modalidad" aria-label="Modalidad" style="width:auto">
+                                <?php $sel = (string)($p['sugeridos_info'][0]['modalidad'] ?? (($p['tipo'] ?? '') === 'suscripcion' ? 'mensual' : '')); foreach ($cliModalidades as $k => $v): ?><option value="<?= $k ?>"<?= $k === $sel ? ' selected' : '' ?>><?= $e($v) ?></option><?php endforeach; ?>
+                            </select>
+                            <button class="sec" style="border-color:var(--ac);color:var(--ac)">Asignar y confirmar</button>
+                        </form>
+                    </td>
+                    <td><form method="post" onsubmit="return confirm('Sacar este pago de la lista? Queda anotado como que no es de ningún cliente.')"><input type="hidden" name="accion" value="pago_ignorar"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>"><button class="sec">No es de nadie</button></form></td>
+                </tr>
+                <?php endforeach; ?>
+            </table></div>
+        </div>
+        <?php endif; ?>
+
+        <div class="card">
+            <div class="fila" style="justify-content:space-between">
+                <h2 style="margin:0">Nuevos <span class="pill on"><?= count($cliDatos['nuevos']) ?></span></h2>
+                <span class="meta">Datos de las <?= $e($cliFecha($cliDatos['ts'] ?? 0)) ?> · <a href="admin.php?tab=clientes&actualizar=1">Actualizar</a></span>
+            </div>
+            <p class="meta">Los chats con el pago confirmado y en qué etapa está su web: el bot junta los datos (modelo, factura, dominios, email, logo, fotos, cambios), cuando los tiene queda listo para producción, y de ahí el pedido para el agente que arma la web.</p>
+            <?php if (!$cliDatos['nuevos']): ?><p class="meta">Todavía no hay ningún pago confirmado por el bot.</p><?php else: ?>
+            <div class="ad-scroll"><table>
+                <tr><th>Cliente</th><th>Pagó</th><th>Modalidad</th><th>Etapa</th><th>Bot</th><th></th></tr>
+                <?php foreach ($cliDatos['nuevos'] as $r): ?>
+                <tr>
+                    <td><strong><?= $e($r['nombre'] !== '' ? $r['nombre'] : ($r['negocio'] !== '' ? $r['negocio'] : $r['clave'])) ?></strong><?php if ($r['negocio'] !== '' && $r['negocio'] !== $r['nombre']): ?><br><span class="meta"><?= $e($r['negocio']) ?></span><?php endif; ?><?php if ($r['slug'] !== ''): ?><br><a class="meta" href="https://gokywebs.com/demo/<?= $e($r['slug']) ?>/" target="_blank" rel="noopener noreferrer">demo/<?= $e($r['slug']) ?></a><?php endif; ?></td>
+                    <td><?= $e(wabot_pagos_monto_texto($r['pago_monto'])) ?><br><span class="meta"><?= $e($cliFecha($r['pago_cuando'])) ?> · <?= $e($cliComo[$r['pago_tipo']] ?? $r['pago_tipo']) ?></span><?php if ($r['pago_firestore'] !== 'ok'): ?><br><span class="meta" style="color:var(--warn)">no quedó en el admin</span><?php endif; ?></td>
+                    <td><?= $e(wabot_pagos_modalidad_label($r['pago_modalidad'])) ?></td>
+                    <td><span class="pill <?= $cliPill[$r['etapa']] ?? 'tipo' ?>"><?= $e($r['etapa']) ?></span></td>
+                    <td class="meta"><?php if ($r['etapa'] === 'juntando datos'): ?><?= $r['onboarding_pausado'] ? 'pausado (lo seguís vos)' : ($r['onboarding_paso'] !== '' ? 'pidiendo: ' . $e($r['onboarding_paso']) : 'por arrancar') ?><?php else: ?>—<?php endif; ?></td>
+                    <td><?= $cliChatLink($r['clave']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </table></div>
+            <?php endif; ?>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Mantenimiento <span class="pill tipo"><?= count($cliDatos['mantenimiento']) ?></span></h2>
+            <p class="meta">Los clientes del admin (Firestore) con su plan, el dominio, cómo está la suscripción y el día de cobro, y el chat de cada uno si lo hay. Al final, los suscriptores de Mercado Pago sin ficha.</p>
+            <?php if (!empty($cliDatos['error'])): ?><p class="meta" style="color:var(--bad)">No se pudo leer Firestore: <?= $e($cliDatos['error']) ?></p><?php endif; ?>
+            <?php if ($cliDatos['mantenimiento']): ?>
+            <div class="ad-scroll"><table>
+                <tr><th>Cliente</th><th>Plan</th><th>Dominio</th><th>Suscripción</th><th>Día de cobro</th><th></th></tr>
+                <?php foreach ($cliDatos['mantenimiento'] as $r): ?>
+                <tr<?= $r['entregada'] ? '' : ' style="opacity:.85"' ?>>
+                    <td><strong><?= $e($r['nombre'] !== '' ? $r['nombre'] : $r['negocio']) ?></strong><?php if ($r['negocio'] !== '' && $r['negocio'] !== $r['nombre']): ?><br><span class="meta"><?= $e($r['negocio']) ?></span><?php endif; ?></td>
+                    <td><?= $e($r['plan']) ?><?php if ($r['monto'] > 0): ?><br><span class="meta"><?= $e(wabot_pagos_monto_texto($r['monto'])) ?></span><?php endif; ?></td>
+                    <td><?php if ($r['dominio'] !== ''): ?><a href="https://<?= $e(preg_replace('~^https?://~', '', $r['dominio'])) ?>" target="_blank" rel="noopener noreferrer"><?= $e($r['dominio']) ?></a><?php else: ?><span class="meta">—</span><?php endif; ?></td>
+                    <td class="meta"><?= $e($r['estado']) ?></td>
+                    <td><?= $r['dia'] > 0 ? 'el ' . (int)$r['dia'] : '<span class="meta">—</span>' ?></td>
+                    <td><?= $cliChatLink($r['clave']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </table></div>
+            <?php elseif (empty($cliDatos['error'])): ?><p class="meta">Sin clientes en Firestore.</p><?php endif; ?>
+        </div>
+
     <?php elseif ($tab === 'conversaciones'): ?>
         <?php
         $ver   = $_GET['ver'] ?? '';
@@ -3363,6 +3507,11 @@ function burbujaCita(t, chat) {
                               $cabTipo = wabot_tipo_label((string)($conv['tipo'] ?? ''), $cfg);
                               $cabPartes = array_filter([$cabPlan !== '' ? 'Eligió: ' . $cabPlan : '', $cabTipo !== '' ? 'Web: ' . $cabTipo : '']);
                               if ($cabPartes): ?><span class="meta">📋 <?= $e(implode(' · ', $cabPartes)) ?></span><?php endif; ?>
+                        <?php /* El pago (1-nov, pagos.php): qué pagó y cuándo, o que avisó que pagó y falta confirmarlo. */
+                              $pagoResumen = wabot_pago_resumen_ficha($conv);
+                              if ($pagoResumen !== ''): ?><span class="meta" style="color:var(--ac)">💰 <?= $e($pagoResumen) ?><?= !empty($conv['cliente_id']) && ($conv['pago_firestore'] ?? '') === 'ok' ? ' · cliente en el admin' : '' ?></span>
+                        <?php elseif (!empty($conv['pago_avisado_ts'])): ?><span class="meta" style="color:var(--warn)">💰 Avisó que pagó el <?= $e(gmdate('j/n H:i', (int)$conv['pago_avisado_ts'] - 3 * 3600)) ?> · falta confirmarlo</span>
+                        <?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -3461,6 +3610,21 @@ function burbujaCita(t, chat) {
                         <form method="post" onsubmit="return confirm('Marcar la demo como entregada?\n\nNo se le manda ningún mensaje al cliente: es para las que ya entregaste por otro medio. Sale de \'Demos por diseñar\' y pasa a \'Demo entregada\'.')">
                             <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Ya la entregué</button></form>
+                        <?php endif; ?>
+                        <?php /* "Confirmar pago" (1-nov, pagos.php): para la transferencia que no apareció sola en MP o el
+                               comprobante que ya viste. Con el monto y la modalidad que se le cotizó, editables. */
+                              if (empty($conv['pago_confirmado_ts']) && (!empty($conv['pago_avisado_ts']) || !empty($conv['presentado_ts']) || (string)($conv['modalidad_elegida'] ?? '') !== '')):
+                                  $pagoEsperados = wabot_pagos_montos_esperados($conv, $cfg);
+                                  $pagoModalidad = wabot_pagos_modalidad_de_conv($conv) ?: 'mensual'; ?>
+                        <form method="post" class="conv-retomar-form conv-pago-form" onsubmit="return confirm('Confirmar que ya pagó? Pasa a Cliente en el admin, se le avisa la compra a Meta y el bot le pide lo que falta para la web.')"
+                              title="Para la transferencia que no apareció sola en Mercado Pago, o el comprobante que ya viste. Lo que entra en MP se confirma solo." data-montos="<?= $e(json_encode($pagoEsperados)) ?>">
+                            <input type="hidden" name="accion" value="pago_confirmar_manual"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <select name="modalidad" aria-label="Modalidad" style="width:auto;padding:3px 5px;font-size:11px">
+                                <?php foreach (['mensual' => 'Mensual', 'anual' => 'Anual (seña)', 'unico' => 'Único (seña)', 'inicial' => 'Inicial + mensual'] as $k => $v): ?><option value="<?= $k ?>"<?= $k === $pagoModalidad ? ' selected' : '' ?>><?= $v ?></option><?php endforeach; ?>
+                            </select>
+                            <input type="number" name="monto" min="1000" step="1000" value="<?= (int)($pagoEsperados[$pagoModalidad] ?? 0) ?: '' ?>" placeholder="Monto" aria-label="Monto" required style="width:90px;padding:3px 5px;font-size:11px">
+                            <button class="sec" style="border-color:var(--ac);color:var(--ac)">💰 Confirmar pago</button>
+                        </form>
                         <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
@@ -5850,6 +6014,14 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
 </script>
 <?php endif; ?>
 <script src="respuestas-rapidas.js?v=20260926-tres-modalidades"></script>
+<script>
+/* "Confirmar pago" (1-nov): al cambiar la modalidad, el monto esperado de esa modalidad en esta charla. */
+document.querySelectorAll('.conv-pago-form').forEach(function (f) {
+    var montos = {}; try { montos = JSON.parse(f.dataset.montos || '{}'); } catch (e) {}
+    var sel = f.querySelector('select[name=modalidad]'), monto = f.querySelector('input[name=monto]');
+    if (sel && monto) sel.addEventListener('change', function () { if (montos[sel.value]) monto.value = montos[sel.value]; });
+});
+</script>
 <?php if ($logueado && $tab === 'estado'): ?>
 <script type="module">
 /* Notificaciones push del panel.
