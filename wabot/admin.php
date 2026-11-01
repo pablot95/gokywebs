@@ -621,6 +621,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
 
         if (isset($_POST['capi_dataset_id'])) $cfg['capi_dataset_id'] = preg_replace('/\D+/', '', (string)$_POST['capi_dataset_id']);
+        // El id de la cuenta de WhatsApp (WABA) para la API de conversiones (1-nov); vacío = el que anota el webhook.
+        if (isset($_POST['capi_waba_id'])) $cfg['capi_waba_id'] = preg_replace('/\D+/', '', (string)$_POST['capi_waba_id']);
         // El token solo se pisa si escribieron uno nuevo: el campo se muestra
         // vacío a propósito para no dejar la credencial a la vista en el HTML.
         if (trim((string)($_POST['capi_token'] ?? '')) !== '') $cfg['capi_token'] = trim((string)$_POST['capi_token']);
@@ -3276,8 +3278,14 @@ function burbujaCita(t, chat) {
                 <label style="flex:1 1 260px">Token de acceso
                     <input type="password" name="capi_token" value="" placeholder="<?= trim((string)($cfg['capi_token'] ?? '')) !== '' ? 'Ya cargado — escribí uno nuevo para cambiarlo' : 'Pegá el token acá' ?>" autocomplete="off">
                 </label>
+                <label style="flex:1 1 220px">Id de la cuenta de WhatsApp (WABA)
+                    <input type="text" name="capi_waba_id" value="<?= $e($cfg['capi_waba_id'] ?? '') ?>" placeholder="<?= wabot_waba_id($cfg) !== '' ? 'Detectado: ' . $e(wabot_waba_id($cfg)) : 'Lo anota solo el webhook' ?>">
+                </label>
             </div>
-            <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '') ? 'activo' : 'sin configurar (no se manda nada)' ?></strong></p>
+            <p class="meta" style="margin-top:6px">Meta exige el id de la cuenta de WhatsApp en cada evento (desde el 1-nov los rechazaba sin él). Lo toma solo del primer mensaje que llega; cargalo a mano únicamente si el estado sigue diciendo que falta (WhatsApp Manager → Configuración de la cuenta → Identificador de la cuenta de WhatsApp Business).</p>
+            <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '')
+                ? (wabot_waba_id($cfg) !== '' ? 'activo (cuenta de WhatsApp ' . $e(wabot_waba_id($cfg)) . ')' : 'falta el id de la cuenta de WhatsApp: no se manda nada hasta que llegue un mensaje o lo cargues')
+                : 'sin configurar (no se manda nada)' ?></strong></p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Gasto en publicidad (API de Marketing)</h2>

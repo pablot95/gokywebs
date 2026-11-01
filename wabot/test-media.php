@@ -179,17 +179,28 @@ caso('un referral sin ctwa_clid tampoco sirve para atribuir',
 $cfgCapi = wabot_config_load();
 $cfgCapi['capi_dataset_id'] = '1234567890';
 $cfgCapi['capi_token'] = 'TOKEN';
+$cfgCapi['capi_waba_id'] = '';
+$GLOBALS['WABOT_TEST_WABA_ARCHIVO'] = sys_get_temp_dir() . '/wabot-test-waba-' . getmypid() . '.json';
+@unlink($GLOBALS['WABOT_TEST_WABA_ARCHIVO']);
 
+// 1-nov: Meta rechazaba todos los eventos (400, subcode 2804116) porque faltaba la cuenta de WhatsApp.
 $GLOBALS['WABOT_TEST_CAPI'] = [];
+$convSinWaba = ['tel' => 'TESTCAPI0', 'conversation_key' => 'TESTCAPI0', 'canal' => 'whatsapp', 'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
+caso('sin el id de la cuenta de WhatsApp (WABA) el evento no sale ni queda anotado',
+    wabot_waba_id($cfgCapi) === '' && wabot_capi_evento($convSinWaba, 'LeadSubmitted', $cfgCapi) === false && $GLOBALS['WABOT_TEST_CAPI'] === [] && $convSinWaba['capi_eventos'] === []);
+caso('el webhook lo anota al pasar (entry.id) y desde ahí se usa', wabot_waba_id_guardar('123456789012345') && wabot_waba_id($cfgCapi) === '123456789012345');
+caso('un id cargado en Ajustes le gana al anotado', wabot_waba_id(['capi_waba_id' => '999 888 777 666']) === '999888777666');
+caso('basura no cuenta como id', !wabot_waba_id_guardar('abc') && wabot_waba_id(['capi_waba_id' => '12']) === '123456789012345');
+
 $convCapi = ['tel' => 'TESTCAPI1', 'conversation_key' => 'TESTCAPI1', 'canal' => 'whatsapp',
              'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
 caso('con clic de anuncio y config cargada, se manda el evento',
     wabot_capi_evento($convCapi, 'LeadSubmitted', $cfgCapi) === true);
 caso('y queda anotado para no repetirlo', in_array('LeadSubmitted', $convCapi['capi_eventos'], true));
 $ultimoCapi = end($GLOBALS['WABOT_TEST_CAPI'])[2] ?? [];
-caso('va como mensajería de WhatsApp, con el clic del anuncio y sin custom_data',
+caso('va como mensajería de WhatsApp, con el clic del anuncio, la cuenta de WhatsApp y sin custom_data',
     ($ultimoCapi['action_source'] ?? '') === 'business_messaging' && ($ultimoCapi['messaging_channel'] ?? '') === 'whatsapp'
-    && ($ultimoCapi['user_data']['ctwa_clid'] ?? '') === 'ARAbc123' && !isset($ultimoCapi['custom_data']));
+    && ($ultimoCapi['user_data']['ctwa_clid'] ?? '') === 'ARAbc123' && ($ultimoCapi['user_data']['whatsapp_business_account_id'] ?? '') === '123456789012345' && !isset($ultimoCapi['custom_data']));
 caso('el mismo evento NO se manda dos veces (inflaria las conversiones de Meta)',
     wabot_capi_evento($convCapi, 'LeadSubmitted', $cfgCapi) === false);
 caso('pero otro evento distinto si',
@@ -517,4 +528,5 @@ caso('si no se entiende, la línea queda como estaba',
 @unlink(wabot_conv_path($claveNv));
 
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR'], $GLOBALS['WABOT_TEST_MEDIA']);
+@unlink($GLOBALS['WABOT_TEST_WABA_ARCHIVO']);
 todo_ok();

@@ -80,6 +80,8 @@ function wabot_textos_default() {
     'cambio_modalidad' => 'Arrancás con el plan que más te sirva hoy. Si más adelante querés pasarte de uno al otro, las condiciones de ese cambio las coordinás con el desarrollador.',
     'capi_dataset_id' => '',
     'capi_token' => '',
+    // El id de la cuenta de WhatsApp Business para la API de conversiones (1-nov). Vacío: lo anota solo el webhook. Ver wabot_waba_id().
+    'capi_waba_id' => '',
     'cambios_plan' => 'El plan mensual y el anual incluyen un cambio por mes en la web.',
     // Se suma a cambios_plan en los planes con panel (Pablo, 20-sep). Desde el 9-oct (noche) la web informativa de $20.000 NO tiene panel: ahí va cambios_plan_sin_panel.
     'cambios_plan_panel' => 'Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',

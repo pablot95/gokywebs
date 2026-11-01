@@ -651,6 +651,10 @@ if (($payload['object'] ?? '') === 'instagram') {
 }
 
 foreach (($payload['entry'] ?? []) as $entry) {
+    /* `entry.id` es el id de la cuenta de WhatsApp Business (WABA), que la API
+     * de conversiones exige en cada evento (1-nov). Se anota al pasar, así
+     * nadie tiene que buscarlo en Meta: ver wabot_waba_id(). */
+    if (($payload['object'] ?? '') === 'whatsapp_business_account') wabot_waba_id_guardar((string)($entry['id'] ?? ''));
     foreach (($entry['changes'] ?? []) as $cambio) {
         $campo = $cambio['field'] ?? '';
         $valor = $cambio['value'] ?? [];
