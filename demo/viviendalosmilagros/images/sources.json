@@ -1,0 +1,25 @@
+{
+  "origen": "Zip de ChatGPT del prospecto (9 imágenes + mock up), demo automática del 2-nov-2026. Sin imágenes propias del cliente ni fotos de bancos.",
+  "archivos": {
+    "casa-porche-ancha.webp": { "de": "02_imagen.jpg", "slot": "hero M1 y M2 (16:9) y og:image" },
+    "casa-cubo-vertical.webp": { "de": "01_imagen.jpg", "slot": "Cómo comprar M1 (9:16) y tarjeta alta Minimalistas M2" },
+    "p-casa-cubo.webp": { "de": "01_imagen.jpg", "recorte": "0,600-900,1275", "slot": "Casa Cubo (4:3)" },
+    "q-casa-cubo.webp": { "de": "01_imagen.jpg", "recorte": "0,470-900,1370", "slot": "Casa Cubo (1:1)" },
+    "p-casa-porche.webp": { "de": "02_imagen.jpg", "recorte": "200,0-1400,900", "slot": "Casa Porche (4:3)" },
+    "q-casa-porche.webp": { "de": "02_imagen.jpg", "recorte": "340,0-1240,900", "slot": "Casa Porche (1:1)" },
+    "p-casa-dos-aguas.webp": { "de": "03_imagen.jpg", "recorte": "0,120-1254,1060", "slot": "Casa Dos Aguas (4:3) y estilo Dos plantas M1" },
+    "q-casa-dos-aguas.webp": { "de": "03_imagen.jpg", "slot": "Casa Dos Aguas (1:1)" },
+    "p-casa-pergola.webp": { "de": "04_imagen.jpg", "recorte": "0,160-1254,1100", "slot": "Casa Pérgola (4:3)" },
+    "q-casa-pergola.webp": { "de": "04_imagen.jpg", "slot": "Casa Pérgola (1:1)" },
+    "p-casa-baranda.webp": { "de": "05_imagen.jpg", "recorte": "0,150-1254,1090", "slot": "Casa Baranda (4:3) y estilo Tradicionales M1" },
+    "q-casa-baranda.webp": { "de": "05_imagen.jpg", "slot": "Casa Baranda (1:1)" },
+    "p-casa-vertical.webp": { "de": "06_imagen.jpg", "recorte": "0,30-1254,970", "slot": "Casa Vertical (4:3) y tarjeta Dos plantas M2" },
+    "q-casa-vertical.webp": { "de": "06_imagen.jpg", "slot": "Casa Vertical (1:1)" },
+    "p-casa-en-l.webp": { "de": "07_imagen.jpg", "recorte": "0,160-1254,1100", "slot": "Casa en L (4:3) y estilo Minimalistas M1" },
+    "q-casa-en-l.webp": { "de": "07_imagen.jpg", "slot": "Casa en L (1:1)" },
+    "p-cabana-galeria.webp": { "de": "08_imagen.jpg", "recorte": "0,160-1254,1100", "slot": "Cabaña Galería (4:3) y tarjeta Tradicionales M2" },
+    "q-cabana-galeria.webp": { "de": "08_imagen.jpg", "slot": "Cabaña Galería (1:1)" },
+    "p-casa-liston.webp": { "de": "09_imagen.jpg", "recorte": "0,170-1254,1110", "slot": "Casa Listón (4:3)" },
+    "q-casa-liston.webp": { "de": "09_imagen.jpg", "slot": "Casa Listón (1:1)" }
+  }
+}
