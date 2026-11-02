@@ -1,0 +1,26 @@
+{
+  "zip_chatgpt": {
+    "origen": "Zip Alto_Trago de ChatGPT (Copiar 10), prospecto K2gdMn6QBVmmMlNbhafn",
+    "archivos": {
+      "01_imagen.jpg": "tequila-sunrise.webp (recorte 4:5) y tequila-sunrise-alto.webp (9:16 entero, banda «De la barra a tu puerta»)",
+      "02_imagen.jpg": "barra-frutos-rojos.webp (hero de los dos modelos), caipiroska-frutos-rojos.webp (recorte 4:5) y og.jpg",
+      "03_imagen.jpg": "mojito.webp (4:5) y mojito-barra.webp (1:1, galería)",
+      "04_imagen.jpg": "spritz.webp (4:5) y spritz-barra.webp (1:1, galería)",
+      "05_imagen.jpg": "pisco-sour.webp (4:5) y pisco-sour-barra.webp (1:1, galería)",
+      "06_imagen.jpg": "tropical-anana-maracuya.webp (4:5) y tropical-anana-maracuya-barra.webp (1:1, galería)",
+      "07_imagen.jpg": "bramble-moras-romero.webp (4:5) y bramble-moras-romero-barra.webp (1:1, galería)",
+      "08_imagen.jpg": "old-fashioned.webp (4:5) y old-fashioned-barra.webp (1:1, galería)",
+      "09_imagen.jpg": "pina-colada.webp (4:5) y pina-colada-barra.webp (1:1, galería)",
+      "10_mockup_720x480.png": "referencia de diseño del Modelo 1"
+    }
+  },
+  "generadas": {
+    "favicon.png": "vaso alto con nivel naranja sobre fondo noche (dibujado con PIL, sin logo del cliente)",
+    "apple-touch-icon.png": "ídem, 180 px"
+  },
+  "cliente": {
+    "origen": "No mandó logo ni fotos (formulario sin imágenes, WhatsApp sin adjuntos al 2-nov-2026)",
+    "pendiente": "Logo real si lo tiene (hoy es un wordmark HTML/CSS), dirección del local para el retiro y horarios."
+  },
+  "bancos": []
+}
