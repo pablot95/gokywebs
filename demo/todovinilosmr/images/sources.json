@@ -1,0 +1,19 @@
+{
+  "origen": "Zip de ChatGPT Todovinilosmr_gJQKTbPdCFKEp8mRZ63N.zip (9 imágenes + mock up), 2-nov-2026. La clienta no mandó fotos por WhatsApp (imagenes_recibidas: 0). Son imágenes ilustrativas: se reemplazan por fotos de sus trabajos reales con el mismo nombre de archivo.",
+  "recortes": {
+    "luna-alta.webp": "01_imagen.jpg (9:16 entera: tarjeta del hero del Modelo 1 y tile alto del mosaico del Modelo 2)",
+    "p-luna.webp": "01_imagen.jpg (recorte 1:1, y 315-1215)",
+    "marco-ancho.webp": "02_imagen.jpg (16:9 entera: portada de los dos modelos; en el Modelo 2 el H1 va adentro del marco)",
+    "p-portarretrato.webp": "02_imagen.jpg (recorte 1:1 centrado en el marco: ficha y vista previa «Probá tu frase»)",
+    "p-mariposa.webp": "03_imagen.jpg",
+    "p-taza.webp": "04_imagen.jpg",
+    "p-remera.webp": "05_imagen.jpg",
+    "p-vaso.webp": "06_imagen.jpg (también vista previa del nombre en vinilo)",
+    "p-caja.webp": "07_imagen.jpg (también vista previa del nombre grabado)",
+    "p-almohadon.webp": "08_imagen.jpg",
+    "p-estrellas.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg (1200x630)"
+  },
+  "mock_up": "10_mockup_720x480.png: referencia del Modelo 1 (index.html y catalogo.html); no se usa en la página.",
+  "bancos": "Ninguna foto de bancos externos."
+}
