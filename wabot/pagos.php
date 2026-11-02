@@ -770,7 +770,12 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
             ? ($resultado['mensajes'] ? ' El bot ya le pidió lo que falta.' : '')
             : ($resultado['mensajes'] ? ' Le mandé el «Genial, recibido» y el bot se calló: seguís vos desde tu número.'
                 : (($conv['pago_recibido_omitido'] ?? '') === 'pablo_escribio' ? ' No le mandé el «Genial, recibido» porque ya le escribiste vos. El bot ya no contesta en ese chat.' : ' No le pude mandar el «Genial, recibido» (ventana de WhatsApp cerrada): escribile vos. El bot ya no contesta en ese chat.')));
-    try { $avisar('Pago confirmado: ' . $quien, $cuerpo); } catch (\Throwable $e) { /* un aviso que falla no frena la confirmación */ }
+    /* Confirmado a mano desde el panel y todo salió bien: Pablo ya lo sabe, no se le avisa
+     * (2-nov: solo lo que pide algo de él). Lo que entra solo por MP, o lo que falló, sí. */
+    $sabido = ($conv['pago_tipo'] ?? '') === 'manual' && $conv['pago_firestore'] === 'ok';
+    if (!$sabido) {
+        try { $avisar('Pago confirmado: ' . $quien, $cuerpo); } catch (\Throwable $e) { /* un aviso que falla no frena la confirmación */ }
+    }
     return $resultado;
 }
 

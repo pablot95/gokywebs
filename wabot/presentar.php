@@ -412,8 +412,8 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
         ];
         $marcar($id, $marca);
         if ($marca['demo_ok']) {
+            // Salió bien: no se avisa (Pablo, 2-nov: solo lo que pide algo de él).
             $res['presentadas']++;
-            $avisar('Demo presentada sola', 'Le mandé la demo a ' . $negocio . ' (' . $marca['slug'] . ').');
         } else {
             $res['sin_enviar']++;
             $motivo = $marca['error'] !== '' ? $marca['error']

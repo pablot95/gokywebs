@@ -317,7 +317,7 @@ function wabot_webs_chequear(array $lista, $ahora, array $monitor, $pedir = null
             $e['caidas'][] = ['desde' => $desde, 'hasta' => $ahora, 'motivo' => (string)($e['motivo_caida'] ?? '')];
             $e['caidas'] = array_slice($e['caidas'], -30);
             if ($duro >= WABOT_WEBS_CAIDA_MIN) $e['aviso_pendiente'] = ['desde' => $desde, 'hasta' => $ahora];
-            $avisar('Volvió la web de ' . $quien, $d . ' responde otra vez. Estuvo caída ' . wabot_webs_duracion_texto($duro) . ' (desde ' . wabot_webs_cuando_texto($desde, $ahora) . ').');
+            // Que volvió no se avisa (Pablo, 2-nov: solo lo que pide algo de él); la caída sí.
             $res['volvieron'][] = $d;
             unset($e['motivo_caida']);
         } elseif (!$x['ok'] && $e['ok'] !== false) {
@@ -545,10 +545,9 @@ function wabot_webs_reporte_correr($cfg, $ahora, array $estado, array $monitor, 
             $fallas[] = ($f['negocio'] !== '' ? $f['negocio'] : ($f['persona'] !== '' ? $f['persona'] : $f['dominio'])) . ' (' . ($motivos[$r] ?? $r) . ')';
         }
     }
-    if ($res['enviados'] || $res['fallidos']) {
-        $cuerpo = 'Salió el resumen de ' . $mesNombre . ' a ' . $res['enviados'] . ($res['enviados'] === 1 ? ' cliente' : ' clientes') . '.';
-        if ($fallas) $cuerpo .= ' Sin enviar: ' . implode(', ', $fallas) . '. Escribiles a mano.';
-        $avisar('Reporte mensual de las webs', $cuerpo);
+    // Solo si alguno no salió (Pablo, 2-nov: solo lo que pide algo de él).
+    if ($fallas) {
+        $avisar('Reporte mensual sin enviar', 'No salió el resumen de ' . $mesNombre . ' a: ' . implode(', ', $fallas) . '. Escribiles a mano.');
     }
     return $res + ['estado' => $estado];
 }

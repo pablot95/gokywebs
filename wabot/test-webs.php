@@ -104,7 +104,8 @@ $c5 = wabot_webs_chequear($lista, $t2, $c4['monitor'], $pedir, $avisar);
 $m5 = $c5['monitor']['panaderiasol.com.ar'];
 caso('volvió', $c5['volvieron'] === ['panaderiasol.com.ar'] && $m5['ok'] === true);
 caso('la caída queda anotada con desde y hasta', $m5['caidas'] === [['desde' => $t1, 'hasta' => $t2, 'motivo' => 'no responde (tiempo de espera agotado)']], json_encode($m5['caidas']));
-caso('Pablo recibe el push con cuánto duró', $avisos[0][0] === 'Volvió la web de Panadería Sol' && strpos($avisos[0][1], 'Estuvo caída 1 hora') !== false, json_encode($avisos, JSON_UNESCAPED_UNICODE));
+// 2-nov (Pablo): que volvió no se le avisa (la caída sí, más arriba).
+caso('que volvió no le llega a Pablo', $avisos === [], json_encode($avisos, JSON_UNESCAPED_UNICODE));
 caso('queda el aviso al cliente pendiente', $m5['aviso_pendiente'] === ['desde' => $t1, 'hasta' => $t2]);
 
 $av1 = wabot_webs_avisos_correr($lista, $t2, $c5['monitor'], $cfg, $enviar, $avisar);
@@ -188,7 +189,7 @@ caso('el 1 a las 10 sale a los dos con dominio', $r1['enviados'] === 2 && count(
 caso('con las 6 variables en orden, sin el certificado', $mandados[0][3] === ['nombre' => 'Juan', 'mes' => 'octubre', 'negocio' => 'Panadería Sol', 'disponibilidad' => '99,8 % (una caída de 1 hora, ya resuelta)', 'visitas' => '1.234 visitas', 'errores' => '3 detectados, 1 corregido, 1 revisado sin impacto, 1 en revisión'], json_encode($mandados[0][3], JSON_UNESCAPED_UNICODE));
 caso('es la plantilla del reporte', $mandados[0][2] === 'reporte_mensual_web');
 caso('el que no tiene dominio queda marcado sin reintento', ($r1['estado']['reportes']['clientes:CCC']['resultado'] ?? '') === 'sin_dominio' && ($r1['estado']['reportes']['clientes:DDD']['resultado'] ?? '') === 'sin_dominio');
-caso('Pablo recibe un solo push con el total', count($avisos) === 1 && $avisos[0][1] === 'Salió el resumen de octubre a 2 clientes.', json_encode($avisos, JSON_UNESCAPED_UNICODE));
+caso('si salieron todos, a Pablo no le llega nada', $avisos === [], json_encode($avisos, JSON_UNESCAPED_UNICODE));
 
 $mandados = [];
 $r2 = wabot_webs_reporte_correr($cfg, $h + 1800, $r1['estado'], $monitor, $err, $enviar, $avisar);
@@ -217,7 +218,7 @@ caso('a una web caída ahora no se le manda, y queda para la próxima pasada', $
 $mandados = []; $avisos = [];
 $sinTel = $estadoBase($h); $sinTel['lista'][0]['tel'] = '123';
 $r6 = wabot_webs_reporte_correr($cfg, $h, $sinTel, $monitor, $err, $enviar, $avisar);
-caso('con un teléfono raro no manda, lo marca y se lo dice a Pablo', $r6['fallidos'] === 1 && ($r6['estado']['reportes']['clientes:AAA']['resultado'] ?? '') === 'telefono' && strpos($avisos[0][1], 'Sin enviar: Panadería Sol (teléfono raro)') !== false, json_encode($avisos, JSON_UNESCAPED_UNICODE));
+caso('con un teléfono raro no manda, lo marca y se lo dice a Pablo', $r6['fallidos'] === 1 && ($r6['estado']['reportes']['clientes:AAA']['resultado'] ?? '') === 'telefono' && ($avisos[0][0] ?? '') === 'Reporte mensual sin enviar' && strpos($avisos[0][1], 'Panadería Sol (teléfono raro)') !== false, json_encode($avisos, JSON_UNESCAPED_UNICODE));
 
 $mandados = [];
 $apagada = $cfg; $apagada['plantillas']['reporte_mensual_web']['activa'] = false;

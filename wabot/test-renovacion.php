@@ -63,7 +63,8 @@ caso('el 25 a las 11 sale solo el del día 25', $r['enviados'] === 1 && count($m
 caso('a un número sin chat le arma el 549', ($mandados[0][0] ?? '') === '5491144445555', $mandados[0][0] ?? '');
 caso('nombre, negocio y monto en la plantilla', ($mandados[0][2] ?? []) === ['nombre' => 'Juan', 'negocio' => 'Panadería Sol', 'monto' => '$20.000 por mes'], json_encode($mandados[0][2] ?? []));
 caso('el que se dio de alta hoy no recibe aviso', !in_array('clientes:CCC', array_column($mandados, 1), true));
-caso('Pablo recibe el push', $avisos === ['Aviso de renovación enviado']);
+// 2-nov (Pablo): solo avisos que piden algo de él; el que salió bien no se avisa.
+caso('si salió bien, a Pablo no le llega nada', $avisos === [], json_encode($avisos, JSON_UNESCAPED_UNICODE));
 
 $mandados = [];
 $otra = wabot_renovacion_correr($cfg, $ar('2026-10-25 15:00:00'), $r['estado'], $enviar, $avisar);

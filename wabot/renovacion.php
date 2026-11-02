@@ -188,8 +188,8 @@ function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = 
         if ($enDisco) wabot_renovacion_guardar($estado);
         $quien = $f['negocio'] !== '' ? $f['negocio'] : ($f['persona'] !== '' ? $f['persona'] : $f['tel']);
         if ($r === 'ok') {
+            // Salió bien: no se avisa (Pablo, 2-nov: solo lo que pide algo de él).
             $res['enviados']++;
-            $avisar('Aviso de renovación enviado', 'Le mandé a ' . $quien . ' el aviso del plan mensual (' . wabot_moneda($f['monto']) . ').');
         } else {
             $res['fallidos']++;
             $motivos = ['sin_chat' => 'no tiene teléfono cargado', 'telefono' => 'el teléfono no parece de WhatsApp',
