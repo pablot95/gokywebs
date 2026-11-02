@@ -20,7 +20,9 @@
       "20261102-161558-1b6002fe.jpg": "logo.webp, favicon.png, apple-touch-icon.png (fondo a transparente y sin la línea del celular)",
       "20261102-161558-1cc1ade9.jpg": "etiquetas-empanadas.webp, etiqueta-carne.webp, etiqueta-pollo.webp, etiqueta-jyq.webp",
       "20261102-161558-69a016a1.jpg": "flyer de referencia, no se usa en la web"
-    }
+    },
+    "copia_local": "%USERPROFILE%\\Downloads\\imagenes-prospectos\\prontopizza\\form-0N-*.jpg (originales, el logo con la línea «Cel: 3407-490243»)",
+    "pendiente": "Confirmar con el cliente si el logo va con o sin el celular y cuál es el número para los pedidos (3444 del WhatsApp o 3407 del logo)."
   },
   "bancos": []
 }
