@@ -626,10 +626,11 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'categoria' => 'UTILITY',
             'activa' => false,
             'automatico' => true,
-            // Texto de Pablo (2-nov), el mismo de la presentación por chat: {{1}} el negocio, {{2}} el slug del link. Sin botón.
+            // Elegido por Pablo (2-nov) para que Meta la acepte como Utilidad: atada al pedido del
+            // formulario, sin lo promocional. {{1}} el negocio, {{2}} el slug del link. Sin botón.
             'params' => ['negocio', 'slug'],
             'boton' => [],
-            'texto' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\nhttps://gokywebs.com/demo/{slug}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
+            'texto' => "Hola! Te enviamos la primera propuesta para la web de {negocio} que pediste en nuestro formulario.\n\nPodés verla acá:\nhttps://gokywebs.com/demo/{slug}\n\nTiene dos modelos: en la parte inferior podés cambiar de uno a otro. Cuando la veas, contanos por este chat cuál preferís.",
         ],
         // Utilidad (25-oct): el día del cobro, a los del plan mensual que pagan por
         // afuera de Mercado Pago (renovacion.php). Apagada hasta que Meta la apruebe.
