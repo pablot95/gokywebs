@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de ChatGPT del prospecto (9 imágenes + mock up), demo automática del 2-nov-2026. Sin imágenes propias del cliente ni fotos de bancos.",
+  "archivos": {
+    "persiana-pvc-vertical.webp": { "de": "01_imagen.jpg", "slot": "hero M1 (9:16)" },
+    "persianas-madera-ancha.webp": { "de": "02_imagen.jpg", "slot": "hero M2 (16:9) y og:image" },
+    "p-pvc.webp": { "de": "01_imagen.jpg", "recorte": "0,390-900,1290", "slot": "Persiana de PVC reforzada" },
+    "p-madera.webp": { "de": "02_imagen.jpg", "recorte": "172,0-1072,900", "slot": "Persiana de madera reforzada" },
+    "p-aluminio-cajon.webp": { "de": "03_imagen.jpg", "slot": "Persiana de aluminio con cajón exterior" },
+    "p-roller-blackout.webp": { "de": "04_imagen.jpg", "slot": "Cortina roller blackout" },
+    "p-americana.webp": { "de": "05_imagen.jpg", "slot": "Cortina americana de lamas" },
+    "p-motor.webp": { "de": "06_imagen.jpg", "slot": "Motor tubular reforzado" },
+    "p-control.webp": { "de": "06_imagen.jpg", "recorte": "520,640-1040,1160", "slot": "Control remoto para persianas" },
+    "p-manual.webp": { "de": "07_imagen.jpg", "slot": "Kit de apertura manual" },
+    "servicio-instalacion.webp": { "de": "08_imagen.jpg", "slot": "Servicio técnico (instalación)" },
+    "p-aluminio-inyectado.webp": { "de": "09_imagen.jpg", "slot": "Persiana de aluminio reforzada" }
+  }
+}
