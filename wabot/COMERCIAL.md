@@ -151,8 +151,9 @@ Requiere a Pablo (el bot se calla y lo marca en el panel con el motivo):
   sincronización de stock/precios con otro sistema.
 - Marketplace de varios vendedores; entrega automática de archivos al pagar; portal de noticias.
   La cantidad de productos ya no deriva (9-oct): se avisa con `muchos_productos`.
-- Cuotas sin interés, cualquier condición de pago fuera de las aprobadas; qué pasa si un mes no
-  puede pagar (el mes de gracia fue una excepción de Pablo para una sola clienta: nunca se ofrece).
+- Cuotas sin interés, cualquier condición de pago fuera de las aprobadas. Qué pasa si un mes no
+  puede pagar: antes de la demo lo resuelve Pablo; después de la demo sale `dejo_de_pagar` (1-nov:
+  no hay mes de gracia, se espera hasta 15 días y la fecha de renovación se mantiene).
 - Internacional con pago único. Mayorista con dropshipping o importador con catálogo grande (Pablo
   cotizó a mano $40.000 / $260.000 el 9-oct).
 - Cuánto cuesta que carguemos nosotros todos los productos.
@@ -176,9 +177,9 @@ que pide y contesta `cambios_demo`; «ya pagué» o comprobante → «Perfecto, 
 confirmamos por acá» + aviso a Pablo; «lo veo y te aviso» → corto, sin link. Respuestas oficiales de
 esta etapa: `google_difusion`, `dominio_com_ar`, `dejo_de_pagar`, `cambios_demo`, `comisiones_mp`,
 `tiempo_entrega`, `material_web`; antes de la demo se sumó `demo_tiempo` («menos de 24 hs»).
-`dejo_de_pagar` nombra el mes de gracia y los 18 meses para la titularidad porque es lo que Pablo
-contestó en los chats de octubre (informe del 1-nov); contradice el punto de arriba del 9-oct y
-queda para que Pablo confirme cuál vale.
+`dejo_de_pagar` dice lo que Pablo definió el 1-nov: si se atrasa un mes se lo espera hasta 15 días,
+la fecha de renovación no se corre, y a los 18 meses con el plan activo puede pedir la titularidad
+del código (el «mes de gracia» que contestó en algunos chats de octubre ya no va).
 
 ### Después del pago (1-nov)
 El poller (`pagos.php`) cruza los cobros de Mercado Pago con los chats; al confirmar, el bot manda

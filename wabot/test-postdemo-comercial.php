@@ -352,7 +352,7 @@ $r = turno('Qué diferencia hay entre .com y .com.ar? Cuál me conviene', $c, $c
 caso('.com vs .com.ar → dominio_com_ar', $r === [$cfg['info']['dominio_com_ar']], json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['info_claves' => ['dejo_de_pagar']])]);
 $r = turno('Y si el pago mensual es indefinidamente o una determinada cantidad de meses', $c, $cfg);
-caso('«indefinidamente o una cantidad de meses» → dejo_de_pagar (18 meses, mes de gracia)', $r === [$cfg['info']['dejo_de_pagar']], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('«indefinidamente o una cantidad de meses» → dejo_de_pagar (15 días de espera, renovación fija, 18 meses)', $r === [$cfg['info']['dejo_de_pagar']] && strpos($r[0], '15 días') !== false && strpos($r[0], 'mes de gracia') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['info_claves' => ['comisiones_mp']])]);
 $r = turno('La comisión eso después la configuro desde mercado?', $c, $cfg);
 caso('comisión de Mercado Pago → comisiones_mp', $r === [$cfg['info']['comisiones_mp']], json_encode($r, JSON_UNESCAPED_UNICODE));
