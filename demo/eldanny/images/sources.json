@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto El Danny, 1-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "living-parquet.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos",
+    "pintura-rodillo.webp": "01_imagen.jpg (9:16) - Pintura interior y exterior",
+    "pulido-parquet.webp": "03_imagen.jpg (1:1) - Pulido y plastificado de parquet",
+    "parquet-plastificado.webp": "04_imagen.jpg (1:1) - Trabajos / pestaña Pisos",
+    "tarquini.webp": "05_imagen.jpg (1:1) - Revestimiento Tarquini",
+    "durlock.webp": "06_imagen.jpg (1:1) - Trabajos de Durlock / foto encintada del hero (M1)",
+    "piso-flotante.webp": "07_imagen.jpg (1:1) - Colocación de pisos flotantes",
+    "pulido-granito.webp": "08_imagen.jpg (1:1) - Pulido de pisos de granito",
+    "reparaciones.webp": "09_imagen.jpg (1:1) - Reparaciones y colocaciones",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": "ninguna foto extra de Pexels/Unsplash"
+}
