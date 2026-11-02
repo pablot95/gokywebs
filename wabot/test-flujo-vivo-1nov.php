@@ -13,6 +13,10 @@
  * Mercado Pago: el formulario, la demo y el pago se simulan como en los tests
  * sin red. Las charlas quedan en wabot/data/conv/ de la PC y se borran al final.
  * CUESTA PLATA (unos centavos por charla): no va en los barridos de tests.
+ *
+ * 2-nov: corren con la prueba de precios prendida, como producción (pares en
+ * A2, impares en B), y el formulario ya no trae la forma de pago: después de
+ * la demo el bot la pregunta antes del link (la charla 6 la recorre entera).
  */
 if (PHP_SAPI !== 'cli') exit;
 error_reporting(E_ALL & ~E_DEPRECATED);
@@ -144,6 +148,7 @@ $charlas = [
         ['c', 'Cuánto tardan en tenerla?'],
         ['demo', 'estudiorios'],
         ['c', 'Me gustó el modelo 2'],
+        ['c', 'Sería el mensual'],
         ['c', 'Cómo se paga? Se puede en cuotas con tarjeta?'],
         ['c', 'Ok, lo veo y te aviso la semana que viene'],
     ]],
@@ -204,39 +209,55 @@ $charlas = [
         ['c', 'Carlo Bianchi, 20-98765432-1, responsable inscripto'],
         ['c', 'pizzeriadoncarlo.com'],
     ]],
+    6 => ['nombre' => 'Dietética (A2): modelo y pago juntos, la pregunta de la modalidad y el anual', 'tel' => '5491100009362', 'pasos' => [
+        ['c', 'Hola, tengo una dietética y quiero vender online'],
+        ['c', 'Dale, haceme la demo'],
+        ['form', ['nombre' => 'Sole', 'nombre_negocio' => 'Dietética Sole', 'resumen' => 'Dietética: frutos secos, harinas, productos sin TACC', 'colores' => 'verde']],
+        ['demo', 'dieteticasole'],
+        ['c', 'Me encantó el 1! Cómo te pago?'],
+        ['c', 'Prefiero el anual'],
+        ['c', 'Y el resto cuándo lo pago?'],
+    ]],
 ];
 
 $resumen = [];
 $t0 = microtime(true);
 foreach ($charlas as $n => $ch) {
     if ($solo && !in_array($n, $solo, true)) continue;
-    $GLOBALS['WABOT_TEST_SIN_AB'] = empty($ch['ab']);
+    // Como producción desde el 2-nov: la prueba de precios prendida para todas (pares A2, impares B).
+    $GLOBALS['WABOT_TEST_SIN_AB'] = false;
     $tel = $ch['tel'];
     @unlink(wabot_conv_path($tel));
     $c = wabot_conv_load($tel);
     $c['nombre'] = '';
-    echo "\n========== CHARLA $n — {$ch['nombre']} ({$tel}" . (!empty($ch['ab']) ? ', grupo ' . wabot_ab_grupo_por_id($c) : '') . ") ==========\n";
+    echo "\n========== CHARLA $n — {$ch['nombre']} ({$tel}, grupo " . strtoupper(wabot_ab_grupo_por_id($c)) . ") ==========\n";
     $salidas = [];
-    foreach ($ch['pasos'] as $paso) {
+    foreach ($ch['pasos'] as $i => $paso) {
         switch ($paso[0]) {
-            case 'c':    $salidas[] = cliente($c, $paso[1], $cfg); break;
-            case 'foto': $salidas[] = cliente($c, '', $cfg, foto($paso[1])); break;
+            case 'c':    $salidas[$i] = cliente($c, $paso[1], $cfg); break;
+            case 'foto': $salidas[$i] = cliente($c, '', $cfg, foto($paso[1])); break;
             case 'form': form($c, $cfg, $paso[1]); break;
             case 'demo': demo($c, $cfg, $paso[1]); break;
             case 'pago': pago($c, $cfg, $paso[1], $paso[2]); break;
         }
     }
-    $todo = array_merge(...array_map(fn($s) => (array)$s, $salidas ?: [[]]));
+    $todo = array_merge(...array_map(fn($s) => (array)$s, array_values($salidas) ?: [[]]));
+    // Lo que contestó el bot a ese mensaje del cliente.
+    $turno = fn($texto) => (array)($salidas[array_search(['c', $texto], $ch['pasos'], true)] ?? []);
     $resumen[$n] = ['nombre' => $ch['nombre'], 'estado' => estado($c), 'mensajes_bot' => count($todo)];
     echo "\n--- Chequeos de la charla $n ---\n";
     switch ($n) {
         case 1:
             caso('cotizó (planes con montos)', tiene($todo, 'Plan mensual') || tiene($todo, 'mensual:'));
             caso('mandó el link del formulario', tiene($todo, 'gokywebs.com/form'));
-            caso('después del modelo 2 mandó un link de pago', tiene($todo, 'gokywebs.com/pago/') && (int)($c['modelo_elegido'] ?? 0) === 2, json_encode($c['modelo_elegido'] ?? null));
+            caso('después del modelo 2 preguntó la modalidad (A2: anual o mensual), sin link todavía', (int)($c['modelo_elegido'] ?? 0) === 2
+                && tiene($turno('Me gustó el modelo 2'), 'preferís el plan anual o el plan mensual') && !tiene($turno('Me gustó el modelo 2'), 'gokywebs.com/pago/'),
+                json_encode($turno('Me gustó el modelo 2'), JSON_UNESCAPED_UNICODE));
+            caso('«Sería el mensual» → el link mensual20000', tiene($todo, 'gokywebs.com/pago/mensual20000') && ($c['modalidad_elegida'] ?? '') === 'mensual', (string)($c['modalidad_elegida'] ?? ''));
             caso('«lo veo y te aviso» dejó fecha de retomar', !empty($c['retomar_ts']));
             break;
         case 2:
+            caso('«El 1» → tomamos el modelo 1 y la pregunta de la modalidad', tiene($turno('El 1'), 'tomamos el modelo 1') && tiene($turno('El 1'), 'preferís'), json_encode($turno('El 1'), JSON_UNESCAPED_UNICODE));
             caso('con «no quiero MP» dio el alias pablotravi y el CVU', tiene($todo, 'pablotravi') && tiene($todo, '0000003100053462800156'));
             caso('«ya te transferí» → acuse y pago avisado', tiene($todo, 'revisamos el pago') && !empty($c['pago_avisado_ts']));
             caso('el pago confirmado arrancó el onboarding', !empty($c['pago_confirmado_ts']) && !empty($c['onboarding']));
@@ -248,13 +269,23 @@ foreach ($charlas as $n => $ch) {
             break;
         case 4:
             caso('grupo B: cotizó con pago inicial', tiene($todo, 'inicial'));
-            caso('mandó un link de pago del grupo B', tiene($todo, 'gokywebs.com/pago/inicial'));
+            caso('mandó un link de pago del grupo B, sin preguntar la modalidad (hay una sola)', tiene($todo, 'gokywebs.com/pago/inicial') && !tiene($todo, 'preferís'));
             caso('«ya pagué el inicial» → acuse', tiene($todo, 'revisamos el pago'));
             break;
         case 5:
             caso('«no me abre el link» reenvió el link', count(array_filter($todo, fn($m) => mb_stripos($m, 'gokywebs.com/form') !== false)) >= 2);
             caso('los cambios al nombre quedaron anotados', tiene($todo, 'muestra') || tiene($todo, 'primer pago') || tiene($todo, 'anot'));
-            caso('la suscripción confirmada arrancó el onboarding y tomó la factura', !empty($c['onboarding']) && (($c['onboarding']['datos']['factura']['valor']['cuit'] ?? '') === '20987654321'), json_encode($c['onboarding']['datos']['factura'] ?? null));
+            // Desde el 1-nov (c41d85d) el onboarding no pide factura ni dominio: modelo, email si hay login, imágenes y cambios.
+            caso('la suscripción confirmada arrancó el onboarding (modelo, email, imágenes o cambios)', !empty($c['pago_confirmado_ts'])
+                && in_array((string)($c['onboarding']['paso'] ?? ''), ['modelo', 'email', 'imagenes', 'cambios'], true), json_encode($c['onboarding']['paso'] ?? null));
+            break;
+        case 6:
+            $pide = $turno('Me encantó el 1! Cómo te pago?');
+            caso('«me encantó el 1, cómo te pago» → tomamos el modelo 1 y la pregunta de la modalidad, sin link', tiene($pide, 'tomamos el modelo 1')
+                && tiene($pide, 'preferís el plan anual o el plan mensual') && !tiene($pide, 'gokywebs.com/pago/'), json_encode($pide, JSON_UNESCAPED_UNICODE));
+            caso('«Prefiero el anual» → el plan anual con la seña ($60.000) y el resto, pago/anual210', tiene($turno('Prefiero el anual'), 'gokywebs.com/pago/anual210')
+                && tiene($turno('Prefiero el anual'), '$60.000') && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($turno('Prefiero el anual'), JSON_UNESCAPED_UNICODE));
+            caso('no volvió a preguntar la modalidad', count(array_filter($todo, fn($m) => mb_stripos($m, 'preferís el plan anual') !== false)) === 1);
             break;
     }
     @unlink(wabot_conv_path($tel));
