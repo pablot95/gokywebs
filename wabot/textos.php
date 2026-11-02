@@ -91,7 +91,7 @@ function wabot_textos_default() {
     // sitio profesional y la carga de productos va aparte.
     'carga_producto' => '$500',
     // Texto de Pablo (28-sep): "va aparte" sonaba a que cargar productos siempre se paga.
-    'catalogo_carga' => 'Los productos los podés cargar vos desde el panel. Si querés que hagamos nosotros la carga, tiene un costo de {carga_producto} por producto.',
+    'catalogo_carga' => 'Los productos los podés cargar vos desde el panel. Si son menos de 30, los cargamos nosotros sin costo; si son más y querés que hagamos toda la carga, tiene un costo de {carga_producto} por producto.',
     'cierre_comparando' => 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
     /* Lo que no entra en el precio de lista: se nombra el motivo y lo toma el
      * desarrollador (18-sep). Nunca un precio estándar para un proyecto que no
@@ -201,12 +201,15 @@ function wabot_textos_default() {
         'plazos' => "La web queda lista en unos 7 días desde que arrancamos con el plan y nos pasás el contenido.",
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros.',
         'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual y en el anual.',
-        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Los primeros productos los cargamos nosotros y, cuando esté lista, te mostramos cómo se usa.',
+        // Menos de 30 productos: la carga la hacemos nosotros (Pablo, 1-nov).
+        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Si son menos de 30 productos los cargamos todos nosotros; si son más, los primeros, y cuando esté lista te mostramos cómo se usa.',
         /* "Se pueden cargar todos ustedes?" no es "lo puedo manejar yo?" (Pablo,
          * 9-oct: la respuesta de arriba contradecía la pregunta). Con sus palabras
          * del 22-sep: algunos los cargamos para entregarla funcionando; todos,
          * también, con un costo adicional según la cantidad. */
-        'carga_nosotros' => 'Si preferís que carguemos nosotros todos los productos, también podemos, con un costo adicional según la cantidad. Algunos los cargamos igual para entregarte la web funcionando, y el resto lo cargás vos desde el panel sin costo.',
+        'carga_nosotros' => 'Si son menos de 30 productos, los cargamos todos nosotros sin costo. Si son más, también podemos cargarlos todos, con un costo adicional según la cantidad, o cargamos algunos y el resto lo cargás vos desde el panel sin costo.',
+        // La misma, cuando ya dijo cuántos son y son menos de 30 (la elige el sistema, no el modelo).
+        'carga_pocos' => 'Con {cantidad} productos, los cargamos todos nosotros sin costo. Después los manejás vos desde el panel cuando quieras.',
         // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche).
         'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, vos solo nos pedís lo que quieras cambiar.',
         'carga_sitio' => 'En la web informativa los cambios los hacemos nosotros, uno por mes incluido. Si querés manejar vos el contenido desde un panel, va con el plan de {mensualidad_panel}.',
@@ -654,7 +657,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'automatico' => true,
             'params' => ['quien', 'texto'],
             'boton' => ['clave'],
-            'texto' => "{quien} te escribió y el bot no le contestó:\n{texto}",
+            // Va con todos los avisos (un chat sin contestar, un pago, la revisión…): {quien} es el título.
+            'texto' => "Aviso del bot: {quien}\n{texto}\nAbrilo en el panel con el botón.",
         ],
         // Marketing, solo a mano desde el chat (21-oct): abre la conversación con un saludo.
         'saludo' => [
@@ -855,6 +859,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
                     'cambios_extra' => 'Sí: sumando $10.000 por mes tenés 3 cambios por mes.',
                     'medios_pago' => 'El pago inicial lo podés pagar por transferencia, con tarjeta o por Mercado Pago. La mensualidad es una suscripción de Mercado Pago, con cualquier tarjeta.',
                     // Pablo, 31-oct: con el primer pago no compran la web; si deja de pagar, suspendida.
+                    // El de después de la demo con la titularidad del modelo B (mes 12, no 18); los 15 días de espera son los mismos (Pablo, 1-nov).
+                    'dejo_de_pagar' => 'Si cancelás la mensualidad, la web deja de estar publicada al terminar el período pagado. Si un mes te atrasás, te esperamos hasta 15 días y la fecha de renovación se mantiene. A partir del mes 12 podés pedir la titularidad del código.',
                     'suspension' => 'Si la mensualidad queda sin pagar, la web se suspende hasta que se regularice. Con el pago inicial no estás comprando la web: hasta el mes 12 el código, el dominio y el servidor son de Gokywebs.',
                 ],
                 'cambios_plan' => 'La mensualidad incluye un cambio por mes en la web.',

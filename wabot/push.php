@@ -308,7 +308,6 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
     $clave  = preg_replace('/[^0-9A-Za-z_-]/', '', (string)($datos['tel'] ?? ''));
     if ($clave === '' && preg_match('/[?&]ver=([^&]+)/', $link, $m)) $clave = preg_replace('/[^0-9A-Za-z_-]/', '', rawurldecode($m[1]));
 
-    $estado = wabot_aviso_estado();
     $via = '';
     $ok = false;
 
@@ -335,6 +334,9 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
     // El id de este envío no es de ninguna charla: que no se lo lleve el próximo renglón de un transcript.
     wabot_salida_tomar();
 
+    /* Releído recién ahora: mientras Meta contestaba (hasta 20 s) Pablo pudo
+     * escribirle al bot, y guardar el estado leído antes le cerraba la ventana. */
+    $estado = wabot_aviso_estado();
     $estado['ultimo_aviso_ts'] = time();
     $estado['ultimo_aviso_ok'] = $ok;
     $estado['ultimo_aviso_via'] = $ok ? $via : ($via !== '' ? $via : 'ninguna');

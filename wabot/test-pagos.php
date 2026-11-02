@@ -276,6 +276,62 @@ echo "La ficha\n";
 caso('el resumen de la ficha', wabot_pago_resumen_ficha($convsDisco['5491111TEST01']) === 'Pagó $30.000 el 2/11 (plan mensual)', wabot_pago_resumen_ficha($convsDisco['5491111TEST01']));
 caso('sin pago, nada', wabot_pago_resumen_ficha(conv_nueva()) === '');
 
+echo "Revisión del 1-nov (noche)\n";
+// La primera corrida que falla sigue siendo la primera.
+@unlink($GLOBALS['WABOT_TEST_PAGOS_ARCHIVO']);
+wabot_pagos_correr($cfg, $ahora, ['mp' => function () { throw new RuntimeException('MP caído'); }]);
+$r = wabot_pagos_correr($cfg, $ahora + 600, ['mp' => $mpViejo, 'candidatos' => [], 'cargar' => fn($k) => [], 'guardar' => fn($c) => true]);
+caso('si la primera corrida falla, la siguiente sigue siendo "la primera" (solo anota lo que ya estaba)', !empty($r['primera_corrida']), json_encode($r));
+// Dos chats con el mismo link, uno solo avisó: el segundo pago del mismo monto no se lo queda el primero.
+@unlink($GLOBALS['WABOT_TEST_PAGOS_ARCHIVO']);
+wabot_pagos_guardar(['pagos' => ['viejo' => ['id' => 'viejo', 'ts' => $ahora - 86400, 'estado' => 'anterior']], 'corrida_ts' => $ahora - 3600, 'yo' => $YO, 'error' => '']);
+$cvX = conv_nueva('5491111TEST21', ['nombre' => 'Xime', 'tipo' => 'ecommerce']);
+$cvX['transcript'] = [['q' => 'humano', 't' => 'gokywebs.com/pago/mensual30000', 'ts' => $hace(10)], ['q' => 'cliente', 't' => 'listo, ya pagué', 'ts' => $hace(2)]];
+$cvY = conv_nueva('5491111TEST22', ['nombre' => 'Yami', 'tipo' => 'ecommerce']);
+$cvY['transcript'] = [['q' => 'humano', 't' => 'gokywebs.com/pago/mensual30000', 'ts' => $hace(9)]];
+$disco = ['5491111TEST21' => $cvX, '5491111TEST22' => $cvY];
+$colaXY = [mp_suscripcion('201', 30000, $hace(1.5), 1, 's1'), mp_suscripcion('202', 30000, $hace(1), 1, 's2')];
+$r = wabot_pagos_correr($cfg, $ahora, $deps + [
+    'mp' => function ($ruta) use ($colaXY, $YO) { return strpos($ruta, '/users/me') === 0 ? ['id' => $YO] : ['results' => $colaXY, 'paging' => ['total' => 2]]; },
+    'candidatos' => wabot_pagos_candidatos($ahora, $disco, $cfg),
+    'cargar' => function ($k) use (&$disco) { return $disco[$k]; },
+    'guardar' => function ($c) use (&$disco) { $disco[$c['conversation_key']] = $c; return true; },
+]);
+$est = wabot_pagos_estado()['pagos'];
+caso('el segundo pago con el mismo monto no queda como "extra" del que ya se confirmó: queda sin asignar',
+    $r['confirmados'] === 1 && $est['201']['estado'] === 'confirmado' && $est['202']['estado'] === 'sin_asignar' && count((array)$disco['5491111TEST21']['pagos']) === 1, json_encode($est));
+caso('desde una lista vieja no se asigna un pago ya confirmado', wabot_pagos_asignar('201', '5491111TEST22', 'mensual', $cfg)['motivo'] === 'ya_asignado');
+// Si Pablo ya le escribió después del pago, el «Genial, recibido» no sale.
+$cvP = conv_nueva('5491111TEST23', ['nombre' => 'Pía', 'tipo' => 'ecommerce']);
+$cvP['transcript'] = [['q' => 'cliente', 't' => 'ya pagué', 'ts' => $hace(1)], ['q' => 'humano', 't' => 'Genial, recibido, te escribo desde otro número', 'ts' => $hace(0.5)]];
+$env = 0;
+$rP = wabot_pago_confirmar($cvP, ['id' => '300', 'monto' => 30000, 'ts' => $hace(1), 'tipo' => 'suscripcion', 'suscripcion' => 's3'], 'mensual', $cfg,
+    ['ahora' => $ahora, 'firestore' => $deps['firestore'], 'avisar' => function ($t, $c) use (&$avisoP) { $avisoP = $c; return 1; }, 'ventana_abierta' => true,
+     'enviar' => function (&$c, $t) use (&$env) { $env++; return true; }]);
+caso('si Pablo ya le escribió después del pago, no le manda el «Genial, recibido» y el aviso lo dice',
+    $rP['ok'] && $rP['mensajes'] === [] && $env === 0 && strpos((string)$avisoP, 'ya le escribiste vos') !== false, (string)$avisoP);
+// Un doc que Pablo ya pasó a Cliente con su cobro: la plata no se vuelve a escribir.
+$opsC = [];
+$leerC = function ($ruta) { return [200, ['estadoCliente' => 'cliente', 'planLabel' => 'Ecommerce', 'abono' => 100000.0, 'cobros' => [['at' => '2026-11-01T15:00:00Z', 'monto' => 100000, 'tipo' => 'sena']]]]; };
+$escribirC = function ($ruta, $campos, $mascara, $crear) use (&$opsC) { $opsC[] = $campos; return 200; };
+wabot_pagos_fs_cliente_escribir(['conversation_key' => 'W', 'cliente_id' => 'YAESCLIENTE123456789', 'tipo' => 'ecommerce'],
+    wabot_pagos_firestore_campos($convB, $pagoT, 'unico', $cfg, $ahora), $leerC, $escribirC, fn($r) => 200);
+caso('con el cliente ya pasado a mano y su cobro cargado, no se duplica el cobro ni se pisan los montos',
+    count($opsC) === 1 && !isset($opsC[0]['cobros']) && !isset($opsC[0]['abono']) && !isset($opsC[0]['valorTotal']) && isset($opsC[0]['pagoBot']), json_encode($opsC));
+// El cobro inicial del modelo B queda como 'inicial'.
+$ci = wabot_pagos_firestore_campos($convB, $pagoT, 'inicial', $cfg, $ahora);
+caso('el cobro del pago inicial queda con tipo "inicial" (no "sena")', ($ci['cobros'][0]['tipo'] ?? '') === 'inicial', json_encode($ci['cobros']));
+// Con el alias y el grupo B de la prueba de precios: lo esperado es el pago inicial, no la seña del único.
+$sinAb = $GLOBALS['WABOT_TEST_SIN_AB'] ?? null; unset($GLOBALS['WABOT_TEST_SIN_AB']);
+$esp = wabot_pagos_montos_esperados(['tipo' => 'ecommerce', 'ab_grupo' => 'b'] + conv_nueva('5491111TEST25'), $cfg);
+$espA = wabot_pagos_montos_esperados(['tipo' => 'ecommerce', 'ab_grupo' => 'a'] + conv_nueva('5491111TEST26'), $cfg);
+caso('grupo B: el alias espera el pago inicial (sin pago único); grupo A: la seña del único (sin inicial)',
+    isset($esp['inicial']) && !isset($esp['unico']) && isset($espA['unico']) && !isset($espA['inicial']), json_encode([$esp, $espA]));
+if ($sinAb !== null) $GLOBALS['WABOT_TEST_SIN_AB'] = $sinAb;
+caso('el poller carga la prueba de precios por su cuenta (seguimiento.php no la carga)', strpos((string)file_get_contents(__DIR__ . '/pagos.php'), "require_once __DIR__ . '/ab-precios.php'") !== false);
+$errF = wabot_pagos_estado(); $errF['pagos']['err1'] = ['id' => 'err1', 'monto' => 5000, 'ts' => $ahora, 'estado' => 'error', 'motivo' => 'x']; wabot_pagos_guardar($errF);
+caso('un pago que falló al confirmarse aparece en la pestaña Clientes', in_array('err1', array_column(wabot_pagos_sin_asignar(), 'id'), true));
+
 echo "Quién lo llama\n";
 caso('el cron de seguimiento corre el poller', strpos((string)file_get_contents(__DIR__ . '/seguimiento.php'), 'wabot_pagos_correr($cfg)') !== false);
 caso('la facturación automática sigue filtrando solo suscripciones (no se tocó)', strpos((string)file_get_contents(__DIR__ . '/../config/arca/suscripciones.php'), "!== 'SUBSCRIPTIONS'") !== false);

@@ -3985,7 +3985,9 @@ function wabot_postdemo_bot_activo($cfg = null) {
     // Los tests lo prenden sin tocar la config.
     if (isset($GLOBALS['WABOT_TEST_BOT_POSTDEMO'])) return (bool)$GLOBALS['WABOT_TEST_BOT_POSTDEMO'];
     if ($cfg === null) $cfg = wabot_config_load();
-    return !empty($cfg['bot_postdemo_activo']);
+    /* Sin el flujo comercial en Automático no hay quién conteste después de la
+     * demo: el motor viejo no conoce esta etapa (revisión del 1-nov). */
+    return !empty($cfg['bot_postdemo_activo']) && (function_exists('wabot_flujo_comercial') ? wabot_flujo_comercial($cfg) : trim((string)($cfg['flujo_comercial'] ?? ''))) === 'auto';
 }
 
 /** Única forma de devolverle una conversación al bot: una acción manual. */

@@ -310,7 +310,16 @@ function wabot_comercial_estado($conv) {
         $n = (int)($conv['comercial_pausa_n'] ?? 0);
         $t = (array)($conv['transcript'] ?? []);
         $nuevo = false;
-        for ($i = count($t) - 1; $i >= $n; $i--) {
+        /* Por la hora del último mensaje del cliente: el índice solo no alcanza,
+         * porque el transcript se recorta a 80 renglones al guardar y en una
+         * charla larga el mensaje nuevo nunca llegaba al renglón n. */
+        $clienteTs = (int)($conv['comercial_pausa_cliente_ts'] ?? 0);
+        for ($i = count($t) - 1; $i >= 0; $i--) {
+            if (($t[$i]['q'] ?? '') !== 'cliente') continue;
+            if ($clienteTs > 0 && (int)($t[$i]['ts'] ?? 0) > $clienteTs) $nuevo = true;
+            break;
+        }
+        for ($i = count($t) - 1; !$nuevo && $i >= $n; $i--) {
             if (($t[$i]['q'] ?? '') === 'cliente') { $nuevo = true; break; }
         }
         if (!$nuevo) return 'humano';
@@ -440,7 +449,8 @@ function wabot_comercial_info_claves($cfg, $postdemo = false) {
     $claves = array_values(array_filter(array_keys((array)($cfg['info'] ?? [])), function ($k) use ($postdemo) {
         if (!$postdemo && in_array($k, wabot_comercial_info_claves_postdemo(), true)) return false;
         // turnos dice "incluido, no se paga aparte", y las reservas online son del plan con panel (Pablo, 9-oct): la cubre la solución reservas.
-        return !in_array($k, ['otra', 'rangos', 'turnos'], true);
+        // carga_pocos la elige el sistema con la cantidad contada (ver wabot_comercial_info_textos).
+        return !in_array($k, ['otra', 'rangos', 'turnos', 'carga_pocos'], true);
     }));
     return array_values(array_unique(array_merge($claves, array_keys(wabot_comercial_info_extra($cfg)))));
 }
@@ -527,6 +537,10 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
         foreach ((array)$conv['comercial_pendientes'] as $pendiente) $c[] = '- ' . (string)$pendiente;
     }
     $c[] = "\nESTADO DE LA CHARLA";
+    $derivado = is_array($conv['comercial_derivado'] ?? null) ? $conv['comercial_derivado'] : null;
+    if ($derivado && trim((string)$derivado['motivo']) !== '' && (int)($derivado['ts'] ?? 0) > time() - 48 * 3600) {
+        $c[] = '- Una consulta anterior se la pasamos a una persona del equipo («' . trim((string)$derivado['motivo']) . '»): no la contestes ni la prometas; si la vuelve a preguntar, accion humano. Lo demás seguí contestándolo.';
+    }
     $sol = (string)($conv['comercial_solucion'] ?? '');
     if ($sol !== '' && wabot_comercial_solucion_estandar($sol)) $c[] = '- Solución que ya se definió: ' . $sol . '.';
     $cot = wabot_comercial_cotizacion($conv, $cfg);
@@ -1760,8 +1774,19 @@ function wabot_comercial_postdemo_modelo($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '' || mb_strlen($t) > 400) return null;
     if (preg_match('/\b(los dos|las dos|ambos|ambas|cualquiera|los 2|las 2|me da igual|da lo mismo)\b/u', $t)) return null;
-    $uno = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n|el|la)\s+(1|uno|primera?|primero)\b|^(el |la |opcion |modelo )?(1|uno)$/u', $t);
-    $dos = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n|el|la)\s+(2|dos|segund[ao])\b|^(el |la |opcion |modelo )?(2|dos)$/u', $t);
+    // "El 1 no me gusta", "el 2 está muy cargado": opina sobre uno, no lo elige.
+    if (preg_match('/\b(el|la|modelo|opcion|diseno)\s+(1|2|uno|dos|primer[oa]?|segund[oa])\s+(no|nada|es (muy|medio|un poco|demasiado)|esta (muy|medio|un poco)|tiene (mucho|muchos|muchas|demasiad\w*)|demasiado|me parece (muy|medio|un poco)|queda (muy|medio|raro))\b/u', $t)) return null;
+    // Fechas y horas: "pago el 1", "el 1 o el 2 de diciembre", "la 1 de la tarde", "a las 2".
+    $meses = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre';
+    $t = preg_replace(['/\b(pago|pagamos|cobro|cobramos|cobran|me pagan|abono|transfiero|deposito|hasta|desde|antes del|despues del|dia|vence|vencimiento)\s+(el|la)\s+\d+\b/u',
+                       '/\b(el|la)\s+\d+\s+(o|y|al)\s+(el|la)?\s*\d+\s+de\s+(' . $meses . ')\b/u',
+                       '/\b(el|la)\s+\d+\s+de\s+la\s+(manana|tarde|noche)\b/u', '/\b(a la|a las)\s+\d+\b/u', '/\b(el|la)\s+\d+\s+(hs|horas)\b/u'], ' ', $t);
+    /* Con "el/la" solo cuenta si no sigue una fecha o un verbo: "el 1 de
+     * diciembre", "el 2 te aviso", "la primera vez", "el primer pago" (revisión
+     * del 1-nov). Con "modelo/opción/diseño…" cuenta siempre. */
+    $noSigue = '(?!\s*(de (enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|este mes|cada mes|\d+)|del (mes|\d+)|vez|pago|pagos|mes|dia|dias|semana|cuota|cuotas|quincena|hora|horas|te aviso|les aviso|te digo|te confirmo|te escribo|te contesto)\b)(?!\s*\/)';
+    $uno = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n)\s+(1|uno|primera?|primero)\b|\b(el|la)\s+(1|uno|primera?|primero)\b' . $noSigue . '|^(el |la |opcion |modelo )?(1|uno)$/u', $t);
+    $dos = preg_match('/\b(modelo|opcion|diseno|version|propuesta|numero|nro|n)\s+(2|dos|segund[ao])\b|\b(el|la)\s+(2|dos|segund[ao])\b' . $noSigue . '|^(el |la |opcion |modelo )?(2|dos)$/u', $t);
     if (($uno && $dos) || (!$uno && !$dos)) return null;
     // "El 1 tiene carrito?" pregunta por un modelo, no lo elige.
     if (strpos((string)$texto, '?') !== false && !preg_match('/\b(me gust\w*|me encant\w*|elijo|elegimos|prefiero|preferimos|me quedo|nos quedamos|vamos con|voy con|tomamos|quiero|queremos|avanzamos|avanzo)\b/u', $t)) return null;
@@ -1786,12 +1811,34 @@ function wabot_comercial_postdemo_es_acuse($texto) {
  * descripción de la imagen dice "comprobante" o "transferencia").
  */
 function wabot_comercial_postdemo_avisa_pago($texto) {
-    if (function_exists('wabot_dice_que_pago') && wabot_dice_que_pago($texto)) return true;
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
-    return (bool)preg_match('/\b(pago realizado|pago (hecho|efectuado|aprobado|acreditado)|transferencia (realizada|hecha|enviada|exitosa|aprobada)|ya (esta|quedo) (pago|pagado|abonado|transferido)'
-        . '|(estoy|quede|ya estoy|ya quede) (suscripto|suscripta|suscrito|suscrita|adherido|adherida)|numero de operacion|n(ro|umero)? de (operacion|comprobante|transaccion)|comprobante'
-        . '|te (hice|mande|envie|deje) (el|la|un|una) (pago|transferencia|deposito|sena)|ahi (te )?(transferi|pague|deposite|hice la transferencia)|realice (el|la) (pago|transferencia))\b/u', $t);
+    /* Sin tildes "pague" es también el subjuntivo, y "comprobante" puede ser un
+     * pedido (revisión del 1-nov): "cómo hago para que te pague", "cuando te
+     * pague arrancamos?", "me das comprobante?" no avisan un pago hecho. */
+    if (preg_match('/\b(para que|cuando|apenas|antes de que|en cuanto|hasta que|ni bien|puedo|podria|quiero|queria)\s+(yo )?(te |les |le )?(pague|abone|transfiera|deposite|pagues)\b/u', $t)
+        || preg_match('/\b(me|nos)\s+(das|dan|mandas|mandan|pasas|pasan|envias|envian|haces|hacen|podes dar|podes mandar)\b.{0,14}\b(comprobante|factura|recibo)\b/u', $t)
+        || preg_match('/\b(necesito|necesitaria|quiero|me hace falta|me piden)\b.{0,10}\b(el |un |una |la )?(comprobante|factura|recibo)\b/u', $t)
+        // "No pagué todavía", "aún no hice el pago", "no me llegó el comprobante".
+        || preg_match('/\b(no|todavia no|aun no|sin)\b\s+(te |les |le |me |lo |la )?(lo |la )?(pague|abone|transferi|deposite|hice|realice|mande|envie|suscribi|adheri|subscribi|pude)\b|\bno me llego\b/u', $t)
+        || preg_match('/\b(pague|abone|transferi)\b\s+(el |la |a |un |una )?(dominio|hosting|hostinger|otro|otra|wix|tiendanube|wordpress)\b/u', $t)
+        // "El comprobante te lo mando mañana": todavía no.
+        || (preg_match('/\b(manana|despues|luego|mas tarde|en un rato|el lunes|el martes|el miercoles|el jueves|el viernes|el sabado|la semana que viene)\b/u', $t)
+            && !preg_match('/\b(ya|listo|recien|hice|realice|pague|transferi|deposite|abone|pase|mande|envie)\b/u', $t))) {
+        return false;
+    }
+    // Lo inequívoco vale aunque siga una pregunta ("Pago realizado, ¿cuándo arrancan?", "Me suscribí, ¿qué sigue?").
+    if (preg_match('/\b(pago realizado|pago (hecho|efectuado|aprobado|acreditado)|transferencia (realizada|hecha|enviada|exitosa|aprobada)|ya (esta|quedo) (pago|pagado|abonado|transferido)'
+        . '|(estoy|quede|ya estoy|ya quede) (suscripto|suscripta|suscrito|suscrita|adherido|adherida)|(ya )?(me )?(suscribi|adheri|subscribi)|numero de operacion|n(ro|umero)? de (operacion|comprobante|transaccion)'
+        . '|(te|les) (dejo|mando|paso|envio|adjunto|comparto|deje|mande|pase|envie) (el |la |un |una )?(comprobante|transferencia)'
+        . '|(listo |ya )?(transferido|depositado|abonado)|te (llego|entro) (la|el) (transferencia|pago|deposito|plata)'
+        . '|te (hice|mande|envie|deje) (el|la|un|una) (pago|transferencia|deposito|sena)|ahi (te )?(transferi|pague|deposite|hice la transferencia)|realice (el|la) (pago|transferencia))\b/u', $t)) {
+        return true;
+    }
+    // Lo demás ("pagué", "comprobante" sueltos), solo si no es una pregunta sin nada de pasado.
+    if (strpos((string)$texto, '?') !== false && !preg_match('/\b(ya|listo|recien|ahi|hecho|realice|hice|mande|envie|pase|transferi|deposite|pague|abone)\b/u', $t)) return false;
+    if (function_exists('wabot_dice_que_pago') && wabot_dice_que_pago($texto)) return true;
+    return (bool)preg_match('/\bcomprobante\b/u', $t);
 }
 
 /**
@@ -1805,12 +1852,26 @@ function wabot_comercial_postdemo_pide_pago($texto) {
     if ($t === '' || mb_strlen($t) > 400) return false;
     if (preg_match('/\b(mi|mis|su|sus)\b.{0,14}\b(web|pagina|sitio|tienda|negocio|clientes|compradores)\b|\b(cobrar|cobro|cobren|cobra|cobrarles|exterior|dolares|paypal)\b/u', $t)) return false;
     // "Cuando cobre te pago", "la semana que viene te transfiero": posterga, no pide pagar ahora.
-    if (preg_match('/\b(cuando (cobre|pueda|tenga|me paguen|junte)|la semana que viene|el mes que viene|mas adelante|en unos dias|los primeros dias|a fin de mes|despues te|luego te)\b/u', $t)) return false;
+    if (preg_match('/\b(cuando (cobre|pueda|tenga|me paguen|junte)|la semana que viene|el mes que viene|mas adelante|en unos dias|los primeros dias|a fin de mes|despues te|luego te|(pagar|pago|transferir|transfiero|abonar|abono) (el )?(lunes|martes|miercoles|jueves|viernes|sabado|domingo|manana))\b/u', $t)) return false;
+    // "Ya pagué la seña": avisa, no pide (lo toma wabot_comercial_postdemo_avisa_pago). "Después de la seña cuánto queda?": el saldo.
+    if (wabot_comercial_postdemo_avisa_pago($texto) || preg_match('/\b(despues de la sena|el resto|el saldo|cuanto queda)\b/u', $t)) return false;
+    // "No tengo para la seña ahora", "todavía no puedo pagar": no lo pide.
+    if (preg_match('/\b(no (tengo|puedo|llego|me alcanza|me da)|todavia no|aun no|ahora no)\b/u', $t)) return false;
+    // Otra cosa que se paga ("¿dónde pago el dominio?", "¿cómo se paga el mantenimiento?") o el link para volver a ver la demo.
+    if (preg_match('/\b(pago|pagar|paga|pagan|abono|abonar)\b.{0,12}\b(dominio|hosting|mantenimiento|mensualidad|renovacion)\b/u', $t) && strpos((string)$texto, '?') !== false) return false;
+    if (preg_match('/\b(link|enlace)\b.{0,12}\b(para )?(ver|mirar|entrar|abrir|volver a ver)\b.{0,12}\b(web|pagina|demo|diseno|modelo|sitio)\b/u', $t)) return false;
+    // "Quiero arrancar con los cambios": avanzar con el diseño, no pagar.
+    if (preg_match('/\b(arrancar|avanzar|empezar|seguir)\s+con\s+(los|las|el|la|unos|unas)\s+(cambio|ajuste|modific|logo|foto|texto|color)\w*/u', $t)) return false;
     if (function_exists('wabot_postdemo_avance_explicito') && wabot_postdemo_avance_explicito($texto)) return true;
     return (bool)(preg_match('/\b(como|donde|de que forma)\b.{0,22}\b(te pago|les pago|te abono|hago para pagar|hago el pago|te transfiero|te deposito|pago|abono)\b/u', $t)
         || preg_match('/\b(cuanto|que)\b.{0,20}\b(hay que|tengo que|debo|se)\b.{0,14}\b(dejar|pagar|abonar|adelantar)\b/u', $t)
-        || preg_match('/\b(sena|anticipo|adelanto|primer pago|pago inicial)\b/u', $t)
-        || preg_match('/\b(link|enlace)\b.{0,12}\b(pago|pagar|mercado ?pago|suscri\w*)|\b(pasame|mandame|enviame|dame) (el|un) link\b|\b(quiero|queremos|vamos a|voy a) (pagar|abonar|contratar|arrancar|avanzar)\b/u', $t));
+        // "¿El pago inicial incluye el dominio?" o "te adelanto que…" son dudas, no pedir pagar.
+        || ((strpos((string)$texto, '?') === false
+                || preg_match('/\b(pagar|pago|pagarte|abonar|abono|dejar|dejo|transferir|transfiero|mandar|mando|hacer|hago|deposito|cuanto|cual)\b.{0,20}\b(la |el )?(sena|anticipo|adelanto|primer pago|pago inicial)\b/u', $t)
+                || preg_match('/^(y )?(la |el )?(sena|anticipo|adelanto|primer pago|pago inicial)( (cuanto|cuanto es|cuanto seria|de cuanto))?$/u', $t)
+                || preg_match('/\b(sena|anticipo|adelanto|primer pago|pago inicial)\b.{0,12}\b(cuanto|de cuanto)\b/u', $t))
+            && preg_match('/\b(sena|anticipo|adelanto|primer pago|pago inicial)\b/u', $t) && !preg_match('/\b(te|les|le) adelanto\b(?! (la|el) (sena|pago|anticipo))/u', $t))
+        || preg_match('/\b(link|enlace)\b.{0,12}\b(pago|pagar|mercado ?pago|suscri\w*)|\b(pasame|mandame|enviame|dame) (el|un) link\b|\b(quiero|queremos|vamos a|voy a) (pagar|abonar|contratar|arrancar|avanzar)\b(?! con (los|las|el|la|unos|unas) (cambio|ajuste|modific|logo|foto|texto|color))/u', $t));
 }
 
 /**
@@ -1905,14 +1966,22 @@ function wabot_comercial_validar_postdemo($d, $texto, $conv, $cfg, array $ajuste
         $d['pide_pago'] = false;
         $ajustes[] = 'postdemo_posterga';
     }
+    // Con un modelo elegido, el acuse "tomamos el modelo N" sale igual; el link, no (wabot_comercial_construir_postdemo).
+    $d['sin_link_por_mirar'] = $laMira && !$pideLink && $plan === null;
     $hayBloque = ($d['modelo_elegido'] ?? null) !== null || !empty($d['pide_cambios']) || !empty($d['pide_transferencia']) || !empty($d['pide_pago']) || !empty($d['quiere_avanzar']) || !empty($d['avisa_pago']);
     if ($hayBloque && $d['accion'] === 'esperar') {
         $d['accion'] = 'responder';
         $ajustes[] = 'postdemo_responder';
     }
     // Quiere pagar, pide el link o eligió plan o modelo: antes de la demo iba a Pablo; acá lo cierra el sistema.
+    /* Pero no si es de Pablo aunque hable de pagar (revisión del 1-nov): "me
+     * podés llamar para coordinar el pago?", cuotas, descuento, factura, otro
+     * nombre o un reclamo. "pag\w*" agarraba también "página". */
+    $deriva = '/\b(llam\w*|telefon\w*|persona|hablar con|cuota\w*|descuento\w*|factura\w*|reclam\w*|queja\w*|excepci\w*|precio especial|a nombre de|otro nombre|devoluci\w*|reembols\w*)\b/iu';
     if ($d['accion'] === 'humano' && (!empty($d['pide_pago']) || !empty($d['pide_transferencia']) || $plan !== null || $modelo !== null || !empty($d['avisa_pago']))
-        && preg_match('/\b(pag\w*|link|transfer\w*|alias|cbu|cvu|avanzar|arrancar|modelo|plan|suscri\w*|comprobante)\b/iu', (string)$d['motivo'])) {
+        && !preg_match($deriva, (string)$d['motivo'])
+        && !preg_match('/\b(llamame|llamarme|llamarte|llamada|llamar|llamas|hablar con|cuotas|descuento|factura|reclamo|queja|reembolso|devolucion)\b/u', wabot_normalizar_frase((string)$texto))
+        && preg_match('/\b(pagar|pago|pagos|pague|pagarlo|pagarte|pagado|pagada|pagaste|link|transfer\w*|alias|cbu|cvu|avanzar|arrancar|modelo|plan|suscri\w*|comprobante)\b/u', wabot_normalizar_frase((string)$d['motivo']))) {
         $d['accion'] = 'responder';
         $d['motivo'] = null;
         $ajustes[] = 'postdemo_no_humano';
@@ -1942,6 +2011,8 @@ function wabot_comercial_postdemo_pago($conv, $cfg, $modalidad = null) {
     if ($tipo === '' || $tipo === 'sistema') $tipo = wabot_comercial_plan_tipo((string)($cot['plan'] ?? 'panel'));
     $m = (string)($modalidad ?: ($conv['modalidad_elegida'] ?? ''));
     if ($m === '') $m = trim((string)($cot['inicial'] ?? '')) !== '' ? 'inicial' : 'mensual';
+    // En el modelo B lo primero que se paga es siempre el pago inicial; la mensualidad arranca al mes.
+    if ($m === 'mensual' && trim((string)($cot['inicial'] ?? '')) !== '') $m = 'inicial';
     $campo = ['mensual' => 'mensual', 'unico' => 'anual', 'propia' => 'unico', 'inicial' => 'inicial'][$m] ?? null;
     if ($campo === null) return null;
     $n = wabot_monto_a_numero(trim((string)($cot[$campo] ?? '')));
@@ -1959,7 +2030,9 @@ function wabot_comercial_postdemo_pago($conv, $cfg, $modalidad = null) {
         if ($s <= 0 || $s >= $n) return null;
         $saldo = wabot_moneda($n - $s);
     }
-    return ['t' => strtr($plantilla, ['{link}' => 'gokywebs.com/pago/' . $pagina, '{sena}' => $sena, '{saldo}' => $saldo]), 'modalidad' => $m, 'pagina' => $pagina];
+    // Con el código corto de la charla, la página manda a MP la referencia GKY-<código> y pagos.php ata el pago al chat solo (como las respuestas rápidas).
+    $sufijo = preg_match('/^[A-Z0-9]{1,12}$/', (string)($conv['codigo'] ?? '')) ? '?c=' . $conv['codigo'] : '';
+    return ['t' => strtr($plantilla, ['{link}' => 'gokywebs.com/pago/' . $pagina . $sufijo, '{sena}' => $sena, '{saldo}' => $saldo]), 'modalidad' => $m, 'pagina' => $pagina];
 }
 
 /**
@@ -2017,7 +2090,7 @@ function wabot_comercial_construir_postdemo($d, $texto, $c, $cfg, array &$resume
     } elseif (!empty($d['pide_pago']) || $plan !== null) {
         if (!$modeloConocido && !$pregunto) $pedirModelo();
         if (!$yaLink || $repite || $plan !== null) $mandarLink($plan);
-    } elseif (!empty($d['quiere_avanzar']) || $modeloNuevo !== '') {
+    } elseif (!empty($d['quiere_avanzar']) || ($modeloNuevo !== '' && empty($d['sin_link_por_mirar']))) {
         if ($modeloConocido) {
             if (!$yaLink) $mandarLink(null);
         } elseif (!$pregunto) {
@@ -2187,6 +2260,12 @@ function wabot_comercial_info_textos(array $claves, $conv, $cfg, $sinMontos, $te
     foreach ($claves as $k) {
         $una = isset($extra[$k]) ? (string)$extra[$k] : wabot_info_lineas([$k], $conv, $cfg);
         if ($una === '') continue;
+        /* Menos de 30 productos los cargamos todos nosotros (Pablo, 1-nov): si ya
+         * dijo cuántos son, la respuesta con su cantidad. */
+        $cant = (int)(wabot_ficha($conv)['cantidad_productos'] ?? 0);
+        if ($k === 'carga_nosotros' && $cant > 0 && $cant < 30 && trim((string)($cfg['info']['carga_pocos'] ?? '')) !== '') {
+            $una = str_replace('{cantidad}', (string)$cant, (string)$cfg['info']['carga_pocos']);
+        }
         /* "Te pasamos el valor y, si te interesa…" con el valor ya pasado (22-oct,
          * Maxi: "Cómo se comenzaría?"): la misma respuesta, desde el diseño. */
         if ($k === 'proceso' && empty($conv['_cotiza_este_turno']) && wabot_comercial_cotizacion($conv, $cfg) !== null) {
@@ -2655,6 +2734,11 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         $conv['comercial_pausa_ts'] = $ahora;
         // Desde qué renglón del chat vale la pausa: un mensaje del cliente posterior la levanta (1-nov).
         $conv['comercial_pausa_n'] = count((array)($conv['transcript'] ?? []));
+        $clienteTs = 0;
+        foreach ((array)($conv['transcript'] ?? []) as $fila) {
+            if (is_array($fila) && ($fila['q'] ?? '') === 'cliente') $clienteTs = max($clienteTs, (int)($fila['ts'] ?? 0));
+        }
+        $conv['comercial_pausa_cliente_ts'] = $clienteTs;
         $conv['comercial_motivo'] = (string)($resumen['motivo'] ?? 'Caso especial');
         $conv['handoff_pendiente'] = true;
         $conv['seguimiento_bloqueado'] = true;
@@ -2719,6 +2803,8 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         $conv['comercial_pausa'] = '';
         $conv['comercial_pausa_ts'] = 0;
         $conv['seguimiento_bloqueado'] = false;
+        // Lo que se le pasó a Pablo sigue siendo de él: el modelo lo sabe por el contexto (wabot_comercial_contexto).
+        $conv['comercial_derivado'] = ['motivo' => mb_substr((string)($conv['comercial_motivo'] ?? ''), 0, 200), 'ts' => time()];
         wabot_log('comercial_pausa_levantada', ['tel' => $conv['tel'] ?? '', 'motivo' => mb_substr((string)($conv['comercial_motivo'] ?? ''), 0, 120)]);
     }
     [$ok, $motivo] = wabot_comercial_elegible($conv, $cfg, 'auto');

@@ -128,7 +128,10 @@ caso('«Bot después de la demo» arranca apagada de fábrica', (wabot_textos_de
 caso('es un ajuste del panel', in_array('bot_postdemo_activo', wabot_ajustes_claves(), true));
 caso('los tests la prenden con WABOT_TEST_BOT_POSTDEMO', wabot_postdemo_bot_activo(['bot_postdemo_activo' => false]) === true);
 unset($GLOBALS['WABOT_TEST_BOT_POSTDEMO']);
-caso('y sin el gancho manda la config', wabot_postdemo_bot_activo(['bot_postdemo_activo' => true]) === true && wabot_postdemo_bot_activo(['bot_postdemo_activo' => false]) === false);
+$flujoTest = $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] ?? null; unset($GLOBALS['WABOT_TEST_FLUJO_COMERCIAL']);
+caso('y sin el gancho manda la config (prendido y con el flujo comercial en Automático)', wabot_postdemo_bot_activo(['bot_postdemo_activo' => true, 'flujo_comercial' => 'auto']) === true
+    && wabot_postdemo_bot_activo(['bot_postdemo_activo' => true, 'flujo_comercial' => 'off']) === false && wabot_postdemo_bot_activo(['bot_postdemo_activo' => false, 'flujo_comercial' => 'auto']) === false);
+if ($flujoTest !== null) $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = $flujoTest;
 $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = true;
 $insPre = wabot_comercial_instrucciones($cfg);
 $insPost = wabot_comercial_instrucciones($cfg, true);
@@ -450,6 +453,44 @@ $cvd = wabot_conv_load($tel);
 caso('«ya pagué» por el webhook → el acuse, la columna Pago y pendiente para Pablo', count($GLOBALS['WABOT_TEST_ENVIADOS']) === 1 && ($GLOBALS['WABOT_TEST_ENVIADOS'][0][1] ?? '') === PAGO_AVISADO
     && wabot_conv_grupo($cvd) === 'pago' && !empty($cvd['handoff_pendiente']) && count(pedidos()) === 0, json_encode($GLOBALS['WABOT_TEST_ENVIADOS'], JSON_UNESCAPED_UNICODE));
 @unlink(wabot_conv_path($tel)); @unlink(wabot_cola_path($tel));
+
+echo "Revisión del 1-nov (noche)\n";
+foreach (['Cómo hago para que te pague?' => false, 'cuando te pague el viernes arrancamos?' => false, 'Me das comprobante?' => false,
+          'me mandás factura cuando pague?' => false, 'Ya te pagué' => true, 'Listo, ya transferí' => true, 'Pago realizado, te dejo el número de operación' => true,
+          '[foto] Mandó un comprobante de transferencia por $30.000' => true, 'ya pagué, te llegó?' => true,
+          'Sí, ya te pagué' => true, 'Si, ya aboné' => true, 'Pagué, ¿te llegó?' => true, 'Te pasé el comprobante, ¿lo recibiste?' => true,
+          'Transferencia realizada, ¿me confirmás?' => true, 'Pago realizado, ¿cuándo arrancan?' => true, 'Me suscribí, ¿qué sigue?' => true,
+          'Número de operación 12345 ¿lo ves?' => true, 'Les dejo el comprobante, ¿está bien?' => true, 'Apenas cobré te pagué' => true, 'Cuando pude te pagué' => true,
+          'No pagué todavía' => false, 'todavía no te transferí' => false, 'Aún no hice el pago' => false, 'todavía no me suscribí' => false,
+          'Ya pagué el dominio, sirve?' => false, 'El comprobante te lo mando mañana' => false, 'no me llegó el comprobante de mercado pago' => false,
+          'Listo transferido' => true, 'Te llegó la transferencia?' => true, 'Ya pagué, no tengo el comprobante a mano' => true, 'necesito el comprobante para mi contador' => false] as $m => $esperado) {
+    caso("¿avisa que pagó? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_postdemo_avisa_pago($m) === $esperado);
+}
+foreach (['Te pago el 1 de diciembre' => null, 'lo veo y el 2 te aviso' => null, 'Es la primera vez que hago una web' => null, 'quiero hacer el primer pago' => null,
+          'me gustó el 1' => '1', 'me quedo con el 2' => '2', 'Modelo 1' => '1', 'la segunda' => '2', 'me gustó el 1 y quiero avanzar' => '1', 'la opción 2' => '2',
+          'el 2 me gusta más' => '2', 'la 1 me encanta' => '1', 'el 2 lo quiero' => '2', 'me gusta el primer modelo' => '1', 'la primera vez que veo algo así' => null,
+          'El 1 de una' => '1', 'me quedo con el 2 de una' => '2', 'Me encantó el 1, de verdad' => '1', 'el 2 del todo' => '2',
+          'el 1 no me gusta' => null, 'el 2 está muy cargado' => null, 'pago el 1' => null, 'Pago el 1 y el resto el 15' => null,
+          'la 1 de la tarde te llamo' => null, 'el 1 o el 2 de diciembre' => null, 'me gustó el 2, pago el 10' => '2'] as $m => $esperado) {
+    caso("¿elige modelo? «{$m}» → " . var_export($esperado, true), wabot_comercial_postdemo_modelo($m) === $esperado, var_export(wabot_comercial_postdemo_modelo($m), true));
+}
+// La pausa «humano» se levanta con el mensaje nuevo aunque el transcript esté recortado a 80.
+$cvPausa = ['comercial_pausa' => 'humano', 'comercial_pausa_ts' => 1000, 'comercial_pausa_n' => 81, 'comercial_pausa_cliente_ts' => 990, 'transcript' => []];
+for ($i = 0; $i < 79; $i++) $cvPausa['transcript'][] = ['q' => $i % 2 ? 'bot' : 'cliente', 't' => 'x', 'ts' => 900 + $i];
+$cvPausa['transcript'][] = ['q' => 'cliente', 't' => 'ya pude ver', 'ts' => 990];
+caso('la pausa sigue mientras el cliente no volvió a escribir (charla de 80 renglones)', wabot_comercial_estado($cvPausa) === 'humano');
+array_shift($cvPausa['transcript']);
+$cvPausa['transcript'][] = ['q' => 'cliente', 't' => 'hola?', 'ts' => 1200];
+caso('… y se levanta con su mensaje nuevo aunque el transcript se haya recortado a 80', wabot_comercial_estado($cvPausa) !== 'humano', wabot_comercial_estado($cvPausa));
+$cvPausa['comercial_derivado'] = ['motivo' => 'Pregunta si se puede pagar en cuotas', 'ts' => time()];
+foreach (['¿Puedo pagar la seña ahora?' => true, '¿El pago inicial incluye el dominio?' => false, 'Te adelanto que me gustó' => false,
+          'Te adelanto la seña' => true, '¿Te transfiero la seña?' => true, '¿Mando la seña?' => true, '¿Cuánto es el pago inicial?' => true, 'Seña?' => true, '¿Y la seña cuánto sería?' => true,
+          'te adelanto, quiero cambiar el logo' => false, 'Les adelanto: el logo nuevo lo mando mañana' => false, 'quiero arrancar con los cambios' => false,
+          'No tengo para la seña ahora' => false, 'Donde pago el dominio?' => false, 'me pasas el link para ver la web de nuevo?' => false,
+          'quiero avanzar' => true, 'pasame el link' => true, 'Ya pagué la seña' => false, 'Después de la seña cuánto queda?' => false, 'voy a pagar el lunes' => false] as $m => $esperado) {
+    caso("¿pide pagar? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_postdemo_pide_pago($m) === $esperado);
+}
+caso('lo que quedó para Pablo va en el contexto: no lo contesta', strpos(wabot_comercial_contexto('hola?', $cvPausa + ['tel' => '5491100009999TEST'], $cfg), 'pagar en cuotas') !== false);
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);

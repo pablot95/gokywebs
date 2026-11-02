@@ -1495,7 +1495,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     /* Un pago que quedó sin asignar (pestaña Clientes): Pablo dice de quién es. */
     if ($a === 'pago_asignar' && !empty($_POST['pago_id'])) {
-        $tel = trim((string)($_POST['tel'] ?? '')) ?: trim((string)($_POST['tel_otro'] ?? ''));
+        // El número escrito a mano gana aunque el select haya quedado en la primera sugerencia.
+        $tel = trim((string)($_POST['tel_otro'] ?? '')) ?: trim((string)($_POST['tel'] ?? ''));
         $aviso = 'pago_asignar_sin_chat';
         if ($tel !== '') {
             $r = wabot_pagos_asignar((string)$_POST['pago_id'], $tel, (string)($_POST['modalidad'] ?? ''), $cfg);
@@ -1520,8 +1521,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $aviso . '=1'); exit;
     }
     if ($a === 'pago_ignorar' && !empty($_POST['pago_id'])) {
-        wabot_pagos_ignorar((string)$_POST['pago_id']);
-        header('Location: admin.php?tab=clientes'); exit;
+        $ok = wabot_pagos_ignorar((string)$_POST['pago_id']);
+        header('Location: admin.php?tab=clientes' . ($ok ? '' : '&pago_ignorar_error=1')); exit;
     }
     if ($a === 'conv_crear_boceto' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
@@ -2289,13 +2290,13 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['pago_monto'])) echo '<p class="ok" style="color:var(--bad)">Falta el monto que pagó.</p>'; ?>
     <?php if (isset($_GET['pago_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo confirmar el pago. Revisá el log en wabot/data/log/.</p>'; ?>
     <?php if (isset($_GET['pago_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
-    <?php if (isset($_GET['pago_asignado'])) echo '<p class="ok">Pago asignado y confirmado: el cliente ya figura en el admin y el bot le pide lo que falta.</p>'; ?>
+    <?php if (isset($_GET['pago_asignado'])) echo '<p class="ok">Pago asignado y confirmado: el cliente ya figura en el admin.</p>'; ?>
     <?php if (isset($_GET['onboarding_ok'])) echo '<p class="ok">Listo: el bot le volvió a pedir lo que falta para la web.</p>'; ?>
     <?php if (isset($_GET['onboarding_ventana'])) echo '<p class="ok" style="color:var(--warn)">El bot sigue él, pero la ventana de 24 h de WhatsApp está cerrada: le pregunta apenas el cliente escriba.</p>'; ?>
     <?php if (isset($_GET['onboarding_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo mandar la pregunta. Revisá el log en wabot/data/log/.</p>'; ?>
     <?php if (isset($_GET['onboarding_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
     <?php foreach (['pago_asignar_sin_chat' => 'No hay ningún chat con ese número.', 'pago_asignar_ambiguo' => 'Hay más de un chat con ese número: abrí el chat y confirmá el pago desde ahí.',
-                    'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.',
+                    'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.', 'pago_asignar_ya_asignado' => 'Ese pago ya se confirmó o se ignoró (la lista estaba vieja).', 'pago_ignorar_error' => 'No se pudo sacar el pago de la lista (ya no estaba o se estaba procesando): recargá y probá de nuevo.',
                     'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.'] as $k => $txt) {
               if (isset($_GET[$k])) echo '<p class="ok" style="color:var(--bad)">' . $e($txt) . '</p>'; } ?>
     <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
@@ -3171,12 +3172,12 @@ function burbujaCita(t, chat) {
             <p class="meta">El bot saluda al que escribe por primera vez y después no contesta más. Formularios, demos, plantillas y avisos automáticos siguen igual. Destildado vuelve a conversar como antes.</p>
             <label style="margin-top:12px"><input type="checkbox" name="postprecio_activo" value="1" <?= !empty($cfg['postprecio_activo']) ? 'checked' : '' ?> style="width:auto"> Responder consultas aprobadas después del precio y de la demo</label>
             <p class="meta">Los pagos recibidos, las excepciones y los temas nuevos pasan a Pablo sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
-            <label style="margin-top:12px"><input type="checkbox" name="bot_postdemo_activo" value="1" <?= wabot_postdemo_bot_activo($cfg) ? 'checked' : '' ?> style="width:auto"> Bot después de la demo</label>
+            <label style="margin-top:12px"><input type="checkbox" name="bot_postdemo_activo" value="1" <?= !empty($cfg['bot_postdemo_activo']) ? 'checked' : '' ?> style="width:auto"> Bot después de la demo</label>
             <p class="meta">Con el flujo comercial en Automático, el bot sigue después del formulario completo y de la demo: contesta lo simple hasta que llega la demo, pregunta cuál de los dos modelos le gustó, toma la elección, manda el link de pago de la modalidad elegida (o los datos de transferencia si no quiere Mercado Pago), anota los cambios que pide y contesta las dudas habituales. «Ya pagué» o el comprobante: le confirma que lo revisamos y te avisa. Llamadas, nombre, reclamos o algo fuera de libreto siguen yendo a vos en silencio. Si vos escribís en el chat, el bot se pausa como siempre. Destildado, el formulario completo apaga el bot y Presentar te deja la charla, como hasta ahora.</p>
             <label style="margin-top:12px"><input type="checkbox" name="pagos_auto" value="1" <?= !array_key_exists('pagos_auto', $cfg) || !empty($cfg['pagos_auto']) ? 'checked' : '' ?> style="width:auto"> Cruzar solo los pagos de Mercado Pago con los chats</label>
             <p class="meta">Cada vez que corre el cron, mira los cobros aprobados de los últimos 3 días (señas, pagos únicos, suscripciones y transferencias al CVU) y los cruza con los chats: por la referencia del link (<code>?c=</code>), o por el mismo monto que un link mandado a un solo chat en 72 h cuando el cliente avisó que pagó. Lo confirmado pasa a Cliente, avisa a Meta y te avisa; lo dudoso queda en «pagos sin asignar» de la pestaña Clientes. Destildado, los pagos los asignás a mano desde esa pestaña.</p>
             <label style="margin-top:12px"><input type="checkbox" name="onboarding_activo" value="1" <?= !array_key_exists('onboarding_activo', $cfg) || !empty($cfg['onboarding_activo']) ? 'checked' : '' ?> style="width:auto"> Pedir por el chat los datos para la web después del pago</label>
-            <p class="meta">Con el pago confirmado, el bot pide de a una cosa: el modelo si no lo eligió, los datos de la factura, 2 o 3 dominios, el email del panel, el logo, las fotos, los cambios y los horarios. Si vos escribís en el chat, se pausa; «Que siga el bot» en la ficha lo retoma. Destildado, el pago confirmado te deja la charla a vos.</p>
+            <p class="meta">Con el pago confirmado, el bot pide de a una cosa: el modelo (1, 2 o una mezcla) si no lo eligió, el email del panel si la web tiene login, el logo y las fotos, y los cambios. Nunca pide datos de factura ni dominios. Si vos escribís en el chat, se pausa; «Que siga el bot» en la ficha lo retoma. Destildado, el pago confirmado le manda tu «Genial, recibido…» y el bot se calla en esa charla.</p>
 
             <h3 style="margin:18px 0 6px">Flujo comercial nuevo</h3>
             <p class="meta" style="margin-top:0">Un solo criterio antes y después del precio, hasta el formulario (plan del 9-oct): entiende la charla con contexto, redacta una propuesta breve para ese negocio, manda los planes con el bloque aprobado y la oferta de la demo, contesta las dudas habituales y, con el sí, el formulario. Los precios y los textos fijos siguen saliendo del sistema. Los casos especiales (CRM, funciones no aprobadas, problemas con el formulario) quedan para Pablo con el motivo a la vista, sin avisarle nada al cliente.</p>
@@ -3386,13 +3387,13 @@ function burbujaCita(t, chat) {
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
-                'aviso_pablo' => '{{1}} quién escribió, {{2}} lo que escribió en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
+                'aviso_pablo' => '{{1}} el título del aviso (quién escribió, pago confirmado…), {{2}} el detalle en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
             ];
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
                 'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
-                'aviso_pablo' => 'Automática con cada mensaje que el bot no contestó, solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',
+                'aviso_pablo' => 'Automática con cada aviso (mensaje sin contestar, pago, revisión…), solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">

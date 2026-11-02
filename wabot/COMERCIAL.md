@@ -100,7 +100,9 @@ Antes de salir, cada respuesta pasa por el revisor (sección 6).
 - **Carga de contenido**: "lo cargo yo?" → el cliente desde su panel (`carga`); "lo cargan
   ustedes?" → `carga_nosotros`, con las palabras de Pablo del 22-sep: algunos los cargamos para
   entregarla funcionando; todos, también, con un costo adicional según la cantidad. Cuánto cuesta
-  la carga → Pablo (pendiente 4).
+  la carga → Pablo (pendiente 4). **Menos de 30 productos los cargamos todos nosotros sin costo**
+  (Pablo, 1-nov): está en `carga` y `carga_nosotros`; si ya dijo cuántos son (menos de 30), sale
+  `carga_pocos` con su cantidad, y «cuánto cuesta la carga» con menos de 30 ya no va a Pablo.
 - **Medios de pago de la tienda** (`medios_pago_tienda`, Pablo 9-oct): Mercado Pago, u otra billetera
   virtual si la prefiere; también transferencia o efectivo. **Nombre que figura al cobrar**
   (`mp_nombre_negocio`, Pablo 9-oct): el que configure como nombre del negocio en Mercado Pago.

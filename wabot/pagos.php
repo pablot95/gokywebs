@@ -52,6 +52,7 @@
 require_once __DIR__ . '/lib.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/presentar.php';   // el token de Firestore con la cuenta de servicio
+require_once __DIR__ . '/ab-precios.php';  // el grupo de la prueba de precios (seguimiento.php no lo carga)
 
 const WABOT_PAGOS_DIAS = 3;            // cuántos días atrás se buscan pagos en MP en cada corrida
 const WABOT_PAGOS_LINK_HORAS = 72;     // un link de pago mandado hace menos de esto cuenta para el cruce
@@ -72,6 +73,7 @@ function wabot_pagos_estado() {
         'corrida_ts' => (int)($j['corrida_ts'] ?? 0),
         'yo'         => (string)($j['yo'] ?? ''),
         'error'      => (string)($j['error'] ?? ''),
+        'error_ts'   => (int)($j['error_ts'] ?? 0),
     ];
 }
 
@@ -275,8 +277,17 @@ function wabot_pagos_montos_esperados($conv, $cfg) {
     $out = [];
     if ($n($v['mensualidad'] ?? '') > 0) $out['mensual'] = $n($v['mensualidad']);
     if ($n($v['sena'] ?? '') > 0) $out['anual'] = $n($v['sena']);
-    $out['unico'] = $tipo === 'landing' ? 80000 : 100000;
-    $out['inicial'] = $tipo === 'landing' ? 80000 : 100000;
+    /* La seña del pago único y el pago inicial del modelo B valen lo mismo
+     * ($80.000 / $100.000): con el alias y sin modalidad elegida, el grupo de
+     * la prueba de precios dice cuál es (el B no tiene pago único de lista). */
+    $grupo = function_exists('wabot_ab_grupo') ? wabot_ab_grupo($conv, $cfg) : '';
+    $unico = $n($v['sena_unico'] ?? '') ?: ($tipo === 'landing' ? 80000 : 100000);
+    if ($grupo === 'b' || wabot_pagos_modalidad_de_conv($conv) === 'inicial') {
+        $inicial = function_exists('wabot_ab_inicial') ? $n(wabot_ab_inicial($conv, function_exists('wabot_ab_cfg') ? wabot_ab_cfg($cfg, $conv) : $cfg, $tipo)) : 0;
+        $out['inicial'] = $inicial > 0 ? $inicial : $unico;
+    } else {
+        $out['unico'] = $unico;
+    }
     return $out;
 }
 
@@ -374,7 +385,11 @@ function wabot_pagos_cruzar(array $pago, array $candidatos, $ahora = null) {
     if (preg_match('/^GKY-([A-Z0-9]{1,12})-/i', $pago['referencia'] ?? '', $m) && strtoupper($m[1]) !== 'PAGO') {
         $clave = wabot_codigo_buscar($m[1]);
         if ($clave !== '' && wabot_conv_existe($clave)) {
-            $modalidad = $candidatos[$clave]['montos'][0]['modalidad'] ?? '';
+            // La modalidad, la del link con ese mismo monto (si no hay, la de la charla al confirmar).
+            $modalidad = '';
+            foreach ((array)($candidatos[$clave]['montos'] ?? []) as $mm) {
+                if ((int)$mm['monto'] === (int)$pago['monto'] && (string)$mm['modalidad'] !== '') { $modalidad = (string)$mm['modalidad']; break; }
+            }
             return ['estado' => 'confirmar', 'clave' => $clave, 'modo' => 'referencia', 'modalidad' => $modalidad];
         }
     }
@@ -475,7 +490,7 @@ function wabot_pagos_firestore_campos(array $conv, array $pago, $modalidad, $cfg
         if ($n($v['mensualidad'] ?? '') > 0) $campos['montoMensual'] = $n($v['mensualidad']);
         $campos['estadoSuscripcion'] = 'pendiente';
         $campos['suscripcionDesde'] = wabot_pagos_fs_ts((int)($pago['ts'] ?? $ahora) + 30 * 86400);
-        $campos['cobros'] = [$cobro + ['tipo' => 'inicial']];
+        $campos['cobros'] = [['tipo' => 'inicial'] + $cobro];
     } else {
         $campos['modalidad'] = 'mensual';
         $campos['montoMensual'] = $n($v['mensualidad'] ?? '') > 0 ? $n($v['mensualidad']) : $monto;
@@ -555,6 +570,13 @@ function wabot_pagos_fs_cliente_escribir(array $conv, array $campos, $leer = nul
             }
             // Lo que el admin ya tiene no se pisa: el plan, y la seña si ya la registró.
             if (isset($campos['planLabel']) && trim((string)($doc['planLabel'] ?? '')) !== '') unset($campos['planLabel']);
+            /* Pablo ya lo pasó a Cliente con su cobro: la plata no se vuelve a
+             * escribir (el cobro quedaría dos veces en Calendario/Ingresos). */
+            if (wabot_pagos_fs_doc_con_pago($doc)) {
+                foreach (['clienteDesdeAt', 'modalidad', 'valorTotal', 'abono', 'senaAt', 'cobros', 'primerPago', 'primerPagoAt', 'montoMensual',
+                          'estadoSuscripcion', 'suscripcionDesde', 'pagaPorFuera', 'diaCobro', 'estadoCliente'] as $k) unset($campos[$k]);
+                if (trim((string)($doc['preapprovalId'] ?? '')) !== '') unset($campos['preapprovalId']);
+            }
             $http = $escribir('clientes/' . rawurlencode($id), $campos, array_keys($campos), false);
             return ['ok' => $http >= 200 && $http < 300, 'id' => $id, 'creado' => false, 'error' => $http >= 200 && $http < 300 ? '' : 'http_' . $http];
         }
@@ -598,6 +620,13 @@ function wabot_pagos_fs_cliente_escribir(array $conv, array $campos, $leer = nul
         if ($hb < 200 || $hb >= 300) wabot_log('error', ['donde' => 'pagos_borrar_propuesta', 'ruta' => $rutaPropuesta, 'http' => $hb]);
     }
     return ['ok' => true, 'id' => $id, 'creado' => true, 'error' => ''];
+}
+
+/** ¿El doc de clientes ya tiene un pago cargado (lo pasó Pablo a Cliente a mano)? */
+function wabot_pagos_fs_doc_con_pago(array $doc) {
+    if ((string)($doc['estadoCliente'] ?? '') !== 'cliente') return false;
+    return (float)($doc['abono'] ?? 0) > 0 || (float)($doc['primerPago'] ?? 0) > 0
+        || (bool)array_filter((array)($doc['cobros'] ?? []), 'is_array');
 }
 
 /** Un cobro que ya estaba en el doc, vuelto a codificar (la fecha vino como string ISO). */
@@ -727,7 +756,8 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
         . ($conv['pago_firestore'] === 'ok' ? ' Ya figura como cliente en el admin.' : ' OJO: no se pudo pasar a Cliente en el admin; hacelo a mano.')
         . ($onboarding
             ? ($resultado['mensajes'] ? ' El bot ya le pidió lo que falta.' : '')
-            : ($resultado['mensajes'] ? ' Le mandé el «Genial, recibido» y el bot se calló: seguís vos desde tu número.' : ' No le pude mandar el «Genial, recibido» (ventana de WhatsApp cerrada): escribile vos. El bot ya no contesta en ese chat.'));
+            : ($resultado['mensajes'] ? ' Le mandé el «Genial, recibido» y el bot se calló: seguís vos desde tu número.'
+                : (($conv['pago_recibido_omitido'] ?? '') === 'pablo_escribio' ? ' No le mandé el «Genial, recibido» porque ya le escribiste vos. El bot ya no contesta en ese chat.' : ' No le pude mandar el «Genial, recibido» (ventana de WhatsApp cerrada): escribile vos. El bot ya no contesta en ese chat.')));
     try { $avisar('Pago confirmado: ' . $quien, $cuerpo); } catch (\Throwable $e) { /* un aviso que falla no frena la confirmación */ }
     return $resultado;
 }
@@ -744,6 +774,17 @@ function wabot_pago_recibido_enviar(&$conv, $cfg, $ahora, array $deps = []) {
     else { $conv['control_manual'] = true; $conv['bot_off'] = true; }
     $texto = trim((string)(is_array($cfg) ? ($cfg['pago_recibido'] ?? '') : ''));
     if ($texto === '') return [];
+    /* Pablo ya le escribió después del pago (1-nov, Neuro Test: el bot mandó la
+     * apertura justo después de su «te escribo desde otro número»): ya lo
+     * atendió él, el mensaje sobra. */
+    $pagoTs = (int)($conv['pago_ts'] ?? 0);
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (is_array($fila) && ($fila['q'] ?? '') === 'humano' && $pagoTs > 0 && (int)($fila['ts'] ?? 0) >= $pagoTs) {
+            $conv['pago_recibido_omitido'] = 'pablo_escribio';
+            wabot_log('pago_recibido_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
+            return [];
+        }
+    }
     if (function_exists('wabot_personalizar')) $texto = wabot_personalizar($texto, $conv);
     $ventana = isset($deps['ventana_abierta']) ? (bool)$deps['ventana_abierta'] : (wabot_ventana_restante($conv, $ahora) > 0);
     if (!$ventana) {
@@ -775,6 +816,17 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
         if (wabot_pagos_mp_token() === '') return $res + ['apagado' => 'sin_token'];
         $mp = 'wabot_pagos_mp';
     }
+    // Una corrida por vez, y el panel (asignar/ignorar) espera a que termine: todos reescriben pagos-mp.json.
+    $lockCorrida = isset($deps['mp']) ? true : wabot_lock_tomar('pagosmp');
+    if (!$lockCorrida) return $res + ['ocupado' => true];
+    try {
+        return wabot_pagos_correr_bloqueado($cfg, $ahora, $deps, $mp, $res);
+    } finally {
+        if ($lockCorrida !== true) wabot_lock_soltar($lockCorrida);
+    }
+}
+
+function wabot_pagos_correr_bloqueado($cfg, $ahora, array $deps, $mp, array $res) {
     $estado = wabot_pagos_estado();
     try {
         if ($estado['yo'] === '') $estado['yo'] = wabot_pagos_mp_yo($mp);
@@ -782,7 +834,9 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
     } catch (\Throwable $e) {
         wabot_log('error', ['donde' => 'pagos_mp', 'msg' => mb_substr($e->getMessage(), 0, 200)]);
         $estado['error'] = mb_substr($e->getMessage(), 0, 200);
-        $estado['corrida_ts'] = $ahora;
+        /* corrida_ts no se toca: si la primera corrida falla, la siguiente
+         * tiene que seguir siendo "la primera" (solo anota lo que ya estaba). */
+        $estado['error_ts'] = $ahora;
         wabot_pagos_guardar($estado);
         return $res + ['error' => $e->getMessage()];
     }
@@ -808,7 +862,7 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
     $cargar = $deps['cargar'] ?? 'wabot_conv_load';
     $guardar = $deps['guardar'] ?? 'wabot_conv_save';
 
-    $procesar = function (array $fila) use (&$res, $buscarCandidatos, $cargar, $guardar, $cfg, $deps, $ahora) {
+    $procesar = function (array $fila) use (&$res, &$candidatos, $buscarCandidatos, $cargar, $guardar, $cfg, $deps, $ahora) {
         $cruce = wabot_pagos_cruzar($fila, $buscarCandidatos(), $ahora);
         if ($cruce['estado'] !== 'confirmar') {
             $fila['estado'] = 'sin_asignar';
@@ -822,7 +876,16 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
         try {
             $conv = $cargar($clave);
             if (!empty($conv['pago_confirmado_ts'])) {
-                // Ya pagó antes (otro pago del mismo cliente): se anota como cobro extra, sin volver a confirmar.
+                unset($candidatos[$clave]);
+                /* Cruzado solo por el monto, puede ser de otro chat que recibió el
+                 * mismo link: lo decide Pablo desde la pestaña Clientes. */
+                if ($cruce['modo'] !== 'referencia') {
+                    $fila['estado'] = 'sin_asignar';
+                    $fila['motivo'] = 'ya_pago';
+                    $fila['sugeridos'] = [];
+                    return $fila;
+                }
+                // Ya pagó antes (otro pago del mismo cliente, con su referencia): se anota como cobro extra, sin volver a confirmar.
                 $fila['estado'] = 'extra';
                 $fila['clave'] = $clave;
                 $conv['pagos'] = array_merge((array)($conv['pagos'] ?? []), [['id' => $fila['id'], 'monto' => $fila['monto'], 'ts' => $fila['ts'], 'tipo' => $fila['tipo'], 'modo' => $cruce['modo'], 'confirmado_ts' => $ahora]]);
@@ -831,6 +894,8 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
             }
             $r = wabot_pago_confirmar($conv, $fila + ['modo' => $cruce['modo']], $cruce['modalidad'], $cfg, $deps);
             $guardar($conv);
+            // Ya no es candidato: el próximo pago con el mismo monto no puede caer acá.
+            unset($candidatos[$clave]);
             $fila['estado'] = 'confirmado';
             $fila['clave'] = $clave;
             $fila['modo'] = $cruce['modo'];
@@ -855,20 +920,23 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
             $fila['estado'] = 'renovacion';
             $res['renovaciones']++;
         } else {
-            $fila = $procesar($fila);
+            $fila = wabot_pagos_procesar_seguro($procesar, $fila);
             if ($fila['estado'] === 'sin_asignar') $res['sin_asignar']++;
         }
         $estado['pagos'][$p['id']] = $fila;
+        // Guardado pago por pago: si algo se cae después, lo confirmado ya no vuelve como "sin asignar".
+        if (in_array($fila['estado'], ['confirmado', 'extra', 'error'], true)) wabot_pagos_guardar($estado);
         $res['detalle'][] = ['id' => $p['id'], 'monto' => $p['monto'], 'tipo' => $p['tipo'], 'estado' => $fila['estado'], 'clave' => $fila['clave'] ?? ''];
     }
     // Los que quedaron sin asignar hace poco: quizás ahora el cliente ya avisó.
     foreach ($estado['pagos'] as $id => $fila) {
         if (($fila['estado'] ?? '') !== 'sin_asignar' || ($fila['motivo'] ?? '') === 'ignorado_por_pablo') continue;
         if ((int)($fila['ts'] ?? 0) < $ahora - WABOT_PAGOS_LINK_HORAS * 3600 || (int)($fila['visto_ts'] ?? 0) === $ahora) continue;
-        $nueva = $procesar($fila);
+        $nueva = wabot_pagos_procesar_seguro($procesar, $fila);
         $res['reintentados']++;
         if ($nueva['estado'] !== 'sin_asignar') $res['detalle'][] = ['id' => $id, 'monto' => $fila['monto'], 'tipo' => $fila['tipo'], 'estado' => $nueva['estado'], 'clave' => $nueva['clave'] ?? ''];
         $estado['pagos'][$id] = $nueva;
+        if (in_array($nueva['estado'], ['confirmado', 'extra', 'error'], true)) wabot_pagos_guardar($estado);
     }
     // Lo viejo se olvida.
     foreach ($estado['pagos'] as $id => $fila) {
@@ -880,20 +948,52 @@ function wabot_pagos_correr($cfg, $ahora = null, array $deps = []) {
     return $res;
 }
 
+/**
+ * Un pago que tira una excepción a mitad de la confirmación no corta la
+ * corrida ni vuelve a intentarse solo (el mensaje al cliente pudo haber
+ * salido): queda en "error" en la pestaña Clientes y se le avisa a Pablo.
+ */
+function wabot_pagos_procesar_seguro(callable $procesar, array $fila) {
+    try {
+        return $procesar($fila);
+    } catch (\Throwable $e) {
+        wabot_log('error', ['donde' => 'pagos_confirmar', 'pago_id' => $fila['id'] ?? '', 'msg' => mb_substr($e->getMessage(), 0, 200)]);
+        $fila['estado'] = 'error';
+        $fila['motivo'] = mb_substr($e->getMessage(), 0, 120);
+        if (function_exists('wabot_push_enviar')) {
+            try { wabot_push_enviar('Pago con error', 'Un pago de ' . wabot_pagos_monto_texto((int)($fila['monto'] ?? 0)) . ' falló al confirmarse; revisalo en la pestaña Clientes.', ['link' => 'https://www.gokywebs.com/wabot/admin.php?tab=clientes']); } catch (\Throwable $e2) {}
+        }
+        return $fila;
+    }
+}
+
 /* ── Desde el panel ────────────────────────────────────────────────────── */
 
 /** Los pagos que esperan que Pablo diga de quién son, el más nuevo primero. */
 function wabot_pagos_sin_asignar() {
-    $lista = array_filter(wabot_pagos_estado()['pagos'], function ($f) { return ($f['estado'] ?? '') === 'sin_asignar'; });
+    // Los que fallaron al confirmarse también: el aviso a Pablo lo manda a revisarlos acá.
+    $lista = array_filter(wabot_pagos_estado()['pagos'], function ($f) { return in_array(($f['estado'] ?? ''), ['sin_asignar', 'error'], true); });
     usort($lista, function ($a, $b) { return ($b['ts'] ?? 0) <=> ($a['ts'] ?? 0); });
     return array_values($lista);
 }
 
 /** Pablo lo asignó a un chat desde la pestaña Clientes. Devuelve lo de wabot_pago_confirmar o ['ok' => false, 'motivo']. */
 function wabot_pagos_asignar($pagoId, $clave, $modalidad, $cfg, array $deps = []) {
+    $lockPagos = wabot_lock_tomar_esperando('pagosmp', 100, 100000);
+    if (!$lockPagos) return ['ok' => false, 'motivo' => 'ocupado'];
+    try {
+        return wabot_pagos_asignar_bloqueado($pagoId, $clave, $modalidad, $cfg, $deps);
+    } finally {
+        wabot_lock_soltar($lockPagos);
+    }
+}
+
+function wabot_pagos_asignar_bloqueado($pagoId, $clave, $modalidad, $cfg, array $deps) {
     $estado = wabot_pagos_estado();
     $fila = $estado['pagos'][(string)$pagoId] ?? null;
     if (!$fila) return ['ok' => false, 'motivo' => 'no_existe'];
+    // Desde una lista vieja: el cron (u otra pestaña) ya lo confirmó o lo ignoró.
+    if (!in_array(($fila['estado'] ?? ''), ['sin_asignar', 'error'], true)) return ['ok' => false, 'motivo' => 'ya_asignado'];
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     $motivo = null;
     $resuelta = wabot_conv_resolver($clave, $motivo);
@@ -921,11 +1021,17 @@ function wabot_pagos_asignar($pagoId, $clave, $modalidad, $cfg, array $deps = []
 
 /** No es de ningún cliente (o Pablo lo quiere afuera): deja de aparecer. */
 function wabot_pagos_ignorar($pagoId) {
-    $estado = wabot_pagos_estado();
-    if (!isset($estado['pagos'][(string)$pagoId])) return false;
-    $estado['pagos'][(string)$pagoId]['estado'] = 'ignorado';
-    $estado['pagos'][(string)$pagoId]['motivo'] = 'ignorado_por_pablo';
-    return wabot_pagos_guardar($estado);
+    $lockPagos = wabot_lock_tomar_esperando('pagosmp', 100, 100000);
+    if (!$lockPagos) return false;
+    try {
+        $estado = wabot_pagos_estado();
+        if (!isset($estado['pagos'][(string)$pagoId])) return false;
+        $estado['pagos'][(string)$pagoId]['estado'] = 'ignorado';
+        $estado['pagos'][(string)$pagoId]['motivo'] = 'ignorado_por_pablo';
+        return wabot_pagos_guardar($estado);
+    } finally {
+        wabot_lock_soltar($lockPagos);
+    }
 }
 
 /**

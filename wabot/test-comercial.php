@@ -645,6 +645,20 @@ $cn = (string)($cfg['info']['carga_nosotros'] ?? '');
 caso('carga_nosotros: con las palabras de Pablo (costo adicional según la cantidad), corta y sin monto',
     mb_stripos($cn, 'costo adicional según la cantidad') !== false && mb_strlen($cn) <= 260 && strpos($cn, '$') === false, $cn);
 $infoTxt = wabot_comercial_info($cfg);
+// Menos de 30 productos los cargamos todos nosotros (Pablo, 1-nov).
+caso('carga y carga_nosotros dicen que con menos de 30 productos la carga la hacemos nosotros',
+    mb_stripos($cn, 'menos de 30') !== false && mb_stripos((string)$cfg['info']['carga'], 'menos de 30') !== false
+    && mb_strlen((string)$cfg['info']['carga']) <= 260 && mb_stripos($ins, 'menos de 30') !== false);
+caso('carga_pocos no se le ofrece al modelo (la elige el sistema con la cantidad)', !in_array('carga_pocos', wabot_comercial_info_claves($cfg), true)
+    && strpos($infoTxt, '- carga_pocos:') === false);
+$cp = cv_cotizada('tienda');
+$cp['ficha']['cantidad_productos'] = 20;
+$r = wabot_comercial_info_textos(['carga_nosotros'], $cp, $cfg, false);
+caso('con 20 productos contados, "lo cargan ustedes?" → los cargamos todos nosotros sin costo, con su cantidad',
+    count($r) === 1 && mb_stripos($r[0], 'Con 20 productos') !== false && mb_stripos($r[0], 'sin costo') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+$cp['ficha']['cantidad_productos'] = 45;
+$r = wabot_comercial_info_textos(['carga_nosotros'], $cp, $cfg, false);
+caso('con 45 productos sale carga_nosotros tal cual', count($r) === 1 && $r[0] === $cn, json_encode($r, JSON_UNESCAPED_UNICODE));
 // 27-oct: los ejemplos de cómo preguntan ya no van en el prompt (gasto); la regla de quién carga la aplica la red de abajo.
 caso('carga_nosotros se le ofrece al modelo y sus ejemplos siguen en consultas-ejemplos.php', in_array('carga_nosotros', wabot_comercial_info_claves($cfg), true)
     && strpos($infoTxt, '- carga_nosotros:') !== false && in_array('Se pueden cargar todos ustedes?', wabot_consultas_ejemplos('carga_nosotros', 15), true));

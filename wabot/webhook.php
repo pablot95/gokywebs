@@ -707,6 +707,18 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 $motivo = trim((string)($err['title'] ?? '')) ?: (trim((string)($err['message'] ?? '')) ?: 'motivo desconocido');
                 wabot_log('error', ['donde' => 'whatsapp_status_failed', 'tel' => $clave,
                     'wamid' => $st['id'] ?? '', 'codigo' => $err['code'] ?? null, 'motivo' => $motivo]);
+                /* El aviso a Pablo que Meta aceptó y después no entregó (1-nov):
+                 * queda como fallido en la tarjeta de Estado y no se le marca a
+                 * ninguna charla. Con la ventana vencida (131047) se cierra,
+                 * así el próximo aviso prueba la plantilla. */
+                if (wabot_numero_propio($clave, $cfg)) {
+                    $estadoAviso = wabot_aviso_estado();
+                    $estadoAviso['ultimo_aviso_ok'] = false;
+                    $estadoAviso['ultimo_aviso_via'] = 'rechazado: ' . mb_substr($motivo, 0, 60);
+                    if ((int)($err['code'] ?? 0) === 131047) $estadoAviso['entrante_ts'] = 0;
+                    wabot_aviso_estado_guardar($estadoAviso);
+                    continue;
+                }
                 /* Meta manda el recipient_id con el 549 adelante, y la charla
                  * puede estar guardada como el cliente escribió su número en el
                  * formulario (2944814198). Sin resolver, el aviso caía en una
