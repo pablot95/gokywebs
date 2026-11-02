@@ -1,0 +1,25 @@
+{
+  "origen": "Zip de ChatGPT Solana_MILWpw18xCoi3E0GqQ6c.zip (9 imágenes + mock up), 1-nov-2026. La clienta no mandó fotos por WhatsApp (imagenes_recibidas: 0). Son imágenes ilustrativas: se reemplazan por fotos de los productos reales de Solana con el mismo nombre de archivo.",
+  "recortes": {
+    "portada-pareo.webp": "02_imagen.jpg",
+    "sombrero-vertical.webp": "01_imagen.jpg",
+    "sombrero-cinta.webp": "01_imagen.jpg (recorte 1:1 del sombrero)",
+    "pareo-guarda.webp": "02_imagen.jpg (recorte 1:1 del centro)",
+    "abanico-petroleo.webp": "03_imagen.jpg",
+    "piluso-crochet.webp": "04_imagen.jpg",
+    "pareo-rayado-azul.webp": "05_imagen.jpg",
+    "panuelo-hojas.webp": "06_imagen.jpg",
+    "abanico-lino.webp": "07_imagen.jpg",
+    "capelina-cinta.webp": "08_imagen.jpg",
+    "panuelo-flores.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg"
+  },
+  "variantes_de_color": {
+    "abanico-coral.webp": "03_imagen.jpg con la tela recoloreada (HSV) a coral",
+    "abanico-marino.webp": "03_imagen.jpg con la tela recoloreada (HSV) a azul marino",
+    "abanico-mostaza.webp": "03_imagen.jpg con la tela recoloreada (HSV) a mostaza",
+    "pareo-rayado-coral.webp": "05_imagen.jpg con las rayas recoloreadas (HSV) a coral",
+    "pareo-rayado-salvia.webp": "05_imagen.jpg con las rayas recoloreadas (HSV) a verde salvia"
+  },
+  "bancos": "Ninguna foto de bancos externos."
+}
