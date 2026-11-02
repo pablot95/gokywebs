@@ -350,6 +350,10 @@ function wabot_onboarding_parece_pregunta($t) {
 /** El modelo que dijo: '1', '2' o 'ambos' (una mezcla de los dos); '' si no se entiende. */
 function wabot_onboarding_modelo_en($texto) {
     $n = wabot_onboarding_norm($texto);
+    /* Un CUIT, un DNI o un teléfono no eligen modelo: "Carlo Bianchi,
+     * 20-98765432-1, responsable inscripto" se leía como el modelo 1 (charla
+     * en vivo, 2-nov). Los números largos, con o sin guiones, se sacan antes. */
+    $n = trim(preg_replace('/\d[\d\s.\-\/]{5,}\d/u', ' ', $n));
     if ($n === '') return '';
     // "Los dos", "combinar", "el 1 con el menú del 2": una mezcla. Si no, el número (o "primero"/"segundo") que nombra.
     if (preg_match('/\b(los dos|las dos|ambos|ambas|combinar|combinacion|mezcla|mezclar|un poco de cada|de cada uno|de los dos|cosas de los dos|mitad y mitad)\b/u', $n)) return 'ambos';

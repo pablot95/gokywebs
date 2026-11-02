@@ -193,6 +193,13 @@ $enviados9 = [];
 wabot_pago_confirmar($c9, ['id' => 'p9', 'monto' => 30000, 'ts' => $ahora - 300, 'tipo' => 'suscripcion', 'modo' => 'monto_avisado', 'suscripcion' => 's9'], 'mensual', $cfg,
     ['ahora' => $ahora, 'enviar' => function (&$cv, $t) use (&$enviados9) { $enviados9[] = $t; return true; }, 'firestore' => fn($conv, $campos) => ['ok' => true, 'id' => 'CLI9', 'creado' => false, 'error' => ''], 'fs_onboarding' => fn($id, $campos) => true, 'avisar' => fn($t, $cu) => 1]);
 caso('sin modelo elegido, arranca pidiendo el modelo', $c9['onboarding']['paso'] === 'modelo' && dice($enviados9, 'modelo', $cfg));
+// Charla en vivo (2-nov): con paso=modelo mandó sus datos de factura y el «-1» del CUIT se anotó como el modelo 1.
+$c9b = $c9;
+$r = cliente($c9b, 'Carlo Bianchi, 20-98765432-1, responsable inscripto', $T, null, $cfg);
+caso('los datos de factura con un CUIT no eligen el modelo: repregunta el modelo', !isset($c9b['onboarding']['datos']['modelo']) && $c9b['onboarding']['paso'] === 'modelo'
+    && count($r) === 1 && strpos($r[0], $cfg['onboarding_no_entendi']) === 0 && dice($r, 'modelo', $cfg), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('un CUIT, un DNI o un teléfono no son un modelo; "Modelo 1." y "el 2" sí', wabot_onboarding_modelo_en('Carlo Bianchi, 20 98765432 1') === '' && wabot_onboarding_modelo_en('DNI 32.456.781') === ''
+    && wabot_onboarding_modelo_en('mi cel es 11 4068-8675') === '' && wabot_onboarding_modelo_en('Modelo 1.') === '1' && wabot_onboarding_modelo_en('el 2, mi cuit 20-98765432-1') === '2');
 $r = cliente($c9, 'carlo@donCarlo.com', $T, null, $cfg);
 caso('contesta el email cuando se le pedía el modelo: se toma igual y se vuelve a pedir el modelo, sin callarse', ($c9['onboarding']['datos']['email']['valor'] ?? '') === 'carlo@doncarlo.com' && $c9['onboarding']['paso'] === 'modelo'
     && count($r) === 1 && strpos($r[0], $cfg['onboarding_ok']) === 0 && dice($r, 'modelo', $cfg) && empty($c9['handoff_pendiente']), json_encode($r));

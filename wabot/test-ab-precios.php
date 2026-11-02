@@ -118,6 +118,19 @@ caso('sitio profesional: $80.000 y $20.000', strpos(junto($r), 'Para tu sitio pr
 // «No tienen para pagar una sola vez?» en vivo (31-oct): salía «{precio_web_propia}» sin el monto.
 $u = wabot_texto_info('un_solo_pago', wabot_ab_cfg($cfg, $bs), $bs);
 caso('B: el pago único lo pide → dice el monto, sin la llave suelta', strpos($u, '{') === false && preg_match('/pago único, de \$[\d.]+, pagás/u', $u), $u);
+// Nutricionista con turnos en vivo (2-nov): la web con reservas es tipo landing con el plan con panel, y el pago único salía de $240.000 (el del sitio).
+foreach (['5491100009013' => 'b', '5491100009012' => 'a'] as $tel => $g) {
+    $cr = charla($tel);
+    if ($g === 'a') $cr['ab_grupo'] = 'a';
+    cotizar_charla($cr, 'reservas', 'Soy nutricionista y quiero que reserven turnos desde la web');
+    $cfgG = wabot_ab_cfg($cfg, $cr);
+    $u = wabot_texto_info('un_solo_pago', $cfgG, $cr);
+    $w = wabot_texto_info('web_propia', $cfgG, $cr);
+    $vig = wabot_precio_vigente($cr, $cfgG);
+    caso(strtoupper($g) . ': con reservas, el pago único que pide es el que vio ($330.000), no el del sitio profesional',
+        ($cr['tipo'] ?? '') === 'landing' && strpos($u, '$330.000') !== false && strpos($w, '$330.000') !== false && strpos($u . $w, '$240.000') === false
+        && $vig['precio_unico'] === '$330.000' && $vig['mensualidad'] === '$30.000', json_encode([$u, $vig], JSON_UNESCAPED_UNICODE));
+}
 
 echo "— 4. Modelo A (cerrado el 2-nov: solo las charlas que ya estaban) —\n";
 $a = charla('5491100009002');

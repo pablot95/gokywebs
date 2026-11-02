@@ -6182,6 +6182,13 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
             /* Cotizada del 10 al 14-sep, con la mensualidad sola: conserva SU
              * mensualidad y se le ofrece también el plan anual de lista. */
             $v['mensualidad'] = $vigente($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+        } elseif (in_array($modelo, ['inicial', 'unico_mensual'], true)) {
+            /* Prueba de precios (31-oct), grupos B y A: sin anual, pero el pago
+             * único y la mensualidad son los que vio. Una web con reservas es
+             * tipo landing con el plan con panel: de lista salían los del sitio
+             * profesional ($240.000 y $20.000) en vez de $330.000 y $30.000 (2-nov). */
+            $v['mensualidad']  = $vigente($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+            $v['precio_unico'] = $vigente($conv['precio_unico_cotizado'] ?? '', $v['precio_unico']);
         }
     }
     // El plan con cambios y el mantenimiento después del primer año salen siempre de lista.
