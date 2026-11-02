@@ -365,6 +365,12 @@ $rDup = wabot_pago_recibido_enviar($cvDup, ['pago_recibido' => 'Genial, recibido
     ['ventana_abierta' => true, 'enviar' => function (&$c, $t) use (&$enviadosDup) { $enviadosDup[] = $t; return true; }]);
 caso('…y entonces el bot no lo repite', $rDup === [] && $enviadosDup === [] && ($cvDup['pago_recibido_omitido'] ?? '') === 'pablo_escribio');
 
+// 2-nov (BLIZZ): grupo B que eligió «Plan mensual» en el formulario viejo → se cobra el pago inicial.
+caso('grupo B con «mensual» elegido: la modalidad que se cobra es el pago inicial',
+    wabot_pagos_modalidad_de_conv(['modalidad_elegida' => 'mensual', 'comercial_cotizacion' => ['modelo' => 'b', 'mensual' => '$20.000', 'inicial' => '$80.000']]) === 'inicial'
+    && wabot_pagos_modalidad_de_conv(['modalidad_elegida' => 'mensual', 'comercial_cotizacion' => ['modelo' => 'a2', 'anual' => '$140.000', 'mensual' => '$20.000']]) === 'mensual'
+    && wabot_pagos_modalidad_de_conv(['modalidad_elegida' => 'propia', 'comercial_cotizacion' => ['modelo' => 'b', 'inicial' => '$80.000']]) === 'unico');
+
 array_map('unlink', glob($tmp . '/*') ?: []);
 @rmdir($tmp);
 todo_ok();

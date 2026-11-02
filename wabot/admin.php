@@ -3625,8 +3625,9 @@ function burbujaCita(t, chat) {
                         <?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
                         <?php // Solo el plan que eligió y el tipo de web (16-oct): el resto de la ficha se ve en "Ver info".
-                              $cabModalidad = (string)($conv['modalidad_elegida'] ?? '');
-                              $cabPlan = $cabModalidad !== '' ? (['unico' => 'Plan anual', 'propia' => 'Pago único'][$cabModalidad] ?? 'Plan mensual') : '';
+                              // Con la modalidad que se cobra (pagos.php): en el grupo B «mensual» es el pago inicial + mensual (2-nov).
+                              $cabModalidad = function_exists('wabot_pagos_modalidad_de_conv') ? wabot_pagos_modalidad_de_conv($conv) : '';
+                              $cabPlan = ['mensual' => 'Plan mensual', 'anual' => 'Plan anual', 'unico' => 'Pago único', 'inicial' => 'Pago inicial + mensual'][$cabModalidad] ?? '';
                               $cabTipo = wabot_tipo_label((string)($conv['tipo'] ?? ''), $cfg);
                               $cabPartes = array_filter([$cabPlan !== '' ? 'Eligió: ' . $cabPlan : '', $cabTipo !== '' ? 'Web: ' . $cabTipo : '']);
                               if ($cabPartes): ?><span class="meta">📋 <?= $e(implode(' · ', $cabPartes)) ?></span><?php endif; ?>

@@ -370,6 +370,11 @@ function wabot_pagos_candidato(array $cv, $ahora, $cfg = null) {
 /** mensual | anual | unico | inicial según lo que eligió en la charla ('unico' del bot = plan anual; 'propia' = pago único). */
 function wabot_pagos_modalidad_de_conv(array $cv) {
     $m = (string)($cv['modalidad_elegida'] ?? '');
+    /* En el grupo B (pago inicial + mensual, prueba de precios) «el mensual» es esa
+     * modalidad: lo primero que paga es el pago inicial (2-nov, BLIZZ eligió «Plan
+     * mensual» en el formulario viejo y el panel le proponía $20.000). */
+    $cot = is_array($cv['comercial_cotizacion'] ?? null) ? $cv['comercial_cotizacion'] : [];
+    if ($m === 'mensual' && (($cot['modelo'] ?? '') === 'b' || trim((string)($cot['inicial'] ?? '')) !== '')) return 'inicial';
     return ['mensual' => 'mensual', 'unico' => 'anual', 'propia' => 'unico', 'inicial' => 'inicial'][$m] ?? '';
 }
 
