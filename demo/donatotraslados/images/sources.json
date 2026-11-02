@@ -1,0 +1,23 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto Donato traslados, 2-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "taxi-pasajera.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos (+ taxi-pasajera-960.webp)",
+    "taxi-noche.webp": "05_imagen.jpg (1:1) - tarjeta Taxi (+ taxi-noche-640.webp)",
+    "traslado-valija.webp": "04_imagen.jpg (1:1) - tarjeta Traslados (+ traslado-valija-640.webp)",
+    "auto-arboleda.webp": "01_imagen.jpg (9:16, 900x1600) - foto con capilla de Cómo viajamos (M1) y del cierre (M2) (+ auto-arboleda-540.webp)",
+    "chofer.webp": "06_imagen.jpg (1:1) - paso 2",
+    "llegada-valija.webp": "08_imagen.jpg (1:1) - paso 3",
+    "asiento-trasero.webp": "03_imagen.jpg (1:1) - paso 4",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "07_imagen.jpg / 09_imagen.jpg": "sin uso (autos sueltos, ya cubiertos por el resto del set)",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": {
+    "ciudad-9dejulio.webp": "Pexels 16228260 (vista aérea de la Av. 9 de Julio con el Obelisco), recorte 4:5 sin carteles de marcas - https://www.pexels.com/photo/an-aerial-view-of-a-city-with-many-cars-16228260/",
+    "ciudad-avenida.webp": "Pexels 16228300 (avenida con jacarandás desde arriba), girada 90° y recortada 16:9 - https://www.pexels.com/photo/an-aerial-view-of-a-city-street-with-cars-16228300/",
+    "ciudad-retiro.webp": "Pexels 19371040 (Torre Monumental, Retiro), recorte 4:5 - https://www.pexels.com/photo/photo-of-the-torre-monumental-clock-tower-in-buenos-aires-argentina-19371040/",
+    "ciudad-casco.webp": "Pexels 31501177 (edificio histórico con torre de reloj), recorte 4:5 sin el cartel publicitario - https://www.pexels.com/photo/historic-colonial-architecture-in-buenos-aires-31501177/",
+    "ciudad-madero.webp": "Pexels 5972189 (torres de Puerto Madero reflejadas en el dique), recorte 4:5 sin los carteles de empresas - https://www.pexels.com/photo/skyscrapers-reflecting-in-river-5972189/"
+  },
+  "pedido": "Incluir sí o sí: fotos de la ciudad (sección «La ciudad, de punta a punta», Buenos Aires asumido por el 11)"
+}
