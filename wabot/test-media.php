@@ -529,4 +529,9 @@ caso('si no se entiende, la línea queda como estaba',
 
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR'], $GLOBALS['WABOT_TEST_MEDIA']);
 @unlink($GLOBALS['WABOT_TEST_WABA_ARCHIVO']);
+// Varias fotos juntas (1-nov): el álbum no se anota (las fotos llegan una por una).
+caso('el álbum de fotos se ignora (las fotos llegan después) y lo demás no soportado no', wabot_wa_unsupported_ignorado('album') && !wabot_wa_unsupported_ignorado('poll_creation') && !wabot_wa_unsupported_ignorado(''));
+$alb = wabot_wa_adjunto(['type' => 'unsupported', 'unsupported' => ['type' => 'album'], 'errors' => [['code' => 131051]]], 'unsupported');
+caso('si igual se mostrara, dice que es un álbum', ($alb['sub'] ?? '') === 'album' && strpos((string)($alb['etiqueta'] ?? ''), 'álbum') !== false, json_encode($alb, JSON_UNESCAPED_UNICODE));
+caso('el webhook corta antes de encolar el álbum', strpos((string)file_get_contents(__DIR__ . '/webhook.php'), "wabot_wa_unsupported_ignorado((string)(\$media['sub'] ?? ''))) return;") !== false);
 todo_ok();

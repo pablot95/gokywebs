@@ -2488,7 +2488,7 @@ function wabot_wa_adjunto($msg, $tipo) {
             'list' => 'una lista', 'button' => 'un botón', 'group_invite' => 'una invitación a un grupo',
             'media_placeholder' => 'un archivo que todavía no terminó de llegar', 'pin' => 'un mensaje fijado',
             'keep_in_chat' => 'un mensaje guardado en el chat', 'order' => 'un pedido', 'product' => 'un producto',
-            'view_once' => 'una foto o video de "ver una vez"',
+            'view_once' => 'una foto o video de "ver una vez"', 'album' => 'un álbum de fotos',
         ][$sub] ?? 'un tipo de mensaje';
         return ['clase' => 'unsupported', 'ref' => '', 'caption' => '', 'sub' => $sub, 'codigo' => $codigo,
                 'etiqueta' => "mandó $que que WhatsApp no deja ver acá: miralo en el celular"];
@@ -2503,6 +2503,11 @@ function wabot_wa_adjunto($msg, $tipo) {
  */
 function wabot_wa_tipo_ignorado($tipo) {
     return in_array((string)$tipo, ['system'], true);
+}
+
+/** Lo "unsupported" que no hace falta anotar: el álbum de fotos (las fotos llegan después, una por una; 1-nov). */
+function wabot_wa_unsupported_ignorado($sub) {
+    return in_array((string)$sub, ['album'], true);
 }
 
 /* Los eventos que la API de conversiones acepta para mensajería (doc de Meta,

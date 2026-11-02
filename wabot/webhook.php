@@ -235,6 +235,12 @@ function wabot_procesar_entrante($ev, $cfg) {
     $etiquetaMedia = (string)($media['etiqueta'] ?? ($media['clase'] ?? 'sin texto'));
     if (($media['clase'] ?? '') === 'unsupported') {
         wabot_log('no_soportado', ['tel' => $clave, 'sub' => $media['sub'] ?? '', 'codigo' => $media['codigo'] ?? 0]);
+        /* Varias fotos juntas (1-nov): WhatsApp manda primero el "álbum", que
+         * Meta no soporta, y después cada foto por separado. Las 21 veces de la
+         * última semana llegaron todas las fotos, así que el álbum solo es
+         * ruido: el renglón «[un tipo de mensaje que WhatsApp no deja ver…]», un
+         * turno vacío y el aviso a Pablo. No se anota ni se contesta. */
+        if (wabot_wa_unsupported_ignorado((string)($media['sub'] ?? ''))) return;
     }
     if ($etiquetaMedia === 'documento' && !empty($mediaGuardada['nombre'])) {
         $etiquetaMedia = 'documento: ' . $mediaGuardada['nombre'];
