@@ -954,7 +954,8 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
     }
     $valoresBoton = [];
     foreach ((array)($p['boton'] ?? []) as $campo) $valoresBoton[$campo] = wabot_plantilla_valor($campo, $conv);
-    foreach ($valoresBoton as $campo => $v) {
+    // Sin slug no hay link a la demo (en el botón o, desde el 2-nov, en el cuerpo).
+    foreach ($valoresBoton + $valores as $campo => $v) {
         if ($campo === 'slug' && $v === '') return false;
     }
 

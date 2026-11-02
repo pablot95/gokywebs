@@ -857,8 +857,8 @@ $cfgPres['plantillas']['presentar_demo']['activa'] = true;
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $envPl = wabot_presentar_muestra(['tel' => '5493810008002', 'negocio' => 'Flores del Sur', 'tipo' => 'landing'], $cfgPres);
 $pl = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
-caso('con la plantilla activa, la demo sale por presentar_demo con el negocio y el slug en el botón',
-    ($pl[1] ?? '') === 'demo_lista' && ($pl[3] ?? []) === ['Flores del Sur'] && ($pl[4] ?? []) === [$envPl['slug']], json_encode($pl, JSON_UNESCAPED_UNICODE));
+caso('con la plantilla activa, la demo sale por presentar_demo con el negocio y el slug en el cuerpo',
+    ($pl[1] ?? '') === 'demo_lista' && ($pl[3] ?? []) === ['Flores del Sur', $envPl['slug']] && ($pl[4] ?? []) === [], json_encode($pl, JSON_UNESCAPED_UNICODE));
 caso('...y el panel la da por entregada (no le pide mandarla a mano)',
     !empty($envPl['enviado']) && !empty($envPl['demo_ok']) && empty($envPl['fuera_ventana']) && !empty($envPl['por_plantilla']));
 caso('...queda en el chat del panel con el link', strpos(json_encode(wabot_conv_load('5493810008002')['transcript'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'gokywebs.com/demo/' . $envPl['slug']) !== false);
@@ -875,7 +875,7 @@ $GLOBALS['WABOT_TEST_PLANTILLAS'] = []; $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $envViejo = wabot_presentar_muestra(['tel' => '5493810008003', 'negocio' => 'Verdulería Ana', 'tipo' => 'landing'], $cfgPres);
 $plV = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
 caso('escribió hace 30 h (ventana cerrada): la demo sale por la plantilla, no por texto',
-    ($plV[1] ?? '') === 'demo_lista' && ($plV[3] ?? []) === ['Verdulería Ana'] && !empty($envViejo['por_plantilla']) && !empty($envViejo['enviado'])
+    ($plV[1] ?? '') === 'demo_lista' && ($plV[3] ?? []) === ['Verdulería Ana', $envViejo['slug']] && !empty($envViejo['por_plantilla']) && !empty($envViejo['enviado'])
     && $GLOBALS['WABOT_TEST_ENVIADOS'] === [] && empty($envViejo['nunca_escribio']), json_encode([$plV, $envViejo['fuera_ventana'] ?? null], JSON_UNESCAPED_UNICODE));
 $cfgPres['plantillas']['presentar_demo']['activa'] = false;
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];

@@ -618,18 +618,18 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         // Utilidad (2-nov): la demo cuando la ventana de 24 h está cerrada, al
         // presentar (presentar.php): el número del formulario que nunca nos
-        // escribió o el que escribió hace más de 24 h. El botón es
-        // gokywebs.com/demo/{slug}. Apagada hasta que Meta la apruebe.
+        // escribió o el que escribió hace más de 24 h. El link
+        // gokywebs.com/demo/{slug} va en el cuerpo. Apagada hasta que Meta la apruebe.
         'presentar_demo' => [
             'nombre' => 'demo_lista',
             'idioma' => 'es_AR',
             'categoria' => 'UTILITY',
             'activa' => false,
             'automatico' => true,
-            'params' => ['negocio'],
-            'boton' => ['slug'],
-            // El cuerpo de Meta tal cual; el renglón entre corchetes es el botón, para que el link se vea en el chat del panel.
-            'texto' => "Hola! Ya está lista la primera propuesta para la web de {negocio} que pediste en nuestro formulario.\n\nHay dos modelos para elegir: abajo de todo podés cambiar de uno a otro. Cuando la veas, contame qué te pareció por este chat.\n\n[Ver la propuesta: https://gokywebs.com/demo/{slug}]",
+            // Texto de Pablo (2-nov), el mismo de la presentación por chat: {{1}} el negocio, {{2}} el slug del link. Sin botón.
+            'params' => ['negocio', 'slug'],
+            'boton' => [],
+            'texto' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\nhttps://gokywebs.com/demo/{slug}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
         ],
         // Utilidad (25-oct): el día del cobro, a los del plan mensual que pagan por
         // afuera de Mercado Pago (renovacion.php). Apagada hasta que Meta la apruebe.

@@ -3391,7 +3391,7 @@ function burbujaCita(t, chat) {
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
                 'aviso_pablo' => '{{1}} el título del aviso (quién escribió, pago confirmado…), {{2}} el detalle en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
-                'presentar_demo' => '{{1}} negocio; botón de URL https://gokywebs.com/demo/{{1}} con el slug de la demo',
+                'presentar_demo' => '{{1}} negocio, {{2}} slug de la demo (el link gokywebs.com/demo/{{2}} va en el cuerpo, sin botón)',
             ];
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
