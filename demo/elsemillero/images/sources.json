@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto El Semillero, 2-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "quinta-pileta.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos",
+    "jardin-cantero.webp": "01_imagen.jpg (9:16, 900x1600) - foto en arco del calendario (los dos modelos)",
+    "corte-cesped.webp": "03_imagen.jpg (1:1) - trabajos (mosaico M1 / riel M2) y pestaña Jardín (M2)",
+    "poda-ligustrina.webp": "04_imagen.jpg (1:1) - trabajos",
+    "parquizado-cantero.webp": "05_imagen.jpg (1:1) - trabajos",
+    "limpieza-pileta.webp": "06_imagen.jpg (1:1) - trabajos y pestaña Pileta (M2)",
+    "pintura-interior.webp": "07_imagen.jpg (1:1) - trabajos y pestaña Pintura (M2)",
+    "pintura-exterior.webp": "08_imagen.jpg (1:1) - trabajos",
+    "mantenimiento-patio.webp": "09_imagen.jpg (1:1) - cómo trabajamos (M1), riel y pestaña Hogar (M2)",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": "ninguna foto extra de Pexels/Unsplash"
+}
