@@ -15,5 +15,6 @@
     "anillo-banda.webp": "09_imagen.jpg",
     "og.jpg": "02_imagen.jpg"
   },
+  "mock_up": "10_mockup_720x480.png: referencia del Modelo 1 (index.html y catalogo.html); no se usa en la página.",
   "bancos": "Ninguna foto de bancos externos."
 }
