@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto Caballo Crew, 2-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "entrenamiento-grupal.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos",
+    "correccion-sentadilla.webp": "01_imagen.jpg (9:16, 900x1600) - Personal trainer en General Rodríguez (tarjeta) y Así empezás a entrenar (M1)",
+    "sentadilla-mancuerna.webp": "03_imagen.jpg (1:1) - Entrenamiento para mujeres",
+    "musculacion-banco.webp": "04_imagen.jpg (1:1) - Musculación y acondicionamiento físico",
+    "domicilio-banda.webp": "05_imagen.jpg (1:1) - Entrenador personal a domicilio",
+    "online-en-casa.webp": "06_imagen.jpg (1:1) - Entrenamiento personalizado online",
+    "velocidad-escalera.webp": "07_imagen.jpg (1:1) - Preparador físico en General Rodríguez y cierre (M2)",
+    "coordinacion-funcional.webp": "08_imagen.jpg (1:1) - Entrenamiento funcional",
+    "judo-jiujitsu.webp": "09_imagen.jpg (1:1) - Preparación física para deportistas y Quién está detrás de la crew",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": "ninguna foto extra de Pexels/Unsplash"
+}
