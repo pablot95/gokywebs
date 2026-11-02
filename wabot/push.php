@@ -256,6 +256,8 @@ function wabot_aviso_tel($cfg = null) {
 }
 
 function wabot_aviso_whatsapp_activo($cfg = null) {
+    // test-aviso-pablo.php los prende cuando no le pasa la config: de fábrica están apagados (2-nov).
+    if ($cfg === null && isset($GLOBALS['WABOT_TEST_AVISO_ACTIVO'])) $cfg = ['aviso_whatsapp_activo' => (bool)$GLOBALS['WABOT_TEST_AVISO_ACTIVO']] + wabot_config_load();
     $cfg = $cfg ?? wabot_config_load();
     return !empty($cfg['aviso_whatsapp_activo']) && wabot_aviso_tel($cfg) !== '';
 }
@@ -298,6 +300,7 @@ function wabot_aviso_ventana_abierta($ahora = null) {
  */
 function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null) {
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && empty($GLOBALS['WABOT_TEST_AVISO_PABLO'])) return false;
+    if ($cfg === null && isset($GLOBALS['WABOT_TEST_AVISO_ACTIVO'])) $cfg = ['aviso_whatsapp_activo' => (bool)$GLOBALS['WABOT_TEST_AVISO_ACTIVO']] + wabot_config_load();
     $cfg = $cfg ?? wabot_config_load();
     if (!wabot_aviso_whatsapp_activo($cfg)) return false;
     $tel    = wabot_aviso_tel($cfg);

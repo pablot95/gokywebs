@@ -72,7 +72,8 @@ function wabot_textos_default() {
      * `numeros_propios` son los números de Pablo: lo que escriba desde ahí al
      * bot no es un cliente, solo abre la ventana de 24 h en la que Meta deja
      * mandarle texto libre. Se editan desde la pestaña Estado del panel. */
-    'aviso_whatsapp_activo' => true,
+    // Apagado (Pablo, 2-nov: «me molestan los mensajes del bot a mi número»). Queda el push; se prende en Estado.
+    'aviso_whatsapp_activo' => false,
     'aviso_whatsapp_tel' => '5491125068578',
     'numeros_propios' => ['5491125068578'],
     'adicional_bilingue' => '$30.000',

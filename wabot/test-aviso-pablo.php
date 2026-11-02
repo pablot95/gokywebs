@@ -15,6 +15,9 @@ $GLOBALS['WABOT_TEST_AVISO_PABLO'] = true;
 $GLOBALS['WABOT_TEST_AVISO_ESTADO'] = [];
 
 $cfg = wabot_config_load();
+// De fábrica apagado desde el 2-nov (Pablo): las pruebas lo prenden para ver cómo manda.
+caso('de fábrica los avisos por WhatsApp a Pablo están apagados', (wabot_textos_default()['aviso_whatsapp_activo'] ?? null) === false);
+$cfg['aviso_whatsapp_activo'] = true; $GLOBALS['WABOT_TEST_AVISO_ACTIVO'] = true;
 $pablo = '5491125068578';
 
 echo "Número propio\n";
