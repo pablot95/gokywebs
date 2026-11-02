@@ -1,0 +1,19 @@
+{
+  "origen": "Zip de ChatGPT Origen_Rumi_147s1L7NxGf0I67xWL7F.zip (9 imágenes + mock up), 1-nov-2026. La clienta no mandó fotos por WhatsApp (imagenes_recibidas: 0). Son imágenes ilustrativas: se reemplazan por fotos de las joyas reales de Origen Rumi con el mismo nombre de archivo.",
+  "recortes": {
+    "collar-espiral-vertical.webp": "01_imagen.jpg (9:16 entera)",
+    "collar-espiral-alto.webp": "01_imagen.jpg (recorte 4:5, portada del Modelo 1)",
+    "collar-espiral.webp": "01_imagen.jpg (recorte 1:1 del dije)",
+    "brazalete-ancho.webp": "02_imagen.jpg (16:9 entera)",
+    "brazalete-martillado.webp": "02_imagen.jpg (1:1: centro de la foto con la pared de arriba extendida)",
+    "aros-hoja.webp": "03_imagen.jpg",
+    "anillo-turquesa.webp": "04_imagen.jpg",
+    "pulsera-dije.webp": "05_imagen.jpg",
+    "prendedor-espiral.webp": "06_imagen.jpg",
+    "aros-discos.webp": "07_imagen.jpg",
+    "colgante-dos-metales.webp": "08_imagen.jpg",
+    "anillo-banda.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg"
+  },
+  "bancos": "Ninguna foto de bancos externos."
+}
