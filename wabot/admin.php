@@ -2500,26 +2500,27 @@ function burbujaCita(t, chat) {
         $adFilas['total'] = $adStats['total'] + ['_total' => true];
     ?>
         <style>
-            .ad-scroll { overflow-x:auto; margin-top:12px }
-            .ad-tabla { width:100%; border-collapse:collapse; font-size:.9rem }
-            .ad-tabla th { font-size:.78rem; font-weight:600; color:var(--dim) }
-            .ad-tabla th, .ad-tabla td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top }
-            .ad-tabla td.n, .ad-tabla th.n { text-align:right; white-space:nowrap }
-            .ad-tabla td.n .meta { display:block }
-            .ad-tabla tr.ad-total td { font-weight:700; border-top:1px solid var(--line-fuerte) }
-            .ad-anuncio { display:flex; gap:10px; align-items:flex-start; min-width:220px }
-            .ad-anuncio img { width:52px; height:52px; object-fit:cover; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
-            .ad-anuncio .ad-sin-img { width:52px; height:52px; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
-            .ad-texto { font-size:.8rem; color:var(--dim); margin-top:2px; overflow-wrap:anywhere }
-            .ad-contactos { list-style:none; padding:0; margin:6px 0 0 }
-            .ad-contactos li { padding:4px 0; border-bottom:1px solid var(--line); font-size:.88rem }
+            /* Sin el prefijo «ad-» (2-nov): los bloqueadores de anuncios escondían estas tablas. */
+            .tabla-scroll { overflow-x:auto; margin-top:12px }
+            .anu-tabla { width:100%; border-collapse:collapse; font-size:.9rem }
+            .anu-tabla th { font-size:.78rem; font-weight:600; color:var(--dim) }
+            .anu-tabla th, .anu-tabla td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top }
+            .anu-tabla td.n, .anu-tabla th.n { text-align:right; white-space:nowrap }
+            .anu-tabla td.n .meta { display:block }
+            .anu-tabla tr.anu-total td { font-weight:700; border-top:1px solid var(--line-fuerte) }
+            .anu-item { display:flex; gap:10px; align-items:flex-start; min-width:220px }
+            .anu-item img { width:52px; height:52px; object-fit:cover; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
+            .anu-item .anu-sin-img { width:52px; height:52px; border-radius:6px; flex:0 0 auto; background:var(--card-2) }
+            .anu-texto { font-size:.8rem; color:var(--dim); margin-top:2px; overflow-wrap:anywhere }
+            .anu-contactos { list-style:none; padding:0; margin:6px 0 0 }
+            .anu-contactos li { padding:4px 0; border-bottom:1px solid var(--line); font-size:.88rem }
             @media (max-width:720px) {
-                .ad-tabla td[data-label]::before { content:attr(data-label) ': '; color:var(--dim); font-size:12px; font-weight:400 }
-                .ad-tabla td.n { text-align:left }
-                .ad-tabla td.n .meta { display:inline; margin-left:4px }
-                .ad-anuncio { min-width:0 }
-                .ad-tabla tr.ad-cab { display:none }   /* cada celda ya dice qué es */
-                .ad-tabla td:first-child { font-size:inherit; font-weight:400 }
+                .anu-tabla td[data-label]::before { content:attr(data-label) ': '; color:var(--dim); font-size:12px; font-weight:400 }
+                .anu-tabla td.n { text-align:left }
+                .anu-tabla td.n .meta { display:inline; margin-left:4px }
+                .anu-item { min-width:0 }
+                .anu-tabla tr.anu-cab { display:none }   /* cada celda ya dice qué es */
+                .anu-tabla td:first-child { font-size:inherit; font-weight:400 }
             }
         </style>
         <div class="card">
@@ -2536,25 +2537,25 @@ function burbujaCita(t, chat) {
             <?php if (!$adStats['anuncios']): ?>
                 <p class="meta" style="margin-top:10px">Nadie escribió desde un anuncio en esas fechas.</p>
             <?php endif; ?>
-            <div class="ad-scroll"><table class="ad-tabla">
-                <tr class="ad-cab"><th>Anuncio</th><?php foreach ($adEtapas as $etiqueta): ?><th class="n"><?= $e($etiqueta) ?></th><?php endforeach; ?></tr>
+            <div class="tabla-scroll"><table class="anu-tabla">
+                <tr class="anu-cab"><th>Anuncio</th><?php foreach ($adEtapas as $etiqueta): ?><th class="n"><?= $e($etiqueta) ?></th><?php endforeach; ?></tr>
                 <?php foreach ($adFilas as $idAd => $fila):
                     $base = (int)$fila['etapas']['contactos'];
                     $esOrg = !empty($fila['_organico']); $esTotal = !empty($fila['_total']); ?>
-                    <tr class="<?= $esTotal ? 'ad-total' : '' ?>">
+                    <tr class="<?= $esTotal ? 'anu-total' : '' ?>">
                         <td>
                             <?php if ($esOrg || $esTotal): ?>
-                                <?= $esTotal ? 'Total' : 'Sin anuncio' ?><?php if ($esOrg): ?><div class="ad-texto">Escribieron directo (el número, Instagram, la web)</div><?php endif; ?>
+                                <?= $esTotal ? 'Total' : 'Sin anuncio' ?><?php if ($esOrg): ?><div class="anu-texto">Escribieron directo (el número, Instagram, la web)</div><?php endif; ?>
                             <?php else: ?>
-                                <div class="ad-anuncio">
+                                <div class="anu-item">
                                     <?php if (!empty($fila['imagen'])): ?>
                                         <img src="admin.php?accion=media&amp;tel=<?= urlencode((string)$fila['imagen']['clave']) ?>&amp;archivo=<?= urlencode((string)$fila['imagen']['archivo']) ?>&amp;modo=ver" alt="" loading="lazy">
-                                    <?php else: ?><span class="ad-sin-img" aria-hidden="true"></span><?php endif; ?>
+                                    <?php else: ?><span class="anu-sin-img" aria-hidden="true"></span><?php endif; ?>
                                     <div>
                                         <strong><?= $e($fila['titular'] !== '' ? $fila['titular'] : 'Sin título') ?></strong>
-                                        <div class="ad-texto"><?= $idAd === 'sin_id' ? 'Meta no mandó el id del anuncio' : 'id ' . $e($idAd) ?></div>
+                                        <div class="anu-texto"><?= $idAd === 'sin_id' ? 'Meta no mandó el id del anuncio' : 'id ' . $e($idAd) ?></div>
                                         <?php $textoAd = $fila['cuerpo'] !== '' ? $fila['cuerpo'] : $fila['descripcion']; if ($textoAd !== ''): ?>
-                                            <div class="ad-texto" title="<?= $e($textoAd) ?>"><?= $e(mb_strlen($textoAd) > 110 ? mb_substr($textoAd, 0, 108) . '…' : $textoAd) ?></div>
+                                            <div class="anu-texto" title="<?= $e($textoAd) ?>"><?= $e(mb_strlen($textoAd) > 110 ? mb_substr($textoAd, 0, 108) . '…' : $textoAd) ?></div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -2569,7 +2570,7 @@ function burbujaCita(t, chat) {
             <?php foreach ($adFilas as $idAd => $fila): if (!empty($fila['_total']) || !$fila['contactos_detalle']) continue; ?>
                 <details style="margin-top:8px">
                     <summary class="meta" style="cursor:pointer"><?= count($fila['contactos_detalle']) === 1 ? 'El contacto' : 'Los ' . count($fila['contactos_detalle']) . ' contactos' ?> de<?= $e(!empty($fila['_organico']) ? 'los que escribieron sin anuncio' : ($fila['titular'] !== '' ? $fila['titular'] : 'id ' . $idAd) . ($idAd !== 'sin_id' && empty($fila['_organico']) ? ' (' . $idAd . ')' : '')) ?></summary>
-                    <ul class="ad-contactos">
+                    <ul class="anu-contactos">
                         <?php foreach (array_slice($fila['contactos_detalle'], 0, 300) as $d): ?>
                             <li><a href="admin.php?tab=conversaciones&amp;ver=<?= urlencode((string)$d['clave']) ?>"><?= $e(trim((string)$d['nombre']) !== '' ? $d['nombre'] : $d['clave']) ?></a>
                                 <span class="meta"><?= $e(date('d/m H:i', (int)$d['ts'])) ?><?= $d['canal'] === 'instagram' ? ' · Instagram' : '' ?> · llegó hasta: <?= $e($d['llego']) ?></span></li>
@@ -3446,7 +3447,7 @@ function burbujaCita(t, chat) {
         <div class="card">
             <h2 style="margin-top:0">Pagos sin asignar <span class="pill pausa"><?= count($cliDatos['sin_asignar']) ?></span></h2>
             <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Elegí el chat (o escribí el número), la modalidad, y confirmá: pasa a Cliente en el admin y el bot le pide lo que falta. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
-            <div class="ad-scroll"><table>
+            <div class="tabla-scroll"><table>
                 <tr><th>Cuándo</th><th>Monto</th><th>Cómo</th><th>Por qué quedó acá</th><th>De quién es</th><th></th></tr>
                 <?php foreach ($cliDatos['sin_asignar'] as $p): ?>
                 <tr>
@@ -3484,7 +3485,7 @@ function burbujaCita(t, chat) {
             </div>
             <p class="meta">Los chats con el pago confirmado. De fábrica el bot manda el «Genial, recibido…» y se calla: la web la seguís vos desde tu número. Si en Ajustes prendés «Pedir por el chat los datos para la web», el bot junta los datos (modelo, email del panel si hay login, logo y fotos, cambios) y la etapa pasa a listo para producción.</p>
             <?php if (!$cliDatos['nuevos']): ?><p class="meta">Todavía no hay ningún pago confirmado por el bot.</p><?php else: ?>
-            <div class="ad-scroll"><table>
+            <div class="tabla-scroll"><table>
                 <tr><th>Cliente</th><th>Pagó</th><th>Modalidad</th><th>Etapa</th><th>Bot</th><th></th></tr>
                 <?php foreach ($cliDatos['nuevos'] as $r): ?>
                 <tr>
@@ -3505,7 +3506,7 @@ function burbujaCita(t, chat) {
             <p class="meta">Los clientes del admin (Firestore) con su plan, el dominio, cómo está la suscripción y el día de cobro, y el chat de cada uno si lo hay. Al final, los suscriptores de Mercado Pago sin ficha.</p>
             <?php if (!empty($cliDatos['error'])): ?><p class="meta" style="color:var(--bad)">No se pudo leer Firestore: <?= $e($cliDatos['error']) ?></p><?php endif; ?>
             <?php if ($cliDatos['mantenimiento']): ?>
-            <div class="ad-scroll"><table>
+            <div class="tabla-scroll"><table>
                 <tr><th>Cliente</th><th>Plan</th><th>Dominio</th><th>Suscripción</th><th>Día de cobro</th><th></th></tr>
                 <?php foreach ($cliDatos['mantenimiento'] as $r): ?>
                 <tr<?= $r['entregada'] ? '' : ' style="opacity:.85"' ?>>
