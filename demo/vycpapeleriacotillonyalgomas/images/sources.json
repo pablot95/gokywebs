@@ -1,0 +1,20 @@
+{
+  "origen": "Las 9 fotos y el mock up vienen del zip de ChatGPT del prospecto (01_imagen.jpg a 09_imagen.jpg, 10_mockup_720x480.png). No hay fotos de bancos libres.",
+  "derivados": {
+    "hero-safari.webp": "02_imagen.jpg (16:9)",
+    "og.jpg": "02_imagen.jpg recortada a 1200x630",
+    "p-banderin-jardin.webp": "01_imagen.jpg (9:16) completada a 1:1 con el fondo de la foto",
+    "g-banderin-jardin.webp": "01_imagen.jpg",
+    "p-vasos-safari.webp": "02_imagen.jpg recorte 1:1",
+    "p-stickers-dinos.webp": "03_imagen.jpg",
+    "p-pinata-arcoiris.webp": "04_imagen.jpg",
+    "p-banderin-espacial.webp": "05_imagen.jpg",
+    "p-vasos-mar.webp": "06_imagen.jpg",
+    "p-stickers-bosque.webp": "07_imagen.jpg",
+    "p-pinata-estrella.webp": "08_imagen.jpg",
+    "p-kit-arcoiris.webp": "09_imagen.jpg",
+    "c-*.webp": "recortes 4:3 de 05, 02, 03 y 04 (tarjetas de categoría)",
+    "t-*.webp / r-*.webp": "recortes 1:1 y 4:5 por temática (tarjetas de temáticas)",
+    "s-dinos-NN.webp / s-bosque-NN.webp": "cada sticker redondo de 03 y 07 (vista previa de la plancha con nombre)"
+  }
+}
