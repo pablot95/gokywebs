@@ -350,6 +350,21 @@ caso('la facturación automática sigue filtrando solo suscripciones (no se toc�
 caso('las páginas de pago pasan ?c= como referencia GKY-<código>', strpos((string)file_get_contents(__DIR__ . '/../pago/script.js'), "'GKY-' + codigo") !== false
     && preg_match('/GKY-\[A-Z0-9\]/', (string)file_get_contents(__DIR__ . '/../pago/api/crear-preferencia.php')) === 1);
 
+// 2-nov (Todovinilosmr): Pablo mandó su «Genial, recibido» a las 13:21, confirmó a mano a las 13:23 y el bot lo repitió.
+$t0 = 1793632000;
+$genial = ['q' => 'humano', 't' => 'Genial, recibido! Ahora te escribo desde otro numero ( 1125068578 ) , desde ahora seguimos el desarrollo por ese número', 'ts' => $t0 - 120];
+caso('confirmado a mano: lo que escribió Pablo minutos antes cuenta como que ya lo atendió',
+    wabot_pagos_pablo_escribio_despues(['pago_ts' => $t0, 'pago_tipo' => 'manual', 'transcript' => [['q' => 'humano', 't' => 'Tu nombre es mirian ?', 'ts' => $t0 - 60]]]));
+caso('su «Genial, recibido… otro número» de horas antes cuenta aunque el pago lo haya detectado MP',
+    wabot_pagos_pablo_escribio_despues(['pago_ts' => $t0, 'pago_tipo' => 'transferencia', 'transcript' => [array_merge($genial, ['ts' => $t0 - 3 * 3600])]]));
+caso('un mensaje cualquiera de Pablo antes del pago de MP no cuenta (el bot manda el aviso)',
+    !wabot_pagos_pablo_escribio_despues(['pago_ts' => $t0, 'pago_tipo' => 'transferencia', 'transcript' => [['q' => 'humano', 't' => 'Te paso el link', 'ts' => $t0 - 3 * 3600]]]));
+$cvDup = ['tel' => '5491100008888TEST', 'conversation_key' => '5491100008888TEST', 'transcript' => [$genial], 'pago_ts' => $t0, 'pago_tipo' => 'manual'];
+$enviadosDup = [];
+$rDup = wabot_pago_recibido_enviar($cvDup, ['pago_recibido' => 'Genial, recibido. Ahora te escribo desde otro número (1125068578), desde ahora seguimos el desarrollo por ese número.'], $t0,
+    ['ventana_abierta' => true, 'enviar' => function (&$c, $t) use (&$enviadosDup) { $enviadosDup[] = $t; return true; }]);
+caso('…y entonces el bot no lo repite', $rDup === [] && $enviadosDup === [] && ($cvDup['pago_recibido_omitido'] ?? '') === 'pablo_escribio');
+
 array_map('unlink', glob($tmp . '/*') ?: []);
 @rmdir($tmp);
 todo_ok();

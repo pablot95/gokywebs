@@ -769,12 +769,23 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     return $resultado;
 }
 
-/** ¿Pablo le escribió a este chat después del pago (pago_ts)? Entonces ya lo atendió él. */
+/**
+ * ¿Pablo le escribió a este chat después del pago (pago_ts)? Entonces ya lo atendió él.
+ * Con «Confirmar pago» a mano el pago tiene la hora del clic, así que vale también lo
+ * que escribió en las 2 h anteriores; y su «Genial, recibido… otro número» de las
+ * últimas 24 h, siempre (2-nov, Todovinilosmr: lo mandó él a las 13:21, confirmó a
+ * las 13:23 y el bot lo repitió).
+ */
 function wabot_pagos_pablo_escribio_despues($conv) {
     $pagoTs = (int)($conv['pago_ts'] ?? 0);
     if ($pagoTs <= 0) return false;
+    $desde = ($conv['pago_tipo'] ?? '') === 'manual' ? $pagoTs - 2 * 3600 : $pagoTs;
     foreach ((array)($conv['transcript'] ?? []) as $fila) {
-        if (is_array($fila) && ($fila['q'] ?? '') === 'humano' && (int)($fila['ts'] ?? 0) >= $pagoTs) return true;
+        if (!is_array($fila) || ($fila['q'] ?? '') !== 'humano') continue;
+        $ts = (int)($fila['ts'] ?? 0);
+        if ($ts >= $desde) return true;
+        $t = function_exists('wabot_normalizar_frase') ? wabot_normalizar_frase((string)($fila['t'] ?? '')) : mb_strtolower((string)($fila['t'] ?? ''));
+        if ($ts >= $pagoTs - 24 * 3600 && preg_match('/\b(otro numero|1125068578)\b|^genial,? recibido/u', $t)) return true;
     }
     return false;
 }
