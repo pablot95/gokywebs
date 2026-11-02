@@ -1,0 +1,26 @@
+{
+  "zip_chatgpt": {
+    "origen": "Zip Pronto_pizza de ChatGPT (Copiar 10), prospecto TFd8BnCvXgh9tEiXrdBB",
+    "archivos": {
+      "01_imagen.jpg": "prepizza-salsa.webp",
+      "02_imagen.jpg": "pizzetas-salsa.webp",
+      "03_imagen.jpg": "prelista-grande.webp",
+      "04_imagen.jpg": "prelista-grande-2.webp",
+      "05_imagen.jpg": "empanadas-crudas.webp",
+      "06_imagen.jpg": "media-tarta.webp",
+      "07_imagen.jpg": "tarta-individual.webp",
+      "08_imagen.jpg": "prepizzas-x3.webp",
+      "09_imagen.jpg": "prelistas-individuales.webp",
+      "10_mockup_720x480.png": "referencia de diseño del Modelo 1"
+    }
+  },
+  "cliente": {
+    "origen": "Imágenes que el cliente subió al formulario (wabot/data/media/5493444406749, 2-nov-2026 16:15)",
+    "archivos": {
+      "20261102-161558-1b6002fe.jpg": "logo.webp, favicon.png, apple-touch-icon.png (fondo a transparente y sin la línea del celular)",
+      "20261102-161558-1cc1ade9.jpg": "etiquetas-empanadas.webp, etiqueta-carne.webp, etiqueta-pollo.webp, etiqueta-jyq.webp",
+      "20261102-161558-69a016a1.jpg": "flyer de referencia, no se usa en la web"
+    }
+  },
+  "bancos": []
+}
