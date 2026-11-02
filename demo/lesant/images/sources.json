@@ -1,0 +1,21 @@
+{
+  "nota": "Fotos 01-09 y el mock up (10) del zip de ChatGPT del prospecto Le Sant (0iurTh3SNM2N3gLT51gK): son ilustrativas de la propuesta, no fotos reales de sus productos. Logo y foto de la feria bajados de su tienda actual (lesant.empretienda.com.ar, 2-nov-2026).",
+  "archivos": {
+    "vela-caramelera-petit-alta.webp": "01_imagen.jpg (9:16) entera",
+    "vela-caramelera-petit.webp": "01_imagen.jpg recorte 1:1 (0,360,900,1260)",
+    "vela-cuenco-algarrobo-ancha.webp": "02_imagen.jpg (16:9) entera, portada del Modelo 1",
+    "vela-cuenco-algarrobo.webp": "02_imagen.jpg recorte 1:1 (350,0,1250,900)",
+    "fogonero-de-mesa.webp": "03_imagen.jpg",
+    "spray-aurico.webp": "04_imagen.jpg (etiqueta en blanco: el texto del blend se superpone por CSS)",
+    "difusor-ecologico.webp": "05_imagen.jpg",
+    "cuenco-algarrobo.webp": "06_imagen.jpg",
+    "lampara-sal-sustentable.webp": "07_imagen.jpg",
+    "roll-on-blends.webp": "08_imagen.jpg (etiqueta en blanco: el texto del blend se superpone por CSS)",
+    "vela-caramelera-glass-xl.webp": "09_imagen.jpg",
+    "t-*.webp": "miniaturas 240x240 recortadas de las fotos de producto (menú de categorías y tira de tipos)",
+    "m-*.webp": "detalles 600x600 de materiales: m-cera (02), m-madera (06), m-sal (07), m-aceites (05)",
+    "feria-sabe-la-tierra.webp": "banner real de su Empretienda (d22fxaf9t8d39k.cloudfront.net/a6541186…jpg): la dueña en su puesto de la feria Sabe La Tierra",
+    "logo-le-sant.webp": "logo real de su Empretienda (d22fxaf9t8d39k.cloudfront.net/6c695215…png, 400x400), con alfa circular",
+    "og.jpg": "02_imagen.jpg recortada a 1200x630"
+  }
+}
