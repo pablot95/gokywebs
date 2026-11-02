@@ -1,0 +1,19 @@
+{
+  "zip_chatgpt": {
+    "origen": "Zip Maga_de_Luz de ChatGPT (Copiar 10), demo automática del 2-nov-2026",
+    "archivos": {
+      "01_imagen.jpg": "hero-velas.webp (9:16 entero, hero del Modelo 1 y galería), velas-pilar.webp (recorte 4:5) y velas-v.webp (recorte 2:3, carta II del Modelo 2)",
+      "02_imagen.jpg": "tarot-mesa.webp (16:9, banda de consultas del Modelo 1 y galería del mazo), mazo-triple-luna.webp (recorte 4:5), tarot-cartas.webp (recorte 2:3, carta I del Modelo 2) y og.jpg",
+      "03_imagen.jpg": "cuarzo-rosa-bruto.webp y cuarzos-rodados.webp (recortes 4:5) y cuarzo-rosa-full.webp (1:1, galería)",
+      "04_imagen.jpg": "sahumerios-loto.webp (4:5, también la foto de la banda de consultas del Modelo 2) y sahumerios-loto-full.webp",
+      "05_imagen.jpg": "vela-vaso.webp (4:5) y vela-vaso-full.webp",
+      "06_imagen.jpg": "saquito-lavanda.webp (4:5) y saquito-lavanda-full.webp",
+      "07_imagen.jpg": "torre-selenita.webp (4:5) y torre-selenita-full.webp",
+      "08_imagen.jpg": "bandeja-luna.webp (4:5), bandeja-luna-full.webp y bandeja-luna-v.webp (recorte 2:3, carta III del Modelo 2)",
+      "09_imagen.jpg": "melts-lunas.webp (4:5) y melts-lunas-full.webp",
+      "10_mockup_720x480.png": "mock up de referencia del Modelo 1 (no se usa en la página)"
+    }
+  },
+  "bancos_libres": [],
+  "cliente": "no mandó logo ni fotos"
+}
