@@ -277,6 +277,9 @@ h3 { font-weight: 700; font-size: var(--fs-h3); line-height: 1.2; }
   .hero--m1 .chapa__pie { display: none; }
   .hero__banda { width: 100%; margin-top: -26px; clip-path: polygon(0 26px, 100% 0, 100% 100%, 0 100%); padding: calc(26px + 1.6rem) var(--gutter) calc(2rem + 40px); }
 }
+@media (min-width: 600px) and (max-width: 899px) {
+  .hero--m1 .hero__foto { aspect-ratio: 2 / 1; }
+}
 
 .hero--m2 { display: flex; align-items: flex-end; min-height: calc(100svh - var(--header-h) - 36px); padding: clamp(4rem, 8vw, 6rem) 0 clamp(7rem, 11vw, 8.5rem); }
 .hero--m2 .hero__foto { position: absolute; inset: 0; }
