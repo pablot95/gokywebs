@@ -228,4 +228,27 @@ foreach (['inicial100' => ['$100.000', '$30.000'], 'inicial80' => ['$80.000', '$
         && strpos($h, 'mes 12') !== false && strpos($h, 'no estás comprando la web') !== false && strpos($h, 'se suspende') !== false && mb_stripos($h, 'plan anual') === false);
 }
 
+echo "— 7. El precio que Pablo pasa a mano queda como el de la charla (2-nov, BLIZZ) —\n";
+require_once __DIR__ . '/pagos.php';
+$k = charla('5491100009011');
+$k['tipo'] = 'landing'; $k['comercial_solucion'] = 'informativa'; $k['ab_grupo'] = 'b'; $k['precio_dado'] = true; $k['precio_modelo'] = 'inicial';
+$k['comercial_cotizacion'] = ['origen' => 'bot', 'plan' => 'informativa', 'anual' => '', 'mensual' => '$20.000', 'unico' => '$240.000', 'modelo' => 'b', 'inicial' => '$80.000', 'ts' => time() - 3600];
+$k['precio_cotizado'] = '$80.000'; $k['inicial_cotizado'] = '$80.000'; $k['mensualidad_cotizada'] = '$20.000'; $k['sena_cotizada'] = '$80.000';
+$textoPablo = "Perfecto! Podemos incluir las dos opciones en tu web:\n\nPara este tipo de web, el desarrollo completo cuesta $100.000 iniciales, sin saldo pendiente.\n\nA partir del segundo mes abonás $30.000 mensuales, que incluyen hosting, dominio, mantenimiento y soporte técnico.";
+caso('«$100.000 iniciales … $30.000 mensuales» de Pablo reemplaza lo que había congelado el bot', wabot_comercial_cotizacion_de_pablo($k, $textoPablo, $cfg)
+    && ($k['comercial_cotizacion']['inicial'] ?? '') === '$100.000' && ($k['comercial_cotizacion']['mensual'] ?? '') === '$30.000'
+    && ($k['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($k['comercial_cotizacion']['modelo'] ?? '') === 'b' && !empty($k['landing_con_panel']),
+    json_encode($k['comercial_cotizacion'] ?? null, JSON_UNESCAPED_UNICODE));
+$k['modalidad_elegida'] = 'mensual';
+$pagoK = wabot_comercial_postdemo_pago($k, $cfg);
+caso('…y el link de pago es el de $100.000 (pago/inicial100), no el de $80.000', strpos((string)($pagoK['t'] ?? ''), 'gokywebs.com/pago/inicial100') !== false, (string)($pagoK['t'] ?? ''));
+caso('…y «Confirmar pago» propone el pago inicial de $100.000', wabot_pagos_modalidad_de_conv($k) === 'inicial'
+    && (int)(wabot_pagos_montos_esperados($k, $cfg)['inicial'] ?? 0) === 100000, json_encode(wabot_pagos_montos_esperados($k, $cfg)));
+caso('el mismo mensaje otra vez no cambia nada', !wabot_comercial_cotizacion_de_pablo($k, $textoPablo, $cfg));
+$n2 = charla('5491100009014');
+$n2['comercial_cotizacion'] = ['origen' => 'bot', 'plan' => 'panel', 'anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000', 'modelo' => 'a2', 'ts' => time() - 3600];
+caso('un precio de anual y mensual a mano queda, en su grupo (A2)', wabot_comercial_cotizacion_de_pablo($n2, "Podés elegir entre dos planes:\n\n1) Plan anual: $140.000\n2) Plan mensual: $20.000", $cfg)
+    && ($n2['comercial_cotizacion']['anual'] ?? '') === '$140.000' && ($n2['comercial_cotizacion']['plan'] ?? '') === 'informativa' && ($n2['comercial_cotizacion']['modelo'] ?? '') === 'a2');
+caso('un mensaje sin precio completo no toca nada', !wabot_comercial_cotizacion_de_pablo($n2, 'Son $30.000 por mes, te paso el link?', $cfg)
+    && !wabot_comercial_cotizacion_de_pablo($n2, 'Te paso el enlace donde están todos los detalles del servicio y los datos para el pago. Para arrancar son $60.000 y el resto ($150.000) al final', $cfg));
 todo_ok();

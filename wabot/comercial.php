@@ -159,6 +159,54 @@ function wabot_comercial_plan_por_montos($mensual, $anual, $cfg) {
     return 'panel';
 }
 
+/**
+ * Pablo le pasó el precio a mano, desde el panel o el celular (2-nov, BLIZZ: el
+ * bot había congelado $80.000 + $20.000 de sitio profesional y él cotizó
+ * $100.000 + $30.000 con turnos; el link de pago y «Confirmar pago» seguían con
+ * lo del bot). Si el mensaje trae un precio completo —la mensualidad y el pago
+ * inicial, el anual o el pago único—, ese pasa a ser el congelado de la charla.
+ * Con pago inicial es el modelo B. Devuelve si cambió algo.
+ */
+function wabot_comercial_cotizacion_de_pablo(array &$conv, $texto, $cfg = null) {
+    $m = wabot_comercial_montos_de_texto((string)$texto);
+    if ($m['mensual'] === '' || ($m['anual'] === '' && $m['unico'] === '' && $m['inicial'] === '')) return false;
+    $cfg = is_array($cfg) ? $cfg : wabot_config_load();
+    $previa = is_array($conv['comercial_cotizacion'] ?? null) ? $conv['comercial_cotizacion'] : [];
+    $plan = wabot_comercial_plan_por_montos($m['mensual'], $m['anual'], $cfg);
+    $lista = wabot_comercial_montos_lista($plan, $cfg);
+    $cot = ['origen' => 'pablo', 'plan' => $plan, 'anual' => $m['anual'], 'mensual' => $m['mensual'],
+            'unico' => $m['unico'] !== '' ? $m['unico'] : ($lista['unico'] ?? ''), 'ts' => time()];
+    if ($m['inicial'] !== '') {
+        $cot['inicial'] = $m['inicial'];
+        $cot['anual'] = '';
+        $cot['modelo'] = 'b';
+    } elseif (($previa['modelo'] ?? '') !== '' && ($previa['modelo'] ?? '') !== 'b') {
+        $cot['modelo'] = $previa['modelo'];
+    }
+    $mismo = true;
+    foreach (['plan', 'anual', 'mensual', 'inicial', 'modelo'] as $k) $mismo = $mismo && (string)($previa[$k] ?? '') === (string)($cot[$k] ?? '');
+    if ($mismo) return false;   // ya era ese precio
+    $conv['comercial_cotizacion'] = $cot;
+    $conv['precio_dado'] = true;
+    $conv['precio_cotizado'] = wabot_comercial_cotizacion_primer_pago($cot);
+    $conv['mensualidad_cotizada'] = $cot['mensual'];
+    $conv['precio_unico_cotizado'] = $cot['unico'];
+    $conv['inicial_cotizado'] = (string)($cot['inicial'] ?? '');
+    $conv['precio_cotizado_ts'] = $cot['ts'];
+    if (($conv['tipo'] ?? '') === 'landing') $conv['landing_con_panel'] = $plan !== 'informativa';
+    if (!empty($cot['modelo'])) $conv['ab_grupo'] = $cot['modelo'];
+    if (($cot['modelo'] ?? '') === 'b') {
+        $conv['precio_modelo'] = 'inicial';
+        $conv['sena_cotizada'] = $cot['inicial'];
+    } elseif (($cot['anual'] ?? '') !== '') {
+        $conv['precio_modelo'] = 'anual';
+        $conv['sena_cotizada'] = $lista['sena'] ?? ($conv['sena_cotizada'] ?? '');
+    }
+    wabot_log('cotizacion_de_pablo', ['tel' => $conv['tel'] ?? '', 'plan' => $plan, 'mensual' => $cot['mensual'],
+                                      'inicial' => $cot['inicial'] ?? '', 'anual' => $cot['anual'], 'modelo' => $cot['modelo'] ?? '']);
+    return true;
+}
+
 /* ─────────────────────────────── Cotización de la charla ─────────────────────────────── */
 
 /**
@@ -182,8 +230,9 @@ function wabot_comercial_montos_de_texto($texto) {
         $r['mensual'] = $num($m[1]);
     }
     if (preg_match('/pago [uú]nico\s*(de|es|sale|son|:)?\s*\$\s*([\d.]{5,})/iu', $t, $m)) $r['unico'] = $num($m[2]);
-    // El modelo B de la prueba de precios (31-oct): "precio inicial de $100.000".
+    // El modelo B de la prueba de precios (31-oct): "precio inicial de $100.000"; a mano, "$100.000 iniciales" (2-nov).
     if (preg_match('/(precio|pago) inicial\s*(de|es|:)?\s*\$\s*([\d.]{5,})/iu', $t, $m)) $r['inicial'] = $num($m[3]);
+    elseif (preg_match('/\$\s*([\d.]{5,})\s*iniciales?\b/iu', $t, $m)) $r['inicial'] = $num($m[1]);
     return $r;
 }
 

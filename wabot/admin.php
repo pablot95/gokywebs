@@ -839,6 +839,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // vuelve si Pablo pulsa expresamente "Encender bot acá".
         wabot_conv_tomar_control($conv);
         wabot_conv_transcript($conv, 'humano', $texto);
+        // Si le pasaste un precio a mano, ese queda como el de la charla (2-nov, comercial.php).
+        if (function_exists('wabot_comercial_cotizacion_de_pablo')) wabot_comercial_cotizacion_de_pablo($conv, $texto, $cfg);
         wabot_conv_save($conv);
         wabot_log('respuesta_panel', ['tel' => $conv['tel']]);
 

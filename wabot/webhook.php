@@ -690,6 +690,8 @@ foreach (($payload['entry'] ?? []) as $entry) {
                     wabot_conv_tomar_control($conv);
                     wabot_conv_transcript($conv, 'humano', $textoEco, null,
                         ['id' => (string)($eco['id'] ?? ''), 'cita' => (string)($eco['context']['id'] ?? '')]);
+                    // Un precio que le pasó Pablo desde el celular queda como el de la charla (2-nov, comercial.php).
+                    if (function_exists('wabot_comercial_cotizacion_de_pablo')) wabot_comercial_cotizacion_de_pablo($conv, $textoEco);
                     wabot_conv_save($conv);
                     wabot_log('control_humano', ['tel' => $para, 'canal' => 'whatsapp']);
                 } finally {
