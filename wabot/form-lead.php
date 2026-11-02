@@ -153,11 +153,14 @@ function formlead_extras($payload, &$motivo = null, $ahora = null) {
         && !wabot_referencia_utilizable($extras['referencia'])) {
         $extras['referencia'] = '';
     }
-    if (array_key_exists('modalidad', $payload)) {
-        $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
+    /* Desde el 2-nov /form ya no pregunta la forma de pago (la pregunta el bot
+     * antes del link de pago) y la manda vacía: no se anota nada. La traen /formb
+     * (pago único, campo oculto) y los formularios viejos que quedaron en caché. */
+    $modalidad = is_string($payload['modalidad'] ?? null) ? $payload['modalidad'] : '';
+    if ($modalidad !== '') {
         /* 'unico' es el plan anual, 'mensual' el plan mensual y 'propia' el
          * pago único (sacado del formulario el 6-oct, de vuelta el 26-oct). */
-        // 'inicial' = pago inicial + mensualidad, el modelo B de la prueba de precios (31-oct); 'unico' queda para formularios en caché.
+        // 'inicial' = pago inicial + mensualidad, el modelo B de la prueba de precios (31-oct).
         if (!in_array($modalidad, ['unico', 'mensual', 'propia', 'inicial'], true)) {
             $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
         }
@@ -236,8 +239,8 @@ function formlead_extras_guardar($base, $extras) {
         }
         // El formulario ya se la preguntó: el chat no se la vuelve a pedir.
         if (array_key_exists('referencia', $extras)) $conv['referencia_preguntada'] = true;
-        // Con los modelos ocultos en el form (4-oct) alcanza con la forma de pago.
-        if (!empty($extras['modalidad_elegida'])) $conv['esProspecto'] = true;
+        // Con los modelos ocultos en el form (4-oct) alcanza con el paso 2 (la referencia viaja siempre; la forma de pago, desde el 2-nov, no).
+        if (array_key_exists('referencia', $extras) || !empty($extras['modalidad_elegida'])) $conv['esProspecto'] = true;
     }
 
     $partes = [];
@@ -249,7 +252,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único', 'inicial' => 'Pago inicial + mensualidad'][$extras['modalidad_elegida']] ?? 'Plan mensual');
     if (!empty($extras['demo_hora_ts'])) $partes[] = 'Demo: ' . wabot_demo_hora_frase($extras['demo_hora_ts']) . ' (eligió la hora)';
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
-    elseif (array_key_exists('modalidad_elegida', $extras)) $partes[] = 'Modelos: a elección del diseñador (dos)';
+    elseif (array_key_exists('modalidad_elegida', $extras) || array_key_exists('referencia', $extras)) $partes[] = 'Modelos: a elección del diseñador (dos)';
     if ($partes) {
         $linea = ($aplicar ? '[Formulario web, paso 2] ' : '[Formulario web, paso 2, sin código — NO aplicado] ')
                . implode(' · ', $partes);

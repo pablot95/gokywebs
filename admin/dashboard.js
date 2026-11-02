@@ -6140,6 +6140,22 @@ function getPropuestaFechaInfo(p) {
     return { key: "Sin fecha", hora: "", sortMs: -Infinity };
 }
 
+/* La hora que eligió en el formulario para recibir la demo (29-oct, demoProgramadaAt;
+   Pablo, 2-nov: verla en la lista). "Cualquier horario" no la deja: no se muestra nada.
+   En ámbar si ya pasó y el boceto sigue acá (todavía no se presentó). */
+function entregaPedidaHTML(p) {
+    const d = mantToDate(p.demoProgramadaAt);
+    if (!d) return "";
+    const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    const hoy = new Date();
+    const dias = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
+    const dia = dias === 0 ? "hoy" : dias === 1 ? "mañana" : dias === -1 ? "ayer"
+        : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
+    const paso = d.getTime() < Date.now();
+    const color = paso ? "#F59E0B" : "#60A5FA";
+    return `<div style="margin-top:5px"><span style="background:${paso ? "rgba(245,158,11,.13)" : "rgba(96,165,250,.13)"};color:${color};border:1px solid ${color}66;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Hora que eligió en el formulario para recibir la demo${paso ? " (ya pasó)" : ""}">🕐 Entrega ${escapeHtml(dia)} ${escapeHtml(hh)}</span></div>`;
+}
+
 // Fechas marcadas para filtrar Bocetos. Vive fuera de renderPropuestas() para
 // no perderse en cada re-render (búsqueda, llegada de datos nuevos).
 const fechasSeleccionadas = new Set();
@@ -6276,7 +6292,9 @@ function renderPropuestas() {
                 <td>
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
-                    ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}                </td>
+                    ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}
+                    ${entregaPedidaHTML(p)}
+                </td>
                 <td class="prop-col-marca">
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`

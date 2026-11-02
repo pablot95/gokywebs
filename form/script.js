@@ -570,11 +570,7 @@ function validarPaso1() {
 function validarPaso2() {
     let firstError = null;
 
-    const modalidad = document.getElementById('modalidad');
-    if (!modalidad.value) {
-        markError(modalidad, 'Elegí la forma de pago.');
-        if (!firstError) firstError = modalidad;
-    }
+    // La forma de pago ya no se elige acá (2-nov): la pregunta el bot antes del link de pago.
 
     // El horario es opcional (29-oct): solo se refresca la lista por si cambió la ventana.
     if (horaDemoSelect) pintarHorasDemo();
@@ -633,6 +629,7 @@ function buildPayload() {
         // sabe que el formulario ya preguntó la referencia y no la pide por chat.
         referencia: get('referencia'),
         incluir: get('incluir'),
+        // Solo /formb lo trae (campo oculto, pago único); en /form ya no se elige (2-nov) y va vacío.
         modalidad: get('modalidad'),
         // Id y nombre: el servidor valida el id y guarda el nombre tal como
         // lo vio el cliente (nuevos.js arma las letras en el navegador).
@@ -1015,28 +1012,6 @@ function pintarInstagram() {
 }
 if (instagramInput) instagramInput.addEventListener('input', pintarInstagram);
 
-// Lo mismo con la forma de pago: qué implica cada una de las opciones.
-const planSelect = document.getElementById('modalidad');
-const planAyuda = document.getElementById('modalidadDetalle');
-
-/* Prueba de precios (Pablo, 31-oct): al modelo B el bot le manda el link con
- * &m=b y acá queda una sola forma de pago, la que le pasó: pago inicial y
- * mensualidad desde el mes siguiente (form-lead.php la guarda como 'inicial').
- * Sin el parámetro, pago único o plan mensual. */
-if (planSelect && _paramsInicial.get('m') === 'b') {
-    planSelect.innerHTML = '<option value="inicial" selected data-desc="Arrancás con un pago inicial que cubre todo el desarrollo de la web, sin seña ni saldo. Al mes de ese pago empieza la mensualidad, que incluye hosting, dominio, mantenimiento y soporte.">Pago inicial + mensualidad</option>';
-    if (planAyuda) planAyuda.textContent = 'Es la forma de pago que te pasamos por WhatsApp.';
-}
-const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';
-
-function pintarPlan() {
-    if (!planSelect || !planAyuda) return;
-    const op = planSelect.selectedOptions[0];
-    planAyuda.textContent = op && op.value ? (op.dataset.desc || '') : PLAN_AYUDA_INICIAL;
-}
-if (planSelect) planSelect.addEventListener('change', pintarPlan);
-pintarPlan();
-
 /* A qué hora quiere la demo (Pablo, 29-oct). Según la hora argentina en que lo
  * completa (UTC-3 fijo, como el servidor):
  *   15:00 a 02:59 → de 11 a 14 h (del día siguiente; de madrugada, de ese mismo día)
@@ -1087,7 +1062,7 @@ if (horaDemoSelect) {
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre_negocio', 'instagram', 'resumen', 'telefono',
-    'color_principal', 'color_secundario', 'referencia', 'incluir', 'modalidad'];
+    'color_principal', 'color_secundario', 'referencia', 'incluir'];
 
 function saveDraft() {
     try {
@@ -1137,5 +1112,4 @@ restoreDraft();
 // link de Instagram.
 _pintarContadores.forEach(pintar => pintar());
 pintarInstagram();
-pintarPlan();
 COLOR_IDS.forEach(pintarColor);

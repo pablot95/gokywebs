@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20261102-fotos">
+    <link rel="stylesheet" href="styles.css?v=20261102-sin-forma-pago">
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -116,39 +116,14 @@
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Cómo te gustaría pagar, cuándo querés la demo y tus colores.</p>
+                            <p class="step-header-desc">Cuándo querés la demo, tus colores y tus fotos.</p>
                         </div>
 
                         <!-- "¿Qué querés lograr con tu web?" se sacó el 2-oct: no cambiaba la web. -->
 
-                        <div class="field-group">
-                            <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
-                            <!-- script.js muestra abajo la descripción elegida.
-                                 Los valores mensual/unico los valida wabot/form-lead.php
-                                 ('unico' es el plan anual, 'propia' el pago único). La opción
-                                 'propia' se sacó del formulario el 6-oct-2026 y volvió el
-                                 26-oct, primera, en el orden de los precios del bot. El plan
-                                 anual ('unico') se sacó el 31-oct y volvió el 2-nov con las
-                                 dos opciones de antes del 26-oct (grupo A2 de la prueba de
-                                 precios). Con ?m=b (modelo B) script.js deja solo 'inicial';
-                                 con ?m=a (el A, cerrado el 2-nov) el script de abajo deja
-                                 pago único y plan mensual. -->
-                            <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
-                                <option value="" disabled selected>Elegí una opción</option>
-                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
-                                <option value="unico" data-desc="Arrancás con una seña de $60.000, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción. Incluye el mantenimiento y un cambio por mes.">Plan anual</option>
-                            </select>
-                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan mensual y plan anual.</p>
-                            <script>
-                                /* Va acá y no en script.js para no depender de la caché del ?v=. */
-                                if (/[?&]m=a(&|$)/.test(location.search)) {
-                                    document.getElementById('modalidad').innerHTML = '<option value="" disabled selected>Elegí una opción</option>'
-                                        + '<option value="propia" data-desc="Pagás la web una sola vez: arrancás con una seña y el resto lo pagás al entregar la web. La web queda 100% tuya e incluye el primer año de hosting y dominio.">Pago único</option>'
-                                        + '<option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>';
-                                    document.getElementById('modalidadDetalle').textContent = 'Elegí entre pago único y plan mensual.';
-                                }
-                            </script>
-                        </div>
+                        <!-- La forma de pago se sacó el 2-nov (Pablo: link simple, sin parámetros):
+                             el bot la pregunta antes de pasar el link de pago. /formb sigue
+                             mandando su campo oculto (pago único). -->
 
                         <!-- A qué hora quiere la demo (29-oct). script.js arma las opciones
                              según la hora en que lo completa (de 11 a 14, de 14 a 01 o de 17
@@ -291,7 +266,7 @@
                 <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
             </div>
             <div class="que-es-body">
-                <p class="que-es-intro">Contanos sobre tu negocio, elegí la forma de pago y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
+                <p class="que-es-intro">Contanos sobre tu negocio y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
                 <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con la mensualidad, después de la entrega tenés un cambio por mes incluido.</p></div>
             </div>
         </div>
@@ -341,6 +316,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261102-fotos"></script>
+    <script type="module" src="script.js?v=20261102-sin-forma-pago"></script>
 </body>
 </html>

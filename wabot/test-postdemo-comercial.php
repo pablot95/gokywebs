@@ -102,6 +102,8 @@ function cv_demo($tipo = 'ecommerce', array $extra = [], $presentada = true) {
         'link_form_enviado' => true, 'form_link_mandado_ts' => time() - 6900, 'comercial_pausa' => 'formulario', 'comercial_pausa_ts' => time() - 6900,
         'form_completado_ts' => time() - 6000, 'lead_creado' => true, 'lead_doc' => 'projects/x/databases/(default)/documents/propuestas/abc',
         'fase' => 'derivado', 'cierre' => 'prediseno', 'descripcion' => 'Vendo zapatillas', 'colores' => 'rojo',
+        // La forma de pago del formulario (obligatoria hasta el 2-nov). Sin ella, la sección 12.
+        'modalidad_elegida' => 'mensual',
     ], $extra));
     wabot_conv_transcript($c, 'cliente', 'Hola! Vendo zapatillas');
     wabot_conv_transcript($c, 'bot', 'Perfecto, te podemos armar una tienda online para que vendas las zapatillas directo desde la web');
@@ -491,6 +493,61 @@ foreach (['¿Puedo pagar la seña ahora?' => true, '¿El pago inicial incluye el
     caso("¿pide pagar? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_postdemo_pide_pago($m) === $esperado);
 }
 caso('lo que quedó para Pablo va en el contexto: no lo contesta', strpos(wabot_comercial_contexto('hola?', $cvPausa + ['tel' => '5491100009999TEST'], $cfg), 'pagar en cuotas') !== false);
+
+echo "— 12. Sin la forma de pago del formulario (2-nov): el bot la pregunta antes del link —\n";
+// Con la prueba de precios prendida, para que cada grupo use su pregunta.
+$GLOBALS['WABOT_TEST_SIN_AB'] = false;
+$cotA2 = ['origen' => 'bot', 'plan' => 'panel', 'anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000', 'modelo' => 'a2', 'ts' => time() - 7200];
+const PREGUNTA_MODALIDAD_A2 = 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?';
+$c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'ab_grupo' => 'a2', 'comercial_cotizacion' => $cotA2]);
+oa([dc(['modelo_elegido' => '2', 'quiere_avanzar' => true, 'mensajes' => ['Me alegra que te haya gustado']])]);
+$r = turno('Me encantó el modelo 2', $c, $cfg);
+caso('A2: le gustó y eligió modelo → «tomamos el modelo 2» y la pregunta de la modalidad, sin link', $r === ['Perfecto, tomamos el modelo 2', 'Me alegra que te haya gustado', PREGUNTA_MODALIDAD_A2]
+    && !empty($c['postdemo_pregunto_modalidad_ts']) && empty($c['postdemo_link_pago_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([dc(['mensajes' => []])]);
+caso('el modelo sabe que ya se la preguntamos', $c && strpos(wabot_comercial_contexto('mensual', $c, $cfg), 'ya se la preguntamos') !== false);
+$cm = $c;
+oa([dc(['mensajes' => []])]);
+$r = turno('Sería el mensual', $cm, $cfg);
+caso('«Sería el mensual» → el link mensual y queda anotada la modalidad', $r === [LINK_MENSUAL_30] && ($cm['modalidad_elegida'] ?? '') === 'mensual' && !empty($cm['postdemo_link_pago_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$ca = $c;
+oa([dc(['mensajes' => []])]);
+$r = turno('anual', $ca, $cfg);
+caso('«anual» → el plan anual con la seña y el resto', $r === ['Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210']
+    && ($ca['modalidad_elegida'] ?? '') === 'unico', json_encode($r, JSON_UNESCAPED_UNICODE));
+$cl = $c;
+oa([dc(['pide_pago' => true, 'mensajes' => []])]);
+$r = turno('pasame el link', $cl, $cfg);
+caso('si ya se la preguntamos y pide el link sin decirla, va el mensual (no insiste)', $r === [LINK_MENSUAL_30], json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'ab_grupo' => 'a2', 'comercial_cotizacion' => $cotA2]);
+oa([dc(['pide_pago' => true, 'mensajes' => []])]);
+$r = turno('Cómo te pago?', $c, $cfg);
+caso('pide pagar sin modelo ni modalidad → las dos preguntas, sin link', $r === [PREGUNTA_MODELO, PREGUNTA_MODALIDAD_A2] && empty($c['postdemo_link_pago_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_demo('ecommerce', ['modalidad_elegida' => 'mensual', 'ab_grupo' => 'a2', 'comercial_cotizacion' => $cotA2, 'modelo_elegido' => '1']);
+oa([dc(['pide_pago' => true, 'mensajes' => []])]);
+$r = turno('pasame el link', $c, $cfg);
+caso('si ya la eligió en el chat, el link directo', $r === [LINK_MENSUAL_30], json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'ab_grupo' => 'b', 'modelo_elegido' => '1',
+    'comercial_cotizacion' => ['origen' => 'bot', 'plan' => 'panel', 'anual' => '', 'mensual' => '$30.000', 'unico' => '$330.000', 'inicial' => '$100.000', 'modelo' => 'b', 'ts' => time() - 7200]]);
+oa([dc(['quiere_avanzar' => true, 'mensajes' => ['Buenísimo']])]);
+$r = turno('Me gustó mucho, cómo sigo?', $c, $cfg);
+caso('grupo B: una sola modalidad → el link del pago inicial, sin preguntar', tiene($r, 'gokywebs.com/pago/inicial100') && !tiene($r, 'preferís') && empty($c['postdemo_pregunto_modalidad_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'ab_grupo' => 'a', 'modelo_elegido' => '1',
+    'comercial_cotizacion' => ['origen' => 'bot', 'plan' => 'panel', 'anual' => '', 'mensual' => '$30.000', 'unico' => '$330.000', 'modelo' => 'a', 'ts' => time() - 7200]]);
+oa([dc(['quiere_avanzar' => true, 'mensajes' => []])]);
+$r = turno('Dale, avancemos', $c, $cfg);
+caso('grupo A (cerrado): la pregunta con el pago único y el mensual', $r === ['Para pasarte el link de pago, preferís el pago único o el plan mensual?'], json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'modelo_elegido' => '1']);
+oa([dc(['quiere_avanzar' => true, 'mensajes' => []])]);
+$r = turno('Dale, avancemos', $c, $cfg);
+caso('cotizada antes de la prueba: la pregunta con las tres', $r === ['Para pasarte el link de pago, preferís el pago único, el plan anual o el plan mensual?'], json_encode($r, JSON_UNESCAPED_UNICODE));
+foreach (['Sería el mensual' => 'mensual', 'el anual' => 'unico', 'Mensual porfa' => 'mensual', 'pago único' => 'propia', 'anual o mensual?' => null,
+          'no, el mensual no' => null, 'el mensual o el anual, no sé' => null, 'Me gustó el modelo 1' => null] as $m => $esperado) {
+    caso("respuesta a la pregunta: «{$m}» → " . var_export($esperado, true),
+        wabot_comercial_postdemo_respuesta_modalidad($m, ['postdemo_pregunto_modalidad_ts' => time(), 'comercial_cotizacion' => $cotA2]) === $esperado);
+}
+caso('sin habérsela preguntado, «sería el mensual» no la elige por esta vía', wabot_comercial_postdemo_respuesta_modalidad('Sería el mensual', ['comercial_cotizacion' => $cotA2]) === null);
+$GLOBALS['WABOT_TEST_SIN_AB'] = true;
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);

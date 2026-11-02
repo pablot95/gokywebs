@@ -475,6 +475,10 @@ function wabot_textos_default() {
          * manda Pablo), {sena} y {saldo} salen de la cotización congelada. */
         'postdemo' => [
             'pregunta_modelo' => 'Cuál de los dos modelos te gustó más?',
+            /* Desde el 2-nov el formulario no pregunta la forma de pago (Pablo): si
+             * todavía no la eligió, va esto en vez del link, una vez. Cada grupo de
+             * la prueba de precios tiene la suya (ab_precios); en B, ninguna. */
+            'pregunta_modalidad' => 'Para pasarte el link de pago, preferís el pago único, el plan anual o el plan mensual?',
             'modelo_elegido' => 'Perfecto, tomamos el modelo {modelo}',
             'link_mensual' => 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}',
             'link_anual' => 'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}',
@@ -821,10 +825,12 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
                     'planes_informativa' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
                     'planes_panel' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
                     'con_reservas' => "Con reservas quedaría en:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}",
+                    'postdemo' => ['pregunta_modalidad' => 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?'],
                 ],
             ],
             'a' => [
                 'comercial' => [
+                    'postdemo' => ['pregunta_modalidad' => 'Para pasarte el link de pago, preferís el pago único o el plan mensual?'],
                     'planes_informativa' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n2) Plan mensual: {mensual}\nIncluye todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
                     'planes_panel' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n2) Plan mensual: {mensual}\nIncluye todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
                     'con_reservas' => "Con reservas quedaría en:\n\n1) Pago único: {unico}\n2) Plan mensual: {mensual}",
@@ -864,6 +870,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
                     'planes_informativa' => "Para tu {web}, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
                     'planes_panel' => "Para tu {web}, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
                     'con_reservas' => "Con reservas, el desarrollo completo tiene un precio inicial de {inicial}\n\nLuego del primer mes abonás {mensual} mensuales, que incluyen hosting, dominio, mantenimiento y soporte",
+                    // Una sola modalidad: no hay nada que preguntar antes del link del pago inicial.
+                    'postdemo' => ['pregunta_modalidad' => ''],
                     'modalidades_gpt' => 'Hay UNA sola modalidad: un pago inicial que cubre todo el desarrollo (sin seña ni saldo: con ese pago se hace toda la web) y, al mes de ese pago, una mensualidad por Mercado Pago que incluye hosting, dominio, mantenimiento y soporte. Con el pago inicial NO compra la web: la titularidad del código la puede pedir a partir del mes 12, y si deja de pagar la mensualidad la web se suspende. No hay plan anual ni otras opciones: no las ofrezcas ni las nombres. El pago único existe solo si pide comprar la web o el código (marcá pago_unico).',
                 ],
                 'info' => [

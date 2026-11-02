@@ -465,15 +465,15 @@ caso('una forma inventada se sigue rechazando',
 $htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
 $htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
 /* 6-oct: el formulario principal dejó de ofrecer el pago único; el 26-oct
- * (Pablo) vuelve, primero, en el orden de los precios: pago único, anual, mensual.
- * 31-oct (prueba de precios): sin el anual. 2-nov (grupo A2): las dos de antes
- * del 26-oct, plan mensual y plan anual; el pago único y el mensual, solo con m=a. */
-$selectPrincipal = preg_match('/<select id="modalidad".*?<\/select>/s', $htmlPrincipal, $mm) ? $mm[0] : '';
-$posPropia = strpos($selectPrincipal, '<option value="propia"');
-$posAnual = strpos($selectPrincipal, '<option value="unico"');
-$posMensual = strpos($selectPrincipal, '<option value="mensual"');
-caso('el formulario principal ofrece plan mensual y plan anual, en ese orden, sin el pago único (2-nov)',
-    $posPropia === false && $posAnual !== false && $posMensual !== false && $posMensual < $posAnual, $selectPrincipal);
+ * (Pablo) vuelve, primero; el 31-oct, sin el anual. 2-nov (Pablo: link simple,
+ * sin parámetros): la forma de pago ya no se pregunta en el formulario, la
+ * pregunta el bot antes del link de pago. */
+caso('el formulario principal ya no pregunta la forma de pago (2-nov)',
+    strpos($htmlPrincipal, 'id="modalidad"') === false && stripos($htmlPrincipal, 'Forma de pago que preferís') === false);
+$motivoSinForma = null;
+$extrasSinForma = formlead_extras(['referencia' => '', 'incluir' => '', 'modalidad' => ''], $motivoSinForma);
+caso('el envío sin forma de pago pasa, sin modalidad anotada y como prospecto',
+    is_array($extrasSinForma) && $motivoSinForma === null && !array_key_exists('modalidad_elegida', $extrasSinForma) && array_key_exists('referencia', $extrasSinForma));
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',

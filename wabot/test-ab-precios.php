@@ -106,7 +106,8 @@ caso('si pide el precio otra vez, el mismo bloque B', strpos(junto($r), 'precio 
 
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 $r = turno('Dale, el mensual', $b, $cfg);
-caso('"el mensual" en B es elegir el pago inicial + mensualidad y va el formulario con &m=b', strpos(junto($r), 'gokywebs.com/form/?m=b') !== false, junto($r));
+// Desde el 2-nov el link del formulario va sin parámetros: la forma de pago la pregunta el bot antes del link de pago.
+caso('"el mensual" en B es elegir el pago inicial + mensualidad y va el formulario, sin parámetros', strpos(junto($r), 'gokywebs.com/form/') !== false && strpos(junto($r), 'm=') === false, junto($r));
 caso('queda anotada la modalidad inicial', ($b['modalidad_elegida'] ?? '') === 'inicial', (string)($b['modalidad_elegida'] ?? ''));
 
 echo "— 3. Modelo B: sitio profesional —\n";
@@ -128,7 +129,7 @@ caso('sin plan anual', mb_stripos($t, 'anual') === false, $t);
 $cot = $a['comercial_cotizacion'] ?? [];
 caso('congela modelo A sin anual', ($cot['modelo'] ?? '') === 'a' && ($cot['unico'] ?? '') === '$330.000' && ($cot['anual'] ?? 'x') === '' && ($a['ab_grupo'] ?? '') === 'a', json_encode($cot));
 caso('GPT lee que el anual ya no existe', strpos(prompt_ultimo(), 'El plan anual YA NO EXISTE') !== false);
-caso('el link del formulario lleva m=a (pago único o mensual)', strpos(wabot_form_link($a, $cfg), 'm=a') !== false && strpos(wabot_form_link($a, $cfg), 'm=b') === false);
+caso('el link del formulario va sin parámetros (2-nov)', strpos(wabot_form_link($a, $cfg), 'm=') === false, wabot_form_link($a, $cfg));
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['pago']])]);
 $r = turno('Cómo se paga?', $a, $cfg);
 caso('la respuesta de pago habla del pago único y el mensual, sin anual', strpos(junto($r), 'pago único de $330.000') !== false && mb_stripos(junto($r), 'anual') === false, junto($r));
@@ -202,10 +203,8 @@ caso('dos webs durante la prueba: lo cotiza Pablo, en silencio', $r === [] && ($
 $form = file_get_contents(__DIR__ . '/form-lead.php');
 caso('form-lead acepta la modalidad inicial', strpos($form, "['unico', 'mensual', 'propia', 'inicial']") !== false);
 $html = file_get_contents(__DIR__ . '/../form/index.html');
-$select = preg_match('/<select id="modalidad".*?<\/select>/s', $html, $mm) ? $mm[0] : '';
-caso('el formulario ofrece el plan mensual y el anual (A2), sin el pago único', strpos($select, 'value="unico"') !== false && strpos($select, 'value="mensual"') !== false && strpos($select, 'value="propia"') === false, $select);
-caso('con m=a el formulario cambia a pago único o mensual', strpos($html, '[?&]m=a(&|$)') !== false && strpos($html, '<option value="propia"') !== false);
-foreach (['mensual20000' => 'anual140', 'unico240' => 'anual140', 'mensual30000' => 'anual210', 'unico330' => 'anual210'] as $pag => $anual) {
+caso('el formulario ya no pregunta la forma de pago (2-nov): sin el selector ni lo de m=a / m=b', strpos($html, 'id="modalidad"') === false && strpos($html, 'm=a') === false
+    && strpos((string)file_get_contents(__DIR__ . '/../form/script.js'), "get('m')") === false);foreach (['mensual20000' => 'anual140', 'unico240' => 'anual140', 'mensual30000' => 'anual210', 'unico330' => 'anual210'] as $pag => $anual) {
     $h = (string)@file_get_contents(__DIR__ . '/../pago/' . $pag . '/index.html');
     caso("pago/$pag: vuelve la pestaña Anual ($anual)", strpos($h, '<a href="../' . $anual . '/">Anual</a>') !== false);
 }

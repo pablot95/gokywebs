@@ -1209,11 +1209,8 @@ function wabot_form_link_armar($conv, $codigo) {
     } else {
         $link = 'https://gokywebs.com/form/';
     }
-    /* Prueba de precios (31-oct): el formulario muestra solo las formas de pago del
-     * grupo (m=b: pago inicial + mensualidad; m=a: pago único o mensual, el A que
-     * se cerró el 2-nov). Sin parámetro, plan anual o mensual (A2). */
-    $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
-    if ($modelo === 'a' || $modelo === 'b') $link .= (strpos($link, '?') === false ? '?' : '&') . 'm=' . $modelo;
+    /* Sin la forma de pago del grupo (m=b / m=a de la prueba de precios): desde el
+     * 2-nov el formulario no la pregunta, la pregunta el bot antes del link de pago. */
     return $link;
 }
 
