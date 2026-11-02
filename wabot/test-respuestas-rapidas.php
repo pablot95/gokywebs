@@ -500,4 +500,14 @@ if ($marcaOpcionesRespaldo === null) @unlink($marcaOpciones); else file_put_cont
 
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 if ($marcaRespaldo === null) @unlink($marca); else file_put_contents($marca, $marcaRespaldo);
+
+// 2-nov (Pablo): todos los mensajes de pago arrancan con «Te paso el enlace donde están…»; el resto queda.
+$abreEnlace = "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\n";
+caso('mensual guardado: cambia solo el comienzo', wabot_rr_enlace_pago_texto("Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. \n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/pago/mensual30000")
+    === $abreEnlace . 'Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/pago/mensual30000');
+caso('anual y pago único (con o sin coma): el comienzo nuevo y la seña de siempre',
+    wabot_rr_enlace_pago_texto("Te paso el pago único, con todas las condiciones y los datos para la transferencia. \n\nPara arrancar con todas las modificaciones son \$80.000 y el resto (\$160.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/unico240")
+        === $abreEnlace . 'Para arrancar con todas las modificaciones son $80.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/unico240'
+    && str_starts_with(wabot_rr_enlace_pago_texto('Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar…'), $abreEnlace . 'Para arrancar'));
+caso('lo que no es un mensaje de pago no se toca', wabot_rr_enlace_pago_texto('Dale, te paso el link del plan mensual.') === 'Dale, te paso el link del plan mensual.');
 todo_ok();

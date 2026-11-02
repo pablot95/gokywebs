@@ -122,7 +122,7 @@ function wabot_ab_rr_categoria($conv, $cfg) {
                                   '{unico}' => (string)($t['precio_unico'] ?? ''), '{anual}' => (string)($t['precio'] ?? '')]);
         if ($grupo === 'b') {
             $pagina = $plan === 'informativa' ? 'inicial80' : 'inicial100';
-            $items[] = 'Te paso el detalle con todas las condiciones y los datos para la transferencia del pago inicial: https://gokywebs.com/pago/' . $pagina;
+            $items[] = "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/pago/" . $pagina;
         }
     }
     return $items ? ['ico' => '🧪', 'titulo' => 'Precio de esta charla (grupo ' . strtoupper($grupo) . ')', 'items' => $items] : null;

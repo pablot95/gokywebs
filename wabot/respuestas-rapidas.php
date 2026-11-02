@@ -1083,13 +1083,49 @@ function wabot_respuestas_rapidas_detalle_2oct($categorias) {
     return $categorias;
 }
 
+/* 2-nov (Pablo): todos los mensajes con link de pago arrancan igual, «Te paso el enlace donde
+   están todos los detalles del servicio y los datos para el pago». En las guardadas se cambia
+   una sola vez (marca en data/migrated/) solo el comienzo; el resto (montos, link, renglones
+   que Pablo haya editado) queda como estaba. */
+const WABOT_RR_ENLACE_PAGO = 'Te paso el enlace donde están todos los detalles del servicio y los datos para el pago';
+
+/** El texto de un mensaje de pago con el comienzo del 2-nov; los demás, igual. */
+function wabot_rr_enlace_pago_texto($texto) {
+    $abre = WABOT_RR_ENLACE_PAGO . "\n\n";
+    return (string)preg_replace([
+        '/^Te dejo el link de Mercado Pago para activar el plan mensual de la web\.\s*En ese enlace podés ver todos los detalles del servicio\.\s*/u',
+        '/^Te paso el (plan anual|pago único)( del sitio profesional)?,? con todas las condiciones y los datos para la transferencia\.\s*/u',
+        '/^Te paso el detalle con todas las condiciones y los datos para la transferencia del pago inicial:\s*/u',
+    ], [$abre, $abre, $abre . 'Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: '], (string)$texto);
+}
+
+function wabot_rr_enlace_pago_2nov(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-enlace-pago-2nov';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$texto) {
+            $nuevo = wabot_rr_enlace_pago_texto($texto);
+            if ($nuevo !== $texto) { $texto = $nuevo; $cambio = true; }
+        }
+        unset($texto);
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

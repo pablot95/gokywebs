@@ -34,8 +34,10 @@ $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
 $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
 $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = true;
 
-const LINK_MENSUAL_30 = 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual30000';
-const LINK_MENSUAL_20 = 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual20000';
+// Pablo, 2-nov: todos los links de pago arrancan igual.
+const ENLACE_PAGO = "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\n";
+const LINK_MENSUAL_30 = ENLACE_PAGO . 'Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual30000';
+const LINK_MENSUAL_20 = ENLACE_PAGO . 'Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/mensual20000';
 const PREGUNTA_MODELO = 'Cuál de los dos modelos te gustó más?';
 const PAGO_AVISADO = 'Perfecto, revisamos el pago y te confirmamos por acá.';
 
@@ -273,16 +275,16 @@ caso('«elegiría plan mensual» → se anota la modalidad, se pregunta el model
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1']);
 oa([dc(['mensajes' => []])]);
 $r = turno('plan anual', $c, $cfg);
-caso('«plan anual» → el plan anual con la seña y el resto, como Pablo', $r === ['Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210']
+caso('«plan anual» → el plan anual con la seña y el resto, como Pablo', $r === [ENLACE_PAGO . 'Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210']
     && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_demo('ecommerce', ['modelo_elegido' => '2']);
 oa([dc(['mensajes' => []])]);
 $r = turno('Me quedo con el pago único', $c, $cfg);
-caso('«me quedo con el pago único» → el pago único con su seña ($100.000) y el resto', $r === ['Te paso el pago único con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $100.000 y el resto ($230.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('«me quedo con el pago único» → el pago único con su seña ($100.000) y el resto', $r === [ENLACE_PAGO . 'Para arrancar con todas las modificaciones son $100.000 y el resto ($230.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico330'], json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_demo('landing', ['modelo_elegido' => '1']);
 oa([dc(['solucion' => 'informativa', 'mensajes' => []])]);
 $r = turno('Vamos con el pago único', $c, $cfg);
-caso('sitio profesional: pago único → seña $80.000 y resto $160.000 en unico240', $r === ['Te paso el pago único con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $80.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico240'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('sitio profesional: pago único → seña $80.000 y resto $160.000 en unico240', $r === [ENLACE_PAGO . 'Para arrancar con todas las modificaciones son $80.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico240'], json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1']);
 oa([dc(['accion' => 'humano', 'motivo' => 'Quiere pagar: pide el link'])]);
 $r = turno('Cómo te pago? Pasame el link', $c, $cfg);
@@ -408,13 +410,13 @@ $c = cv_demo('ecommerce', ['modelo_elegido' => '2', 'comercial_cotizacion' => ['
                            'precio_cotizado' => '$190.000']);
 oa([dc(['mensajes' => []])]);
 $r = turno('Dale, vamos con el plan anual', $c, $cfg);
-caso('cotizada con el anual viejo ($190.000) → pago/anual190 con seña $60.000 y resto $130.000', $r === ['Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('cotizada con el anual viejo ($190.000) → pago/anual190 con seña $60.000 y resto $130.000', $r === [ENLACE_PAGO . 'Para arrancar con todas las modificaciones son $60.000 y el resto ($130.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual190'], json_encode($r, JSON_UNESCAPED_UNICODE));
 // La prueba de precios (31-oct): B manda el pago inicial; en A no hay plan anual.
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1', 'ab_grupo' => 'b', 'comercial_cotizacion' => ['origen' => 'bot', 'plan' => 'panel', 'anual' => '', 'mensual' => '$30.000', 'unico' => '$330.000', 'inicial' => '$100.000', 'modelo' => 'b', 'ts' => time() - 7200],
                            'inicial_cotizado' => '$100.000', 'precio_cotizado' => '$100.000', 'precio_modelo' => 'inicial']);
 oa([dc(['quiere_avanzar' => true, 'mensajes' => ['Buenísimo']])]);
 $r = turno('Me gustó mucho, avancemos', $c, $cfg);
-caso('grupo B: le gustó → el detalle del pago inicial (pago/inicial100)', $r === ['Buenísimo', 'Te paso el detalle con todas las condiciones y los datos para la transferencia del pago inicial: gokywebs.com/pago/inicial100'] && ($c['postdemo_link_pago'] ?? '') === 'inicial', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('grupo B: le gustó → el detalle del pago inicial (pago/inicial100)', $r === ['Buenísimo', ENLACE_PAGO . 'Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: gokywebs.com/pago/inicial100'] && ($c['postdemo_link_pago'] ?? '') === 'inicial', json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1', 'ab_grupo' => 'a', 'comercial_cotizacion' => ['origen' => 'bot', 'plan' => 'panel', 'anual' => '', 'mensual' => '$30.000', 'unico' => '$330.000', 'modelo' => 'a', 'ts' => time() - 7200]]);
 oa([dc(['mensajes' => ['Te cuento']])]);
 $r = turno('plan anual', $c, $cfg);
@@ -513,7 +515,7 @@ caso('«Sería el mensual» → el link mensual y queda anotada la modalidad', $
 $ca = $c;
 oa([dc(['mensajes' => []])]);
 $r = turno('anual', $ca, $cfg);
-caso('«anual» → el plan anual con la seña y el resto', $r === ['Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210']
+caso('«anual» → el plan anual con la seña y el resto', $r === [ENLACE_PAGO . 'Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual210']
     && ($ca['modalidad_elegida'] ?? '') === 'unico', json_encode($r, JSON_UNESCAPED_UNICODE));
 $cl = $c;
 oa([dc(['pide_pago' => true, 'mensajes' => []])]);

@@ -480,11 +480,12 @@ function wabot_textos_default() {
              * la prueba de precios tiene la suya (ab_precios); en B, ninguna. */
             'pregunta_modalidad' => 'Para pasarte el link de pago, preferís el pago único, el plan anual o el plan mensual?',
             'modelo_elegido' => 'Perfecto, tomamos el modelo {modelo}',
-            'link_mensual' => 'Te dejo el link de Mercado Pago para activar el plan mensual de la web. En ese enlace podés ver todos los detalles del servicio. Una vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}',
-            'link_anual' => 'Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}',
-            'link_unico' => 'Te paso el pago único con todas las condiciones y los datos para la transferencia. Para arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}',
+            // Pablo, 2-nov: todos los links de pago arrancan igual («Te paso el enlace donde están…»).
+            'link_mensual' => "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}",
+            'link_anual' => "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nPara arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}",
+            'link_unico' => "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nPara arrancar con todas las modificaciones son {sena} y el resto ({saldo}) se paga al finalizar la web, que no demora más de 7 días: {link}",
             // Modelo B de la prueba de precios (31-oct): un solo pago inicial, sin seña ni saldo.
-            'link_inicial' => 'Te paso el detalle con todas las condiciones y los datos para la transferencia del pago inicial: {link}',
+            'link_inicial' => "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}",
             // Si no quiere Mercado Pago o pide el alias / CBU: los mismos datos que figuran en las páginas de pago/.
             'transferencia_cbu' => "Te paso los datos para la transferencia:
 Alias: pablotravi
