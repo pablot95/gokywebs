@@ -13,7 +13,7 @@ wabot_precio_congelar($c, 'landing', $cfg);
 $r = turno('dale', $c, $cfg);
 // 18-sep: el formulario va con el código de la charla, no el link pelado.
 caso('un sí corto inmediatamente después del precio manda solo el formulario',
-    count($r) === 1 && tiene_form($r) && strpos($r[0], 'gokywebs.com/form/?c=') !== false, json_encode($r));
+    count($r) === 1 && tiene_form($r) && strpos($r[0], 'gokywebs.com/form/') !== false, json_encode($r));
 caso('queda marcado como prospecto y el bot se apaga', !empty($c['esProspecto']) && !empty($c['bot_off']) && !empty($c['handoff_pendiente']));
 
 $c = conv_nueva('549110001BTEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,

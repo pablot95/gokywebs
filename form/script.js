@@ -382,6 +382,12 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
         telefonoCorregir.textContent = 'Cambiar';
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
+    } else {
+        // Link simple (2-nov): el número es lo que ata el formulario al chat.
+        const pista = document.createElement('p');
+        pista.className = 'form-tip';
+        pista.textContent = 'Poné el WhatsApp desde el que nos escribiste: por ahí te mandamos la demo.';
+        telefonoInput.insertAdjacentElement('afterend', pista);
     }
 
     if (!precargados) return;
@@ -638,6 +644,130 @@ function buildPayload() {
     return payload;
 }
 
+/* ─── Fotos (2-nov) ─────────────────────────────────────────────────────────
+ * Hasta 20, de una. No viajan con el formulario: se suben de a una a
+ * form-imagenes.php recién cuando el envío se aceptó (con el permiso `subida`
+ * que devuelve form-lead.php), así una foto pesada o una conexión lenta nunca
+ * frenan el boceto. Las grandes se achican antes (lado mayor 2400 px, JPEG):
+ * desde el celular una foto de 6 MB pasa a menos de 1 MB. */
+const FOTOS_URL = '/wabot/form-imagenes.php';
+const FOTOS_MAX = 20;
+const FOTOS_MAX_BYTES = 15 * 1024 * 1024;
+const fotosInput = document.getElementById('fotos');
+const fotosGrid = document.getElementById('fotosGrid');
+const fotosContador = document.getElementById('fotosContador');
+const fotosElegidas = [];   // { file, url }
+
+function pintarFotos(aviso = '') {
+    if (!fotosGrid) return;
+    fotosGrid.replaceChildren();
+    fotosElegidas.forEach((f, i) => {
+        const li = document.createElement('li');
+        li.className = 'foto-item';
+        const img = document.createElement('img');
+        img.src = f.url;
+        img.alt = '';
+        const quitar = document.createElement('button');
+        quitar.type = 'button';
+        quitar.className = 'foto-quitar';
+        quitar.setAttribute('aria-label', `Quitar la foto ${i + 1}`);
+        quitar.textContent = '×';
+        quitar.addEventListener('click', () => {
+            URL.revokeObjectURL(f.url);
+            fotosElegidas.splice(i, 1);
+            pintarFotos();
+        });
+        li.append(img, quitar);
+        fotosGrid.append(li);
+    });
+    fotosContador.textContent = aviso || `${fotosElegidas.length}/${FOTOS_MAX}`;
+    fotosContador.classList.toggle('fotos-aviso', !!aviso);
+    const elegir = document.querySelector('.fotos-elegir');
+    if (elegir) elegir.hidden = fotosElegidas.length >= FOTOS_MAX;
+}
+
+if (fotosInput) fotosInput.addEventListener('change', () => {
+    const nuevas = [...fotosInput.files].filter(f => /^image\//.test(f.type) || /\.(heic|heif)$/i.test(f.name));
+    const lugar = FOTOS_MAX - fotosElegidas.length;
+    let pesadas = 0;
+    nuevas.slice(0, lugar).forEach(file => {
+        if (file.size > FOTOS_MAX_BYTES * 3) { pesadas++; return; }   // ni achicada entraría
+        fotosElegidas.push({ file, url: URL.createObjectURL(file) });
+    });
+    fotosInput.value = '';
+    const aviso = nuevas.length > lugar ? `${fotosElegidas.length}/${FOTOS_MAX} · El máximo es ${FOTOS_MAX}: quedaron las primeras.`
+        : pesadas ? `${fotosElegidas.length}/${FOTOS_MAX} · ${pesadas === 1 ? 'Una foto era' : pesadas + ' fotos eran'} demasiado pesada${pesadas === 1 ? '' : 's'}.` : '';
+    pintarFotos(aviso);
+});
+
+/** La foto lista para subir: si pesa más de 1,9 MB se achica hasta entrar (el
+ * upload_max_filesize de fábrica de PHP es 2 MB). Lo que el navegador no puede
+ * leer (HEIC en Chrome) va como vino. */
+const FOTO_TOPE_SUBIDA = 1.9 * 1024 * 1024;
+async function fotoParaSubir(file) {
+    if (file.size <= FOTO_TOPE_SUBIDA || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+    try {
+        const bmp = await createImageBitmap(file);
+        let mejor = null;
+        // De a pasos: la primera que entra es la de mejor calidad. El PNG (un logo
+        // con transparencia) prueba primero seguir PNG; si no entra, pasa a JPEG.
+        const pasos = [[2400, 0.85], [2000, 0.8], [1600, 0.75], [1280, 0.7]];
+        for (const [lado, calidad] of pasos) {
+            const escala = Math.min(1, lado / Math.max(bmp.width, bmp.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(bmp.width * escala);
+            canvas.height = Math.round(bmp.height * escala);
+            const ctx = canvas.getContext('2d');
+            for (const tipo of file.type === 'image/png' ? ['image/png', 'image/jpeg'] : ['image/jpeg']) {
+                if (tipo === 'image/jpeg') { ctx.globalCompositeOperation = 'destination-over'; ctx.fillStyle = '#fff'; }
+                ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+                if (tipo === 'image/jpeg') ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const blob = await new Promise(r => canvas.toBlob(r, tipo, calidad));
+                if (blob && (!mejor || blob.size < mejor.size)) mejor = blob;
+                if (blob && blob.size <= FOTO_TOPE_SUBIDA) { bmp.close(); return comoArchivo(file, blob); }
+            }
+        }
+        bmp.close();
+        return mejor && mejor.size < file.size ? comoArchivo(file, mejor) : file;
+    } catch (_) {
+        return file;
+    }
+}
+function comoArchivo(original, blob) {
+    const nombre = blob.type === 'image/jpeg' ? original.name.replace(/\.\w+$/, '') + '.jpg' : original.name;
+    return new File([blob], nombre, { type: blob.type });
+}
+
+/** Sube las fotos de a una. Devuelve cuántas no pudieron subirse. */
+async function subirFotos(subida, alAvanzar) {
+    let fallidas = 0;
+    for (let i = 0; i < fotosElegidas.length; i++) {
+        alAvanzar(i + 1, fotosElegidas.length);
+        let ok = false;
+        try {
+            const archivo = await fotoParaSubir(fotosElegidas[i].file);
+            if (archivo.size > FOTOS_MAX_BYTES) { fallidas++; continue; }
+            for (let intento = 0; intento < 3 && !ok; intento++) {
+                if (intento) await new Promise(r => setTimeout(r, 1500 * intento));
+                const datos = new FormData();
+                datos.append('subida', subida);
+                datos.append('n', String(i + 1));
+                datos.append('total', String(fotosElegidas.length));
+                datos.append('imagen', archivo, archivo.name);
+                try {
+                    const res = await fetch(FOTOS_URL, { method: 'POST', body: datos });
+                    const json = await res.json().catch(() => ({}));
+                    ok = !!json.ok;
+                    // Tipo, peso o tope: reintentar no lo arregla.
+                    if (!ok && !json.reintentar && res.status >= 400 && res.status < 500) break;
+                } catch (_) { /* red: se reintenta */ }
+            }
+        } catch (_) {}
+        if (!ok) fallidas++;
+    }
+    return fallidas;
+}
+
 /* Aviso de error del envío, en la propia tarjeta y no en un alert: dice qué
  * pasó y qué hacer. Se reemplaza en cada intento. */
 function mostrarErrorEnvio(msg) {
@@ -761,7 +891,14 @@ async function enviarFormulario() {
 
         track('success');
         clearDraft();
-        showSuccess();
+        // Las fotos, con el boceto ya creado: si alguna falla, el formulario igual quedó.
+        let fotosFallidas = 0;
+        if (fotosElegidas.length && json.subida) {
+            fotosFallidas = await subirFotos(json.subida, (n, total) => { btnEnviar.textContent = `Subiendo fotos ${n} de ${total}…`; });
+        } else if (fotosElegidas.length) {
+            fotosFallidas = fotosElegidas.length;
+        }
+        showSuccess(fotosFallidas);
     } catch (err) {
         console.error('Error al enviar el formulario:', err);
         mostrarErrorEnvio('No pudimos enviar el formulario. Revisá tu conexión y probá de nuevo; si sigue fallando, escribinos por WhatsApp.');
@@ -771,7 +908,7 @@ async function enviarFormulario() {
 
 /* Al terminar no se abre WhatsApp (16-sep, pedido de Pablo): los datos ya
  * llegaron al prospecto y lo contactamos nosotros. */
-function showSuccess() {
+function showSuccess(fotosFallidas = 0) {
     const card = document.getElementById('formCard');
     // "Hoy a las 18:00" → "hoy a las 18:00", para la frase de abajo.
     const horaTexto = horaDemoSelect && horaDemoSelect.value ? horaDemoSelect.selectedOptions[0].textContent.replace(/^./, c => c.toLowerCase()) : '';
@@ -785,6 +922,7 @@ function showSuccess() {
             <p class="success-desc">
                 ${horaTexto ? `Vamos a preparar tu demo y te la mandamos por WhatsApp ${horaTexto}.` : 'Vamos a revisar tus datos y los modelos que elegiste. Te escribimos por WhatsApp para coordinar los próximos pasos.'}
             </p>
+            ${fotosFallidas ? `<p class="success-desc">${fotosFallidas === 1 ? 'Una foto no se pudo subir' : fotosFallidas + ' fotos no se pudieron subir'}: mandala${fotosFallidas === 1 ? '' : 's'} por WhatsApp y la${fotosFallidas === 1 ? '' : 's'} sumamos.</p>` : ''}
             <a href="https://www.gokywebs.com" class="success-link">Mientras tanto, explorá nuestros trabajos →</a>
         </div>
     `;

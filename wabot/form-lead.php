@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/redactor.php';
 require_once __DIR__ . '/presentar.php';
+require_once __DIR__ . '/form-imagenes.php';
 
 /* ── Paso 2 del formulario (10-sep) ───────────────────────────────────────────
  * Web de referencia y lo que quiere incluir sí o sí. El estilo de página se
@@ -343,6 +344,9 @@ $res = wabot_form_lead_procesar($payload, $cfg);
 if (!empty($res['ok']) && $base !== null) {
     formlead_instagram_sincronizar($base['clave'] ?? '');
     formlead_demo_hora_sincronizar($base['clave'] ?? '');
+    // El permiso para subir las fotos que eligió (2-nov): el formulario las manda de a una a form-imagenes.php.
+    $subida = form_imagenes_permiso((string)($base['clave'] ?? ''));
+    if ($subida !== '') $res['subida'] = $subida;
 }
 
 if (empty($res['ok']) && !empty($res['reintentar'])) {

@@ -1192,13 +1192,29 @@ function wabot_form_link(&$conv, $cfg) {
      * wabot_cerrar_o_pedir_whatsapp antes de cerrar por chat). El &ig=1 le
      * dice al formulario que muestre y pida el número en vez de darlo por
      * sabido. */
-    $link = 'https://gokywebs.com/form/?c=' . $codigo;
+    return wabot_form_link_armar($conv, $codigo);
+}
+
+/**
+ * El link en sí. Desde el 2-nov (Pablo: «el link se envía de manera simple, que
+ * la conexión sea el número de teléfono») en WhatsApp va sin código: el
+ * formulario pide el número y el envío se ata a la charla de ese abonado
+ * (wabot_form_lead_validar). Si tipea otro número, la demo le llega a ese por
+ * la plantilla presentar_demo (presentar.php). Instagram conserva el ?c=: del
+ * IGSID no sale ningún teléfono con qué atarlo. Lo usan el bot y el botón del panel.
+ */
+function wabot_form_link_armar($conv, $codigo) {
+    if (wabot_canal($conv) === 'instagram') {
+        $link = 'https://gokywebs.com/form/?c=' . $codigo . '&ig=1';
+    } else {
+        $link = 'https://gokywebs.com/form/';
+    }
     /* Prueba de precios (31-oct): el formulario muestra solo las formas de pago del
      * grupo (m=b: pago inicial + mensualidad; m=a: pago único o mensual, el A que
      * se cerró el 2-nov). Sin parámetro, plan anual o mensual (A2). */
     $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
-    if ($modelo === 'a' || $modelo === 'b') $link .= '&m=' . $modelo;
-    return wabot_canal($conv) === 'instagram' ? $link . '&ig=1' : $link;
+    if ($modelo === 'a' || $modelo === 'b') $link .= (strpos($link, '?') === false ? '?' : '&') . 'm=' . $modelo;
+    return $link;
 }
 
 function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
@@ -3279,7 +3295,8 @@ function wabot_logo_cliente($cv) {
     $ultimaImagen = null;
     $ultimaConLogo = null;
     foreach ((array)($cv['transcript'] ?? []) as $fila) {
-        if (($fila['q'] ?? '') !== 'cliente') continue;
+        // Las fotos que subió en el formulario (2-nov) quedan como línea de sistema con la marca `form`.
+        if (($fila['q'] ?? '') !== 'cliente' && empty($fila['media']['form'])) continue;
         $archivo = $fila['media']['archivo'] ?? null;
         if (($fila['media']['clase'] ?? '') !== 'imagen' || !$archivo) continue;
         $ultimaImagen = $archivo;
@@ -7096,6 +7113,24 @@ function wabot_form_lead_validar($payload, &$motivo = null) {
 }
 
 /**
+ * Una foto que subió en el formulario (2-nov, Pablo: «que puedan agregar
+ * imágenes, muchas de una, máximo 20»). Va a la misma carpeta que las de
+ * WhatsApp, así el botón «Imágenes» del boceto y la PC (imagenes-bajar.php) la
+ * traen sin cambios. En el chat queda como línea de sistema y no de cliente:
+ * no abre la ventana de 24 h ni cuenta como que escribió (presentar.php decide
+ * por eso si va la plantilla). Devuelve lo que guardó o null.
+ */
+function wabot_form_imagen_guardar(&$conv, $bytes, $mime, $nombre, $n = 0, $total = 0) {
+    $guardada = wabot_media_guardar(wabot_conversation_key($conv), $bytes, $mime, 'imagen', (string)$nombre);
+    if ($guardada === null) return null;
+    $guardada['form'] = true;
+    $cuenta = ($n > 0 && $total > 0) ? " {$n} de {$total}" : '';
+    wabot_conv_transcript($conv, 'sistema', "[Formulario web] Imagen{$cuenta}", $guardada);
+    $conv['imagenes_recibidas'] = (int)($conv['imagenes_recibidas'] ?? 0) + 1;
+    return $guardada;
+}
+
+/**
  * Freno por IP del formulario público: hasta $max envíos cada $ventana
  * segundos. Sin esto, cualquiera podía tirar envíos en loop contra
  * form-lead.php (auditoría 7-sep, punto F). Guarda un JSON chico en data/.
@@ -7159,6 +7194,14 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if ($telWsp !== '') $conv['telefono_wsp'] = $telWsp;
 
     $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
+    /* El link simple (2-nov) no trae código: la charla de ese abonado a la que
+     * ya le mandamos el formulario cuenta como suya, igual que con el ?c=. Sin
+     * esto el envío solo completaba lo vacío y no pisaba la descripción que el
+     * bot había sacado del chat. A una charla que nunca recibió el link sigue
+     * sin poder pisarle nada. */
+    if (!$conCodigo && $huboChatReal && empty($conv['form_completado_ts']) && wabot_conv_form_recibido($conv)) {
+        $conCodigo = true;
+    }
 
     /* Sin código, el envío NO está autorizado a pisar una charla que ya
      * existe. Cualquiera con el teléfono de un cliente podía reemplazarle la
@@ -7383,23 +7426,29 @@ function wabot_logo_sincronizar(&$conv) {
     if (empty($conv['lead_creado'])) return false;
 
     $archivo = wabot_logo_cliente($conv);
-    if ($archivo === null || $archivo === ($conv['logo_sincronizado'] ?? null)) return false;
+    /* El contador viaja con el logo (2-nov): «Imágenes (N)» del boceto se
+     * quedaba con las que había al crearlo aunque el zip trajera todas. */
+    $cuantas = (int)($conv['imagenes_recibidas'] ?? 0);
+    if ($archivo === null || ($archivo === ($conv['logo_sincronizado'] ?? null)
+        && $cuantas === (int)($conv['imagenes_sincronizadas'] ?? -1))) return false;
 
     $doc = trim((string)($conv['lead_doc'] ?? ''));
     if ($doc === '') return false;
 
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
         $conv['logo_sincronizado'] = $archivo;
+        $conv['imagenes_sincronizadas'] = $cuantas;
         return true;
     }
 
     $campos = [
         'logoUrl'    => ['stringValue' => wabot_logo_url(wabot_conversation_key($conv), $archivo)],
         'logoNombre' => ['stringValue' => wabot_logo_nombre($conv, $archivo)],
+        'imagenes_recibidas' => ['integerValue' => (string)$cuantas],
         'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
     ];
     $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
-         . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=updatedAt';
+         . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=imagenes_recibidas&updateMask.fieldPaths=updatedAt';
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -7418,6 +7467,7 @@ function wabot_logo_sincronizar(&$conv) {
         return false;
     }
     $conv['logo_sincronizado'] = $archivo;
+    $conv['imagenes_sincronizadas'] = $cuantas;
     wabot_log('logo_agregado', ['clave' => wabot_conversation_key($conv), 'archivo' => $archivo]);
     return true;
 }

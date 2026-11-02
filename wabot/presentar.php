@@ -115,8 +115,18 @@ function wabot_presentar_muestra(array $in, $cfg) {
         $enviados++;
         if ($i === 0) $conv['presentado_via_bot'] = true;
     }
+    /* Dejó en el formulario un número que nunca nos escribió (link simple,
+     * 2-nov): sin ventana, la demo va por la plantilla presentar_demo (cuerpo
+     * con el negocio, botón a gokywebs.com/demo/{slug}). Apagada hasta que Meta
+     * la apruebe; mientras, sigue el aviso de mandarla a mano. */
+    $porPlantilla = $fueraVentana && wabot_ultimo_cliente_ts($conv) === 0
+        && wabot_enviar_plantilla($conv, 'presentar_demo', $cfg);
+    if ($porPlantilla) {
+        $conv['presentado_via_bot'] = true;
+        $textosEnviados = array_fill(0, count($textos), true);
+    }
     $total   = count($textos);
-    $enviado = $enviados === $total;
+    $enviado = $porPlantilla || $enviados === $total;
 
     // Le llegó la demo: para Meta es un lead calificado ('Schedule' no existe en mensajería).
     wabot_capi_evento($conv, 'QualifiedLead', $cfg);
@@ -124,6 +134,7 @@ function wabot_presentar_muestra(array $in, $cfg) {
     wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
                                     'enviados' => $enviados, 'total' => $total,
                                     'fuera_ventana' => $fueraVentana,
+                                    'por_plantilla' => $porPlantilla,
                                     'auto' => !empty($in['auto'])]);
 
     return [
@@ -131,7 +142,8 @@ function wabot_presentar_muestra(array $in, $cfg) {
         'enviado'  => $enviado,
         'enviados' => $enviados,
         'total'    => $total,
-        'fuera_ventana' => $fueraVentana,
+        'fuera_ventana' => $fueraVentana && !$porPlantilla,
+        'por_plantilla' => $porPlantilla,
         // Nunca escribió por WhatsApp: llegó por el formulario o por otro lado.
         'nunca_escribio' => (int)($conv['ultimo_cliente_ts'] ?? 0) === 0,
         'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link

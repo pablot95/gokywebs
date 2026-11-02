@@ -106,7 +106,7 @@ caso('si pide el precio otra vez, el mismo bloque B', strpos(junto($r), 'precio 
 
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 $r = turno('Dale, el mensual', $b, $cfg);
-caso('"el mensual" en B es elegir el pago inicial + mensualidad y va el formulario con &m=b', strpos(junto($r), 'gokywebs.com/form/?c=') !== false && strpos(junto($r), '&m=b') !== false, junto($r));
+caso('"el mensual" en B es elegir el pago inicial + mensualidad y va el formulario con &m=b', strpos(junto($r), 'gokywebs.com/form/?m=b') !== false, junto($r));
 caso('queda anotada la modalidad inicial', ($b['modalidad_elegida'] ?? '') === 'inicial', (string)($b['modalidad_elegida'] ?? ''));
 
 echo "— 3. Modelo B: sitio profesional —\n";
@@ -135,7 +135,7 @@ caso('la respuesta de pago habla del pago único y el mensual, sin anual', strpo
 $a2 = $a;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 $r = turno('la 2', $a2, $cfg);
-caso('"la 2" en A es el plan mensual', ($a2['modalidad_elegida'] ?? '') === 'mensual' && strpos(junto($r), 'gokywebs.com/form/?c=') !== false, (string)($a2['modalidad_elegida'] ?? ''));
+caso('"la 2" en A es el plan mensual', ($a2['modalidad_elegida'] ?? '') === 'mensual' && strpos(junto($r), 'gokywebs.com/form/') !== false, (string)($a2['modalidad_elegida'] ?? ''));
 $a3 = $a;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 turno('la 1', $a3, $cfg);

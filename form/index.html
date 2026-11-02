@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20261026-sin-paso3">
+    <link rel="stylesheet" href="styles.css?v=20261102-fotos">
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -205,6 +205,22 @@
                             <textarea id="incluir" name="incluir" class="field-input field-textarea autosize" rows="1" placeholder="Ej: galería de trabajos, mapa con la ubicación, horarios de atención" maxlength="2000"></textarea>
                         </div>
 
+                        <!-- Fotos (2-nov): hasta 20, de una. script.js las achica y las sube de a una
+                             a wabot/form-imagenes.php DESPUÉS de que se aceptó el formulario. -->
+                        <div class="field-group" id="fotosGroup">
+                            <label class="field-label" for="fotos">
+                                Fotos para tu web <span class="optional">(opcional)</span>
+                                <span class="field-hint" id="fotosContador" aria-live="polite">0/20</span>
+                            </label>
+                            <p class="field-hint" id="fotosAyuda">Tu logo, tus productos, tu local o tus trabajos. Podés elegir varias de una, hasta 20.</p>
+                            <label class="fotos-elegir" for="fotos">
+                                <span class="fotos-elegir-icono" aria-hidden="true">+</span>
+                                <span class="fotos-elegir-texto">Agregar fotos</span>
+                            </label>
+                            <input type="file" id="fotos" class="fotos-input" accept="image/*" multiple aria-describedby="fotosAyuda">
+                            <ul class="fotos-grid" id="fotosGrid" aria-label="Fotos elegidas"></ul>
+                        </div>
+
                     </div>
 
                     <div class="step-nav">
@@ -325,6 +341,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261031-ab-precios"></script>
+    <script type="module" src="script.js?v=20261102-fotos"></script>
 </body>
 </html>

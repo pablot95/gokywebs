@@ -2134,3 +2134,85 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .tipo-web-badge {
     font-family: var(--font-display);
 }
+
+/* ─── Fotos para tu web (2-nov) ───
+   El input real queda oculto (pero accesible por su label): el botón es el
+   label «Agregar fotos», y abajo las miniaturas con su × para quitar. */
+.fotos-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+.fotos-elegir {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 16px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--navy);
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.fotos-elegir:hover,
+.fotos-elegir:has(+ .fotos-input:focus-visible) {
+    border-color: var(--blue);
+    background: var(--blue-light);
+}
+.fotos-elegir[hidden] { display: none; }
+.fotos-elegir-icono {
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+.fotos-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+.fotos-grid:empty { display: none; }
+.foto-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--sand);
+}
+.foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.foto-quitar {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(10,31,68,0.78);
+    color: #fff;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.foto-quitar:hover,
+.foto-quitar:focus-visible { background: var(--error); }
+#fotosContador.fotos-aviso { color: var(--error); }

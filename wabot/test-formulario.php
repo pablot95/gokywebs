@@ -205,7 +205,7 @@ $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
 caso('el texto auxiliar del formulario es el de Pablo (7-oct: "Para hacer la demo", 2 minutos, menos de 24 hs)',
-    preg_match('/^Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: https:\/\/gokywebs\.com\/form\/\S+\nLa entregamos en menos de 24 hs\.$/u', $form) === 1, $form);
+    preg_match('/^Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: https:\/\/gokywebs\.com\/form\/\S*\nLa entregamos en menos de 24 hs\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
 caso('dice que el formulario toma 2 minutos, como lo escribió Pablo', mb_stripos($form, 'toma 2 minutos') !== false);
@@ -224,9 +224,10 @@ echo "— 7. wabot_form_link() y el código corto —\n";
 
 $convWsp = ['tel' => '5491122334455TEST', 'channel_user_id' => '5491122334455TEST', 'canal' => 'whatsapp', 'nombre_negocio' => 'Panadería Sur'];
 $link = wabot_form_link($convWsp, $cfg);
-caso('arma la URL con el código corto de dos caracteres en ?c=', (bool)preg_match('~^https://gokywebs\.com/form/\?c=[A-Z0-9]{2}$~', $link));
+// Link simple desde el 2-nov: en WhatsApp va sin código, se ata por el teléfono.
+caso('en WhatsApp el link va simple, sin ?c=', $link === 'https://gokywebs.com/form/', $link);
 caso('y el teléfono NO viaja en el link', strpos($link, '5491122334455') === false);
-caso('el código queda guardado en la conversación', ($convWsp['codigo'] ?? '') !== '' && strpos($link, $convWsp['codigo']) !== false);
+caso('el código igual queda guardado en la conversación (lo usa Instagram)', ($convWsp['codigo'] ?? '') !== '');
 caso('y es estable: pedirlo de nuevo devuelve el mismo', wabot_form_link($convWsp, $cfg) === $link);
 $cfgFormOff = $cfg; $cfgFormOff['form_activo'] = false;
 $convWspOff = ['tel' => '5491122334466TEST', 'channel_user_id' => '5491122334466TEST', 'canal' => 'whatsapp'];
@@ -563,9 +564,8 @@ caso('copia el mensaje completo, con el texto arriba del link',
     && strpos((string)wabot_textos_default()['form_link_panel'], 'Para hacer la demo, solo tendrías') === 0
     && strpos((string)wabot_textos_default()['form_link_panel'], 'primera entrega gratuita') === false
     && strpos((string)wabot_textos_default()['form_link_panel'], '{link}') !== false);
-caso('y arma el link igual que el bot, con &ig=1 en Instagram',
-    strpos($adminForm, "'https://gokywebs.com/form/?c=' . \$codigo") !== false
-    && strpos($adminForm, "\$link .= '&ig=1'") !== false);
+caso('y arma el link igual que el bot (wabot_form_link_armar)',
+    strpos($adminForm, '$link = wabot_form_link_armar($conv, $codigo);') !== false);
 
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 
@@ -826,5 +826,77 @@ caso('sin lead_doc no se puede saber: se la da por existente', wabot_lead_doc_ex
 foreach (['3810007001', '5493810007001', '3810007002', '5493810007002'] as $k) @unlink(WABOT_DATA . "/conv/$k.json");
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 unset($GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'], $GLOBALS['WABOT_TEST_RESUMEN']);
+
+echo "— 12. Link simple (2-nov): se ata por el teléfono; otro número → demo por plantilla —\n";
+
+@unlink(WABOT_DATA . '/conv/5493810008001.json');
+$simple = wabot_conv_load('5493810008001');
+$simple['transcript'] = [['q' => 'cliente', 't' => 'Hola, tengo una panadería', 'ts' => time() - 900],
+    ['q' => 'bot', 't' => 'Para hacer la demo, solo tendrías que llenar este formulario, toma 2 minutos: https://gokywebs.com/form/', 'ts' => time() - 800]];
+$simple['ultimo_cliente_ts'] = time() - 900;
+$simple['link_form_enviado'] = true;
+$simple['descripcion'] = 'panadería';
+wabot_conv_save($simple);
+$rS = wabot_form_lead_procesar(['t' => '381 000-8001', 'nombre_negocio' => 'Panadería Sur', 'resumen' => 'Panadería artesanal con pan de masa madre', 'colores' => ''], $cfg);
+$simpleDespues = wabot_conv_load('5493810008001');
+caso('sin código, el teléfono del chat al que le mandamos el link cae en esa charla y la actualiza',
+    ($rS['ok'] ?? false) === true && $simpleDespues['descripcion'] === 'Panadería artesanal con pan de masa madre'
+    && (int)($simpleDespues['form_completado_ts'] ?? 0) > 0 && !file_exists(WABOT_DATA . '/conv/3810008001.json'));
+@unlink(WABOT_DATA . '/conv/5493810008001.json');
+
+require_once __DIR__ . '/presentar.php';
+@unlink(WABOT_DATA . '/conv/5493810008002.json');
+wabot_form_lead_procesar(['t' => '3810008002', 'nombre_negocio' => 'Flores del Sur', 'resumen' => 'Florería con envíos a domicilio', 'colores' => ''], $cfg);
+$cfgPres = $cfg;
+$cfgPres['plantillas']['presentar_demo']['activa'] = false;
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = []; $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
+$envApagada = wabot_presentar_muestra(['tel' => '5493810008002', 'negocio' => 'Flores del Sur', 'tipo' => 'landing'], $cfgPres);
+caso('número que nunca escribió con la plantilla apagada: queda para mandar a mano, como antes',
+    !empty($envApagada['fuera_ventana']) && empty($envApagada['enviado']) && $GLOBALS['WABOT_TEST_PLANTILLAS'] === []);
+$cfgPres['plantillas']['presentar_demo']['activa'] = true;
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$envPl = wabot_presentar_muestra(['tel' => '5493810008002', 'negocio' => 'Flores del Sur', 'tipo' => 'landing'], $cfgPres);
+$pl = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
+caso('con la plantilla activa, la demo sale por presentar_demo con el negocio y el slug en el botón',
+    ($pl[1] ?? '') === 'demo_lista' && ($pl[3] ?? []) === ['Flores del Sur'] && ($pl[4] ?? []) === [$envPl['slug']], json_encode($pl, JSON_UNESCAPED_UNICODE));
+caso('...y el panel la da por entregada (no le pide mandarla a mano)',
+    !empty($envPl['enviado']) && !empty($envPl['demo_ok']) && empty($envPl['fuera_ventana']) && !empty($envPl['por_plantilla']));
+caso('...queda en el chat del panel con el link', strpos(json_encode(wabot_conv_load('5493810008002')['transcript'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'gokywebs.com/demo/' . $envPl['slug']) !== false);
+@unlink(WABOT_DATA . '/conv/5493810008002.json');
+
+echo "— 13. Fotos del formulario (2-nov): hasta 20, al mismo boceto —\n";
+
+require_once __DIR__ . '/form-imagenes.php';
+$permiso = form_imagenes_permiso('5493810009001TEST');
+caso('form-lead entrega un permiso firmado para esa charla', $permiso !== '' && form_imagenes_permiso_clave($permiso) === '5493810009001TEST');
+caso('el permiso tocado o vencido no sirve',
+    form_imagenes_permiso_clave(str_replace('5493810009001TEST', '5493810009002TEST', $permiso)) === null
+    && form_imagenes_permiso_clave(form_imagenes_permiso('5493810009001TEST', time() - 3 * 3600)) === null
+    && form_imagenes_permiso_clave('basura') === null);
+caso('solo fotos: un PDF o un ejecutable no entran', form_imagenes_mime_ok('image/jpeg') && form_imagenes_mime_ok('image/heic')
+    && !form_imagenes_mime_ok('application/pdf') && !form_imagenes_mime_ok('application/x-php'));
+
+$foto = wabot_conv_load('5493810009001TEST');
+$foto['lead_creado'] = true; $foto['lead_doc'] = 'projects/x/databases/(default)/documents/propuestas/abc';
+$foto['logo_sincronizado'] = null;
+$png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+$g1 = wabot_form_imagen_guardar($foto, $png, 'image/png', 'logo.png', 1, 2);
+$g2 = wabot_form_imagen_guardar($foto, $png, 'image/png', 'local.png', 2, 2);
+caso('quedan en la carpeta de la charla y el botón Imágenes las encuentra',
+    $g1 && $g2 && count(wabot_imagenes_cliente($foto)) === 2);
+caso('en el chat van como sistema: no abren la ventana ni cuentan como que escribió',
+    wabot_ultimo_cliente_ts($foto) === 0 && end($foto['transcript'])['q'] === 'sistema' && end($foto['transcript'])['t'] === '[Formulario web] Imagen 2 de 2');
+caso('suman al contador de imágenes', (int)$foto['imagenes_recibidas'] === 2);
+caso('y el boceto se entera: enlace a las imágenes y contador nuevo',
+    wabot_logo_sincronizar($foto) === true && (int)$foto['imagenes_sincronizadas'] === 2 && $foto['logo_sincronizado'] === $g2['archivo']);
+caso('sin fotos nuevas no se vuelve a mandar', wabot_logo_sincronizar($foto) === false);
+$foto['imagenes_recibidas'] = 3;
+caso('una foto más por WhatsApp con el mismo enlace igual actualiza el contador', wabot_logo_sincronizar($foto) === true);
+foreach (glob(WABOT_DATA . '/media/5493810009001TEST/*') ?: [] as $f) @unlink($f);
+@rmdir(WABOT_DATA . '/media/5493810009001TEST');
+
+$formJs = (string)@file_get_contents(__DIR__ . '/../form/script.js');
+caso('el formulario sube las fotos recién después de que el envío se aceptó, con tope de 20',
+    strpos($formJs, 'const FOTOS_MAX = 20;') !== false && strpos($formJs, 'await subirFotos(json.subida') !== false);
 
 todo_ok();

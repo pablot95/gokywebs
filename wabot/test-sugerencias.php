@@ -181,7 +181,7 @@ wabot_conv_transcript($cv, 'cliente', 'Dale, armala');
 wabot_conv_save($cv);
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
 $s = wabot_sugerencia_generar($tel, $cfg, true);
-caso('con la oferta ya hecha por Pablo, el "dale" sugiere el formulario', $s['accion'] === 'formulario' && count($s['mensajes']) === 1 && strpos($s['mensajes'][0]['t'], 'gokywebs.com/form/?c=') !== false, json_encode($s['mensajes'], JSON_UNESCAPED_UNICODE));
+caso('con la oferta ya hecha por Pablo, el "dale" sugiere el formulario', $s['accion'] === 'formulario' && count($s['mensajes']) === 1 && strpos($s['mensajes'][0]['t'], 'gokywebs.com/form/') !== false, json_encode($s['mensajes'], JSON_UNESCAPED_UNICODE));
 $cv = wabot_conv_load($tel);
 caso('pero el formulario NO figura como enviado hasta que Pablo lo manda', empty($cv['link_form_enviado']) && empty($cv['form_link_mandado_ts']) && empty($cv['comercial_pausa']));
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];

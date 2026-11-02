@@ -612,6 +612,20 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'automatico' => true,
             'texto' => 'Hola, cómo estás?',
         ],
+        // Utilidad (2-nov): la demo al número que dejó en el formulario y nunca
+        // nos escribió (presentar.php). El botón es gokywebs.com/demo/{slug}.
+        // Apagada hasta que Meta la apruebe.
+        'presentar_demo' => [
+            'nombre' => 'demo_lista',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => false,
+            'automatico' => true,
+            'params' => ['negocio'],
+            'boton' => ['slug'],
+            // El cuerpo de Meta tal cual; el renglón entre corchetes es el botón, para que el link se vea en el chat del panel.
+            'texto' => "Hola! Ya está lista la primera propuesta para la web de {negocio} que pediste en nuestro formulario.\n\nHay dos modelos para elegir: abajo de todo podés cambiar de uno a otro. Cuando la veas, contame qué te pareció por este chat.\n\n[Ver la propuesta: https://gokywebs.com/demo/{slug}]",
+        ],
         // Utilidad (25-oct): el día del cobro, a los del plan mensual que pagan por
         // afuera de Mercado Pago (renovacion.php). Apagada hasta que Meta la apruebe.
         'renovacion_por_fuera' => [

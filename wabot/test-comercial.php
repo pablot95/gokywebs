@@ -105,7 +105,7 @@ function cv_cotizada($solucion = 'tienda', array $extra = []) {
     turno('Vendo zapatillas', $c, $cfg);
     return $c;
 }
-function con_form($r) { return count(array_filter((array)$r, fn($m) => strpos((string)$m, 'gokywebs.com/form/?c=') !== false)) > 0; }
+function con_form($r) { return count(array_filter((array)$r, fn($m) => strpos((string)$m, 'gokywebs.com/form/') !== false)) > 0; }
 
 echo "— 1. Configuración —\n";
 caso('arranca apagado de fábrica (la activación no es un efecto del deploy)', (wabot_textos_default()['flujo_comercial'] ?? '') === 'off');
