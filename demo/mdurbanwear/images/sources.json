@@ -1,0 +1,18 @@
+{
+  "origen": "Zip de ChatGPT («Copiar 10») del prospecto M&D Urban Wear, 2-nov-2026: 9 fotos de producto + mock up. Sin fotos de bancos.",
+  "fotos": {
+    "hero-buzo.webp / hero-buzo-blanco.webp": "01_imagen.jpg (9:16), fondo blanqueado para el multiply del hero",
+    "camisa-oxford-ancha.webp": "02_imagen.jpg (16:9)",
+    "buzo-canguro-negro.webp": "01_imagen.jpg completado a 1:1 con el color del fondo",
+    "camisa-oxford-celeste.webp": "02_imagen.jpg completado a 1:1 con el color del fondo",
+    "jean-clasico-azul.webp": "03_imagen.jpg",
+    "remera-basica-blanca.webp": "04_imagen.jpg",
+    "campera-bomber-azul.webp": "05_imagen.jpg",
+    "pantalon-chino-beige.webp": "06_imagen.jpg",
+    "gorra-negra.webp": "07_imagen.jpg",
+    "cinturon-cuero-suela.webp": "08_imagen.jpg",
+    "sweater-gris.webp": "09_imagen.jpg",
+    "variantes de color (ilustrativas)": "buzo-canguro-gris, camisa-oxford-blanca, campera-bomber-negra, pantalon-chino-verde, cinturon-cuero-negro y sweater-azul: recoloreadas desde las fotos del zip",
+    "og.jpg": "compuesta con hero-buzo-blanco.webp"
+  }
+}
