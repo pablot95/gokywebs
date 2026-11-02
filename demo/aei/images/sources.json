@@ -1,0 +1,18 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto AEI, 2-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "capacitacion-cocina.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos y servicio Capacitaciones",
+    "control-calidad.webp": "01_imagen.jpg (9:16, 900x1600) - servicio Seguimiento",
+    "asesoria-equipamiento.webp": "03_imagen.jpg (1:1) - servicio Equipamiento y portada de «Equipamiento y puesta en marcha de una cocina»",
+    "seleccion-personal.webp": "04_imagen.jpg (1:1) - servicio Selección de personal y portada de «Selección e incorporación del equipo»",
+    "elaboracion-carta.webp": "05_imagen.jpg (1:1) - servicio Elaboración de cartas y portada de «Costeo de platos e ingeniería de carta»",
+    "no-tabla-compartida.webp": "06_imagen.jpg (1:1) - galería, Tabla y cuchillo: lo que no se debe",
+    "si-tablas-separadas.webp": "07_imagen.jpg (1:1) - galería, Tabla y cuchillo: lo que se debe; servicio Control de calidad y BPM",
+    "no-mercaderia-piso.webp": "08_imagen.jpg (1:1) - galería, Depósito: lo que no se debe",
+    "si-estanteria-ordenada.webp": "09_imagen.jpg (1:1) - galería, Depósito: lo que se debe; portada de «Buenas prácticas de manufactura en la cocina»",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": {},
+  "pedido": "Incluir sí o sí: galería de lo que no se debe y lo que se debe (dos pares de fotos + cuatro reglas)"
+}
