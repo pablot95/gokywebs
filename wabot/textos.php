@@ -616,9 +616,10 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'automatico' => true,
             'texto' => 'Hola, cómo estás?',
         ],
-        // Utilidad (2-nov): la demo al número que dejó en el formulario y nunca
-        // nos escribió (presentar.php). El botón es gokywebs.com/demo/{slug}.
-        // Apagada hasta que Meta la apruebe.
+        // Utilidad (2-nov): la demo cuando la ventana de 24 h está cerrada, al
+        // presentar (presentar.php): el número del formulario que nunca nos
+        // escribió o el que escribió hace más de 24 h. El botón es
+        // gokywebs.com/demo/{slug}. Apagada hasta que Meta la apruebe.
         'presentar_demo' => [
             'nombre' => 'demo_lista',
             'idioma' => 'es_AR',

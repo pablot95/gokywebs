@@ -863,6 +863,25 @@ caso('...y el panel la da por entregada (no le pide mandarla a mano)',
     !empty($envPl['enviado']) && !empty($envPl['demo_ok']) && empty($envPl['fuera_ventana']) && !empty($envPl['por_plantilla']));
 caso('...queda en el chat del panel con el link', strpos(json_encode(wabot_conv_load('5493810008002')['transcript'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'gokywebs.com/demo/' . $envPl['slug']) !== false);
 @unlink(WABOT_DATA . '/conv/5493810008002.json');
+// Pablo, 2-nov: también el que escribió por WhatsApp pero hace más de 24 h (antes quedaba para mandar a mano y no se podía).
+@unlink(WABOT_DATA . '/conv/5493810008003.json');
+$viejo = wabot_conv_load('5493810008003');
+$viejo['transcript'] = [['q' => 'cliente', 't' => 'Hola, tengo una verdulería', 'ts' => time() - 30 * 3600]];
+$viejo['ultimo_cliente_ts'] = time() - 30 * 3600;
+$viejo['nombre_negocio'] = 'Verdulería Ana';
+$viejo['form_completado_ts'] = time() - 29 * 3600;
+wabot_conv_save($viejo);
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = []; $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
+$envViejo = wabot_presentar_muestra(['tel' => '5493810008003', 'negocio' => 'Verdulería Ana', 'tipo' => 'landing'], $cfgPres);
+$plV = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
+caso('escribió hace 30 h (ventana cerrada): la demo sale por la plantilla, no por texto',
+    ($plV[1] ?? '') === 'demo_lista' && ($plV[3] ?? []) === ['Verdulería Ana'] && !empty($envViejo['por_plantilla']) && !empty($envViejo['enviado'])
+    && $GLOBALS['WABOT_TEST_ENVIADOS'] === [] && empty($envViejo['nunca_escribio']), json_encode([$plV, $envViejo['fuera_ventana'] ?? null], JSON_UNESCAPED_UNICODE));
+$cfgPres['plantillas']['presentar_demo']['activa'] = false;
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$envViejoOff = wabot_presentar_muestra(['tel' => '5493810008003', 'negocio' => 'Verdulería Ana', 'tipo' => 'landing'], $cfgPres);
+caso('...y con la plantilla apagada queda para mandar a mano, avisado', !empty($envViejoOff['fuera_ventana']) && empty($envViejoOff['enviado']) && $GLOBALS['WABOT_TEST_PLANTILLAS'] === []);
+@unlink(WABOT_DATA . '/conv/5493810008003.json');
 
 echo "— 13. Fotos del formulario (2-nov): hasta 20, al mismo boceto —\n";
 

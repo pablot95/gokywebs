@@ -3382,7 +3382,7 @@ function burbujaCita(t, chat) {
                 'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
                 'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
                 'aviso_pablo' => 'Aviso a Pablo fuera de las 24 h · Utilidad (va a tu número, no a clientes)',
-                'presentar_demo' => 'Demo al número del formulario que nunca escribió · Utilidad',
+                'presentar_demo' => 'Demo con la ventana de 24 h cerrada · Utilidad',
             ];
             $plantillasVariables = [
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
@@ -3396,7 +3396,7 @@ function burbujaCita(t, chat) {
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
                 'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
                 'aviso_pablo' => 'Automática con cada aviso (mensaje sin contestar, pago, revisión…), solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',
-                'presentar_demo' => 'Al presentar (botón o automático), solo si el número que dejó en el formulario nunca escribió por WhatsApp',
+                'presentar_demo' => 'Al presentar (botón o automático), cuando la ventana de 24 h está cerrada: el número del formulario que nunca escribió o el que escribió hace más de 24 h',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">

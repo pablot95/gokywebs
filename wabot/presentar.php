@@ -115,12 +115,12 @@ function wabot_presentar_muestra(array $in, $cfg) {
         $enviados++;
         if ($i === 0) $conv['presentado_via_bot'] = true;
     }
-    /* Dejó en el formulario un número que nunca nos escribió (link simple,
-     * 2-nov): sin ventana, la demo va por la plantilla presentar_demo (cuerpo
-     * con el negocio, botón a gokywebs.com/demo/{slug}). Apagada hasta que Meta
-     * la apruebe; mientras, sigue el aviso de mandarla a mano. */
-    $porPlantilla = $fueraVentana && wabot_ultimo_cliente_ts($conv) === 0
-        && wabot_enviar_plantilla($conv, 'presentar_demo', $cfg);
+    /* Sin ventana de 24 h la demo va por la plantilla presentar_demo (cuerpo con
+     * el negocio, botón a gokywebs.com/demo/{slug}): el que dejó en el formulario
+     * un número que nunca nos escribió (link simple, 2-nov) y, desde el mismo
+     * día (Pablo), también el que escribió hace más de 24 h. Apagada hasta que
+     * Meta la apruebe; mientras, sigue el aviso de mandarla a mano. */
+    $porPlantilla = $fueraVentana && wabot_enviar_plantilla($conv, 'presentar_demo', $cfg);
     if ($porPlantilla) {
         $conv['presentado_via_bot'] = true;
         $textosEnviados = array_fill(0, count($textos), true);
