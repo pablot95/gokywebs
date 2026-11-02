@@ -1,0 +1,30 @@
+{
+  "origen": "Zip de ChatGPT Apertura_Buenos_Aires_pclfUy9Q2mvHKwgVAs2H.zip (9 imágenes + mock up), 2-nov-2026. El cliente no mandó fotos por WhatsApp (imagenes_recibidas: 0). Las 9 son imágenes ilustrativas de calzado: se reemplazan por fotos de los modelos reales de Apertura con el mismo nombre de archivo.",
+  "recortes": {
+    "botineta-callao-alta.webp": "01_imagen.jpg (9:16 entera)",
+    "botineta-callao.webp": "01_imagen.jpg (recorte 1:1 de las botinetas sobre el pedestal)",
+    "mocasin-santafe-suela-ancho.webp": "02_imagen.jpg (16:9 entera: portada de los dos modelos)",
+    "mocasin-santafe-suela.webp": "02_imagen.jpg (1:1: la foto entera con el fondo de arriba y de abajo extendido)",
+    "balerina-montevideo.webp": "03_imagen.jpg",
+    "mocasin-santafe-negro.webp": "04_imagen.jpg",
+    "forro-detalle.webp": "04_imagen.jpg (recorte 760x760 del forro de cuero natural, bloque «Por dentro, también cuero»)",
+    "sandalia-parana.webp": "05_imagen.jpg",
+    "destalonado-pena.webp": "06_imagen.jpg",
+    "oxford-ayacucho.webp": "07_imagen.jpg",
+    "bota-recoleta.webp": "08_imagen.jpg",
+    "zapatilla-riobamba.webp": "09_imagen.jpg",
+    "g-forro.webp": "04_imagen.jpg (recorte de galería)",
+    "g-mono.webp": "03_imagen.jpg (recorte de galería)",
+    "g-taco.webp": "05_imagen.jpg (recorte de galería)",
+    "g-cordones.webp": "07_imagen.jpg (recorte de galería)",
+    "g-cierre.webp": "08_imagen.jpg (recorte de galería)",
+    "g-hebilla.webp": "06_imagen.jpg (recorte de galería)",
+    "og.jpg": "02_imagen.jpg (1200x630)"
+  },
+  "bancos": [
+    { "archivo": "taller-corte.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/4452610/", "licencia": "Pexels License", "uso": "Galería (Corte), en blanco y negro. Ilustrativa: no es el taller de Apertura.", "descripcion": "Manos cortando una pieza de cuero marrón sobre una plancha de corte" },
+    { "archivo": "taller-aparado.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/6660926/", "licencia": "Pexels License", "uso": "Foto de «Más de 65 años haciendo zapatos en familia» (Aparado), en blanco y negro. Ilustrativa.", "descripcion": "Máquina de aparar cosiendo una pieza de cuero negro" },
+    { "archivo": "taller-mesa.webp", "fuente": "Pexels", "url": "https://www.pexels.com/photo/3084342/", "licencia": "Pexels License", "uso": "Galería (Mesa de trabajo), en blanco y negro. Ilustrativa.", "descripcion": "Artesano trabajando una pieza de cuero sobre una mesa de mármol" }
+  ],
+  "mock_up": "10_mockup_720x480.png: referencia del Modelo 1 (index.html y catalogo.html); no se usa en la página."
+}
