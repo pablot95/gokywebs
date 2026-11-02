@@ -1,0 +1,33 @@
+{
+  "demo": "preciosamia",
+  "fecha": "2026-11-02",
+  "originales": {
+    "01_imagen.jpg … 09_imagen.jpg": "zip de ChatGPT (Copiar 10) del prospecto Ej8p0GjaIrTNZPYcPuSf",
+    "10_mockup_720x480.png": "mock up del zip, referencia del Modelo 1"
+  },
+  "logo": {
+    "logo.webp": "logo que mandó la clienta por el formulario (wabot/data/media/5491139399642/20261102-123904-bae55562.jpg), recortado a círculo con el exterior transparente",
+    "favicon.png": "mismo logo a 180 px"
+  },
+  "derivadas": {
+    "hero-vestido.webp": "recorte 4:5 de 02_imagen.jpg",
+    "vestido-floral-ancha.webp": "02_imagen.jpg en WebP",
+    "vestido-floral-crema.webp": "recorte 1:1 de 02_imagen.jpg (900 px)",
+    "pollera-lisa-alta.webp": "01_imagen.jpg en WebP",
+    "pollera-lisa-rosa.webp": "01_imagen.jpg completada a 1:1 con el color del fondo",
+    "blusa-cuello-alto-crema.webp": "03_imagen.jpg",
+    "camisa-clasica-lila.webp": "04_imagen.jpg",
+    "blazer-entallado-ciruela.webp": "05_imagen.jpg",
+    "tapado-cinto-camel.webp": "06_imagen.jpg",
+    "pollera-plisada-azul.webp": "07_imagen.jpg",
+    "vestido-cuello-alto-salvia.webp": "08_imagen.jpg",
+    "vestido-coro-bordo.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg + logo, 1200x630"
+  },
+  "variantes_recoloreadas": [
+    "pollera-lisa-negra.webp", "pollera-lisa-azul.webp", "pollera-plisada-negra.webp", "pollera-plisada-bordo.webp",
+    "camisa-clasica-blanca.webp", "camisa-clasica-celeste.webp", "blazer-entallado-negro.webp", "tapado-cinto-gris.webp",
+    "vestido-cuello-alto-azul.webp", "vestido-coro-azul.webp", "vestido-coro-negro.webp", "blusa-cuello-alto-rosa.webp"
+  ],
+  "bancos": "ninguna foto de bancos libres"
+}
