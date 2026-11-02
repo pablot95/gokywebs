@@ -710,7 +710,7 @@ body[data-pagina="catalogo"] .site-footer { padding-top: var(--section-pad-y); }
 .qv__galeria { position: relative; align-self: start; }
 .qv__principal { aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius); background: var(--color-bg-alt); }
 .qv__principal img { width: 100%; height: 100%; object-fit: cover; }
-.qv__chapa { position: absolute; left: 16px; bottom: -22px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .3rem; max-width: 220px; padding: .7rem 1rem .75rem; border-radius: var(--radius); background: var(--plano), var(--color-tinta); color: #fff; box-shadow: var(--shadow-sm); }
+.qv__chapa { position: absolute; left: 16px; bottom: -22px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .3rem; width: max-content; max-width: 220px; padding: .7rem 1rem .75rem; border-radius: var(--radius); background: var(--plano), var(--color-tinta); color: #fff; box-shadow: var(--shadow-sm); }
 .qv__chapa b { font: 800 2.8rem/.9 var(--font-display); font-stretch: 75%; color: var(--color-madera-claro); font-variant-numeric: tabular-nums; }
 .qv__chapa span { font: 800 1.2rem/1 var(--font-display); }
 .qv__chapa small { flex-basis: 100%; font-size: .78rem; color: rgba(255, 255, 255, .8); margin-top: .3rem; }
