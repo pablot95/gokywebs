@@ -1187,7 +1187,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'lista') {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['items' => wabot_lista_items()], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['items' => wabot_clientes_marcar_lista(wabot_lista_items())], JSON_UNESCAPED_UNICODE);
         exit;
     }
     /* Conversaciones live (13-sep): las charlas con movimiento, la más reciente
@@ -2265,7 +2265,9 @@ function burbujaCita(t, chat) {
     <?php /* Botones a lo largo, no un desplegable (Pablo, 13-sep): las
      * pestañas se ven todas de un vistazo. En el celular la fila scrollea. */ ?>
     <nav class="tabs tabs-nav" aria-label="Secciones del bot">
-        <?php foreach ($NAV_TABS as $k => $v): ?>
+        <?php foreach ($NAV_TABS as $k => $v):
+            // Clientes (2-nov) es una vista de Conversaciones; esta página queda para asignar los pagos de MP sin dueño.
+            if ($k === 'clientes' && $tab !== 'clientes') continue; ?>
             <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= $v ?></a>
         <?php endforeach; ?>
     </nav>
@@ -3437,6 +3439,7 @@ function burbujaCita(t, chat) {
         $cliModalidades = ['mensual' => 'Plan mensual', 'anual' => 'Plan anual (seña)', 'unico' => 'Pago único (seña)', 'inicial' => 'Pago inicial + mensual'];
         $cliChatLink = function ($clave) use ($e) { return $clave !== '' ? '<a href="admin.php?tab=conversaciones&ver=' . $e(rawurlencode($clave)) . '">Ver chat</a>' : '<span class="meta">sin chat</span>'; };
     ?>
+        <p class="meta">Los chats de los clientes están en <a href="admin.php?tab=conversaciones">Conversaciones</a> → Clientes. Acá quedan los pagos sin asignar y las tablas.</p>
         <?php if ($cliDatos['sin_asignar']): ?>
         <div class="card">
             <h2 style="margin-top:0">Pagos sin asignar <span class="pill pausa"><?= count($cliDatos['sin_asignar']) ?></span></h2>
@@ -3533,7 +3536,9 @@ function burbujaCita(t, chat) {
         // (chatALaVista), y enseguida refresca la lista.
         // La lista la arma lib.php y se pinta por JS: el render inicial y el
         // refresco automático usan exactamente los mismos datos y el mismo código.
-        $items = wabot_lista_items();
+        $items = wabot_clientes_marcar_lista(wabot_lista_items());
+        // Los pagos de MP que entraron sin chat: el aviso de la vista Clientes lleva a asignarlos.
+        $pagosSinAsignar = function_exists('wabot_pagos_sin_asignar') ? count(wabot_pagos_sin_asignar()) : 0;
 
         $convClave = $conv ? (string)($conv['conversation_key'] ?? $ver) : '';
         $restante = $conv ? wabot_ventana_restante($conv) : 0;
@@ -3577,6 +3582,7 @@ function burbujaCita(t, chat) {
                         <button type="button" class="conv-chip" data-grupo="bot" title="Lo que va contestando el bot: las charlas donde conversó en la última semana (sin contar la bienvenida ni los avisos automáticos) y las que tienen una sugerencia lista para mandar. Arriba, la más reciente.">Bot</button>
                         <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats donde el cliente escribió en las últimas 24 h, menos los archivados. Los demás, con el buscador.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="clientes" title="Los chats de los que ya son clientes: pagaron (el bot lo confirmó o lo confirmaste vos) o son el chat de un cliente del admin. Todos, aunque no hayan escrito en las últimas 24 h.">Clientes</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -3591,6 +3597,10 @@ function burbujaCita(t, chat) {
                             </div>
                         </div>
                     </div>
+                    <?php if ($pagosSinAsignar > 0): ?>
+                    <a class="meta" id="convClientesPagos" href="admin.php?tab=clientes" hidden style="display:block;margin-top:8px;color:var(--warn)"
+                       title="Entraron en Mercado Pago y el bot no pudo decir de quién son: elegí el chat y confirmalo">⚠ <?= $pagosSinAsignar ?> pago<?= $pagosSinAsignar === 1 ? '' : 's' ?> de Mercado Pago sin asignar → asignar</a>
+                    <?php endif; ?>
                 </div>
                 <div class="conv-items" id="listaItems"></div>
             </aside>
@@ -3950,8 +3960,10 @@ function burbujaCita(t, chat) {
             try { localStorage.setItem('wabotFechas', JSON.stringify([...fechasChatsSeleccionadas])); } catch (e) {}
         }
 
+        const avisoPagosEl = document.getElementById('convClientesPagos');
         function pintarChips() {
             for (const b of navBtns) b.classList.toggle('on', filtrosActivos.has(b.dataset.grupo));
+            if (avisoPagosEl) avisoPagosEl.hidden = !filtrosActivos.has('clientes');
         }
 
         function alternarFiltro(grupo) {
@@ -4055,6 +4067,8 @@ function burbujaCita(t, chat) {
             if (filtro === 'con_form') return esConForm(it);
             if (filtro === 'todos_humano') return it.grupo !== 'archivado';
             if (filtro === 'demos_presentadas') return esDemoPresentada(it);
+            // Los que ya son clientes (2-nov): pagaron o son el chat de un cliente del admin (clientes.php).
+            if (filtro === 'clientes') return !!it.cliente;
             // Lo que va contestando el bot (9-oct): charlas donde conversó en la última semana, o con una sugerencia lista.
             if (filtro === 'bot') return it.grupo !== 'archivado' && (!!it.sugerencia || Number(it.bot_conversa_ts || 0) >= EMBUDO_DESDE_TS);
             if (filtro === 'favorito') return !!it.favorito;
@@ -4081,7 +4095,8 @@ function burbujaCita(t, chat) {
             // Pidió info, recibió la bienvenida y no contestó más: no va en ninguna
             // vista (Pablo, 4-oct). Sigue en la descarga de chats y en el buscador.
             // En la vista Bot sí: ahí se mira lo que contestó el bot aunque el cliente no haya vuelto a escribir.
-            if (it.sin_respuesta_bienvenida && filtro !== 'bot') return false;
+            // Y en Clientes (2-nov): el que ya es cliente aparece siempre, aunque su chat sea solo la bienvenida.
+            if (it.sin_respuesta_bienvenida && filtro !== 'bot' && filtro !== 'clientes') return false;
             if (VISTAS_CON_VENCIMIENTO.has(filtro) && vencido(it)) return false;
             return cumpleFiltro(it, filtro);
         }

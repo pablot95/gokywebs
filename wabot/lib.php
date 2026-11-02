@@ -3604,6 +3604,8 @@ function wabot_lista_item($tel) {
             // Las líneas internas del formulario (`q=sistema`) no alteran esta
             // comparación, así completar el form no cuenta como haber hablado.
             'ultimo_cliente_ts' => wabot_ultimo_cliente_ts($cv),
+            // Ya pagó (1-nov, pagos.php): entra en la vista Clientes (2-nov), junto con los del admin (clientes.php).
+            'pago_confirmado' => (int)($cv['pago_confirmado_ts'] ?? 0) > 0,
             'ultimo_salida_ts' => wabot_ultima_salida_ts($cv),
             'estado' => !empty($cv['bot_off']) ? 'apagado'
                       : (((int)$cv['pausado_hasta'] > time()) ? 'pausado'

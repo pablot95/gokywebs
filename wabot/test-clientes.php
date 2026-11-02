@@ -72,4 +72,28 @@ caso('la pestaña existe y usa los datos de clientes.php', strpos($admin, "'clie
 caso('la ficha muestra el pago y tiene el botón Confirmar pago', strpos($admin, 'wabot_pago_resumen_ficha($conv)') !== false && strpos($admin, "value=\"pago_confirmar_manual\"") !== false);
 caso('los pagos sin asignar se asignan e ignoran desde la pestaña', strpos($admin, "\$a === 'pago_asignar'") !== false && strpos($admin, "\$a === 'pago_ignorar'") !== false);
 
+echo "— Vista Clientes de Conversaciones (2-nov) —\n";
+// Pablo: «Clientes, quiero que sea solo una pestaña, al lado de Todos, que me muestre los chats de los que ya son clientes».
+$cacheVista = sys_get_temp_dir() . '/wabot-clientes-vista-' . getmypid() . '.json';
+$GLOBALS['WABOT_TEST_CLIENTES_CACHE'] = $cacheVista;
+file_put_contents($cacheVista, json_encode(['ts' => $ahora, 'nuevos' => [['clave' => '5491100007001TEST']],
+    'mantenimiento' => [['clave' => '5491100007002TEST'], ['clave' => '']]]));
+$marcados = wabot_clientes_marcar_lista([['tel' => '5491100007001TEST'], ['tel' => '5491100007002TEST'], ['tel' => '5491100007003TEST', 'pago_confirmado' => true], ['tel' => '5491100007004TEST']]);
+caso('marca como cliente al que pagó y al chat de un cliente del admin; al resto no', array_column($marcados, 'cliente') === [true, true, true, false], json_encode($marcados));
+@unlink($cacheVista);
+caso('sin la caché (todavía no corrió el cron) vale solo el pago confirmado', array_column(wabot_clientes_marcar_lista([['tel' => '5491100007002TEST'], ['tel' => 'x', 'pago_confirmado' => true]]), 'cliente') === [false, true]);
+unset($GLOBALS['WABOT_TEST_CLIENTES_CACHE']);
+$cvPago = conv_nueva('5491100007005TEST');
+$cvPago['pago_confirmado_ts'] = $ahora - 3600;
+wabot_conv_save($cvPago);
+caso('la fila de la lista dice si ya pagó', !empty(wabot_lista_item('5491100007005TEST')['pago_confirmado']) && empty(wabot_lista_item('5491100007001TEST')['pago_confirmado']));
+@unlink(wabot_conv_path('5491100007005TEST'));
+$chips = substr($admin, (int)strpos($admin, 'id="convChips"'), 3000);
+caso('el filtro Clientes está al lado de Todos', (bool)preg_match('/data-grupo="todos_humano"[^\n]*>Todos<\/button>\s*<button[^>]*data-grupo="clientes"[^>]*>Clientes<\/button>/', $chips));
+caso('filtra por la marca cliente, sin el vencimiento de 24 h', strpos($admin, "if (filtro === 'clientes') return !!it.cliente;") !== false
+    && !preg_match("/VISTAS_CON_VENCIMIENTO = new Set\(\[[^\]]*'clientes'/", $admin));
+caso('la lista del panel sale marcada', strpos($admin, "wabot_clientes_marcar_lista(wabot_lista_items())") !== false);
+caso('Clientes ya no está en el menú de la derecha (la página queda para asignar pagos)', strpos($admin, "if (\$k === 'clientes' && \$tab !== 'clientes') continue;") !== false);
+caso('el cron mantiene al día la caché de clientes', strpos((string)file_get_contents(__DIR__ . '/seguimiento.php'), 'wabot_clientes_datos()') !== false);
+
 todo_ok();

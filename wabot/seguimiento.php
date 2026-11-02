@@ -31,6 +31,7 @@ require_once __DIR__ . '/renovacion.php';
 require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/pagos.php';
 require_once __DIR__ . '/onboarding.php';
+require_once __DIR__ . '/clientes.php';
 
 if (php_sapi_name() !== 'cli') {
     $auth = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');
@@ -64,6 +65,8 @@ $webs = wabot_webs_correr($cfg);
 $pagos = wabot_pagos_correr($cfg);
 // Al que pagó y se cortó en el medio de los datos para la web, el recordatorio a las 24 h (onboarding.php).
 $onboarding = wabot_onboarding_recordatorio_correr($cfg);
+// Los clientes del admin cruzados con sus chats (clientes.php): la vista Clientes de Conversaciones los lee de esta caché.
+try { wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
 $reaviso = wabot_push_reaviso_correr();
 

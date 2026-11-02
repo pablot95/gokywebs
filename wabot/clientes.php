@@ -305,6 +305,26 @@ function wabot_clientes_datos($forzar = false, $ahora = null) {
     return $datos;
 }
 
+/**
+ * La vista Clientes de Conversaciones (Pablo, 2-nov: «que sea solo una
+ * pestaña, al lado de Todos, con los chats de los que ya son clientes»): marca
+ * `cliente` en las filas de la lista que pagaron (pago_confirmado) o que son el
+ * chat de un cliente del admin. Esos salen de la caché de esta pestaña, sin ir
+ * a Firestore: la lista se pide cada pocos segundos (el cron la mantiene al día).
+ */
+function wabot_clientes_marcar_lista(array $items) {
+    $cache = json_decode((string)@file_get_contents(wabot_clientes_cache_archivo()), true);
+    $claves = [];
+    foreach (['nuevos', 'mantenimiento'] as $k) {
+        foreach ((array)($cache[$k] ?? []) as $r) {
+            if (is_array($r) && (string)($r['clave'] ?? '') !== '') $claves[(string)$r['clave']] = true;
+        }
+    }
+    foreach ($items as &$it) $it['cliente'] = !empty($it['pago_confirmado']) || isset($claves[(string)($it['tel'] ?? '')]);
+    unset($it);
+    return $items;
+}
+
 /** El nombre de una charla por su clave, sin cargarla entera si está en la lista del panel. */
 function wabot_clientes_nombre_de($clave) {
     if (!wabot_conv_existe($clave)) return $clave;
