@@ -1,0 +1,23 @@
+{
+  "zip_chatgpt": {
+    "origen": "Zip Laura_Mac_Caddon_Fotografias de ChatGPT (Copiar 10), prospecto diTKKiPXsyU9J2mwpRHj",
+    "nota": "Imágenes ilustrativas generadas para la demo; la web lo dice en la galería y en el pie.",
+    "archivos": {
+      "01_imagen.jpg": "madre-hija-campo.webp (recortada a 900x1440 para sacar la estrellita de Gemini de la esquina inferior derecha)",
+      "02_imagen.jpg": "familia-parque.webp (hero de los dos modelos y la historia «Una tarde en el parque»); og.jpg",
+      "03_imagen.jpg": "nene-otono.webp",
+      "04_imagen.jpg": "papa-cuento.webp",
+      "05_imagen.jpg": "bebe-picnic.webp (Quién soy)",
+      "06_imagen.jpg": "abuela-nieta.webp",
+      "07_imagen.jpg": "recien-nacido.webp",
+      "08_imagen.jpg": "familia-living.webp",
+      "09_imagen.jpg": "hermanos-burbujas.webp",
+      "10_mockup_720x480.png": "referencia de diseño del Modelo 1"
+    }
+  },
+  "cliente": {
+    "origen": "Sin imágenes propias del cliente (no hay logo ni fotos en Descargas/imagenes-prospectos).",
+    "datos_reales": "Instagram @lauramaccaddon.fotografias (bio: «Atrapando el tiempo», fotografía de niños y familia, eventos sociales, Granadero Baigorria y alrededores)."
+  },
+  "bancos": {}
+}
