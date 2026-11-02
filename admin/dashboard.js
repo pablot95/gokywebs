@@ -4627,6 +4627,92 @@ async function enviarSeguimientoATodos() {
 }
 document.getElementById("segEnviarTodos")?.addEventListener("click", enviarSeguimientoATodos);
 
+/* La misma plantilla a una lista pegada (Pablo, 2-nov: "armá el envío en
+   tanda" para los que recibieron el link de pago y no pagaron). No hace falta
+   que estén en Seguimientos: el servidor busca la charla por el teléfono. Se
+   saca un teléfono por renglón (lo de antes queda como nombre para el
+   resumen); los que se repiten van una vez. Instagram no recibe plantillas. */
+function _segListaParsear(texto) {
+    const vistos = new Set();
+    const items = [];
+    for (const renglon of String(texto || "").split(/\r?\n/)) {
+        const m = renglon.match(/\+?\d[\d \-()]{7,}\d/);
+        if (!m) continue;
+        const tel = cleanArgPhone(m[0]);
+        if (tel.length !== 10 || vistos.has(tel)) continue;
+        vistos.add(tel);
+        const nombre = renglon.slice(0, m.index).replace(/[\t|;,]+/g, " ").trim();
+        items.push({ tel, nombre: nombre || tel });
+    }
+    return items;
+}
+
+const segListaModal = document.getElementById("segListaModal");
+const segListaTexto = document.getElementById("segListaTexto");
+function _segListaPintar() {
+    const items = _segListaParsear(segListaTexto.value);
+    const btn = document.getElementById("segListaEnviarBtn");
+    btn.disabled = !items.length || !!segEnvioMasivo;
+    btn.textContent = items.length ? `Enviar a ${items.length}` : "Enviar";
+    document.getElementById("segListaResumen").textContent = items.length
+        ? `${items.length} ${items.length === 1 ? "teléfono" : "teléfonos"}: ` + items.map(x => x.nombre).join(", ")
+        : "Ningún teléfono todavía.";
+}
+function _segListaCerrar() { if (!segEnvioMasivo) segListaModal.hidden = true; }
+document.getElementById("segEnviarLista")?.addEventListener("click", () => {
+    segListaModal.hidden = false;
+    _segListaPintar();
+    segListaTexto.focus();
+});
+segListaTexto?.addEventListener("input", _segListaPintar);
+document.getElementById("closeSegListaBtn")?.addEventListener("click", _segListaCerrar);
+document.getElementById("cancelSegListaBtn")?.addEventListener("click", _segListaCerrar);
+
+document.getElementById("segListaEnviarBtn")?.addEventListener("click", async () => {
+    if (segEnvioMasivo) return;
+    const items = _segListaParsear(segListaTexto.value);
+    if (!items.length) return;
+    if (!confirm(`¿Mandar la plantilla seguimiento_interesado por WhatsApp a ${items.length} ${items.length === 1 ? "teléfono" : "teléfonos"}?\n\nEs una plantilla de Marketing: Meta cobra cada envío. Sale una sola vez por chat.`)) return;
+
+    segEnvioMasivo = { detener: false, hechos: 0, total: items.length };
+    const btn = document.getElementById("segListaEnviarBtn");
+    const avisoSalida = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", avisoSalida);
+    const enviadas = [], yaTenian = [], fallas = [];
+    try {
+        await wabotAuthHandshake();
+        for (const x of items) {
+            btn.disabled = true;
+            btn.textContent = `Enviando… (${segEnvioMasivo.hechos}/${segEnvioMasivo.total})`;
+            try {
+                const res = await fetch("../wabot/admin.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({ accion: "seguimiento_template_interesado", tel: x.tel }),
+                    credentials: "same-origin"
+                });
+                const data = await res.json();
+                if (data.ok) enviadas.push(x.nombre);
+                else if (data.resultado === "ya") yaTenian.push(x.nombre);
+                else fallas.push(`${x.nombre} (${x.tel}): ${TEMPLATE_INTERESADO_MOTIVOS[data.resultado] || TEMPLATE_INTERESADO_MOTIVOS.error}`);
+            } catch (e) {
+                fallas.push(`${x.nombre} (${x.tel}): no se pudo contactar al panel del bot (${e.message})`);
+            }
+            segEnvioMasivo.hechos++;
+            await new Promise(r => setTimeout(r, 400));
+        }
+    } finally {
+        segEnvioMasivo = null;
+        window.removeEventListener("beforeunload", avisoSalida);
+        _segListaPintar();
+        renderSeg();
+        sincronizarPresentados();
+        alert(`Enviadas: ${enviadas.length}.`
+            + (yaTenian.length ? `\nYa la tenían (no se repite): ${yaTenian.join(", ")}.` : "")
+            + (fallas.length ? `\n\nNo salieron (${fallas.length}):\n` + fallas.join("\n") : ""));
+    }
+});
+
 function _segRow(c) {
     const estado = getEstado(c);
     const plan = planDe(c, propuestaDeCliente(c));

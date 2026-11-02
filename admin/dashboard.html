@@ -101,6 +101,7 @@
             <!-- Envío masivo de seguimiento_interesado a la vista de arriba (9-oct). -->
             <div style="margin:0 0 10px">
                 <button type="button" id="segEnviarTodos" class="btn-ghost" disabled>Enviar seguimiento a todos</button>
+                <button type="button" id="segEnviarLista" class="btn-ghost">Enviar a una lista…</button>
             </div>
 
             <div class="table-wrapper">
@@ -848,6 +849,25 @@
         </div>
     </div>
 
+    <!-- seguimiento_interesado a una lista pegada de teléfonos (2-nov). -->
+    <div id="segListaModal" class="modal-backdrop" hidden>
+        <div class="modal modal--task">
+            <div class="modal-header">
+                <h2>Enviar seguimiento a una lista</h2>
+                <button class="modal-close" id="closeSegListaBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="form-row">
+                <label class="form-label" for="segListaTexto">Pegá los teléfonos (o la tabla entera: se toma un teléfono por renglón y lo de antes como nombre)</label>
+                <textarea id="segListaTexto" class="form-input" rows="9" placeholder="Cris – Valora Desarrollos	297 452-6442&#10;Nel – Dermocapilo	11 5121-7004"></textarea>
+            </div>
+            <p class="meta" id="segListaResumen" style="margin:6px 0">Ningún teléfono todavía.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="cancelSegListaBtn">Cancelar</button>
+                <button type="button" class="btn-primary" id="segListaEnviarBtn" disabled>Enviar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal detalle presupuesto -->
     <div id="presupuestoModal" class="modal-backdrop" hidden>
         <div class="modal modal-propuesta">
@@ -1402,6 +1422,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261102-entrega"></script>
+    <script type="module" src="dashboard.js?v=20261102-lista"></script>
 </body>
 </html>
