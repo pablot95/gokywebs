@@ -10191,7 +10191,9 @@ function _renderMantVincular(term) {
             <td>${fmtMoney(k.monto)}/mes<div class="muted" style="font-size:12px">alta ${escapeHtml(dm(k.desde))}</div></td>
             <td><select class="mant-vinc-select" data-vinc-select="${destino}" data-vinc-actual="${escapeHtml(actual)}" aria-label="Suscripción de Mercado Pago de ${escapeHtml(k.negocio || k.nombre)}">${opciones(k)}</select></td>
             <td><span class="mant-vinc-estado mant-vinc-estado--${e.clase}">${escapeHtml(e.texto)}</span></td>
-            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button></td>
+            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button>
+                ${(k.atrasada || k.baja || k.pausada) && !k.porFuera
+                    ? `<button type="button" class="btn-ghost btn-sm" data-vinc-fuera="${destino}" data-vinc-dia="${_mantVincDiaCobro(k)}" title="La suscripción se cortó y te transfiere: pasa a «Pagan por afuera», con su día de cobro">💵 Paga por afuera</button>` : ""}</td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nadie con esa búsqueda." : "Nada para revisar: cada mensual tiene su suscripción vinculada o paga por afuera."}</td></tr>`;
 
@@ -10204,14 +10206,24 @@ function _renderMantVincular(term) {
     }
 }
 
-/* Guarda el vínculo de cada uno: [{ destino: "coleccion:id", valor: id de la suscripción | MANT_VINC_FUERA | "" }]. */
+/* El día de cobro de un mensual que pasa a pagar por afuera (2-nov): el que ya tenía o, si no, el día del
+   mes en que arrancó su suscripción de MP (o su plan). 0 si no hay de dónde sacarlo. */
+function _mantVincDiaCobro(k) {
+    const ya = Number(k.ref?.diaCobro) || 0;
+    if (ya) return ya;
+    const desde = k.sub?.alta ? new Date(k.sub.alta) : (k.desde ? new Date(k.desde) : null);
+    return desde && !Number.isNaN(desde.getTime()) ? desde.getDate() : 0;
+}
+
+/* Guarda el vínculo de cada uno: [{ destino: "coleccion:id", valor: id de la suscripción | MANT_VINC_FUERA | "", dia? }]. */
 async function _mantVincGuardar(cambios) {
     const batch = writeBatch(db);
     const tocados = new Set(cambios.map(c => c.destino));
-    for (const { destino, valor } of cambios) {
+    for (const { destino, valor, dia } of cambios) {
         const [coleccion, id] = destino.split(":");
         const fuera = valor === MANT_VINC_FUERA;
-        batch.update(doc(db, coleccion, id), { preapprovalId: fuera ? "" : valor, pagaPorFuera: fuera, updatedAt: serverTimestamp() });
+        batch.update(doc(db, coleccion, id), { preapprovalId: fuera ? "" : valor, pagaPorFuera: fuera, updatedAt: serverTimestamp(),
+            ...(fuera && Number(dia) > 0 ? { diaCobro: Number(dia) } : {}) });
         if (!valor || fuera) continue;
         // Una suscripción es de uno solo: se le saca al que la tuviera.
         for (const [col, lista] of [["clientes", clients || []], ["mantenimiento", mantenimiento || []]]) {
@@ -10243,6 +10255,17 @@ document.addEventListener("change", (e) => {
 document.addEventListener("click", async (e) => {
     const filtro = e.target.closest("[data-vinc-filtro]");
     if (filtro) { mantVincFiltro = filtro.dataset.vincFiltro; renderMantenimiento(); return; }
+    // Pablo, 2-nov: "la suscripción se rompe y me transfieren": a «Pagan por afuera» en un clic.
+    const fuera = e.target.closest("[data-vinc-fuera]");
+    if (fuera) {
+        const nombre = fuera.closest("tr")?.querySelector("td")?.textContent.trim() || "este cliente";
+        const dia = Number(fuera.dataset.vincDia) || 0;
+        if (!confirm(`¿${nombre} pasa a pagar por afuera (transferencia)?\n\nSe le saca la suscripción de Mercado Pago${dia ? ` y queda con día de cobro el ${dia}` : ""}. Lo ves en Mantenimiento → Pagan por afuera.`)) return;
+        fuera.disabled = true;
+        await _mantVincGuardar([{ destino: fuera.dataset.vincFuera, valor: MANT_VINC_FUERA, dia }]);
+        fuera.disabled = false;
+        return;
+    }
     const guardar = e.target.closest("[data-vinc-guardar]");
     if (guardar) {
         const sel = guardar.closest("tr")?.querySelector("[data-vinc-select]");
