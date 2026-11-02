@@ -6193,6 +6193,11 @@ function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
      * "¿pudiste completar el formulario? Si tuviste algún problema, avisame"):
      * hasta que él le conteste, el recordatorio no corresponde. */
     if ((int)($cv['form_duda_pablo_ts'] ?? 0) >= $link) return false;
+    /* Después del link dijo que lo deja para más adelante sin fecha (Juan,
+     * 1-nov 18:16: "me puedo guardar este número y lo hacemos más adelante,
+     * estoy sin trabajo ahora", y a las 08:00 le salió igual "¿pudiste
+     * completar el formulario?"). Con fecha lo frena wabot_retomar_activo(). */
+    if (wabot_form_cliente_posterga_sin_fecha($cv, $link)) return false;
     $horas = max(1, (float)($cfg['form_recordatorio_horas'] ?? 12));
     if ($ahora - $link < $horas * 3600) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
@@ -6202,6 +6207,21 @@ function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     // Texto libre solo con la ventana abierta, y con margen para que llegue.
     if (wabot_ventana_restante($cv, $ahora) < 1800) return false;
     return wabot_seguimiento_hora_ok($cfg, $ahora);
+}
+
+/** ¿Algún mensaje del cliente posterior al link deja el formulario para "más adelante"? */
+function wabot_form_cliente_posterga_sin_fecha($cv, $link) {
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (!is_array($fila) || ($fila['q'] ?? '') !== 'cliente' || (int)($fila['ts'] ?? 0) < $link) continue;
+        $t = wabot_normalizar_frase((string)($fila['t'] ?? ''));
+        if ($t === '') continue;
+        if (preg_match('/\b(mas adelante|mas para adelante|en otro momento|el mes que viene|el ano que viene)\b/u', $t)
+            || preg_match('/\b(me (guardo|agendo)|guardar(me)?|agendar(me)?)\b.{0,8}\b(este|el|tu|su)\b.{0,3}\b(numero|contacto)\b/u', $t)
+            || preg_match('/\b(estoy|ando|me quede|quede)\b.{0,6}\bsin (trabajo|laburo|plata|un peso)\b/u', $t)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /** El mismo link que se le mandó (el último del bot o de Pablo); si no se encuentra, el de la charla. */

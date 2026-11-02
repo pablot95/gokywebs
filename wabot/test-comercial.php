@@ -1412,10 +1412,10 @@ oa([]);
 $r = turno('Buenas tardes gente, no puedo abrir el link', $c, $cfg);
 caso('"no puedo abrir el link" → se reenvía el mismo link sin gastar un turno del modelo, y Pablo queda avisado', count($r) === 1 && con_form($r) && count(pedidos()) === 0
     && !empty($c['handoff_pendiente']) && !empty($c['form_duda_pablo_ts']) && ($c['comercial_ultimo']['ajustes'] ?? []) === ['link_no_abre'], json_encode($r, JSON_UNESCAPED_UNICODE));
-foreach (['No me abre el link del formulario', 'el link no anda', 'no me carga la página del formulario', 'No me llegó el formulario', 'el enlace me da error'] as $t) {
+foreach (['No me abre el link del formulario', 'el link no anda', 'no me carga la página del formulario', 'No me llegó el formulario', 'el enlace me da error', 'No puedo ingresar', 'no puedo entrar', 'No me abre'] as $t) {
     caso("«{$t}» es el link que no abre", wabot_comercial_link_no_abre($t));
 }
-foreach (['Ya lo completé', 'no quiero el formulario ahora', 'lo lleno más tarde', 'Qué formulario?', 'no entendí el formulario'] as $t) {
+foreach (['Ya lo completé', 'no quiero el formulario ahora', 'lo lleno más tarde', 'Qué formulario?', 'no entendí el formulario', 'no puedo pagar', 'no puedo ahora', 'no puedo ingresar más plata este mes'] as $t) {
     caso("«{$t}» no", !wabot_comercial_link_no_abre($t));
 }
 // El saludo duplicado: 8 de las 13 correcciones del revisor del 26-oct eran "Muy bien, gracias. Bien, gracias!" o volver a saludar.

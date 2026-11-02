@@ -1285,7 +1285,12 @@ function wabot_comercial_link_no_abre($texto) {
     $falla = '(abre|abrio|abrir|abrirlo|abrirla|carga|cargo|cargar|anda|funciona|funciono|entra|entrar|ingresar|deja|dejo|llega|llego|aparece|sirve|puedo|pude|pudimos|logro|logre|consigo)';
     return (bool)(preg_match('/\b(no|nunca|tampoco)\b.{0,25}\b' . $falla . '\b.{0,35}\b' . $cosa . '\b/u', $t)
         || preg_match('/\b' . $cosa . '\b.{0,35}\b(no|nunca|tampoco)\b.{0,20}\b' . $falla . '\b/u', $t)
-        || preg_match('/\b' . $cosa . '\b.{0,25}\b(roto|caido|caida|error|mal)\b|\b(error|roto|caido)\b.{0,25}\b' . $cosa . '\b/u', $t));
+        || preg_match('/\b' . $cosa . '\b.{0,25}\b(roto|caido|caida|error|mal)\b|\b(error|roto|caido)\b.{0,25}\b' . $cosa . '\b/u', $t)
+        /* "No puedo ingresar" pelado, con el formulario recién mandado (Miriam,
+         * 2-nov 09:58: quedó para Pablo en silencio). Solo el mensaje entero y
+         * corto: "no puedo pagar" o "no puedo ahora" no son el link. */
+        || (mb_strlen($t) <= 40 && preg_match('/^(hola |buenas |buen dia )?(no|nunca|tampoco)( me)? (puedo|pude|pudimos|logro|logre|consigo) (ingresar|entrar|abrir(lo|la)?)( al?| en)?( link| enlace| formulario| form| pagina)?$/u', $t))
+        || (mb_strlen($t) <= 30 && preg_match('/^(hola |buenas )?(no|nunca)( me)? (abre|abrio|carga|cargo|entra|ingresa|funciona|funciono)$/u', $t)));
 }
 
 /** La repregunta de la demo (22-oct), también para volver a ofrecerla después de las dudas. */

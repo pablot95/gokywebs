@@ -54,6 +54,18 @@ caso('con una duda que quedó para Pablo después del link, espera a que él con
     !wabot_form_recordatorio_corresponde(fr_conv(12.5, ['form_duda_pablo_ts' => $ahora - 11 * 3600]), $cfg, $ahora));
 caso('una duda anterior a este link no lo frena',
     wabot_form_recordatorio_corresponde(fr_conv(12.5, ['form_duda_pablo_ts' => $ahora - 14 * 3600]), $cfg, $ahora));
+// Juan (1-nov): "me puedo guardar este número y lo hacemos más adelante, estoy sin trabajo ahora" → no se le recuerda el form.
+foreach (['Si si me puedo guardar este número y lo hacemos más adelante estoy sin trabajo ahora', 'Lo hago en otro momento', 'Ahora estoy sin trabajo'] as $dice) {
+    $c = fr_conv(12.5);
+    $c['transcript'][] = ['q' => 'cliente', 't' => $dice, 'ts' => $ahora - 12 * 3600];
+    caso("«{$dice}» después del link: no hay recordatorio", !wabot_form_recordatorio_corresponde($c, $cfg, $ahora));
+}
+$c = fr_conv(12.5);
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Dale, ahora lo completo', 'ts' => $ahora - 12 * 3600];
+caso('«ahora lo completo» después del link: el recordatorio sigue', wabot_form_recordatorio_corresponde($c, $cfg, $ahora));
+$c = fr_conv(12.5);
+$c['transcript'] = array_merge([['q' => 'cliente', 't' => 'quizás más adelante amplío', 'ts' => $ahora - 20 * 3600]], $c['transcript']);
+caso('un «más adelante» de antes del link no lo frena', wabot_form_recordatorio_corresponde($c, $cfg, $ahora));
 
 echo "Texto\n";
 $c = fr_conv(12.5);
