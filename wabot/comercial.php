@@ -1346,6 +1346,24 @@ function wabot_comercial_link_no_abre($texto, $conv = null) {
     return strpos($ultimoNuestro, 'gokywebs.com/form') !== false;
 }
 
+/**
+ * "Cuál es el formulario?" con el link mandado hace rato (F&S, 2-nov: entre
+ * el link y la pregunta había 30 fotos y el modelo le contestó "es el que te
+ * mandamos más arriba", sin el link). Pide el formulario o dónde está: se le
+ * vuelve a mandar. "pasame el link" solo no cuenta: puede ser el de pago.
+ */
+function wabot_comercial_pide_form_de_nuevo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 90) return false;
+    if (preg_match('/\b(ya (lo )?(complete|llene|mande|hice)|lo (complete|llene))\b/u', $t)) return false;
+    $form = '(formulario|form|formu)';
+    if (preg_match('/\b(cual|que|donde|donde esta)\b( es)?( el| ese)? ' . $form . '\b/u', $t)) return true;
+    if (preg_match('/\bno (lo )?(encuentro|veo|tengo)\b.{0,15}\b(formulario|form|formu|link|enlace)\b/u', $t)) return true;
+    if (preg_match('/\b(pasame|pasamelo|mandame|mandamelo|enviame|reenviame|me pasas|me mandas|me envias|me reenvias|podes pasarme|podes mandarme)\b.{0,20}\b' . $form . '\b/u', $t)) return true;
+    return (bool)(preg_match('/\b(link|enlace) del ' . $form . '\b/u', $t)
+        && preg_match('/\b(cual|donde|pasame|mandame|enviame|reenviame|no (lo )?encuentro)\b/u', $t));
+}
+
 /** La repregunta de la demo (22-oct), también para volver a ofrecerla después de las dudas. */
 function wabot_comercial_texto_confirmar_demo($cfg) {
     return trim((string)($cfg['comercial']['confirmar_demo'] ?? '')) ?: 'Te consulto, querés que te armemos la demo así ves cómo quedaría?';
@@ -3002,6 +3020,20 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
             $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'responder', 'motivo' => 'No le abre el link del formulario: se lo reenviamos',
                                          'ajustes' => ['link_no_abre'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
             wabot_log('comercial_link_no_abre', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr($texto, 0, 120)]);
+            $conv['_comercial_salida'] = true;
+            return [strtr($plantilla, ['{link}' => $link])];
+        }
+    }
+
+    /* Pide el formulario de nuevo ("cuál es el formulario?"): el mismo link,
+     * con el texto de siempre, sin gastar un turno del modelo. */
+    if ($postForm && wabot_comercial_pide_form_de_nuevo($texto)) {
+        $plantilla = trim((string)($cfg['prediseno_link'] ?? ''));
+        $link = function_exists('wabot_form_recordatorio_link') ? (string)wabot_form_recordatorio_link($conv, $cfg) : '';
+        if ($plantilla !== '' && $link !== '' && strpos($plantilla, '{link}') !== false) {
+            $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'responder', 'motivo' => 'Pidió el formulario de nuevo: se lo reenviamos',
+                                         'ajustes' => ['form_de_nuevo'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+            wabot_log('comercial_form_de_nuevo', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr($texto, 0, 120)]);
             $conv['_comercial_salida'] = true;
             return [strtr($plantilla, ['{link}' => $link])];
         }

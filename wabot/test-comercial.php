@@ -1516,6 +1516,21 @@ foreach (['No puedo ahora, lo hago más tarde', 'no puedo', 'no entiendo', 'Si']
 }
 $cOtra = ['transcript' => [['q' => 'bot', 't' => 'Si te interesa, te preparamos una demo gratis', 'id' => 'wamid.O'], ['q' => 'cliente', 't' => 'x']]];
 caso('«No puedo ingresar» después de otro mensaje que no es el link, no', !wabot_comercial_link_no_abre('No puedo ingresar', $cOtra));
+// F&S (2-nov): "Cual es el formulario?" 12 h y 30 fotos después del link; el modelo contestó "es el que te mandamos más arriba", sin el link.
+$c = cv_cotizada('informativa');
+oa([dc(['accion' => 'formulario', 'solucion' => 'informativa', 'intencion' => 'acepta'])]);
+turno('Dale', $c, $cfg);
+oa([]);
+$r = turno('Cual es el formulario?', $c, $cfg);
+caso('"Cual es el formulario?" con el link mandado → se le reenvía el link con el texto de siempre, sin gastar un turno del modelo', count($r) === 1 && con_form($r) && count(pedidos()) === 0
+    && strpos((string)$r[0], 'Para hacer la demo, solo tendrías que llenar este formulario') !== false
+    && ($c['comercial_ultimo']['ajustes'] ?? []) === ['form_de_nuevo'], json_encode($r, JSON_UNESCAPED_UNICODE));
+foreach (['Cual es el formulario?', 'Qué formulario?', 'Dónde está el formulario', 'No encuentro el link', 'no lo encuentro el formulario', 'Pasame de nuevo el formulario', 'me mandás el formulario otra vez?', 'cuál es el link del formulario'] as $t) {
+    caso("«{$t}» pide el formulario de nuevo", wabot_comercial_pide_form_de_nuevo($t));
+}
+foreach (['pasame el link', 'Ya completé el formulario', 'ya lo llené', 'no entendí el formulario', 'Lo lleno más tarde', 'Me llegó el formulario, gracias', 'Hola'] as $t) {
+    caso("«{$t}» no", !wabot_comercial_pide_form_de_nuevo($t));
+}
 // El saludo duplicado: 8 de las 13 correcciones del revisor del 26-oct eran "Muy bien, gracias. Bien, gracias!" o volver a saludar.
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Todo bien, gracias! Podemos armarte una tienda online para tus perfumes'], 'ficha' => ['que_vende' => 'perfumes']])]);
