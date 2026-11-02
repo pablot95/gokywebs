@@ -3676,7 +3676,9 @@ function burbujaCita(t, chat) {
                               $abGrupo = function_exists('wabot_ab_grupo') ? wabot_ab_grupo($conv, $cfg) : '';
                               if ($abGrupo !== ''): ?>
                         <span class="sec" style="display:inline-flex;align-items:center;padding:6px 10px;border:1px dashed var(--ac);border-radius:8px;color:var(--ac);font-size:12px"
-                            title="<?= $e($abGrupo === 'b' ? 'Modelo B: pago inicial ($100.000 / $80.000) sin seña y la mensualidad desde el mes siguiente. El pago único, solo si lo pide.' : 'Modelo A: pago único o plan mensual. Sin plan anual.') ?>">🧪 Grupo <?= strtoupper($abGrupo) ?> · <?= $abGrupo === 'b' ? 'inicial + mensual' : 'único o mensual' ?><?= empty($conv['ab_grupo']) ? ' (sin precio todavía)' : '' ?></span>
+                            title="<?= $e(['b' => 'Modelo B: pago inicial ($100.000 / $80.000) sin seña y la mensualidad desde el mes siguiente. El pago único, solo si lo pide.',
+                                           'a2' => 'Modelo A2: plan anual o plan mensual, como antes del 26-oct. El pago único, solo si lo pide.',
+                                           'a' => 'Modelo A (cerrado el 2-nov): pago único o plan mensual. Sin plan anual.'][$abGrupo] ?? '') ?>">🧪 <?= $e(wabot_ab_grupo_nombre($abGrupo)) ?><?= empty($conv['ab_grupo']) ? ' (sin precio todavía)' : '' ?></span>
                         <?php endif; ?>
                         <?php /* Pablo, 6-oct: copia los últimos 10 mensajes y, si llenó el formulario, su resumen arriba. */ ?>
                         <button type="button" class="sec" id="btnCopiarMsjs"
@@ -4627,7 +4629,7 @@ function burbujaCita(t, chat) {
             : '', JSON_UNESCAPED_UNICODE) ?>;
         // El grupo de la prueba de precios A/B (Pablo, 1-nov), el mismo del chip.
         const AB_GRUPO = <?= json_encode(!empty($abGrupo)
-            ? 'Grupo ' . strtoupper($abGrupo) . ' (' . ($abGrupo === 'b' ? 'pago inicial + mensual' : 'pago único o mensual') . ')'
+            ? 'Grupo ' . strtoupper($abGrupo) . ' (' . (wabot_ab_grupos()[$abGrupo] ?? '') . ')'
                 . (empty($conv['ab_grupo']) ? ' — sin precio todavía' : '')
             : '', JSON_UNESCAPED_UNICODE) ?>;
         function textoUltimosMensajes() {

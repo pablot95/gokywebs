@@ -128,14 +128,26 @@
                                  ('unico' es el plan anual, 'propia' el pago único). La opción
                                  'propia' se sacó del formulario el 6-oct-2026 y volvió el
                                  26-oct, primera, en el orden de los precios del bot. El plan
-                                 anual ('unico') se sacó el 31-oct; con ?m=b (modelo B de la
-                                 prueba de precios) script.js deja solo 'inicial'. -->
+                                 anual ('unico') se sacó el 31-oct y volvió el 2-nov con las
+                                 dos opciones de antes del 26-oct (grupo A2 de la prueba de
+                                 precios). Con ?m=b (modelo B) script.js deja solo 'inicial';
+                                 con ?m=a (el A, cerrado el 2-nov) el script de abajo deja
+                                 pago único y plan mensual. -->
                             <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
                                 <option value="" disabled selected>Elegí una opción</option>
-                                <option value="propia" data-desc="Pagás la web una sola vez: arrancás con una seña y el resto lo pagás al entregar la web. La web queda 100% tuya e incluye el primer año de hosting y dominio.">Pago único</option>
                                 <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
+                                <option value="unico" data-desc="Arrancás con una seña de $60.000, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción. Incluye el mantenimiento y un cambio por mes.">Plan anual</option>
                             </select>
-                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre pago único y plan mensual.</p>
+                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan mensual y plan anual.</p>
+                            <script>
+                                /* Va acá y no en script.js para no depender de la caché del ?v=. */
+                                if (/[?&]m=a(&|$)/.test(location.search)) {
+                                    document.getElementById('modalidad').innerHTML = '<option value="" disabled selected>Elegí una opción</option>'
+                                        + '<option value="propia" data-desc="Pagás la web una sola vez: arrancás con una seña y el resto lo pagás al entregar la web. La web queda 100% tuya e incluye el primer año de hosting y dominio.">Pago único</option>'
+                                        + '<option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>';
+                                    document.getElementById('modalidadDetalle').textContent = 'Elegí entre pago único y plan mensual.';
+                                }
+                            </script>
                         </div>
 
                         <!-- A qué hora quiere la demo (29-oct). script.js arma las opciones

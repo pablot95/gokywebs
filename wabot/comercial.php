@@ -111,15 +111,16 @@ function wabot_comercial_montos_lista($plan, $cfg) {
 /**
  * Una cotización nueva de un plan con los montos de lista. En la prueba de
  * precios (31-oct) lleva el modelo del grupo: en A y B no hay plan anual; en B,
- * el pago inicial.
+ * el pago inicial. En A2 (2-nov) queda como antes de la prueba: anual, mensual
+ * y el pago único de lista por si lo pide.
  */
 function wabot_comercial_cotizacion_nueva($plan, $cfg) {
     $l = wabot_comercial_montos_lista($plan, $cfg);
     $c = ['origen' => 'bot', 'plan' => $plan, 'anual' => $l['anual'], 'mensual' => $l['mensual'], 'unico' => $l['unico'], 'ts' => time()];
     $grupo = wabot_ab_grupo_cfg($cfg);
-    if ($plan !== 'internacional' && in_array($grupo, ['a', 'b'], true)) {
+    if ($plan !== 'internacional' && $grupo !== '') {
         $c['modelo'] = $grupo;
-        $c['anual'] = '';
+        if ($grupo !== 'a2') $c['anual'] = '';
         if ($grupo === 'b') $c['inicial'] = $l['inicial'];
     }
     return $c;
@@ -1237,9 +1238,10 @@ function wabot_comercial_si_claro($texto) {
 function wabot_comercial_elige_plan($texto, $conv) {
     /* Prueba de precios (31-oct): en A las opciones son 1) pago único y 2) plan
      * mensual, sin anual; en B hay una sola (pago inicial + mensualidad), así que
-     * elegir "el mensual" es elegir esa ('inicial') y el pago único sigue valiendo. */
+     * elegir "el mensual" es elegir esa ('inicial') y el pago único sigue valiendo.
+     * A2 (2-nov) es 1) anual y 2) mensual, como antes: el detector de siempre. */
     $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
-    if ($modelo !== '') {
+    if ($modelo === 'a' || $modelo === 'b') {
         $num = preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([12])\)?$/u', wabot_normalizar_frase(trim((string)$texto)), $mm) ? $mm[2] : '';
         if ($modelo === 'a' && $num !== '') return $num === '1' ? 'propia' : 'mensual';
         if ($modelo === 'b' && $num === '1') return 'inicial';
@@ -1568,7 +1570,7 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         } elseif (!wabot_comercial_solucion_estandar($seg)) {
             $d['segunda_solucion'] = null;
         } elseif (wabot_ab_grupo_cfg($cfg) !== '' && empty($conv['comercial_dos_webs'])) {
-            // Durante la prueba de precios (31-oct) el descuento de dos webs no está definido para A ni B: lo cotiza Pablo.
+            // Durante la prueba de precios (31-oct) las dos webs las cotiza Pablo: en A y B el descuento no está definido y en A2 (2-nov) se dejó igual.
             $d['accion'] = 'humano';
             $d['motivo'] = 'Pide dos webs: durante la prueba de precios las cotiza Pablo';
             $ajustes[] = 'dos_webs_prueba_precios';
@@ -2654,11 +2656,12 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         $conv['sena_cotizada'] = $lista['sena'];
         $conv['precio_modelo'] = 'anual';
         /* Prueba de precios (31-oct): el grupo y el modelo quedan anotados para el
-         * panel, el formulario y la medición. En B no hay seña: el pago inicial. */
+         * panel, el formulario y la medición. En B no hay seña: el pago inicial.
+         * A2 (2-nov) sigue con el modelo 'anual' de siempre. */
         $modelo = (string)($cot['modelo'] ?? '');
         if ($modelo !== '') {
             $conv['ab_grupo'] = $modelo;
-            $conv['precio_modelo'] = $modelo === 'b' ? 'inicial' : 'unico_mensual';
+            if ($modelo !== 'a2') $conv['precio_modelo'] = $modelo === 'b' ? 'inicial' : 'unico_mensual';
             $conv['inicial_cotizado'] = (string)($cot['inicial'] ?? '');
             if ($modelo === 'b') $conv['sena_cotizada'] = (string)($cot['inicial'] ?? '');
             if (empty($conv['ab_grupo_ts'])) $conv['ab_grupo_ts'] = $ahora;

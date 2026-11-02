@@ -2354,7 +2354,8 @@ function renderAutores() {
    y solo sobre las que ya las cumplieron. La plata sale de los clientes de acá: el
    grupo lo deja el bot en el boceto (grupoPrecios) y, si falta, se busca la charla
    por teléfono. Lo que decide cuál gana es la plata por charla, no los formularios. */
-const AB_GRUPOS = { a: "A · pago único o mensual", b: "B · pago inicial + mensualidad" };
+// A2 (2-nov) reemplazó al A para los teléfonos pares; el A queda con las charlas que ya lo recibieron.
+const AB_GRUPOS = { a2: "A2 · anual o mensual", b: "B · pago inicial + mensualidad", a: "A · pago único o mensual (cerrado)" };
 const AB_PLANES = { sitio: "Sitio profesional", con_panel: "Tienda y con panel" };
 let abDatos = null;
 let abCargando = false;
@@ -2437,8 +2438,8 @@ function renderAb() {
     const modLabel = c => ({ mensual: "Mensual", unico: "Anual", propia: "Pago único" })[modalidadDe(c)] || "—";
 
     cont.innerHTML = `
-        <p class="muted">Desde el 31/10, cada charla que recibe el precio queda en un grupo según el último dígito del teléfono (par A, impar B). "Por charla a 12 meses" es lo cobrado a sus clientes (pago único, seña, pago inicial) más 12 meses de las mensualidades activas (11 en B, que arranca al mes), dividido por las charlas que recibieron ese precio: es el número que decide. El formulario cuenta dentro de las 72 h del precio, solo sobre las charlas que ya las cumplieron.${abDatos.activa === false ? " <strong>La prueba está apagada.</strong>" : ""}</p>
-        <div class="inv-cards">${tarjeta("a")}${tarjeta("b")}</div>
+        <p class="muted">Desde el 31/10, cada charla que recibe el precio queda en un grupo según el último dígito del teléfono (impar B; par A hasta el 2/11 y A2 desde ahí). "Por charla a 12 meses" es lo cobrado a sus clientes (pago único, seña, pago inicial) más 12 meses de las mensualidades activas (11 en B, que arranca al mes), dividido por las charlas que recibieron ese precio: es el número que decide. El formulario cuenta dentro de las 72 h del precio, solo sobre las charlas que ya las cumplieron.${abDatos.activa === false ? " <strong>La prueba está apagada.</strong>" : ""}</p>
+        <div class="inv-cards">${tarjeta("a2")}${tarjeta("b")}${tarjeta("a")}</div>
         ${filas.length ? `<div class="table-wrapper"><table class="clients-table">
             <thead><tr><th>Grupo</th><th>Plan</th><th>Precio</th><th>Demo ofrecida</th><th>Link del form</th><th>Form</th><th>Form en 72 h</th><th>Conversión 72 h</th><th>Pidió pago único</th></tr></thead>
             <tbody>${filas.map(filaTabla).join("")}</tbody></table></div>` : `<p class="muted">Todavía no hay charlas que hayan recibido el precio de la prueba.</p>`}
@@ -3389,7 +3390,7 @@ const DIAS_AVISO_RENOVACION = 30;
 const DIAS_HASTA_EL_PLAN = 7;
 /* Prueba de precios (31-oct-2026, wabot/ab-precios.php): el grupo B paga un
    pago inicial (primerPago, sin seña) y la mensualidad arranca al mes. El bot
-   deja `grupoPrecios` en el boceto ('a', 'b' o ''). */
+   deja `grupoPrecios` en el boceto ('a2', 'b', 'a' o ''). */
 function grupoPreciosDe(c) {
     return c?.grupoPrecios || c?.propuestaSnapshot?.grupoPrecios || "";
 }

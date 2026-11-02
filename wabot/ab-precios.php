@@ -3,14 +3,18 @@
  * wabot/ab-precios.php — prueba A/B de precios (Pablo, 31-oct-2026).
  *
  * Dos modelos en paralelo, con los mismos anuncios y en el mismo período:
- *   A: pago único o plan mensual (el plan anual ya no se ofrece).
+ *   A2: plan anual o plan mensual, con los textos de antes del 26-oct (Pablo,
+ *      2-nov: era lo que convertía, 37 % en 700 charlas). El pago único, solo
+ *      si lo pide, como entonces.
  *   B: un pago inicial que cubre todo el desarrollo (sin seña ni saldo) y, al
  *      mes de ese pago, la mensualidad. Tienda (y cursos, inmobiliaria,
  *      reservas, catálogo): $100.000 + $30.000/mes; sitio profesional:
  *      $80.000 + $20.000/mes. La titularidad del código se puede pedir al mes
  *      12. El pago único, solo si lo pide.
+ *   A (del 31-oct al 2-nov, cerrado): pago único o plan mensual, sin el anual.
+ *      Queda solo para las charlas que ya lo recibieron, con lo que se les dijo.
  *
- * El grupo sale del teléfono (último dígito par = A, impar = B; Instagram por
+ * El grupo sale del teléfono (último dígito par = A2, impar = B; Instagram por
  * el id) y es siempre el mismo para esa persona. Queda anotado en la charla
  * (`ab_grupo`) y en la cotización (`modelo`) al pasarle el precio. Una charla
  * que ya tenía precio antes de la prueba sigue con lo suyo (sin `modelo`).
@@ -20,35 +24,53 @@
  * el flujo comercial (comercial.php), los marcadores de precio y el formulario.
  */
 
-/** ¿Está corriendo la prueba? Apagada, todos ven el modelo A. */
+/** Los grupos que pueden quedar congelados en una charla, con cómo se los nombra en el panel y el reporte. */
+function wabot_ab_grupos() {
+    return ['a2' => 'anual o mensual', 'b' => 'pago inicial + mensual', 'a' => 'pago único o mensual'];
+}
+
+/** "Grupo A2 · anual o mensual". */
+function wabot_ab_grupo_nombre($grupo) {
+    $nombres = wabot_ab_grupos();
+    return isset($nombres[$grupo]) ? 'Grupo ' . strtoupper($grupo) . ' · ' . $nombres[$grupo] : '';
+}
+
+/** ¿El grupo de esta charla no tiene plan anual (A y B)? En A2 el anual es una de las dos opciones. */
+function wabot_ab_sin_anual($conv, $cfg) {
+    return in_array(wabot_ab_grupo($conv, $cfg), ['a', 'b'], true);
+}
+
+/** ¿Está corriendo la prueba? Apagada, todos ven el modelo A2 (anual o mensual). */
 function wabot_ab_activa($cfg) {
     return !empty($cfg['ab_precios']['activo']);
 }
 
-/** El grupo que le toca a esta persona por su teléfono o su id: 'a' o 'b'. */
+/** El grupo que le toca a esta persona por su teléfono o su id: 'a2' o 'b' (desde el 2-nov los pares ya no van al A). */
 function wabot_ab_grupo_por_id($conv) {
     $id = (string)($conv['tel'] ?? '');
     if ($id === '' && function_exists('wabot_channel_user_id')) $id = (string)wabot_channel_user_id($conv);
     $digitos = preg_replace('/\D/', '', $id);
-    if ($digitos !== '' && strpos($id, 'ig') !== 0) return ((int)substr($digitos, -1)) % 2 === 0 ? 'a' : 'b';
-    if ($id === '') return 'a';
-    return (crc32($id) % 2) === 0 ? 'a' : 'b';
+    if ($digitos !== '' && strpos($id, 'ig') !== 0) return ((int)substr($digitos, -1)) % 2 === 0 ? 'a2' : 'b';
+    if ($id === '') return 'a2';
+    return (crc32($id) % 2) === 0 ? 'a2' : 'b';
 }
 
 /**
- * El modelo de precios de esta charla: 'a', 'b' o '' (cotizada antes de la
- * prueba: sigue con sus textos de siempre). Manda lo congelado: la cotización,
- * después lo anotado en la charla y, si no hay nada, el teléfono.
+ * El modelo de precios de esta charla: 'a2', 'b', 'a' (ya cotizada en el A) o
+ * '' (cotizada antes de la prueba: sigue con sus textos de siempre). Manda lo
+ * congelado: la cotización, después lo anotado en la charla y, si no hay
+ * nada, el teléfono.
  */
 function wabot_ab_grupo($conv, $cfg) {
     // Las pruebas de antes de la prueba de precios corren sin grupos (test-lib.php); test-ab-precios.php los prende.
     if (!empty($GLOBALS['WABOT_TEST_SIN_AB'])) return '';
+    $grupos = array_keys(wabot_ab_grupos());
     $cot = is_array($conv['comercial_cotizacion'] ?? null) ? $conv['comercial_cotizacion'] : null;
-    if ($cot && in_array(($cot['modelo'] ?? ''), ['a', 'b'], true)) return $cot['modelo'];
-    if (in_array(($conv['ab_grupo'] ?? ''), ['a', 'b'], true)) return $conv['ab_grupo'];
+    if ($cot && in_array(($cot['modelo'] ?? ''), $grupos, true)) return $cot['modelo'];
+    if (in_array(($conv['ab_grupo'] ?? ''), $grupos, true)) return $conv['ab_grupo'];
     // Precio dado antes de la prueba (flujo nuevo, motor viejo o Pablo a mano): no se cambia.
     if ($cot || !empty($conv['precio_dado'])) return '';
-    if (!wabot_ab_activa($cfg)) return 'a';
+    if (!wabot_ab_activa($cfg)) return 'a2';
     return wabot_ab_grupo_por_id($conv);
 }
 
@@ -63,7 +85,7 @@ function wabot_ab_cfg($cfg, $conv) {
     return $cfg;
 }
 
-/** El grupo que ya se aplicó a esta config ('a', 'b' o ''). */
+/** El grupo que ya se aplicó a esta config ('a2', 'b', 'a' o ''). */
 function wabot_ab_grupo_cfg($cfg) {
     return (string)($cfg['_ab_grupo_aplicado'] ?? '');
 }
@@ -106,7 +128,7 @@ function wabot_ab_rr_categoria($conv, $cfg) {
     return $items ? ['ico' => '🧪', 'titulo' => 'Precio de esta charla (grupo ' . strtoupper($grupo) . ')', 'items' => $items] : null;
 }
 
-/** ¿Una respuesta rápida guardada habla del plan anual? En las charlas de la prueba no se muestra. */
+/** ¿Una respuesta rápida guardada habla del plan anual? En las charlas de A y B no se muestra. */
 function wabot_ab_rr_menciona_anual($texto) {
     return (bool)preg_match('/\banual\b|_anual\}|link_anual|\/anual\d/iu', (string)$texto);
 }
@@ -135,7 +157,7 @@ function wabot_ab_reporte_calcular($ahora = null) {
         if (!is_array($cv) || str_ends_with(basename($archivo, '.json'), 'TEST')) continue;
         $cot = is_array($cv['comercial_cotizacion'] ?? null) ? $cv['comercial_cotizacion'] : [];
         $grupo = (string)($cot['modelo'] ?? '');
-        if (!in_array($grupo, ['a', 'b'], true)) continue;
+        if (!isset(wabot_ab_grupos()[$grupo])) continue;
         $plan = ($cot['plan'] ?? '') === 'informativa' ? 'sitio' : 'con_panel';
         $desde = (int)($cv['ab_grupo_ts'] ?? ($cot['ts'] ?? 0));
         $clave = $grupo . '|' . $plan;

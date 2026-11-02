@@ -794,12 +794,21 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     ],
     /* Prueba A/B de precios (Pablo, 31-oct-2026; ver ab-precios.php). Cada
      * modelo pisa, solo para las charlas de su grupo, los textos y montos de
-     * arriba. En los dos ya no se ofrece el plan anual. Los textos de B que
-     * dictó Pablo van tal cual (planes_*); el resto son adaptaciones de las
-     * respuestas oficiales de siempre, sin el anual. */
+     * arriba. Los textos de B que dictó Pablo van tal cual (planes_*). Desde
+     * el 2-nov los pares van al A2: el plan anual o el mensual con los mismos
+     * bloques de antes del 26-oct (los *_sin_unico de arriba); las respuestas
+     * oficiales de arriba ya son las de esas charlas. El A (sin anual) queda
+     * para las charlas que ya lo recibieron. */
     'ab_precios' => [
         'activo' => true,
         'modelos' => [
+            'a2' => [
+                'comercial' => [
+                    'planes_informativa' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    'planes_panel' => "Podés elegir entre dos planes:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    'con_reservas' => "Con reservas quedaría en:\n\n1) Plan anual: {anual}\n2) Plan mensual: {mensual}",
+                ],
+            ],
             'a' => [
                 'comercial' => [
                     'planes_informativa' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos.\n\n1) Pago único: {unico}\nLa web queda 100% tuya. Incluye el primer año de hosting y dominio.\n\n2) Plan mensual: {mensual}\nIncluye todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",

@@ -1193,8 +1193,11 @@ function wabot_form_link(&$conv, $cfg) {
      * dice al formulario que muestre y pida el número en vez de darlo por
      * sabido. */
     $link = 'https://gokywebs.com/form/?c=' . $codigo;
-    // Prueba de precios (31-oct): el formulario muestra solo las formas de pago del grupo (&m=b: pago inicial + mensualidad).
-    if (($conv['comercial_cotizacion']['modelo'] ?? '') === 'b') $link .= '&m=b';
+    /* Prueba de precios (31-oct): el formulario muestra solo las formas de pago del
+     * grupo (m=b: pago inicial + mensualidad; m=a: pago único o mensual, el A que
+     * se cerró el 2-nov). Sin parámetro, plan anual o mensual (A2). */
+    $modelo = (string)($conv['comercial_cotizacion']['modelo'] ?? '');
+    if ($modelo === 'a' || $modelo === 'b') $link .= '&m=' . $modelo;
     return wabot_canal($conv) === 'instagram' ? $link . '&ig=1' : $link;
 }
 
@@ -6988,7 +6991,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'modalidad'          => ['stringValue' => ($conv['modalidad_elegida'] ?? '') === 'inicial' ? 'mensual'
                                     : (in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual', 'propia'], true) ? (string)$conv['modalidad_elegida'] : '')],
         'primerPago'         => ['integerValue' => (($conv['comercial_cotizacion']['modelo'] ?? '') === 'b') ? $montoLead($conv['comercial_cotizacion']['inicial'] ?? '') : '0'],
-        // Grupo de la prueba de precios (31-oct): 'a' (pago único o mensual), 'b' (inicial + mensual) o '' (cotizada antes).
+        // Grupo de la prueba de precios (31-oct): 'a2' (anual o mensual, desde el 2-nov), 'b' (inicial + mensual), 'a' (pago único o mensual, 31-oct al 2-nov) o '' (cotizada antes).
         'grupoPrecios'       => ['stringValue' => (string)($conv['comercial_cotizacion']['modelo'] ?? '')],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],

@@ -792,17 +792,19 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
 function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
     $salida = [];
     /* Prueba de precios (31-oct, ab-precios.php): arriba, el precio del grupo de
-     * esta charla; y las guardadas que nombran el plan anual no se muestran (no
-     * se ofrece más). Lo guardado no se toca: sin la prueba, todo vuelve. */
+     * esta charla; y en A y B las guardadas que nombran el plan anual no se
+     * muestran (ahí no se ofrece; en A2 sí). Lo guardado no se toca: sin la
+     * prueba, todo vuelve. */
     $ab = function_exists('wabot_ab_rr_categoria') ? wabot_ab_rr_categoria($conv, $cfg) : null;
     if ($ab) $salida[] = $ab;
+    $sinAnual = $ab && is_array($conv) && wabot_ab_sin_anual($conv, $cfg);
     foreach ((array)$categorias as $categoria) {
         if (!empty($categoria['oculta'])) continue;
         if (($categoria['titulo'] ?? '') === 'Propiedad absoluta del código'
             && !wabot_rr_03oct_pidio_codigo($conv)) continue;
         $items = [];
         foreach ((array)($categoria['items'] ?? []) as $texto) {
-            if ($ab && wabot_ab_rr_menciona_anual($texto)) continue;
+            if ($sinAnual && wabot_ab_rr_menciona_anual($texto)) continue;
             $items[] = wabot_respuestas_rapidas_montos($texto, $conv, $cfg);
         }
         if (!$items) continue;

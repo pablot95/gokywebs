@@ -2,7 +2,8 @@
 /**
  * wabot/ab-reporte.php — cómo va la prueba A/B de precios (31-oct-2026, ab-precios.php).
  *
- * Por grupo (A: pago único o mensual; B: pago inicial + mensualidad) y por
+ * Por grupo (A2: anual o mensual, desde el 2-nov; B: pago inicial +
+ * mensualidad; A: pago único o mensual, del 31-oct al 2-nov) y por
  * plan (sitio profesional sin panel / con panel: tienda, cursos, inmobiliaria,
  * reservas), cuántas charlas recibieron el precio, a cuántas se les ofreció la
  * demo, cuántas recibieron el link del formulario y cuántas lo completaron.
@@ -39,7 +40,8 @@ if ($formato === 'json') {
     exit;
 }
 $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
-$nombres = ['a' => 'A · pago único o mensual', 'b' => 'B · inicial + mensual'];
+$nombres = [];
+foreach (wabot_ab_grupos() as $g => $nombre) $nombres[$g] = strtoupper($g) . ' · ' . $nombre;
 $planes = ['sitio' => 'Sitio profesional', 'con_panel' => 'Tienda y con panel'];
 header('Content-Type: text/html; charset=utf-8');
 ?>
