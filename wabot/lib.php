@@ -7442,7 +7442,9 @@ function wabot_logo_sincronizar(&$conv) {
     $doc = trim((string)($conv['lead_doc'] ?? ''));
     if ($doc === '') return false;
 
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+    // Los tests pueden poner WABOT_TEST_LOGO_PATCH (fn($campos) => [$code, $res]) para ver el PATCH.
+    $patchTest = $GLOBALS['WABOT_TEST_LOGO_PATCH'] ?? null;
+    if (!is_callable($patchTest) && (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false)) {
         $conv['logo_sincronizado'] = $archivo;
         $conv['imagenes_sincronizadas'] = $cuantas;
         return true;
@@ -7454,20 +7456,31 @@ function wabot_logo_sincronizar(&$conv) {
         'imagenes_recibidas' => ['integerValue' => (string)$cuantas],
         'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
     ];
-    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
-         . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=imagenes_recibidas&updateMask.fieldPaths=updatedAt';
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST => 'PATCH',
-        CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 20,
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    $patch = is_callable($patchTest) ? $patchTest : function (array $campos) use ($doc) {
+        $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY;
+        foreach (array_keys($campos) as $campo) $url .= '&updateMask.fieldPaths=' . $campo;
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $res  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return [$code, $res];
+    };
+    [$code, $res] = $patch($campos);
+    /* Las reglas de propuestas (firestore.rules, hasOnly) no dejaban tocar
+     * imagenes_recibidas y Firestore rechazaba el PATCH entero: el logo no
+     * llegaba al boceto (2-nov, 25 veces de 12:39 a 17:39). Mientras las reglas
+     * nuevas no estén publicadas, el logo va solo, sin el contador. */
+    if ($code === 403) {
+        unset($campos['imagenes_recibidas']);
+        [$code, $res] = $patch($campos);
+    }
 
     if ($code < 200 || $code >= 300) {
         wabot_log('error', ['donde' => 'firestore_logo', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);

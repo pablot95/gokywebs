@@ -37,8 +37,14 @@ service cloud.firestore {
         // después de que se creara el boceto (wabot, 15-sep-2026).
         // Marca esta ficha como prospecto: el cliente vio el precio y afirmó
         // una forma de pago, el bot dejó de responder (wabot, 15/16-sep-2026).
-        'modalidad', 'esProspecto', 'prospectoAt', 'modelosElegidos'
-      ]) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['esProspecto'])
+        'modalidad', 'esProspecto', 'prospectoAt', 'modelosElegidos',
+        // Cuántas imágenes mandó, junto con el logo (wabot_logo_sincronizar, 2-nov-2026).
+        'imagenes_recibidas'
+      ]) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagenes_recibidas'])
+              || (request.resource.data.imagenes_recibidas is int
+                  && request.resource.data.imagenes_recibidas >= 0
+                  && request.resource.data.imagenes_recibidas <= 500))
+         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['esProspecto'])
               || request.resource.data.esProspecto == true)
          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modalidad'])
               || request.resource.data.modalidad in ['unico', 'mensual', 'propia'])

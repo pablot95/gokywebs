@@ -911,6 +911,23 @@ caso('y el boceto se entera: enlace a las imágenes y contador nuevo',
 caso('sin fotos nuevas no se vuelve a mandar', wabot_logo_sincronizar($foto) === false);
 $foto['imagenes_recibidas'] = 3;
 caso('una foto más por WhatsApp con el mismo enlace igual actualiza el contador', wabot_logo_sincronizar($foto) === true);
+/* 2-nov (revisión de las 18): las reglas de propuestas rechazaban el PATCH con
+ * imagenes_recibidas (403) y el logo no llegaba. Con 403 se reintenta sin el contador. */
+$pedidos = [];
+$GLOBALS['WABOT_TEST_LOGO_PATCH'] = function (array $campos) use (&$pedidos) {
+    $pedidos[] = array_keys($campos);
+    return [in_array('imagenes_recibidas', array_keys($campos), true) ? 403 : 200, '{}'];
+};
+$foto['imagenes_recibidas'] = 4;
+$okLogo = wabot_logo_sincronizar($foto);
+caso('con 403 por el contador, el logo se manda igual sin él',
+    $okLogo === true && count($pedidos) === 2 && in_array('imagenes_recibidas', $pedidos[0], true)
+    && !in_array('imagenes_recibidas', $pedidos[1], true) && in_array('logoUrl', $pedidos[1], true));
+$pedidos = [];
+$GLOBALS['WABOT_TEST_LOGO_PATCH'] = function (array $campos) use (&$pedidos) { $pedidos[] = array_keys($campos); return [200, '{}']; };
+$foto['imagenes_recibidas'] = 5;
+caso('con las reglas nuevas va todo en un solo PATCH', wabot_logo_sincronizar($foto) === true && count($pedidos) === 1 && in_array('imagenes_recibidas', $pedidos[0], true));
+unset($GLOBALS['WABOT_TEST_LOGO_PATCH']);
 foreach (glob(WABOT_DATA . '/media/5493810009001TEST/*') ?: [] as $f) @unlink($f);
 @rmdir(WABOT_DATA . '/media/5493810009001TEST');
 
