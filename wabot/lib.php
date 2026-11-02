@@ -3791,8 +3791,7 @@ function wabot_conv_portfolio_enviado($cv) {
 function wabot_seguimiento_sin_precio_texto($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     $clave = wabot_conv_portfolio_enviado($cv) ? 'seguimiento_sin_precio_sin_portfolio' : 'seguimiento_sin_precio';
-    $h = wabot_hora_local($ahora);
-    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    $saludo = wabot_saludo_hora($ahora);
     return trim(str_replace('{saludo}', $saludo, (string)($cfg[$clave] ?? '')));
 }
 
@@ -5912,6 +5911,16 @@ function wabot_hora_local($ts) {
 }
 
 /**
+ * El {saludo} de los avisos automáticos según la hora argentina. De madrugada
+ * (antes de las 6) es «buenas noches»: el aviso del formulario de las 00:00 y
+ * la 1:00 salía con «buen día» (2-nov, Todovinilosmr y Apertura Buenos Aires).
+ */
+function wabot_saludo_hora($ts) {
+    $h = wabot_hora_local($ts);
+    return $h < 6 ? 'Hola, buenas noches' : ($h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches'));
+}
+
+/**
  * ¿Es una hora decente para escribirle a alguien que no pidió que le escriban?
  * El seguimiento sale por cron, así que sin esto le llega a cualquier hora: el
  * 20-ago salieron a las 20:30 y de madrugada.
@@ -6238,8 +6247,7 @@ function wabot_form_recordatorio_texto_auto(&$cv, $cfg, $ahora) {
     // El link solo si el texto lo pide con {link} (desde el 5-oct no lo pide).
     $link = strpos($plantilla, '{link}') !== false ? wabot_form_recordatorio_link($cv, $cfg) : '';
     if ($link === '' && strpos($plantilla, '{link}') !== false) return '';
-    $h = wabot_hora_local($ahora);
-    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    $saludo = wabot_saludo_hora($ahora);
     return trim(strtr($plantilla, ['{saludo}' => $saludo, '{link}' => $link]));
 }
 
@@ -6320,8 +6328,7 @@ function wabot_form_confirmacion_corresponde($cv, $cfg, $ahora = null) {
 
 function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
     $plantilla = (string)($cfg['form_confirmacion'] ?? '');
-    $h = wabot_hora_local($ahora);
-    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    $saludo = wabot_saludo_hora($ahora);
     /* {entrega} acá es propio (Pablo, 12-oct): antes de las 15 h "Estará lista para hoy a la tarde" y
      * después, "para mañana" (era a las 14 h hasta el 18-oct: ahora coincide con la presentación
      * automática de presentar.php, 18 h el mismo día o 14 h del siguiente). De madrugada (antes de

@@ -3195,7 +3195,15 @@ function wabot_contexto_consulta($texto, $conv = null) {
         /* "Necesito más trabajo para mi taller" pide clientes, no empleo (9-sep). */
         || (preg_match('/\b(busco|buscando|necesito)\s+(un\s+)?(trabajo|empleo|laburo)\b/u', $t)
             && !preg_match('/\b(mas (trabajo|laburo|clientes)|(trabajo|laburo) para (mi|el|la|nuestro|nuestra)|conseguir (mas )?(trabajo|clientes)|trabajos)\b/u', $t))
-        || preg_match('/\b(quiero|quisiera|me gustaria)\b.{0,30}\b(trabajar (con|en|para) (ustedes|uds|vos)|sumarme al equipo|formar parte del equipo)\b/u', $t)
+        || preg_match('/\b(quiero|quisiera|me gustaria)\b.{0,30}\b(trabajar( \w+){0,3} (con|en|para) (ustedes|uds|vos)|sumarme al equipo|formar parte del equipo)\b/u', $t)
+        /* "Puedo trabajar remoto con ustedes?" (Ezequiel, 1-nov) recibió la
+         * bienvenida que pide el rubro para darle un precio. Con "puedo" solo
+         * si es en remoto o freelance: "puedo trabajar con ustedes?" a secas, o
+         * "se puede trabajar a distancia? estoy en Salta", lo dice también el
+         * cliente que quiere contratarnos desde lejos. */
+        || (preg_match('/\b(puedo|podria|hay (posibilidad|chance) de)\b.{0,20}\btrabajar\b.{0,40}\b(con|para) (ustedes|uds|vos|la agencia|gokywebs)\b/u', $t)
+            && preg_match('/\b(remoto|remota|remotamente|home office|freelance\w*)\b/u', $t)
+            && !preg_match('/\b(web|pagina|sitio|tienda) (de|para) (mi|nuestro|nuestra)\b|\b(mi|nuestro|nuestra) (negocio|emprendimiento|tienda|local|marca|empresa|web|pagina)\b/u', $t))
         || preg_match('/\b(toman|estan tomando|buscan|estan buscando|necesitan|precisan)\b.{0,20}\b(gente|personal|programador\w*|desarrollador\w*|disenador\w*|empleados?|colaboradores)\b/u', $t)
         /* El desarrollador que ofrece su trabajo a la agencia (18-sep): el bot
          * le contestó como a alguien con una web para reemplazar. Si en el

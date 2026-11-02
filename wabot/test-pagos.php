@@ -310,6 +310,18 @@ $rP = wabot_pago_confirmar($cvP, ['id' => '300', 'monto' => 30000, 'ts' => $hace
      'enviar' => function (&$c, $t) use (&$env) { $env++; return true; }]);
 caso('si Pablo ya le escribió después del pago, no le manda el «Genial, recibido» y el aviso lo dice',
     $rP['ok'] && $rP['mensajes'] === [] && $env === 0 && strpos((string)$avisoP, 'ya le escribiste vos') !== false, (string)$avisoP);
+// Neuro Test (1-nov): Pablo le dijo «te escribo desde otro número» y después el bot le pidió la factura y el dominio. Con el onboarding prendido, tampoco.
+require_once __DIR__ . '/onboarding.php';
+$cvN = conv_nueva('5491111TEST24', ['nombre' => 'Sofii', 'tipo' => 'landing', 'ultimo_cliente_ts' => $ahora - 600, 'control_manual' => true, 'bot_off' => true]);
+$cvN['transcript'] = [['q' => 'cliente', 't' => '[foto] comprobante', 'ts' => $hace(1)],
+                      ['q' => 'humano', 't' => 'Genial, recibido. Ahora te escribo desde otro numero ( 1125068578 )', 'ts' => $hace(0.9)]];
+$envN = 0;
+$rN = wabot_pago_confirmar($cvN, ['id' => '301', 'monto' => 60000, 'ts' => $hace(1), 'tipo' => 'transferencia'], 'anual', array_merge($cfg, ['onboarding_activo' => true]),
+    ['ahora' => $ahora, 'firestore' => $deps['firestore'], 'avisar' => function ($t, $c) { return 1; }, 'ventana_abierta' => true,
+     'enviar' => function (&$c, $t) use (&$envN) { $envN++; return true; }]);
+caso('con el onboarding prendido, si Pablo ya le escribió después del pago no arranca: nada sale y el chat sigue callado',
+    $rN['ok'] && $rN['mensajes'] === [] && $envN === 0 && empty($cvN['onboarding']) && !empty($cvN['control_manual']) && !wabot_onboarding_activo($cvN, array_merge($cfg, ['onboarding_activo' => true])),
+    json_encode([$rN['mensajes'], $cvN['onboarding'] ?? null, $cvN['control_manual'] ?? null], JSON_UNESCAPED_UNICODE));
 // Un doc que Pablo ya pasó a Cliente con su cobro: la plata no se vuelve a escribir.
 $opsC = [];
 $leerC = function ($ruta) { return [200, ['estadoCliente' => 'cliente', 'planLabel' => 'Ecommerce', 'abono' => 100000.0, 'cobros' => [['at' => '2026-11-01T15:00:00Z', 'monto' => 100000, 'tipo' => 'sena']]]]; };

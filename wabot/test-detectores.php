@@ -335,6 +335,16 @@ caso('el volante que solo ofrece sigue siendo proveedor',
 echo "— 12. Trabajo y clientes viejos por palabras sueltas —\n";
 caso('"necesito más trabajo para mi taller" no es laboral', wabot_contexto_consulta('necesito más trabajo para mi taller') === null);
 caso('"busco trabajo, soy plomero" sigue siendo laboral', wabot_contexto_consulta('busco trabajo, soy plomero') === 'laboral');
+// Ezequiel (1-nov): "Puedo trabajar remoto con ustedes?" recibió la bienvenida que pide el rubro para cotizar.
+foreach (['Hola. Puedo obtener más información?Puedo trabajar remoto con ustedes ?', 'Hola, podría trabajar con ustedes de forma remota?',
+          'quiero trabajar de manera remota con ustedes', 'Hay posibilidad de trabajar remoto para ustedes? soy programador'] as $frase) {
+    caso("\"$frase\" es laboral", wabot_contexto_consulta($frase) === 'laboral', (string)wabot_contexto_consulta($frase));
+}
+// El cliente de lejos o el que quiere contratarnos no es laboral.
+foreach (['Se puede trabajar a distancia con ustedes? Estoy en Salta', 'Puedo trabajar con ustedes?', 'Ok.. yo estoy en el sur del pais. Es todo x la web?',
+          'Puedo trabajar con ustedes de forma remota para hacer la web de mi negocio?', 'Hola. Puedo obtener más información?'] as $frase) {
+    caso("\"$frase\" no es laboral", wabot_contexto_consulta($frase) === null, (string)wabot_contexto_consulta($frase));
+}
 caso('"ya pagué otra web y fue un desastre, quiero una nueva" es un lead', wabot_contexto_consulta('ya pagué otra web y fue un desastre, quiero una nueva') === null);
 caso('"Ya pagué la seña, cuando empiezan?" sigue siendo cliente existente', wabot_contexto_consulta('Ya pagué la seña, cuando empiezan?') === 'cliente_existente');
 

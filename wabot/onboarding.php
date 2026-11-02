@@ -116,8 +116,7 @@ function wabot_onboarding_texto($clave, $cfg, $conv = null, array $vars = []) {
     if ($t === '') return '';
     if ($vars) $t = strtr($t, $vars);
     if (strpos($t, '{saludo}') !== false) {
-        $h = wabot_hora_local(time());
-        $t = str_replace('{saludo}', $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches'), $t);
+        $t = str_replace('{saludo}', wabot_saludo_hora(time()), $t);
     }
     return trim(is_array($conv) && function_exists('wabot_personalizar') ? wabot_personalizar($t, $conv) : $t);
 }

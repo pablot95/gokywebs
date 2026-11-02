@@ -290,6 +290,42 @@ oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'intencion' => 'posterg
 $r = turno('Me interesa, pero lo hablo con mi socio y te aviso', $c, $cfg);
 caso('postergar no manda el formulario', !con_form($r) && count($r) === 1 && empty($c['link_form_enviado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Marcela (1-nov): pidió tiempo, el bot dijo "Armalo con calma" y el "👍 si" que siguió salió como sí a la demo.
+$marcela = function ($acuse, array $decision) use ($cfg) {
+    $c = cv_cotizada();
+    oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'intencion' => 'posterga', 'mensajes' => ['Sí, perfecto! Armalo con calma y cuando lo tengas me escribís 😊']])]);
+    turno('Dejame q arme nombre texto y lo q mas o menos quiero poner y te contesto entre lunes y martes. Te parece bien?', $c, $cfg);
+    oa([dc($decision)]);
+    $r = turno($acuse, $c, $cfg);
+    return [$r, $c];
+};
+[$r, $c] = $marcela('👍 si', ['accion' => 'esperar', 'solucion' => 'tienda']);
+caso('«👍 si» después de «te contesto entre lunes y martes» no es sí a la demo: la red del sí claro no manda el formulario',
+    $r === [] && !con_form($r) && empty($c['link_form_enviado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+[$r, $c] = $marcela('👍 si', ['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta']);
+caso('aunque el modelo lo lea como aceptación, después de postergar un acuse espera (sin formulario)',
+    $r === [] && empty($c['link_form_enviado']) && in_array('acuse_tras_postergar', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode([$r, $c['comercial_ultimo']['ajustes'] ?? null], JSON_UNESCAPED_UNICODE));
+[$r, $c] = $marcela('Ok', ['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta']);
+caso('lo mismo con un «Ok»', $r === [] && empty($c['link_form_enviado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+[$r, $c] = $marcela('Ya lo tengo, dale armemos la demo', ['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta']);
+caso('si vuelve y la pide con todas las letras, el formulario sale', con_form($r) && !empty($c['link_form_enviado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+// Si después de postergar se le vuelve a ofrecer la demo, el sí a esa oferta nueva vale.
+$c = cv_cotizada();
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'intencion' => 'posterga', 'mensajes' => ['Dale, sin apuro.']])]);
+turno('Lo pienso y te aviso', $c, $cfg);
+wabot_conv_transcript($c, 'bot', 'Te consulto, querés que te armemos la demo así ves cómo quedaría?');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'intencion' => 'ninguna', 'mensajes' => ['Contame un poco más.']])]);
+$r = turno('Dale', $c, $cfg);
+caso('postergó, se le volvió a ofrecer la demo y dijo «Dale»: ahí sí sale el formulario', con_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
+foreach (['Dejame q arme nombre texto y lo q mas o menos quiero poner y te contesto entre lunes y martes. Te parece bien?',
+          'Déjame que lo analizamos con los otros profes y te confirmo', 'Si me gustaría pero ahora no tengo plata bueno gracias sería cuando me decida',
+          'Lo pienso y te aviso'] as $t) {
+    caso("«{$t}» pide tiempo", wabot_comercial_texto_posterga($t));
+}
+foreach (['Ok.. yo estoy en el sur del pais. Es todo x la web?', 'El primer pago, es en 1cuota?', 'No sé nada de tecnología', 'Te digo que vendo lanas', 'Si'] as $t) {
+    caso("«{$t}» no pide tiempo", !wabot_comercial_texto_posterga($t));
+}
+
 $c = cv();
 oa([dc(['accion' => 'formulario', 'solucion' => 'sin_definir', 'intencion' => 'acepta'])]);
 $r = turno('Sí', $c, $cfg);
@@ -487,6 +523,14 @@ $c = cv();
 oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
 $r = turno('Hola, les mando mi CV para sumarme al equipo', $c, $cfg);
 caso('el que busca trabajo recibe el texto de siempre y queda para Pablo', $r === [$cfg['mensaje_laboral']] && count(pedidos()) === 0 && !empty($c['handoff_pendiente']));
+// Ezequiel (1-nov): el pedido de trabajo venía pegado al texto del anuncio y salió la bienvenida que pide el rubro.
+$GLOBALS['TC_DICE_RUBRO'] = false;
+$c = cv();
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$r = turno('Hola. Puedo obtener más información?Puedo trabajar remoto con ustedes ?', $c, $cfg);
+caso('"Puedo trabajar remoto con ustedes?" en el primer mensaje: el texto laboral, no la bienvenida que pide el rubro',
+    $r === [$cfg['mensaje_laboral']] && empty($c['bienvenida_ts']) && ($c['contexto_consulta'] ?? '') === 'laboral' && count(pedidos()) === 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+$GLOBALS['TC_DICE_RUBRO'] = true;
 
 echo "— 10. El recordatorio del formulario según el estado —\n";
 $cfgRec = $cfg; $cfgRec['form_recordatorio_activo'] = true; $cfgRec['seguimiento_hora_desde'] = 0; $cfgRec['seguimiento_hora_hasta'] = 24;
@@ -598,8 +642,10 @@ caso('miles de productos ya no van a Pablo: se cotiza y se avisa que lo digan an
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['instagram_sigue', 'muchos_productos'], 'mensajes' => ['Buenas! Te podemos armar una tienda online de ropa.'], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Hola buenas, quiero pasar mi tienda de Instagram a una web, son unos 400 productos de ropa', $c, $cfg);
+// Desde el 2-nov (Mary) las dos oficiales van en un mensaje: cuatro en vez de cinco.
 caso('cotizar conserva las respuestas seleccionadas aunque el cliente no escriba signos de pregunta, con un solo saludo',
-    count($r) === 5 && strpos($r[1], 'miles de productos') !== false && str_starts_with($r[0], 'Hola') && str_starts_with($r[2], 'Te podemos armar'), json_encode($r, JSON_UNESCAPED_UNICODE));
+    count($r) === 4 && strpos($r[0], 'miles de productos') !== false && strpos($r[0], 'Instagram') !== false && str_starts_with($r[0], 'Hola')
+    && str_starts_with($r[1], 'Te podemos armar'), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te podemos armar una tienda.'], 'ficha' => ['que_vende' => 'leches']])]);
 turno('Vendo leches maternizadas', $c, $cfg);
@@ -680,6 +726,12 @@ oa([dc(['accion' => 'responder', 'solucion' => 'informativa', 'info_claves' => [
 $r = turno('El contenido lo cargan ustedes?', $c, $cfg);
 caso('en la informativa sin panel, "lo cargan ustedes?" → los cambios los hacemos nosotros (carga_sitio)',
     count($r) === 1 && mb_stripos($r[0], 'los hacemos nosotros') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+// Caballo Crew (2-nov): "la pág la manejarían ustedes?" → "los cambios los hacemos nosotros", sin decir que es uno por mes.
+oa([dc(['accion' => 'responder', 'solucion' => 'informativa', 'info_claves' => ['manual_sitio'], 'mensajes' => []])]);
+$r = turno('Consulta aparte la pag la manejarian ustedes', $c, $cfg);
+caso('"la manejarían ustedes?" en la informativa → los cambios los hacemos nosotros, con el límite de uno por mes',
+    count($r) === 1 && mb_stripos($r[0], 'los hacemos nosotros') !== false && mb_stripos($r[0], 'uno por mes') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('las instrucciones dicen el límite de los cambios de la informativa', mb_stripos(wabot_comercial_instrucciones($cfg), 'los cambios los hacemos nosotros, uno por mes incluido') !== false);
 
 // La pregunta de los turnos queda pendiente: no se elige por el cliente ni se cotiza.
 function cv_turnos() {
@@ -1240,8 +1292,8 @@ $c = cv();
 wabot_conv_transcript($c, 'bot', $cfg['comercial']['pregunta_turnos']);
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'info_claves' => ['plazos', 'medios_pago'], 'ficha' => ['rubro' => 'peluquería']])]);
 $r = turno('Tengo una peluquería. Qué costo tiene, cuánto tarda y qué medios de pago aceptan?', $c, $cfg);
-caso('la comparación con y sin reservas conserva ambas dudas y todavía no ofrece la demo', count($r) === 5
-    && strpos($r[0], '7 días') !== false && $r[1] === $cfg['info']['medios_pago'] && !in_array(OFERTA, $r, true), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('la comparación con y sin reservas conserva ambas dudas (juntas en un mensaje) y todavía no ofrece la demo', count($r) === 4
+    && strpos($r[0], '7 días') !== false && strpos($r[0], $cfg['info']['medios_pago']) !== false && !in_array(OFERTA, $r, true), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $sinLista = ['falta' => [], 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'Falta el hosting'], ['tipo' => 'no_contesta', 'detalle' => 'Falta el panel']]];
 caso('si el revisor no da lista, se conservan todos los detalles de omisiones', wabot_comercial_revision_pendientes($sinLista) === ['Falta el hosting', 'Falta el panel']);
@@ -1398,6 +1450,22 @@ caso('tres oficiales al cotizar van juntas en un mensaje, antes de la propuesta 
     && strpos($r[0], $cfg['info']['no_se_nada']) === 0 && strpos($r[0], $cfg['info']['logo']) !== false && strpos($r[0], 'primer diseño') !== false
     && strpos($r[1], 'lencería') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Mary (1-nov, Natura y Avon): envíos y qué incluye al cotizar + propuesta, precio y demo salían como cinco mensajes.
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['envios', 'logo'],
+        'mensajes' => ['Podemos armarte una tienda online para vender tus productos Natura y Avon'], 'ficha' => ['que_vende' => 'productos Natura y Avon']])]);
+$r = turno("Hola como estas\nMe dedico a vender productos Natura y avon\nquiero expandir mi negocio con envíos en caba y amba\nquiero saber si me hacen el logo", $c, $cfg);
+caso('dos oficiales al cotizar también van juntas: cuatro mensajes, no cinco', count($r) === 4
+    && strpos($r[0], 'Correo Argentino') !== false && strpos($r[0], $cfg['info']['logo']) !== false && strpos($r[1], 'Natura') !== false && end($r) === OFERTA,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['envios', 'que_incluye'],
+        'mensajes' => ['Podemos armarte una tienda online para vender tus productos Natura y Avon'], 'ficha' => ['que_vende' => 'productos Natura y Avon']])]);
+$r = turno("Me dedico a vender productos Natura y avon, con envíos en caba y amba. Cuánto cuesta y qué trae el paquete?", $c, $cfg);
+caso('«qué trae el paquete» con el precio en el mismo turno: el bloque de planes ya lo dice, la respuesta oficial no sale antes',
+    count($r) === 4 && strpos(implode("\n", $r), $cfg['info']['que_incluye']) === false && strpos($r[0], 'Correo Argentino') !== false && end($r) === OFERTA,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+
 // Al derivar, el bot sigue en silencio (Pablo, 27-oct: "que se siga callando").
 $c = cv();
 oa([dc(['accion' => 'humano', 'solucion' => 'crm', 'motivo' => 'Pide un CRM'])]);
@@ -1418,6 +1486,36 @@ foreach (['No me abre el link del formulario', 'el link no anda', 'no me carga l
 foreach (['Ya lo completé', 'no quiero el formulario ahora', 'lo lleno más tarde', 'Qué formulario?', 'no entendí el formulario'] as $t) {
     caso("«{$t}» no", !wabot_comercial_link_no_abre($t));
 }
+// Miriam (2-nov): "No puedo ingresar", citando el mensaje del formulario, quedó sin respuesta.
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
+turno('La 2da opción', $c, $cfg);
+$filas = $c['transcript'];
+$idForm = 'wamid.FORM' . count($filas);
+$c['transcript'][count($filas) - 1]['id'] = $idForm;   // el mensaje del link, con su id de WhatsApp
+oa([]);
+caso('sin la palabra link no alcanza si no hay charla', !wabot_comercial_link_no_abre('No puedo ingresar'));
+wabot_conv_transcript($c, 'cliente', 'No puedo ingresar');
+$c['transcript'][count($c['transcript']) - 1]['cita'] = $idForm;
+$c['ultimo_cliente_ts'] = time();
+$r = wabot_salida_preparar(wabot_responder('No puedo ingresar', $c, $cfg), $c, $cfg);
+foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', wabot_respuesta_texto_transcript((string)$m));
+caso('"No puedo ingresar" citando el link del formulario → se le reenvía el link y Pablo queda avisado', count($r) === 1 && con_form($r) && count(pedidos()) === 0
+    && !empty($c['handoff_pendiente']) && ($c['comercial_ultimo']['ajustes'] ?? []) === ['link_no_abre'], json_encode($r, JSON_UNESCAPED_UNICODE));
+oa([]);
+$r = turno('Sigue sin abrir el link', $c, $cfg);
+caso('si después del reenvío sigue sin entrar, no se le manda otro link igual: lo ve Pablo', $r === [] && count(pedidos()) === 0
+    && !empty($c['handoff_pendiente']) && ($c['comercial_ultimo']['ajustes'] ?? []) === ['link_no_abre_otra_vez'], json_encode($r, JSON_UNESCAPED_UNICODE));
+$cLink = ['transcript' => [['q' => 'bot', 't' => 'Para hacer la demo, solo tendrías que llenar este formulario: https://gokywebs.com/form/', 'id' => 'wamid.F'],
+                           ['q' => 'cliente', 't' => 'x']]];
+foreach (['No puedo ingresar', 'no me abre', 'No lo puedo abrir', 'no me deja entrar'] as $t) {
+    caso("«{$t}» justo después del link del formulario es el link que no abre", wabot_comercial_link_no_abre($t, $cLink));
+}
+foreach (['No puedo ahora, lo hago más tarde', 'no puedo', 'no entiendo', 'Si'] as $t) {
+    caso("«{$t}» después del link, no", !wabot_comercial_link_no_abre($t, $cLink));
+}
+$cOtra = ['transcript' => [['q' => 'bot', 't' => 'Si te interesa, te preparamos una demo gratis', 'id' => 'wamid.O'], ['q' => 'cliente', 't' => 'x']]];
+caso('«No puedo ingresar» después de otro mensaje que no es el link, no', !wabot_comercial_link_no_abre('No puedo ingresar', $cOtra));
 // El saludo duplicado: 8 de las 13 correcciones del revisor del 26-oct eran "Muy bien, gracias. Bien, gracias!" o volver a saludar.
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Todo bien, gracias! Podemos armarte una tienda online para tus perfumes'], 'ficha' => ['que_vende' => 'perfumes']])]);

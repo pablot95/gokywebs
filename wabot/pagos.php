@@ -706,6 +706,13 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
      * web" (onboarding_activo), en vez de callarse arranca el onboarding. Los
      * seguimientos de venta ya no van. */
     $onboarding = function_exists('wabot_onboarding_iniciar') && is_array($cfg) && !empty($cfg['onboarding_activo']);
+    /* Si Pablo ya le escribió después del pago ("Genial, recibido, te escribo
+     * desde otro número", Neuro Test, 1-nov), ese chat ya lo derivó él: el
+     * onboarding tampoco arranca, aunque esté prendido. Queda como de fábrica. */
+    if ($onboarding && wabot_pagos_pablo_escribio_despues($conv)) {
+        $onboarding = false;
+        wabot_log('onboarding_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
+    }
     if ($onboarding) {
         $conv['control_manual'] = false;
         $conv['bot_off'] = false;
@@ -762,6 +769,16 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     return $resultado;
 }
 
+/** ¿Pablo le escribió a este chat después del pago (pago_ts)? Entonces ya lo atendió él. */
+function wabot_pagos_pablo_escribio_despues($conv) {
+    $pagoTs = (int)($conv['pago_ts'] ?? 0);
+    if ($pagoTs <= 0) return false;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (is_array($fila) && ($fila['q'] ?? '') === 'humano' && (int)($fila['ts'] ?? 0) >= $pagoTs) return true;
+    }
+    return false;
+}
+
 /**
  * El mensaje de Pablo al recibir el pago («Genial, recibido. Ahora te escribo
  * desde otro número…», textos.php `pago_recibido`), y el bot se calla en ese
@@ -777,13 +794,10 @@ function wabot_pago_recibido_enviar(&$conv, $cfg, $ahora, array $deps = []) {
     /* Pablo ya le escribió después del pago (1-nov, Neuro Test: el bot mandó la
      * apertura justo después de su «te escribo desde otro número»): ya lo
      * atendió él, el mensaje sobra. */
-    $pagoTs = (int)($conv['pago_ts'] ?? 0);
-    foreach ((array)($conv['transcript'] ?? []) as $fila) {
-        if (is_array($fila) && ($fila['q'] ?? '') === 'humano' && $pagoTs > 0 && (int)($fila['ts'] ?? 0) >= $pagoTs) {
-            $conv['pago_recibido_omitido'] = 'pablo_escribio';
-            wabot_log('pago_recibido_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
-            return [];
-        }
+    if (wabot_pagos_pablo_escribio_despues($conv)) {
+        $conv['pago_recibido_omitido'] = 'pablo_escribio';
+        wabot_log('pago_recibido_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
+        return [];
     }
     if (function_exists('wabot_personalizar')) $texto = wabot_personalizar($texto, $conv);
     $ventana = isset($deps['ventana_abierta']) ? (bool)$deps['ventana_abierta'] : (wabot_ventana_restante($conv, $ahora) > 0);

@@ -93,7 +93,10 @@ echo "Cuándo se la entrega\n";
 // El corte pasó de las 14 a las 15 h el 18-oct (presentación automática: 18 h el mismo día, 14 h del siguiente).
 foreach ([['07:00', 'Hola, buen día', 'hoy a la tarde'], ['14:05', 'Hola, buenas tardes', 'hoy a la tarde'],
           ['14:59', 'Hola, buenas tardes', 'hoy a la tarde'], ['15:00', 'Hola, buenas tardes', 'mañana'],
-          ['18:00', 'Hola, buenas tardes', 'mañana'], ['22:30', 'Hola, buenas noches', 'mañana'], ['01:00', 'Hola, buen día', 'mañana']] as [$hora, $saludo, $cuando]) {
+          ['18:00', 'Hola, buenas tardes', 'mañana'], ['22:30', 'Hola, buenas noches', 'mañana'],
+          // De madrugada, «buenas noches» (2-nov: a las 00:00 y a la 1:00 salía «buen día»).
+          ['00:00', 'Hola, buenas noches', 'mañana'], ['01:00', 'Hola, buenas noches', 'mañana'], ['05:59', 'Hola, buenas noches', 'hoy a la tarde'],
+          ['06:00', 'Hola, buen día', 'hoy a la tarde']] as [$hora, $saludo, $cuando]) {
     $t = strtotime($hoy . ' ' . $hora . ':00 UTC') + 3 * 3600;   // la hora es la argentina
     $c = fc_conv(6);
     $texto = wabot_form_confirmacion_texto($c, $cfg, $t);

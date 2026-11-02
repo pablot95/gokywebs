@@ -210,8 +210,8 @@ function wabot_textos_default() {
         'carga_nosotros' => 'Si son menos de 30 productos, los cargamos todos nosotros sin costo. Si son más, también podemos cargarlos todos, con un costo adicional según la cantidad, o cargamos algunos y el resto lo cargás vos desde el panel sin costo.',
         // La misma, cuando ya dijo cuántos son y son menos de 30 (la elige el sistema, no el modelo).
         'carga_pocos' => 'Con {cantidad} productos, los cargamos todos nosotros sin costo. Después los manejás vos desde el panel cuando quieras.',
-        // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche).
-        'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, vos solo nos pedís lo que quieras cambiar.',
+        // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche). Con el límite del plan a la vista (2-nov, Caballo Crew: «los hacemos nosotros» sin el uno por mes).
+        'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, uno por mes incluido. Vos solo nos pedís lo que quieras cambiar.',
         'carga_sitio' => 'En la web informativa los cambios los hacemos nosotros, uno por mes incluido. Si querés manejar vos el contenido desde un panel, va con el plan de {mensualidad_panel}.',
         // "Se pueden cargar miles de artículos; si van a ser miles, que avisen antes" (Pablo, 9-oct).
         'muchos_productos' => 'Sí, se pueden cargar miles de productos. Si vas a tener tantos, avisanos antes así preparamos la base de datos y la estructura para ese volumen.',
