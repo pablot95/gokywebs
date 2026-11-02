@@ -1,0 +1,20 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto ENTREN, 2-nov-2026; imágenes ilustrativas. El logo lo mandó el cliente por WhatsApp (Descargas/imagenes-prospectos/entren/01-logo.jpg)",
+  "archivos": {
+    "rondo-grupal.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos",
+    "entrenador-jugadora.webp": "01_imagen.jpg (9:16, 900x1600) - foto vertical de «Así es una sesión» (los dos modelos)",
+    "tecnificacion-conduccion.webp": "03_imagen.jpg (1:1) - Tecnificación individual",
+    "duelo-1v1.webp": "04_imagen.jpg (1:1) - Preparación técnico-táctica",
+    "pizarra-tactica.webp": "06_imagen.jpg (1:1) - Inteligencia de juego",
+    "escalera-coordinacion.webp": "07_imagen.jpg (1:1) - Preparación física específica",
+    "infantiles-grupo.webp": "08_imagen.jpg (1:1) - formato Grupal",
+    "personalizado-1v1.webp": "09_imagen.jpg (1:1) - formato Personalizado",
+    "finalizacion-arquera.webp": "05_imagen.jpg (1:1) - cierre (cuadrado en M1, círculo en M2)",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "logo-entren.jpg": "logo original del cliente (blanco sobre negro, 717x1600)",
+    "logo-entren-negro.webp": "el mismo logo pasado a transparente, letras negras + punto rojo (header M1, ficha del hero M2)",
+    "logo-entren-blanco.webp": "el mismo logo pasado a transparente, letras blancas + punto rojo (header M2, sello, ficha de jugador, footer)",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": "ninguna foto extra de Pexels/Unsplash"
+}
