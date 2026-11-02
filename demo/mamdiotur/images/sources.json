@@ -1,0 +1,17 @@
+{
+  "origen": "Zip de ChatGPT (Copiar 10) del prospecto Mamdiotur, 1-nov-2026; imágenes ilustrativas, sin fotos propias del cliente",
+  "archivos": {
+    "cataratas.webp": "02_imagen.jpg (16:9, 1600x900) - hero de los dos modelos",
+    "traslado-aeropuerto.webp": "01_imagen.jpg (9:16) - Turismo receptivo",
+    "combi-blanca.webp": "03_imagen.jpg (1:1) - Traslados",
+    "combi-asientos.webp": "04_imagen.jpg (1:1) - galería «En el camino» (M2)",
+    "pasarelas-selva.webp": "05_imagen.jpg (1:1) - Excursiones",
+    "rio-tres-fronteras.webp": "06_imagen.jpg (1:1) - Las salidas que más se piden (M1) / galería (M2)",
+    "plan-de-viaje.webp": "07_imagen.jpg recortada abajo (sin el mar del fondo) - Hablás directo con el dueño (M1) / galería (M2)",
+    "valijas-baul.webp": "09_imagen.jpg (1:1) - galería «En el camino» (M2)",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg",
+    "08_imagen.jpg": "sin usar: el fondo es un lago con montañas que no es de Misiones",
+    "10_mockup_720x480.png": "mock up de referencia del diseño (no se usa en la página)"
+  },
+  "bancos": "ninguna foto extra de Pexels/Unsplash"
+}
