@@ -1,0 +1,50 @@
+{
+  "nota": "Fotos ilustrativas del zip de ChatGPT («Copiar 10») del prospecto TFxT7NA7ADvqPrFNegVm. Las webp son copias redimensionadas; los originales quedan sin tocar. Sin fotos de stock extra.",
+  "archivos": {
+    "electricidad.webp / electricidad-600.webp": {
+      "origen": "01_imagen.jpg",
+      "uso": "M1 hero (panel izquierdo) · tarjeta y rueda Electricidad · orden de trabajo"
+    },
+    "relevamiento.webp / relevamiento-960.webp": {
+      "origen": "02_imagen.jpg",
+      "uso": "M2 hero (foto ancha) · M1 bloque Para inmobiliarias · og.jpg"
+    },
+    "plomeria.webp / plomeria-600.webp": {
+      "origen": "03_imagen.jpg",
+      "uso": "M1 hero (panel derecho) · tarjeta y rueda Plomería"
+    },
+    "albanileria.webp / albanileria-600.webp": {
+      "origen": "04_imagen.jpg",
+      "uso": "Albañilería"
+    },
+    "pintura.webp / pintura-600.webp": {
+      "origen": "05_imagen.jpg",
+      "uso": "Pintura"
+    },
+    "carpinteria.webp / carpinteria-600.webp": {
+      "origen": "06_imagen.jpg",
+      "uso": "Carpintería y muebles"
+    },
+    "refrigeracion.webp / refrigeracion-600.webp": {
+      "origen": "07_imagen.jpg",
+      "uso": "Refrigeración"
+    },
+    "electrodomesticos.webp / electrodomesticos-600.webp": {
+      "origen": "08_imagen.jpg",
+      "uso": "Electrodomésticos"
+    },
+    "general.webp / general-600.webp": {
+      "origen": "09_imagen.jpg",
+      "uso": "Mantenimiento general · M2 bloque Para inmobiliarias"
+    },
+    "logo.webp": {
+      "origen": "Portada de la propuesta comercial que mandó el cliente por WhatsApp (01-evolucion-360-inmobiliarias-final-corregido.pdf, página 1): logo recortado y fondo pasado a transparente.",
+      "uso": "header, hero, cierre, pie, og.jpg"
+    },
+    "og.jpg": {
+      "origen": "02_imagen.jpg + logo",
+      "uso": "Open Graph 1200x630"
+    }
+  },
+  "mockup": "10_mockup_720x480.png (referencia del Modelo 1)"
+}
