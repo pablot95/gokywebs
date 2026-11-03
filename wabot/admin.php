@@ -1505,11 +1505,18 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $aviso . '=1'); exit;
     }
-    /* Un pago que quedó sin asignar (pestaña Clientes): Pablo dice de quién es. */
+    /* Un pago que quedó sin asignar (pestaña Clientes): Pablo dice de quién es, con un solo
+     * desplegable (3-nov: «la idea de elegir el cliente en la lista es que yo no tenga que
+     * agregar el número»). "cli:<id>" = ya es cliente; "chat:<clave>" u "otro" = venta nueva. */
+    $pagoDestino = (string)($_POST['destino'] ?? '');
+    if ($a === 'pago_asignar' && str_starts_with($pagoDestino, 'cli:')) {
+        $_POST['cliente_id'] = substr($pagoDestino, 4);
+        $a = 'pago_cliente';
+    }
     if ($a === 'pago_asignar' && !empty($_POST['pago_id'])) {
         // El número escrito a mano gana aunque el select haya quedado en la primera sugerencia.
-        $tel = trim((string)($_POST['tel_otro'] ?? '')) ?: trim((string)($_POST['tel'] ?? ''));
-        $aviso = 'pago_asignar_sin_chat';
+        $tel = trim((string)($_POST['tel_otro'] ?? '')) ?: (str_starts_with($pagoDestino, 'chat:') ? substr($pagoDestino, 5) : trim((string)($_POST['tel'] ?? '')));
+        $aviso = isset($_POST['destino']) && $pagoDestino === '' ? 'pago_asignar_sin_destino' : 'pago_asignar_sin_chat';
         if ($tel !== '') {
             $r = wabot_pagos_asignar((string)$_POST['pago_id'], $tel, (string)($_POST['modalidad'] ?? ''), $cfg);
             wabot_clientes_cache_borrar();
@@ -2344,7 +2351,7 @@ function burbujaCita(t, chat) {
     <?php foreach (['pago_asignar_sin_chat' => 'No hay ningún chat con ese número.', 'pago_asignar_ambiguo' => 'Hay más de un chat con ese número: abrí el chat y confirmá el pago desde ahí.',
                     'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.', 'pago_asignar_ya_asignado' => 'Ese pago ya se confirmó o se ignoró (la lista estaba vieja).', 'pago_ignorar_error' => 'No se pudo sacar el pago de la lista (ya no estaba o se estaba procesando): recargá y probá de nuevo.',
                     'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.',
-                    'pago_cliente_sin_cliente' => 'Elegí de qué cliente es.', 'pago_cliente_ok' => 'Listo: quedó como pago de ese cliente (y lo que entre de ese mail, también).'] as $k => $txt) {
+                    'pago_cliente_sin_cliente' => 'Elegí de qué cliente es.', 'pago_asignar_sin_destino' => 'Elegí de quién es el pago.', 'pago_cliente_ok' => 'Listo: quedó como pago de ese cliente (y lo que entre de ese mail, también).'] as $k => $txt) {
               if (isset($_GET[$k])) echo '<p class="ok" style="color:var(--bad)">' . $e($txt) . '</p>'; } ?>
     <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
     <?php if (isset($_GET['template_saludo_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
@@ -3498,7 +3505,7 @@ function burbujaCita(t, chat) {
         <?php if ($cliDatos['sin_asignar']): ?>
         <div class="card">
             <h2 style="margin-top:0">Pagos sin asignar <span class="pill pausa"><?= count($cliDatos['sin_asignar']) ?></span></h2>
-            <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Si es una venta nueva: elegí el chat (o escribí el número), la modalidad, y confirmá: pasa a Cliente en el admin y el bot le pide lo que falta. Si ya es cliente (una cuota, el saldo, el que paga por afuera): elegilo abajo y sale de la lista sin escribirle a nadie; lo que entre después desde ese mail se asigna solo. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
+            <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Elegí de quién es. Si ya es cliente (una cuota, el saldo, el que paga por afuera), elegilo de la lista: sale de acá sin escribirle a nadie, y lo que entre después desde ese mail se asigna solo. Si es una venta nueva, elegí su chat (o escribí el número) y la modalidad: pasa a Cliente en el admin y el bot le pide lo que falta. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
             <div class="tabla-scroll"><table>
                 <tr><th>Cuándo</th><th>Monto</th><th>Cómo</th><th>Por qué quedó acá</th><th>De quién es</th><th></th></tr>
                 <?php foreach ($cliDatos['sin_asignar'] as $p): ?>
@@ -3508,36 +3515,54 @@ function burbujaCita(t, chat) {
                     <td><?= $e($cliComo[$p['tipo'] ?? ''] ?? (string)($p['tipo'] ?? '')) ?><?php if (!empty($p['email'])): ?><br><span class="meta"><?= $e($p['email']) ?></span><?php endif; ?></td>
                     <td class="meta"><?= $e($cliMotivo[$p['motivo'] ?? ''] ?? (string)($p['motivo'] ?? '')) ?></td>
                     <td>
-                        <form method="post" class="fila" style="gap:6px">
+                        <?php /* Un solo desplegable (3-nov): el cliente del admin, o el chat de una venta nueva. */
+                              $destinoSel = (string)($p['cliente_sugerido'] ?? '') !== '' ? 'cli:' . $p['cliente_sugerido'] : (!empty($p['sugeridos_info']) ? 'chat:' . $p['sugeridos_info'][0]['clave'] : ''); ?>
+                        <form method="post" class="fila pago-asignar" style="gap:6px">
                             <input type="hidden" name="accion" value="pago_asignar"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>">
-                            <?php if (!empty($p['sugeridos_info'])): ?>
-                            <select name="tel" aria-label="Chat" style="width:auto">
-                                <?php foreach ($p['sugeridos_info'] as $i => $sg): ?><option value="<?= $e($sg['clave']) ?>"<?= $i === 0 ? ' selected' : '' ?>><?= $e($sg['nombre']) ?></option><?php endforeach; ?>
-                                <option value="">Otro número…</option>
+                            <select name="destino" class="pago-destino" aria-label="De quién es" style="width:auto;max-width:300px">
+                                <option value="">¿De quién es? Elegí…</option>
+                                <?php if ($cliClientesOrden): ?>
+                                <optgroup label="Ya es cliente (sale de la lista, sin escribirle)">
+                                    <?php foreach ($cliClientesOrden as $cl): ?><option value="cli:<?= $e($cl['id']) ?>"<?= $destinoSel === 'cli:' . $cl['id'] ? ' selected' : '' ?>><?= $e($cl['etiqueta']) ?></option><?php endforeach; ?>
+                                </optgroup>
+                                <?php endif; ?>
+                                <optgroup label="Venta nueva (confirma el pago en su chat)">
+                                    <?php foreach ((array)($p['sugeridos_info'] ?? []) as $sg): ?><option value="chat:<?= $e($sg['clave']) ?>"<?= $destinoSel === 'chat:' . $sg['clave'] ? ' selected' : '' ?>><?= $e($sg['nombre']) ?></option><?php endforeach; ?>
+                                    <option value="otro">Otro chat: escribo el número…</option>
+                                </optgroup>
                             </select>
-                            <?php endif; ?>
-                            <input type="text" name="tel_otro" placeholder="Número del chat" aria-label="Número del chat" style="width:150px;padding:6px 8px">
-                            <select name="modalidad" aria-label="Modalidad" style="width:auto">
+                            <input type="text" name="tel_otro" class="pago-otro" placeholder="Número del chat" aria-label="Número del chat" style="width:150px;padding:6px 8px">
+                            <select name="modalidad" class="pago-modalidad" aria-label="Modalidad" style="width:auto">
                                 <?php $sel = (string)($p['sugeridos_info'][0]['modalidad'] ?? (($p['tipo'] ?? '') === 'suscripcion' ? 'mensual' : '')); foreach ($cliModalidades as $k => $v): ?><option value="<?= $k ?>"<?= $k === $sel ? ' selected' : '' ?>><?= $e($v) ?></option><?php endforeach; ?>
                             </select>
-                            <button class="sec" style="border-color:var(--ac);color:var(--ac)">Asignar y confirmar</button>
+                            <button class="sec" style="border-color:var(--ac);color:var(--ac)">Asignar</button>
                         </form>
-                        <?php if ($cliClientesOrden): ?>
-                        <form method="post" class="fila" style="gap:6px;margin-top:8px">
-                            <input type="hidden" name="accion" value="pago_cliente"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>">
-                            <select name="cliente_id" aria-label="Cliente del admin" style="width:auto;max-width:260px">
-                                <option value="">Ya es cliente: elegí cuál…</option>
-                                <?php foreach ($cliClientesOrden as $cl): ?><option value="<?= $e($cl['id']) ?>"<?= (string)($p['cliente_sugerido'] ?? '') === (string)$cl['id'] ? ' selected' : '' ?>><?= $e($cl['etiqueta']) ?></option><?php endforeach; ?>
-                            </select>
-                            <button class="sec">Es de este cliente</button>
-                        </form>
-                        <?php endif; ?>
                     </td>
                     <td><form method="post" onsubmit="return confirm('Sacar este pago de la lista? Queda anotado como que no es de ningún cliente.')"><input type="hidden" name="accion" value="pago_ignorar"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>"><button class="sec">No es de nadie</button></form></td>
                 </tr>
                 <?php endforeach; ?>
             </table></div>
         </div>
+        <script>
+        /* El número y la modalidad solo hacen falta para una venta nueva (3-nov). */
+        document.querySelectorAll('form.pago-asignar').forEach(f => {
+            const destino = f.querySelector('.pago-destino');
+            const otro = f.querySelector('.pago-otro');
+            const modalidad = f.querySelector('.pago-modalidad');
+            const pintar = () => {
+                const v = destino.value;
+                otro.hidden = v !== 'otro';
+                modalidad.hidden = !(v === 'otro' || v.startsWith('chat:'));
+            };
+            destino.addEventListener('change', pintar);
+            pintar();
+            f.addEventListener('submit', ev => {
+                const v = destino.value;
+                if (v === '') { ev.preventDefault(); destino.focus(); return; }
+                if ((v === 'otro' || v.startsWith('chat:')) && !confirm('Confirmar el pago en ese chat? Pasa a Cliente en el admin y el bot le pide lo que falta.')) ev.preventDefault();
+            });
+        });
+        </script>
         <?php endif; ?>
 
         <div class="card">
