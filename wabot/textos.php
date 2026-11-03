@@ -586,7 +586,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         '_default' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
     ],
     // Segundo mensaje de la presentación (Pablo, 3-nov), tal cual lo escribió.
-    'muestra_presentar_modelos' => "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos",
+    'muestra_presentar_modelos' => "Hay dos modelos, que se cambian en la parte inferior de la web\nAvisame cual de los dos modelos te gustó más",
     'no_entiendo' => 'No estoy pudiendo entender el mensaje. Cuando puedas, mandame en una línea a qué te dedicás y seguimos por acá.',
     'no_interesa' => 'Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá.',
     'no_texto' => 'No pude abrir eso que me mandaste. Contámelo por mensaje de texto así te ayudo mejor.',

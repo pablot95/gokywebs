@@ -3994,7 +3994,7 @@ $demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'l
 caso('es el texto de Pablo, con el negocio y el link',
     $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\nPodés verla acá:\nhttps://gokywebs.com/demo/yfprevencion", $demoTextos[0]);
 caso('los dos modelos van aparte, con el texto de Pablo del 3-nov',
-    ($demoTextos[1] ?? '') === "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos", $demoTextos[1] ?? '');
+    ($demoTextos[1] ?? '') === "Hay dos modelos, que se cambian en la parte inferior de la web\nAvisame cual de los dos modelos te gustó más", $demoTextos[1] ?? '');
 caso('son dos mensajes', count($demoTextos) === 2);
 
 $presentaciones = [];
@@ -4006,7 +4006,7 @@ foreach (['landing', 'ecommerce', 'inmobiliaria', 'elearning'] as $tipoDemo) {
 caso('todas las webs llevan el mismo texto', count(array_unique(array_values($presentaciones))) === 1);
 $sistema = wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])[0];
 caso('el sistema mantiene el suyo, también con los dos modelos',
-    $sistema !== $presentaciones['landing'] && substr_count(implode("\n", wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])), 'dos modelos') === 1);
+    $sistema !== $presentaciones['landing'] && substr_count(implode("\n", wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])), 'Hay dos modelos') === 1);
 caso('sin nombre de negocio, el texto igual cierra bien',
     stripos(wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'ecommerce'])[0], 'la web de tu negocio') !== false);
 

@@ -1033,7 +1033,7 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     // desde el 3-nov en un mensaje aparte, después del link (Pablo).
     if (stripos($texto, 'dos modelos') === false) {
         $modelos = trim((string)($cfg['muestra_presentar_modelos'] ?? ''));
-        if ($modelos === '') $modelos = "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos";
+        if ($modelos === '') $modelos = "Hay dos modelos, que se cambian en la parte inferior de la web\nAvisame cual de los dos modelos te gustó más";
         $textos[] = $modelos;
     }
     // Segundo mensaje, aparte, pidiendo el feedback.

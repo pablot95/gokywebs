@@ -7448,7 +7448,7 @@ function textoPresentacionRespaldo(p, slug) {
     const link = slug ? `https://gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
     return [
         `Ya está lista la primera propuesta para la web de ${negocio}\nPodés verla acá:\n${link}`,
-        "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos",
+        "Hay dos modelos, que se cambian en la parte inferior de la web\nAvisame cual de los dos modelos te gustó más",
     ];
 }
 
