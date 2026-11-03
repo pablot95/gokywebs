@@ -101,5 +101,14 @@ echo "La marca del link\n";
 $c = conv_nueva('999TEST999');
 wabot_conv_transcript($c, 'humano', 'Te paso el form: gokywebs.com/form/?c=ZZ9');
 caso('el link mandado por Pablo deja la hora para el recordatorio', (int)($c['form_link_mandado_ts'] ?? 0) > 0);
+// Giancarlo (3-nov): el form reenviado a las 11:53 y el recordatorio a las 14:00, contado desde el primer link.
+$c = fr_conv(48);
+$c['transcript'][] = ['q' => 'humano', 't' => 'Para hacer la demo, solo tendrías que llenar este formulario: https://gokywebs.com/form/', 'ts' => $ahora - 2.5 * 3600];
+$c['form_link_ultimo_ts'] = $ahora - 2.5 * 3600;
+caso('con el link reenviado hace 2 h y media, no corresponde (cuenta desde el último)', !wabot_form_recordatorio_corresponde($c, $cfg, $ahora));
+$primero = (int)$c['form_link_mandado_ts'];
+wabot_conv_transcript($c, 'bot', 'Te lo paso de nuevo: https://gokywebs.com/form/');
+caso('el reenvío mueve la hora del último link y deja la del primero', (int)$c['form_link_mandado_ts'] === $primero && (int)($c['form_link_ultimo_ts'] ?? 0) > $primero);
+caso('charla de antes, sin la hora del último: sigue contando desde el primero', wabot_form_recordatorio_corresponde(fr_conv(12.5), $cfg, $ahora));
 
 todo_ok();

@@ -1820,6 +1820,8 @@ function wabot_conv_load($clave) {
         // Cuándo le llegó el link del formulario, lo haya mandado el bot o Pablo
         // (panel o celular). Solo lo usa la lista del panel (4-oct).
         'form_link_mandado_ts'        => 0,
+        // El último link del formulario (3-nov): el recordatorio cuenta desde ahí.
+        'form_link_ultimo_ts'         => 0,
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         // Pablo le contestó por fuera del sistema (su otro WhatsApp, un mail,
@@ -2033,6 +2035,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
     $conv['form_link_mandado_ts'] = 0;
+    $conv['form_link_ultimo_ts'] = 0;
     $conv['turnos_sin_avance'] = 0;
     $conv['repeticiones_seguidas'] = 0;
     $conv['tandas_bot'] = [];
@@ -2296,9 +2299,9 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
         $conv['archivado'] = false;
         $conv['desarchivado_ts'] = $fila['ts'];
     }
-    if (($quien === 'bot' || $quien === 'humano') && empty($conv['form_link_mandado_ts'])
-        && wabot_texto_tiene_link_form($texto)) {
-        $conv['form_link_mandado_ts'] = $fila['ts'];
+    if (($quien === 'bot' || $quien === 'humano') && wabot_texto_tiene_link_form($texto)) {
+        if (empty($conv['form_link_mandado_ts'])) $conv['form_link_mandado_ts'] = $fila['ts'];
+        $conv['form_link_ultimo_ts'] = $fila['ts'];
     }
     // "Te hablo el martes" (del cliente, o de Pablo desde el panel): ningún aviso
     // automático sale antes de esa fecha (wabot_retomar_activo, 11-oct).
@@ -6207,10 +6210,18 @@ function wabot_retomar_detectar(&$conv, $texto, $ts, $quien) {
  * 4-oct. Sale una vez por link, en horario de contacto y con la ventana de 24 h
  * abierta; nunca en medio de una charla (2 h sin mensajes de nadie).
  */
+/** Hora del último link del formulario (las charlas de antes del 3-nov solo tienen el primero). */
+function wabot_form_link_ultimo_ts($cv) {
+    return max((int)($cv['form_link_mandado_ts'] ?? 0), (int)($cv['form_link_ultimo_ts'] ?? 0));
+}
+
 function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['form_recordatorio_activo'])) return false;
-    $link = (int)($cv['form_link_mandado_ts'] ?? 0);
+    /* Desde el último link (Giancarlo, 3-nov: Pablo le reenvió el form a las
+     * 11:53 y a las 14:00 le salió "¿pudiste completar el formulario?", porque
+     * contaba desde el primer link, de días antes). */
+    $link = wabot_form_link_ultimo_ts($cv);
     if ($link <= 0 || (int)($cv['form_recordatorio_auto_ts'] ?? 0) >= $link) return false;
     if ((int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])
         || !empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
@@ -6489,9 +6500,9 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
      * el recordatorio (Ignacio, 26-oct: dijo "Bueno" a la demo a las 07:32 y a
      * las 19:00, con la marca de 23 h adelantada por caer de noche, recibió "Te
      * escribo por última vez…" en vez de "¿pudiste completar el formulario?"). */
-    if (!empty($cfg['form_recordatorio_activo']) && (int)($cv['form_link_mandado_ts'] ?? 0) > 0
+    if (!empty($cfg['form_recordatorio_activo']) && wabot_form_link_ultimo_ts($cv) > 0
         && (int)($cv['form_completado_ts'] ?? 0) <= 0 && empty($cv['lead_creado'])
-        && (int)($cv['form_recordatorio_auto_ts'] ?? 0) < (int)$cv['form_link_mandado_ts']) return false;
+        && (int)($cv['form_recordatorio_auto_ts'] ?? 0) < wabot_form_link_ultimo_ts($cv)) return false;
     // Solo los que mostraron interés y no cerraron nada, o los que escribieron
     // y no llegaron al precio (2-oct).
     if (!wabot_conv_interesado($cv) && !wabot_conv_sin_precio_seguible($cv)) return false;
