@@ -1,0 +1,15 @@
+{
+  "nota": "Imágenes de la demo de Marine (3-nov-2026). Las 01-09 y el mock up vienen del zip de ChatGPT (Marine_9G8Wid0RXykYXHZ3vkCv.zip) y son ilustrativas; la clienta no mandó fotos ni logo. Sin fotos de bancos.",
+  "archivos": {
+    "clase-presencial.webp": "02_imagen.jpg (16:9), portada de los dos modelos",
+    "alumna-auriculares.webp": "01_imagen.jpg (9:16), Área de alumnos",
+    "aula-clase.webp": "recorte 16:9 de 09_imagen.jpg, portada del reproductor del Área de alumnos",
+    "seguridad-forense.webp": "03_imagen.jpg, curso destacado de Seguridad forense",
+    "seguridad-higiene.webp": "04_imagen.jpg, curso destacado de Seguridad e higiene",
+    "administrativo.webp": "05_imagen.jpg, curso destacado de Administrativo",
+    "maquillaje.webp": "06_imagen.jpg, curso destacado de Belleza y estética",
+    "cosmetologia.webp": "07_imagen.jpg, Testimonios y ficha de Cosmetología facial",
+    "clase-grupo.webp": "08_imagen.jpg, Institución",
+    "og.jpg": "recorte 1200x630 de 02_imagen.jpg"
+  }
+}
