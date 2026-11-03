@@ -27,10 +27,14 @@
 #                   programada de Desktop "Demo automatica" al empezar cada corrida.
 #   -Modo terminar -ZipNombre <nombre> -Resultado "DEMO OK ..."  mueve el zip, anota, marca el
 #                   boceto hecho y avisa. Lo llama la misma sesion al final.
+#   -Modo gpt -ZipNombre <nombre> -Pedido <ruta>  (3-nov) arma la demo con Codex (GPT) y
+#                   despues hace lo mismo que terminar. Lo llama la sesion de Desktop en segundo plano.
 #   -Modo imagenes  solo baja las imagenes que mandaron los prospectos (tarea de Windows).
 #   -Modo claude    lo de antes: lanza claude -p sin ventana (no aparece en Desktop).
+# 3-nov (Pablo: "que las demo que se hacen automaticamente con claude, se turnen con chat gpt,
+# 1 y 1"): tomar alterna el motor (estado.json -> ultimoMotor) y lo devuelve en el JSON.
 # -Simular: hace todo menos lanzar Claude. -Descargas / -Datos: otras carpetas (para probar).
-param([ValidateSet('claude', 'tomar', 'terminar', 'imagenes')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '',
+param([ValidateSet('claude', 'tomar', 'terminar', 'gpt', 'imagenes')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '', [string]$Pedido = '',
       [switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'))
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +43,8 @@ $Claude     = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
 $Modelo     = 'opus'
 $Esfuerzo   = 'xhigh'
 $Permisos   = 'auto'
+$ModeloGpt  = 'gpt-6-astra'   # 3-nov, Pablo: "que las haga 6 astra"
+$EsfuerzoGpt = 'xhigh'
 $Maximo     = 5     # demos al mismo tiempo (cada una es una sesion de Opus xhigh: gasta cuota)
 $Log       = Join-Path $Datos 'log.txt'
 $ArchivoEstado = Join-Path $Datos 'estado.json'
@@ -186,10 +192,10 @@ if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; exit 0 }
 if ($Modo -eq 'claude') { Bajar-Imagenes-Prospectos }
 
 # --- Fin de una demo hecha por una sesion de Desktop ---
-if ($Modo -eq 'terminar') {
+function Terminar([string]$ZipNombre, [string]$Resultado) {
     $e = Bajo-Candado { Leer-Estado }
     $anotado = @($e.hechos | Where-Object { $_.zip -eq $ZipNombre }) | Select-Object -Last 1
-    if (-not $anotado) { Write-Output ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); exit 1 }
+    if (-not $anotado) { Anotar ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); return $false }
     $ruta = Join-Path $Descargas $ZipNombre
     # Nombre y tamanio como se reclamo (Marcar los usa de clave; el FileInfo ya movido no da Length).
     $z = [pscustomobject]@{ Name = $ZipNombre; Length = $anotado.tam; FullName = $(if (Test-Path -LiteralPath $ruta) { $ruta } else { $null }) }
@@ -206,7 +212,36 @@ if ($Modo -eq 'terminar') {
     }
     elseif ($Resultado -match '^DEMO OK') { Avisar ('Demo lista: ' + $slug) ($Resultado + ' (marca Boceto hecho a mano: el zip no trae el id)') }
     else { Avisar ('Demo con problemas: ' + $ZipNombre) $Resultado }
+    return $true
+}
+if ($Modo -eq 'terminar') {
+    if (-not @(Terminar $ZipNombre $Resultado)[-1]) { Write-Output ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); exit 1 }
     Write-Output 'ok'
+    exit 0
+}
+
+# --- Demo con Codex (GPT): corre codex exec y termina igual que una de Claude ---
+if ($Modo -eq 'gpt') {
+    $final = ''
+    try {
+        $codex = Get-ChildItem (Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\bin\*\codex.exe') -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if (-not $codex) { throw 'No esta instalado Codex (LOCALAPPDATA\OpenAI\Codex\bin)' }
+        $base = Join-Path $Repo ($Pedido -replace '\.md$', '')
+        $argumentos = 'exec -C "' + $Repo + '" --dangerously-bypass-approvals-and-sandbox -m ' + $ModeloGpt + ' -c model_reasoning_effort="' + $EsfuerzoGpt + '" ' +
+                      '--json -o "' + $base + '.gpt-final.txt" "Lee el archivo ' + $Pedido + ' y segui sus instrucciones al pie de la letra."'
+        Anotar ('Lanzando Codex (' + $ModeloGpt + ', esfuerzo ' + $EsfuerzoGpt + ') con ' + $Pedido)
+        $inicio = Get-Date
+        $vacio = $base + '.gpt-stdin.txt'   # sin esto codex exec se queda leyendo stdin
+        [IO.File]::WriteAllText($vacio, '', $Utf8)
+        $p = Start-Process -FilePath $codex.FullName -ArgumentList $argumentos -WorkingDirectory $Repo -NoNewWindow -Wait -PassThru `
+                           -RedirectStandardInput $vacio -RedirectStandardOutput ($base + '.gpt.jsonl') -RedirectStandardError ($base + '.gpt.err.txt')
+        Anotar ('Codex termino en ' + [math]::Round(((Get-Date) - $inicio).TotalMinutes) + ' min (codigo ' + $p.ExitCode + ')')
+        $final = (([IO.File]::ReadAllLines($base + '.gpt-final.txt', $Utf8)) | Where-Object { $_.Trim() } | Select-Object -Last 1)
+        if ($final) { $final = $final.Trim().Trim('*', '`', ' ') }
+    } catch { Anotar ('ERROR con Codex: ' + $_.Exception.Message) }
+    if ($final -notmatch '^DEMO (OK|ERROR)') { $final = 'DEMO ERROR Codex no termino (ver ' + $Pedido + ')' }
+    Terminar $ZipNombre $final | Out-Null
+    Write-Output $final
     exit 0
 }
 
@@ -268,16 +303,29 @@ try {
         Remove-Item -LiteralPath $tmp -Recurse -Force
         Anotar ('Zip ' + $zip.Name + ' -> ' + $r.slug + ' (prospecto ' + $r.id + '), ' + $copiadas + ' imagenes en demo\' + $r.slug + '\images')
 
+        # --- Claude o GPT: uno y uno (3-nov) ---
+        $motor = 'claude'
+        if ($Modo -eq 'tomar') {
+            $motor = Bajo-Candado {
+                $e = Leer-Estado
+                $m = if ($e.ultimoMotor -eq 'claude') { 'gpt' } else { 'claude' }
+                $e | Add-Member -NotePropertyName ultimoMotor -NotePropertyValue $m -Force
+                Guardar-Estado $e
+                $m
+            }
+        }
+
         # --- El pedido completo para la sesion ---
         $sesion = Join-Path $Datos ('sesiones\' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + $r.slug)
         $pedido = $sesion + '.md'
-        $texto = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'instrucciones.md'), $Utf8) + [IO.File]::ReadAllText($r.pedido, $Utf8)
+        $instrucciones = if ($motor -eq 'gpt') { 'instrucciones-gpt.md' } else { 'instrucciones.md' }
+        $texto = [IO.File]::ReadAllText((Join-Path $PSScriptRoot $instrucciones), $Utf8) + [IO.File]::ReadAllText($r.pedido, $Utf8)
         [IO.File]::WriteAllText($pedido, $texto, $Utf8)
         $relativo = if ($pedido.StartsWith($Repo + '\')) { $pedido.Substring($Repo.Length + 1).Replace('\', '/') } else { $pedido }
 
         if ($Modo -eq 'tomar') {
-            Anotar ('Tomado por una sesion de Desktop: ' + $r.slug + ' (pedido ' + $relativo + ')')
-            [pscustomobject]@{ ok = $true; zip = $zip.Name; id = $r.id; nombre = $r.nombre; slug = $r.slug; pedido = $relativo } | ConvertTo-Json -Compress
+            Anotar ('Tomado por una sesion de Desktop (' + $motor + '): ' + $r.slug + ' (pedido ' + $relativo + ')')
+            [pscustomobject]@{ ok = $true; motor = $motor; zip = $zip.Name; id = $r.id; nombre = $r.nombre; slug = $r.slug; pedido = $relativo } | ConvertTo-Json -Compress
             exit 0
         }
 
