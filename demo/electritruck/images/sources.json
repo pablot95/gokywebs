@@ -1,0 +1,17 @@
+{
+  "nota": "Sin zip de ChatGPT ni mock up para este prospecto (el mail de Copiar 10 del 3-nov 00:45 nunca volvió). Logo: foto de perfil pública de instagram.com/electritruck (150x150, la única resolución sin login), recortada en círculo con alpha y llevada a 360 px. Las demás son fotos ilustrativas de Pexels (licencia libre), bajadas del CDN, recortadas y pasadas a WebP; sin marcas ajenas visibles (se descartaron las que mostraban logos de MAN, Peterbilt, Porsche, DAF y una marca rusa en el uniforme). Las de 600/960/1000 px son copias chicas para srcset.",
+  "archivos": {
+    "logo-electritruck.webp / favicon.png": { "origen": "Instagram @electritruck, foto de perfil", "uso": "header, sello del hero, pie y favicon" },
+    "hero-camion-luces.webp / -1000.webp / og.jpg": { "origen": "https://www.pexels.com/photo/7019376/", "uso": "hero de las dos páginas · Open Graph" },
+    "taller-herramientas.webp / -600.webp": { "origen": "https://www.pexels.com/photo/7019368/", "uso": "Cómo trabajamos (M1) · Consulta (M2)" },
+    "taller-camion.webp / -960.webp": { "origen": "https://www.pexels.com/photo/7019604/", "uso": "cierre del Modelo 1" },
+    "mazo-cables.webp / -600.webp": { "origen": "https://www.pexels.com/photo/5090652/", "uso": "galería (Fabricación) · pestaña C·01 (M2)" },
+    "cabina-cableado.webp / -600.webp": { "origen": "https://www.pexels.com/photo/6720532/", "uso": "galería (Fabricación)" },
+    "terminal-bateria.webp / -600.webp": { "origen": "https://www.pexels.com/photo/11569036/", "uso": "galería (Reparación) · pestaña C·02 (M2)" },
+    "fusibles.webp / -600.webp": { "origen": "https://www.pexels.com/photo/4617591/", "uso": "galería (Reparación)" },
+    "optica-encendida.webp / -600.webp": { "origen": "https://www.pexels.com/photo/7019363/", "uso": "galería (Luces) · pestaña C·03 (M2)" },
+    "faro-posicion.webp / -600.webp": { "origen": "https://www.pexels.com/photo/7006163/", "uso": "galería (Luces)" },
+    "tester-motor.webp / -600.webp": { "origen": "https://www.pexels.com/photo/33531832/", "uso": "galería (Diagnóstico) · pestaña C·04 (M2)" },
+    "tester-tablero.webp / -600.webp": { "origen": "https://www.pexels.com/photo/33531830/", "uso": "galería (Diagnóstico)" }
+  }
+}
