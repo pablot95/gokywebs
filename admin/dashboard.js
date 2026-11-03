@@ -7442,10 +7442,14 @@ async function togglePropuestaFlag(id, field, btn) {
 // ver sincronizarPresentados().
 const presentacionManualModal = document.getElementById("presentacionManualModal");
 
+// Los dos mensajes de la presentación (Pablo, 3-nov): el link y, aparte, los modelos.
 function textoPresentacionRespaldo(p, slug) {
     const negocio = p.nombre_negocio || p.rubro || "tu negocio";
     const link = slug ? `https://gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
-    return `Ya está lista la primera propuesta para la web de ${negocio}\n\nPodés verla acá:\n${link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.`;
+    return [
+        `Ya está lista la primera propuesta para la web de ${negocio}\nPodés verla acá:\n${link}`,
+        "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos",
+    ];
 }
 
 function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
@@ -7453,10 +7457,10 @@ function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
     const slug = envio?.slug || slugNegocio(p.nombre_negocio || p.rubro || "");
     const textos = Array.isArray(envio?.textos) && envio.textos.length
         ? envio.textos.filter(texto => typeof texto === "string" && texto.trim())
-        : [textoPresentacionRespaldo(p, slug)];
+        : textoPresentacionRespaldo(p, slug);
     const enviados = Array.isArray(envio?.textos_enviados) ? envio.textos_enviados : [];
     const pendientes = textos.filter((_, i) => !enviados[i] && !(i === 0 && envio?.demo_ok));
-    const mensajes = pendientes.length ? pendientes : [textoPresentacionRespaldo(p, slug)];
+    const mensajes = pendientes.length ? pendientes : textoPresentacionRespaldo(p, slug);
     const estado = document.getElementById("presentacionManualEstado");
     const nota = document.getElementById("presentacionManualNota");
     const campoTelefono = document.getElementById("presentacionManualTelefono");

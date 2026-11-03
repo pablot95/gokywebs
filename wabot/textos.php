@@ -574,16 +574,19 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         'elearning'    => 'Si te interesa, te preparamos sin cargo un primer diseño de tu plataforma de cursos, así ves cómo quedaría y cómo se verían presentados tus cursos antes de decidir. Querés que lo armemos?',
         'inmobiliaria' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web inmobiliaria, así ves cómo quedaría y cómo se verían publicadas tus propiedades antes de decidir. Querés que lo armemos?',
     ],
-    /* Presentación de la demo: el texto de Pablo del 5-oct, igual para todas las
-     * webs (el sistema de gestión mantiene el suyo). */
+    /* Presentación de la demo: el texto de Pablo del 3-nov, igual para todas las
+     * webs (el sistema de gestión mantiene el suyo). Los dos modelos van en un
+     * mensaje aparte, muestra_presentar_modelos. */
     'muestra_presentar_por_tipo' => [
-        'landing' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\n{link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
-        'ecommerce' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\n{link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
-        'inmobiliaria' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\n{link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
-        'elearning' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\n{link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
+        'landing' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
+        'ecommerce' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
+        'inmobiliaria' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
+        'elearning' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
         'sistema' => "¡Ya está lista la demo del sistema para {negocio}!\n\nPodés verla acá:\n{link}\n\nLos datos que aparecen cargados son de ejemplo, para que puedas ver cómo se vería la información y cómo se navega entre las pantallas.\n\nMirá el flujo general y cómo está organizada cada vista. Si avanzamos, lo adaptamos a tu operación real.",
-        '_default' => "Ya está lista la primera propuesta para la web de {negocio}\n\nPodés verla acá:\n{link}\n\nMirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.",
+        '_default' => "Ya está lista la primera propuesta para la web de {negocio}\nPodés verla acá:\n{link}",
     ],
+    // Segundo mensaje de la presentación (Pablo, 3-nov), tal cual lo escribió.
+    'muestra_presentar_modelos' => "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos",
     'no_entiendo' => 'No estoy pudiendo entender el mensaje. Cuando puedas, mandame en una línea a qué te dedicás y seguimos por acá.',
     'no_interesa' => 'Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá.',
     'no_texto' => 'No pude abrir eso que me mandaste. Contámelo por mensaje de texto así te ayudo mejor.',

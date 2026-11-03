@@ -3984,7 +3984,7 @@ caso('el reinicio por antigüedad tampoco enciende el bot después de la plantil
     !empty($convSeguimientoViejo['bot_off']) && !empty($convSeguimientoViejo['control_manual']));
 @unlink(wabot_conv_path('QATESTPLANTILLAOFF'));
 
-echo "\n— La presentación de la demo: el texto de Pablo del 5-oct, igual para todas las webs —\n";
+echo "\n— La presentación de la demo: el texto de Pablo del 3-nov, igual para todas las webs —\n";
 
 /* Del 6-sep al 4-oct hubo un texto por tipo de web que aclaraba qué contenido
  * era de ejemplo. El 5-oct Pablo pidió uno solo: "Ya está lista la primera
@@ -3992,11 +3992,10 @@ echo "\n— La presentación de la demo: el texto de Pablo del 5-oct, igual para
  * El sistema de gestión mantiene el suyo. */
 $demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'landing', 'nombre_negocio' => 'YF Prevención']);
 caso('es el texto de Pablo, con el negocio y el link',
-    $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\n\nPodés verla acá:\nhttps://gokywebs.com/demo/yfprevencion\n\n"
-        . "Mirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.\n\n"
-        . "Hay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.", $demoTextos[0]);
-caso('la aclaración de los dos modelos va una sola vez', substr_count($demoTextos[0], 'dos modelos') === 1);
-caso('es un solo mensaje', count($demoTextos) === 1);
+    $demoTextos[0] === "Ya está lista la primera propuesta para la web de YF Prevención\nPodés verla acá:\nhttps://gokywebs.com/demo/yfprevencion", $demoTextos[0]);
+caso('los dos modelos van aparte, con el texto de Pablo del 3-nov',
+    ($demoTextos[1] ?? '') === "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos", $demoTextos[1] ?? '');
+caso('son dos mensajes', count($demoTextos) === 2);
 
 $presentaciones = [];
 foreach (['landing', 'ecommerce', 'inmobiliaria', 'elearning'] as $tipoDemo) {
@@ -4007,7 +4006,7 @@ foreach (['landing', 'ecommerce', 'inmobiliaria', 'elearning'] as $tipoDemo) {
 caso('todas las webs llevan el mismo texto', count(array_unique(array_values($presentaciones))) === 1);
 $sistema = wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])[0];
 caso('el sistema mantiene el suyo, también con los dos modelos',
-    $sistema !== $presentaciones['landing'] && substr_count($sistema, 'dos modelos') === 1);
+    $sistema !== $presentaciones['landing'] && substr_count(implode("\n", wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'sistema', 'nombre_negocio' => 'Cuidar+'])), 'dos modelos') === 1);
 caso('sin nombre de negocio, el texto igual cierra bien',
     stripos(wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'ecommerce'])[0], 'la web de tu negocio') !== false);
 

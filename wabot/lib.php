@@ -1027,14 +1027,15 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     if (is_array($conv)) $texto = wabot_personalizar($texto, $conv);
     else $texto = str_replace('{negocio}', 'tu negocio', $texto);
 
-    // Todas las demos nuevas ofrecen dos variantes dentro del mismo enlace.
-    // Se aclara al presentarlas para que el cliente no pase por alto el selector.
-    // Desde el 5-oct el texto de Pablo ya la trae: no se repite.
-    if (stripos($texto, 'dos modelos') === false) {
-        $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte inferior podés cambiar de modelo. Si te gustan cosas de los dos, también podemos usar elementos de ambos.";
-    }
-
     $textos = [$texto];
+    // Todas las demos nuevas ofrecen dos variantes dentro del mismo enlace.
+    // Se aclara al presentarlas para que el cliente no pase por alto el selector:
+    // desde el 3-nov en un mensaje aparte, después del link (Pablo).
+    if (stripos($texto, 'dos modelos') === false) {
+        $modelos = trim((string)($cfg['muestra_presentar_modelos'] ?? ''));
+        if ($modelos === '') $modelos = "Hay dos modelos, que se cambian en la parte inferior\nTe gusto mas el modelo 1, el 2 o combinacion de ambos";
+        $textos[] = $modelos;
+    }
     // Segundo mensaje, aparte, pidiendo el feedback.
     $seguimiento = trim((string)($cfg['muestra_presentar_seguimiento'] ?? ''));
     if ($seguimiento !== '') {
