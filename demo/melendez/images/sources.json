@@ -1,0 +1,19 @@
+{
+  "zip_chatgpt": {
+    "01_imagen.jpg": ["remera-negra-percha.webp", "p-remera-negra.webp (costados extendidos a 1:1)"],
+    "02_imagen.jpg": ["gorra-crema-piedra.webp", "p-gorra-crema.webp (recorte 1:1)", "og-melendez.jpg"],
+    "03_imagen.jpg": ["p-remera-blanca.webp"],
+    "04_imagen.jpg": ["p-remera-humo.webp"],
+    "05_imagen.jpg": ["p-remera-arena.webp"],
+    "06_imagen.jpg": ["p-remera-oliva.webp"],
+    "07_imagen.jpg": ["p-gorra-negra.webp"],
+    "08_imagen.jpg": ["p-gorra-azul.webp"],
+    "09_imagen.jpg": ["p-gorra-gris.webp"],
+    "10_mockup_720x480.png": ["referencia del Modelo 1, no se usa en la página"]
+  },
+  "cliente_formulario": {
+    "wabot/data/media/5491168234849/20261102-193434-de619d0a.jpg": ["p-gorra-santooz-tono.webp", "p-gorra-santooz-negras.webp", "p-gorra-santooz-blancas.webp (carteles tapados, fondo blanco a 1:1)"],
+    "wabot/data/media/5491168234849/20261102-193441-5450f812.png": ["p-santooz-777-frente.webp", "p-santooz-777-espalda.webp (mitades a 1:1 sobre blanco)"]
+  },
+  "bancos_de_fotos": []
+}
