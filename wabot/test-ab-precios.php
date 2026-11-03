@@ -162,7 +162,7 @@ echo "— 4b. Modelo A2 (desde el 2-nov): anual o mensual, como antes del 26-oct
 $n = charla('5491100009004');
 $r = cotizar_charla($n, 'tienda');
 $t = junto($r);
-caso('A2: el bloque de antes del 26-oct, con el anual y el mensual', strpos($t, "Podés elegir entre dos planes:\n\n1) Plan anual: \$190.000\n2) Plan mensual: \$30.000\n\nAmbos incluyen todo:") !== false, $t);
+caso('A2: el texto de Pablo del 3-nov, con el anual y el mensual', strpos($t, "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: \$190.000\n2. Plan mensual: \$30.000\n\nLos dos planes incluyen todo:") !== false, $t);
 caso('A2: sin pago único ni pago inicial', mb_stripos($t, 'pago único') === false && mb_stripos($t, 'inicial') === false, $t);
 $cot = $n['comercial_cotizacion'] ?? [];
 caso('A2: congela anual, mensual y el pago único de lista (por si lo pide)', ($cot['modelo'] ?? '') === 'a2' && ($cot['anual'] ?? '') === '$190.000' && ($cot['mensual'] ?? '') === '$30.000'
@@ -178,7 +178,7 @@ $r = turno('Cómo se paga?', $n, $cfg);
 caso('A2: la respuesta de pago es la de siempre (mensual o anual)', strpos(junto($r), 'anual de $190.000') !== false && strpos(junto($r), 'mensual de $30.000') !== false, junto($r));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda'])]);
 $r = turno('Me pasás el precio de nuevo?', $n, $cfg);
-caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1) Plan anual: $190.000') !== false && mb_stripos(junto($r), 'pago único') === false, junto($r));
+caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1. Plan anual: $190.000') !== false && mb_stripos(junto($r), 'pago único') === false, junto($r));
 $n1 = $n;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 turno('la 1', $n1, $cfg);
@@ -190,15 +190,15 @@ caso('A2: "la 2" es el plan mensual', ($n2['modalidad_elegida'] ?? '') === 'mens
 caso('A2: "voy con el anual" elige el anual', wabot_comercial_elige_plan('voy con el anual', $n) === 'unico');
 $ns = charla('5491100009006');
 $r = cotizar_charla($ns, 'informativa', 'Soy contadora');
-caso('A2: sitio profesional con $140.000 y $20.000', strpos(junto($r), "1) Plan anual: \$140.000\n2) Plan mensual: \$20.000") !== false && ($ns['ab_grupo'] ?? '') === 'a2', junto($r));
+caso('A2: sitio profesional con $140.000 y $20.000', strpos(junto($r), "1. Plan anual: \$140.000\n2. Plan mensual: \$20.000") !== false && ($ns['ab_grupo'] ?? '') === 'a2', junto($r));
 $np = charla('5491100009008');
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'pago_unico' => true, 'mensajes' => ['Perfecto, te podemos armar una tienda online.'],
         'ficha' => ['rubro' => 'zapatillas', 'que_vende' => 'zapatillas']])]);
 $r = turno('Cuánto sale? Quiero que la web sea mía', $np, $cfg);
-caso('A2: si pide comprar la web, el pago único va debajo de los dos planes (como antes)', strpos(junto($r), '2) Plan mensual: $30.000') !== false
+caso('A2: si pide comprar la web, el pago único va debajo de los dos planes (como antes)', strpos(junto($r), '2. Plan mensual: $30.000') !== false
     && strpos(junto($r), 'está el pago único: $330.000') !== false, junto($r));
 $rr = wabot_ab_rr_categoria($n, $cfg);
-caso('A2: en el panel, arriba el precio del grupo con el anual', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1) Plan anual: $190.000') !== false,
+caso('A2: en el panel, arriba el precio del grupo con el anual', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1. Plan anual: $190.000') !== false,
     json_encode($rr, JSON_UNESCAPED_UNICODE));
 caso('A2: el chip dice el grupo', wabot_ab_grupo_nombre('a2') === 'Grupo A2 · anual o mensual');
 
