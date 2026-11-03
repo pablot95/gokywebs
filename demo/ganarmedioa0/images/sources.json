@@ -1,0 +1,15 @@
+{
+  "cliente_formulario": {
+    "origen": "12 fotos que el cliente subió al formulario (wabot/data/media/5492234979361, 03-nov-2026); copia local en Downloads/imagenes-prospectos/ganarmedioa0/form-01..12.jpg",
+    "logo.webp": "form-06 (sello circular, recortado con alfa)",
+    "p-*.webp / e-*.webp": "form-01,02,03,04,05,07,08,09,10,11,12: recorte 4:5 de la camiseta (p-) y de las bolsas con el sello (e-)",
+    "v-*.webp": "form-01, 07, 08, 09 enteras en 9:16"
+  },
+  "zip_chatgpt": {
+    "origen": "zip «Copiar 10» de la ficha (01-09 + mock up), ilustrativas",
+    "albiceleste.webp": "01_imagen.jpg (hero del Modelo 1)",
+    "negra.webp / negra-cuadrada.webp": "02_imagen.jpg (hero del Modelo 2 y dorsal de la guía de talles)",
+    "g-03..g-09.webp": "03-09 (collage decorativo del pedido de camisetas que no están)"
+  },
+  "bancos": "ninguna"
+}
