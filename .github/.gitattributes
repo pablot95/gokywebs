@@ -1,0 +1,2 @@
+# El deploy lo corre bash desde esta carpeta: con CRLF de Windows deja de andar.
+*.sh text eol=lf
