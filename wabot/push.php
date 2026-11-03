@@ -317,7 +317,8 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
     if (wabot_aviso_ventana_abierta()) {
         // WhatsApp corta los mensajes en 4096 caracteres; el link va siempre.
         if (mb_strlen($cuerpo) > 3000) $cuerpo = '…' . mb_substr($cuerpo, -2999);
-        $texto = $titulo . ($cuerpo !== '' ? "\n" . $cuerpo : '') . "\n" . $link;
+        // El resumen de los sin leer (3-nov) va pelado: sin título ni link.
+        $texto = !empty($datos['solo_texto']) ? $cuerpo : $titulo . ($cuerpo !== '' ? "\n" . $cuerpo : '') . "\n" . $link;
         $ok = wabot_wa_send_text($tel, $texto);
         $via = 'texto';
     }
@@ -349,13 +350,84 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
 }
 
 /**
- * El aviso a Pablo por todos los canales: WhatsApp (el principal) y el push
- * de respaldo. Devuelve a cuántos destinos llegó, igual que antes: el que
- * llamaba con el push solo sigue funcionando sin cambios.
+ * El aviso a Pablo, uno por cosa: solo el push. Por WhatsApp ya no va de a
+ * uno (Pablo, 3-nov: "que no sea mensaje por mensaje"); a su número llega
+ * únicamente el resumen de los chats sin leer (wabot_aviso_resumen_correr).
  */
 function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
-    $n = wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos) ? 1 : 0;
-    return $n + (int)wabot_push_fcm_enviar($titulo, $cuerpo, $datos);
+    return (int)wabot_push_fcm_enviar($titulo, $cuerpo, $datos);
+}
+
+/* ── Resumen de los sin leer por WhatsApp (Pablo, 3-nov) ──────────────────
+ *
+ * "Que me mande cuántos chats tengo sin leer, nada más, separados por demo
+ * entregada y chat normal. Sin links, sin nada":
+ *     DemosE: 1
+ *     Normal: 2
+ * Los chats con la demo por presentar no cuentan ("ni me los muestre").
+ * "Sin leer" es la misma cuenta que el chip del panel (esNoLeido + visibleEn
+ * en admin.php). Sale cuando entra un chat sin leer nuevo desde el último
+ * resumen, con 10 minutos como mínimo entre uno y otro: lo que entra en el
+ * medio lo levanta el cron.
+ */
+const WABOT_AVISO_RESUMEN_ESPACIO = 600;
+
+/** ¿Esta fila de la lista cuenta como sin leer en el panel? (admin.php, esNoLeido + visibleEn('no_leidos')). */
+function wabot_aviso_resumen_sin_leer($it, $ahora) {
+    if (($it['grupo'] ?? '') === 'archivado' || !empty($it['sin_respuesta_bienvenida'])) return false;
+    if (($it['estado'] ?? '') === 'bot' && empty($it['handoff_pendiente'])) return false;
+    $cli = (int)($it['ultimo_cliente_ts'] ?? 0);
+    if ($cli <= (int)($it['ultimo_salida_ts'] ?? 0) || !empty($it['contestado']) || empty($it['no_leido'])) return false;
+    return $cli > 0 && $ahora - $cli <= 24 * 3600;
+}
+
+/** Las cuentas del resumen: ['demos' => n, 'normal' => n, 'ultimo' => ts del cliente más reciente]. */
+function wabot_aviso_resumen_cuentas($items, $ahora) {
+    $r = ['demos' => 0, 'normal' => 0, 'ultimo' => 0];
+    foreach ($items as $it) {
+        if (stripos((string)($it['conversation_key'] ?? $it['tel'] ?? ''), 'TEST') !== false) continue;
+        if (!wabot_aviso_resumen_sin_leer($it, $ahora)) continue;
+        $grupo = (string)($it['grupo'] ?? '');
+        if ($grupo === 'muestra') continue;
+        if ($grupo === 'presentados' || $grupo === 'presentadas_48') $r['demos']++;
+        else $r['normal']++;
+        $r['ultimo'] = max($r['ultimo'], (int)$it['ultimo_cliente_ts']);
+    }
+    return $r;
+}
+
+function wabot_aviso_resumen_texto($c) {
+    return 'DemosE: ' . $c['demos'] . "\nNormal: " . $c['normal'];
+}
+
+/**
+ * Manda el resumen si hay algún sin leer nuevo desde el último. $items y
+ * $enviar solo los pasan las pruebas; en producción, la lista del panel y el
+ * WhatsApp a Pablo.
+ */
+function wabot_aviso_resumen_correr($ahora = null, $items = null, $enviar = null) {
+    $ahora = $ahora ?? time();
+    if ($enviar === null) {
+        if (!wabot_aviso_whatsapp_activo()) return ['enviado' => false, 'motivo' => 'apagado'];
+        $enviar = function ($texto) {
+            return wabot_aviso_whatsapp_enviar('Chats sin leer', $texto, ['solo_texto' => true, 'tel' => '-']);
+        };
+    }
+    $c = wabot_aviso_resumen_cuentas($items ?? wabot_lista_items(), $ahora);
+    $estado = wabot_aviso_estado();
+    $res = ['enviado' => false, 'demos' => $c['demos'], 'normal' => $c['normal']];
+    if ($c['demos'] + $c['normal'] === 0) return $res + ['motivo' => 'nada_sin_leer'];
+    if ($c['ultimo'] <= (int)($estado['resumen_hasta'] ?? 0)) return $res + ['motivo' => 'nada_nuevo'];
+    if ($ahora - (int)($estado['resumen_ts'] ?? 0) < WABOT_AVISO_RESUMEN_ESPACIO) return $res + ['motivo' => 'muy_seguido'];
+    $texto = wabot_aviso_resumen_texto($c);
+    if (!$enviar($texto)) return $res + ['motivo' => 'no_salio'];
+    // Releído: el envío pisa el estado (ultimo_aviso_*) y Pablo pudo escribir mientras tanto.
+    $estado = wabot_aviso_estado();
+    $estado['resumen_ts'] = $ahora;
+    $estado['resumen_hasta'] = $c['ultimo'];
+    wabot_aviso_estado_guardar($estado);
+    wabot_log('aviso_resumen', ['demos' => $c['demos'], 'normal' => $c['normal']]);
+    return ['enviado' => true] + $res;
 }
 
 /* ── Cuándo avisar ────────────────────────────────────────────────────── */

@@ -38,8 +38,11 @@ caso('con la ventana abierta hay aviso configurado aunque falte Firebase', wabot
 echo "Con la ventana abierta sale como texto\n";
 $GLOBALS['WABOT_TEST_ENVIADOS'] = []; $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $link = 'https://www.gokywebs.com/wabot/admin.php?tab=conversaciones&ver=549TEST1';
-$n = wabot_push_enviar('⚠ Marcela · quiere pagar', "pasame el alias\nasí te transfiero", ['tel' => '549TEST1', 'link' => $link]);
-caso('cuenta un destino (el push sin red no suma)', $n === 1, (string)$n);
+// 3-nov: los avisos de a uno ya no van por WhatsApp, solo por push.
+$n = wabot_push_enviar('⚠ Marcela · quiere pagar', 'hola', ['tel' => '549TEST1', 'link' => $link]);
+caso('el aviso de a uno ya no sale por WhatsApp', $n === 0 && empty($GLOBALS['WABOT_TEST_ENVIADOS']), (string)$n);
+$n = wabot_aviso_whatsapp_enviar('⚠ Marcela · quiere pagar', "pasame el alias\nasí te transfiero", ['tel' => '549TEST1', 'link' => $link]) ? 1 : 0;
+caso('el envío por WhatsApp sigue andando', $n === 1, (string)$n);
 $e = $GLOBALS['WABOT_TEST_ENVIADOS'][0] ?? null;
 caso('va al número de Pablo', $e && $e[0] === $pablo);
 caso('lleva el título, los renglones del cliente y el link al chat',
@@ -53,7 +56,7 @@ echo "Con la ventana cerrada\n";
 wabot_aviso_estado_guardar(['entrante_ts' => time() - 25 * 3600]);
 caso('cerrada a las 25 h', !wabot_aviso_ventana_abierta());
 $GLOBALS['WABOT_TEST_ENVIADOS'] = []; $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
-$n = wabot_push_enviar('Marcela', 'hola?', ['tel' => '549TEST1', 'link' => $link]);
+$n = wabot_aviso_whatsapp_enviar('Marcela', 'hola?', ['tel' => '549TEST1', 'link' => $link]) ? 1 : 0;
 caso('sin la plantilla aprobada no sale nada por WhatsApp', $n === 0 && empty($GLOBALS['WABOT_TEST_ENVIADOS']) && empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
 caso('y queda anotado que no salió', empty(wabot_aviso_estado()['ultimo_aviso_ok']) && (wabot_aviso_estado()['ultimo_aviso_via'] ?? '') === 'ninguna');
 
@@ -80,6 +83,49 @@ caso('apagado no manda', !wabot_aviso_whatsapp_enviar('x', 'y', [], $cfgOff) && 
 $cfgSinTel = $cfg; $cfgSinTel['aviso_whatsapp_tel'] = '';
 caso('sin número no manda ni cuenta como configurado', !wabot_aviso_whatsapp_enviar('x', 'y', [], $cfgSinTel) && !wabot_aviso_whatsapp_activo($cfgSinTel));
 caso('un número con basura se limpia', wabot_aviso_tel(['aviso_whatsapp_tel' => '+54 9 11 2506-8578']) === $pablo);
+
+echo "Resumen de los sin leer (3-nov)\n";
+$ahora = time();
+$fila = function ($clave, $grupo, $hace, $extra = []) use ($ahora) {
+    return $extra + ['conversation_key' => $clave, 'grupo' => $grupo, 'estado' => 'pausado', 'handoff_pendiente' => false,
+                     'ultimo_cliente_ts' => $ahora - $hace, 'ultimo_salida_ts' => $ahora - $hace - 60,
+                     'no_leido' => true, 'contestado' => false, 'sin_respuesta_bienvenida' => false];
+};
+$items = [
+    $fila('5491100000001', 'presentados', 300),
+    $fila('5491100000002', 'presentadas_48', 600),
+    $fila('5491100000003', 'chat', 120),
+    $fila('5491100000004', 'interesado', 900),
+    $fila('5491100000005', 'muestra', 100),                                   // demo por presentar: no cuenta
+    $fila('5491100000006', 'chat', 100, ['no_leido' => false]),               // ya lo abrió
+    $fila('5491100000007', 'chat', 100, ['ultimo_salida_ts' => $ahora]),      // ya le contestaron
+    $fila('5491100000008', 'chat', 25 * 3600),                                // vencido
+    $fila('5491100000009', 'archivado', 100),
+    $fila('5491100000010', 'chat', 100, ['estado' => 'bot']),                 // lo lleva el bot
+    $fila('5491100000011', 'chat', 100, ['sin_respuesta_bienvenida' => true]),
+    $fila('549TEST12', 'chat', 100),
+];
+$c = wabot_aviso_resumen_cuentas($items, $ahora);
+caso('cuenta 2 demos entregadas y 2 normales', $c['demos'] === 2 && $c['normal'] === 2, json_encode($c));
+caso('el texto es solo las dos cuentas', wabot_aviso_resumen_texto($c) === "DemosE: 2\nNormal: 2");
+
+$mandados = [];
+$enviar = function ($t) use (&$mandados) { $mandados[] = $t; return true; };
+wabot_aviso_estado_guardar(['entrante_ts' => $ahora]);
+$r = wabot_aviso_resumen_correr($ahora, $items, $enviar);
+caso('sale el resumen', $r['enviado'] && $mandados === ["DemosE: 2\nNormal: 2"], json_encode($r));
+$r = wabot_aviso_resumen_correr($ahora + 900, $items, $enviar);
+caso('sin nada nuevo no se repite', !$r['enviado'] && $r['motivo'] === 'nada_nuevo' && count($mandados) === 1);
+$items[] = $fila('5491100000013', 'chat', -60);
+$r = wabot_aviso_resumen_correr($ahora + 120, $items, $enviar);
+caso('uno nuevo a los 2 minutos espera', !$r['enviado'] && $r['motivo'] === 'muy_seguido');
+$r = wabot_aviso_resumen_correr($ahora + 700, $items, $enviar);
+caso('pasados los 10 minutos sale con la cuenta nueva', $r['enviado'] && end($mandados) === "DemosE: 2\nNormal: 3", json_encode($mandados));
+caso('sin ninguno sin leer no sale', wabot_aviso_resumen_correr($ahora + 9999, [$fila('5491100000014', 'muestra', 10)], $enviar)['motivo'] === 'nada_sin_leer');
+
+$GLOBALS['WABOT_TEST_ENVIADOS'] = [];
+wabot_aviso_whatsapp_enviar('Chats sin leer', "DemosE: 1\nNormal: 2", ['solo_texto' => true, 'tel' => '-'], $cfg);
+caso('por WhatsApp va pelado: sin título ni link', ($GLOBALS['WABOT_TEST_ENVIADOS'][0][1] ?? '') === "DemosE: 1\nNormal: 2", json_encode($GLOBALS['WABOT_TEST_ENVIADOS'], JSON_UNESCAPED_UNICODE));
 
 echo "Las demás suites no ven avisos\n";
 $GLOBALS['WABOT_TEST_AVISO_PABLO'] = false;

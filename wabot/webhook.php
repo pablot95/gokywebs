@@ -518,7 +518,10 @@ function wabot_procesar_entrante($ev, $cfg) {
      * la conversación en un estado distinto. Un aviso que falla no puede
      * tumbar el webhook. */
     try {
-        wabot_push_avisar_si_corresponde(wabot_conv_load($clave));
+        $cvFinal = wabot_conv_load($clave);
+        wabot_push_avisar_si_corresponde($cvFinal);
+        // A su WhatsApp, solo el resumen de los sin leer (3-nov).
+        if (wabot_push_debe_avisar($cvFinal)) wabot_aviso_resumen_correr();
     } catch (Throwable $err) {
         wabot_log('error', ['donde' => 'push', 'msg' => mb_substr($err->getMessage(), 0, 200)]);
     }

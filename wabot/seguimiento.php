@@ -69,6 +69,8 @@ $onboarding = wabot_onboarding_recordatorio_correr($cfg);
 try { wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
 $reaviso = wabot_push_reaviso_correr();
+// El resumen de los sin leer a su WhatsApp: los que entraron mientras se esperaban los 10 minutos (3-nov).
+try { $resumen = wabot_aviso_resumen_correr(); } catch (\Throwable $e) { $resumen = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 
 echo json_encode([
     'ultima_llamada' => [
@@ -84,6 +86,7 @@ echo json_encode([
     'renovacion' => $renovacion,
     'webs' => $webs,
     'push_reaviso' => $reaviso,
+    'aviso_resumen' => $resumen,
     'pagos' => $pagos,
     'onboarding' => $onboarding,
 ], JSON_UNESCAPED_UNICODE) . "\n";
