@@ -142,7 +142,8 @@
                              script.js solo manda los que cambiaron, y si no cambió ninguno la
                              ficha queda "A elección del diseñador" (wabot/lib.php).
                              9-oct (Pablo): sin colores de fábrica a la vista; hasta que eligen
-                             uno se ve un círculo punteado con un "+" (clase sin-color). -->
+                             uno se ve un círculo punteado con un "+" (clase sin-color).
+                             3-nov (Pablo): si no encuentran el tono, lo escriben (colores_texto). -->
                         <div class="field-group">
                             <label class="field-label">
                                 Colores de identidad <span class="optional">(opcional)</span>
@@ -162,6 +163,8 @@
                                     <button type="button" class="color-quitar" data-color-quitar="color_secundario" hidden>Quitar</button>
                                 </div>
                             </div>
+                            <label class="field-label small-label" for="colores_texto" style="margin-top:12px">¿No encontrás el tono? Escribilo</label>
+                            <input type="text" id="colores_texto" name="colores_texto" class="field-input" placeholder="Ej: bordó y dorado, verde oliva" maxlength="100">
                         </div>
 
                         <div class="field-group">
@@ -316,6 +319,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20261103-miniaturas"></script>
+    <script type="module" src="script.js?v=20261103-colores-texto"></script>
 </body>
 </html>

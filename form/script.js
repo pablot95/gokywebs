@@ -616,6 +616,8 @@ function buildPayload() {
     const colores = [['color_principal', 'Color principal'], ['color_secundario', 'Color secundario']]
         .filter(([id]) => colorElegido(id))
         .map(([id, nombre]) => `${nombre}: ${get(id)}`)
+        // 3-nov (Pablo): el tono que no encontraron en el selector, escrito; va en el mismo texto.
+        .concat(get('colores_texto') ? [`Escritos: ${get('colores_texto')}`] : [])
         .join(' · ');
 
     const payload = {
@@ -1105,7 +1107,7 @@ if (horaDemoSelect) {
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre_negocio', 'instagram', 'resumen', 'telefono',
-    'color_principal', 'color_secundario', 'referencia', 'incluir'];
+    'color_principal', 'color_secundario', 'colores_texto', 'referencia', 'incluir'];
 
 function saveDraft() {
     try {
