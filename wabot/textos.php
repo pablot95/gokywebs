@@ -260,7 +260,7 @@ function wabot_textos_default() {
         'google' => 'La web queda preparada para que Google la encuentre. El puesto en que aparece depende del rubro y del tiempo, no se puede garantizar.',
         'maps' => 'Sí, si tenés local podemos sumar el mapa con tu ubicación y el acceso directo a Google Maps para que te lleguen con el GPS.',
         'ampliar_despues' => 'Sí, podés arrancar con lo que necesitás hoy y sumar funciones más adelante, sin rehacer la web.',
-        'que_necesitan' => 'Muy poco: completás un formulario cortito (nombre, qué ofrecés, colores y contacto) y con eso armamos la muestra. Si tenés logo y fotos, mejor, pero no hacen falta.',
+        'que_necesitan' => 'Muy poco: completás un formulario cortito (nombre del negocio, qué ofrecés, colores y contacto) y con eso armamos la muestra. Si tenés logo y fotos, mejor, pero no hacen falta.',
         'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         /* "Su nombre?", "con quién hablo?" (26-sep): se contesta primero y
          * después sigue la pregunta comercial pendiente, en el mismo turno. */
