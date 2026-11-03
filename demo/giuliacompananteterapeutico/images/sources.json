@@ -1,0 +1,49 @@
+{
+  "nota": "Fotos ilustrativas del zip de ChatGPT («Copiar 10») del prospecto VgTOL1eRBBxWklEMOwiR (Giuli Acompañante Terapéutico). La clienta no mandó fotos ni logo. Las webp son copias redimensionadas; los originales quedan sin tocar. Sin fotos de stock extra.",
+  "archivos": {
+    "sala-charla.webp / sala-charla-960.webp": {
+      "origen": "02_imagen.jpg",
+      "uso": "hero de las dos páginas · og.jpg"
+    },
+    "manos-mesa.webp / manos-mesa-540.webp": {
+      "origen": "01_imagen.jpg",
+      "uso": "M1: ¿Qué hace un acompañante terapéutico? (foto vertical que sube) · M2: Días y horarios"
+    },
+    "paseo-jardin.webp / paseo-jardin-640.webp": {
+      "origen": "03_imagen.jpg",
+      "uso": "Adulto mayor (foto grande)"
+    },
+    "rompecabezas.webp / rompecabezas-640.webp": {
+      "origen": "07_imagen.jpg",
+      "uso": "Adulto mayor"
+    },
+    "plantas-patio.webp / plantas-patio-640.webp": {
+      "origen": "09_imagen.jpg",
+      "uso": "M1: Adulto mayor · M2: cierre (círculo que baja al pie)"
+    },
+    "charla-ronda.webp / charla-ronda-640.webp": {
+      "origen": "04_imagen.jpg",
+      "uso": "Charlas y talleres (foto grande)"
+    },
+    "charla-abierta.webp / charla-abierta-640.webp": {
+      "origen": "08_imagen.jpg",
+      "uso": "M1: Charlas y talleres"
+    },
+    "taller-papeles.webp / taller-papeles-640.webp": {
+      "origen": "05_imagen.jpg",
+      "uso": "Charlas y talleres"
+    },
+    "espacio-duelo.webp / espacio-duelo-640.webp": {
+      "origen": "06_imagen.jpg",
+      "uso": "Acompañamiento en el duelo"
+    },
+    "og.jpg": {
+      "origen": "02_imagen.jpg recortada a 1200x630",
+      "uso": "Open Graph"
+    },
+    "10_mockup_720x480.png": {
+      "origen": "mock up del zip",
+      "uso": "referencia del Modelo 1, no se publica en la página"
+    }
+  }
+}
