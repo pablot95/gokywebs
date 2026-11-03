@@ -7469,6 +7469,23 @@ function wabot_logo_sincronizar(&$conv) {
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
+    /* Con las reglas de Firestore sin `imagenes_recibidas` el PATCH entero da
+     * 403 (3-nov): se reintenta solo con el logo para no perderlo. */
+    if ($code === 403) {
+        unset($campos['imagenes_recibidas']);
+        $ch = curl_init(str_replace('&updateMask.fieldPaths=imagenes_recibidas', '', $url));
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $res  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    }
+
     if ($code < 200 || $code >= 300) {
         wabot_log('error', ['donde' => 'firestore_logo', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
         return false;
