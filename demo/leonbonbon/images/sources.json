@@ -1,0 +1,23 @@
+{
+  "demo": "leonbonbon",
+  "fecha": "2026-11-03",
+  "zip_chatgpt": {
+    "01_imagen.jpg": "medialunas de manteca (9:16) -> medialunas-alta.webp, p-medialunas.webp",
+    "02_imagen.jpg": "mostrador surtido (16:9) -> mostrador-surtido.webp, og-leonbonbon.jpg, p-bandeja.webp (recorte 900x900 desde x=560)",
+    "03_imagen.jpg": "pan francés en canasta -> p-pan-frances.webp",
+    "04_imagen.jpg": "facturas con crema pastelera y membrillo -> p-facturas.webp",
+    "05_imagen.jpg": "churros azucarados -> p-churros.webp",
+    "06_imagen.jpg": "torta de frutillas y crema -> p-torta-frutillas.webp",
+    "07_imagen.jpg": "sándwiches de miga de jamón y queso -> p-miga.webp",
+    "08_imagen.jpg": "sándwich de pan francés con queso y tomate -> p-baguette.webp",
+    "09_imagen.jpg": "tarta de verduras con ensalada para llevar -> p-tarta.webp",
+    "10_mockup_720x480.png": "mock up de referencia del Modelo 1 (no se publica en la web)"
+  },
+  "cliente": {
+    "logo.webp": "recorte circular (centro 611,1355 r 399) de la captura de su perfil de Instagram que subió al formulario (wabot/data/media/5491169966471/20261103-093018-cbd78463.png); se conserva el disco negro porque el león y el aro son amarillos",
+    "favicon.png": "logo.webp a 64 px",
+    "favicon-180.png": "logo.webp a 180 px"
+  },
+  "bancos": [],
+  "pendientes": "Logo en alta: el que hay sale de una captura de pantalla (≈810 px de diámetro); pedir el archivo original."
+}
