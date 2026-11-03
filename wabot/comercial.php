@@ -3017,6 +3017,25 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
             return [trim((string)$cfg['bienvenida'])];
         }
     }
+    /* El que vuelve días después con el texto del anuncio ("Hola. Puedo
+     * obtener más información?") sin haber contado nunca a qué se dedica
+     * recibe otra vez la bienvenida que se lo pregunta. Dejado al modelo,
+     * contestaba con info.proceso ("Te pasamos el valor y…") y la charla
+     * quedaba sin pregunta (Adriana, 3-nov 12:36). */
+    if ($hablamos && wabot_canal($conv) !== 'instagram' && in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu'], true)
+        && empty($conv['precio_dado']) && trim((string)($conv['tipo'] ?? '')) === ''
+        && trim($texto) !== '' && wabot_apertura_generica($texto)) {
+        $ultimoBot = 0;
+        foreach ((array)($conv['transcript'] ?? []) as $fila) {
+            if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true)) $ultimoBot = max($ultimoBot, (int)($fila['ts'] ?? 0));
+        }
+        if ($ultimoBot > 0 && time() - $ultimoBot > 12 * 3600) {
+            $conv['bienvenida_ts'] = time();
+            $conv['fase'] = 'menu';
+            wabot_evento_sesion($conv, 'bienvenida');
+            return [trim((string)$cfg['bienvenida'])];
+        }
+    }
     if (trim($texto) === '') { $conv['handoff_pendiente'] = true; return []; }
 
     /* Un "ok", un "gracias" o un pulgar después de la demo no gasta un turno
