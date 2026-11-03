@@ -1432,6 +1432,13 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
     }
+    /* "Copiar" de la vista Sin leer (Pablo, 3-nov): todos los chats sin leer,
+     * los últimos 10 mensajes de cada uno, con el mismo formato que "Copiar msjs". */
+    if ($a === 'conv_copiar_sin_leer') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => true, 'texto' => wabot_conv_copiar_texto((array)json_decode((string)($_POST['tels'] ?? '[]'), true))], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     if ($a === 'conv_favorito' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['favorito'] = empty($conv['favorito']);
@@ -1815,6 +1822,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     border:1px solid var(--line); border-radius:99px; background:var(--card-2); color:var(--dim);
     font:inherit; font-size:10.5px; font-weight:700; letter-spacing:.01em; cursor:pointer; white-space:nowrap; }
 .conv-chip:hover { border-color:var(--line-fuerte); color:var(--tx); }
+.conv-chip[hidden] { display:none; }
 .conv-chip.on { background:var(--info); border-color:var(--info); color:#0b1424; }
 .conv-chip--sl.on, .conv-chip--rta.on { background:var(--info); border-color:var(--info); }
 .conv-chip-n { min-width:17px; padding:0 5px; border-radius:99px; background:var(--info); color:#0b1424;
@@ -3617,6 +3625,7 @@ function burbujaCita(t, chat) {
                          históricos quedan en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat. Pasadas 24 h sin que escriba, el chat sale de esta vista y vuelve cuando escribe.">Sin leer</button>
+                        <button type="button" class="conv-chip" id="convCopiarSinLeer" hidden title="Copia todos los chats sin leer: los últimos 10 mensajes de cada uno">Copiar</button>
                         <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Nuevos</button>
                         <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Con form</button>
                         <button type="button" class="conv-chip" data-grupo="bot" title="Lo que va contestando el bot: las charlas donde conversó en la última semana (sin contar la bienvenida ni los avisos automáticos) y las que tienen una sugerencia lista para mandar. Arriba, la más reciente.">Bot</button>
@@ -3990,6 +3999,37 @@ function burbujaCita(t, chat) {
         // Migra automáticamente los filtros viejos Bot/Yo a la nueva vista.
         const filtrosActivos = new Set([filtroGuardado || 'todos_humano']);
         let itemsCache = [];
+        /* "Copiar" (Pablo, 3-nov): con la vista Sin leer, todos esos chats juntos,
+         * los últimos 10 mensajes de cada uno. Los arma el server (la lista no trae los mensajes). */
+        const btnCopiarSinLeer = document.getElementById('convCopiarSinLeer');
+        btnCopiarSinLeer?.addEventListener('click', async () => {
+            const tels = itemsCache.filter(it => visibleEn(it, 'no_leidos'))
+                .sort((a, b) => Number(b.ultimo_cliente_ts || 0) - Number(a.ultimo_cliente_ts || 0)).map(it => it.tel);
+            if (!tels.length) return;
+            const previo = btnCopiarSinLeer.textContent;
+            btnCopiarSinLeer.disabled = true;
+            btnCopiarSinLeer.textContent = 'Copiando…';
+            let texto = '';
+            try {
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ accion: 'conv_copiar_sin_leer', tels: JSON.stringify(tels) }), credentials: 'same-origin' });
+                texto = (await r.json()).texto || '';
+            } catch (e) {}
+            if (texto) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                } catch (err) {
+                    const caja = document.createElement('textarea');
+                    caja.value = texto;
+                    document.body.appendChild(caja);
+                    caja.select();
+                    document.execCommand('copy');
+                    caja.remove();
+                }
+            }
+            btnCopiarSinLeer.textContent = texto ? 'Copiados ' + tels.length + ' ✓' : 'No se pudo';
+            setTimeout(() => { btnCopiarSinLeer.textContent = previo; btnCopiarSinLeer.disabled = false; }, 1800);
+        });
         let sincronizado = false;
         let firmaLista = '';
         // Persistido: abrir un chat navega a admin.php?ver=… (recarga la página
@@ -4399,6 +4439,7 @@ function burbujaCita(t, chat) {
                 b.classList.toggle('tiene', n > 0);
                 b.title = (b.title || '').replace(/ \(\d+ con mensajes sin leer\)$/, '') + (n > 0 ? ' (' + n + ' con mensajes sin leer)' : '');
             }
+            if (btnCopiarSinLeer) btnCopiarSinLeer.hidden = !(filtrosActivos.has('no_leidos') && nSinLeer > 0);
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;
                 listaEl.innerHTML = '<p class="conv-vacio">'

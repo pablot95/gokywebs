@@ -358,6 +358,33 @@ function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
     return (int)wabot_push_fcm_enviar($titulo, $cuerpo, $datos);
 }
 
+/**
+ * El texto del botón "Copiar" de la vista Sin leer (Pablo, 3-nov): por cada
+ * charla, quién es y si tiene la demo entregada, y sus últimos 10 mensajes
+ * con el formato de "Copiar msjs" ([dd/mm hh:mm] Cliente/Gokywebs: texto).
+ */
+function wabot_conv_copiar_texto(array $claves) {
+    $bloques = [];
+    foreach (array_slice(array_values(array_unique(array_map('strval', $claves))), 0, 100) as $clave) {
+        if ($clave === '' || !wabot_conv_existe($clave)) continue;
+        $cv = wabot_conv_load($clave);
+        $grupo = wabot_conv_grupo($cv);
+        $etiqueta = in_array($grupo, ['presentados', 'presentadas_48'], true) ? 'Demo entregada' : ($grupo === 'muestra' ? 'Demo por presentar' : 'Chat');
+        $quien = wabot_push_quien($cv);
+        $tel = (string)($cv['channel_user_id'] ?? $cv['tel'] ?? $clave);
+        $lineas = [];
+        foreach ((array)($cv['transcript'] ?? []) as $t) {
+            if (!is_array($t) || !in_array(($t['q'] ?? ''), ['cliente', 'bot', 'humano'], true)) continue;
+            $texto = trim((string)($t['t'] ?? ''));
+            if ($texto === '' && !empty($t['media']['clase'])) $texto = '[' . $t['media']['clase'] . ']';
+            $lineas[] = '[' . date('d/m H:i', (int)($t['ts'] ?? 0)) . '] ' . (($t['q'] ?? '') === 'cliente' ? 'Cliente' : 'Gokywebs') . ': ' . $texto;
+        }
+        $bloques[] = '— ' . $quien . (strpos($quien, $tel) === false && $tel !== '' ? ' (' . $tel . ')' : '') . ' · ' . $etiqueta . "\n"
+                   . implode("\n", array_slice($lineas, -10));
+    }
+    return implode("\n\n", $bloques);
+}
+
 /* ── Resumen de los sin leer por WhatsApp (Pablo, 3-nov) ──────────────────
  *
  * "Que me mande cuántos chats tengo sin leer, nada más, separados por demo
