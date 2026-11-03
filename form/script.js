@@ -653,7 +653,49 @@ const FOTOS_MAX_BYTES = 15 * 1024 * 1024;
 const fotosInput = document.getElementById('fotos');
 const fotosGrid = document.getElementById('fotosGrid');
 const fotosContador = document.getElementById('fotosContador');
-const fotosElegidas = [];   // { file, url }
+const fotosElegidas = [];   // { file, url, li }
+
+/* Miniatura chica (3-nov): con la foto original de 12 MP en cada <img>, varias
+ * juntas dejaban al celular sin memoria y la página quedaba en gris. Se arman
+ * de a una, a 240 px; la que el navegador no puede leer (HEIC en Chrome) queda
+ * con un ícono, igual se sube. */
+let miniaturasEnCola = Promise.resolve();
+function armarMiniatura(f) {
+    miniaturasEnCola = miniaturasEnCola.then(async () => {
+        if (!fotosElegidas.includes(f)) return;
+        try {
+            const bmp = await createImageBitmap(f.file, { resizeWidth: 240, resizeQuality: 'medium' });
+            const canvas = document.createElement('canvas');
+            canvas.width = bmp.width;
+            canvas.height = bmp.height;
+            canvas.getContext('2d').drawImage(bmp, 0, 0);
+            bmp.close();
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.8));
+            if (!blob) throw new Error('sin miniatura');
+            f.url = URL.createObjectURL(blob);
+        } catch (_) {
+            f.url = '';
+        }
+        f.lista = true;
+        if (f.li) pintarMiniatura(f);
+    });
+}
+function pintarMiniatura(f) {
+    const vieja = f.li.querySelector('img, .foto-sin-vista');
+    if (vieja) vieja.remove();
+    if (f.url) {
+        const img = document.createElement('img');
+        img.src = f.url;
+        img.alt = '';
+        f.li.prepend(img);
+    } else if (f.lista) {
+        const sin = document.createElement('span');
+        sin.className = 'foto-sin-vista';
+        sin.textContent = '🖼️';
+        f.li.prepend(sin);
+    }
+    f.li.classList.toggle('cargando', !f.lista);
+}
 
 function pintarFotos(aviso = '') {
     if (!fotosGrid) return;
@@ -661,20 +703,19 @@ function pintarFotos(aviso = '') {
     fotosElegidas.forEach((f, i) => {
         const li = document.createElement('li');
         li.className = 'foto-item';
-        const img = document.createElement('img');
-        img.src = f.url;
-        img.alt = '';
+        f.li = li;
         const quitar = document.createElement('button');
         quitar.type = 'button';
         quitar.className = 'foto-quitar';
         quitar.setAttribute('aria-label', `Quitar la foto ${i + 1}`);
         quitar.textContent = '×';
         quitar.addEventListener('click', () => {
-            URL.revokeObjectURL(f.url);
+            if (f.url) URL.revokeObjectURL(f.url);
             fotosElegidas.splice(i, 1);
             pintarFotos();
         });
-        li.append(img, quitar);
+        li.append(quitar);
+        pintarMiniatura(f);
         fotosGrid.append(li);
     });
     fotosContador.textContent = aviso || `${fotosElegidas.length}/${FOTOS_MAX}`;
@@ -689,7 +730,9 @@ if (fotosInput) fotosInput.addEventListener('change', () => {
     let pesadas = 0;
     nuevas.slice(0, lugar).forEach(file => {
         if (file.size > FOTOS_MAX_BYTES * 3) { pesadas++; return; }   // ni achicada entraría
-        fotosElegidas.push({ file, url: URL.createObjectURL(file) });
+        const f = { file, url: '', lista: false, li: null };
+        fotosElegidas.push(f);
+        armarMiniatura(f);
     });
     fotosInput.value = '';
     const aviso = nuevas.length > lugar ? `${fotosElegidas.length}/${FOTOS_MAX} · El máximo es ${FOTOS_MAX}: quedaron las primeras.`

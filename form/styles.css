@@ -2216,3 +2216,13 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .foto-quitar:hover,
 .foto-quitar:focus-visible { background: var(--error); }
 #fotosContador.fotos-aviso { color: var(--error); }
+.foto-item.cargando { animation: foto-cargando 1.2s ease-in-out infinite alternate; }
+@keyframes foto-cargando { to { opacity: .5; } }
+.foto-sin-vista {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    font-size: 28px;
+}
+@media (prefers-reduced-motion: reduce) { .foto-item.cargando { animation: none; } }
