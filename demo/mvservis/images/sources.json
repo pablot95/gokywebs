@@ -1,0 +1,17 @@
+{
+  "nota": "Fotos ilustrativas del zip de ChatGPT («Copiar 10») del prospecto eTsvcmkxbc1jqMMbQRN4, salvo trabajo-auto, que es la foto que el cliente subió al formulario (wabot/data/media/5493872510566/20261103-101121-eb958590.jpg), recortada en cuadrado sin el volante del auto. Las webp son copias redimensionadas; los originales quedan sin tocar. Sin fotos de stock extra.",
+  "archivos": {
+    "sillon-living.webp / sillon-living-960.webp": { "origen": "02_imagen.jpg", "uso": "hero de las dos páginas · og.jpg" },
+    "pasada.webp / pasada-600.webp": { "origen": "01_imagen.jpg", "uso": "Cómo trabajamos (foto vertical que cruza la costura)" },
+    "trabajo-auto.webp / trabajo-auto-600.webp": { "origen": "foto del cliente por el formulario, recorte 330,940-1351,1961", "uso": "galería, marcada como trabajo real" },
+    "auto-butaca.webp / auto-butaca-600.webp": { "origen": "03_imagen.jpg", "uso": "galería · pestaña Autos (M2)" },
+    "alfombra.webp / alfombra-600.webp": { "origen": "04_imagen.jpg", "uso": "galería · pestaña Alfombras (M2)" },
+    "colchon.webp / colchon-600.webp": { "origen": "05_imagen.jpg", "uso": "galería · pestaña Colchones (M2)" },
+    "silla.webp / silla-600.webp": { "origen": "06_imagen.jpg", "uso": "galería · pestaña Sillas (M2)" },
+    "sillon-azul.webp / sillon-azul-600.webp": { "origen": "07_imagen.jpg", "uso": "galería · pestaña Sillones (M2)" },
+    "auto-trasero.webp / auto-trasero-600.webp": { "origen": "08_imagen.jpg", "uso": "galería" },
+    "sillon-beige.webp / sillon-beige-600.webp": { "origen": "09_imagen.jpg", "uso": "galería" },
+    "og.jpg": { "origen": "02_imagen.jpg recortada a 1200x630", "uso": "Open Graph" },
+    "10_mockup_720x480.png": { "origen": "mock up del zip", "uso": "referencia del Modelo 1, no se publica en la página" }
+  }
+}
