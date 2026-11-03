@@ -238,6 +238,7 @@ function wabot_clientes_mantenimiento(array $fs, array $chats) {
             'dia'       => $dia,
             'clave'     => $clave,
             'telefono'  => (string)($c['telefono'] ?? ''),
+            'email'     => trim((string)($c['email'] ?? '')),
             'entregada' => wabot_clientes_ts($c['entregadoAt'] ?? null) > 0,
             'desde'     => wabot_clientes_ts($c['clienteDesdeAt'] ?? $c['createdAt'] ?? null),
             'origen'    => 'clientes',
@@ -261,6 +262,7 @@ function wabot_clientes_mantenimiento(array $fs, array $chats) {
             'dia'       => wabot_clientes_dia(wabot_clientes_ts($s['fechaAlta'] ?? $s['createdAt'] ?? null)),
             'clave'     => wabot_clientes_chat_de($s, $sid, $chats),
             'telefono'  => (string)($s['whatsapp'] ?? ''),
+            'email'     => trim((string)($s['email'] ?? '')),
             'entregada' => false,
             'desde'     => wabot_clientes_ts($s['createdAt'] ?? null),
             'origen'    => 'mantenimiento',
@@ -295,7 +297,14 @@ function wabot_clientes_datos($forzar = false, $ahora = null) {
     // Los nombres de los chats sugeridos para cada pago sin asignar.
     $porClave = [];
     foreach ((array)$datos['nuevos'] as $r) $porClave[$r['clave']] = $r;
+    // El cliente del admin con el mismo mail que el que pagó (3-nov): viene elegido en «Es de un cliente».
+    $porMail = [];
+    foreach ((array)$datos['mantenimiento'] as $r) {
+        $m = wabot_pagos_email_clave($r['email'] ?? '');
+        if ($m !== '' && !isset($porMail[$m])) $porMail[$m] = (string)$r['id'];
+    }
     foreach ($datos['sin_asignar'] as &$p) {
+        $p['cliente_sugerido'] = $porMail[wabot_pagos_email_clave($p['email'] ?? '')] ?? '';
         $p['sugeridos_info'] = [];
         foreach ((array)($p['sugeridos'] ?? []) as $clave => $modalidad) {
             $p['sugeridos_info'][] = ['clave' => (string)$clave, 'modalidad' => (string)$modalidad, 'nombre' => wabot_clientes_nombre_de((string)$clave)];

@@ -1525,6 +1525,20 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $aviso . '=1'); exit;
     }
+    /* Es de alguien que ya es cliente (3-nov): sale de la lista sin tocar ningún chat. */
+    if ($a === 'pago_cliente' && !empty($_POST['pago_id'])) {
+        $cliId = (string)($_POST['cliente_id'] ?? '');
+        $cliNombre = '';
+        foreach ((array)(wabot_clientes_datos()['mantenimiento'] ?? []) as $r) {
+            if ((string)$r['id'] === $cliId) { $cliNombre = trim($r['nombre'] . ($r['negocio'] !== '' ? ' · ' . $r['negocio'] : '')); break; }
+        }
+        $aviso = 'pago_cliente_sin_cliente';
+        if ($cliId !== '' && $cliNombre !== '') {
+            $r = wabot_pagos_de_cliente((string)$_POST['pago_id'], $cliId, $cliNombre);
+            $aviso = !empty($r['ok']) ? 'pago_cliente_ok' : 'pago_asignar_' . preg_replace('/[^a-z_]/', '', (string)($r['motivo'] ?? 'error'));
+        }
+        header('Location: admin.php?tab=clientes&' . $aviso . '=1'); exit;
+    }
     if ($a === 'pago_ignorar' && !empty($_POST['pago_id'])) {
         $ok = wabot_pagos_ignorar((string)$_POST['pago_id']);
         header('Location: admin.php?tab=clientes' . ($ok ? '' : '&pago_ignorar_error=1')); exit;
@@ -2304,7 +2318,8 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['onboarding_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Probá de nuevo en unos segundos.</p>'; ?>
     <?php foreach (['pago_asignar_sin_chat' => 'No hay ningún chat con ese número.', 'pago_asignar_ambiguo' => 'Hay más de un chat con ese número: abrí el chat y confirmá el pago desde ahí.',
                     'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.', 'pago_asignar_ya_asignado' => 'Ese pago ya se confirmó o se ignoró (la lista estaba vieja).', 'pago_ignorar_error' => 'No se pudo sacar el pago de la lista (ya no estaba o se estaba procesando): recargá y probá de nuevo.',
-                    'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.'] as $k => $txt) {
+                    'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.',
+                    'pago_cliente_sin_cliente' => 'Elegí de qué cliente es.', 'pago_cliente_ok' => 'Listo: quedó como pago de ese cliente (y lo que entre de ese mail, también).'] as $k => $txt) {
               if (isset($_GET[$k])) echo '<p class="ok" style="color:var(--bad)">' . $e($txt) . '</p>'; } ?>
     <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
     <?php if (isset($_GET['template_saludo_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
@@ -3443,13 +3458,22 @@ function burbujaCita(t, chat) {
         $cliComo = ['suscripcion' => 'suscripción', 'checkout' => 'link de MP', 'transferencia' => 'transferencia', 'transferencia_mp' => 'transferencia desde MP', 'manual' => 'a mano'];
         $cliMotivo = ['sin_candidatos' => 'ningún chat recibió un link por ese monto en las últimas 72 h', 'ambiguo' => 'más de un chat recibió ese monto', 'sin_aviso' => 'el chat sugerido no avisó que pagó', 'ocupado' => 'el chat estaba ocupado'];
         $cliModalidades = ['mensual' => 'Plan mensual', 'anual' => 'Plan anual (seña)', 'unico' => 'Pago único (seña)', 'inicial' => 'Pago inicial + mensual'];
+        // Los clientes del admin para «Es de un cliente» (3-nov), por nombre.
+        $cliClientesOrden = [];
+        foreach ((array)($cliDatos['mantenimiento'] ?? []) as $r) {
+            $etq = trim($r['nombre'] . ($r['negocio'] !== '' ? ' · ' . $r['negocio'] : ''));
+            if ($etq === '') continue;
+            if ((int)$r['monto'] > 0) $etq .= ' (' . wabot_pagos_monto_texto((int)$r['monto']) . ')';
+            $cliClientesOrden[] = ['id' => (string)$r['id'], 'etiqueta' => $etq];
+        }
+        usort($cliClientesOrden, function ($a, $b) { return strcasecmp($a['etiqueta'], $b['etiqueta']); });
         $cliChatLink = function ($clave) use ($e) { return $clave !== '' ? '<a href="admin.php?tab=conversaciones&ver=' . $e(rawurlencode($clave)) . '">Ver chat</a>' : '<span class="meta">sin chat</span>'; };
     ?>
         <p class="meta">Los chats de los clientes están en <a href="admin.php?tab=conversaciones">Conversaciones</a> → Clientes. Acá quedan los pagos sin asignar y las tablas.</p>
         <?php if ($cliDatos['sin_asignar']): ?>
         <div class="card">
             <h2 style="margin-top:0">Pagos sin asignar <span class="pill pausa"><?= count($cliDatos['sin_asignar']) ?></span></h2>
-            <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Elegí el chat (o escribí el número), la modalidad, y confirmá: pasa a Cliente en el admin y el bot le pide lo que falta. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
+            <p class="meta">Entraron en Mercado Pago y el bot no pudo decir de quién son. Si es una venta nueva: elegí el chat (o escribí el número), la modalidad, y confirmá: pasa a Cliente en el admin y el bot le pide lo que falta. Si ya es cliente (una cuota, el saldo, el que paga por afuera): elegilo abajo y sale de la lista sin escribirle a nadie; lo que entre después desde ese mail se asigna solo. Las transferencias bancarias llegan sin el nombre del que mandó: solo el monto y la hora.</p>
             <div class="tabla-scroll"><table>
                 <tr><th>Cuándo</th><th>Monto</th><th>Cómo</th><th>Por qué quedó acá</th><th>De quién es</th><th></th></tr>
                 <?php foreach ($cliDatos['sin_asignar'] as $p): ?>
@@ -3473,6 +3497,16 @@ function burbujaCita(t, chat) {
                             </select>
                             <button class="sec" style="border-color:var(--ac);color:var(--ac)">Asignar y confirmar</button>
                         </form>
+                        <?php if ($cliClientesOrden): ?>
+                        <form method="post" class="fila" style="gap:6px;margin-top:8px">
+                            <input type="hidden" name="accion" value="pago_cliente"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>">
+                            <select name="cliente_id" aria-label="Cliente del admin" style="width:auto;max-width:260px">
+                                <option value="">Ya es cliente: elegí cuál…</option>
+                                <?php foreach ($cliClientesOrden as $cl): ?><option value="<?= $e($cl['id']) ?>"<?= (string)($p['cliente_sugerido'] ?? '') === (string)$cl['id'] ? ' selected' : '' ?>><?= $e($cl['etiqueta']) ?></option><?php endforeach; ?>
+                            </select>
+                            <button class="sec">Es de este cliente</button>
+                        </form>
+                        <?php endif; ?>
                     </td>
                     <td><form method="post" onsubmit="return confirm('Sacar este pago de la lista? Queda anotado como que no es de ningún cliente.')"><input type="hidden" name="accion" value="pago_ignorar"><input type="hidden" name="pago_id" value="<?= $e($p['id']) ?>"><button class="sec">No es de nadie</button></form></td>
                 </tr>

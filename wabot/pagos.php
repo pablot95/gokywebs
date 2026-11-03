@@ -74,6 +74,8 @@ function wabot_pagos_estado() {
         'yo'         => (string)($j['yo'] ?? ''),
         'error'      => (string)($j['error'] ?? ''),
         'error_ts'   => (int)($j['error_ts'] ?? 0),
+        // Mail del que paga → cliente del admin (3-nov): lo que entra de ese mail se asigna solo.
+        'emails_cliente' => array_filter((array)($j['emails_cliente'] ?? []), 'is_array'),
     ];
 }
 
@@ -947,9 +949,14 @@ function wabot_pagos_correr_bloqueado($cfg, $ahora, array $deps, $mp, array $res
         if (isset($estado['pagos'][$p['id']])) continue;
         $res['nuevos']++;
         $fila = $p + ['visto_ts' => $ahora];
+        $deCliente = $estado['emails_cliente'][wabot_pagos_email_clave($p['email'] ?? '')] ?? null;
         if ($p['tipo'] === 'propio' || $p['tipo'] === 'otro') {
             $fila['estado'] = 'ignorado';
             $res['ignorados']++;
+        } elseif ($deCliente) {
+            // De un cliente que Pablo ya asignó antes desde este mail: no es una venta nueva.
+            $fila = wabot_pagos_marcar_cliente($fila, $deCliente, $ahora, 'auto');
+            $res['de_clientes'] = ($res['de_clientes'] ?? 0) + 1;
         } elseif ($p['tipo'] === 'suscripcion' && $p['cuota'] > 1) {
             // Una renovación: la factura la hace facturar-cobros.php; el admin ya lo tiene como cliente.
             $fila['estado'] = 'renovacion';
@@ -1010,6 +1017,59 @@ function wabot_pagos_sin_asignar() {
     $lista = array_filter(wabot_pagos_estado()['pagos'], function ($f) { return in_array(($f['estado'] ?? ''), ['sin_asignar', 'error'], true); });
     usort($lista, function ($a, $b) { return ($b['ts'] ?? 0) <=> ($a['ts'] ?? 0); });
     return array_values($lista);
+}
+
+/** El mail como clave del recuerdo: minúsculas y sin espacios; '' si no es un mail. */
+function wabot_pagos_email_clave($email) {
+    $email = mb_strtolower(trim((string)$email));
+    return strpos($email, '@') !== false ? $email : '';
+}
+
+function wabot_pagos_marcar_cliente(array $fila, array $cliente, $ahora, $modo) {
+    $fila['estado'] = 'cliente';
+    $fila['cliente_id'] = (string)($cliente['id'] ?? '');
+    $fila['cliente_nombre'] = (string)($cliente['nombre'] ?? '');
+    $fila['modo'] = $modo;
+    $fila['confirmado_ts'] = $ahora;
+    unset($fila['sugeridos']);
+    return $fila;
+}
+
+/**
+ * Pablo, 3-nov: «hay muchos que ya son clientes de acá, pero no tengo cómo
+ * asignarlos». El pago es de un cliente del admin (una cuota, el saldo, una
+ * transferencia de los que pagan por afuera): sale de la lista sin tocar
+ * ningún chat ni escribirle a nadie. Los otros sin asignar del mismo mail
+ * corren la misma suerte, y lo que entre después de ese mail también (el cron).
+ */
+function wabot_pagos_de_cliente($pagoId, $clienteId, $clienteNombre, $ahora = null) {
+    $ahora = (int)($ahora ?? time());
+    $lockPagos = wabot_lock_tomar_esperando('pagosmp', 100, 100000);
+    if (!$lockPagos) return ['ok' => false, 'motivo' => 'ocupado'];
+    try {
+        $estado = wabot_pagos_estado();
+        $fila = $estado['pagos'][(string)$pagoId] ?? null;
+        if (!$fila) return ['ok' => false, 'motivo' => 'no_existe'];
+        if (!in_array(($fila['estado'] ?? ''), ['sin_asignar', 'error'], true)) return ['ok' => false, 'motivo' => 'ya_asignado'];
+        $cliente = ['id' => (string)$clienteId, 'nombre' => (string)$clienteNombre];
+        $estado['pagos'][(string)$pagoId] = wabot_pagos_marcar_cliente($fila, $cliente, $ahora, 'pablo');
+        $n = 1;
+        $mail = wabot_pagos_email_clave($fila['email'] ?? '');
+        if ($mail !== '') {
+            $estado['emails_cliente'][$mail] = $cliente;
+            foreach ($estado['pagos'] as $id => $otra) {
+                if ((string)$id === (string)$pagoId || !in_array(($otra['estado'] ?? ''), ['sin_asignar', 'error'], true)) continue;
+                if (wabot_pagos_email_clave($otra['email'] ?? '') !== $mail) continue;
+                $estado['pagos'][$id] = wabot_pagos_marcar_cliente($otra, $cliente, $ahora, 'mismo_mail');
+                $n++;
+            }
+        }
+        wabot_pagos_guardar($estado);
+        wabot_log('pago_de_cliente', ['pago' => (string)$pagoId, 'cliente' => $cliente['id'], 'pagos' => $n]);
+        return ['ok' => true, 'pagos' => $n];
+    } finally {
+        wabot_lock_soltar($lockPagos);
+    }
 }
 
 /** Pablo lo asignó a un chat desde la pestaña Clientes. Devuelve lo de wabot_pago_confirmar o ['ok' => false, 'motivo']. */

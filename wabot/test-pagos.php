@@ -371,6 +371,35 @@ caso('grupo B con «mensual» elegido: la modalidad que se cobra es el pago inic
     && wabot_pagos_modalidad_de_conv(['modalidad_elegida' => 'mensual', 'comercial_cotizacion' => ['modelo' => 'a2', 'anual' => '$140.000', 'mensual' => '$20.000']]) === 'mensual'
     && wabot_pagos_modalidad_de_conv(['modalidad_elegida' => 'propia', 'comercial_cotizacion' => ['modelo' => 'b', 'inicial' => '$80.000']]) === 'unico');
 
+echo "Es de un cliente (3-nov)\n";
+// «Hay muchos que ya son clientes de acá, pero no tengo cómo asignarlos a un cliente.»
+@unlink($GLOBALS['WABOT_TEST_PAGOS_ARCHIVO']);
+wabot_pagos_guardar(['pagos' => [
+    'j1' => ['id' => 'j1', 'monto' => 15000, 'ts' => $hace(30), 'tipo' => 'suscripcion', 'email' => 'jorge@hotmail.com', 'estado' => 'sin_asignar', 'motivo' => 'sin_candidatos', 'sugeridos' => []],
+    'j2' => ['id' => 'j2', 'monto' => 180000, 'ts' => $hace(70), 'tipo' => 'transferencia_mp', 'email' => 'Jorge@Hotmail.com ', 'estado' => 'sin_asignar', 'motivo' => 'sin_candidatos', 'sugeridos' => []],
+    't1' => ['id' => 't1', 'monto' => 60000, 'ts' => $hace(5), 'tipo' => 'transferencia', 'email' => '', 'estado' => 'sin_asignar', 'motivo' => 'sin_candidatos', 'sugeridos' => []],
+], 'corrida_ts' => $ahora - 3600, 'yo' => $YO, 'error' => '']);
+$rc = wabot_pagos_de_cliente('j1', 'cli-9', 'Jorge Guzmán · Vitamov', $ahora);
+$estC = wabot_pagos_estado();
+caso('asignado a un cliente sale de la lista, junto con el otro pago del mismo mail', !empty($rc['ok']) && $rc['pagos'] === 2
+    && array_column(wabot_pagos_sin_asignar(), 'id') === ['t1'], json_encode($rc));
+caso('queda anotado de qué cliente es', $estC['pagos']['j1']['estado'] === 'cliente' && $estC['pagos']['j1']['cliente_id'] === 'cli-9'
+    && $estC['pagos']['j2']['cliente_nombre'] === 'Jorge Guzmán · Vitamov' && $estC['pagos']['j2']['modo'] === 'mismo_mail');
+caso('el mail queda recordado', ($estC['emails_cliente']['jorge@hotmail.com']['id'] ?? '') === 'cli-9');
+caso('una lista vieja no lo pisa', (wabot_pagos_de_cliente('j1', 'cli-1', 'Otro', $ahora)['motivo'] ?? '') === 'ya_asignado');
+caso('una transferencia bancaria (sin mail) no deja nada recordado', !empty(wabot_pagos_de_cliente('t1', 'cli-2', 'Ana', $ahora)['ok']) && count(wabot_pagos_estado()['emails_cliente']) === 1);
+// La cuota siguiente del mismo mail entra sola como de ese cliente, sin buscar chat ni escribirle a nadie.
+$colaJ = [mp_suscripcion('j3', 15000, $hace(1))];
+$colaJ[0]['payer'] = ['id' => '777', 'email' => 'JORGE@hotmail.com'];
+$cargados = [];
+$rj = wabot_pagos_correr($cfg, $ahora, $deps + [
+    'mp' => function ($ruta) use ($colaJ, $YO) { return strpos($ruta, '/users/me') === 0 ? ['id' => $YO] : ['results' => $colaJ, 'paging' => ['total' => 1]]; },
+    'candidatos' => [], 'cargar' => function ($k) use (&$cargados) { $cargados[] = $k; return []; }, 'guardar' => fn($c) => true,
+]);
+$j3 = wabot_pagos_estado()['pagos']['j3'] ?? [];
+caso('lo que entra después de ese mail se asigna solo al cliente', ($j3['estado'] ?? '') === 'cliente' && ($j3['cliente_id'] ?? '') === 'cli-9' && ($j3['modo'] ?? '') === 'auto'
+    && $rj['sin_asignar'] === 0 && $cargados === [] && wabot_pagos_sin_asignar() === [], json_encode([$rj, $j3]));
+
 array_map('unlink', glob($tmp . '/*') ?: []);
 @rmdir($tmp);
 todo_ok();
