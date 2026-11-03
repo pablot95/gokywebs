@@ -210,7 +210,8 @@ h3 { font-weight: 700; font-size: var(--fs-h3); line-height: 1.2; }
   .carrito-btn { width: 46px; padding: 0; justify-content: center; }
   .carrito-btn__txt { display: none; }
   .carrito-btn .cart-badge { position: absolute; top: -4px; right: -4px; }
-  .aviso { font-size: .82rem; }
+  .aviso { font-size: .84rem; }
+  .aviso__mas { display: none; }
 }
 @media (max-width: 359px) { .icon-buscar { display: none; } }
 
