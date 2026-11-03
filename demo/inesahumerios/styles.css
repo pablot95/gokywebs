@@ -192,6 +192,7 @@ h3 { font-weight: 600; font-size: var(--fs-h3); line-height: 1.25; }
 .site-header--m2 .header-inner { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); min-height: 96px; }
 .header-izq { display: flex; align-items: center; gap: .3rem; min-width: 0; }
 .site-header--m2 .main-nav { margin-left: -.85rem; }
+@media (min-width: 1081px) { .site-header--m2 .nav-cats__panel { left: 0; translate: 0 0; } }
 .brand--centro { align-items: center; justify-self: center; }
 .brand--centro .hilo { margin-left: 0; }
 .site-header--m2 .header-acciones { justify-self: end; }
