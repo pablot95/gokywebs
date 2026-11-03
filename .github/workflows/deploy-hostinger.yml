@@ -1,0 +1,87 @@
+# Publica en Hostinger solo los archivos que cambiaron en cada push a main.
+# Reemplaza al auto-deploy de Hostinger, que rehacía los ~20 mil archivos en cada push
+# y dejaba el sitio dando 404 entre 25 y 35 segundos (medido el 3-nov-2026).
+# rsync escribe cada archivo en un temporal y lo renombra: nunca hay un momento sin el archivo.
+name: Deploy a Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-hostinger
+  cancel-in-progress: false
+
+env:
+  SSH_HOST: 195.200.3.71
+  SSH_PORT: "65002"
+  SSH_USER: u739671719
+  DESTINO: domains/gokywebs.com/public_html
+  # Fuera de public_html para que no se pueda leer desde la web.
+  MARCA: domains/gokywebs.com/.deploy-sha
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Sin blobs ni archivos: el repo pesa ~8 GB y solo hacen falta los que cambiaron.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: true
+
+      - name: Llave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Qué cambió desde el último deploy
+        env:
+          ANTES_DEL_PUSH: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          ssh_srv() { ssh -i ~/.ssh/deploy -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" "$@"; }
+          previo=$(ssh_srv "cat $MARCA 2>/dev/null || true" | tr -d '[:space:]')
+          # Sin marca en el servidor (primer deploy de este workflow): lo anterior al push
+          # ya lo había publicado el auto-deploy de Hostinger.
+          [ -n "$previo" ] || previo="${ANTES_DEL_PUSH:-}"
+          if [ -n "$previo" ] && git cat-file -e "$previo^{commit}" 2>/dev/null; then
+            git diff --no-renames --name-only --diff-filter=ACMRT "$previo" HEAD > subir.txt
+            git diff --no-renames --name-only --diff-filter=D "$previo" HEAD > borrar.txt
+          else
+            echo "No hay commit previo conocido: se sube todo."
+            git ls-files > subir.txt
+            : > borrar.txt
+          fi
+          echo "Desde $previo: $(wc -l < subir.txt) para subir, $(wc -l < borrar.txt) para borrar."
+
+      - name: Armar los archivos a subir
+        run: |
+          set -euo pipefail
+          mkdir -p salida
+          if [ -s subir.txt ]; then
+            # Con muchos archivos xargs corre varios git archive seguidos: -i lee los tar encadenados.
+            GIT_LITERAL_PATHSPECS=1 xargs -d '\n' -a subir.txt git archive --format=tar HEAD -- \
+              | tar -x -i -C salida
+          fi
+
+      - name: Subir y borrar
+        run: |
+          set -euo pipefail
+          ssh_cmd="ssh -i $HOME/.ssh/deploy -p $SSH_PORT"
+          if [ -s subir.txt ]; then
+            rsync -rltz --chmod=D755,F644 --files-from=subir.txt -e "$ssh_cmd" \
+              salida/ "$SSH_USER@$SSH_HOST:$DESTINO/"
+          fi
+          # Solo se borra lo que git borró: los datos del servidor (wabot/data, etc.) no se tocan.
+          if [ -s borrar.txt ]; then
+            $ssh_cmd "$SSH_USER@$SSH_HOST" \
+              "cd $DESTINO && while IFS= read -r f; do rm -f -- \"\$f\"; done" < borrar.txt
+          fi
+          $ssh_cmd "$SSH_USER@$SSH_HOST" "echo $GITHUB_SHA > $MARCA"
