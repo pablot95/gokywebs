@@ -510,4 +510,19 @@ caso('anual y pago único (con o sin coma): el comienzo nuevo y la seña de siem
         === $abreEnlace . 'Para arrancar con todas las modificaciones son $80.000 y el resto ($160.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/unico240'
     && str_starts_with(wabot_rr_enlace_pago_texto('Te paso el plan anual con todas las condiciones y los datos para la transferencia. Para arrancar…'), $abreEnlace . 'Para arrancar'));
 caso('lo que no es un mensaje de pago no se toca', wabot_rr_enlace_pago_texto('Dale, te paso el link del plan mensual.') === 'Dale, te paso el link del plan mensual.');
+
+// 3-nov (Pablo): «en Planes no están los planes iniciales».
+$marcaIni = WABOT_DATA . '/migrated/respuestas-rapidas-inicial-3nov';
+$marcaIniRespaldo = is_file($marcaIni) ? file_get_contents($marcaIni) : null;
+$rutaRespaldo = is_file($ruta) ? file_get_contents($ruta) : null;
+@unlink($marcaIni);
+$antes = [['ico' => '💬', 'titulo' => 'Respuestas', 'items' => ['Hola']],
+          ['ico' => '💳', 'titulo' => 'Planes', 'items' => ['link mensual', 'Mi versión: https://gokywebs.com/pago/inicial100']]];
+$despues = wabot_rr_inicial_3nov($antes, $ruta);
+caso('a Planes se suma el inicial80 (el inicial100 ya estaba, con su texto propio)',
+    $despues[1]['items'] === ['link mensual', 'Mi versión: https://gokywebs.com/pago/inicial100', WABOT_RR_INICIAL_3NOV[0]] && $despues[0] === $antes[0], json_encode($despues, JSON_UNESCAPED_UNICODE));
+caso('con el comienzo de los links de pago', str_starts_with(WABOT_RR_INICIAL_3NOV[1], $abreEnlace . 'Una vez realizado el pago') && str_ends_with(WABOT_RR_INICIAL_3NOV[1], 'pago/inicial100'));
+caso('una sola vez: si los borra no vuelven', is_file($marcaIni) && wabot_rr_inicial_3nov($antes, $ruta) === $antes);
+if ($marcaIniRespaldo === null) @unlink($marcaIni); else file_put_contents($marcaIni, $marcaIniRespaldo);
+if ($rutaRespaldo === null) @unlink($ruta); else file_put_contents($ruta, $rutaRespaldo);
 todo_ok();
