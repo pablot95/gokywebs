@@ -2100,6 +2100,19 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
    los botones: el navegador oculta su contenido con un mecanismo interno que
    NO se ve mirando el `display` del hijo. Un toggle explícito es predecible. */
 .conv-acciones-toggle { display:none; }
+/* Desplegables de la barra del chat (Pablo, 3-nov: «esto es un quilombo»): Pago,
+   Plantillas y Más. En pantalla grande abren flotando debajo del botón; en el
+   celular, dentro del menú "⋯", se despliegan en el lugar. */
+.conv-menu { position:relative; display:inline-block; }
+.conv-menu > summary { list-style:none; cursor:pointer; padding:4px 8px; font-size:11px; border:1px solid var(--line); border-radius:6px; color:var(--dim); white-space:nowrap; user-select:none; }
+.conv-menu > summary::-webkit-details-marker { display:none; }
+.conv-menu > summary:hover, .conv-menu[open] > summary { color:var(--tx); border-color:var(--line-fuerte); }
+.conv-menu--pago > summary { border-color:var(--ac); color:var(--ac); }
+.conv-menu-panel { position:absolute; right:0; top:calc(100% + 4px); z-index:30; display:flex; flex-direction:column; align-items:stretch; gap:6px;
+    min-width:220px; padding:8px; background:var(--card); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 10px 26px rgba(0,0,0,.5); }
+.conv-menu-panel > form, .conv-head .conv-menu-panel > form { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.conv-menu-panel > form > button { flex:1 1 auto; text-align:left; }
+.conv-menu-panel .conv-acciones-sep { width:auto; height:1px; margin:2px 0; }
 .conv-acciones-wrap > .conv-acciones { display:flex; }
 .tel-copiar { background:transparent; border:0; border-bottom:1px dashed var(--line); border-radius:0; color:var(--dim); font:inherit; font-weight:400; padding:0 1px; cursor:pointer; }
 .tel-copiar:hover { color:var(--ac); border-bottom-color:var(--ac); }
@@ -2197,6 +2210,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
        del botón se salía de la pantalla y se cortaban los textos (Pablo, 27-sep). */
     .conv-acciones-wrap.hacia-derecha.abierto > .conv-acciones { right: auto; left: 0; }
     .conv-acciones-wrap > .conv-acciones button { width: 100%; }
+    /* Dentro del "⋯" del celular los desplegables se abren en el lugar, no flotando. */
+    .conv-menu { display:block; }
+    .conv-menu > summary { min-height: 42px; display:flex; align-items:center; font-size: 15px; padding: 8px 12px; }
+    .conv-menu-panel { position: static; box-shadow: none; min-width: 0; margin-top: 6px; }
     /* La pausa de avisos en el menú: la fecha arriba, los botones abajo. */
     .conv-head form.conv-retomar-form { display: flex; flex-wrap: wrap; }
     .conv-retomar-form input[type=date] { flex: 1 1 100%; min-height: 42px; font-size: 16px; }
@@ -3692,42 +3709,6 @@ function burbujaCita(t, chat) {
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
                     <div class="fila conv-acciones">
-                        <form method="post"><input type="hidden" name="accion" value="conv_favorito"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec"><?= !empty($conv['favorito']) ? '★ Quitar favorito' : '☆ Marcar favorito' ?></button></form>
-                        <?php /* "Te hablo el martes" a mano (11-oct): para lo que te dicen por el otro WhatsApp. */
-                              $retomarActivo = wabot_retomar_activo($conv); ?>
-                        <form method="post" class="conv-retomar-form" title="Para cuando te dicen «te hablo el martes»: poné ese día. Los avisos automáticos vuelven dos días después y, si es favorito, ese día a las 18 h sale el seguimiento. Si lo dicen en este chat, se pone solo.">
-                            <input type="hidden" name="accion" value="conv_retomar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <input type="date" name="dia" required min="<?= $e(gmdate('Y-m-d', time() - 3 * 3600)) ?>" value="<?= $retomarActivo ? $e((string)($conv['retomar_dia'] ?? '')) : '' ?>" aria-label="Fecha que prometió">
-                            <button class="sec"><?= $retomarActivo ? 'Cambiar fecha' : '⏸ Fecha prometida' ?></button>
-                            <?php if ($retomarActivo): ?><button class="sec" name="quitar" value="1" formnovalidate>Quitar pausa</button><?php endif; ?>
-                        </form>
-                        <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['presentado_ts'])):
-                            $template72Enviado = !empty($conv['confirmacion_demo_enviada']);
-                            $template72Activo = wabot_plantilla_config('confirmacion_demo_48h', $cfg) !== null;
-                        ?>
-                        <form method="post" onsubmit="return confirm('Enviar ahora el template de seguimiento de 72 h?')">
-                            <input type="hidden" name="accion" value="enviar_template_72h"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec"<?= ($template72Enviado || !$template72Activo) ? ' disabled' : '' ?> title="<?= $e($template72Enviado ? 'Ya fue enviado en esta conversación.' : (!$template72Activo ? 'Activá y configurá el template en Ajustes.' : 'Envía manualmente la plantilla aprobada por Meta.')) ?>"><?= $template72Enviado ? '✓ Template 72 h enviado' : 'Enviar template 72 h' ?></button>
-                        </form>
-                        <?php endif; ?>
-                        <?php /* En todos los chats de WhatsApp, no solo los favoritos (9-oct). */ ?>
-                        <?php if (wabot_canal($conv) !== 'instagram'):
-                            $templateInteresadoEnviado = !empty($conv['seguimiento_interesado_enviado']);
-                            $templateInteresadoActivo = wabot_plantilla_config('seguimiento_interesado', $cfg) !== null;
-                        ?>
-                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla seguimiento_interesado?')">
-                            <input type="hidden" name="accion" value="enviar_template_interesado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec"<?= ($templateInteresadoEnviado || !$templateInteresadoActivo) ? ' disabled' : '' ?> title="<?= $e($templateInteresadoEnviado ? 'Ya fue enviada en este chat.' : (!$templateInteresadoActivo ? 'Activá y configurá la plantilla en Ajustes.' : 'Envía la plantilla de Marketing aprobada por Meta.')) ?>"><?= $templateInteresadoEnviado ? '✓ Seguimiento interesado enviado' : 'Enviar seguimiento interesado' ?></button>
-                        </form>
-                        <?php endif; ?>
-                        <?php /* Plantilla "saludo" (Marketing), 21-oct: a mano y repetible. */ ?>
-                        <?php if (wabot_canal($conv) !== 'instagram'): $templateSaludoActivo = wabot_plantilla_config('saludo', $cfg) !== null; ?>
-                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla saludo («Hola, cómo estás?»)?')">
-                            <input type="hidden" name="accion" value="enviar_template_saludo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="sec"<?= $templateSaludoActivo ? '' : ' disabled' ?> title="<?= $e($templateSaludoActivo ? 'Envía la plantilla de Marketing «saludo» aprobada por Meta.' : 'Activá y configurá la plantilla en Ajustes.') ?>">Enviar saludo</button>
-                        </form>
-                        <?php endif; ?>
                         <?php /* "Encender/Apagar bot acá", "Rehacer boceto", "Confirmó la demo" y "Ya le
                                contesté" se sacaron de acá (Pablo, 5-oct); sus acciones siguen en el
                                servidor. "Ver info" muestra lo que llenó en el formulario. */
@@ -3801,6 +3782,7 @@ function burbujaCita(t, chat) {
                               if (empty($conv['pago_confirmado_ts']) && (!empty($conv['pago_avisado_ts']) || !empty($conv['presentado_ts']) || (string)($conv['modalidad_elegida'] ?? '') !== '')):
                                   $pagoEsperados = wabot_pagos_montos_esperados($conv, $cfg);
                                   $pagoModalidad = wabot_pagos_modalidad_de_conv($conv) ?: 'mensual'; ?>
+                        <details class="conv-menu conv-menu--pago"><summary>💰 Pago ▾</summary><div class="conv-menu-panel">
                         <form method="post" class="conv-retomar-form conv-pago-form" onsubmit="return confirm('Confirmar que ya pagó? Pasa a Cliente en el admin, se le avisa la compra a Meta y el bot le pide lo que falta para la web.')"
                               title="Para la transferencia que no apareció sola en Mercado Pago, o el comprobante que ya viste. Lo que entra en MP se confirma solo." data-montos="<?= $e(json_encode($pagoEsperados)) ?>">
                             <input type="hidden" name="accion" value="pago_confirmar_manual"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -3810,7 +3792,51 @@ function burbujaCita(t, chat) {
                             <input type="number" name="monto" min="1000" step="1000" value="<?= (int)($pagoEsperados[$pagoModalidad] ?? 0) ?: '' ?>" placeholder="Monto" aria-label="Monto" required style="width:90px;padding:3px 5px;font-size:11px">
                             <button class="sec" style="border-color:var(--ac);color:var(--ac)">💰 Confirmar pago</button>
                         </form>
+                        </div></details>
                         <?php endif; ?>
+                        <?php /* Pablo, 3-nov: «esto es un quilombo, poné algunas cosas en desplegables».
+                               Las plantillas de Meta van juntas acá. */ ?>
+                        <?php if (wabot_canal($conv) !== 'instagram'): ?>
+                        <details class="conv-menu"><summary>✉ Plantillas ▾</summary><div class="conv-menu-panel">
+                        <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['presentado_ts'])):
+                            $template72Enviado = !empty($conv['confirmacion_demo_enviada']);
+                            $template72Activo = wabot_plantilla_config('confirmacion_demo_48h', $cfg) !== null;
+                        ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora el template de seguimiento de 72 h?')">
+                            <input type="hidden" name="accion" value="enviar_template_72h"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= ($template72Enviado || !$template72Activo) ? ' disabled' : '' ?> title="<?= $e($template72Enviado ? 'Ya fue enviado en esta conversación.' : (!$template72Activo ? 'Activá y configurá el template en Ajustes.' : 'Envía manualmente la plantilla aprobada por Meta.')) ?>"><?= $template72Enviado ? '✓ Template 72 h enviado' : 'Enviar template 72 h' ?></button>
+                        </form>
+                        <?php endif; ?>
+                        <?php /* En todos los chats de WhatsApp, no solo los favoritos (9-oct). */ ?>
+                        <?php if (wabot_canal($conv) !== 'instagram'):
+                            $templateInteresadoEnviado = !empty($conv['seguimiento_interesado_enviado']);
+                            $templateInteresadoActivo = wabot_plantilla_config('seguimiento_interesado', $cfg) !== null;
+                        ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla seguimiento_interesado?')">
+                            <input type="hidden" name="accion" value="enviar_template_interesado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= ($templateInteresadoEnviado || !$templateInteresadoActivo) ? ' disabled' : '' ?> title="<?= $e($templateInteresadoEnviado ? 'Ya fue enviada en este chat.' : (!$templateInteresadoActivo ? 'Activá y configurá la plantilla en Ajustes.' : 'Envía la plantilla de Marketing aprobada por Meta.')) ?>"><?= $templateInteresadoEnviado ? '✓ Seguimiento interesado enviado' : 'Enviar seguimiento interesado' ?></button>
+                        </form>
+                        <?php endif; ?>
+                        <?php /* Plantilla "saludo" (Marketing), 21-oct: a mano y repetible. */ ?>
+                        <?php if (wabot_canal($conv) !== 'instagram'): $templateSaludoActivo = wabot_plantilla_config('saludo', $cfg) !== null; ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla saludo («Hola, cómo estás?»)?')">
+                            <input type="hidden" name="accion" value="enviar_template_saludo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= $templateSaludoActivo ? '' : ' disabled' ?> title="<?= $e($templateSaludoActivo ? 'Envía la plantilla de Marketing «saludo» aprobada por Meta.' : 'Activá y configurá la plantilla en Ajustes.') ?>">Enviar saludo</button>
+                        </form>
+                        <?php endif; ?>
+                        </div></details>
+                        <?php endif; ?>
+                        <details class="conv-menu conv-menu--mas"><summary>⋯ Más ▾</summary><div class="conv-menu-panel">
+                        <form method="post"><input type="hidden" name="accion" value="conv_favorito"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"><?= !empty($conv['favorito']) ? '★ Quitar favorito' : '☆ Marcar favorito' ?></button></form>
+                        <?php /* "Te hablo el martes" a mano (11-oct): para lo que te dicen por el otro WhatsApp. */
+                              $retomarActivo = wabot_retomar_activo($conv); ?>
+                        <form method="post" class="conv-retomar-form" title="Para cuando te dicen «te hablo el martes»: poné ese día. Los avisos automáticos vuelven dos días después y, si es favorito, ese día a las 18 h sale el seguimiento. Si lo dicen en este chat, se pone solo.">
+                            <input type="hidden" name="accion" value="conv_retomar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <input type="date" name="dia" required min="<?= $e(gmdate('Y-m-d', time() - 3 * 3600)) ?>" value="<?= $retomarActivo ? $e((string)($conv['retomar_dia'] ?? '')) : '' ?>" aria-label="Fecha que prometió">
+                            <button class="sec"><?= $retomarActivo ? 'Cambiar fecha' : '⏸ Fecha prometida' ?></button>
+                            <?php if ($retomarActivo): ?><button class="sec" name="quitar" value="1" formnovalidate>Quitar pausa</button><?php endif; ?>
+                        </form>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
                         <span class="conv-acciones-sep" aria-hidden="true"></span>
@@ -3818,6 +3844,7 @@ function burbujaCita(t, chat) {
                             <button class="bad">Resetear</button></form>
                         <form method="post" onsubmit="return confirm('Eliminar esta conversación para siempre? No se puede deshacer.')"><input type="hidden" name="accion" value="conv_eliminar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="bad">Eliminar</button></form>
+                        </div></details>
                     </div>
                     </div>
                 </div>
@@ -5426,6 +5453,14 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             }
             if (!e.shiftKey) { e.preventDefault(); enviar(); }
         });
+
+        // Los desplegables de la barra del chat (3-nov): uno abierto a la vez; se cierran al tocar afuera o con Esc.
+        const convMenus = [...document.querySelectorAll('.conv-menu')];
+        convMenus.forEach(m => m.addEventListener('toggle', () => {
+            if (m.open) convMenus.forEach(o => { if (o !== m) o.open = false; });
+        }));
+        document.addEventListener('click', ev => convMenus.forEach(m => { if (m.open && !m.contains(ev.target)) m.open = false; }));
+        document.addEventListener('keydown', ev => { if (ev.key === 'Escape') convMenus.forEach(m => { m.open = false; }); });
 
         // El menú "⋯" de acciones solo se usa en el celular; en pantalla grande
         // el botón está oculto por CSS y las acciones se ven siempre.
