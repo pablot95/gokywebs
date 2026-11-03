@@ -251,6 +251,7 @@ return [
         'Tendria para mostrarme alguna pagina para ver?',
         'yo pensé que tenías algún modelo para mostrarme cómo funcionaba',
         'Con ver alguna captura de alguno de sus trabajos me alcanza',
+        'en el teléfono no tengo nada de los trabajos realizados hasta el momento, quería saber cómo es todo el trabajo para verlo',
     ],
     'migracion' => [
         'Ya tenemos una página desarrollada',
@@ -917,6 +918,7 @@ return [
         'Tenes alguno que hayas realizado a farmacia',
         'no tenes ninguna de mi rubro..',
         'donde veo sus trabajos?',
+        'no tengo nada de los trabajos realizados, quería verlo para evaluar',
     ],
     'instagram' => [
         'Tenes Instagram',
