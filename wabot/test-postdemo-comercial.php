@@ -542,7 +542,8 @@ caso('grupo A (cerrado): la pregunta con el pago único y el mensual', $r === ['
 $c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'modelo_elegido' => '1']);
 oa([dc(['quiere_avanzar' => true, 'mensajes' => []])]);
 $r = turno('Dale, avancemos', $c, $cfg);
-caso('cotizada antes de la prueba: la pregunta con las tres', $r === ['Para pasarte el link de pago, preferís el pago único, el plan anual o el plan mensual?'], json_encode($r, JSON_UNESCAPED_UNICODE));
+// 3-nov (Pablo): anual o mensual, nada más; también en las cotizadas antes de la prueba.
+caso('cotizada antes de la prueba: la pregunta con el anual y el mensual', $r === ['Para pasarte el link de pago, preferís el plan anual o el plan mensual?'], json_encode($r, JSON_UNESCAPED_UNICODE));
 foreach (['Sería el mensual' => 'mensual', 'el anual' => 'unico', 'Mensual porfa' => 'mensual', 'pago único' => 'propia', 'anual o mensual?' => null,
           'no, el mensual no' => null, 'el mensual o el anual, no sé' => null, 'Me gustó el modelo 1' => null] as $m => $esperado) {
     caso("respuesta a la pregunta: «{$m}» → " . var_export($esperado, true),

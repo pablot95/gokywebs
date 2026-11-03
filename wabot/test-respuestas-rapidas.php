@@ -436,11 +436,11 @@ $detalleDe = static fn($m, $a) => "Acá podés ver el detalle de cada modalidad:
 caso('detalle de las modalidades: el sitio profesional, con sus 2 páginas (3-oct)',
     wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'landing'], $cfgNoche) === $detalleDe('mensual20000', 'anual140'));
 caso('detalle de las modalidades: la inmobiliaria, con las de la tienda',
-    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual210'));
+    wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, ['tipo' => 'inmobiliaria'], $cfgNoche) === $detalleDe('mensual30000', 'anual190'));
 $sinTipo = wabot_respuestas_rapidas_montos(WABOT_RR_DETALLE_MODALIDADES, null, $cfgNoche);
 caso('detalle de las modalidades sin tipo: una página por grupo, sin el pago único',
     str_contains($sinTipo, 'gokywebs.com/pago/mensual20000 (sitio profesional) o gokywebs.com/pago/mensual30000 (tienda, cursos o inmobiliaria)')
-    && str_contains($sinTipo, 'gokywebs.com/pago/anual140 (sitio profesional) o gokywebs.com/pago/anual210 (tienda, cursos o inmobiliaria)')
+    && str_contains($sinTipo, 'gokywebs.com/pago/anual140 (sitio profesional) o gokywebs.com/pago/anual190 (tienda, cursos o inmobiliaria)')
     && !str_contains($sinTipo, '{link_') && !str_contains($sinTipo, 'Pago único'), $sinTipo);
 // 3-oct: el detalle guardado con las 3 (con el pago único) pasa al de 2.
 $detalleViejo = "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}";
@@ -524,5 +524,19 @@ caso('a Planes se suma el inicial80 (el inicial100 ya estaba, con su texto propi
 caso('con el comienzo de los links de pago', str_starts_with(WABOT_RR_INICIAL_3NOV[1], $abreEnlace . 'Una vez realizado el pago') && str_ends_with(WABOT_RR_INICIAL_3NOV[1], 'pago/inicial100'));
 caso('una sola vez: si los borra no vuelven', is_file($marcaIni) && wabot_rr_inicial_3nov($antes, $ruta) === $antes);
 if ($marcaIniRespaldo === null) @unlink($marcaIni); else file_put_contents($marcaIni, $marcaIniRespaldo);
+
+// 3-nov (Pablo): un solo esquema, anual y mensual. A Planes se suma el anual de la tienda a $190.000; lo demás queda (charlas del A y del B).
+$marcaUno = WABOT_DATA . '/migrated/respuestas-rapidas-un-plan-3nov';
+$marcaUnoRespaldo = is_file($marcaUno) ? file_get_contents($marcaUno) : null;
+@unlink($marcaUno);
+$anual210 = $abreEnlace . 'Para arrancar con todas las modificaciones son $60.000 y el resto ($150.000) se paga al finalizar la web, que no demora más de 7 días: https://gokywebs.com/pago/anual210';
+$antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['mensual: https://gokywebs.com/pago/mensual20000', $anual210, WABOT_RR_PAGO_UNICO_26OCT[0], WABOT_RR_INICIAL_3NOV[1]]],
+          ['ico' => '💬', 'titulo' => 'Respuestas', 'items' => ['Si querés, el pago único: gokywebs.com/pago/unico240']]];
+$despues = wabot_rr_un_plan_3nov($antes, $ruta);
+caso('en Planes se suma el anual190 ($130.000 al entregar) al lado del anual210; el pago único y el inicial quedan',
+    $despues[0]['items'] === ['mensual: https://gokywebs.com/pago/mensual20000', $anual210, str_replace(['($150.000)', 'anual210'], ['($130.000)', 'anual190'], $anual210), WABOT_RR_PAGO_UNICO_26OCT[0], WABOT_RR_INICIAL_3NOV[1]], json_encode($despues[0], JSON_UNESCAPED_UNICODE));
+caso('lo de otras categorías no se toca', $despues[1] === $antes[1]);
+caso('una sola vez', is_file($marcaUno) && wabot_rr_un_plan_3nov($antes, $ruta) === $antes);
+if ($marcaUnoRespaldo === null) @unlink($marcaUno); else file_put_contents($marcaUno, $marcaUnoRespaldo);
 if ($rutaRespaldo === null) @unlink($ruta); else file_put_contents($ruta, $rutaRespaldo);
 todo_ok();

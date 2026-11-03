@@ -479,7 +479,8 @@ function wabot_textos_default() {
             /* Desde el 2-nov el formulario no pregunta la forma de pago (Pablo): si
              * todavía no la eligió, va esto en vez del link, una vez. Cada grupo de
              * la prueba de precios tiene la suya (ab_precios); en B, ninguna. */
-            'pregunta_modalidad' => 'Para pasarte el link de pago, preferís el pago único, el plan anual o el plan mensual?',
+            // 3-nov: anual o mensual, nada más (antes también el pago único).
+            'pregunta_modalidad' => 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?',
             'modelo_elegido' => 'Perfecto, tomamos el modelo {modelo}',
             // Pablo, 2-nov: todos los links de pago arrancan igual («Te paso el enlace donde están…»).
             'link_mensual' => "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: {link}",
@@ -767,7 +768,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$210.000',
+            // 3-nov (Pablo): el anual de la tienda, cursos e inmobiliaria vuelve a $190.000 (del 24-oct al 3-nov fue $210.000).
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
@@ -783,7 +785,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$210.000',
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos completa',
@@ -799,7 +801,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$210.000',
+            'precio' => '$190.000',
             'precio_unico' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',
@@ -821,8 +823,12 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
      * bloques de antes del 26-oct (los *_sin_unico de arriba); las respuestas
      * oficiales de arriba ya son las de esas charlas. El A (sin anual) queda
      * para las charlas que ya lo recibieron. */
+    /* 3-nov (Pablo): «estos distintos precios traen muchas complicaciones, con el bot y a mí me
+     * cuesta diferenciar. Volvemos a lo que más resultó: plan anual y mensual, nada más». La prueba
+     * queda apagada: toda charla sin precio va al A2. Las que ya recibieron el A o el B siguen con
+     * lo que se les dijo (wabot_ab_grupo mira lo congelado primero). */
     'ab_precios' => [
-        'activo' => true,
+        'activo' => false,
         'modelos' => [
             'a2' => [
                 'comercial' => [

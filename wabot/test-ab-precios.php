@@ -20,6 +20,8 @@ $cfg['activo'] = true;
 $cfg['form_activo'] = true;
 foreach (['demora_primer_mensaje', 'demora_segundos', 'demora_entre_mensajes', 'demora_minima', 'demora_bienvenida'] as $k) $cfg[$k] = 0;
 $cfg['demora_por_longitud'] = false;
+// 3-nov: la prueba quedó apagada en textos.php; acá se prende para seguir probando la maquinaria de los grupos.
+$cfg['ab_precios']['activo'] = true;
 
 $tmp = sys_get_temp_dir() . '/wabot-test-ab-' . getmypid();
 @mkdir($tmp, 0755, true);
@@ -160,12 +162,12 @@ echo "— 4b. Modelo A2 (desde el 2-nov): anual o mensual, como antes del 26-oct
 $n = charla('5491100009004');
 $r = cotizar_charla($n, 'tienda');
 $t = junto($r);
-caso('A2: el bloque de antes del 26-oct, con el anual y el mensual', strpos($t, "Podés elegir entre dos planes:\n\n1) Plan anual: \$210.000\n2) Plan mensual: \$30.000\n\nAmbos incluyen todo:") !== false, $t);
+caso('A2: el bloque de antes del 26-oct, con el anual y el mensual', strpos($t, "Podés elegir entre dos planes:\n\n1) Plan anual: \$190.000\n2) Plan mensual: \$30.000\n\nAmbos incluyen todo:") !== false, $t);
 caso('A2: sin pago único ni pago inicial', mb_stripos($t, 'pago único') === false && mb_stripos($t, 'inicial') === false, $t);
 $cot = $n['comercial_cotizacion'] ?? [];
-caso('A2: congela anual, mensual y el pago único de lista (por si lo pide)', ($cot['modelo'] ?? '') === 'a2' && ($cot['anual'] ?? '') === '$210.000' && ($cot['mensual'] ?? '') === '$30.000'
+caso('A2: congela anual, mensual y el pago único de lista (por si lo pide)', ($cot['modelo'] ?? '') === 'a2' && ($cot['anual'] ?? '') === '$190.000' && ($cot['mensual'] ?? '') === '$30.000'
     && ($cot['unico'] ?? '') === '$330.000' && empty($cot['inicial']) && ($n['ab_grupo'] ?? '') === 'a2', json_encode($cot));
-caso('A2: la charla queda como antes (precio anual, seña de siempre, modelo anual)', ($n['precio_cotizado'] ?? '') === '$210.000' && ($n['sena_cotizada'] ?? '') === '$60.000'
+caso('A2: la charla queda como antes (precio anual, seña de siempre, modelo anual)', ($n['precio_cotizado'] ?? '') === '$190.000' && ($n['sena_cotizada'] ?? '') === '$60.000'
     && ($n['precio_modelo'] ?? '') === 'anual' && !empty($n['ab_grupo_ts']), json_encode([$n['precio_cotizado'] ?? null, $n['sena_cotizada'] ?? null, $n['precio_modelo'] ?? null]));
 $p = prompt_ultimo();
 caso('A2: GPT lee las dos modalidades de siempre (anual y mensual; el pago único, solo si lo pide)', strpos($p, 'Las dos modalidades de cada plan son anual') !== false
@@ -173,10 +175,10 @@ caso('A2: GPT lee las dos modalidades de siempre (anual y mensual; el pago únic
 caso('A2: el link del formulario va sin m= (anual o mensual)', strpos(wabot_form_link($n, $cfg), 'm=') === false, wabot_form_link($n, $cfg));
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['pago']])]);
 $r = turno('Cómo se paga?', $n, $cfg);
-caso('A2: la respuesta de pago es la de siempre (mensual o anual)', strpos(junto($r), 'anual de $210.000') !== false && strpos(junto($r), 'mensual de $30.000') !== false, junto($r));
+caso('A2: la respuesta de pago es la de siempre (mensual o anual)', strpos(junto($r), 'anual de $190.000') !== false && strpos(junto($r), 'mensual de $30.000') !== false, junto($r));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda'])]);
 $r = turno('Me pasás el precio de nuevo?', $n, $cfg);
-caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1) Plan anual: $210.000') !== false && mb_stripos(junto($r), 'pago único') === false, junto($r));
+caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1) Plan anual: $190.000') !== false && mb_stripos(junto($r), 'pago único') === false, junto($r));
 $n1 = $n;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 turno('la 1', $n1, $cfg);
@@ -196,7 +198,7 @@ $r = turno('Cuánto sale? Quiero que la web sea mía', $np, $cfg);
 caso('A2: si pide comprar la web, el pago único va debajo de los dos planes (como antes)', strpos(junto($r), '2) Plan mensual: $30.000') !== false
     && strpos(junto($r), 'está el pago único: $330.000') !== false, junto($r));
 $rr = wabot_ab_rr_categoria($n, $cfg);
-caso('A2: en el panel, arriba el precio del grupo con el anual', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1) Plan anual: $210.000') !== false,
+caso('A2: en el panel, arriba el precio del grupo con el anual', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1) Plan anual: $190.000') !== false,
     json_encode($rr, JSON_UNESCAPED_UNICODE));
 caso('A2: el chip dice el grupo', wabot_ab_grupo_nombre('a2') === 'Grupo A2 · anual o mensual');
 
@@ -217,7 +219,7 @@ $form = file_get_contents(__DIR__ . '/form-lead.php');
 caso('form-lead acepta la modalidad inicial', strpos($form, "['unico', 'mensual', 'propia', 'inicial']") !== false);
 $html = file_get_contents(__DIR__ . '/../form/index.html');
 caso('el formulario ya no pregunta la forma de pago (2-nov): sin el selector ni lo de m=a / m=b', strpos($html, 'id="modalidad"') === false && strpos($html, 'm=a') === false
-    && strpos((string)file_get_contents(__DIR__ . '/../form/script.js'), "get('m')") === false);foreach (['mensual20000' => 'anual140', 'unico240' => 'anual140', 'mensual30000' => 'anual210', 'unico330' => 'anual210'] as $pag => $anual) {
+    && strpos((string)file_get_contents(__DIR__ . '/../form/script.js'), "get('m')") === false);foreach (['mensual20000' => 'anual140', 'unico240' => 'anual140', 'mensual30000' => 'anual190', 'unico330' => 'anual190'] as $pag => $anual) {
     $h = (string)@file_get_contents(__DIR__ . '/../pago/' . $pag . '/index.html');
     caso("pago/$pag: vuelve la pestaña Anual ($anual)", strpos($h, '<a href="../' . $anual . '/">Anual</a>') !== false);
 }

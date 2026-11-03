@@ -226,6 +226,14 @@ function wabot_config_load() {
     $cfg = wabot_textos_default();
     $raw = @file_get_contents(WABOT_DIR . '/bot-config.json');
     $guardado = $raw ? json_decode($raw, true) : null;
+    /* 3-nov (Pablo): «el bot se calla después de dar la demo». Se apaga una sola vez el
+     * «Bot después de la demo» guardado; si después lo vuelve a prender desde Ajustes, queda. */
+    $marcaPostdemo = WABOT_DATA . '/migrated/postdemo-apagado-3nov';
+    if (is_array($guardado) && !empty($guardado['bot_postdemo_activo']) && !is_file($marcaPostdemo) && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $guardado['bot_postdemo_activo'] = false;
+        $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaPostdemo, date('c') . "\n");
+    }
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
             if (array_key_exists($k, $guardado)) {
@@ -4643,7 +4651,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_planes_paginas() {
     $tienda = [
         'mensual' => ['pagina' => 'mensual30000', 'monto' => '$30.000'],
-        'anual'   => ['pagina' => 'anual210',  'monto' => '$210.000'],
+        // 3-nov: el anual vuelve a $190.000 (anual210 sigue en línea para los que ya tenían ese precio).
+        'anual'   => ['pagina' => 'anual190',  'monto' => '$190.000'],
         'unico'   => ['pagina' => 'unico330',  'monto' => '$330.000'],
     ];
     return [

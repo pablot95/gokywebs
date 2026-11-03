@@ -3358,6 +3358,7 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
+// 3-nov-2026 (Pablo): un solo esquema, anual $140.000 / $190.000 y mensual $20.000 / $30.000 (del 24-oct al 3-nov el anual del resto fue $210.000).
 // 6-oct-2026 (Pablo): mensual $20.000 / $30.000 (del 5 al 6-oct fue $22.000 / $32.000); anual $140.000 / $210.000 (24-oct: la tienda, cursos, inmobiliaria y noticias suben de $190.000; el sitio sigue igual. $140.000 / $190.000 desde el 9-oct a la noche; el 9-oct a la mañana subió a $160.000 / $240.000, del 7 al 9-oct fue $120.000 / $190.000, antes $140.000 / $220.000); pago único $240.000 / $330.000 (26-oct: el del sitio subió de $220.000).
 // `sena` es la del plan anual, $60.000. Desde el 26-oct-2026 la seña del pago único es otra ($80.000 el sitio,
 // $100.000 el resto) pero acá no es un dato aparte: el panel sigue usando `sena` también para el pago único.
@@ -3369,14 +3370,14 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 // clientes que ya tienen un plan, planDe les toma los montos guardados en el doc.
 const PLANES = {
     profesional:  { label: "Sitio profesional",    unico: 140000, sena: 60000, mensual: 20000, propia: 240000 },
-    ecommerce:    { label: "Ecommerce",            unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
-    cursos:       { label: "Plataforma de cursos", unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
+    ecommerce:    { label: "Ecommerce",            unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
+    cursos:       { label: "Plataforma de cursos", unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
     // Desde el 19-sep-2026 el portal de noticias se cotiza como la tienda (Pablo): presupuestos/noticias.
-    noticias:     { label: "Portal de noticias",   unico: 210000, sena: 60000, mensual: 30000, propia: 330000 },
+    noticias:     { label: "Portal de noticias",   unico: 190000, sena: 60000, mensual: 30000, propia: 330000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 210000, sena: 60000, mensual: 30000, propia: 330000 };
+const PLAN_RESTO = { unico: 190000, sena: 60000, mensual: 30000, propia: 330000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
 const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único" };
 // Modalidades que se cobran con seña y saldo al entregar: el plan anual y la web propia.

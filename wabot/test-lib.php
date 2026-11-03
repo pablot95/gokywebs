@@ -94,7 +94,7 @@ function modalidades_de_precio($mensual, $anual, $unico = '') {
 
 /** Los links de las páginas del tipo (ya no van en el turno del precio desde el 2-oct; solo si el cliente pregunta) — sitio profesional; tienda, cursos e inmobiliaria comparten. */
 function links_de_precio($tipo) {
-    [$m, $a] = $tipo === 'landing' ? ['mensual20000', 'anual140'] : ['mensual30000', 'anual210'];   // anual190 hasta el 24-oct
+    [$m, $a] = $tipo === 'landing' ? ['mensual20000', 'anual140'] : ['mensual30000', 'anual190'];   // 3-nov: de nuevo anual190 (del 24-oct al 3-nov, anual210)
     return "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a";
 }
 
