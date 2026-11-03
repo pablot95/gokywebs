@@ -29,6 +29,11 @@
   "fecha": "2026-10-22",
   "por": "claude"
  },
+ "acompanarte": {
+  "commit": "f6dd9c7",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "adara": {
   "commit": "a79d901",
   "fecha": "2026-10-09",
@@ -42,6 +47,11 @@
  "adumir": {
   "commit": "007fbb7",
   "fecha": "2026-10-14",
+  "por": "claude"
+ },
+ "aei": {
+  "commit": "a60128f",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "afmasajesydepilacion": {
@@ -59,6 +69,11 @@
   "fecha": "2026-10-14",
   "por": "chatgpt"
  },
+ "alonturismoyviajes": {
+  "commit": "12849c2",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "altagamastore": {
   "commit": "f7f4c28",
   "fecha": "2026-10-20",
@@ -67,6 +82,16 @@
  "altapinta": {
   "commit": "7c84e62",
   "fecha": "2026-10-20",
+  "por": "claude"
+ },
+ "altotrago": {
+  "commit": "5286936",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "alvarezconstrucciones": {
+  "commit": "48070d4",
+  "fecha": "2026-10-26",
   "por": "claude"
  },
  "ambosjos": {
@@ -92,6 +117,11 @@
  "andreaalvarez": {
   "commit": "033f7ea",
   "fecha": "2026-10-21",
+  "por": "claude"
+ },
+ "aperturabuenosaires": {
+  "commit": "a6c40a7",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "armonia": {
@@ -124,6 +154,11 @@
   "fecha": "2026-10-07",
   "por": "chatgpt"
  },
+ "avanti": {
+  "commit": "b7280cf",
+  "fecha": "2026-11-03",
+  "por": "claude"
+ },
  "avanza": {
   "commit": "df3f217",
   "fecha": "2026-10-07",
@@ -149,6 +184,11 @@
   "fecha": "2026-10-13",
   "por": "chatgpt"
  },
+ "beckmanvaleriapropiedades": {
+  "commit": "7771802",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "bellesoap": {
   "commit": "2881bd0",
   "fecha": "2026-10-21",
@@ -164,6 +204,11 @@
   "fecha": "2026-10-20",
   "por": "claude"
  },
+ "bgherreriaycarpinteriametalica": {
+  "commit": "1f981de",
+  "fecha": "2026-10-29",
+  "por": "claude"
+ },
  "bicicleteriapilinbikers": {
   "commit": "5ff0542",
   "fecha": "2026-10-16",
@@ -172,6 +217,11 @@
  "blanqueriaisrael": {
   "commit": "8d9aac6",
   "fecha": "2026-10-06",
+  "por": "claude"
+ },
+ "blizzbsas": {
+  "commit": "1a88a19",
+  "fecha": "2026-11-01",
   "por": "claude"
  },
  "bluemoonwitch": {
@@ -204,10 +254,25 @@
   "fecha": "2026-10-21",
   "por": "chatgpt"
  },
+ "caballocrew": {
+  "commit": "67b6e05",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "canelaclub": {
+  "commit": "aeda3f5",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "carolinalucero": {
   "commit": "65018f9",
   "fecha": "2026-10-18",
   "por": "chatgpt"
+ },
+ "ceapi": {
+  "commit": "3096c67",
+  "fecha": "2026-10-25",
+  "por": "claude"
  },
  "ceeafb": {
   "commit": "6c5554b",
@@ -254,6 +319,16 @@
   "fecha": "2026-10-14",
   "por": "claude"
  },
+ "chuckybarbershop": {
+  "commit": "b51140b",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "chuniarte": {
+  "commit": "7c92933",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
  "cintiaspertino": {
   "commit": "59389a0",
   "fecha": "2026-10-15",
@@ -284,6 +359,11 @@
   "fecha": "2026-10-12",
   "por": "claude"
  },
+ "construccionalmada": {
+  "commit": "e384dc0",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
  "consultoranoa": {
   "commit": "b3bd518",
   "fecha": "2026-10-19",
@@ -292,6 +372,11 @@
  "cordobaservice": {
   "commit": "29e1f78",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "cortinasypersianasclara": {
+  "commit": "89d875c",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "crematoriosanfrancisco": {
@@ -314,6 +399,11 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "darioandreoli": {
+  "commit": "0ed2604",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "dcreparaciones": {
   "commit": "69df552",
   "fecha": "2026-10-08",
@@ -324,15 +414,30 @@
   "fecha": "2026-10-09",
   "por": "claude"
  },
+ "deloflet": {
+  "commit": "ace04d3",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "deltagasagua": {
   "commit": "e1ea01b",
   "fecha": "2026-10-22",
+  "por": "claude"
+ },
+ "dermocapilo": {
+  "commit": "f5d77a3",
+  "fecha": "2026-10-26",
   "por": "claude"
  },
  "diegovandermortel": {
   "commit": "9753ba3",
   "fecha": "2026-10-08",
   "por": "chatgpt"
+ },
+ "disenadoragraficatiene": {
+  "commit": "f66f2f6",
+  "fecha": "2026-10-28",
+  "por": "claude"
  },
  "distribuidoraelrebusque": {
   "commit": "515b4c0",
@@ -359,6 +464,11 @@
   "fecha": "2026-10-19",
   "por": "claude"
  },
+ "donatotraslados": {
+  "commit": "80a8dd1",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "dorado": {
   "commit": "77909a1",
   "fecha": "2026-10-18",
@@ -369,14 +479,39 @@
   "fecha": "2026-10-14",
   "por": "chatgpt"
  },
+ "drdermatocosmiatra": {
+  "commit": "2d53e58",
+  "fecha": "2026-10-23",
+  "por": "claude"
+ },
+ "drhooks": {
+  "commit": "89fdc55",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "ecosol": {
   "commit": "f5338bb",
   "fecha": "2026-10-09",
   "por": "claude"
  },
+ "editorialvocessuburbanas": {
+  "commit": "37932f3",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
  "egdecomoldes": {
   "commit": "f7f4c28",
   "fecha": "2026-10-20",
+  "por": "claude"
+ },
+ "eldanny": {
+  "commit": "e6aa799",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
+ "electritruck": {
+  "commit": "07117e0",
+  "fecha": "2026-11-03",
   "por": "claude"
  },
  "electrolift": {
@@ -389,14 +524,39 @@
   "fecha": "2026-10-13",
   "por": "chatgpt"
  },
+ "elguri3": {
+  "commit": "ee97ab7",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
+ "elhornerito": {
+  "commit": "9f809cb",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "elnegroferreyra": {
+  "commit": "45d69cf",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "elrincondulce": {
   "commit": "f54fefc",
   "fecha": "2026-10-06",
   "por": "claude"
  },
+ "elsemillero": {
+  "commit": "241cfd1",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "elysoloviajes": {
   "commit": "f4a8451",
   "fecha": "2026-10-15",
+  "por": "claude"
+ },
+ "emitienda": {
+  "commit": "b848c43",
+  "fecha": "2026-11-01",
   "por": "claude"
  },
  "emunahindumentary": {
@@ -414,6 +574,11 @@
   "fecha": "2026-10-13",
   "por": "chatgpt"
  },
+ "entren": {
+  "commit": "905728f",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "espaciomirenacer": {
   "commit": "005aea2",
   "fecha": "2026-10-21",
@@ -424,9 +589,39 @@
   "fecha": "2026-10-19",
   "por": "claude"
  },
+ "essentirlacocina": {
+  "commit": "f175e06",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "estilopolo": {
   "commit": "944e20e",
   "fecha": "2026-10-22",
+  "por": "claude"
+ },
+ "estudioayalayasociados": {
+  "commit": "684c853",
+  "fecha": "2026-10-23",
+  "por": "claude"
+ },
+ "estudiogalzeranoasociados": {
+  "commit": "7f89358",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
+ "estudiojuridicoandreoli": {
+  "commit": "5e68685",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "eternoresplandor": {
+  "commit": "232f63c",
+  "fecha": "2026-10-29",
+  "por": "claude"
+ },
+ "evolucion360": {
+  "commit": "221fb44",
+  "fecha": "2026-11-03",
   "por": "claude"
  },
  "ezequiel": {
@@ -447,6 +642,11 @@
  "felinaindumentaria": {
   "commit": "dfe39e3",
   "fecha": "2026-10-15",
+  "por": "claude"
+ },
+ "fernyrefrigeracion": {
+  "commit": "319c985",
+  "fecha": "2026-10-28",
   "por": "claude"
  },
  "ferreteriala25": {
@@ -474,6 +674,16 @@
   "fecha": "2026-10-13",
   "por": "claude"
  },
+ "francoalegre": {
+  "commit": "d467300",
+  "fecha": "2026-10-30",
+  "por": "claude"
+ },
+ "fresastore": {
+  "commit": "4454996",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "fumigacionmonigramajo": {
   "commit": "7613999",
   "fecha": "2026-10-14",
@@ -482,6 +692,11 @@
  "fundacioncaminosdeamoryesperanza": {
   "commit": "8cc2048",
   "fecha": "2026-10-16",
+  "por": "claude"
+ },
+ "ganarmedioa0": {
+  "commit": "3d19703",
+  "fecha": "2026-11-03",
   "por": "claude"
  },
  "gasargentina": {
@@ -514,6 +729,21 @@
   "fecha": "2026-10-20",
   "por": "claude"
  },
+ "girolux": {
+  "commit": "271ee06",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
+ "gitanabijou": {
+  "commit": "ba5603e",
+  "fecha": "2026-10-30",
+  "por": "claude"
+ },
+ "giuliacompananteterapeutico": {
+  "commit": "ca9cf1b",
+  "fecha": "2026-11-03",
+  "por": "claude"
+ },
  "goguirecambio": {
   "commit": "409be23",
   "fecha": "2026-10-21",
@@ -534,9 +764,24 @@
   "fecha": "2026-10-13",
   "por": "claude"
  },
+ "gsargentina": {
+  "commit": "84e313e",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "gssportclubdelbotin": {
   "commit": "30906c2",
   "fecha": "2026-10-20",
+  "por": "claude"
+ },
+ "heartsport": {
+  "commit": "9818802",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "herenciaargentina": {
+  "commit": "09d3cab",
+  "fecha": "2026-10-29",
   "por": "claude"
  },
  "hernangonzalez": {
@@ -559,6 +804,11 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "hizteriktienda": {
+  "commit": "67824e6",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "hogarlimpio": {
   "commit": "812df64",
   "fecha": "2026-10-08",
@@ -579,20 +829,55 @@
   "fecha": "2026-10-21",
   "por": "claude"
  },
+ "hyssosa": {
+  "commit": "3bb5f79",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "impactoblanqueria": {
   "commit": "2c370fd",
   "fecha": "2026-10-14",
   "por": "chatgpt"
+ },
+ "induale": {
+  "commit": "39dde48",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
+ "indumentariajubi": {
+  "commit": "54703f4",
+  "fecha": "2026-10-28",
+  "por": "claude"
  },
  "inhumans3dstudio": {
   "commit": "6a1d6c8",
   "fecha": "2026-10-06",
   "por": "claude"
  },
+ "institutorenacer": {
+  "commit": "52cd6ac",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
  "internationaltaekwondoschoolchanghon": {
   "commit": "d687513",
   "fecha": "2026-10-07",
   "por": "chatgpt"
+ },
+ "isad": {
+  "commit": "601e20f",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
+ "isybell": {
+  "commit": "dfb027b",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
+ "jclogistica": {
+  "commit": "8061a72",
+  "fecha": "2026-10-26",
+  "por": "claude"
  },
  "jic": {
   "commit": "af11346",
@@ -602,6 +887,11 @@
  "joaw": {
   "commit": "dbccf8e",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "jsmueblesyproductos": {
+  "commit": "18c3c65",
+  "fecha": "2026-10-28",
   "por": "claude"
  },
  "julietaledesmaasesoracomercial": {
@@ -622,6 +912,11 @@
  "juliominibus": {
   "commit": "eac01a8",
   "fecha": "2026-10-21",
+  "por": "claude"
+ },
+ "juva": {
+  "commit": "b201a80",
+  "fecha": "2026-10-30",
   "por": "claude"
  },
  "jym": {
@@ -659,6 +954,11 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "lauramaccaddonfotografias": {
+  "commit": "ee5510c",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "lecxalyquality": {
   "commit": "344449c",
   "fecha": "2026-10-09",
@@ -669,9 +969,29 @@
   "fecha": "2026-10-15",
   "por": "claude"
  },
+ "lencerytuc": {
+  "commit": "da13072",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
+ "leonbonbon": {
+  "commit": "e165533",
+  "fecha": "2026-11-03",
+  "por": "claude"
+ },
+ "lesant": {
+  "commit": "0f7e65c",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "liamaura": {
   "commit": "f6def47",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "limaalum": {
+  "commit": "dddcfb7",
+  "fecha": "2026-10-28",
   "por": "claude"
  },
  "liosan": {
@@ -683,6 +1003,11 @@
   "commit": "8d9733c",
   "fecha": "2026-10-12",
   "por": "chatgpt"
+ },
+ "lodemoris": {
+  "commit": "3ddc890",
+  "fecha": "2026-10-29",
+  "por": "claude"
  },
  "lolyindumentariafemenina": {
   "commit": "6edcb94",
@@ -697,6 +1022,11 @@
  "lrtelectricidad": {
   "commit": "e3c5dd3",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "lubricentrostop": {
+  "commit": "11daa55",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "luckyfood": {
@@ -714,9 +1044,24 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "lurielcienciacosmetica": {
+  "commit": "cbcc870",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "lxfparquet": {
   "commit": "68aefa2",
   "fecha": "2026-10-16",
+  "por": "claude"
+ },
+ "magadeluz": {
+  "commit": "487e1a2",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "mamdiotur": {
+  "commit": "46446f5",
+  "fecha": "2026-11-01",
   "por": "claude"
  },
  "manademar": {
@@ -724,14 +1069,29 @@
   "fecha": "2026-10-21",
   "por": "claude"
  },
+ "mantenadiseno": {
+  "commit": "d03b41a",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "marcelatarot": {
   "commit": "74c9ca7",
   "fecha": "2026-10-15",
   "por": "claude"
  },
+ "marin": {
+  "commit": "9289cad",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "marinaroberto": {
   "commit": "94d559b",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "marine": {
+  "commit": "9069362",
+  "fecha": "2026-11-03",
   "por": "claude"
  },
  "masajeszn": {
@@ -752,6 +1112,21 @@
  "mdliving": {
   "commit": "07363fc",
   "fecha": "2026-10-16",
+  "por": "claude"
+ },
+ "mdurbanwear": {
+  "commit": "9b19366",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "melendez": {
+  "commit": "dddfee3",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "mercadofacil": {
+  "commit": "baa5719",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "metalmecanicatapia": {
@@ -784,6 +1159,16 @@
   "fecha": "2026-10-19",
   "por": "claude"
  },
+ "missrubi": {
+  "commit": "ecbe521",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
+ "mluxury": {
+  "commit": "d30d259",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "mmconstrucciones": {
   "commit": "6a932f6",
   "fecha": "2026-10-15",
@@ -809,9 +1194,24 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "mtserviciosintegrales": {
+  "commit": "e77e986",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "muebleriajunin": {
+  "commit": "79f6523",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "multirubrorufi": {
   "commit": "4ff133e",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "mundoconfronteras": {
+  "commit": "d23daa4",
+  "fecha": "2026-10-28",
   "por": "claude"
  },
  "mundodecolores": {
@@ -819,9 +1219,19 @@
   "fecha": "2026-10-13",
   "por": "claude"
  },
+ "mvservis": {
+  "commit": "cd9ccfd",
+  "fecha": "2026-11-03",
+  "por": "claude"
+ },
  "nazik": {
   "commit": "bcdd762",
   "fecha": "2026-10-05",
+  "por": "claude"
+ },
+ "neurotest": {
+  "commit": "9b33ddd",
+  "fecha": "2026-10-30",
   "por": "claude"
  },
  "nickyritmosargentina": {
@@ -829,14 +1239,29 @@
   "fecha": "2026-10-07",
   "por": "chatgpt"
  },
+ "nile": {
+  "commit": "4a9976d",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "norbex": {
   "commit": "4332656",
   "fecha": "2026-10-22",
   "por": "claude"
  },
+ "norteadventur": {
+  "commit": "eede556",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "nstnsrl": {
   "commit": "d5c83e2",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "nucleosport": {
+  "commit": "1fc0575",
+  "fecha": "2026-10-25",
   "por": "claude"
  },
  "nuveglam": {
@@ -848,6 +1273,11 @@
   "commit": "21dc10c",
   "fecha": "2026-10-18",
   "por": "chatgpt"
+ },
+ "olmosrolandomobiliariocorporativo": {
+  "commit": "fce91ca",
+  "fecha": "2026-11-01",
+  "por": "claude"
  },
  "omnilifeyseytu": {
   "commit": "ed713d1",
@@ -864,14 +1294,29 @@
   "fecha": "2026-10-13",
   "por": "chatgpt"
  },
+ "organic": {
+  "commit": "e30e568",
+  "fecha": "2026-10-24",
+  "por": "claude"
+ },
  "origami": {
   "commit": "18b6e5c",
   "fecha": "2026-10-15",
   "por": "claude"
  },
+ "origenrumi": {
+  "commit": "cce895a",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
  "oudimperial": {
   "commit": "d6256c9",
   "fecha": "2026-10-22",
+  "por": "claude"
+ },
+ "paincarsloslocos": {
+  "commit": "f314968",
+  "fecha": "2026-10-29",
   "por": "claude"
  },
  "paoladivella": {
@@ -914,6 +1359,11 @@
   "fecha": "2026-10-19",
   "por": "claude"
  },
+ "peques": {
+  "commit": "0e06754",
+  "fecha": "2026-10-22",
+  "por": "claude"
+ },
  "perfumesara": {
   "commit": "661f2dd",
   "fecha": "2026-10-09",
@@ -934,6 +1384,16 @@
   "fecha": "2026-10-13",
   "por": "chatgpt"
  },
+ "piletasberenice": {
+  "commit": "8a9a3c4",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "pinturadirectodefabrica": {
+  "commit": "c1599d8",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "pintureriasmaurosa": {
   "commit": "ec30167",
   "fecha": "2026-10-21",
@@ -949,14 +1409,39 @@
   "fecha": "2026-10-22",
   "por": "claude"
  },
+ "portaldeluzconscienciadunidad": {
+  "commit": "7f784f4",
+  "fecha": "2026-10-25",
+  "por": "claude"
+ },
+ "preciosamia": {
+  "commit": "e62e170",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "prettycosmetica": {
+  "commit": "399dced",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "prismatica": {
   "commit": "2aac976",
   "fecha": "2026-10-21",
   "por": "chatgpt"
  },
+ "probarte": {
+  "commit": "26f3bb0",
+  "fecha": "2026-10-27",
+  "por": "claude"
+ },
  "profesionalmarketing": {
   "commit": "d5578c6",
   "fecha": "2026-10-16",
+  "por": "claude"
+ },
+ "prontopizza": {
+  "commit": "7ac84e8",
+  "fecha": "2026-11-02",
   "por": "claude"
  },
  "pulidosreyes": {
@@ -1064,6 +1549,16 @@
   "fecha": "2026-10-16",
   "por": "claude"
  },
+ "rmdesarrollosinmobiliariossa": {
+  "commit": "2c6e3bd",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "rollerluxdecoraciones": {
+  "commit": "c8f7ffe",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
  "ronin3d": {
   "commit": "82fb3de",
   "fecha": "2026-10-09",
@@ -1073,6 +1568,16 @@
   "commit": "109e3c7",
   "fecha": "2026-10-16",
   "por": "chatgpt"
+ },
+ "sakeperfumes": {
+  "commit": "c2299b5",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "samayyampa": {
+  "commit": "8336259",
+  "fecha": "2026-10-27",
+  "por": "claude"
  },
  "santerialasmafias": {
   "commit": "1f8ebfd",
@@ -1094,6 +1599,11 @@
   "fecha": "2026-10-22",
   "por": "claude"
  },
+ "servihogar": {
+  "commit": "b221040",
+  "fecha": "2026-10-30",
+  "por": "claude"
+ },
  "servimax": {
   "commit": "a478ee4",
   "fecha": "2026-10-17",
@@ -1109,6 +1619,11 @@
   "fecha": "2026-10-14",
   "por": "claude"
  },
+ "showtimelatam": {
+  "commit": "0f33213",
+  "fecha": "2026-10-23",
+  "por": "claude"
+ },
  "siaweb": {
   "commit": "4c0da1b",
   "fecha": "2026-10-22",
@@ -1122,6 +1637,16 @@
  "smash": {
   "commit": "d90a9a4",
   "fecha": "2026-10-19",
+  "por": "claude"
+ },
+ "solana": {
+  "commit": "b994bd0",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
+ "sosahnos": {
+  "commit": "dd60cb8",
+  "fecha": "2026-10-29",
   "por": "claude"
  },
  "stockcentro": {
@@ -1174,6 +1699,11 @@
   "fecha": "2026-10-09",
   "por": "claude"
  },
+ "tiendadebotinesarg": {
+  "commit": "491e0d7",
+  "fecha": "2026-10-22",
+  "por": "claude"
+ },
  "tiendanovex": {
   "commit": "a695e21",
   "fecha": "2026-10-19",
@@ -1199,6 +1729,16 @@
   "fecha": "2026-10-20",
   "por": "claude"
  },
+ "todovinilosmr": {
+  "commit": "8c84f06",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "tokyo": {
+  "commit": "268d9f7",
+  "fecha": "2026-10-28",
+  "por": "claude"
+ },
  "trasportechavarri": {
   "commit": "d99a557",
   "fecha": "2026-10-21",
@@ -1209,10 +1749,25 @@
   "fecha": "2026-10-19",
   "por": "claude"
  },
+ "universoresilientepsico": {
+  "commit": "ff75fda",
+  "fecha": "2026-10-29",
+  "por": "claude"
+ },
  "valoradesarrollos": {
   "commit": "3e37076",
   "fecha": "2026-10-18",
   "por": "chatgpt"
+ },
+ "velasaromaticasamoreterno": {
+  "commit": "211e8f3",
+  "fecha": "2026-11-01",
+  "por": "claude"
+ },
+ "vicol": {
+  "commit": "6686adb",
+  "fecha": "2026-10-28",
+  "por": "claude"
  },
  "vidasana": {
   "commit": "e00ed52",
@@ -1222,6 +1777,31 @@
  "vikingosoudessencials": {
   "commit": "12eb3b9",
   "fecha": "2026-10-15",
+  "por": "claude"
+ },
+ "vitamov": {
+  "commit": "ef278b3",
+  "fecha": "2026-10-23",
+  "por": "claude"
+ },
+ "viviendalosmilagros": {
+  "commit": "b48d1a7",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "vycpapeleriacotillonyalgomas": {
+  "commit": "5a8cb16",
+  "fecha": "2026-11-02",
+  "por": "claude"
+ },
+ "vyorastore": {
+  "commit": "e054521",
+  "fecha": "2026-10-26",
+  "por": "claude"
+ },
+ "youcaneducation": {
+  "commit": "395a754",
+  "fecha": "2026-10-26",
   "por": "claude"
  },
  "zandalaboutique": {

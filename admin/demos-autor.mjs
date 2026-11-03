@@ -5,7 +5,8 @@
    en el panel (Bocetos y prospectos) se corrige a mano por boceto.
    Desde el 4-oct-2026 (antes no se registraba). Volver a correrlo después de cada demo nueva:
      node admin/demos-autor.mjs
-   Git: el del PATH o, si no está, GIT=<ruta a git.exe>. */
+   Git: el del PATH o, si no está, GIT=<ruta a git.exe>.
+   SALIDA=<ruta> lo escribe en otro lado (tools/demo-auto/marcar-demos.php, 3-nov). */
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,6 +35,6 @@ for (const linea of salida.split(/\r?\n/)) {
 }
 
 const ordenado = Object.fromEntries(Object.entries(demos).sort(([a], [b]) => a.localeCompare(b)));
-writeFileSync(path.join(raiz, "admin", "demos-autor.json"), JSON.stringify(ordenado, null, 1) + "\n");
+writeFileSync(process.env.SALIDA || path.join(raiz, "admin", "demos-autor.json"), JSON.stringify(ordenado, null, 1) + "\n");
 const n = p => Object.values(ordenado).filter(d => d.por === p).length;
 console.log(`demos desde ${DESDE}: ${Object.keys(ordenado).length} (Claude ${n("claude")}, ChatGPT ${n("chatgpt")})`);

@@ -2322,7 +2322,7 @@ function renderAutores() {
     const modLabel = c => ({ mensual: "Mensual", unico: "Anual", propia: "Pago único" })[modalidadDe(c)] || "—";
 
     cont.innerHTML = `
-        <p class="muted">Desde el ${DEMOS_AUTOR_DESDE.split("-").reverse().join("/")}. Quién hizo cada demo sale del historial de git (la carpeta que creó cada commit: con firma de Claude es de Claude, sin ella se toma como ChatGPT); si alguna está mal, se corrige acá o en Bocetos y prospectos. Después de cada demo nueva hay que volver a correr <code>node admin/demos-autor.mjs</code>.</p>
+        <p class="muted">Desde el ${DEMOS_AUTOR_DESDE.split("-").reverse().join("/")}. Quién hizo cada demo sale del historial de git (la carpeta que creó cada commit: con firma de Claude es de Claude, sin ella se toma como ChatGPT); si alguna está mal, se corrige acá o en Bocetos y prospectos. Se asigna solo: cada 20 min la PC marca las demos nuevas (Boceto hecho y quién la hizo).</p>
         <div class="inv-cards">
             ${tarjeta("🟠 Hechas por Claude", "claude", "#fb923c")}
             ${tarjeta("🟢 Hechas por ChatGPT", "chatgpt", "#4ade80")}

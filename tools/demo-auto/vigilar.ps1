@@ -188,11 +188,20 @@ function Bajar-Imagenes-Prospectos {
     } catch { Anotar ('No se pudieron bajar las imagenes de los prospectos: ' + $_.Exception.Message) }
     finally { $ErrorActionPreference = 'Stop' }
 }
-if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; exit 0 }
+# --- Boceto hecho y quien hizo la demo (Claude o ChatGPT) en el admin, para todas (3-nov) ---
+function Marcar-Demos {
+    try {
+        $ErrorActionPreference = 'Continue'
+        $r = (& php (Join-Path $PSScriptRoot 'marcar-demos.php') 2>$null | Select-Object -Last 1)
+        if ($r -and $r -notmatch '"revisados":0') { Anotar ('Demos marcadas en el admin: ' + $r) }
+    } catch { Anotar ('No se pudieron marcar las demos en el admin: ' + $_.Exception.Message) }
+    finally { $ErrorActionPreference = 'Stop' }
+}
+if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; Marcar-Demos; exit 0 }
 if ($Modo -eq 'claude') { Bajar-Imagenes-Prospectos }
 
 # --- Fin de una demo hecha por una sesion de Desktop ---
-function Terminar([string]$ZipNombre, [string]$Resultado) {
+function Terminar([string]$ZipNombre, [string]$Resultado, [string]$Por = 'claude') {
     $e = Bajo-Candado { Leer-Estado }
     $anotado = @($e.hechos | Where-Object { $_.zip -eq $ZipNombre }) | Select-Object -Last 1
     if (-not $anotado) { Anotar ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); return $false }
@@ -205,9 +214,9 @@ function Terminar([string]$ZipNombre, [string]$Resultado) {
     Anotar ('Termino (Desktop) ' + $slug + ': ' + $Resultado)
     if ($Resultado -match '^DEMO OK' -and $ZipNombre -match '_([A-Za-z0-9]{20})(?: \(\d+\))?\.zip$') {
         $ErrorActionPreference = 'Continue'
-        $m = (& php (Join-Path $PSScriptRoot 'marcar-boceto.php') $Matches[1] 2>$null | Out-String)
+        $m = (& php (Join-Path $PSScriptRoot 'marcar-boceto.php') $Matches[1] $Por 2>$null | Out-String)
         $ErrorActionPreference = 'Stop'
-        Anotar ('Boceto hecho de ' + $slug + ': ' + $m.Trim())
+        Anotar ('Boceto hecho de ' + $slug + ' (' + $Por + '): ' + $m.Trim())
         Avisar ('Demo lista: ' + $slug) $Resultado
     }
     elseif ($Resultado -match '^DEMO OK') { Avisar ('Demo lista: ' + $slug) ($Resultado + ' (marca Boceto hecho a mano: el zip no trae el id)') }
@@ -240,7 +249,7 @@ if ($Modo -eq 'gpt') {
         if ($final) { $final = $final.Trim().Trim('*', '`', ' ') }
     } catch { Anotar ('ERROR con Codex: ' + $_.Exception.Message) }
     if ($final -notmatch '^DEMO (OK|ERROR)') { $final = 'DEMO ERROR Codex no termino (ver ' + $Pedido + ')' }
-    Terminar $ZipNombre $final | Out-Null
+    Terminar $ZipNombre $final 'chatgpt' | Out-Null
     Write-Output $final
     exit 0
 }
