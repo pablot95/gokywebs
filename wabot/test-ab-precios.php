@@ -162,7 +162,7 @@ echo "— 4b. Modelo A2 (desde el 2-nov): anual o mensual, como antes del 26-oct
 $n = charla('5491100009004');
 $r = cotizar_charla($n, 'tienda');
 $t = junto($r);
-caso('A2: el texto de Pablo del 3-nov, con el anual y el mensual', strpos($t, "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: \$190.000\n2. Plan mensual: \$30.000\n\nLos dos planes incluyen todo:") !== false, $t);
+caso('A2: el texto de Pablo del 3-nov, con el anual y el mensual', strpos($t, "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: \$190.000\n2. Plan mensual: \$30.000\n\nLos dos planes incluyen todo:") !== false, $t);
 caso('A2: sin pago único ni pago inicial', mb_stripos($t, 'pago único') === false && mb_stripos($t, 'inicial') === false, $t);
 $cot = $n['comercial_cotizacion'] ?? [];
 caso('A2: congela anual, mensual y el pago único de lista (por si lo pide)', ($cot['modelo'] ?? '') === 'a2' && ($cot['anual'] ?? '') === '$190.000' && ($cot['mensual'] ?? '') === '$30.000'

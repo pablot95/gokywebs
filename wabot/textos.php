@@ -835,9 +835,9 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         'modelos' => [
             'a2' => [
                 'comercial' => [
-                    // 3-nov (Pablo): «precios se dan:» con estos textos, tal cual (el "$" va para que se lea el monto).
-                    'planes_informativa' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
-                    'planes_panel' => "Tenemos distintas modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    // 3-nov (Pablo): «precios se dan:» con estos textos, tal cual; «Tenemos dos modalidades», no «distintas» (el "$" va para que se lea el monto).
+                    'planes_informativa' => "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
+                    'planes_panel' => "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
                     'con_reservas' => "Con reservas quedaría en:\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}",
                     'postdemo' => ['pregunta_modalidad' => 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?'],
                 ],
