@@ -1,0 +1,3 @@
+<FilesMatch "^products(-menor|-mayor)?\.jsonl$">
+  Require all denied
+</FilesMatch>
