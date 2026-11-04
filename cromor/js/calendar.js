@@ -1,7 +1,7 @@
 // Calendario mensual + modal con el detalle de cada día — Hola Mor
 import { db } from '../firebase-config.js';
 import {
-    collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteField,
+    collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteField, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { formatTime, escHtml, getDateKey, toast, roundSecondsToQuarterHour } from './utils.js';
 
@@ -34,6 +34,7 @@ let viewYear, viewMonth; // viewMonth: 0-indexed
 let currentModalDateKey = null;
 let currentModalData = null;
 let editingTaskId = null; // task del resumen "por task" que se está editando con el lápiz
+let editingDayTime = null; // 'total' | 'sa' mientras se edita el tiempo general del día
 let taskTypeNames = ['CP', 'PT', 'O'];
 let calendarProjects = []; // proyectos del usuario (colección categories) para cambiar el de una task
 let doneDays = {}; // dateKey -> true. Independiente de "finalized" (que se resetea con cualquier edición).
@@ -161,8 +162,10 @@ export async function initCalendar(userId) {
     $('dayModalPrev').addEventListener('click', () => shiftModalDay(-1));
     $('dayModalNext').addEventListener('click', () => shiftModalDay(1));
     $('dayModalDone').addEventListener('change', e => setDayDone(currentModalDateKey, e.target.checked));
+    $('dayModalTotalEdit').addEventListener('click', () => toggleDayTimeEdit('total'));
+    $('dayModalSaEdit').addEventListener('click', () => toggleDayTimeEdit('sa'));
     document.addEventListener('keydown', e => {
-        if (!$('dayModal').classList.contains('open') || editingTaskId) return;
+        if (!$('dayModal').classList.contains('open') || editingTaskId || editingDayTime) return;
         if (e.target.closest?.('input, textarea, select')) return;
         if (e.key === 'ArrowLeft') shiftModalDay(-1);
         if (e.key === 'ArrowRight') shiftModalDay(1);
@@ -287,6 +290,7 @@ function openDayModal(dateKey, data) {
     currentModalDateKey = dateKey;
     currentModalData = data;
     editingTaskId = null;
+    editingDayTime = null;
     const [y, m, d] = dateKey.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     $('dayModalTitle').textContent = dateObj.toLocaleDateString('es-AR', {
@@ -310,8 +314,11 @@ async function shiftModalDay(delta) {
     let data = { projects: {}, generalSeconds: 0 };
     try {
         const snap = await getDoc(doc(db, 'users', uid, 'days', dateKey));
-        // igual que la grilla: solo cuentan los días finalizados
+        // igual que la grilla: solo cuentan los días finalizados. Un día en curso (sin
+        // finalizar) no se deja editar desde acá para no pisar el reloj de «Hoy».
         if (snap.exists() && snap.data().finalized) data = snap.data();
+        else if (snap.exists()) data._live = true;
+        else data._missing = true;
     } catch (e) {
         console.error(e);
         toast('No se pudo cargar el día', 'error');
@@ -334,10 +341,9 @@ function renderDayModal() {
     const allProjEntries = Object.entries(data.projects || {}).filter(([, p]) => (p.seconds || 0) > 0);
     const taskSeconds = allProjEntries.reduce((sum, [, p]) => sum + taskDisplaySeconds(p), 0);
     const generalSeconds = Math.max(data.generalSeconds || 0, taskSeconds);
-    $('dayModalTotal').innerHTML = fmtTime(generalSeconds);
-
     const unassignedSeconds = Math.max(0, generalSeconds - taskSeconds);
-    $('dayModalUnassigned').innerHTML = fmtTime(unassignedSeconds);
+    renderDayTime('total', generalSeconds);
+    renderDayTime('sa', unassignedSeconds);
 
     // Totales por tipo
     const dayTaskTypes = getDayTaskTypeNames(data);
@@ -585,11 +591,114 @@ async function saveDayTaskEdits(projId) {
     renderDayModal();
 }
 
+// ── Tiempo general del día editable (total y SA) ──
+// SA = total − suma de las tasks. Editar el total mueve el SA; editar el SA mueve el
+// total (las tasks quedan igual). El total nunca baja de la suma de las tasks.
+const DAY_TIME_IDS = {
+    total: { val: 'dayModalTotal', btn: 'dayModalTotalEdit', label: 'total del día' },
+    sa:    { val: 'dayModalUnassigned', btn: 'dayModalSaEdit', label: 'tiempo SA' },
+};
+
+function canEditDayTime() {
+    const data = currentModalData;
+    if (!data || data._live) return false;
+    // un día sin registro solo se crea si ya pasó (hoy y lo que viene los maneja «Hoy»)
+    if (data._missing && currentModalDateKey >= getDateKey()) return false;
+    return true;
+}
+
+function dayTaskSeconds() {
+    return Object.values(currentModalData?.projects || {})
+        .filter(p => (p.seconds || 0) > 0)
+        .reduce((sum, p) => sum + taskDisplaySeconds(p), 0);
+}
+
+function renderDayTime(kind, secs) {
+    const ids = DAY_TIME_IDS[kind];
+    const valEl = $(ids.val);
+    const btn = $(ids.btn);
+    const editable = canEditDayTime();
+    btn.hidden = !editable;
+    if (editingDayTime === kind && editable) {
+        valEl.innerHTML = `<input class="modal-task-time-input" value="${formatTime(Math.round(secs))}" inputmode="numeric" aria-label="Editar ${ids.label}" title="HH:MM:SS, MM:SS o minutos">`;
+        btn.textContent = '✓';
+        btn.classList.add('is-done');
+        btn.title = 'Guardar';
+        btn.setAttribute('aria-label', 'Guardar');
+        const inp = valEl.querySelector('input');
+        inp.addEventListener('keydown', e => {
+            e.stopPropagation();
+            if (e.key === 'Enter') { e.preventDefault(); saveDayTime(kind, inp.value); }
+            if (e.key === 'Escape') { e.preventDefault(); editingDayTime = null; renderDayModal(); }
+        });
+    } else {
+        valEl.innerHTML = fmtTime(secs);
+        btn.textContent = '✎';
+        btn.classList.remove('is-done');
+        btn.title = `Editar ${ids.label}`;
+        btn.setAttribute('aria-label', `Editar ${ids.label}`);
+    }
+}
+
+function toggleDayTimeEdit(kind) {
+    if (editingDayTime === kind) {
+        const inp = $(DAY_TIME_IDS[kind].val).querySelector('input');
+        if (inp) { saveDayTime(kind, inp.value); return; }
+    }
+    editingDayTime = kind;
+    renderDayModal();
+    const inp = $(DAY_TIME_IDS[kind].val).querySelector('input');
+    if (inp) { inp.focus(); inp.select(); }
+}
+
+async function saveDayTime(kind, rawValue) {
+    const secs = parseTimeToSeconds(rawValue);
+    if (secs === null) { toast('Tiempo inválido (HH:MM:SS, MM:SS o minutos)', 'error'); return; }
+
+    const taskSeconds = dayTaskSeconds();
+    let newGeneral = kind === 'sa' ? taskSeconds + secs : secs;
+    if (newGeneral < taskSeconds) {
+        newGeneral = taskSeconds;
+        toast('El total no puede quedar por debajo de la suma de las tasks', 'error');
+    }
+
+    const dateKey = currentModalDateKey;
+    const data = currentModalData;
+    const before = Math.max(data.generalSeconds || 0, taskSeconds);
+    editingDayTime = null;
+
+    if (Math.round(before) !== Math.round(newGeneral)) {
+        try {
+            const ref = doc(db, 'users', uid, 'days', dateKey);
+            if (data._missing) {
+                await setDoc(ref, {
+                    date: dateKey, projects: {}, generalSeconds: newGeneral,
+                    finalized: true, finalizedAt: serverTimestamp(),
+                }, { merge: true });
+                delete data._missing;
+                data.date = dateKey;
+                data.finalized = true;
+            } else {
+                await updateDoc(ref, { generalSeconds: newGeneral });
+            }
+            data.generalSeconds = newGeneral;
+            toast(kind === 'sa' ? 'Tiempo SA actualizado' : 'Total del día actualizado', 'success');
+            renderCalendar(); // refresca el total del día en la grilla del mes
+        } catch (e) {
+            console.error(e);
+            toast('No se pudo guardar el tiempo', 'error');
+        }
+    }
+
+    if (currentModalDateKey === dateKey) renderDayModal();
+}
+
 function closeModal() {
     $('dayModal').classList.remove('open');
     currentModalDateKey = null;
     currentModalData = null;
     editingTaskId = null;
+    editingDayTime = null;
 }
 
 // ── Exportar a Excel (.xlsx con formato, armado con ExcelJS) ──

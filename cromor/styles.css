@@ -1701,6 +1701,22 @@ input.clock-digital[readonly] {
     font-size: .95rem;
 }
 
+.modal-total-val {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.modal-total-val .modal-task-edit[hidden] {
+    display: none;
+}
+
+.modal-total-val .modal-task-time-input {
+    width: 110px;
+    margin-left: 0;
+    font-size: 1rem;
+}
+
 .modal-columns {
     display: grid;
     grid-template-columns: 1fr 1fr;
