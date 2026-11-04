@@ -203,7 +203,8 @@ function wabot_textos_default() {
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros.',
         'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual y en el anual.',
         // Menos de 30 productos: la carga la hacemos nosotros (Pablo, 1-nov).
-        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Si son hasta 30 productos los cargamos todos nosotros; si son más, los primeros, y cuando esté lista te mostramos cómo se usa.',
+        // Sin «Sí,» adelante: a «¿se paga aparte?» le contestaba que sí (Lali, 4-nov 09:51).
+        'carga' => 'Lo manejás vos desde tu panel, cuando quieras y sin costo extra. Si son hasta 30 productos los cargamos todos nosotros; si son más, los primeros, y cuando esté lista te mostramos cómo se usa.',
         /* "Se pueden cargar todos ustedes?" no es "lo puedo manejar yo?" (Pablo,
          * 9-oct: la respuesta de arriba contradecía la pregunta). Con sus palabras
          * del 22-sep: algunos los cargamos para entregarla funcionando; todos,
