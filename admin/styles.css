@@ -3185,7 +3185,7 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 
 /* ── Bocetos en dos columnas (4-nov): lista 70 % + entregas por hora 30 % ── */
 .prop-split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 14px; align-items: start; }
-.prop-tabla .clients-table { min-width: 0; }
+.prop-tabla .clients-table { min-width: 640px; }   /* en el celular scrollea de costado en vez de aplastarse */
 .prop-tabla .clients-table th,
 .prop-tabla .clients-table td { padding: 8px 8px; font-size: 12.5px; }
 .prop-tabla .clients-table th { font-size: 10.5px; }
@@ -3209,20 +3209,25 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .pe-dia + .pe-dia { margin-top: 12px; }
 .pe-dia-cab { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 12.5px; color: #e6ecf7; text-transform: capitalize; padding: 0 2px 5px; border-bottom: 1px solid #1e2c49; margin-bottom: 4px; }
 .pe-dia-cab span { font-weight: 600; font-size: 11.5px; color: #8a9bb8; text-transform: none; }
-.pe-hora { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 8px; font: inherit; font-size: 12.5px; color: #5b6b88; cursor: default; text-align: left; }
+.pe-hora { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 8px; font: inherit; font-size: 12.5px; color: #7d8db0; cursor: default; text-align: left; }
 .pe-hora .pe-h { font-variant-numeric: tabular-nums; }
 .pe-hora.con { color: #e6ecf7; background: rgba(96,165,250,.10); border-color: rgba(96,165,250,.28); cursor: pointer; margin: 2px 0; }
 .pe-hora.con .pe-n { color: #60A5FA; font-weight: 700; }
 .pe-hora.con:hover { border-color: #60A5FA; }
-.pe-hora.paso { opacity: .45; }
+.pe-hora.paso { opacity: .6; }
 .pe-hora.con.paso { opacity: .7; }
 .pe-hora.sel { background: #1d4ed8; border-color: #1d4ed8; color: #fff; opacity: 1; }
 .pe-hora.sel .pe-n { color: #fff; }
 @media (max-width: 1100px) {
     .prop-split { grid-template-columns: 1fr; }
-    .prop-entregas { position: static; max-height: none; }
+    /* Arriba de la lista y con alto fijo: al final de 30 bocetos no se veía nunca. */
+    .prop-entregas { position: static; max-height: 240px; order: -1; }
 }
+.prop-entrega-auto { background: rgba(148,163,184,.12); color: #a8b3c7; border: 1px solid rgba(148,163,184,.35); border-radius: 99px; padding: 1px 8px; font-size: 10px; font-weight: 700; white-space: nowrap; }
 
 /* «Ver chat» + «Ver demo» (4-nov): uno al lado del otro, sin partir el texto. */
 .ver-chat-demo { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .ver-chat-demo > .btn-ghost { white-space: nowrap; margin: 0 !important; }
+
+/* .fila (4-nov): Inversión la usa con justify-content/gap inline, pero la clase no existía y quedaba en bloque. */
+.fila { display: flex; align-items: center; }

@@ -2250,7 +2250,8 @@ function burbujaCita(t, chat) {
                     'pago_asignar_ya_confirmado' => 'Ese chat ya tiene un pago confirmado.', 'pago_asignar_no_existe' => 'Ese pago ya no está en la lista.', 'pago_asignar_ya_asignado' => 'Ese pago ya se confirmó o se ignoró (la lista estaba vieja).', 'pago_ignorar_error' => 'No se pudo sacar el pago de la lista (ya no estaba o se estaba procesando): recargá y probá de nuevo.',
                     'pago_asignar_ocupado' => 'Ese chat se está procesando: probá de nuevo en unos segundos.', 'pago_asignar_error' => 'No se pudo asignar el pago. Revisá el log.',
                     'pago_cliente_sin_cliente' => 'Elegí de qué cliente es.', 'pago_asignar_sin_destino' => 'Elegí de quién es el pago.', 'pago_cliente_ok' => 'Listo: quedó como pago de ese cliente (y lo que entre de ese mail, también).'] as $k => $txt) {
-              if (isset($_GET[$k])) echo '<p class="ok" style="color:var(--bad)">' . $e($txt) . '</p>'; } ?>
+              // El de éxito (pago_cliente_ok) salía en rojo como los errores (4-nov).
+              if (isset($_GET[$k])) echo '<p class="ok"' . ($k === 'pago_cliente_ok' ? '' : ' style="color:var(--bad)"') . '>' . $e($txt) . '</p>'; } ?>
     <?php if (isset($_GET['template_saludo_ok'])) echo '<p class="ok">Plantilla «saludo» enviada.</p>'; ?>
     <?php if (isset($_GET['template_saludo_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_saludo_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó la plantilla «saludo» o no está activa en Ajustes.</p>'; ?>

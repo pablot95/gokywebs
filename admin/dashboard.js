@@ -74,10 +74,12 @@ let activeTab = "clientes";
 // ¿El panel del bot está en pantalla fija (Conversaciones) o crece con su
 // contenido (Textos, Entrenamiento)? Lo avisa el propio iframe por postMessage.
 let wabotPantallaFija = true;
-document.querySelectorAll(".tab-btn").forEach(btn => {
+// Solo las pestañas de arriba ([data-tab]): los botones «Consumidor final / Con datos» de los
+// modales de factura también usan .tab-btn y, al tocarlos, escondían todas las pestañas (4-nov).
+document.querySelectorAll(".tab-btn[data-tab]").forEach(btn => {
     btn.addEventListener("click", () => {
         const tabAnterior = activeTab;
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-btn[data-tab]").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         activeTab = btn.dataset.tab;
         document.getElementById("tabClientes").hidden      = activeTab !== "clientes";
@@ -195,6 +197,11 @@ async function abrirWabot() {
 // no hay que lidiar con DST.
 function argYmd(ts) {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(ts * 1000));
+}
+/* AAAA-MM-DD de la fecha LOCAL (4-nov): toISOString() da la de UTC y después
+   de las 21 h de Argentina «hoy» salía como mañana (tareas, facturas, seguimientos). */
+function ymdLocal(d = new Date()) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 function ymdAgregarDias(ymd, dias) {
     const [y, m, d] = ymd.split('-').map(Number);
@@ -6246,8 +6253,18 @@ function getPropuestaFechaInfo(p) {
    Pablo, 2-nov: verla en la lista). "Cualquier horario" no la deja: no se muestra nada.
    En ámbar si ya pasó y el boceto sigue acá (todavía no se presentó). */
 function entregaPedidaHTML(p) {
-    const d = mantToDate(p.demoProgramadaAt);
+    /* 4-nov: también la hora del turno automático (sin hora elegida), la misma que
+       cuenta «Entregas por hora»; en gris para que se distinga de la que pidió él. */
+    const e = horaEntregaDemo(p);
+    const d = e?.d;
     if (!d) return "";
+    if (!e.eligio) {
+        const hoyA = new Date();
+        const dd = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoyA.getFullYear(), hoyA.getMonth(), hoyA.getDate())) / 86400000);
+        if (dd < -1) return "";
+        const diaA = dd === 0 ? "hoy" : dd === 1 ? "mañana" : dd === -1 ? "ayer" : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
+        return `<div style="margin-top:5px"><span class="prop-entrega-auto" title="No eligió hora en el formulario: sale con el turno automático (antes de las 11 → 14 h, de 11 a 15 → 18 h, desde las 15 → 14 h del día siguiente)">🕐 Sale ${escapeHtml(diaA)} ${String(d.getHours()).padStart(2, "0")}:00</span></div>`;
+    }
     const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
     const hoy = new Date();
     const dias = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
@@ -7229,7 +7246,7 @@ function campoFactura(id) {
 function fechaInput(desplazamientoDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + desplazamientoDias);
-    return d.toISOString().slice(0, 10);
+    return ymdLocal(d);
 }
 
 function llenarSelect(select, opciones, seleccionado) {
@@ -7683,7 +7700,7 @@ async function pasarPropuestaASeguimiento(p, clienteId, extra = {}) {
 
     const en72Horas = new Date();
     en72Horas.setDate(en72Horas.getDate() + 3);
-    const hablarleElDia = en72Horas.toISOString().split("T")[0];
+    const hablarleElDia = ymdLocal(en72Horas);
 
     // Snapshot completo del boceto: como acto seguido borramos la propuesta original,
     // esta es la única copia que queda. Guardar TODO evita perder campos (rubro,
@@ -9054,7 +9071,7 @@ document.querySelector(".date-click-wrap")?.addEventListener("click", (e) => {
 let editingTareaId = null;
 
 function openAddTareaModal(dateStr, contexto = "", taskToEdit = null) {
-    const today = new Date().toISOString().split("T")[0];
+    const today = ymdLocal();
     editingTareaId = taskToEdit ? taskToEdit.id : null;
 
     const fecha    = taskToEdit ? taskToEdit.fecha : (dateStr || today);
@@ -9126,7 +9143,7 @@ taskForm.addEventListener("submit", async (e) => {
 
 // Botón "Agregar tarea hoy" desde el header del calendario
 document.getElementById("addTareaHoyBtn")?.addEventListener("click", () => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = ymdLocal();
     openAddTareaModal(today);
 });
 
