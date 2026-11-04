@@ -1,0 +1,21 @@
+{
+  "nota": "Imágenes ilustrativas: las 9 de contenido y el mock up llegaron en el zip de ChatGPT (Pequeletras_Meuxfci8okAkEqMZzopw.zip, 4-nov-2026). Cuando la clienta mande páginas reales de sus PDF, reemplazan p-*.webp y m-*.webp con el mismo nombre.",
+  "logo.webp": "Logo que mandó la clienta con el formulario (wabot/data/media/5493816733638/20261104-092928-f6ca5c91.jpg, 640x640): recorte circular con alfa. Pedir el original en alta.",
+  "favicon.png / favicon-180.png": "Del mismo logo.",
+  "hero-mesa.webp": "02_imagen.jpg (16:9)",
+  "v-hojas.webp": "01_imagen.jpg (9:16)",
+  "n-primaria.webp": "Recorte 4:3 de 01_imagen.jpg",
+  "n-secundaria.webp": "Recorte 4:3 de 07_imagen.jpg",
+  "p-pack-primer.webp": "Recorte 1:1 de 01_imagen.jpg",
+  "p-pack-segundo.webp": "Recorte 1:1 de 02_imagen.jpg",
+  "p-trazos.webp": "03_imagen.jpg",
+  "p-contar.webp": "04_imagen.jpg",
+  "p-figuras.webp": "05_imagen.jpg",
+  "p-comprension.webp": "06_imagen.jpg",
+  "p-funciones.webp": "07_imagen.jpg",
+  "p-hojas.webp": "08_imagen.jpg",
+  "p-plantas.webp": "09_imagen.jpg",
+  "m-*.webp": "Detalles 1:1 de las mismas imágenes, usados como páginas de muestra (con marca de agua por CSS)",
+  "og-pequeletras.jpg": "02_imagen.jpg + logo, 1200x630",
+  "bancos": "Ninguna foto de bancos libres."
+}
