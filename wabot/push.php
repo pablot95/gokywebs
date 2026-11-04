@@ -427,34 +427,73 @@ function wabot_aviso_resumen_texto($c) {
     return 'DemosE: ' . $c['demos'] . "\nNormal: " . $c['normal'];
 }
 
+/* ── Desde el 4-nov: solo demos entregadas, de a una persona ──────────────
+ *
+ * Pablo: "que los mensajes que manda el bot a mi whatsapp sean solo de demos
+ * entregadas, que me diga 'Tenés un mensaje de xxxx' y el siguiente mensaje
+ * no lo diga, solo me vuelva a escribir si otro de demo escribió".
+ * Se avisa la primera vez que una demo entregada queda sin leer; si esa
+ * misma persona sigue escribiendo, silencio. Vuelve a sonar cuando escribe
+ * OTRA demo entregada (y después, si vuelve la primera, suena de nuevo
+ * porque ya no es la última avisada). Los chats normales no avisan.
+ */
+
+/** Las demos entregadas sin leer que escribieron después de $desde, de la más vieja a la más nueva. */
+function wabot_aviso_demo_nuevos($items, $ahora, $desde) {
+    $r = [];
+    foreach ($items as $it) {
+        $clave = (string)($it['conversation_key'] ?? $it['tel'] ?? '');
+        if ($clave === '' || stripos($clave, 'TEST') !== false) continue;
+        if (!in_array((string)($it['grupo'] ?? ''), ['presentados', 'presentadas_48'], true)) continue;
+        if (!wabot_aviso_resumen_sin_leer($it, $ahora)) continue;
+        if ((int)$it['ultimo_cliente_ts'] <= $desde) continue;
+        $r[] = $it;
+    }
+    usort($r, function ($a, $b) { return (int)$a['ultimo_cliente_ts'] <=> (int)$b['ultimo_cliente_ts']; });
+    return $r;
+}
+
+function wabot_aviso_demo_texto($it) {
+    return 'Tenés un mensaje de ' . wabot_push_quien($it);
+}
+
 /**
- * Manda el resumen si hay algún sin leer nuevo desde el último. $items y
- * $enviar solo los pasan las pruebas; en producción, la lista del panel y el
- * WhatsApp a Pablo.
+ * Manda "Tenés un mensaje de X" por cada demo entregada nueva sin leer, salvo
+ * que X sea la última que ya se avisó. $items y $enviar solo los pasan las
+ * pruebas; en producción, la lista del panel y el WhatsApp a Pablo.
  */
 function wabot_aviso_resumen_correr($ahora = null, $items = null, $enviar = null) {
     $ahora = $ahora ?? time();
     if ($enviar === null) {
         if (!wabot_aviso_whatsapp_activo()) return ['enviado' => false, 'motivo' => 'apagado'];
         $enviar = function ($texto) {
-            return wabot_aviso_whatsapp_enviar('Chats sin leer', $texto, ['solo_texto' => true, 'tel' => '-']);
+            return wabot_aviso_whatsapp_enviar('Mensaje de demo', $texto, ['solo_texto' => true, 'tel' => '-']);
         };
     }
-    $c = wabot_aviso_resumen_cuentas($items ?? wabot_lista_items(), $ahora);
     $estado = wabot_aviso_estado();
-    $res = ['enviado' => false, 'demos' => $c['demos'], 'normal' => $c['normal']];
-    if ($c['demos'] + $c['normal'] === 0) return $res + ['motivo' => 'nada_sin_leer'];
-    if ($c['ultimo'] <= (int)($estado['resumen_hasta'] ?? 0)) return $res + ['motivo' => 'nada_nuevo'];
-    if ($ahora - (int)($estado['resumen_ts'] ?? 0) < WABOT_AVISO_RESUMEN_ESPACIO) return $res + ['motivo' => 'muy_seguido'];
-    $texto = wabot_aviso_resumen_texto($c);
-    if (!$enviar($texto)) return $res + ['motivo' => 'no_salio'];
+    $nuevos = wabot_aviso_demo_nuevos($items ?? wabot_lista_items(), $ahora, (int)($estado['resumen_hasta'] ?? 0));
+    if (!$nuevos) return ['enviado' => false, 'motivo' => 'nada_nuevo'];
+    $ultimaClave = (string)($estado['demo_ultima_clave'] ?? '');
+    $hasta = (int)($estado['resumen_hasta'] ?? 0);
+    $mandados = [];
+    foreach ($nuevos as $it) {
+        $clave = (string)($it['conversation_key'] ?? $it['tel'] ?? '');
+        if ($clave !== $ultimaClave) {
+            if (!$enviar(wabot_aviso_demo_texto($it))) break;   // lo que no salió lo levanta la próxima vuelta
+            $mandados[] = $clave;
+            $ultimaClave = $clave;
+        }
+        $hasta = max($hasta, (int)$it['ultimo_cliente_ts']);
+    }
     // Releído: el envío pisa el estado (ultimo_aviso_*) y Pablo pudo escribir mientras tanto.
     $estado = wabot_aviso_estado();
-    $estado['resumen_ts'] = $ahora;
-    $estado['resumen_hasta'] = $c['ultimo'];
+    $estado['resumen_hasta'] = $hasta;
+    $estado['demo_ultima_clave'] = $ultimaClave;
+    if ($mandados) $estado['resumen_ts'] = $ahora;
     wabot_aviso_estado_guardar($estado);
-    wabot_log('aviso_resumen', ['demos' => $c['demos'], 'normal' => $c['normal']]);
-    return ['enviado' => true] + $res;
+    if (!$mandados) return ['enviado' => false, 'motivo' => 'misma_persona'];
+    wabot_log('aviso_demo', ['claves' => $mandados]);
+    return ['enviado' => true, 'claves' => $mandados];
 }
 
 /* ── Cuándo avisar ────────────────────────────────────────────────────── */

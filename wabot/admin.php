@@ -516,9 +516,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, los avisos andan.',
                                ['tel' => 'prueba', 'link' => 'https://www.gokywebs.com/wabot/admin.php?tab=estado']);
-        // Por WhatsApp va el resumen de ahora mismo, tal cual le llegaría (3-nov).
-        $resumenAhora = wabot_aviso_resumen_texto(wabot_aviso_resumen_cuentas(wabot_lista_items(), time()));
-        $n += wabot_aviso_whatsapp_enviar('Chats sin leer', $resumenAhora, ['solo_texto' => true, 'tel' => '-'], $cfg) ? 1 : 0;
+        // Por WhatsApp va el aviso tal cual le llegaría (4-nov): la última demo entregada sin leer, o uno de muestra.
+        $demosAhora = wabot_aviso_demo_nuevos(wabot_lista_items(), time(), 0);
+        $avisoAhora = $demosAhora ? wabot_aviso_demo_texto(end($demosAhora)) : 'Tenés un mensaje de (prueba)';
+        $n += wabot_aviso_whatsapp_enviar('Mensaje de demo', $avisoAhora, ['solo_texto' => true, 'tel' => '-'], $cfg) ? 1 : 0;
         $via = (string)(wabot_aviso_estado()['ultimo_aviso_via'] ?? '');
         echo json_encode(['ok' => $n > 0, 'dispositivos' => $n, 'via' => $via,
                           'error' => $n > 0 ? '' : 'No salió por ningún lado. Por WhatsApp hace falta la ventana abierta o la plantilla aprobada; por push, "Activar acá" en el celular.']);
@@ -2350,7 +2351,7 @@ function burbujaCita(t, chat) {
             <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
                 <div>
                     <strong>Avisos por WhatsApp <?= $avisoActivo ? 'activos' : 'apagados' ?></strong>
-                    <p class="meta">El bot te escribe a tu WhatsApp (<?= $avisoTel !== '' ? htmlspecialchars(wabot_formatear_tel($avisoTel)) : 'sin número' ?>) solo cuántos chats tenés sin leer, separados en <code>DemosE</code> (demo entregada) y <code>Normal</code>. Sin links; los que tienen la demo por presentar no cuentan. Sale cuando entra uno nuevo, con 10 minutos como mínimo entre un resumen y otro.</p>
+                    <p class="meta">El bot te escribe a tu WhatsApp (<?= $avisoTel !== '' ? htmlspecialchars(wabot_formatear_tel($avisoTel)) : 'sin número' ?>) solo cuando te escribe alguien con la demo entregada: <code>Tenés un mensaje de …</code>. Si esa misma persona sigue escribiendo no te vuelve a avisar; vuelve a sonar cuando escribe otra demo entregada. Los chats normales y los de demo por presentar no avisan.</p>
                 </div>
                 <form method="post" class="fila" style="gap:8px;flex-wrap:wrap;align-items:center">
                     <input type="hidden" name="accion" value="aviso_guardar">
