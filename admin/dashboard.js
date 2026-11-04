@@ -9372,6 +9372,7 @@ function renderCompletados() {
             <td class="center">${escapeHtml(fechaStr)}</td>
             <td class="actions-col">
                 ${c.factura?.cae ? `<button class="icon-btn" data-comp-factura="${c.id}" title="Descargar factura ${numeroComprobante(c.factura.puntoVenta, c.factura.numero)} para imprimir">🧾</button>` : ''}
+                <button class="icon-btn" data-comp-edit="${c.id}" title="Editar">✎</button>
                 <button class="icon-btn delete" data-comp-del="${c.id}" title="Eliminar permanentemente">🗑</button>
             </td>
         </tr>`;
@@ -9385,6 +9386,14 @@ function renderCompletados() {
         btn.addEventListener("click", () => {
             const completado = completados.find(x => x.id === btn.dataset.compFactura);
             if (completado?.factura) abrirComprobante(completado.factura);
+        });
+    });
+
+    // Editar un completado (4-nov-2026): nombre, proyecto, teléfono, valor y abono.
+    tbody.querySelectorAll("[data-comp-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const c = completados.find(x => x.id === btn.dataset.compEdit);
+            if (c) editarCompletado(c);
         });
     });
 
@@ -12128,4 +12137,48 @@ function renderStats() {
                 <p class="stats-note">Los clientes del plan anual y los de pago único suman su valor total (seña y saldo); los cobros anuales de los años siguientes no entran acá. Los del plan mensual suman $0, salvo el pago inicial que cobró el modelo del 10 al 14-sep-2026. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
             </div>
         </div>`;
+}
+
+/* Editar un completado (4-nov-2026): antes solo se podía bajar la factura o borrarlo. */
+function editarCompletado(c) {
+    const dlg = document.createElement("dialog");
+    dlg.className = "modal";
+    const campo = (name, label, value, type = "text") =>
+        `<label style="display:grid;gap:4px;margin-bottom:10px">${label}<input name="${name}" type="${type}" value="${escapeHtml(value ?? "")}"${type === "number" ? ' min="0" step="1"' : ""}></label>`;
+    dlg.innerHTML = `<form method="dialog" style="padding:20px;min-width:min(420px,90vw)">
+        <h3 style="margin-top:0">Editar completado</h3>
+        ${campo("nombre", "Nombre", c.nombre)}
+        ${campo("proyecto", "Proyecto", c.proyecto)}
+        ${campo("telefono", "Teléfono", c.telefono)}
+        ${campo("valorTotal", "Valor total", c.valorTotal, "number")}
+        ${campo("abono", "Abono mensual", c.abono, "number")}
+        <p data-comp-error style="color:#c0392b;min-height:1em"></p>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button type="button" class="btn" data-comp-cancel>Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>`;
+    document.body.append(dlg);
+    dlg.addEventListener("close", () => dlg.remove());
+    dlg.querySelector("[data-comp-cancel]").addEventListener("click", () => dlg.close());
+    dlg.querySelector("form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const f = event.currentTarget.elements;
+        const cambios = {
+            nombre: f.nombre.value.trim(),
+            proyecto: f.proyecto.value.trim(),
+            telefono: f.telefono.value.trim(),
+            valorTotal: Number(f.valorTotal.value) || 0,
+            abono: Number(f.abono.value) || 0
+        };
+        if (!cambios.nombre) { dlg.querySelector("[data-comp-error]").textContent = "Falta el nombre."; return; }
+        try {
+            await updateDoc(doc(db, "completados", c.id), cambios);
+            dlg.close();
+        } catch (err) {
+            dlg.querySelector("[data-comp-error]").textContent = "Error: " + err.message;
+        }
+    });
+    dlg.showModal();
+    dlg.querySelector('input[name="nombre"]').focus();
 }
