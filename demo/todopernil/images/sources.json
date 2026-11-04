@@ -1,0 +1,41 @@
+{
+  "zip_chatgpt": {
+    "origen": "Todo_Pernil_YelGVSuNR6rK9M9KY4E3.zip (imágenes ilustrativas generadas para la demo, 01-09 + mock up 10)",
+    "archivos": {
+      "pernil-alto.webp": "01_imagen.jpg (hero del Modelo 1)",
+      "p-pernil-cerdo.webp": "01_imagen.jpg recorte cuadrado",
+      "novillo-espejo.webp": "02_imagen.jpg espejada (hero del Modelo 2)",
+      "p-pernil-novillo.webp": "02_imagen.jpg recorte cuadrado",
+      "og-todopernil.jpg": "02_imagen.jpg",
+      "p-pernil-cordero.webp": "03_imagen.jpg",
+      "p-ribs.webp": "04_imagen.jpg",
+      "p-emp-carne.webp": "05_imagen.jpg",
+      "p-emp-pollo.webp": "06_imagen.jpg",
+      "p-emp-jyq.webp": "07_imagen.jpg",
+      "p-sandwich.webp": "08_imagen.jpg",
+      "p-emp-surtidas.webp": "09_imagen.jpg"
+    }
+  },
+  "cliente_formulario": {
+    "origen": "20 imágenes que subió Todo Pernil al formulario (wabot/data/media/5491158430652, bajadas con imagenes-bajar.php el 4-nov-2026)",
+    "archivos": {
+      "logo.webp": "18-imagen.jpg, recorte circular del logo con el aro celeste",
+      "etiqueta-cerdo.webp": "18-imagen.jpg, recorte de la etiqueta negra con el cerdo",
+      "favicon.png": "18-imagen.jpg, etiqueta del cerdo",
+      "favicon-180.png": "18-imagen.jpg, etiqueta del cerdo",
+      "real-horneado.webp": "19-imagen.jpg",
+      "cat-perniles.webp": "19-imagen.jpg recorte",
+      "real-envuelto.webp": "07-imagen.jpg recorte 4:5",
+      "real-salsas.webp": "16-imagen.jpg recorte 4:5",
+      "p-salsas.webp": "16-imagen.jpg recorte cuadrado",
+      "real-llega.webp": "20-imagen.jpg",
+      "p-pancitos.webp": "20-imagen.jpg recorte del plato de pancitos",
+      "real-kit.webp": "17-imagen.jpg",
+      "real-kit-oscuro.webp": "15-imagen.jpg recorte sin el marco de la historia",
+      "real-pernil.webp": "01-imagen.jpg recorte",
+      "real-patas.webp": "13-imagen.jpg",
+      "cat-extras.webp": "11-imagen.jpg recorte"
+    },
+    "sin_usar": "02 y 10 (historias de clientes: solo se citaron sus frases), 03, 04, 05, 06, 08, 09, 12, 14"
+  }
+}
