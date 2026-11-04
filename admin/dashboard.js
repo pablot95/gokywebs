@@ -6846,9 +6846,8 @@ function renderPropuestas() {
                     ${instagramUsuario(p.instagram)
                         ? `<div style="margin-top:5px">${instagramLinkHTML(p.instagram)}</div>`
                         : ""}
-                    ${/* 4-nov: «Demo / boceto» salía solo cuando no había Instagram (no decía nada);
-                         lo importante es si ya eligió cómo pagar. */ p.esProspecto
-                        ? `<div style="margin-top:5px"><span class="prop-origen-badge prop-origen-badge--prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló y la venta la seguís vos">Eligió avanzar</span></div>` : ""}
+                    ${/* 4-nov: «Demo / boceto» (salía solo sin Instagram) y después «Eligió avanzar» se sacaron
+                         de la fila a pedido de Pablo. */ ""}
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link" style="margin-top:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
