@@ -36,6 +36,7 @@ body.no-scroll{overflow:hidden}
 .m2 .hero-brand{display:block;margin-bottom:16px}
 .main-nav>a{min-width:44px;justify-content:center}
 .m2 .hero-badge{margin-inline:auto}
+@media(max-width:540px){.m2 .card-photo{height:100%;min-height:210px;align-self:stretch}}
 :root {
   --gw-modelos-bg: #17243B;
   --gw-modelos-active-bg: #fff;
