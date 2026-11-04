@@ -6,24 +6,27 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261104-revision">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="styles.css?v=20261104-hace-todo">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
         <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="clientes">Clientes<span class="pill-count" id="countClientesTab">0</span></button>
+            <button class="tab-btn active" data-tab="clientes"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes<span class="pill-count" id="countClientesTab">0</span></button>
             <button class="tab-btn" data-tab="wabot"><svg class="ico-wsp" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.67c2.2 0 4.27.86 5.83 2.42a8.19 8.19 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.23 8.23 0 0 1-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24Zm-2.4 4.34c-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.02s.87 2.34.99 2.5c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.43-.59 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.31-.74-1.79-.2-.47-.4-.4-.54-.41-.14 0-.3-.01-.46-.01Z"/></svg>WhatsApp<span class="pill-count" id="countWabotNoLeidos">0</span></button>
-            <button class="tab-btn" data-tab="propuestas">Prospectos<span class="pill-count" id="countPropuestas">0</span></button>
-            <button class="tab-btn" data-tab="seguimientos">Seguimientos</button>
-            <button class="tab-btn" data-tab="calendario">📅 Calendario</button>
+            <button class="tab-btn" data-tab="propuestas"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Prospectos<span class="pill-count" id="countPropuestas">0</span></button>
+            <button class="tab-btn" data-tab="seguimientos"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Seguimientos</button>
+            <button class="tab-btn" data-tab="calendario"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendario</button>
             <!-- Métricas escondida (10-oct-2026, Pablo: "por ahora no me sirven"). Para volver a mostrarla, sacarle hidden y style. -->
-            <button class="tab-btn" data-tab="metricas" hidden style="display:none">📊 Métricas</button>
-            <button class="tab-btn" data-tab="mantenimiento">🔧 Mantenimiento<span class="pill-count" id="countMantenimiento">0</span></button>
-            <button class="tab-btn" data-tab="inversion">💰 Inversión</button>
-            <button class="tab-btn" data-tab="finanzas">💼 Finanzas</button>
-            <button class="tab-btn" data-tab="errores">🐞 Errores<span class="pill-count pill-count--alerta" id="countErrores" hidden>0</span></button>
+            <button class="tab-btn" data-tab="metricas" hidden style="display:none"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>Métricas</button>
+            <button class="tab-btn" data-tab="mantenimiento"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Mantenimiento</button>
+            <button class="tab-btn" data-tab="inversion"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>Inversión</button>
+            <button class="tab-btn" data-tab="finanzas"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>Finanzas</button>
+            <button class="tab-btn" data-tab="errores"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><path d="M12 9v4M12 17h.01"/></svg>Errores<span class="pill-count pill-count--alerta" id="countErrores" hidden>0</span></button>
             <div class="tab-spacer"></div>
-            <button class="tab-btn tab-btn--secondary tab-btn--completados" data-tab="completados">Completados<span class="pill-count" id="countCompletados">0</span></button>
+            <button class="tab-btn tab-btn--secondary tab-btn--completados" data-tab="completados"><svg class="ico-tab" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>Completados</button>
             <button id="logoutBtn" class="tabs-salir" title="Cerrar sesión">Salir</button>
         </nav>
 
@@ -84,7 +87,7 @@
                         <span class="stat-value" id="totalSeguimientos">0</span>
                     </div>
                 </div>
-                <button id="openModalBtnSeg" class="btn-primary">+ Nuevo</button>
+                <button id="openModalBtnSeg" class="btn-primary">+ Nuevo seguimiento</button>
             </div>
 
 
@@ -129,8 +132,8 @@
         <section class="panel tab-panel" id="tabPropuestas" hidden>
             <div class="panel-header">
                 <div>
-                    <h1>Bocetos y prospectos</h1>
-                    <p class="muted">El bot sigue armando la demo gratis: cada una llega acá como "Demo / boceto". Cuando el cliente ya vio el precio y afirmó una forma de pago, el bot se calla solo (fase "prospecto", ver esProspecto) y esa ficha pasa a "Prospecto · eligió avanzar", para que sigas la venta a mano.</p>
+                    <h1>Prospectos</h1>
+                    <div class="panel-sub"><span class="muted">Los que completaron el formulario y esperan su demo.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Cada formulario llega acá con la hora en que pidió la demo. Cuando el cliente ya vio el precio y eligió cómo pagar, el bot se calla solo y la fila lleva la etiqueta verde «Eligió avanzar»: esa venta la seguís vos. Al presentar la demo pasa a Seguimientos.</p></details></div>
                 </div>
                 <!-- "+ Nuevo boceto" escondido, no borrado (Pablo, 15-sep): ya no se
                      arma un boceto/mockup antes de cobrar, así que no tiene sentido
@@ -328,7 +331,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p>
+                    <div class="panel-sub"><span class="muted">Los clientes con su plan: mensual por Mercado Pago o anual.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p></details></div>
                 </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
             </div>
@@ -336,8 +339,8 @@
                 <div class="mant-planes" id="mantPlanes" role="group" aria-label="Plan">
                     <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="porfuera" aria-pressed="false" title="Los mensuales que pagan fuera de Mercado Pago y el día del mes en que hay que cobrarles">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="vincular" aria-pressed="false" title="Qué suscripción de Mercado Pago es de cada cliente del plan mensual">Vincular con MP <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></button>
+                    <!-- 4-nov: «Pagan por afuera», «Vincular con MP» y los «Intentos de cobro» (antes en el Calendario) son una sola vista. -->
+                    <button type="button" class="mant-plan-btn" data-mantplan="cobros" aria-pressed="false" title="Intentos de cobro de Mercado Pago, qué suscripción es de cada cliente y los que pagan por afuera">Cobros <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
                 </div>
@@ -403,8 +406,14 @@
                     </table>
                 </div>
             </div>
+            <!-- Intentos de cobro (24-oct en el Calendario; desde el 4-nov acá, en «Cobros»). -->
+            <div id="mantIntentos" hidden>
+                <h3 class="mant-sec-titulo">Intentos de cobro</h3>
+                <div id="calVistaIntentos"></div>
+            </div>
             <!-- Pagan por afuera (19-oct-2026): el día del mes en que se le cobra a cada uno. -->
             <div id="mantPorFuera" hidden>
+                <h3 class="mant-sec-titulo">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></h3>
                 <p class="muted mant-pf-nota">El día del mes en que le cobrás a cada uno. El Calendario y Finanzas lo cuentan ese día; sin día, el del alta.</p>
                 <!-- 25-oct-2026: ese día el bot le manda la plantilla de renovación (wabot/renovacion.php). -->
                 <p class="muted mant-pf-nota" id="mantPorFueraAviso"></p>
@@ -429,6 +438,7 @@
             <!-- Vincular con MP (24-oct-2026): cada mensual con su suscripción de Mercado Pago, guardada en
                  preapprovalId. Sin vínculo, el admin la adivina por monto, fecha de alta y nombre. -->
             <div id="mantVincular" hidden>
+                <h3 class="mant-sec-titulo">Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></h3>
                 <p class="muted mant-pf-nota">Elegí la suscripción de Mercado Pago de cada cliente y guardala: queda fija y el Calendario, Finanzas y las bajas usan esa. Las que no están vinculadas se adivinan por monto, fecha de alta y nombre (“sugerida”).</p>
                 <div class="mant-vinc-barra" id="mantVincularBarra"></div>
                 <div class="table-wrapper">
@@ -594,7 +604,7 @@
                 <button type="button" class="subtab-btn" data-inv="ab">🧪 Precios A vs B</button>
             </nav>
             <div id="invVistaContactos">
-                <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta (se trae solo de la API de Meta, o lo cargás a mano), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
+                <div class="panel-sub"><span class="muted">Cuántos contactos y clientes trajo cada semana de publicidad.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta (se trae solo de la API de Meta, o lo cargás a mano), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p></details></div>
                 <div class="seg-views" id="inversionSemanas"></div>
                 <div id="inversionContent"><p class="muted">Cargando…</p></div>
             </div>
@@ -676,7 +686,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Errores</h1>
-                    <p class="muted">Cada web avisa sola cuando algo falla. Solo cuentan los errores críticos, los que hay que arreglar sí o sí: el servidor de la web que falla, un error en su código o un archivo que falta. Lo demás (bots, navegadores viejos, conexiones que se cortan, imágenes, servicios externos) queda plegado como aviso menor. "Marcar resueltos" deja el contador en cero y habilita el mensaje para el cliente.</p>
+                    <div class="panel-sub"><span class="muted">Los errores críticos de las webs de los clientes.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Cada web avisa sola cuando algo falla. Solo cuentan los errores críticos, los que hay que arreglar sí o sí: el servidor de la web que falla, un error en su código o un archivo que falta. Lo demás (bots, navegadores viejos, conexiones que se cortan, imágenes, servicios externos) queda plegado como aviso menor. "Marcar resueltos" deja el contador en cero y habilita el mensaje para el cliente.</p></details></div>
                 </div>
                 <div class="err-controles">
                     <select id="erroresMes" class="mes-select" aria-label="Mes"></select>
@@ -691,7 +701,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Completados</h1>
-                    <p class="muted">Registro de las webs entregadas. Al entregarla, el cliente pasa de Clientes a Mantenimiento (plan mensual o anual) y acá queda la copia de la entrega; el pago único no lleva mantenimiento y queda solo acá. El período se calcula por la fecha de creación del boceto.</p>
+                    <div class="panel-sub"><span class="muted">Las webs entregadas.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Registro de las webs entregadas. Al entregarla, el cliente pasa de Clientes a Mantenimiento (plan mensual o anual) y acá queda la copia de la entrega; el pago único no lleva mantenimiento y queda solo acá. El período se calcula por la fecha de creación del prospecto.</p></details></div>
                 </div>
                 <div class="stats-box stats-box--periods">
                     <div class="stat-item">
@@ -751,21 +761,17 @@
 
         <!-- Tab: Calendario -->
         <section class="panel tab-panel" id="tabCalendario" hidden>
-            <!-- 24-oct-2026: Calendario o Intentos de cobro (cada cobro de suscripción de Mercado Pago con sus reintentos). -->
-            <div class="seg-views" id="calVistas">
-                <button type="button" class="seg-chip active" data-cal-vista="calendario">Calendario</button>
-                <button type="button" class="seg-chip" data-cal-vista="intentos" title="Cada cobro de suscripción de Mercado Pago: cobrados, rechazados, reintentos y devueltos">Intentos de cobro <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
-            </div>
-            <div id="calVistaIntentos" hidden></div>
+            <!-- 4-nov: los Intentos de cobro pasaron a Mantenimiento → Cobros; acá queda la agenda. -->
             <div id="calVistaCalendario">
             <!-- 11-oct-2026: los cobros por día (antes en Inversión) viven acá, junto a las tareas. dashboard.js: renderCal. -->
             <div id="calResumen"></div>
             <div class="cal-layout">
                 <aside class="cal-sidebar">
                     <div class="cal-nav">
-                        <button id="calPrev" class="btn-ghost cal-nav-btn">&#8249;</button>
-                        <span id="calMonthLabel" class="cal-month-label"></span>
-                        <button id="calNext" class="btn-ghost cal-nav-btn">&#8250;</button>
+                        <button id="calPrev" class="btn-ghost cal-nav-btn" title="Mes anterior" aria-label="Mes anterior">&#8249;</button>
+                        <span id="calMonthLabel" class="cal-month-label" aria-live="polite"></span>
+                        <button id="calNext" class="btn-ghost cal-nav-btn" title="Mes siguiente" aria-label="Mes siguiente">&#8250;</button>
+                        <button id="calHoy" class="btn-ghost btn-xs cal-hoy-btn" title="Volver al mes de hoy">Hoy</button>
                     </div>
                     <!-- 16-oct-2026: suma de las suscripciones de los días elegidos, de uno o más meses. dashboard.js: _renderCalSuma. -->
                     <div class="cal-suma" id="calSuma" aria-live="polite"></div>
@@ -889,7 +895,7 @@
     <div id="propuestaModal" class="modal-backdrop" hidden>
         <div class="modal modal-propuesta">
             <div class="modal-header modal-header--no-title">
-                <h2 id="propuestaModalTitle">Detalle de propuesta</h2>
+                <h2 id="propuestaModalTitle">Detalle del prospecto</h2>
                 <button class="modal-close" id="closePropuestaModalBtn" aria-label="Cerrar">&times;</button>
             </div>
             <form id="propuestaForm">
@@ -1208,7 +1214,7 @@
                 <!-- Datos originales de la propuesta (solo lectura) -->
                 <div id="propuestaInfoSection" style="display:none;margin-top:16px">
                     <details>
-                        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--accent-green,#4ade80);padding:8px 0;user-select:none">📋 Detalle de propuesta original</summary>
+                        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--accent-green,#4ade80);padding:8px 0;user-select:none">📋 Detalle del prospecto original</summary>
                         <div id="propuestaInfoBody" class="propuesta-detail" style="margin-top:8px;font-size:13px"></div>
                     </details>
                 </div>
@@ -1221,6 +1227,14 @@
                     </details>
                 </div>
 
+                <!-- 4-nov: las contraseñas de este cliente (Mantenimiento → Contraseñas, por nombre o negocio). -->
+                <div id="credInfoSection" hidden style="margin-top:16px">
+                    <details>
+                        <summary class="modal-sec-summary" id="credInfoSummary">🔑 Contraseñas</summary>
+                        <div id="credInfoBody" style="margin-top:8px"></div>
+                    </details>
+                </div>
+
                 <!-- Reseñas dejadas desde el botón flotante de la demo (solo lectura) -->
                 <div id="resenasInfoSection" style="display:none;margin-top:16px">
                     <details>
@@ -1230,6 +1244,8 @@
                 </div>
 
                 <div class="modal-actions">
+                    <!-- 4-nov: borrar de verdad vive acá; en la fila el tacho de una web sin entregar era «Entregar». -->
+                    <button type="button" class="btn-ghost btn-eliminar-cliente" id="deleteClientBtn" hidden>Eliminar cliente</button>
                     <button type="button" class="btn-ghost" id="cancelBtn">Cancelar</button>
                     <button type="submit" class="btn-primary" id="saveBtn">Guardar</button>
                 </div>
@@ -1428,6 +1444,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261104-revision"></script>
+    <script type="module" src="dashboard.js?v=20261104-hace-todo"></script>
 </body>
 </html>

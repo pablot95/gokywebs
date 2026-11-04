@@ -63,13 +63,110 @@ const searchInput = document.getElementById("searchInput");
 
 const statCount = null; // eliminado
 
-document.getElementById("openModalBtn").addEventListener("click", () => openModal());
+// 4-nov: desde Clientes nace como Cliente (antes nacía en Seguimiento y no aparecía en esta lista).
+document.getElementById("openModalBtn").addEventListener("click", () => openModal(null, "cliente"));
 document.getElementById("closeModalBtn").addEventListener("click", tryCloseModal);
 document.getElementById("cancelBtn").addEventListener("click", tryCloseModal);
 modal.addEventListener("click", (e) => { if (e.target === modal && !window.getSelection().toString().length) tryCloseModal(); });
 searchInput.addEventListener("input", render);
 
+/* ── Teclado y lectores de pantalla (4-nov) ──
+   Todo el admin se usaba solo con el mouse. Sin tocar cada render:
+   - Escape cierra el modal de arriba con su propia ✕ (así respeta «¿Salir sin guardar?»).
+   - Los modales se anuncian como diálogo, toman el foco al abrir y lo devuelven al cerrar.
+   - Las filas que se abren con un clic y los <span> clickeables (teléfono, notas) se pueden
+     enfocar con Tab y abrir con Enter o espacio.
+   - Los botones que son solo un ícono (✎ 🗑 📅 🧾…) toman su title como nombre. */
+const A11Y_FILAS = "tr.client-row[data-row-id], tr[data-row-prop-id]";
+const A11Y_CLICKEABLES = ".phone-copy, .notes-label";
+function _a11yPasada() {
+    document.querySelectorAll(`${A11Y_FILAS}`).forEach(tr => {
+        if (!tr.hasAttribute("tabindex")) tr.tabIndex = 0;
+    });
+    document.querySelectorAll(A11Y_CLICKEABLES).forEach(el => {
+        if (el.hasAttribute("tabindex")) return;
+        el.tabIndex = 0;
+        el.setAttribute("role", "button");
+    });
+    document.querySelectorAll("button:not([aria-label])").forEach(b => {
+        const texto = (b.textContent || "").trim();
+        if (b.title && !/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]/.test(texto)) b.setAttribute("aria-label", b.title);
+    });
+}
+let _a11yPendiente = false;
+new MutationObserver(() => {
+    if (_a11yPendiente) return;
+    _a11yPendiente = true;
+    // setTimeout y no requestAnimationFrame: con la pestaña del navegador en segundo plano rAF no corre.
+    setTimeout(() => { _a11yPendiente = false; _a11yPasada(); }, 30);
+}).observe(document.body, { childList: true, subtree: true });
+_a11yPasada();
+
+document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target;
+    if (!(t instanceof Element) || !(t.matches(A11Y_FILAS) || t.matches(A11Y_CLICKEABLES))) return;
+    e.preventDefault();
+    t.click();
+});
+
+window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    const abiertos = [...document.querySelectorAll(".modal-backdrop")].filter(m => !m.hidden && m.getClientRects().length);
+    const arriba = abiertos[abiertos.length - 1];
+    const cerrar = arriba?.querySelector(".modal-close");
+    if (!cerrar) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cerrar.click();
+}, true);
+
+(function modalesComoDialogo() {
+    const opener = new WeakMap();
+    const preparar = (fondo) => {
+        const m = fondo.querySelector(".modal");
+        if (!m || m.hasAttribute("role")) return;
+        m.setAttribute("role", "dialog");
+        m.setAttribute("aria-modal", "true");
+        const h = m.querySelector(".modal-header h2");
+        if (h) {
+            if (!h.id) h.id = (fondo.id || "modal") + "Titulo";
+            m.setAttribute("aria-labelledby", h.id);
+        }
+    };
+    const alCambiar = (fondo) => {
+        if (!fondo.hidden) {
+            preparar(fondo);
+            opener.set(fondo, document.activeElement);
+            // El primer campo o, si no hay, la ✕; después de que el código que lo abrió termine de llenarlo.
+            setTimeout(() => {
+                if (fondo.hidden || fondo.contains(document.activeElement)) return;
+                // En el celular, la ✕ (enfocar un campo abriría el teclado encima del modal).
+                const tactil = matchMedia("(pointer: coarse)").matches;
+                const foco = (!tactil && fondo.querySelector(".modal input:not([type=hidden]):not([disabled]), .modal select, .modal textarea, .modal [autofocus]"))
+                    || fondo.querySelector(".modal-close");
+                foco?.focus({ preventScroll: true });
+            }, 30);
+        } else {
+            const antes = opener.get(fondo);
+            if (antes && document.contains(antes) && typeof antes.focus === "function") antes.focus({ preventScroll: true });
+        }
+    };
+    document.querySelectorAll(".modal-backdrop").forEach(fondo => {
+        preparar(fondo);
+        new MutationObserver(() => alCambiar(fondo)).observe(fondo, { attributes: true, attributeFilter: ["hidden"] });
+    });
+})();
+
 // --- Tabs ---
+/* 4-nov: los números de las pestañas se esconden en 0 (son pendientes: un «0» no dice nada). */
+(function contadoresSoloConAlgo() {
+    const sync = el => { el.hidden = (el.textContent || "").trim() === "0" || (el.textContent || "").trim() === ""; };
+    document.querySelectorAll(".tab-nav .pill-count").forEach(el => {
+        sync(el);
+        new MutationObserver(() => sync(el)).observe(el, { childList: true, characterData: true, subtree: true });
+    });
+})();
 let activeTab = "clientes";
 // ¿El panel del bot está en pantalla fija (Conversaciones) o crece con su
 // contenido (Textos, Entrenamiento)? Lo avisa el propio iframe por postMessage.
@@ -840,6 +937,26 @@ function renderErrores() {
     }
 }
 
+/* Aviso flotante abajo (4-nov), con un botón opcional «Deshacer». Lo lee el lector de
+   pantalla (role="status") y se va solo a los `ms` milisegundos. */
+function mostrarAviso(texto, { deshacer = null, ms = 6000 } = {}) {
+    let caja = document.getElementById("avisoFlotante");
+    if (!caja) {
+        caja = document.createElement("div");
+        caja.id = "avisoFlotante";
+        caja.className = "aviso-flotante";
+        caja.setAttribute("role", "status");
+        caja.setAttribute("aria-live", "polite");
+        document.body.appendChild(caja);
+    }
+    clearTimeout(caja._timer);
+    caja.innerHTML = `<span>${escapeHtml(texto)}</span>${deshacer ? `<button type="button" class="btn-ghost btn-xs">Deshacer</button>` : ""}`;
+    caja.hidden = false;
+    const cerrar = () => { caja.hidden = true; };
+    caja.querySelector("button")?.addEventListener("click", async () => { cerrar(); await deshacer(); });
+    caja._timer = setTimeout(cerrar, ms);
+}
+
 document.getElementById("erroresRecargarBtn")?.addEventListener("click", () => cargarErrores());
 document.getElementById("erroresMes")?.addEventListener("change", () => cargarErrores());
 document.getElementById("erroresLista")?.addEventListener("click", async (e) => {
@@ -856,9 +973,24 @@ document.getElementById("erroresLista")?.addEventListener("click", async (e) => 
         btn.disabled = true;
         try {
             const ahora = Timestamp.now();
+            const antes = erroresDatos.resueltos.get(id) || null;   // para «Deshacer» (4-nov)
             await setDoc(doc(db, "errores_sitios", id), { resueltoHasta: ahora, updatedAt: serverTimestamp() }, { merge: true });
             erroresDatos.resueltos.set(id, ahora.toDate());
             renderErrores();
+            const nombre = erroresResumen().find(x => x.id === id)?.nombre || id;
+            mostrarAviso(`${nombre}: errores marcados como resueltos.`, {
+                deshacer: async () => {
+                    try {
+                        // Sin fecha anterior, el 1-1-1970: cuenta todo como pendiente, igual que nunca resuelto.
+                        await setDoc(doc(db, "errores_sitios", id), { resueltoHasta: antes ? Timestamp.fromDate(antes) : Timestamp.fromMillis(0), updatedAt: serverTimestamp() }, { merge: true });
+                        if (antes) erroresDatos.resueltos.set(id, antes); else erroresDatos.resueltos.delete(id);
+                        renderErrores();
+                    } catch (err) {
+                        console.error(err);
+                        alert("No se pudo deshacer.");
+                    }
+                },
+            });
         } catch (err) {
             console.error(err);
             btn.disabled = false;
@@ -2266,7 +2398,7 @@ function _selectorAutorDemo(p) {
     if (!creado || creado < new Date(`${DEMOS_AUTOR_DESDE}T00:00:00-03:00`)) return "";
     const a = demoAutorDeBoceto(p);
     const auto = a.manual ? "" : a.por;
-    return `<div style="margin-top:5px"><select class="prop-type-input prop-por-select" data-prop-por="${p.id}" aria-label="Quién hizo la demo de ${escapeHtml(getPropuestaNegocioFields(p).nombreNegocio || "este boceto")}" title="Quién hizo la demo: sale del historial de git y se puede corregir">
+    return `<div style="margin-top:5px"><select class="prop-type-input prop-por-select" data-prop-por="${p.id}" aria-label="Quién hizo la demo de ${escapeHtml(getPropuestaNegocioFields(p).nombreNegocio || "este prospecto")}" title="Quién hizo la demo: sale del historial de git y se puede corregir">
         <option value="">${AUTOR_LABEL[auto] ? `Demo: ${AUTOR_LABEL[auto]} (auto)` : "Demo: sin identificar"}</option>
         ${Object.entries(AUTOR_LABEL).map(([k, v]) => `<option value="${k}"${p.demoPor === k ? " selected" : ""}>Demo: ${v}</option>`).join("")}
     </select></div>`;
@@ -2329,7 +2461,7 @@ function renderAutores() {
     const modLabel = c => ({ mensual: "Mensual", unico: "Anual", propia: "Pago único" })[modalidadDe(c)] || "—";
 
     cont.innerHTML = `
-        <p class="muted">Desde el ${DEMOS_AUTOR_DESDE.split("-").reverse().join("/")}. Quién hizo cada demo sale del historial de git (la carpeta que creó cada commit: con firma de Claude es de Claude, sin ella se toma como ChatGPT); si alguna está mal, se corrige acá o en Bocetos y prospectos. Se asigna solo: cada 20 min la PC marca las demos nuevas (Boceto hecho y quién la hizo).</p>
+        <p class="muted">Desde el ${DEMOS_AUTOR_DESDE.split("-").reverse().join("/")}. Quién hizo cada demo sale del historial de git (la carpeta que creó cada commit: con firma de Claude es de Claude, sin ella se toma como ChatGPT); si alguna está mal, se corrige acá o en Prospectos. Se asigna solo: cada 20 min la PC marca las demos nuevas (Boceto hecho y quién la hizo).</p>
         <div class="inv-cards">
             ${tarjeta("🟠 Hechas por Claude", "claude", "#fb923c")}
             ${tarjeta("🟢 Hechas por ChatGPT", "chatgpt", "#4ade80")}
@@ -3281,6 +3413,12 @@ document.getElementById("calNext").addEventListener("click", () => {
     if (calMonth > 11) { calMonth = 0; calYear++; }
     renderCal();
 });
+document.getElementById("calHoy")?.addEventListener("click", () => {
+    const hoy = new Date();
+    calMonth = hoy.getMonth();
+    calYear = hoy.getFullYear();
+    renderCal();
+});
 document.getElementById("closeDayModalBtn").addEventListener("click", () => { dayModal.hidden = true; });
 dayModal.addEventListener("click", (e) => { if (e.target === dayModal && !window.getSelection().toString().length) dayModal.hidden = true; });
 
@@ -4120,6 +4258,11 @@ function _bindTableListeners(tbodyEl) {
         b.addEventListener("click", () => openModal(b.dataset.id)));
     tbodyEl.querySelectorAll(".icon-btn.delete").forEach(b =>
         b.addEventListener("click", () => removeClient(b.dataset.id)));
+    tbodyEl.querySelectorAll("[data-entregar-id]").forEach(b =>
+        b.addEventListener("click", () => {
+            const c = clients.find(x => x.id === b.dataset.entregarId);
+            if (c) abrirFacturaModal(c);
+        }));
     tbodyEl.querySelectorAll("[data-facturar-id]").forEach(b =>
         b.addEventListener("click", () => {
             const c = clients.find(x => x.id === b.dataset.facturarId);
@@ -4277,7 +4420,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
         ${avisoMp}
         <div class="muted" style="font-size:12px;white-space:nowrap">${s.desde ? `desde ${mantLongDate(s.desde)}` : "sin fecha de inicio"}</div>
         ${s.porActivar ? `<div style="font-size:12px;font-weight:600;color:#F59E0B">por activar en Mercado Pago</div>` : ""}
-        ${s.estado === "pendiente" ? `<button type="button" class="btn-ghost" data-suscripto-id="${c.id}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="El cliente ya está pagando la mensualidad: la deja activa y lo suma a Mantenimiento">Ya se suscribió</button>` : ""}
+        ${s.estado === "pendiente" ? `<button type="button" class="btn-ghost btn-xs" data-suscripto-id="${c.id}" style="margin-top:4px" title="El cliente ya está pagando la mensualidad: la deja activa y lo suma a Mantenimiento">Ya se suscribió</button>` : ""}
         ${s.mant ? `<div class="muted" style="font-size:11px">vía Mercado Pago</div>` : ""}
         ${s.preapprovalId ? `<div class="muted" style="font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.preapprovalId)}">ID ${escapeHtml(s.preapprovalId)}</div>` : ""}`;
 
@@ -4302,7 +4445,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
         ? `<div class="muted" style="font-size:11px;white-space:nowrap">el cobro anual se cuenta desde la seña</div>`
         : `<div style="font-size:12px;font-weight:600;white-space:nowrap;margin-top:4px;color:${colorRenovacion || "var(--text-muted)"}">${r.estado === "vencido" ? "cobro anual vencido el" : "próximo cobro anual:"} ${mantLongDate(r.proximo)}${r.monto ? ` · ${fmtMoney(r.monto)}` : ""}</div>
            ${r.ultimo ? `<div class="muted" style="font-size:11px;white-space:nowrap">último cobro: ${fmtMoney(_num(r.ultimo.monto))}${mantToDate(r.ultimo.at) ? ` · ${mantLongDate(mantToDate(r.ultimo.at))}` : ""}</div>` : ""}
-           <button type="button" class="btn-ghost" data-renovar-id="${c.id}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Anota el cobro del año y pasa el próximo al año siguiente">Registrar cobro anual</button>`;
+           <button type="button" class="btn-ghost btn-xs" data-renovar-id="${c.id}" style="margin-top:4px" title="Anota el cobro del año y pasa el próximo al año siguiente">Registrar cobro anual</button>`;
 
     // Un cambio por mes incluido desde que arranca el plan mensual. El ciclo se reinicia el
     // mismo día del mes en que arrancó (mismo motor que Mantenimiento). El plan anual y la web propia no lo llevan.
@@ -4384,12 +4527,14 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false, conPendie
                 ${pagoTodo}${completada}${terminada}${reabrir}${iniciarPlan}
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
                 <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo el saldo o una mensualidad (no marca la web como entregada)">🧾</button>
-                <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
-                <button class="icon-btn delete" data-id="${c.id}" title="${webEntregada(c)
-                    ? "Eliminar el cliente (el registro de la entrega queda en Completados)"
-                    : modalidad === 'propia'
+                <button class="icon-btn edit" data-id="${c.id}" title="Editar" aria-label="Editar a ${escapeHtml(c.nombre)}">✎</button>
+                ${/* 4-nov: el tacho de una web sin entregar no borraba: abría «Facturar y marcar entregada».
+                     Ahora es un botón con texto; borrar de verdad está en el modal del cliente. */
+                  getEstado(c) === "cliente" && !webEntregada(c)
+                    ? `<button type="button" class="btn-ghost btn-entregar" data-entregar-id="${c.id}" title="${modalidad === 'propia'
                         ? "Facturar y cerrar el pago único: sale de Clientes y queda en Completados"
-                        : `Entregar con factura. Si no hace falta factura, usá ${pagoTodo ? "«Pagó todo»" : "el ✓ de Terminada"}`}">🗑</button>
+                        : `Facturar y marcar la web como entregada. Si no hace falta factura, usá ${pagoTodo ? "«Pagó todo»" : "el ✓ de Terminada"}`}">Entregar</button>`
+                    : `<button class="icon-btn delete" data-id="${c.id}" title="Eliminar el cliente (el registro de la entrega queda en Completados)" aria-label="Eliminar a ${escapeHtml(c.nombre)}">🗑</button>`}
             </td>
         </tr>`;
 }
@@ -4459,7 +4604,7 @@ function _botonVerChat(c) {
     const destino = presentadoDeCliente(c)?.clave || (cleanArgPhone(c.telefono).length >= 8 ? c.telefono : "");
     if (!destino) { const demo = _botonVerDemo(c); return demo ? `<div class="ver-chat-demo">${demo}</div>` : ""; }
     const titulo = [c.nombre, c.proyecto, c.telefono].filter(Boolean).join(" · ");
-    return `<div class="ver-chat-demo"><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de la pestaña">Ver chat</button>${_botonVerDemo(c)}</div>`;
+    return `<div class="ver-chat-demo"><button type="button" class="btn-ghost btn-xs" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de la pestaña">Ver chat</button>${_botonVerDemo(c)}</div>`;
 }
 
 /* «Ver demo» al lado de «Ver chat» (Pablo, 4-nov). La demo vive en
@@ -4474,7 +4619,7 @@ function slugDemoDeCliente(c) {
 function _botonVerDemo(c) {
     const slug = slugDemoDeCliente(c);
     if (!slug) return "";
-    return `<a href="https://gokywebs.com/demo/${encodeURIComponent(slug)}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;margin-left:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slug)}/ en otra pestaña">Ver demo ↗</a>`;
+    return `<a href="https://gokywebs.com/demo/${encodeURIComponent(slug)}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link" style="margin-top:4px;margin-left:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slug)}/ en otra pestaña">Ver demo ↗</a>`;
 }
 
 const TEMPLATE_72H_MOTIVOS = {
@@ -5415,7 +5560,7 @@ async function _preguntarSuscripcionMp(c, monto) {
     for (let i = 0; ingresosMpCargando && i < 60; i++) await new Promise(r => setTimeout(r, 250));
     await cargarIngresosMp(true);
     if (!ingresosMp) {
-        alert(`No se pudo leer Mercado Pago${ingresosMpError ? ` (${ingresosMpError})` : ""}. Queda guardado "${nombreMp}": vinculala después en Mantenimiento → Vincular con MP.`);
+        alert(`No se pudo leer Mercado Pago${ingresosMpError ? ` (${ingresosMpError})` : ""}. Queda guardado "${nombreMp}": vinculala después en Mantenimiento → Cobros.`);
         return { nombreMp, preapprovalId: "" };
     }
     const tomadas = new Set([...(clients || []), ...(mantenimiento || [])].map(x => String(x.preapprovalId || "").trim()).filter(Boolean));
@@ -5427,7 +5572,7 @@ async function _preguntarSuscripcionMp(c, monto) {
         .sort((a, b) => b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || new Date(b.s.alta) - new Date(a.s.alta));
     const etiqueta = ({ s }) => `${s.nombre || "Sin nombre"} · ${fmtMoney(Number(s.monto) || 0)}/mes · alta ${fechaCortaJs(new Date(s.alta)).slice(0, 5)}${s.estado === "paused" ? " · pausada" : ""}`;
     if (!candidatas.length) {
-        alert(`No encontré en Mercado Pago una suscripción sin cliente a nombre de "${nombreMp}". Queda guardado el nombre: si se suscribe después, vinculala en Mantenimiento → Vincular con MP.`);
+        alert(`No encontré en Mercado Pago una suscripción sin cliente a nombre de "${nombreMp}". Queda guardado el nombre: si se suscribe después, vinculala en Mantenimiento → Cobros.`);
         return { nombreMp, preapprovalId: "" };
     }
     // Una sola, o una que coincide en más palabras que el resto: se confirma.
@@ -5444,6 +5589,69 @@ async function _preguntarSuscripcionMp(c, monto) {
     );
     const n = Number(String(elegida || "").trim());
     return { nombreMp, preapprovalId: n >= 1 && n <= lista.length ? String(lista[n - 1].s.id) : "" };
+}
+
+/* «Pasar a Cliente» (4-nov): elegir la modalidad y, en el anual o el pago único, la seña
+   cobrada. Devuelve { modalidad, sena } o null si cancela (sigue en Seguimiento). */
+function elegirModalidadCliente(c, plan, sugerida, senaYaCobrada) {
+    return new Promise(resolve => {
+        const nombre = c.nombre || c.proyecto || "Cliente";
+        const opciones = [
+            ["mensual", "Plan mensual", `${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.`],
+            ["unico", "Plan anual", `${fmtMoney(plan.unico)} por año. Seña de ${fmtMoney(plan.sena)}, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año.`],
+            ["propia", "Pago único", `${fmtMoney(plan.propia)}, con seña de ${fmtMoney(plan.sena)} y el resto al entregar. Incluye el primer año de hosting y dominio; el mantenimiento va aparte.`],
+        ];
+        const fondo = document.createElement("div");
+        fondo.className = "modal-backdrop";
+        fondo.innerHTML = `
+            <div class="modal modal--chico" role="dialog" aria-modal="true" aria-labelledby="pcTitulo">
+                <div class="modal-header">
+                    <h2 id="pcTitulo">Pasar a Cliente</h2>
+                    <button type="button" class="modal-close" data-pc-cancelar aria-label="Cerrar">&times;</button>
+                </div>
+                <form class="pc-form">
+                    <p class="muted" style="margin:0 0 12px">${escapeHtml(nombre)} · plan ${escapeHtml(plan.label || "sin definir")}. ¿Con qué modalidad contrató?</p>
+                    <fieldset class="pc-opciones">
+                        <legend class="sr-only">Modalidad</legend>
+                        ${opciones.map(([v, t, d]) => `
+                            <label class="pc-opcion">
+                                <input type="radio" name="pcModalidad" value="${v}"${sugerida === v ? " checked" : ""} required>
+                                <span><strong>${t}</strong><small>${escapeHtml(d)}</small></span>
+                            </label>`).join("")}
+                    </fieldset>
+                    <div class="pc-sena" hidden>
+                        <label for="pcSena">Seña cobrada</label>
+                        <input type="text" id="pcSena" inputmode="numeric" autocomplete="off" value="${escapeHtml(String(plan.sena || ""))}">
+                        <small class="muted">El resto se cobra al entregar. Dejalo vacío si todavía no la cobraste.</small>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-ghost" data-pc-cancelar>Cancelar</button>
+                        <button type="submit" class="btn-primary">Pasar a Cliente</button>
+                    </div>
+                </form>
+            </div>`;
+        document.body.appendChild(fondo);
+        const form = fondo.querySelector("form");
+        const caja = fondo.querySelector(".pc-sena");
+        const sync = () => {
+            const v = form.querySelector("input[name=pcModalidad]:checked")?.value;
+            caja.hidden = senaYaCobrada || !(v === "unico" || v === "propia");
+        };
+        sync();
+        form.addEventListener("change", sync);
+        const tecla = (e) => { if (e.key === "Escape") { e.stopPropagation(); cerrar(null); } };
+        const cerrar = (valor) => { fondo.remove(); document.removeEventListener("keydown", tecla, true); resolve(valor); };
+        document.addEventListener("keydown", tecla, true);
+        fondo.addEventListener("click", e => { if (e.target === fondo || e.target.closest("[data-pc-cancelar]")) cerrar(null); });
+        form.addEventListener("submit", e => {
+            e.preventDefault();
+            const modalidad = form.querySelector("input[name=pcModalidad]:checked")?.value;
+            if (!modalidad) return;
+            const sena = caja.hidden ? 0 : Number(String(document.getElementById("pcSena").value).replace(/\D/g, "")) || 0;
+            cerrar({ modalidad, sena });
+        });
+        (form.querySelector("input[name=pcModalidad]:checked") || form.querySelector("input[name=pcModalidad]")).focus();
+    });
 }
 
 async function setStatus(id, value) {
@@ -5472,23 +5680,14 @@ async function setStatus(id, value) {
         if (value === "cliente" && prevEstado !== "cliente" && c) {
             const plan = planDe(c, propuestaDeCliente(c));
             const sugerida = modalidadDe(c) || plan.modalidad;
-            let modalidad = "";
-            while (!modalidad) {
-                const respuesta = prompt(
-                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente (plan ${plan.label || "sin definir"}). ¿Con qué modalidad contrató?\n\n` +
-                    `1. Plan mensual: ${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.\n` +
-                    `2. Plan anual: ${fmtMoney(plan.unico)} por año, sin suscripción. Seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año.\n` +
-                    `3. Pago único: ${fmtMoney(plan.propia)}, con seña de ${fmtMoney(plan.sena)} y el resto al entregar. Incluye el primer año de hosting y dominio; el mantenimiento va aparte.\n\n` +
-                    `Escribí 1, 2 o 3. Si cancelás, sigue en Seguimiento.`,
-                    sugerida === "mensual" ? "1" : sugerida === "unico" ? "2" : sugerida === "propia" ? "3" : ""
-                );
-                if (respuesta === null) {
-                    renderSeg();   // el select de la fila vuelve al estado guardado
-                    return;
-                }
-                modalidad = _modalidadDeRespuesta(respuesta);
-                if (!modalidad) alert("Escribí 1 para el plan mensual, 2 para el plan anual o 3 para el pago único.");
+            // 4-nov: un modal con las tres opciones y la seña, en vez de dos prompt() seguidos.
+            const senaYaCobrada = !!(_conSena(modalidadDe(c)) && (_num(c.abono) || c.senaAt));
+            const eleccion = await elegirModalidadCliente(c, plan, sugerida, senaYaCobrada);
+            if (!eleccion) {
+                renderSeg();   // el select de la fila vuelve al estado guardado
+                return;
             }
+            const modalidad = eleccion.modalidad;
             updateData.modalidad = modalidad;
             updateData.clienteDesdeAt = serverTimestamp();
             if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
@@ -5496,14 +5695,8 @@ async function setStatus(id, value) {
                 const precio = modalidad === "propia" ? plan.propia : plan.unico;
                 updateData.valorTotal = precio;
                 // Si vuelve a Seguimiento y regresa, conserva la seña que ya tenía registrada.
-                const senaYaCobrada = _conSena(modalidadDe(c)) && (_num(c.abono) || c.senaAt);
                 if (!senaYaCobrada) {
-                    const montoInput = prompt(
-                        `${modalidad === "propia" ? `Pago único de ${fmtMoney(precio)}` : `Plan anual de ${fmtMoney(precio)} por año`}.\n\n` +
-                        `¿Cuánto cobraste de seña? El resto se cobra al entregar. Si cancelás, pasa igual a Cliente con la seña sin registrar.`,
-                        String(plan.sena)
-                    );
-                    const monto = montoInput === null ? 0 : Number(String(montoInput).replace(/\D/g, "")) || 0;
+                    const monto = eleccion.sena || 0;
                     if (monto) {
                         updateData.abono = monto;
                         updateData.senaAt = serverTimestamp();
@@ -5627,7 +5820,7 @@ function briefDetailHTML(src) {
         + (fecha ? `<div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha propuesta</span><span>${escapeHtml(fecha)}</span></div>` : "");
 }
 
-function openModal(id = null) {
+function openModal(id = null, estadoNuevo = "seguimiento1") {
     form.reset();
     formDirty = false;
     document.getElementById("clientId").value = "";
@@ -5684,10 +5877,13 @@ function openModal(id = null) {
         }
 
         renderResenasEnModal(c.id);
+        renderCredencialesEnModal(c);
     } else {
+        const credSec = document.getElementById("credInfoSection");
+        if (credSec) credSec.hidden = true;
         modalTitle.textContent = "Nuevo cliente";
         cargarPlanEnModal(null);
-        document.getElementById("estadoCliente").value = "seguimiento1";
+        document.getElementById("estadoCliente").value = estadoNuevo;
         document.getElementById("propuestaInfoSection").style.display = "none";
         document.getElementById("propuestaInfoBody").innerHTML = "";
         document.getElementById("presupuestoInfoSection").style.display = "none";
@@ -5699,6 +5895,8 @@ function openModal(id = null) {
     renderTareasChecklist();
     toggleTareasSection();
     syncEstadoSelect();
+    const delBtn = document.getElementById("deleteClientBtn");
+    if (delBtn) delBtn.hidden = !id;
     modal.hidden = false;
     // Marcar dirty a partir del primer cambio del usuario
     setTimeout(() => {
@@ -5711,6 +5909,11 @@ function openModal(id = null) {
 
 let formDirty = false;
 function markDirty() { formDirty = true; }
+
+document.getElementById("deleteClientBtn")?.addEventListener("click", async () => {
+    const id = document.getElementById("clientId").value;
+    if (id && await removeClient(id)) closeModal();
+});
 
 function tryCloseModal() {
     if (formDirty && !confirm("Tenés cambios sin guardar. ¿Salir de todos modos?")) return;
@@ -6487,7 +6690,7 @@ function renderPropuestas() {
             : fechasSeleccionadas.size ? " en las fechas marcadas"
             : term ? " para esa búsqueda"
             : " recibidas aún";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay propuestas${motivo}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay prospectos${motivo}.</td></tr>`;
         actualizarSeleccionPropuestas();
         renderEntregasPorHora();
         return;
@@ -6502,7 +6705,7 @@ function renderPropuestas() {
         const aviso = estadoAvisoBoceto(p);
         return `
             <tr class="client-row${propuestasSeleccionadas.has(p.id) ? " prop-seleccionado" : ""}" data-row-prop-id="${p.id}" style="cursor:pointer">
-                <td class="prop-col-sel"><input type="checkbox" data-prop-sel="${p.id}"${propuestasSeleccionadas.has(p.id) ? " checked" : ""} aria-label="Marcar ${escapeHtml(nombreNegocio || "este boceto")} para presentar"></td>
+                <td class="prop-col-sel"><input type="checkbox" data-prop-sel="${p.id}"${propuestasSeleccionadas.has(p.id) ? " checked" : ""} aria-label="Marcar ${escapeHtml(nombreNegocio || "este prospecto")} para presentar"></td>
                 <td>
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
@@ -6515,9 +6718,12 @@ function renderPropuestas() {
                         : `<strong>—</strong>`}
                     ${instagramUsuario(p.instagram)
                         ? `<div style="margin-top:5px">${instagramLinkHTML(p.instagram)}</div>`
-                        : (p.esProspecto ? "" : `<span class="prop-origen-badge">Demo / boceto</span>`)}
+                        : ""}
+                    ${/* 4-nov: «Demo / boceto» salía solo cuando no había Instagram (no decía nada);
+                         lo importante es si ya eligió cómo pagar. */ p.esProspecto
+                        ? `<div style="margin-top:5px"><span class="prop-origen-badge prop-origen-badge--prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló y la venta la seguís vos">Eligió avanzar</span></div>` : ""}
                     ${slugNegocio(nombreNegocio)
-                        ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
+                        ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link" style="margin-top:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
                     ${_selectorAutorDemo(p)}
                     ${p.confirmoMuestra === false
@@ -6530,7 +6736,7 @@ function renderPropuestas() {
                 <td class="prop-col-contacto">
                     <div>${escapeHtml(p.nombre || p.contacto_nombre || "—")}</div>
                     ${(p.telefono || p.contacto_cel) ? `<span class="phone-copy" data-phone-copy="${escapeHtml(p.telefono || p.contacto_cel)}" title="Copiar número" style="cursor:pointer;font-size:12px;display:block">${escapeHtml(p.telefono || p.contacto_cel)}</span>` : ""}
-                    ${(p.telefono || p.contacto_cel) ? `<button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(p.telefono || p.contacto_cel)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este número sin salir de Bocetos">Ver chat</button>` : ""}
+                    ${(p.telefono || p.contacto_cel) ? `<button type="button" class="btn-ghost btn-xs" data-chat-tel="${escapeHtml(p.telefono || p.contacto_cel)}" style="margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este número sin salir de Prospectos">Ver chat</button>` : ""}
                     ${p.email ? `<div class="muted prop-contact-email" title="${escapeHtml(p.email)}">${escapeHtml(p.email)}</div>` : ""}
                 </td>
                 <td class="prop-col-colores">${escapeHtml(coloresTexto || "—")}</td>
@@ -7172,24 +7378,29 @@ async function removePropuesta(id) {
 
 async function removeClient(id) {
     const c = clients.find(x => x.id === id);
-    if (!c) return;
+    if (!c) return false;
+    // 4-nov: el tacho solo borra (entregar es el botón «Entregar» de la fila).
+    const sinEntregar = getEstado(c) === "cliente" && !webEntregada(c);
+    if (sinEntregar) {
+        if (!confirm(`¿Eliminar a "${c.nombre}"? Su web todavía no se entregó y no queda ningún registro.
 
-    // Cliente con la web todavía sin entregar: el tacho abre "factura + entregada", como siempre.
-    if (getEstado(c) === "cliente" && !webEntregada(c)) {
-        abrirFacturaModal(c);
-        return;
+Para entregarla usá «Entregar» en la fila. Esto no se puede deshacer.`)) return false;
+        try { await deleteDoc(doc(db, "clientes", id)); return true; }
+        catch (err) { console.error(err); alert("Error: " + err.message); return false; }
     }
 
     const conRegistro = c.completadoId && completados.some(x => x.id === c.completadoId);
     const mensaje = getEstado(c) === "cliente"
         ? `¿Eliminar a "${c.nombre}"? Sale de Mantenimiento.${conRegistro ? " El registro de la entrega queda en Completados." : ""}${_conSena(modalidadDe(c)) ? "" : `\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`}`
         : `¿Eliminar a "${c.nombre}"? Esta acción no se puede deshacer.`;
-    if (!confirm(mensaje)) return;
+    if (!confirm(mensaje)) return false;
     try {
         await deleteDoc(doc(db, "clientes", id));
+        return true;
     } catch (err) {
         console.error(err);
         alert("Error: " + err.message);
+        return false;
     }
 }
 
@@ -7596,7 +7807,7 @@ function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
         : "Pasaron más de 24 horas desde el último mensaje. El bot no pudo enviarle la demo.";
     else if (envio?.demo_ok) motivo = "El primer mensaje con la demo sí salió. Solo falta enviar el mensaje siguiente.";
     else motivo = "El bot no pudo confirmar el envío. Tenés el texto y el número para enviarlo manualmente.";
-    const prefijo = enSeguimiento === true ? "Quedó en Seguimiento. " : enSeguimiento === false ? "Sigue en Bocetos. " : "";
+    const prefijo = enSeguimiento === true ? "Quedó en Seguimiento. " : enSeguimiento === false ? "Sigue en Prospectos. " : "";
     estado.textContent = prefijo + motivo;
 
     campoTelefono.value = telefono || "Sin número cargado";
@@ -7923,7 +8134,7 @@ async function presentarSeleccionados() {
     let resumen = "";
     if (enviados.length) resumen += `Quedaron en Seguimiento con la demo enviada por el bot (${enviados.length}):\n${enviados.map(n => "• " + n).join("\n")}\n\n`;
     if (manuales.length) resumen += `Quedaron en Seguimiento pero hay que mandarles la demo a mano (${manuales.length}):\n${manuales.map(n => "• " + n).join("\n")}\nAl cerrar este aviso vas a ver el número y el texto de cada uno.\n\n`;
-    if (errores.length) resumen += `No se pudieron pasar, siguen en Bocetos y marcados (${errores.length}):\n${errores.map(n => "• " + n).join("\n")}`;
+    if (errores.length) resumen += `No se pudieron pasar, siguen en Prospectos y marcados (${errores.length}):\n${errores.map(n => "• " + n).join("\n")}`;
     alert(resumen.trim());
     const primero = presentacionesManualesPendientes.shift();
     if (primero) mostrarPresentacionManual(primero.p, primero.envio, primero.enSeguimiento);
@@ -8289,6 +8500,13 @@ function getDemosByStatus(dateStr, status) {
     return clients.filter(c => getEstado(c) === status && c.hablarleElDia === dateStr);
 }
 
+/* A quién hablarle ese día (4-nov): los de Seguimientos con «Hablarle el día» en esa fecha.
+   Stand by no cuenta (está en pausa a propósito). */
+const ESTADOS_HABLAR = ["seguimiento1", "seguimiento2", "seguimiento3", "ultimo-mensaje"];
+function aQuienHablar(dateStr) {
+    return clients.filter(c => ESTADOS_HABLAR.includes(getEstado(c)) && c.hablarleElDia === dateStr);
+}
+
 /* Calendario → Intentos de cobro (Pablo, 24-oct: "una pestaña que detalle los cobros e intentos de cobro de
    suscripciones"). Cada cobro mensual de cada suscripción de Mercado Pago (admin/api/intentos-cobro.php) con
    su estado: cobrado, rechazado y reintentando ("Intento 1 de 4" en MP, con el próximo reintento), rechazado
@@ -8357,7 +8575,7 @@ async function cargarIntentosCobro() {
     if (intentosCobroCargando) return;
     intentosCobroCargando = true;
     intentosCobroError = "";
-    if (activeTab === "calendario" && calVista === "intentos") renderIntentosCobro();
+    if (activeTab === "mantenimiento" && mantPlan === "cobros") renderIntentosCobro();
     try {
         const [datos] = await Promise.all([llamarFacturacion("lista", null, {}, "intentos-cobro.php"), cargarLinksPago()]);
         intentosCobro = datos.cobros || [];
@@ -8367,7 +8585,6 @@ async function cargarIntentosCobro() {
     } finally {
         intentosCobroCargando = false;
         _contarIntentos();
-        if (activeTab === "calendario" && calVista === "intentos") renderIntentosCobro();
         if (activeTab === "mantenimiento") renderMantenimiento();
     }
 }
@@ -8592,7 +8809,7 @@ function renderIntentosCobro() {
 
 document.addEventListener("click", (e) => {
     const vista = e.target.closest("[data-cal-vista]");
-    if (vista) { calVista = vista.dataset.calVista; renderCal(); return; }
+    if (vista) { calVista = vista.dataset.calVista; renderCal(); return; }   // (sin botones desde el 4-nov)
     const filtro = e.target.closest("[data-intentos-filtro]");
     if (filtro) { intentosFiltro = filtro.dataset.intentosFiltro; renderIntentosCobro(); return; }
     if (e.target.closest("[data-intentos-actualizar]")) cargarIntentosCobro();
@@ -8611,14 +8828,6 @@ document.addEventListener("input", (e) => {
 });
 
 function renderCal() {
-    document.querySelectorAll("#calVistas [data-cal-vista]").forEach(b => b.classList.toggle("active", b.dataset.calVista === calVista));
-    document.getElementById("calVistaCalendario").hidden = calVista !== "calendario";
-    document.getElementById("calVistaIntentos").hidden = calVista !== "intentos";
-    if (calVista === "intentos") {
-        if (!intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
-        renderIntentosCobro();
-        return;
-    }
     calMonthLabel.textContent = `${MONTHS_ES[calMonth]} ${calYear}`;
     const firstDow = new Date(calYear, calMonth, 1).getDay();
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -8645,9 +8854,7 @@ function renderCal() {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const seg1 = getDemosByStatus(dateStr, "seguimiento1");
-        const seg2 = getDemosByStatus(dateStr, "seguimiento2");
-        const seg3 = getDemosByStatus(dateStr, "seguimiento3");
+        const hablar = aQuienHablar(dateStr);
         const tareasDelDia = tareas.filter(t => t.fecha === dateStr);
         const imp1 = tareasDelDia.filter(t => t.importancia == 1);
         const imp2 = tareasDelDia.filter(t => t.importancia == 2);
@@ -8657,7 +8864,8 @@ function renderCal() {
         let badges = "";
         if (imp2.length > 0) badges += `<span class="cal-badge badge-imp2">${imp2.length}</span>`;
         if (imp1.length > 0) badges += `<span class="cal-badge badge-imp1">${imp1.length}</span>`;
-        html += `<div class="${cls}" data-date="${dateStr}">
+        if (hablar.length > 0) badges += `<span class="cal-badge badge-hablar" title="${hablar.length === 1 ? "1 persona a la que hablarle" : `${hablar.length} personas a las que hablarles`}: ${escapeHtml(hablar.map(c => c.nombre || c.proyecto).join(", "))}">💬 ${hablar.length}</span>`;
+        html += `<div class="${cls}" data-date="${dateStr}" role="button" tabindex="0" aria-label="${d} de ${MONTHS_ES[calMonth]}${tareasDelDia.length ? `, ${tareasDelDia.length} tarea${tareasDelDia.length === 1 ? "" : "s"}` : ""}${hablar.length ? `, ${hablar.length} a quien hablarle` : ""}">
             <span class="cal-day-num">${d}</span>
             <div class="cal-cell-badges">${badges}</div>
             ${_cobrosCeldaHTML(dias.get(dateStr))}
@@ -8672,6 +8880,12 @@ function renderCal() {
         cell.addEventListener("click", (e) => {
             if (calEligiendo) _elegirDiaCal(cell.dataset.date, e.shiftKey);
             else openDayModal(cell.dataset.date);
+        });
+        // Teclado (4-nov): Enter o espacio abren el día como el clic.
+        cell.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            cell.click();
         });
     });
     _renderCalSuma();
@@ -8769,7 +8983,30 @@ function openDayModal(dateStr) {
             }
         </div>`;
 
-    dayModalBody.innerHTML = tareasHtml + _cobrosDetalleHTML(ingresosPorDia(dateStr).get(dateStr));
+    // ── A quién hablarle ese día (4-nov) ──
+    const hablar = aQuienHablar(dateStr);
+    const hablarHtml = !hablar.length ? "" : `
+        <div class="day-section">
+            <div class="day-section-header"><span class="day-section-title">💬 Hablarle</span></div>
+            <div class="tarea-list">${hablar.map(c => `
+                <div class="tarea-item hablar-item">
+                    <div class="tarea-item-info">
+                        <span class="tarea-texto">${escapeHtml(c.nombre || "—")}</span>
+                        ${c.proyecto ? `<span class="tarea-contexto">${escapeHtml(c.proyecto)}</span>` : ""}
+                    </div>
+                    <div class="tarea-item-actions">${_botonVerChat(c)}
+                        <button type="button" class="btn-ghost btn-xs" data-hablar-abrir="${c.id}">Abrir ficha</button>
+                    </div>
+                </div>`).join("")}
+            </div>
+        </div>`;
+
+    dayModalBody.innerHTML = tareasHtml + hablarHtml + _cobrosDetalleHTML(ingresosPorDia(dateStr).get(dateStr));
+    dayModalBody.querySelectorAll("[data-chat-tel]").forEach(b => b.addEventListener("click", () => abrirChatModal(b.dataset.chatTel, b.dataset.chatTitulo)));
+    dayModalBody.querySelectorAll("[data-hablar-abrir]").forEach(b => b.addEventListener("click", () => {
+        dayModal.hidden = true;
+        openModal(b.dataset.hablarAbrir);
+    }));
 
     dayModalBody.querySelector(".btn-add-tarea-day")?.addEventListener("click", () => {
         dayModal.hidden = true;
@@ -9949,7 +10186,7 @@ function _mpVinculoHTML(ref, esCliente) {
         : `<div class="mp-vinculo mp-vinculo--falta">⚠ La suscripción vinculada no está en Mercado Pago</div>`;
     const boton = `<button type="button" class="mp-vinculo-btn" ${destino} data-por-fuera-valor="1" title="No tiene suscripción en Mercado Pago y paga por su cuenta: el Calendario y Finanzas lo cuentan como cobrado cada mes, el día del alta">Paga por afuera</button>`;
     return k.sub
-        ? `<div class="mp-vinculo${k.baja ? " mp-vinculo--falta" : ""}" title="La suscripción de Mercado Pago que se le asignó por monto y fecha de alta: confirmala o cambiala en Mantenimiento → Vincular con MP">Mercado Pago: ${escapeHtml(k.sub.nombre || "suscripción")} <span class="muted">(sugerida)</span>${avisos} ${boton}</div>`
+        ? `<div class="mp-vinculo${k.baja ? " mp-vinculo--falta" : ""}" title="La suscripción de Mercado Pago que se le asignó por monto y fecha de alta: confirmala o cambiala en Mantenimiento → Cobros">Mercado Pago: ${escapeHtml(k.sub.nombre || "suscripción")} <span class="muted">(sugerida)</span>${avisos} ${boton}</div>`
         : `<div class="mp-vinculo mp-vinculo--falta" title="No hay una suscripción de Mercado Pago de ese monto dada de alta cerca de esa fecha">⚠ No aparece en Mercado Pago ${boton}</div>`;
 }
 
@@ -10061,7 +10298,7 @@ async function sincronizarRenovaciones(forzar = false) {
         if (!data?.ok) throw new Error("respuesta sin ok");
         renovacionesFirma = firma;
         renovaciones = { plantilla_activa: !!data.plantilla_activa, enviados: data.enviados || {} };
-        if (activeTab === "mantenimiento" && mantPlan === "porfuera") renderMantenimiento();
+        if (activeTab === "mantenimiento" && mantPlan === "cobros") renderMantenimiento();
     } catch (e) {
         console.warn("No se pudo pasarle al bot la lista de los que pagan por afuera:", e);
     }
@@ -10192,7 +10429,7 @@ function _renderMantPorFuera(term) {
     if (countEl) countEl.textContent = todos.length;
     const lista = term ? todos.filter(f => f.texto.toLowerCase().includes(term)) : todos;
     // Si intentó suscribirse y le rebotó el primer pago (Calendario → Intentos de cobro, 24-oct).
-    if (mantPlan === "porfuera" && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
+    if (mantPlan === "cobros" && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
     const reboteDe = new Map(_altasRechazadas().filter(g => g.k && !g.seSuscribio).map(g => [g.k.ref, g]));
     const hoy = _fechaMp(_diaDe(new Date()));
     const cuando = ymd => {
@@ -10238,7 +10475,7 @@ document.addEventListener("change", async (e) => {
     }
 });
 
-/* Mantenimiento → Vincular con MP (Pablo, 24-oct: "me gustaría poder vincular bien cada suscriptor con la
+/* Mantenimiento → Cobros (Pablo, 24-oct: "me gustaría poder vincular bien cada suscriptor con la
    web/cliente de admin, porque hay muchas discrepancias"). Una fila por mensual activo con la suscripción que
    le tocó en el cruce y un selector para elegir otra. Guardar escribe `preapprovalId` en el suscriptor o en
    el cliente (y se lo saca al que lo tuviera): desde ahí el cruce usa esa y deja de adivinar. Abajo, las
@@ -10498,7 +10735,7 @@ function renderMantenimiento() {
     programarSyncRenovaciones();
     programarSyncWebs();
     // El plan mensual muestra con qué pagó cada uno (los cobros de Intentos de cobro, 25-oct).
-    if (activeTab === "mantenimiento" && (mantPlan === "mensual" || mantPlan === "vincular") && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
+    if (activeTab === "mantenimiento" && (mantPlan === "mensual" || mantPlan === "cobros") && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
 
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
@@ -10529,9 +10766,12 @@ function renderMantenimiento() {
     const facturacionEl = document.getElementById("mantFacturacion");
     if (facturacionEl) facturacionEl.hidden = mantPlan !== "facturacion";
     const porFueraEl = document.getElementById("mantPorFuera");
-    if (porFueraEl) porFueraEl.hidden = mantPlan !== "porfuera";
+    if (porFueraEl) porFueraEl.hidden = mantPlan !== "cobros";
     const vincularEl = document.getElementById("mantVincular");
-    if (vincularEl) vincularEl.hidden = mantPlan !== "vincular";
+    if (vincularEl) vincularEl.hidden = mantPlan !== "cobros";
+    const intentosEl = document.getElementById("mantIntentos");
+    if (intentosEl) intentosEl.hidden = mantPlan !== "cobros";
+    if (mantPlan === "cobros") renderIntentosCobro();
     const contrasenasEl = document.getElementById("mantContrasenas");
     if (contrasenasEl) contrasenasEl.hidden = mantPlan !== "contrasenas";
     renderCredenciales();
@@ -10578,6 +10818,44 @@ function renderCredenciales() {
                 <button type="button" class="btn-ghost btn-sm" data-cred-borrar="${escapeHtml(c.id)}">Borrar</button></td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "No hay contraseñas para esa búsqueda." : "Todavía no hay contraseñas cargadas."}</td></tr>`;
+}
+
+/* Contraseñas en la ficha del cliente (4-nov). Las de Mantenimiento → Contraseñas se cargan con
+   el nombre del cliente a mano: se cruzan por nombre o negocio, sin tildes ni mayúsculas. La lista
+   completa (para buscar y editar) sigue en Mantenimiento. */
+function _credNorm(t) { return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
+function credencialesDeCliente(c) {
+    const claves = [c.nombre, c.proyecto].map(_credNorm).filter(k => k.length >= 3);
+    if (!claves.length) return [];
+    return credenciales.filter(k => {
+        const n = _credNorm(k.cliente);
+        return n && claves.some(cl => n.includes(cl) || cl.includes(n));
+    });
+}
+function renderCredencialesEnModal(c) {
+    const sec = document.getElementById("credInfoSection");
+    const body = document.getElementById("credInfoBody");
+    if (!sec || !body) return;
+    const lista = credencialesDeCliente(c);
+    sec.hidden = !lista.length;
+    if (!lista.length) { body.innerHTML = ""; return; }
+    document.getElementById("credInfoSummary").textContent = `🔑 Contraseñas (${lista.length})`;
+    body.innerHTML = lista.map(k => `
+        <div class="cred-ficha">
+            <div><strong>${escapeHtml(k.cliente)}</strong>${k.nota ? ` <span class="muted">· ${escapeHtml(k.nota)}</span>` : ""}</div>
+            <div class="cred-ficha-fila">${k.email ? `<span>${escapeHtml(k.email)}</span> <button type="button" class="btn-ghost btn-xs" data-cred-ficha-copiar="${escapeHtml(k.id)}" data-campo="email">Copiar mail</button>` : ""}
+                <button type="button" class="btn-ghost btn-xs" data-cred-ficha-copiar="${escapeHtml(k.id)}" data-campo="clave">Copiar clave</button></div>
+        </div>`).join("");
+    body.querySelectorAll("[data-cred-ficha-copiar]").forEach(b => b.addEventListener("click", async () => {
+        const k = credenciales.find(x => x.id === b.dataset.credFichaCopiar);
+        if (!k) return;
+        try {
+            await writeTextToClipboard(String(k[b.dataset.campo] || ""));
+            const antes = b.textContent;
+            b.textContent = "✓ Copiado";
+            setTimeout(() => { b.textContent = antes; }, 1400);
+        } catch (err) { console.error(err); alert("No se pudo copiar."); }
+    }));
 }
 
 function _credResetForm() {
