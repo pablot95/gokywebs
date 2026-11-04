@@ -89,7 +89,18 @@ wabot_conv_save($cvPago);
 caso('la fila de la lista dice si ya pagó', !empty(wabot_lista_item('5491100007005TEST')['pago_confirmado']) && empty(wabot_lista_item('5491100007001TEST')['pago_confirmado']));
 @unlink(wabot_conv_path('5491100007005TEST'));
 $chips = substr($admin, (int)strpos($admin, 'id="convChips"'), 3000);
-caso('el filtro Clientes está al lado de Todos', (bool)preg_match('/data-grupo="todos_humano"[^\n]*>Todos<\/button>\s*<button[^>]*data-grupo="clientes"[^>]*>Clientes<\/button>/', $chips));
+// 4-nov: a la vista quedan Sin leer · Nuevos · Con form · Demos · Clientes · Todos (Clientes sigue al lado de Todos, ahora antes).
+caso('el filtro Clientes está al lado de Todos', (bool)preg_match('/data-grupo="clientes"[^\n]*>Clientes<\/button>\s*<button[^>]*data-grupo="todos_humano"[^>]*>Todos<\/button>/', $chips));
+caso('a la vista quedan solo las seis vistas, en ese orden (4-nov)',
+    preg_match_all('/<button type="button" class="conv-chip[^"]*" data-grupo="([a-z_]+)"/', substr($chips, 0, (int)strpos($chips, 'conv-chips-mas')), $mVistas) === 6
+    && $mVistas[1] === ['no_leidos', 'nuevos', 'con_form', 'demos_presentadas', 'clientes', 'todos_humano'], json_encode($mVistas[1] ?? null));
+$panelMas = substr($admin, (int)strpos($admin, 'id="convChipsPanel"'), 6000);
+caso('los demás filtros siguen en «Más» y el canal se suma a la vista (4-nov)',
+    strpos($panelMas, 'data-grupo="bot"') !== false && strpos($panelMas, 'data-grupo="archivado"') !== false
+    && strpos($panelMas, 'data-canal="whatsapp"') !== false && strpos($panelMas, 'data-canal="instagram"') !== false
+    && strpos($admin, 'return visibleEn(it, vistaActiva) && cumpleCanal(it);') !== false);
+caso('el aviso de pagos de MP sin asignar ya no depende del filtro Clientes (4-nov)',
+    strpos($admin, "avisoPagosEl.hidden = !filtrosActivos.has('clientes')") === false && strpos($admin, "'pagos_sin_asignar' => function_exists('wabot_pagos_sin_asignar')") !== false);
 caso('filtra por la marca cliente, sin el vencimiento de 24 h', strpos($admin, "if (filtro === 'clientes') return !!it.cliente;") !== false
     && !preg_match("/VISTAS_CON_VENCIMIENTO = new Set\(\[[^\]]*'clientes'/", $admin));
 caso('la lista del panel sale marcada', strpos($admin, "wabot_clientes_marcar_lista(wabot_lista_items())") !== false);

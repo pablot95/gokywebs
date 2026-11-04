@@ -711,7 +711,21 @@ foreach (($payload['entry'] ?? []) as $entry) {
             // de 24hs se cerró un segundo después de nuestro chequeo. Antes esto
             // se descartaba entero y el fallo quedaba invisible para Pablo.
             foreach ($valor['statuses'] as $st) {
-                if (($st['status'] ?? '') !== 'failed') continue;
+                $estadoMeta = (string)($st['status'] ?? '');
+                /* Enviado / entregado / leído (4-nov): las tildes del panel. Va a un
+                 * archivo aparte por charla, sin tocar ni esperar el candado de la
+                 * conversación (ver wabot_wa_estado_guardar). Solo si la charla
+                 * existe con esa clave: el aviso a Pablo no se anota, y no se busca
+                 * con wabot_conv_resolver(), que recorre todas las charlas, porque
+                 * cada mensaje que sale trae hasta tres de estos. */
+                if (wabot_wa_estado_nivel($estadoMeta) > 0) {
+                    $claveEstado = preg_replace('/[^0-9]/', '', (string)($st['recipient_id'] ?? ''));
+                    if ($claveEstado !== '' && !wabot_numero_propio($claveEstado, $cfg) && is_file(wabot_conv_path($claveEstado))) {
+                        wabot_wa_estado_guardar($claveEstado, (string)($st['id'] ?? ''), $estadoMeta, (int)($st['timestamp'] ?? 0));
+                    }
+                    continue;
+                }
+                if ($estadoMeta !== 'failed') continue;
                 $clave = preg_replace('/[^0-9]/', '', (string)($st['recipient_id'] ?? ''));
                 if ($clave === '') continue;
                 $err = $st['errors'][0] ?? [];

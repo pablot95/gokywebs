@@ -4187,6 +4187,105 @@ function wabot_salida_es_bot($id) {
     return is_array($m) && isset($m[$id]);
 }
 
+/* ── Tildes de enviado / entregado / leído (4-nov) ──
+ *
+ * Cada mensaje que sale ya guarda su wamid en el renglón del transcript (lo anota
+ * wabot_salida_anotar() y lo toma wabot_conv_transcript()). Meta avisa después,
+ * por el webhook, sent → delivered → read de cada wamid, y hasta acá eso se tiraba.
+ *
+ * El estado NO se escribe en el archivo de la charla sino en uno aparte por charla
+ * (data/estados/{clave}.json, wamid → [estado, ts]) y se le pega al renglón recién
+ * al mostrarlo (wabot_transcript_estados). Escribirlo en el renglón obligaba a tomar
+ * el candado de la charla, que el bot tiene agarrado durante toda la respuesta (la
+ * demora, el tipeo y los mensajes de a uno): el «sent» del primer mensaje llega
+ * ANTES de que el renglón exista en disco, el webhook tendría que esperar con un
+ * proceso de PHP ocupado por cada estado, y si no esperaba, el guardado del bot lo
+ * pisaba. Aparte no se pelea con nadie, y un estado que llega antes que su renglón
+ * igual aparece cuando el renglón se guarda. Solo WhatsApp: Instagram no manda
+ * estos estados por mensaje. */
+function wabot_wa_estado_nivel($estado) {
+    return ['sent' => 1, 'delivered' => 2, 'read' => 3][(string)$estado] ?? 0;
+}
+
+function wabot_wa_estados_path($clave) {
+    return WABOT_DATA . '/estados/' . preg_replace('/[^0-9A-Za-z]/', '', (string)$clave) . '.json';
+}
+
+/** Lo que avisó Meta para los mensajes de esa charla: wamid → [estado, ts]. */
+function wabot_wa_estados_leer($clave) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    if ($clave === '') return [];
+    $m = json_decode((string)@file_get_contents(wabot_wa_estados_path($clave)), true);
+    return is_array($m) ? $m : [];
+}
+
+/**
+ * Anota el estado de un mensaje nuestro. Solo sube (sent < delivered < read):
+ * Meta puede mandar los avisos desordenados o repetidos, y un «delivered» que
+ * llega tarde no puede borrar un «read». Devuelve true si cambió algo.
+ */
+function wabot_wa_estado_guardar($clave, $wamid, $estado, $ts = 0) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    $wamid = trim((string)$wamid);
+    $nivel = wabot_wa_estado_nivel($estado);
+    if ($clave === '' || $wamid === '' || $nivel === 0) return false;
+    $path = wabot_wa_estados_path($clave);
+    $dir = dirname($path);
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return false;
+    $h = @fopen($path, 'c+');
+    if (!$h) return false;
+    flock($h, LOCK_EX);
+    $m = json_decode((string)stream_get_contents($h), true);
+    if (!is_array($m)) $m = [];
+    $previo = $m[$wamid] ?? null;
+    $cambio = !is_array($previo) || wabot_wa_estado_nivel($previo[0] ?? '') < $nivel;
+    if ($cambio) {
+        unset($m[$wamid]);
+        $m[$wamid] = [(string)$estado, (int)$ts > 0 ? (int)$ts : time()];
+        // Techo: los últimos 1000 mensajes de la charla (~70 KB); los más viejos ya no cambian.
+        if (count($m) > 1000) $m = array_slice($m, -1000, null, true);
+        ftruncate($h, 0);
+        rewind($h);
+        fwrite($h, json_encode($m));
+        fflush($h);
+    }
+    flock($h, LOCK_UN);
+    fclose($h);
+    return $cambio;
+}
+
+/**
+ * Le pega a cada renglón nuestro (bot o Pablo) de una charla de WhatsApp el
+ * estado que avisó Meta: 'estado' (sent/delivered/read) y 'estado_ts'. Si un
+ * mensaje más nuevo está leído, los anteriores también: en WhatsApp abrir el chat
+ * lee todo lo de arriba, y Meta a veces avisa solo el último. Nunca lo baja.
+ */
+function wabot_transcript_estados($lineas, $conv) {
+    if (!is_array($lineas) || !is_array($conv) || wabot_canal($conv) === 'instagram') return $lineas;
+    $m = [];
+    foreach (array_unique([wabot_conversation_key($conv), wabot_channel_user_id($conv)]) as $clave) {
+        foreach (wabot_wa_estados_leer($clave) as $wamid => $e) {
+            if (!is_array($e) || wabot_wa_estado_nivel($e[0] ?? '') === 0) continue;
+            if (!isset($m[$wamid]) || wabot_wa_estado_nivel($m[$wamid][0]) < wabot_wa_estado_nivel($e[0])) $m[$wamid] = $e;
+        }
+    }
+    if (!$m) return $lineas;
+    $leidoTs = 0;
+    foreach (array_reverse(array_keys($lineas)) as $i) {
+        $l = $lineas[$i];
+        if (!is_array($l) || !in_array(($l['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        $e = $m[(string)($l['id'] ?? '')] ?? null;
+        if (!$e) continue;
+        $estado = (string)$e[0];
+        $ts = (int)($e[1] ?? 0);
+        if ($estado === 'read') $leidoTs = max($leidoTs, $ts);
+        elseif ($leidoTs > 0) { $estado = 'read'; $ts = $leidoTs; }
+        $lineas[$i]['estado'] = $estado;
+        if ($ts > 0) $lineas[$i]['estado_ts'] = $ts;
+    }
+    return $lineas;
+}
+
 /**
  * ¿Este número es de Pablo? Lo que escriba desde su celular personal al bot no
  * es un cliente: no abre charla ni se contesta (webhook.php); solo cuenta para

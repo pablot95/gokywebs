@@ -1087,7 +1087,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
         }
         echo json_encode([
-            'transcript' => wabot_transcript_citas(wabot_transcript_completo($_POST['tel'], $conv)),
+            // Con las tildes de enviado/entregado/leído de WhatsApp (4-nov, wabot_transcript_estados).
+            'transcript' => wabot_transcript_estados(wabot_transcript_citas(wabot_transcript_completo($_POST['tel'], $conv)), $conv),
             'fase'       => $conv['fase'],
             'ventana'    => wabot_ventana_restante($conv),
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
@@ -1191,7 +1192,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'lista') {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['items' => wabot_clientes_marcar_lista(wabot_lista_items())], JSON_UNESCAPED_UNICODE);
+        // Con los pagos de MP sin asignar (4-nov): el aviso de arriba de la lista se mantiene al día solo.
+        echo json_encode(['items' => wabot_clientes_marcar_lista(wabot_lista_items()),
+                          'pagos_sin_asignar' => function_exists('wabot_pagos_sin_asignar') ? count(wabot_pagos_sin_asignar()) : 0], JSON_UNESCAPED_UNICODE);
         exit;
     }
     // Busca DENTRO de los mensajes, no en los datos de contacto: recorre cada
@@ -1351,6 +1354,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_conv_save($conv);
         header('Location: admin.php?tab=conversaciones'); exit;
     }
+    /* Ya sin botón (4-nov): hacía lo mismo que conv_eliminar y en el encabezado
+     * quedó solo «Eliminar». Se deja por si llega un form viejo todavía abierto. */
     if ($a === 'conv_reset' && !empty($_POST['tel'])) {
         @unlink(wabot_conv_path($_POST['tel']));
         header('Location: admin.php?tab=conversaciones'); exit;
@@ -1668,6 +1673,9 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .burb-anuncio a { color:#4ea1ff; font-size:12px; }
 .burb.resaltada { outline:2px solid var(--ac); outline-offset:2px; transition:outline-color .6s; }
 .meta-editado { color:var(--dim); font-style:italic; }
+/* Tildes de WhatsApp (4-nov): ✓ enviado, ✓✓ gris entregado, ✓✓ azul leído. */
+.burb-tilde { display:inline-block; margin-left:6px; padding-right:3px; font-size:12px; font-weight:700; line-height:1; letter-spacing:-3px; color:var(--dim); cursor:default; }
+.burb-tilde--read { color:#53bdeb; }
 /* El lápiz aparece al pasar por encima de la burbuja: en el celular, donde no
    hay hover, queda siempre visible (ver el @media de abajo). */
 .burb-editar { background:none; border:0; padding:0 0 0 8px; margin:0; font-size:11px; font-weight:600;
@@ -1743,17 +1751,38 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .conv-chip--favoritos .conv-chip-n { background:#5b5126; color:#facc15; }
 .conv-chip--favoritos.on .conv-chip-n { background:rgb(0 0 0 / .2); color:#241d02; }
 .conv-chips-sep { width:1px; height:18px; background:var(--line-fuerte); margin:0 2px; flex-shrink:0; }
+.conv-chips-sep[hidden] { display:none; }
 .conv-chips-mas { position:relative; margin-left:auto; }
-.conv-chip--mas { padding:0 7px; font-size:10px; }
-.conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
+/* «Más ▾» dice qué tiene elegido adentro (4-nov): «Prospectos ▾», «Solo WA ▾»… */
+.conv-chip--mas { padding:0 8px; font-size:10.5px; max-width:160px; }
+.conv-chip--mas > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:190px; padding:5px;
     background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px;
     box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
 .conv-chips-panel[hidden] { display:none; }
+.conv-chips-panel-tit { padding:6px 9px 2px; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tenue); }
+.conv-chips-panel-tit:not(:first-child) { margin-top:4px; border-top:1px solid var(--line); padding-top:8px; }
+/* La regla de abajo tenía pegada adentro la del globito (estaba sin cerrar):
+   se separaron el 4-nov. */
 .conv-chip-item { width:100%; text-align:left; padding:7px 9px; border:0; border-radius:7px;
-.conv-chip-item .conv-chip-n { display:inline-block; margin-left:6px; }
     background:transparent; color:var(--dim); font:inherit; font-size:12.5px; cursor:pointer; }
+.conv-chip-item .conv-chip-n { display:inline-block; margin-left:6px; }
 .conv-chip-item:hover { background:var(--card); color:var(--tx); }
 .conv-chip-item.on { background:var(--info); color:#0b1424; font-weight:600; }
+.conv-chip-item[data-canal].on::after { content:' ✓'; }
+/* «Copiar» de Sin leer (4-nov): es una acción, así que tiene cara de botón
+   (esquinas rectas, borde) y no de filtro (píldora). */
+.conv-accion-copiar { flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; height:26px; padding:0 9px;
+    border:1px solid var(--line-fuerte); border-radius:6px; background:var(--card); color:var(--tx);
+    font:inherit; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.conv-accion-copiar:hover, .conv-accion-copiar:focus-visible { border-color:var(--ac); color:var(--ac); outline:0; }
+.conv-accion-copiar[hidden] { display:none; }
+.conv-accion-copiar:disabled { opacity:.6; cursor:default; }
+/* Pagos de Mercado Pago sin dueño (4-nov): siempre arriba de la lista. */
+.conv-aviso-pagos { display:block; margin-top:8px; padding:6px 9px; border:1px solid #5a4415; border-radius:8px;
+    background:var(--warn-tenue); color:var(--warn); font-size:12px; font-weight:600; line-height:1.35; }
+.conv-aviso-pagos:hover, .conv-aviso-pagos:focus-visible { border-color:var(--warn); color:#f2bd5c; }
+.conv-aviso-pagos[hidden] { display:none; }
 
 
 .estado-tag { display:inline-block; flex-shrink:0; padding:1px 6px; border-radius:5px; font-size:10px;
@@ -1867,6 +1896,16 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-item.pago-avisado { border-left-color:var(--ac); background:var(--ac-tenue); }
 .conv-list[data-grupo="presentadas_48"] .conv-list-head { color:var(--bad); }
 .conv-vacio { padding:16px; color:var(--dim); font-size:13px; }
+/* Sin conexión / sesión vencida (4-nov): banda arriba de la lista y el chat.
+   Vacía no ocupa lugar; con texto empuja el resto hacia abajo (no tapa nada). */
+.conexion-aviso { flex:none; margin:0 0 8px; padding:8px 12px; border:1px solid var(--warn); border-radius:9px;
+    background:var(--warn-tenue); color:var(--warn); font-size:13px; font-weight:600; }
+.conexion-aviso:empty { display:none; }
+.conexion-aviso--sesion { border-color:var(--bad); background:var(--bad-tenue); color:var(--bad); }
+.conexion-aviso a { color:inherit; text-decoration:underline; }
+@media (min-width: 1181px) and (hover: hover) {
+  body.conv-full .conexion-aviso { margin-right:130px; }
+}
 
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
 /* min-height: con la tarjeta de sugerencia abierta (9-oct) el chat no puede quedar en cero. */
@@ -1965,6 +2004,14 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-admin-cat-pie { display:flex; justify-content:flex-start; margin-top:9px; }
 .rr-admin-acciones { position:sticky; bottom:0; z-index:5; display:flex; justify-content:space-between; gap:10px;
     margin-top:14px; padding:10px; border:1px solid var(--line-fuerte); border-radius:11px; background:rgb(25 28 35 / .96); }
+/* Plegables de Ajustes y Estado (4-nov): «Técnico», «Datos técnicos», el detalle largo. */
+details.plegable > summary, details.estado-tecnico > summary { cursor:pointer; list-style:none; }
+details.plegable > summary::-webkit-details-marker, details.estado-tecnico > summary::-webkit-details-marker { display:none; }
+details.plegable > summary::before, details.estado-tecnico > summary::before { content:'▸'; display:inline-block; width:1.1em; color:var(--dim); }
+details.plegable[open] > summary::before, details.estado-tecnico[open] > summary::before { content:'▾'; }
+details.plegable > summary:focus-visible, details.estado-tecnico > summary:focus-visible { outline:2px solid var(--info); outline-offset:2px; border-radius:4px; }
+/* «Qué hace el bot»: el rótulo de cada casilla se lee de una, la ayuda va abajo y más tenue. */
+.ajuste-que { color:var(--tx); font-size:14px; }
 @media (max-width:700px) {
   .rr-admin-cat-cab { grid-template-columns:52px minmax(0,1fr); }
   .rr-admin-cat-cab .rr-admin-visible { grid-column:1 / -1; justify-self:start; }
@@ -1988,9 +2035,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .form-info dd a { color:var(--info); }
 .conv-acciones { gap:6px; flex-shrink:0; }
 .conv-acciones button { padding:4px 8px; font-size:11px; font-weight:500; border-radius:6px; }
-/* Resetear y Eliminar no se pueden deshacer, así que dejan de verse como los
-   demás: quedan tenues y sin borde hasta que pasás por encima. En rojo fijo
-   competían por la atención con Archivar, que es inofensivo. */
+/* Eliminar no se puede deshacer, así que deja de verse como los demás: queda
+   tenue y sin borde hasta que pasás por encima. En rojo fijo competía por la
+   atención con Archivar, que es inofensivo. (Hasta el 4-nov estaba también
+   «Resetear», que hacía lo mismo: quedó uno solo.) */
 .conv-acciones button.bad { color:var(--tenue); border-color:transparent; }
 .conv-acciones button.bad:hover, .conv-acciones button.bad:focus-visible { color:var(--bad); border-color:var(--bad); }
 .conv-acciones-sep { width:1px; align-self:stretch; margin:2px 3px; background:var(--line); flex-shrink:0; }
@@ -2076,11 +2124,23 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     td { border: 0; padding: 3px 0; }
     td:first-child { font-size: 16px; font-weight: 700; }
     /* 16px evita que iOS haga zoom al enfocar un campo. */
-    button, input[type=text], input[type=password], input[type=number], textarea, select { min-height: 42px; font-size: 16px; }
+    input[type=text], input[type=password], input[type=number], textarea, select { min-height: 42px; font-size: 16px; }
+    /* 42 px solo en los botones de acción (4-nov): enviar, adjuntar y grabar, los
+       del encabezado del chat y los de las pestañas (todos van en .card). Antes la
+       regla era para TODO button y agrandaba también los chips de filtro (la fila
+       ocupaba 3-4 renglones), la estrella de favorito, el «Editar» de las
+       burbujas, el teléfono copiable y la × de las miniaturas por enviar. */
+    #responder .fila > button, .adjuntando > button, .conv-acciones button, .card button,
+    .rr-admin-acciones button, .sug-acciones button, .burb-edit-acciones button { min-height: 42px; font-size: 16px; }
+    /* Los chips: área de toque con padding, sin el alto de un botón de acción.
+       Así la fila entra en dos renglones como mucho. */
+    .conv-chip, .conv-accion-copiar { height: auto; min-height: 34px; padding: 0 10px; font-size: 12px; }
+    .conv-favorito { width: 34px; height: 34px; }
+    .rr-pop-cerrar, .sug-plegar { min-height: 34px; padding: 4px 12px; }
     .fila > form { flex: 1 1 auto; }
     .fila > form button { width: 100%; }
     /* flex-shrink:0 sin ancho hace que la fila de botones (Apagar/Crear boceto/
-       Archivar/Resetear/Eliminar) nunca doble línea: se estira más allá de la
+       Archivar/Eliminar) nunca doble línea: se estira más allá de la
        pantalla y empuja TODA la página a scroll horizontal. Al celular esto se
        ve apenas se abre cualquier chat. */
     .conv-acciones { flex-shrink: 1; width: 100%; }
@@ -2104,8 +2164,8 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
         background: var(--card); border: 1px solid var(--line); border-radius: 10px;
         padding: 8px; box-shadow: 0 10px 26px rgba(0,0,0,.5);
         /* Con todas las acciones no entra en la pantalla y la página no
-           scrollea: Resetear y Eliminar quedaban fuera de alcance (Pablo,
-           9-oct). Scrollea el menú; el alto exacto lo pone el JS al abrirlo. */
+           scrollea: lo de abajo de todo (Eliminar) quedaba fuera de alcance
+           (Pablo, 9-oct). Scrollea el menú; el alto exacto lo pone el JS al abrirlo. */
         max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
         flex-wrap: nowrap;   /* .fila envuelve: con alto máximo armaba una segunda columna en vez de scrollear */
     }
@@ -2264,15 +2324,16 @@ function burbujaCita(t, chat) {
     <?php if (isset($_GET['template_interesado_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
 
     <?php if ($tab === 'estado'): ?>
+        <?php /* Un solo lugar para cada cosa (4-nov): el interruptor del bot vive en
+               Ajustes; acá solo se ve cómo está. La acción toggle_activo sigue en el
+               PHP por si queda algún form viejo abierto. */ ?>
         <div class="card">
-            <div class="fila" style="justify-content:space-between">
+            <div class="fila" style="justify-content:space-between;gap:10px">
                 <div>
-                    <strong>Bot <?= !empty($cfg['activo']) ? 'activo' : 'apagado' ?></strong>
+                    <strong>Bot <span class="pill <?= !empty($cfg['activo']) ? 'on' : 'off' ?>"><?= !empty($cfg['activo']) ? 'activo' : 'apagado' ?></span></strong>
                     <p class="meta">Apagado: registra los mensajes pero no contesta nada.</p>
                 </div>
-                <form method="post"><input type="hidden" name="accion" value="toggle_activo">
-                    <button class="<?= !empty($cfg['activo']) ? 'bad' : '' ?>"><?= !empty($cfg['activo']) ? 'Apagar' : 'Encender' ?></button>
-                </form>
+                <a href="admin.php?tab=ajustes" class="meta" style="color:var(--ac)">cambiar en Ajustes →</a>
             </div>
         </div>
         <?php
@@ -2343,36 +2404,21 @@ function burbujaCita(t, chat) {
             <?php endif; ?>
             <p class="meta" id="pushEstado"></p>
         </div>
-        <div class="card">
-            <div class="fila" style="justify-content:space-between">
-                <div>
-                    <strong>Exportar chats</strong>
-                    <p class="meta">Descarga un .txt con todas las conversaciones que tuvieron actividad en los últimos días, charla completa.</p>
-                </div>
-                <a href="admin.php?accion=export_chats&dias=7"><button type="button" class="sec">Últimos 7 días</button></a>
-            </div>
-        </div>
-        <div class="card">
-            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
-                <div>
-                    <strong>Chats de un rango de fechas en .txt</strong>
-                    <p class="meta">Todos los chats de esas fechas en un solo archivo, cada uno con la charla completa. Para un solo día, poné la misma fecha en los dos.</p>
-                </div>
-                <?php $estiloFecha = 'width:auto;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit'; ?>
-                <form method="get" action="admin.php" class="fila" style="gap:8px;flex-wrap:wrap;align-items:center">
-                    <input type="hidden" name="accion" value="imprimir_chats">
-                    <label class="meta" style="margin:0">Desde <input type="date" name="desde" value="<?= date('Y-m-d', strtotime('-6 days')) ?>" max="<?= date('Y-m-d') ?>" required style="<?= $estiloFecha ?>"></label>
-                    <label class="meta" style="margin:0">Hasta <input type="date" name="hasta" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required style="<?= $estiloFecha ?>"></label>
-                    <select name="criterio" style="<?= $estiloFecha ?>" aria-label="Qué chats">
-                        <option value="arranque">Que arrancaron en esas fechas</option>
-                        <option value="actividad">Con mensajes en esas fechas</option>
-                    </select>
-                    <button type="submit" class="sec">Descargar</button>
-                </form>
-            </div>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Qué código está corriendo</h2>
+        <?php /* La descarga de chats en .txt estaba en tres lugares (dos tarjetas acá y el
+               panel Fecha de la lista): queda la de la lista, que es la que se usa (4-nov).
+               export_chats e imprimir_chats siguen andando por si hay links guardados. */ ?>
+        <p class="meta" style="margin:-4px 2px 16px">Los chats en .txt se bajan desde <a href="admin.php?tab=conversaciones">Conversaciones</a>: botón <strong>Fecha</strong> arriba de la lista → «Descargar chats» (un día o un rango, los que arrancaron o los que tuvieron mensajes en esas fechas).</p>
+        <?php
+        /* Versión, webhook y credenciales (4-nov): se miran muy de vez en cuando, así
+         * que van plegados. Si falta algo importante (token, número, app secret) se
+         * abren solos y el título lo avisa, para que la alerta no quede escondida. */
+        $secretos = count(wabot_app_secrets());
+        $tecnicoAlerta = WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR'
+            || $secretos === 0 || ($secretos === 1 && wabot_ig_activo());
+        ?>
+        <details class="card estado-tecnico"<?= $tecnicoAlerta ? ' open' : '' ?>>
+            <summary><strong>Datos técnicos</strong> <span class="meta">— versión del código, webhook de Meta y credenciales<?= $tecnicoAlerta ? ' · <span style="color:var(--bad)">⚠ hay algo para revisar</span>' : '' ?></span></summary>
+            <h3 style="margin:14px 0 0">Qué código está corriendo</h3>
             <label>Sello de versión</label>
             <code><?= $e(wabot_version()) ?></code>
             <p class="meta" style="margin-top:6px">
@@ -2383,9 +2429,7 @@ function burbujaCita(t, chat) {
             </p>
             <p class="meta">También queda anotado en cada línea del log, así que se puede saber
             qué código atendió una conversación puntual sin tener que acordarse de qué se subió ese día.</p>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Datos para configurar el webhook en Meta</h2>
+            <h3 style="margin:18px 0 0;padding-top:14px;border-top:1px solid var(--line)">Datos para configurar el webhook en Meta</h3>
             <label>Callback URL</label>
             <code>https://gokywebs.com/wabot/webhook.php</code>
             <label>Verify token</label>
@@ -2393,7 +2437,6 @@ function burbujaCita(t, chat) {
             <label>Campos del webhook a suscribir</label>
             <code>messages</code> y <code>smb_message_echoes</code> en WhatsApp (el segundo hace que el bot se calle cuando contestás vos desde la app) · <code>messages</code> en Instagram
             <label>Estado de credenciales</label>
-            <?php $secretos = count(wabot_app_secrets()); ?>
             <p class="meta">
                 Token de Meta: <?= WABOT_META_TOKEN === 'COMPLETAR' ? '<span style="color:var(--bad)">falta</span>' : '<span style="color:var(--ac)">cargado</span>' ?> ·
                 Phone Number ID: <?= WABOT_PHONE_NUMBER_ID === 'COMPLETAR' ? '<span style="color:var(--bad)">falta</span>' : '<span style="color:var(--ac)">cargado</span>' ?> ·
@@ -2418,7 +2461,7 @@ function burbujaCita(t, chat) {
                     App secret: <?= $secretos ?> clave<?= $secretos > 1 ? 's' : '' ?> cargada<?= $secretos > 1 ? 's' : '' ?>, la firma se valida.
                 </p>
             <?php endif; ?>
-        </div>
+        </details>
 
     <?php elseif ($tab === 'cohortes'):
         // Domingo 20-sep pedido por Pablo. wabot_cohortes_calcular() retrocede
@@ -3066,7 +3109,7 @@ function burbujaCita(t, chat) {
                 <input type="checkbox" name="activo" value="1" <?= !empty($cfg['activo']) ? 'checked' : '' ?> style="width:auto">
                 Bot activo
             </label>
-            <p class="meta" style="margin-top:6px">Apagado registra los mensajes pero no contesta nada. Es el mismo interruptor que el botón de la pestaña Estado.</p>
+            <p class="meta" style="margin-top:6px">Apagado registra los mensajes pero no contesta nada. Se prende y se apaga solo desde acá (4-nov); en Estado se ve cómo está.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Tiempos</h2>
@@ -3079,11 +3122,11 @@ function burbujaCita(t, chat) {
             <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">
                 <label style="display:flex;align-items:center;gap:7px;margin:0">
                     <input type="checkbox" name="demora_por_longitud" <?= !empty($cfg['demora_por_longitud']) ? 'checked' : '' ?>>
-                    Que cada mensaje tarde segun su largo
+                    Que cada mensaje tarde según su largo
                 </label>
                 <div><label>Velocidad de tipeo (caracteres por segundo)</label><input type="number" name="tipeo_por_segundo" min="5" max="200" value="<?= (int)($cfg['tipeo_por_segundo'] ?? 16) ?>" style="width:100px"></div>
                 <div><label>Nunca menos de (segundos)</label><input type="number" step="0.1" name="demora_minima" min="0" max="10" value="<?= $e((string)($cfg['demora_minima'] ?? 2)) ?>" style="width:100px"></div>
-                <div><label>Nunca mas de (segundos)</label><input type="number" step="0.1" name="demora_maxima" min="1" max="30" value="<?= $e((string)($cfg['demora_maxima'] ?? 7)) ?>" style="width:100px"></div>
+                <div><label>Nunca más de (segundos)</label><input type="number" step="0.1" name="demora_maxima" min="1" max="30" value="<?= $e((string)($cfg['demora_maxima'] ?? 7)) ?>" style="width:100px"></div>
                 <div><label>Días para resetear una charla vieja</label><input type="number" name="reset_dias" min="1" value="<?= (int)($cfg['reset_dias'] ?? 7) ?>" style="width:100px"></div>
             </div>
             <div class="fila" style="margin-top:14px;gap:18px">
@@ -3100,20 +3143,32 @@ function burbujaCita(t, chat) {
             <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
             <p class="meta" style="margin-top:8px">Contestar a mano (desde el panel o desde el celular) calla al bot en ese chat por las horas de silencio. Si el cliente vuelve a escribir después de los días de reset, la charla arranca de cero.</p>
         </div>
+        <?php
+        $iaPedido = wabot_ia_proveedor_pedido($cfg);
+        $hayKeyOpenai = wabot_openai_key() !== '';
+        $modeloOpenaiActual = wabot_openai_modelo($cfg);
+        $sugeridos = wabot_openai_modelos_sugeridos();
+        /* La tarjeta «Inteligencia artificial» mezclaba lo que hace el bot con los
+         * fierros (4-nov). Quedó partida en dos: «Qué hace el bot», a la vista, con
+         * rótulos en criollo y una línea de ayuda cada uno (el detalle largo de
+         * antes, plegado abajo), y «Técnico» plegado: modelos, modo prueba, flujo
+         * comercial y revisión. Los name de los inputs y el guardado no cambiaron:
+         * los dos radios ia_proveedor de arriba y el de «Técnico» son el mismo grupo. */
+        $quePasa = function ($nombre, $titulo, $ayuda, $tildado) {
+            return '<label class="ajuste-que" style="margin:12px 0 0;cursor:pointer"><input type="checkbox" name="' . $nombre . '" value="1"' . ($tildado ? ' checked' : '') . ' style="width:auto"> ' . $titulo . '</label>'
+                 . '<p class="meta" style="margin:2px 0 0 22px">' . $ayuda . '</p>';
+        };
+        ?>
         <div class="card">
-            <?php
-            $iaPedido = wabot_ia_proveedor_pedido($cfg);
-            $hayKeyOpenai = wabot_openai_key() !== '';
-            $modeloOpenaiActual = wabot_openai_modelo($cfg);
-            $sugeridos = wabot_openai_modelos_sugeridos();
-            ?>
-            <h2 style="margin-top:0">Inteligencia artificial</h2>
-            <p class="meta" style="margin-top:0">Quién piensa las respuestas <strong>antes del precio</strong>: entender a qué se dedica, qué necesita, contestar dudas y decidir cuándo cotizar. El precio, la oferta del primer diseño y el silencio de después salen siempre con los textos fijos, en los tres modos.</p>
-            <div style="display:grid;gap:8px;margin-top:12px">
+            <h2 style="margin-top:0">Qué hace el bot</h2>
+            <p class="meta" style="margin-top:0">Lo que el bot hace solo en las charlas. Los precios, la oferta de la demo y los textos fijos salen siempre del sistema, pase lo que pase acá.</p>
+            <input type="hidden" name="postprecio_config_presente" value="1">
+
+            <p style="margin:14px 0 4px;font-weight:600">Quién piensa las respuestas antes del precio</p>
+            <div style="display:grid;gap:8px">
                 <?php foreach ([
-                    'gemini' => ['Gemini', 'Como hasta ahora: Gemini clasifica cada mensaje y el bot contesta con los textos fijos.'],
-                    'shadow' => ['Prueba (shadow)', 'Contesta Gemini, como siempre, y OpenAI piensa en paralelo lo que habría contestado, sin mandarlo. Se compara en la pestaña IA.'],
-                    'openai' => ['OpenAI', 'Conversa al inicio y responde consultas aprobadas después del precio. Lo nuevo queda para Pablo en silencio.'],
+                    'gemini' => ['Gemini', 'Clasifica cada mensaje y contesta con los textos fijos, como siempre.'],
+                    'openai' => ['OpenAI', 'Conversa al principio y contesta las dudas aprobadas después del precio; lo nuevo te lo deja a vos, sin contestar.'],
                 ] as $valorModo => [$tituloModo, $textoModo]): ?>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
                         <input type="radio" name="ia_proveedor" value="<?= $valorModo ?>" <?= $iaPedido === $valorModo ? 'checked' : '' ?> style="width:auto;margin-top:3px">
@@ -3121,17 +3176,44 @@ function burbujaCita(t, chat) {
                     </label>
                 <?php endforeach; ?>
             </div>
-            <input type="hidden" name="postprecio_config_presente" value="1">
-            <label style="margin-top:12px"><input type="checkbox" name="solo_bienvenida" value="1" <?= !empty($cfg['solo_bienvenida']) ? 'checked' : '' ?> style="width:auto"> Solo dar la bienvenida (el resto de la charla la contesta Pablo)</label>
-            <p class="meta">El bot saluda al que escribe por primera vez y después no contesta más. Formularios, demos, plantillas y avisos automáticos siguen igual. Destildado vuelve a conversar como antes.</p>
-            <label style="margin-top:12px"><input type="checkbox" name="postprecio_activo" value="1" <?= !empty($cfg['postprecio_activo']) ? 'checked' : '' ?> style="width:auto"> Responder consultas aprobadas después del precio y de la demo</label>
-            <p class="meta">Los pagos recibidos, las excepciones y los temas nuevos pasan a Pablo sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
-            <label style="margin-top:12px"><input type="checkbox" name="bot_postdemo_activo" value="1" <?= !empty($cfg['bot_postdemo_activo']) ? 'checked' : '' ?> style="width:auto"> Bot después de la demo</label>
-            <p class="meta">Con el flujo comercial en Automático, el bot sigue después del formulario completo y de la demo: contesta lo simple hasta que llega la demo, pregunta cuál de los dos modelos le gustó, toma la elección, manda el link de pago de la modalidad elegida (o los datos de transferencia si no quiere Mercado Pago), anota los cambios que pide y contesta las dudas habituales. «Ya pagué» o el comprobante: le confirma que lo revisamos y te avisa. Llamadas, nombre, reclamos o algo fuera de libreto siguen yendo a vos en silencio. Si vos escribís en el chat, el bot se pausa como siempre. Destildado, el formulario completo apaga el bot y Presentar te deja la charla, como hasta ahora.</p>
-            <label style="margin-top:12px"><input type="checkbox" name="pagos_auto" value="1" <?= !array_key_exists('pagos_auto', $cfg) || !empty($cfg['pagos_auto']) ? 'checked' : '' ?> style="width:auto"> Cruzar solo los pagos de Mercado Pago con los chats</label>
-            <p class="meta">Cada vez que corre el cron, mira los cobros aprobados de los últimos 3 días (señas, pagos únicos, suscripciones y transferencias al CVU) y los cruza con los chats: por la referencia del link (<code>?c=</code>), o por el mismo monto que un link mandado a un solo chat en 72 h cuando el cliente avisó que pagó. Lo confirmado pasa a Cliente, avisa a Meta y te avisa; lo dudoso queda en «pagos sin asignar» de la pestaña Clientes. Destildado, los pagos los asignás a mano desde esa pestaña.</p>
-            <label style="margin-top:12px"><input type="checkbox" name="onboarding_activo" value="1" <?= !array_key_exists('onboarding_activo', $cfg) || !empty($cfg['onboarding_activo']) ? 'checked' : '' ?> style="width:auto"> Pedir por el chat los datos para la web después del pago</label>
-            <p class="meta">Con el pago confirmado, el bot pide de a una cosa: el modelo (1, 2 o una mezcla) si no lo eligió, el email del panel si la web tiene login, el logo y las fotos, y los cambios. Nunca pide datos de factura ni dominios. Si vos escribís en el chat, se pausa; «Que siga el bot» en la ficha lo retoma. Destildado, el pago confirmado le manda tu «Genial, recibido…» y el bot se calla en esa charla.</p>
+            <?php if ($iaPedido === 'shadow'): ?>
+                <p class="meta" style="margin-top:6px;color:var(--warn)">Ahora está en <strong>modo prueba</strong>: contesta Gemini y OpenAI piensa en paralelo sin mandar nada. Se cambia acá arriba o en «Técnico».</p>
+            <?php endif; ?>
+            <?php if ($iaPedido !== 'gemini' && !$hayKeyOpenai): ?>
+                <p class="meta" style="margin-top:6px;color:var(--warn)">Elegiste <?= $iaPedido === 'shadow' ? 'la prueba' : 'OpenAI' ?>, pero sin key el bot sigue con Gemini.</p>
+            <?php endif; ?>
+
+            <?= $quePasa('solo_bienvenida', 'Solo saludar (el resto lo contestás vos)',
+                'Saluda al que escribe por primera vez y no contesta más. Formularios, demos, plantillas y avisos siguen igual.', !empty($cfg['solo_bienvenida'])) ?>
+            <?= $quePasa('postprecio_activo', 'Contestar las dudas de siempre después del precio y de la demo',
+                'Lo que no está aprobado (pagos, excepciones, temas nuevos) te lo deja a vos, sin mandarle nada al cliente.', !empty($cfg['postprecio_activo'])) ?>
+            <?= $quePasa('bot_postdemo_activo', 'Seguir la charla después de la demo',
+                'Con el flujo comercial en Automático: pregunta qué modelo le gustó, manda el link de pago y anota los cambios. Si escribís vos, se pausa.', !empty($cfg['bot_postdemo_activo'])) ?>
+            <?= $quePasa('pagos_auto', 'Reconocer solo los pagos de Mercado Pago',
+                'Cruza los cobros de los últimos 3 días con los chats; lo dudoso queda en «pagos sin asignar» de Clientes.', !array_key_exists('pagos_auto', $cfg) || !empty($cfg['pagos_auto'])) ?>
+            <?= $quePasa('onboarding_activo', 'Pedir por el chat lo que falta para la web después del pago',
+                'De a una cosa: modelo, email del panel, logo y fotos, cambios. Si escribís vos, se pausa.', !array_key_exists('onboarding_activo', $cfg) || !empty($cfg['onboarding_activo'])) ?>
+
+            <?php /* Las explicaciones largas de antes (4-nov): no se borraron, quedaron acá plegadas. */ ?>
+            <details class="plegable" style="margin-top:14px">
+                <summary class="meta">Cómo funciona cada uno, en detalle</summary>
+                <p class="meta" style="margin-top:8px"><strong>Quién piensa las respuestas:</strong> entender a qué se dedica, qué necesita, contestar dudas y decidir cuándo cotizar. El precio, la oferta del primer diseño y el silencio de después salen siempre con los textos fijos, en los tres modos (Gemini, OpenAI y el modo prueba de «Técnico»).</p>
+                <p class="meta" style="margin-top:8px"><strong>Solo saludar:</strong> el bot saluda al que escribe por primera vez y después no contesta más. Formularios, demos, plantillas y avisos automáticos siguen igual. Destildado vuelve a conversar como antes.</p>
+                <p class="meta" style="margin-top:8px"><strong>Dudas después del precio y de la demo:</strong> los pagos recibidos, las excepciones y los temas nuevos pasan a vos sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
+                <p class="meta" style="margin-top:8px"><strong>Después de la demo:</strong> con el flujo comercial en Automático, el bot sigue después del formulario completo y de la demo: contesta lo simple hasta que llega la demo, pregunta cuál de los dos modelos le gustó, toma la elección, manda el link de pago de la modalidad elegida (o los datos de transferencia si no quiere Mercado Pago), anota los cambios que pide y contesta las dudas habituales. «Ya pagué» o el comprobante: le confirma que lo revisamos y te avisa. Llamadas, nombre, reclamos o algo fuera de libreto siguen yendo a vos en silencio. Si vos escribís en el chat, el bot se pausa como siempre. Destildado, el formulario completo apaga el bot y Presentar te deja la charla, como hasta ahora.</p>
+                <p class="meta" style="margin-top:8px"><strong>Pagos de Mercado Pago:</strong> cada vez que corre el cron, mira los cobros aprobados de los últimos 3 días (señas, pagos únicos, suscripciones y transferencias al CVU) y los cruza con los chats: por la referencia del link (<code>?c=</code>), o por el mismo monto que un link mandado a un solo chat en 72 h cuando el cliente avisó que pagó. Lo confirmado pasa a Cliente, avisa a Meta y te avisa; lo dudoso queda en «pagos sin asignar» de la pestaña Clientes. Destildado, los pagos los asignás a mano desde esa pestaña.</p>
+                <p class="meta" style="margin-top:8px"><strong>Datos para la web:</strong> con el pago confirmado, el bot pide de a una cosa: el modelo (1, 2 o una mezcla) si no lo eligió, el email del panel si la web tiene login, el logo y las fotos, y los cambios. Nunca pide datos de factura ni dominios. Si vos escribís en el chat, se pausa; «Que siga el bot» en la ficha lo retoma. Destildado, el pago confirmado le manda tu «Genial, recibido…» y el bot se calla en esa charla.</p>
+            </details>
+        </div>
+
+        <details class="card plegable ajustes-tecnico">
+            <summary><strong>Técnico</strong> <span class="meta">— modelos, modo prueba, flujo comercial y revisión de las charlas</span></summary>
+
+            <h3 style="margin:16px 0 6px">Modo prueba (shadow)</h3>
+            <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
+                <input type="radio" name="ia_proveedor" value="shadow" <?= $iaPedido === 'shadow' ? 'checked' : '' ?> style="width:auto;margin-top:3px">
+                <span><strong>Prueba</strong> — <span class="meta">Contesta Gemini, como siempre, y OpenAI piensa en paralelo lo que habría contestado, sin mandarlo. Se compara en la pestaña <a href="admin.php?tab=ia">IA</a>. Para salir, elegí Gemini u OpenAI en «Qué hace el bot».</span></span>
+            </label>
 
             <h3 style="margin:18px 0 6px">Flujo comercial nuevo</h3>
             <p class="meta" style="margin-top:0">Un solo criterio antes y después del precio, hasta el formulario (plan del 9-oct): entiende la charla con contexto, redacta una propuesta breve para ese negocio, manda los planes con el bloque aprobado y la oferta de la demo, contesta las dudas habituales y, con el sí, el formulario. Los precios y los textos fijos siguen saliendo del sistema. Los casos especiales (CRM, funciones no aprobadas, problemas con el formulario) quedan para Pablo con el motivo a la vista, sin avisarle nada al cliente.</p>
@@ -3163,9 +3245,6 @@ function burbujaCita(t, chat) {
             <p class="meta" style="margin-top:10px">Key de OpenAI:
                 <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
             </p>
-            <?php if ($iaPedido !== 'gemini' && !$hayKeyOpenai): ?>
-                <p class="meta" style="color:var(--warn)">Elegiste <?= $iaPedido === 'shadow' ? 'la prueba' : 'OpenAI' ?>, pero sin key el bot sigue con Gemini.</p>
-            <?php endif; ?>
 
             <h3 style="margin:18px 0 6px">Modelo de OpenAI</h3>
             <div class="fila" style="gap:14px;flex-wrap:wrap;align-items:flex-end">
@@ -3221,7 +3300,7 @@ function burbujaCita(t, chat) {
                     <option value="<?= $e($claveModelo) ?>" <?= $claveModelo === $modeloActual ? 'selected' : '' ?>><?= $e($labelModelo) ?></option>
                 <?php endforeach; ?>
             </select>
-        </div>
+        </details>
         <div class="card">
             <h2 style="margin-top:0">Atribución de anuncios (API de conversiones)</h2>
             <p class="meta" style="margin-top:0">Le avisa a Meta cuándo un clic en un anuncio terminó en algo real: un boceto cerrado o una demo entregada. Sin esto Meta no sabe qué clic sirvió, optimiza hacia un evento que nunca ve y termina mostrando el anuncio a cualquiera — es lo que hacía que la campaña marcara 0 resultados con todo el presupuesto gastado.</p>
@@ -3378,7 +3457,12 @@ function burbujaCita(t, chat) {
                 </div>
             <?php endforeach; ?>
         </div>
-        <button>Guardar ajustes</button>
+        <?php /* El único Guardar estaba al final de todo (4-nov): ahora es una barra fija
+               abajo, como la de Respuestas rápidas, y se alcanza desde cualquier tarjeta. */ ?>
+        <div class="rr-admin-acciones ajustes-guardar">
+            <span class="meta" style="align-self:center">Los cambios de esta página se aplican al guardar.</span>
+            <button>Guardar ajustes</button>
+        </div>
         </form>
     <?php elseif ($tab === 'clientes'):
         /* Los chats de los clientes (1-nov, clientes.php): los que acaban de pagar y en qué etapa está su
@@ -3532,6 +3616,10 @@ function burbujaCita(t, chat) {
         $convClave = $conv ? (string)($conv['conversation_key'] ?? $ver) : '';
         $restante = $conv ? wabot_ventana_restante($conv) : 0;
         ?>
+        <?php /* Sin conexión / sesión vencida (4-nov): la llena conexionResultado() en el JS.
+               Vacía no se ve, pero queda siempre en la página para que el lector de
+               pantalla anuncie el cambio (role="status"). */ ?>
+        <div class="conexion-aviso" id="conexionAviso" role="status"></div>
         <div class="conv-split <?= $ver !== '' ? 'has-sel' : '' ?>">
 
             <aside class="conv-list" id="convLista">
@@ -3562,35 +3650,44 @@ function burbujaCita(t, chat) {
                     </div>
                     <!-- Vistas por etapa (4-oct): el bot solo da la bienvenida, así
                          que ya no hay vista "Bot". Nuevos = recién llegan y averiguan;
-                         Con form = ya les llegó el link del formulario. Los filtros
-                         históricos quedan en "más" para no perder favoritos ni canales. -->
+                         Con form = ya les llegó el link del formulario.
+                         4-nov: a la vista quedan solo las seis que se usan (Sin leer ·
+                         Nuevos · Con form · Demos · Clientes · Todos); el resto no se
+                         borró, está en «Más ▾» (Pablo prefiere esconder antes que
+                         borrar). «Demos» es la vista demos_presentadas de siempre y
+                         «Bot» pasó a «Más». El canal (Solo WhatsApp / Solo Instagram)
+                         ya no es una vista más: se SUMA a la que esté elegida. -->
                     <div class="conv-chips" id="convChips">
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente escribió y todavía no abriste el chat. Pasadas 24 h sin que escriba, el chat sale de esta vista y vuelve cuando escribe.">Sin leer</button>
-                        <button type="button" class="conv-chip" id="convCopiarSinLeer" hidden title="Copia todos los chats sin leer: los últimos 10 mensajes de cada uno">Copiar</button>
                         <button type="button" class="conv-chip conv-chip--principal" data-grupo="nuevos" title="Recién llegan y averiguan: todavía no les llegó el link del formulario. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Nuevos</button>
                         <button type="button" class="conv-chip" data-grupo="con_form" title="Ya les llegó el link del formulario (del bot o tuyo, desde el panel o el celular) y todavía no tienen la demo presentada. Solo chats con movimiento en la última semana; pasadas 24 h sin que el cliente escriba, sale de acá y vuelve cuando escribe.">Con form</button>
-                        <button type="button" class="conv-chip" data-grupo="bot" title="Lo que va contestando el bot: las charlas donde conversó en la última semana (sin contar la bienvenida ni los avisos automáticos) y las que tienen una sugerencia lista para mandar. Arriba, la más reciente.">Bot</button>
-                        <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
-                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats donde el cliente escribió en las últimas 24 h, menos los archivados. Los demás, con el buscador.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos</button>
                         <button type="button" class="conv-chip" data-grupo="clientes" title="Los chats de los que ya son clientes: pagaron (el bot lo confirmó o lo confirmaste vos) o son el chat de un cliente del admin. Todos, aunque no hayan escrito en las últimas 24 h.">Clientes</button>
+                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats donde el cliente escribió en las últimas 24 h, menos los archivados. Los demás, con el buscador.">Todos</button>
                         <div class="conv-chips-mas">
-                            <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
+                            <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros y el canal"><span id="convChipsMasTxt">Más</span> ▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
+                                <span class="conv-chips-panel-tit">Más vistas</span>
+                                <button type="button" class="conv-chip-item" data-grupo="bot" title="Lo que va contestando el bot: las charlas donde conversó en la última semana (sin contar la bienvenida ni los avisos automáticos) y las que tienen una sugerencia lista para mandar. Arriba, la más reciente.">Bot</button>
                                 <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="rta">Ya contestaste (RTA)</button>
                                 <button type="button" class="conv-chip-item" data-grupo="retomar" title="Dijeron cuándo siguen («te hablo el martes») o les pusiste la fecha a mano: no les sale ningún aviso automático hasta dos días después de esa fecha.">Retomar</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
-                                <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
-                                <button type="button" class="conv-chip-item" data-grupo="whatsapp">Solo WhatsApp</button>
                                 <button type="button" class="conv-chip-item" data-grupo="archivado">Archivados</button>
+                                <span class="conv-chips-panel-tit">Canal (se suma a la vista)</span>
+                                <button type="button" class="conv-chip-item" data-canal="whatsapp" aria-pressed="false" title="Deja solo los chats de WhatsApp en la vista elegida. Tocalo de nuevo para sacarlo.">Solo WhatsApp</button>
+                                <button type="button" class="conv-chip-item" data-canal="instagram" aria-pressed="false" title="Deja solo los chats de Instagram en la vista elegida. Tocalo de nuevo para sacarlo.">Solo Instagram</button>
                             </div>
                         </div>
+                        <?php /* «Copiar» es una acción, no un filtro (4-nov): va aparte, con cara de botón. */ ?>
+                        <span class="conv-chips-sep" id="convCopiarSep" hidden aria-hidden="true"></span>
+                        <button type="button" class="conv-accion-copiar" id="convCopiarSinLeer" hidden title="Copia los chats sin leer de la lista: los últimos 10 mensajes de cada uno">📋 Copiar</button>
                     </div>
-                    <?php if ($pagosSinAsignar > 0): ?>
-                    <a class="meta" id="convClientesPagos" href="admin.php?tab=clientes" hidden style="display:block;margin-top:8px;color:var(--warn)"
-                       title="Entraron en Mercado Pago y el bot no pudo decir de quién son: elegí el chat y confirmalo">⚠ <?= $pagosSinAsignar ?> pago<?= $pagosSinAsignar === 1 ? '' : 's' ?> de Mercado Pago sin asignar → asignar</a>
-                    <?php endif; ?>
+                    <?php /* Los pagos de MP sin dueño (4-nov): siempre a la vista arriba de la lista,
+                           no solo con el filtro Clientes. El número se actualiza con la lista. */ ?>
+                    <a class="conv-aviso-pagos" id="convClientesPagos" href="admin.php?tab=clientes"<?= $pagosSinAsignar > 0 ? '' : ' hidden' ?>
+                       title="Entraron en Mercado Pago y el bot no pudo decir de quién son: tocá para elegir de quién es cada uno">⚠ <span id="convClientesPagosTxt"><?= $pagosSinAsignar ?> pago<?= $pagosSinAsignar === 1 ? '' : 's' ?> de Mercado Pago sin asignar</span> → asignar</a>
                 </div>
                 <div class="conv-items" id="listaItems"></div>
             </aside>
@@ -3764,10 +3861,12 @@ function burbujaCita(t, chat) {
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
                         <span class="conv-acciones-sep" aria-hidden="true"></span>
-                        <form method="post" onsubmit="return confirm('Resetear esta conversación?')"><input type="hidden" name="accion" value="conv_reset"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="bad">Resetear</button></form>
-                        <form method="post" onsubmit="return confirm('Eliminar esta conversación para siempre? No se puede deshacer.')"><input type="hidden" name="accion" value="conv_eliminar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button class="bad">Eliminar</button></form>
+                        <?php /* Un solo botón (4-nov): «Resetear» hacía exactamente lo mismo que
+                               «Eliminar» (los dos borran el archivo de la charla con @unlink) y
+                               el nombre hacía creer que se podía volver atrás. conv_reset sigue en
+                               el PHP por si queda algún form viejo abierto. */ ?>
+                        <form method="post" onsubmit="return confirm('¿Eliminar esta charla para siempre?\n\nSe borra del panel con su ficha y NO se puede deshacer.')"><input type="hidden" name="accion" value="conv_eliminar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="bad" title="Borra la charla para siempre. No se puede deshacer.">Eliminar</button></form>
                         </div></details>
                     </div>
                     </div>
@@ -3842,7 +3941,7 @@ function burbujaCita(t, chat) {
                     </div>
                     <button type="button" id="respResize" class="resp-resize" aria-label="Arrastrá hacia arriba para agrandar el área de escritura y hacia abajo para achicarla" title="Arrastrá hacia arriba para agrandar; hacia abajo para achicar. Doble clic: tamaño automático">↕</button>
                     <div class="fila">
-                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas"></textarea>
+                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" enterkeyhint="enter"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
                         <button id="respAdjuntar" class="sec" type="button" title="Enviar una imagen o un PDF (las imágenes también se pueden pegar con Ctrl+V)" aria-label="Enviar una imagen o un PDF">📎</button>
                         <input type="file" id="respArchivo" accept="image/*,application/pdf,.pdf" multiple hidden>
@@ -3942,19 +4041,36 @@ function burbujaCita(t, chat) {
         const fechaChipsEl = document.getElementById('convFechaChips');
         const fechaCuentaEl = document.getElementById('convFechaCuenta');
 
+        /* Vista + canal (4-nov): la vista es una sola (un chip de arriba o una de
+         * «Más») y el canal (Solo WhatsApp / Solo Instagram) se SUMA a la que esté
+         * elegida en vez de pisarla. Se guardan juntos en wabotFiltros: [vista] o
+         * [vista, canal]. Un guardado viejo con el canal solo (cuando 'whatsapp' e
+         * 'instagram' eran vistas) queda como Todos con ese canal; uno con una vista
+         * que ya no existe, como Todos (migra solo los viejos Bot/Yo). */
+        const CANALES = new Set(['whatsapp', 'instagram']);
         let filtrosGuardados = [];
         try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
+        if (!Array.isArray(filtrosGuardados)) filtrosGuardados = [];
         const FILTROS_DISPONIBLES = new Set([...document.querySelectorAll('[data-grupo]')].map(b => b.dataset.grupo));
-        const filtroGuardado = Array.isArray(filtrosGuardados)
-            ? filtrosGuardados.find(f => FILTROS_DISPONIBLES.has(f)) : null;
-        // Migra automáticamente los filtros viejos Bot/Yo a la nueva vista.
-        const filtrosActivos = new Set([filtroGuardado || 'todos_humano']);
+        let vistaActiva = filtrosGuardados.find(f => FILTROS_DISPONIBLES.has(f)) || 'todos_humano';
+        let canalActivo = filtrosGuardados.find(f => CANALES.has(f)) || '';
+        function guardarFiltros() {
+            try { localStorage.setItem('wabotFiltros', JSON.stringify(canalActivo ? [vistaActiva, canalActivo] : [vistaActiva])); } catch (e) {}
+        }
+        function cumpleCanal(it) {
+            if (!canalActivo) return true;
+            return canalActivo === 'instagram' ? it.canal === 'instagram' : it.canal !== 'instagram';
+        }
+        // El nombre de cada filtro, antes de que se le pegue el globito de sin leer.
+        for (const b of document.querySelectorAll('[data-grupo], [data-canal]')) b.dataset.etiqueta = b.textContent.trim();
         let itemsCache = [];
         /* "Copiar" (Pablo, 3-nov): con la vista Sin leer, todos esos chats juntos,
-         * los últimos 10 mensajes de cada uno. Los arma el server (la lista no trae los mensajes). */
+         * los últimos 10 mensajes de cada uno. Los arma el server (la lista no trae los mensajes).
+         * Con el canal elegido (4-nov), solo los de ese canal: lo mismo que se ve en la lista. */
         const btnCopiarSinLeer = document.getElementById('convCopiarSinLeer');
+        const sepCopiarEl = document.getElementById('convCopiarSep');
         btnCopiarSinLeer?.addEventListener('click', async () => {
-            const tels = itemsCache.filter(it => visibleEn(it, 'no_leidos'))
+            const tels = itemsCache.filter(it => visibleEn(it, 'no_leidos') && cumpleCanal(it))
                 .sort((a, b) => Number(b.ultimo_cliente_ts || 0) - Number(a.ultimo_cliente_ts || 0)).map(it => it.tel);
             if (!tels.length) return;
             const previo = btnCopiarSinLeer.textContent;
@@ -3992,22 +4108,58 @@ function burbujaCita(t, chat) {
             try { localStorage.setItem('wabotFechas', JSON.stringify([...fechasChatsSeleccionadas])); } catch (e) {}
         }
 
-        const avisoPagosEl = document.getElementById('convClientesPagos');
+        const canalBtns = document.querySelectorAll('[data-canal]');
+        const chipsMasTxtEl = document.getElementById('convChipsMasTxt');
         function pintarChips() {
-            for (const b of navBtns) b.classList.toggle('on', filtrosActivos.has(b.dataset.grupo));
-            if (avisoPagosEl) avisoPagosEl.hidden = !filtrosActivos.has('clientes');
+            for (const b of navBtns) {
+                const on = b.dataset.grupo === vistaActiva;
+                b.classList.toggle('on', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            }
+            for (const b of canalBtns) {
+                const on = b.dataset.canal === canalActivo;
+                b.classList.toggle('on', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            }
+            // Lo elegido adentro de «Más» se ve en el botón (4-nov): con el panel
+            // cerrado no había forma de saber que la lista estaba filtrada por eso.
+            if (chipsMasEl && chipsMasTxtEl) {
+                const enMas = [...chipsPanelEl.querySelectorAll('[data-grupo]')].find(b => b.dataset.grupo === vistaActiva);
+                const partes = [];
+                if (enMas) partes.push(enMas.dataset.etiqueta);
+                if (canalActivo) partes.push(canalActivo === 'instagram' ? 'Solo IG' : 'Solo WA');
+                chipsMasTxtEl.textContent = partes.length ? partes.join(' · ') : 'Más';
+                chipsMasEl.classList.toggle('on', partes.length > 0);
+            }
         }
 
-        function alternarFiltro(grupo) {
-            filtrosActivos.clear();
-            filtrosActivos.add(grupo);
-            try { localStorage.setItem('wabotFiltros', JSON.stringify([...filtrosActivos])); } catch (e) {}
+        function elegirVista(grupo) {
+            vistaActiva = grupo;
+            guardarFiltros();
             pintarChips();
             pintarLista(itemsCache);
         }
+        // El canal se prende y se apaga tocándolo; nunca cambia la vista.
+        function alternarCanal(canal) {
+            canalActivo = canalActivo === canal ? '' : canal;
+            guardarFiltros();
+            pintarChips();
+            pintarLista(itemsCache);
+        }
+        function cerrarPanelMas() {
+            if (!chipsPanelEl || chipsPanelEl.hidden) return;
+            chipsPanelEl.hidden = true;
+            chipsMasEl.setAttribute('aria-expanded', 'false');
+        }
 
         for (const b of navBtns) {
-            b.addEventListener('click', () => alternarFiltro(b.dataset.grupo));
+            b.addEventListener('click', () => {
+                elegirVista(b.dataset.grupo);
+                if (chipsPanelEl && chipsPanelEl.contains(b)) cerrarPanelMas();
+            });
+        }
+        for (const b of canalBtns) {
+            b.addEventListener('click', () => { alternarCanal(b.dataset.canal); cerrarPanelMas(); });
         }
         if (chipsMasEl) {
             chipsMasEl.addEventListener('click', () => {
@@ -4018,9 +4170,19 @@ function burbujaCita(t, chat) {
             document.addEventListener('click', (ev) => {
                 if (chipsPanelEl.hidden) return;
                 if (chipsMasEl.contains(ev.target) || chipsPanelEl.contains(ev.target)) return;
-                chipsPanelEl.hidden = true;
-                chipsMasEl.setAttribute('aria-expanded', 'false');
+                cerrarPanelMas();
             });
+            document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cerrarPanelMas(); });
+        }
+
+        /* El aviso de los pagos de MP sin dueño (4-nov): siempre arriba de la lista
+         * cuando hay alguno, con el número que trae cada refresco. */
+        const avisoPagosEl = document.getElementById('convClientesPagos');
+        const avisoPagosTxtEl = document.getElementById('convClientesPagosTxt');
+        function pintarAvisoPagos(n) {
+            if (!avisoPagosEl || typeof n !== 'number') return;
+            avisoPagosEl.hidden = n <= 0;
+            if (avisoPagosTxtEl && n > 0) avisoPagosTxtEl.textContent = n + (n === 1 ? ' pago' : ' pagos') + ' de Mercado Pago sin asignar';
         }
 
         function hora(ts) {
@@ -4133,7 +4295,7 @@ function burbujaCita(t, chat) {
             return cumpleFiltro(it, filtro);
         }
         function entraEnGrupoActivo(it) {
-            return visibleEn(it, [...filtrosActivos][0] || 'todos_humano');
+            return visibleEn(it, vistaActiva) && cumpleCanal(it);
         }
 
         function renderFechasChats() {
@@ -4210,7 +4372,7 @@ function burbujaCita(t, chat) {
                     if (k && k.startsWith('wabot_borrador_')) firmaBorradores += k + '=' + localStorage.getItem(k) + '\n';
                 }
             } catch (e) {}
-            const firma = JSON.stringify(items) + '|' + [...filtrosActivos].sort().join(',') + '|' + termino + '|'
+            const firma = JSON.stringify(items) + '|' + vistaActiva + '/' + canalActivo + '|' + termino + '|'
                 + [...fechasChatsSeleccionadas].sort().join(',') + '|' + firmaBorradores;
             if (firma === firmaLista) return;
             firmaLista = firma;
@@ -4336,8 +4498,8 @@ function burbujaCita(t, chat) {
                 renderizados.push({ it, el: a });
             }
 
-            const soloSinLeer = filtrosActivos.size === 1 && filtrosActivos.has('no_leidos');
-            const soloConForm = filtrosActivos.size === 1 && filtrosActivos.has('con_form');
+            const soloSinLeer = vistaActiva === 'no_leidos';
+            const soloConForm = vistaActiva === 'con_form';
             if (soloConForm && !buscandoGeneral) {
                 for (const sub of SUBGRUPOS_CON_FORM) {
                     const deEsteGrupo = renderizados.filter(r => !!r.it.form_completado === sub.clave);
@@ -4376,7 +4538,8 @@ function burbujaCita(t, chat) {
                 document.title = (nSinLeer > 0 ? '(' + nSinLeer + ') ' : '') + 'Bot WhatsApp — Gokywebs';
             }
             for (const b of navBtns) {
-                const n = sinLeer.filter(it => visibleEn(it, b.dataset.grupo)).length;
+                // Con el canal elegido, cada globito cuenta solo los de ese canal (4-nov).
+                const n = sinLeer.filter(it => visibleEn(it, b.dataset.grupo) && cumpleCanal(it)).length;
                 let globo = b.querySelector('.conv-chip-n');
                 if (n > 0 && !globo) {
                     globo = document.createElement('span');
@@ -4390,9 +4553,12 @@ function burbujaCita(t, chat) {
                 b.classList.toggle('tiene', n > 0);
                 b.title = (b.title || '').replace(/ \(\d+ con mensajes sin leer\)$/, '') + (n > 0 ? ' (' + n + ' con mensajes sin leer)' : '');
             }
-            if (btnCopiarSinLeer) btnCopiarSinLeer.hidden = !(filtrosActivos.has('no_leidos') && nSinLeer > 0);
+            if (btnCopiarSinLeer) {
+                btnCopiarSinLeer.hidden = !(vistaActiva === 'no_leidos' && sinLeer.some(it => visibleEn(it, 'no_leidos') && cumpleCanal(it)));
+                if (sepCopiarEl) sepCopiarEl.hidden = btnCopiarSinLeer.hidden;
+            }
             if (!visibles) {
-                const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;
+                const filtrando = termino || fechasChatsSeleccionadas.size || vistaActiva || canalActivo;
                 listaEl.innerHTML = '<p class="conv-vacio">'
                     + (filtrando ? 'No hay chats que coincidan con los filtros.' : 'Ninguna demo ni charla con demo entregada.')
                     + '</p>';
@@ -4597,13 +4763,64 @@ function burbujaCita(t, chat) {
             sessionStorage.setItem('wabotListaScroll', String(listaEl.scrollTop));
         });
 
+        /* Aviso de «sin conexión» (4-nov). Los refrescos de la lista (cada 8 s) y
+         * del chat (cada 5 s) se tragaban cualquier error con un catch vacío: si se
+         * caía internet o vencía la sesión, el panel quedaba congelado en lo último
+         * que había traído, sin avisar, y parecía que nadie escribía. Ahora, con 2
+         * fallos seguidos de cualquiera de los dos, o apenas la respuesta es la
+         * página de la clave (sesión vencida), sale una banda arriba. Se va sola con
+         * el primer refresco que vuelve a andar. Embebido, el admin renueva la sesión
+         * cada 30 s, así que la de sesión casi siempre se va sola enseguida. */
+        const conexionEl = document.getElementById('conexionAviso');
+        const conexionFallos = { lista: 0, chat: 0 };
+        let conexionSesion = false;
+        let conexionEstado = '';
+        function conexionResultado(fuente, ok, sesion) {
+            // La sesión vencida va aparte y no suma fallos: al volver, no queda un «sin conexión» colgado.
+            if (ok) { conexionFallos[fuente] = 0; conexionSesion = false; }
+            else if (sesion) conexionSesion = true;
+            else conexionFallos[fuente] = (conexionFallos[fuente] || 0) + 1;
+            const estado = conexionSesion ? 'sesion' : (Object.values(conexionFallos).some(n => n >= 2) ? 'caida' : '');
+            // Solo se reescribe si cambió: cada cambio lo vuelve a anunciar el lector de pantalla.
+            if (!conexionEl || estado === conexionEstado) return;
+            conexionEstado = estado;
+            conexionEl.classList.toggle('conexion-aviso--sesion', estado === 'sesion');
+            conexionEl.textContent = '';
+            if (estado === 'caida') conexionEl.textContent = 'Sin conexión con el panel — reintentando…';
+            if (estado === 'sesion') {
+                const volver = document.createElement('a');
+                volver.href = 'admin.php?tab=conversaciones' + (SEL ? '&ver=' + encodeURIComponent(SEL) : '') + (window.parent !== window ? '&embed=1' : '');
+                volver.textContent = 'volvé a entrar';
+                conexionEl.append('Se cerró la sesión — ', volver);
+            }
+        }
+        /* La respuesta de un refresco: JSON, o un error. Si vino HTML con el campo de
+         * la clave, es la página de login: la sesión venció (sin sesión, admin.php
+         * saltea las acciones y dibuja el login con 200). */
+        async function leerJsonPanel(r) {
+            if ((r.headers.get('Content-Type') || '').includes('application/json')) return r.json();
+            const cuerpo = await r.text().catch(() => '');
+            const error = new Error('El panel no devolvió JSON (HTTP ' + r.status + ')');
+            error.sesion = r.ok && cuerpo.includes('name="clave"');
+            throw error;
+        }
+
         async function refrescarLista() {
+            let j;
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({ accion: 'lista' }) });
-                const j = await r.json();
+                j = await leerJsonPanel(r);
+            } catch (e) {
+                conexionResultado('lista', false, !!(e && e.sesion));
+                return;
+            }
+            conexionResultado('lista', true);
+            // Un error al pintar no es la conexión: va a la consola, como antes no rompe nada.
+            try {
                 if (j.items) pintarLista(j.items);
-            } catch (e) {}
+                pintarAvisoPagos(j.pagos_sin_asignar);
+            } catch (e) { console.error(e); }
         }
         /* ¿Alguien está mirando el panel? (9-oct, "anda muy lento gokywebs"). No,
            si la pestaña del navegador está en segundo plano o el panel está
@@ -4955,6 +5172,11 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && abierta >= 0) cerrar(); });
         })();
 
+        const TILDES_WSP = {
+            sent:      { marca: '✓',  nombre: 'Enviado' },
+            delivered: { marca: '✓✓', nombre: 'Entregado' },
+            read:      { marca: '✓✓', nombre: 'Leído' },
+        };
         function pintar(lineas) {
             lineasChat = lineas;
             const firma = JSON.stringify(lineas);
@@ -5083,13 +5305,41 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
                     ed.title = 'Corregido en el panel. El cliente recibió el texto original.';
                     m.appendChild(ed);
                 }
-                const lapiz = document.createElement('button');
-                lapiz.type = 'button';
-                lapiz.className = 'burb-editar';
-                lapiz.textContent = 'Editar';
-                lapiz.title = 'Corrige el registro del panel (y el contexto que lee el bot). No cambia lo que ya recibió el cliente.';
-                lapiz.addEventListener('click', ev => { ev.stopPropagation(); editarMensaje(t, d); });
-                if (!t.recuperado) m.appendChild(lapiz);
+                /* Las tildes de WhatsApp (4-nov) en lo que mandamos nosotros: ✓ enviado,
+                   ✓✓ gris entregado, ✓✓ azul leído. Las pone el server con lo que avisó
+                   Meta (wabot_transcript_estados); sin aviso todavía, no va ninguna. */
+                const tilde = (t.q === 'bot' || t.q === 'humano') ? TILDES_WSP[t.estado] : null;
+                if (tilde) {
+                    const tl = document.createElement('span');
+                    tl.className = 'burb-tilde burb-tilde--' + t.estado;
+                    tl.textContent = tilde.marca;
+                    tl.setAttribute('role', 'img');
+                    tl.setAttribute('aria-label', tilde.nombre);
+                    let cuando = '';
+                    if (t.estado_ts) {
+                        const fe = new Date(t.estado_ts * 1000);
+                        cuando = ' ' + dd(fe.getDate()) + '/' + dd(fe.getMonth() + 1) + ' ' + dd(fe.getHours()) + ':' + dd(fe.getMinutes());
+                    }
+                    tl.title = tilde.nombre + cuando;
+                    m.appendChild(tl);
+                }
+                /* «Editar» solo en lo que mandamos nosotros (tus mensajes y los del bot),
+                   no en lo que escribió el cliente (4-nov). Única excepción: su audio,
+                   porque corregir una transcripción mal entendida es para lo que nació
+                   el botón (es lo que lee el bot como contexto, ver editar_mensaje). */
+                const editable = t.q === 'bot' || t.q === 'humano'
+                    || (t.q === 'cliente' && !!(t.media && t.media.clase === 'audio'));
+                if (editable && !t.recuperado) {
+                    const lapiz = document.createElement('button');
+                    lapiz.type = 'button';
+                    lapiz.className = 'burb-editar';
+                    lapiz.textContent = 'Editar';
+                    lapiz.title = t.q === 'cliente'
+                        ? 'Corrige la transcripción de este audio en el panel (y el contexto que lee el bot). No cambia nada del lado del cliente.'
+                        : 'Corrige el registro del panel (y el contexto que lee el bot). No cambia lo que ya recibió el cliente.';
+                    lapiz.addEventListener('click', ev => { ev.stopPropagation(); editarMensaje(t, d); });
+                    m.appendChild(lapiz);
+                }
                 d.appendChild(m);
                 chat.appendChild(d);
             }
@@ -5165,14 +5415,22 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
         function chatALaVista() { return panelALaVista(); }
 
         async function refrescar() {
+            // Si falla, la banda de «sin conexión» de arriba (conexionResultado, 4-nov).
+            let j;
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: new URLSearchParams({ accion: 'transcript', tel: TEL, visto: chatALaVista() ? '1' : '' }) });
-                const j = await r.json();
+                j = await leerJsonPanel(r);
+            } catch (e) {
+                conexionResultado('chat', false, !!(e && e.sesion));
+                return;
+            }
+            conexionResultado('chat', true);
+            try {
                 if (j.transcript) pintar(j.transcript);
                 if (typeof j.ventana === 'number') { ventana = j.ventana; estadoVentana(); }
                 if ('sugerencia' in j) pintarSugerencia(j.sugerencia);
-            } catch (e) {}
+            } catch (e) { console.error(e); }
         }
 
         /* ── La sugerencia del flujo comercial (9-oct) ──
@@ -5365,8 +5623,14 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
         // Enter manda. Shift+Enter y Ctrl+Enter hacen salto de línea: el textarea
         // ya inserta el salto solo con Shift, pero con Ctrl no, así que ahí se
         // escribe a mano en la posición del cursor.
+        // En el celular no (4-nov): el teclado de la pantalla no tiene Shift+Enter,
+        // así que el Enter mandaba el mensaje a medio escribir cada vez que se
+        // quería bajar de renglón. Con dedo (pointer: coarse) Enter hace el salto
+        // de línea normal del textarea y se manda solo con el botón Enviar.
+        const enterEsSalto = window.matchMedia ? window.matchMedia('(pointer: coarse)') : null;
         txt.addEventListener('keydown', e => {
             if (e.key !== 'Enter') return;
+            if (enterEsSalto && enterEsSalto.matches) return;
             if (e.ctrlKey || e.metaKey) {
                 e.preventDefault();
                 const ini = txt.selectionStart, fin = txt.selectionEnd;
@@ -5733,7 +5997,7 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             });
         }
 
-        pintar(<?= json_encode(array_values(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv))), JSON_UNESCAPED_UNICODE) ?>);
+        pintar(<?= json_encode(array_values(wabot_transcript_estados(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv)), $conv)), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();
 
