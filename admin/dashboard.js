@@ -6243,6 +6243,99 @@ function entregaPedidaHTML(p) {
     return `<div style="margin-top:5px"><span style="background:${paso ? "rgba(245,158,11,.13)" : "rgba(96,165,250,.13)"};color:${color};border:1px solid ${color}66;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Hora que eligió en el formulario para recibir la demo${paso ? " (ya pasó)" : ""}">🕐 Entrega ${escapeHtml(dia)} ${escapeHtml(hh)}</span></div>`;
 }
 
+/* ── Entregas por hora (4-nov): columna derecha de Bocetos ──
+   La hora en que sale cada demo: la que eligió en el formulario
+   (demoProgramadaAt) o, si no eligió, el turno de wabot/presentar.php
+   (wabot_presentar_turno: antes de las 11 → 14 h, de 11 a 15 → 18 h, desde
+   las 15 → 14 h del día siguiente). Las ya presentadas solas no cuentan. */
+function horaEntregaDemo(p) {
+    if (p.autoPresentada?.demo_ok) return null;
+    const elegida = mantToDate(p.demoProgramadaAt);
+    if (elegida) return { d: elegida, eligio: true };
+    const creado = p.createdAt?.toDate ? p.createdAt.toDate() : null;
+    if (!creado) return null;
+    const h = creado.getHours();
+    const d = new Date(creado.getFullYear(), creado.getMonth(), creado.getDate() + (h >= 15 ? 1 : 0), h < 11 || h >= 15 ? 14 : 18, 0, 0, 0);
+    return { d, eligio: false };
+}
+function _diaClave(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function claveHoraEntrega(p) {
+    const e = horaEntregaDemo(p);
+    return e ? _diaClave(e.d) + " " + String(e.d.getHours()).padStart(2, "0") : "";
+}
+let entregaHoraSel = "";   // "AAAA-MM-DD HH" marcada en la columna; filtra la lista
+
+function renderEntregasPorHora() {
+    const cont = document.getElementById("propEntregas");
+    if (!cont) return;
+    const ahora = new Date();
+    const hoy0 = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+    const porClave = new Map();
+    let atrasadas = 0;
+    for (const p of propuestas) {
+        const e = horaEntregaDemo(p);
+        if (!e) continue;
+        const clave = claveHoraEntrega(p);
+        // Lo de días anteriores que sigue acá = atrasado (una semana para atrás, como presentar.php).
+        if (e.d < hoy0) {
+            if (ahora - e.d < 7 * 86400000) atrasadas++;
+            continue;
+        }
+        const it = porClave.get(clave) || { n: 0, eligio: 0, nombres: [] };
+        it.n++;
+        if (e.eligio) it.eligio++;
+        it.nombres.push(getPropuestaNegocioFields(p).nombreNegocio || p.rubro || "—");
+        porClave.set(clave, it);
+    }
+    if (entregaHoraSel && !porClave.has(entregaHoraSel)) entregaHoraSel = "";
+
+    // Hoy y mañana siempre, de 9 a 1 (el form deja elegir hasta la 1); más días solo si hay algo.
+    // 0 y 1 h son de la noche de ese día: caen en la fecha siguiente.
+    const HORAS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1];
+    const fechaDeHora = (f, h) => h <= 1 ? new Date(f.getFullYear(), f.getMonth(), f.getDate() + 1) : f;
+    const claveDe = (f, h) => _diaClave(fechaDeHora(f, h)) + " " + String(h).padStart(2, "0");
+    const dias = [0, 1];
+    for (const clave of porClave.keys()) {
+        const [a, m, d] = clave.slice(0, 10).split("-").map(Number);
+        let dd = Math.round((new Date(a, m - 1, d) - hoy0) / 86400000);
+        if (Number(clave.slice(11)) <= 1) dd--;   // la 1 de la mañana es de la noche anterior
+        if (dd >= 0 && !dias.includes(dd)) dias.push(dd);
+    }
+    dias.sort((a, b) => a - b);
+    const nombreDia = (dd, f) => dd === 0 ? "Hoy" : dd === 1 ? "Mañana"
+        : f.toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "2-digit" });
+
+    let html = `<div class="pe-cab"><strong>Entregas por hora</strong>${entregaHoraSel ? `<button type="button" class="btn-ghost pe-limpiar" data-pe-limpiar>Ver todas</button>` : ""}</div>`;
+    if (atrasadas) html += `<div class="pe-atrasadas" title="Su hora de entrega ya pasó en días anteriores y siguen sin presentar">⚠ ${atrasadas} atrasada${atrasadas === 1 ? "" : "s"} de días anteriores</div>`;
+    for (const dd of dias) {
+        const f = new Date(hoy0.getFullYear(), hoy0.getMonth(), hoy0.getDate() + dd);
+        const total = HORAS.reduce((s, h) => s + (porClave.get(claveDe(f, h))?.n || 0), 0);
+        if (dd > 1 && !total) continue;
+        html += `<div class="pe-dia"><div class="pe-dia-cab">${escapeHtml(nombreDia(dd, f))}<span>${total} demo${total === 1 ? "" : "s"}</span></div>`;
+        for (const h of HORAS) {
+            const fh = fechaDeHora(f, h);
+            const clave = claveDe(f, h);
+            const it = porClave.get(clave);
+            const paso = new Date(fh.getFullYear(), fh.getMonth(), fh.getDate(), h + 1) <= ahora;
+            const cls = ["pe-hora", it ? "con" : "", paso ? "paso" : "", entregaHoraSel === clave ? "sel" : ""].filter(Boolean).join(" ");
+            const tit = it ? `${it.nombres.join(", ")}${it.eligio ? ` · ${it.eligio} eligió${it.eligio === 1 ? "" : "eron"} esta hora` : ""}` : "";
+            html += `<button type="button" class="${cls}"${it ? ` data-pe-hora="${clave}"` : " disabled"} title="${escapeHtml(tit)}">
+                <span class="pe-h">${String(h).padStart(2, "0")}:00</span>
+                <span class="pe-n">${it ? `${it.n} demo${it.n === 1 ? "" : "s"}` : "—"}</span>
+            </button>`;
+        }
+        html += `</div>`;
+    }
+    cont.innerHTML = html;
+    cont.querySelectorAll("[data-pe-hora]").forEach(btn => btn.addEventListener("click", () => {
+        entregaHoraSel = entregaHoraSel === btn.dataset.peHora ? "" : btn.dataset.peHora;
+        renderPropuestas();
+    }));
+    cont.querySelector("[data-pe-limpiar]")?.addEventListener("click", () => { entregaHoraSel = ""; renderPropuestas(); });
+}
+// Que lo que ya pasó y Hoy/Mañana se acomoden solos con la pestaña abierta.
+setInterval(() => { if (!document.getElementById("tabPropuestas")?.hidden) renderEntregasPorHora(); }, 5 * 60000);
+
 // Fechas marcadas para filtrar Bocetos. Vive fuera de renderPropuestas() para
 // no perderse en cada re-render (búsqueda, llegada de datos nuevos).
 const fechasSeleccionadas = new Set();
@@ -6322,9 +6415,10 @@ function renderPropuestas() {
     const tbody = document.getElementById("propuestasTbody");
     const term  = searchPropuestasInput.value.trim().toLowerCase();
     const termPhone = cleanArgPhone(term);
-    const baseList = fechasSeleccionadas.size
+    let baseList = fechasSeleccionadas.size
         ? propuestas.filter(p => fechasSeleccionadas.has(getPropuestaFechaInfo(p).key))
         : propuestas;
+    if (entregaHoraSel) baseList = baseList.filter(p => claveHoraEntrega(p) === entregaHoraSel);
     const list  = term
         ? baseList.filter(p =>
             (p.nombre_negocio      || "").toLowerCase().includes(term) ||
@@ -6357,11 +6451,13 @@ function renderPropuestas() {
 
     if (list.length === 0) {
         const motivo = fechasSeleccionadas.size && term ? " para esa búsqueda en las fechas marcadas"
+            : entregaHoraSel ? " para esa hora de entrega"
             : fechasSeleccionadas.size ? " en las fechas marcadas"
             : term ? " para esa búsqueda"
             : " recibidas aún";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No hay propuestas${motivo}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay propuestas${motivo}.</td></tr>`;
         actualizarSeleccionPropuestas();
+        renderEntregasPorHora();
         return;
     }
 
@@ -6371,7 +6467,6 @@ function renderPropuestas() {
         const { key: fecha, hora } = getPropuestaFechaInfo(p);
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
-        const tipoWeb = getPropuestaTipoWeb(p);
         const aviso = estadoAvisoBoceto(p);
         return `
             <tr class="client-row${propuestasSeleccionadas.has(p.id) ? " prop-seleccionado" : ""}" data-row-prop-id="${p.id}" style="cursor:pointer">
@@ -6406,14 +6501,6 @@ function renderPropuestas() {
                     ${(p.telefono || p.contacto_cel) ? `<button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(p.telefono || p.contacto_cel)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este número sin salir de Bocetos">Ver chat</button>` : ""}
                     ${p.email ? `<div class="muted prop-contact-email" title="${escapeHtml(p.email)}">${escapeHtml(p.email)}</div>` : ""}
                 </td>
-                <td class="prop-col-tipo">
-                    <select
-                        class="prop-type-input"
-                        data-prop-type-id="${p.id}"
-                        data-original="${escapeHtml(tipoWeb)}"
-                        aria-label="Tipo de web de ${escapeHtml(nombreNegocio || "este boceto")}"
-                    >${tipoWebOpcionesHTML(tipoWeb)}</select>
-                </td>
                 <td class="prop-col-colores">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="center">
                     ${p.logoUrl
@@ -6441,6 +6528,8 @@ function renderPropuestas() {
             </tr>
         `;
     }).join("");
+
+    renderEntregasPorHora();
 
     tbody.querySelectorAll("[data-row-prop-id]").forEach(row => {
         row.addEventListener("click", (e) => {

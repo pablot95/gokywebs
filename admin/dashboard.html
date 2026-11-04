@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20261028-presentar-varios">
+    <link rel="stylesheet" href="styles.css?v=20261104-entregas-hora">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -145,7 +145,8 @@
                 <button type="button" id="copyCarpetasBtn" class="btn-ghost" title="Copiar el prompt para crear las carpetas de imágenes de los bocetos que se ven en la lista">Copiar carpetas</button>
                 <button type="button" id="presentarSeleccionadosBtn" class="btn-presentada-prop" hidden>Presentar seleccionados</button>
             </div>
-            <div class="table-wrapper">
+            <div class="prop-split">
+            <div class="table-wrapper prop-tabla">
                 <table class="clients-table">
                     <thead>
                         <tr>
@@ -153,7 +154,6 @@
                             <th>Fecha</th>
                             <th class="prop-col-marca">Marca / Negocio</th>
                             <th class="prop-col-contacto">Contacto</th>
-                            <th class="prop-col-tipo">Tipo de web</th>
                             <th class="center prop-col-colores">Colores</th>
                             <th class="center">Imágenes</th>
                             <th class="notes-col-th">Notas</th>
@@ -161,9 +161,15 @@
                         </tr>
                     </thead>
                     <tbody id="propuestasTbody">
-                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
                     </tbody>
                 </table>
+            </div>
+            <!-- Entregas por hora (4-nov): cuántas demos salen en cada horario.
+                 Hora = la que eligió en el form (demoProgramadaAt) o, sin ella,
+                 el turno de presentar.php (antes de las 11 → 14 h, 11-15 → 18 h,
+                 desde las 15 → 14 h del día siguiente). Tocar una hora filtra la lista. -->
+            <aside class="prop-entregas" id="propEntregas" aria-label="Demos a entregar por hora"></aside>
             </div>
         </section>
 
@@ -1422,6 +1428,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261103-dos-modelos"></script>
+    <script type="module" src="dashboard.js?v=20261104-entregas-hora"></script>
 </body>
 </html>

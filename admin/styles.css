@@ -3182,3 +3182,43 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 @media (max-width: 600px) {
     #tabMantenimiento .mant-plan-btn { padding: 11px 10px 12px; font-size: 13.5px; }
 }
+
+/* ── Bocetos en dos columnas (4-nov): lista 70 % + entregas por hora 30 % ── */
+.prop-split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 3fr); gap: 14px; align-items: start; }
+.prop-tabla .clients-table { min-width: 0; }
+.prop-tabla .clients-table th,
+.prop-tabla .clients-table td { padding: 8px 8px; font-size: 12.5px; }
+.prop-tabla .clients-table th { font-size: 10.5px; }
+.prop-tabla .clients-table .prop-col-marca { width: 170px; min-width: 130px; }
+.prop-tabla .clients-table .prop-col-contacto { width: 125px; max-width: 125px; }
+.prop-tabla .notes-col-th,
+.prop-tabla .notes-col { min-width: 100px; max-width: 150px; }
+.prop-tabla .actions-col { white-space: normal; min-width: 170px; max-width: 210px; }
+.prop-tabla .actions-col > * { margin: 2px 0 2px 3px; }
+.prop-tabla .actions-col .btn-ghost,
+.prop-tabla .actions-col .btn-toggle-prop,
+.prop-tabla .actions-col .btn-presentada-prop { font-size: 11.5px !important; padding: 4px 7px; }
+.prop-tabla .actions-col .icon-btn { width: 28px; height: 28px; }
+.prop-tabla .business-name-copy { font-size: 13px; }
+
+.prop-entregas { position: sticky; top: 12px; background: #0d1830; border: 1px solid #1e2c49; border-radius: 12px; padding: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
+.prop-entregas:empty { display: none; }
+.pe-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 14px; }
+.pe-limpiar { font-size: 11px; padding: 3px 8px; }
+.pe-atrasadas { background: rgba(245,158,11,.12); color: #F59E0B; border: 1px solid rgba(245,158,11,.4); border-radius: 8px; padding: 6px 9px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.pe-dia + .pe-dia { margin-top: 12px; }
+.pe-dia-cab { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 12.5px; color: #e6ecf7; text-transform: capitalize; padding: 0 2px 5px; border-bottom: 1px solid #1e2c49; margin-bottom: 4px; }
+.pe-dia-cab span { font-weight: 600; font-size: 11.5px; color: #8a9bb8; text-transform: none; }
+.pe-hora { display: flex; justify-content: space-between; align-items: center; width: 100%; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 8px; font: inherit; font-size: 12.5px; color: #5b6b88; cursor: default; text-align: left; }
+.pe-hora .pe-h { font-variant-numeric: tabular-nums; }
+.pe-hora.con { color: #e6ecf7; background: rgba(96,165,250,.10); border-color: rgba(96,165,250,.28); cursor: pointer; margin: 2px 0; }
+.pe-hora.con .pe-n { color: #60A5FA; font-weight: 700; }
+.pe-hora.con:hover { border-color: #60A5FA; }
+.pe-hora.paso { opacity: .45; }
+.pe-hora.con.paso { opacity: .7; }
+.pe-hora.sel { background: #1d4ed8; border-color: #1d4ed8; color: #fff; opacity: 1; }
+.pe-hora.sel .pe-n { color: #fff; }
+@media (max-width: 1100px) {
+    .prop-split { grid-template-columns: 1fr; }
+    .prop-entregas { position: static; max-height: none; }
+}
