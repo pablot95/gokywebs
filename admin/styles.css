@@ -3222,3 +3222,7 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
     .prop-split { grid-template-columns: 1fr; }
     .prop-entregas { position: static; max-height: none; }
 }
+
+/* «Ver chat» + «Ver demo» (4-nov): uno al lado del otro, sin partir el texto. */
+.ver-chat-demo { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.ver-chat-demo > .btn-ghost { white-space: nowrap; margin: 0 !important; }

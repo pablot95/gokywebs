@@ -1,7 +1,7 @@
 <?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
- * Pestañas: Conversaciones · Conversaciones live · Revisión · Respuestas rápidas · Ajustes · Estado.
+ * Pestañas: Conversaciones · Revisión · Respuestas rápidas · Ajustes · Estado.
  * Los textos del bot viven en código (textos.php): el panel ya no los edita.
  * Auth: normalmente entra por el login de Firebase del admin (ver auth.php);
  * la clave de WABOT_ADMIN_PASS queda como respaldo para acceso directo.
@@ -48,7 +48,6 @@ $respuestasRapidas = wabot_respuestas_rapidas_load();
 // las pestañas viejas (textos, entrenamiento…) lo necesita antes del HTML.
 $NAV_TABS = [
     'conversaciones' => 'Conversaciones',
-    'live'           => 'Conversaciones live',
     'clientes'       => 'Clientes',
     'revision'       => 'Revisión',
     'respuestas'     => 'Respuestas rápidas',
@@ -1195,58 +1194,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['items' => wabot_clientes_marcar_lista(wabot_lista_items())], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    /* Conversaciones live (13-sep): las charlas con movimiento, la más reciente
-     * primero, cada una con su tramo final de mensajes. Solo lee: no las marca
-     * como leídas (eso lo hace abrirla en Conversaciones).
-     * Desde el 9-oct, solo las que están en manos del bot (Pablo: "para poder yo
-     * vigilar bien que conteste bien… una vez que me pase el chat a mí, sale de
-     * ahí"), con lo que hizo el bot en cada una, y las que salieron hace poco. */
-    if ($a === 'live') {
-        header('Content-Type: application/json; charset=utf-8');
-        $cfgLive = wabot_config_load();
-        $todos = array_values(array_filter(wabot_lista_items(), function ($it) {
-            return stripos((string)$it['tel'], 'TEST') === false && (int)($it['ts'] ?? 0) > 0;
-        }));
-        $items = array_values(array_filter($todos, function ($it) { return !empty($it['bot_tiene']); }));
-        usort($items, function ($x, $y) { return (int)$y['ts'] <=> (int)$x['ts']; });
-        $items = array_slice($items, 0, 30);
-        $salieron = [];
-        foreach ($todos as $it) {
-            $s = $it['bot_salio'] ?? null;
-            if (!empty($it['bot_tiene']) || !is_array($s) || (int)($s['ts'] ?? 0) < time() - 1800) continue;
-            $salieron[] = ['tel' => (string)$it['tel'], 'nombre' => (string)($it['nombre_agenda'] ?: ($it['nombre'] ?: ($it['nombre_negocio'] ?: $it['tel']))),
-                           'motivo' => (string)$s['motivo'], 'ts' => (int)$s['ts']];
-        }
-        usort($salieron, function ($x, $y) { return $y['ts'] <=> $x['ts']; });
-        $salieron = array_slice($salieron, 0, 5);
-        $vivos = [];
-        foreach ($items as $it) {
-            $cv = wabot_conv_load($it['tel']);
-            // La lista guardada puede tener unos minutos (una pausa que se cumplió): lo que manda es la charla.
-            if (!wabot_comercial_bot_tiene($cv, $cfgLive)) continue;
-            $rev = $cv['comercial_ultimo']['revision']['estado'] ?? '';
-            $cot = wabot_comercial_cotizacion($cv, $cfgLive);
-            $it['bot'] = [
-                'solucion' => (string)($cv['comercial_solucion'] ?? ''),
-                'mensual' => (string)($cot['mensual'] ?? ''),
-                'oferta' => wabot_comercial_oferta_hecha($cv, $cfgLive),
-                'sugerencia' => !empty($it['sugerencia']),
-                'revision' => in_array($rev, ['corregida', 'dudosa'], true) && (int)($cv['comercial_ultimo']['ts'] ?? 0) > 0 ? $rev : '',
-            ];
-            $it['ventana'] = wabot_ventana_restante($cv);
-            $it['transcript'] = array_map(function ($l) {
-                $fila = ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
-                         'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
-                if (!empty($l['plantilla'])) $fila['plantilla'] = $l['plantilla'];
-                if (!empty($l['cita'])) { $fila['cita'] = 1; $fila['cita_q'] = $l['cita_q']; $fila['cita_t'] = $l['cita_t']; }
-                return $fila;
-            }, array_slice(wabot_transcript_citas(wabot_transcript_completo($it['tel'], $cv)), -40));
-            $vivos[] = $it;
-        }
-        echo json_encode(['items' => $vivos, 'ahora' => time(), 'modo' => wabot_flujo_comercial($cfgLive), 'salieron' => $salieron],
-            JSON_UNESCAPED_UNICODE);
-        exit;
-    }
     // Busca DENTRO de los mensajes, no en los datos de contacto: recorre cada
     // conversación completa (lo vivo + lo archivado en historial/, ver
     // wabot_transcript_completo) y devuelve las que tienen al menos un mensaje
@@ -1359,6 +1306,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                 'clave'                => $clave,
                 'canal'                => wabot_canal($cv),
                 'presentado_ts'        => (int)$cv['presentado_ts'],
+                'slug'                 => (string)($cv['presentado_slug'] ?? ''),   // «Ver demo» en Clientes (4-nov)
                 'confirmado'           => !empty($cv['presentado_confirmado']),
                 'recordatorio_enviado' => !empty($cv['presentado_recordatorio_enviado']),
                 'archivado'            => !empty($cv['archivado']),
@@ -1470,7 +1418,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'conv_eliminar' && !empty($_POST['tel'])) {
         @unlink(wabot_conv_path($_POST['tel']));
-        // La pestaña live borra por fetch y solo necesita saber si salió.
+        // Por fetch (ajax=1) y solo necesita saber si salió.
         if (!empty($_POST['ajax'])) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['ok' => !is_file(wabot_conv_path($_POST['tel']))]); exit;
@@ -1572,6 +1520,7 @@ $tab = (string)($_GET['tab'] ?? 'conversaciones');
 // Las pestañas que ya no existen: Textos y Entrenamiento pasaron a ser
 // Ajustes; cualquier otra desconocida cae en Conversaciones.
 if (in_array($tab, ['textos', 'entrenamiento'], true)) $tab = 'ajustes';
+// Conversaciones live se sacó el 4-nov (Pablo): el link viejo cae en Conversaciones.
 if (!isset($NAV_TABS[$tab])) $tab = 'conversaciones';
 $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
 ?>
@@ -1617,7 +1566,7 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .tabs a { padding:7px 13px; border:1px solid transparent; border-radius:8px; color:var(--dim); font-size:13.5px; }
 .tabs a:hover { background:var(--card); color:var(--tx); }
 .tabs a.on { background:var(--card-2); color:var(--tx); border-color:var(--line-fuerte); font-weight:500; }
-/* Navegación en botones. En Conversaciones y Live sale del flujo y ocupa la
+/* Navegación en botones. En Conversaciones sale del flujo y ocupa la
    misma franja derecha que las respuestas rápidas: así no roba alto al chat. */
 .tabs-nav { margin-bottom:6px; justify-content:flex-end; gap:4px; }
 .tabs-nav a { border-color:var(--line); padding:4px 9px; border-radius:7px; font-size:11.5px; }
@@ -1626,63 +1575,12 @@ h2 { font-size:16px; margin:22px 0 10px; }
   body.conv-full .tabs-nav { position:fixed; z-index:60; top:8px; right:8px; width:122px;
       margin:0; flex-direction:column; align-items:stretch; gap:3px; }
   body.conv-full .tabs-nav a { padding:3px 8px; font-size:10.5px; line-height:17px; text-align:left; white-space:nowrap; }
-  body.conv-full .live-bar, body.conv-full .live-board { margin-right:130px; }
 }
 @media (max-width: 700px) {
   .tabs-nav { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .tabs-nav::-webkit-scrollbar { display:none; }
   .tabs-nav a { white-space:nowrap; flex:0 0 auto; }
 }
-/* Conversaciones live: 4 columnas por pantalla de compu (9-oct), scroll horizontal. */
-.live-bar { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-bottom:8px; color:var(--dim); font-size:12.5px; }
-/* Las que salieron de las manos del bot en la última media hora (9-oct). */
-.live-salieron { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:-2px 0 8px; font-size:12px; color:var(--dim); }
-.live-salieron-titulo { color:var(--tenue); }
-.live-salieron a { color:var(--tx); text-decoration:none; border-bottom:1px dotted var(--line-fuerte); }
-.live-salieron a:hover { color:var(--ac); }
-.pill.live-pill-bot { background:transparent; border:1px solid var(--line-fuerte); color:var(--tx); }
-.pill.live-pill-sug { background:var(--ac-tenue); color:var(--ac); }
-.pill.live-pill-rev { background:transparent; border:1px solid var(--line-fuerte); color:var(--dim); }
-.pill.live-pill-alerta { background:var(--warn-tenue); color:var(--warn); }
-.live-punto { width:8px; height:8px; border-radius:50%; background:var(--ac, #3ecf8e); box-shadow:0 0 0 0 rgba(62,207,142,.6); animation:livePulso 2s infinite; }
-.live-punto.caido { background:var(--bad); animation:none; }
-@keyframes livePulso { 0% { box-shadow:0 0 0 0 rgba(62,207,142,.55); } 70% { box-shadow:0 0 0 8px rgba(62,207,142,0); } 100% { box-shadow:0 0 0 0 rgba(62,207,142,0); } }
-.live-board { flex:1; min-height:360px; display:grid; grid-auto-flow:column; gap:10px;
-  grid-auto-columns:calc((100% - 3 * 10px) / 4); overflow-x:auto; overflow-y:hidden; padding-bottom:8px; }
-body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
-.live-col { display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-.live-col.movio { animation:liveMovio 1.6s ease-out; }
-@keyframes liveMovio { 0% { border-color:var(--ac, #3ecf8e); box-shadow:0 0 0 2px rgba(62,207,142,.35); } 100% { border-color:var(--line); box-shadow:none; } }
-.live-head { padding:9px 11px 8px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:4px; }
-.live-fila { display:flex; align-items:center; gap:6px; min-width:0; }
-.live-nombre { flex:1; min-width:0; font-weight:600; font-size:13.5px; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.live-hace { flex:0 0 auto; font-size:11.5px; color:var(--dim); }
-.live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
-.live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
-.live-abrir:hover { color:var(--tx); }
-.live-demo { color:#93c5fd; font-weight:700; text-decoration:none; }
-.live-demo:hover { color:#fff; text-decoration:underline; }
-.live-form { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
-.live-form:hover, .live-form:focus-visible { color:var(--ac); border-color:var(--ac); }
-.live-form:disabled { opacity:.5; cursor:default; }
-.live-eliminar { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
-.live-eliminar:hover, .live-eliminar:focus-visible { color:var(--bad); border-color:var(--bad); }
-.live-eliminar:disabled { opacity:.5; cursor:default; }
-.live-chat { flex:1; min-height:0; overflow-y:auto; padding:10px 9px; display:flex; flex-direction:column; gap:6px; }
-.live-chat .burb { max-width:94%; font-size:12.5px; padding:7px 10px; line-height:1.4; }
-.live-chat .burb .meta { font-size:10.5px; }
-.live-media { display:block; font-size:11.5px; color:var(--dim); margin-top:3px; }
-.live-responder { flex:0 0 auto; padding:7px; border-top:1px solid var(--line); background:var(--card-2); }
-.live-responder-fila { display:flex; align-items:flex-end; gap:6px; }
-.live-responder textarea { min-height:38px; max-height:92px; resize:vertical; padding:8px 9px; font-size:12.5px; line-height:1.35; }
-.live-enviar { flex:0 0 auto; min-height:38px; padding:7px 10px; font-size:12px; }
-.live-responder-estado { min-height:14px; margin-top:3px; color:var(--dim); font-size:10.5px; line-height:1.25; }
-.live-responder-estado.error { color:var(--bad); }
-.live-responder textarea:disabled { opacity:.65; cursor:not-allowed; }
-.live-vacio { color:var(--dim); font-size:13px; padding:30px 4px; }
-/* Cuatro por pantalla en cualquier compu (Pablo, 9-oct); en tablet, dos; en el celular, una. */
-@media (max-width: 860px)  { .live-board { grid-auto-columns:calc((100% - 10px) / 2); } }
-@media (max-width: 700px)  { .live-board { grid-auto-columns:88%; scroll-snap-type:x mandatory; } .live-col { scroll-snap-align:start; } }
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
 label { display:block; font-size:13px; color:var(--dim); margin:12px 0 4px; }
 input[type=text], input[type=password], input[type=number], textarea, select {
@@ -2258,11 +2156,11 @@ body.embed { min-height: 0; }
 .rapidas button:hover { border-color:var(--ac); }
 </style>
 </head>
-<?php $pantallaCompleta = in_array($tab, ['conversaciones', 'live'], true); ?>
+<?php $pantallaCompleta = $tab === 'conversaciones'; ?>
 <body class="<?= $embed ? 'embed ' : '' ?><?= $pantallaCompleta ? 'conv-full' : '' ?>">
 <script>
 /* La cita de un mensaje respondido (Pablo, 24-sep: "no puedo ver una
- * respuesta a un comentario"). La usan el chat y la vista live, por eso vive
+ * respuesta a un comentario"). La usa el chat, por eso vive
  * acá arriba y no adentro del script de una pestaña. El server ya la resolvió
  * (wabot_transcript_citas): cita_q es quién escribió el citado, cita_t qué
  * decía. Con `chat`, tocarla lleva al mensaje citado y lo resalta. */
@@ -5869,400 +5767,6 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
         document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
         </script>
         <?php endif; ?>
-
-    <?php elseif ($tab === 'live'): ?>
-        <?php /* Conversaciones live (Pablo, 13-sep): varias charlas a la vez, con
-         * scroll horizontal. La que tuvo el último mensaje pasa sola al primer lugar.
-         * Desde el 9-oct: 4 por pantalla y solo las que están en manos del bot,
-         * para vigilar que conteste bien; cuando el bot se la pasa a Pablo (o la
-         * toma él), sale de acá y queda anotada arriba un rato. */ ?>
-        <div class="live-bar">
-            <span class="live-punto" id="livePunto" aria-hidden="true"></span>
-            <span id="liveEstado">Conectando…</span>
-            <span style="margin-left:auto">Solo las charlas que tiene el bot. Cuando te la pasa, sale de acá.</span>
-        </div>
-        <div class="live-salieron" id="liveSalieron" hidden></div>
-        <p class="live-vacio" id="liveVacio">Cargando conversaciones…</p>
-        <div class="live-board" id="liveBoard"></div>
-        <script>
-        (function () {
-            const board  = document.getElementById('liveBoard');
-            const vacio  = document.getElementById('liveVacio');
-            const punto  = document.getElementById('livePunto');
-            const estado = document.getElementById('liveEstado');
-            const salieronBox = document.getElementById('liveSalieron');
-            const MODOS = { off: 'flujo nuevo apagado', sugerencias: 'modo Sugerencias', auto: 'modo Automático' };
-            const cols = new Map();   // tel -> { el, firma, ts, pintado }
-            const dd = n => String(n).padStart(2, '0');
-            let cargando = false;
-
-            function hace(ts, ahora) {
-                const s = Math.max(0, ahora - ts);
-                if (s < 60) return 'recién';
-                if (s < 3600) return 'hace ' + Math.floor(s / 60) + ' min';
-                if (s < 86400) return 'hace ' + Math.floor(s / 3600) + ' h';
-                const f = new Date(ts * 1000);
-                return dd(f.getDate()) + '/' + dd(f.getMonth() + 1);
-            }
-
-            function crearColumna() {
-                const el = document.createElement('section');
-                el.className = 'live-col';
-                el.innerHTML = '<header class="live-head"><div class="live-fila"><span class="live-nombre"></span>'
-                    + '<span class="live-hace"></span></div><div class="live-sub"></div></header><div class="live-chat"></div>'
-                    + '<div class="live-responder"><div class="live-responder-fila">'
-                    + '<textarea rows="1" placeholder="Escribí tu respuesta…" aria-label="Escribir respuesta"></textarea>'
-                    + '<button type="button" class="live-enviar">Enviar</button></div>'
-                    + '<div class="live-responder-estado"></div></div>';
-                return { el, firma: '', ts: 0, pintado: false, tel: '', enviando: false, ventanaAbierta: false };
-            }
-
-            /* Borrador por chat (Pablo, 21-sep: "escribo algo, cambio de chat y
-             * lo pierdo"). Las columnas se reciclan entre conversaciones, así
-             * que lo escrito se guarda con el teléfono al que estaba dirigido y
-             * vuelve cuando esa conversación se pinta de nuevo. Queda en este
-             * navegador y sobrevive a la recarga; se borra al enviar. */
-            function borradorKey(tel) { return 'wabot_borrador_' + tel; }
-            function borradorLeer(tel) {
-                try { return localStorage.getItem(borradorKey(tel)) || ''; } catch (e) { return ''; }
-            }
-            function borradorGuardar(tel, valor) {
-                if (!tel) return;
-                try {
-                    if (valor && valor.trim() !== '') localStorage.setItem(borradorKey(tel), valor);
-                    else localStorage.removeItem(borradorKey(tel));
-                } catch (e) {}
-            }
-
-            function prepararRespuesta(c, tel) {
-                if (c.tel === tel) return;
-                const texto = c.el.querySelector('.live-responder textarea');
-                const boton = c.el.querySelector('.live-enviar');
-                // La columna pasa a otro chat: lo que había escrito es del anterior.
-                if (c.tel) borradorGuardar(c.tel, texto.value);
-                c.tel = tel;
-                texto.value = borradorLeer(tel);
-                if (c.ligado) return;   // los listeners se cuelgan una sola vez por columna
-                c.ligado = true;
-                boton.addEventListener('click', () => enviar(c));
-                texto.addEventListener('input', () => borradorGuardar(c.tel, texto.value));
-                texto.addEventListener('keydown', ev => {
-                    if (ev.key === 'Enter' && !ev.shiftKey) {
-                        ev.preventDefault();
-                        enviar(c);
-                    }
-                });
-            }
-
-            function actualizarRespuesta(c, it) {
-                const texto = c.el.querySelector('.live-responder textarea');
-                const boton = c.el.querySelector('.live-enviar');
-                const estadoRespuesta = c.el.querySelector('.live-responder-estado');
-                const abierta = Number(it.ventana || 0) > 0;
-                c.ventanaAbierta = abierta;
-                texto.disabled = !abierta || c.enviando;
-                boton.disabled = !abierta || c.enviando;
-                if (!abierta) {
-                    texto.placeholder = 'Fuera de la ventana de 24 horas';
-                    estadoRespuesta.textContent = 'El cliente tiene que volver a escribir.';
-                    estadoRespuesta.classList.remove('error');
-                } else {
-                    texto.placeholder = 'Escribí tu respuesta…';
-                    if (!c.enviando && estadoRespuesta.textContent === 'El cliente tiene que volver a escribir.') {
-                        estadoRespuesta.textContent = '';
-                    }
-                }
-            }
-
-            async function enviar(c) {
-                if (c.enviando || !c.tel) return;
-                const texto = c.el.querySelector('.live-responder textarea');
-                const boton = c.el.querySelector('.live-enviar');
-                const estadoRespuesta = c.el.querySelector('.live-responder-estado');
-                const mensaje = texto.value.trim();
-                if (!mensaje) { texto.focus(); return; }
-                /* Mismo envio_id mientras no llegue la confirmación del mismo texto
-                   (7-oct): si la respuesta se pierde y se reintenta, el servidor no lo repite. */
-                if (!c.envioId || mensaje !== c.envioTexto) {
-                    c.envioId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replace(/-/g, '')
-                        : 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
-                    c.envioTexto = mensaje;
-                }
-                c.enviando = true;
-                texto.disabled = true;
-                boton.disabled = true;
-                estadoRespuesta.textContent = 'Enviando…';
-                estadoRespuesta.classList.remove('error');
-                const corte = new AbortController();
-                const reloj = setTimeout(() => corte.abort(), 45000);
-                try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: corte.signal,
-                        body: new URLSearchParams({ accion: 'responder', tel: c.tel, texto: mensaje, envio_id: c.envioId }) });
-                    const j = await r.json();
-                    if (!j.ok) throw new Error(j.error || 'No se pudo enviar.');
-                    c.envioId = ''; c.envioTexto = '';
-                    texto.value = '';
-                    borradorGuardar(c.tel, '');   // se fue: el borrador ya no existe
-                    // La tomaste vos: el bot quedó en silencio y la charla sale de esta vista (queda anotada arriba).
-                    estadoRespuesta.textContent = 'Enviado. La tomaste vos: sale de esta vista.';
-                    await refrescar();
-                } catch (error) {
-                    estadoRespuesta.textContent = error && error.name === 'AbortError'
-                        ? 'El servidor no respondió. Mirá si salió; si no, tocá Enviar de nuevo (si ya había salido, no se repite).'
-                        : (error.message || 'No se pudo enviar.');
-                    estadoRespuesta.classList.add('error');
-                    if (estadoRespuesta.textContent.includes('24 horas')) c.ventanaAbierta = false;
-                } finally {
-                    clearTimeout(reloj);
-                    c.enviando = false;
-                    texto.disabled = !c.ventanaAbierta;
-                    boton.disabled = !c.ventanaAbierta;
-                    if (c.ventanaAbierta) texto.focus();
-                }
-            }
-
-            async function copiarAlPortapapeles(texto) {
-                try {
-                    await navigator.clipboard.writeText(texto);
-                } catch (err) {
-                    const caja = document.createElement('textarea');
-                    caja.value = texto;
-                    document.body.appendChild(caja);
-                    caja.select();
-                    document.execCommand('copy');
-                    caja.remove();
-                }
-            }
-
-            // Al cuadro de respuesta de la tarjeta (4-oct); si está cerrado (ventana
-            // de 24 h vencida), al portapapeles como antes.
-            async function copiarFormLink(tel, boton, caja) {
-                const previo = boton.textContent;
-                boton.disabled = true;
-                boton.textContent = '…';
-                try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'form_link', tel }) });
-                    const j = await r.json();
-                    if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
-                    const texto = j.mensaje || j.link;
-                    if (caja && !caja.disabled) {
-                        const actual = caja.value.replace(/\s+$/, '');
-                        caja.value = actual ? actual + '\n\n' + texto : texto;
-                        caja.dispatchEvent(new Event('input', { bubbles: true }));
-                        caja.focus();
-                        caja.setSelectionRange(caja.value.length, caja.value.length);
-                        boton.textContent = 'en el chat ✓';
-                        return;
-                    }
-                    await copiarAlPortapapeles(texto);
-                    boton.textContent = j.codigo + ' copiado ✓';
-                } catch (error) {
-                    boton.textContent = 'error';
-                    boton.title = error.message || 'No se pudo armar el link.';
-                } finally {
-                    boton.disabled = false;
-                    setTimeout(() => { boton.textContent = previo; }, 2200);
-                }
-            }
-
-            function pintarCabecera(c, it, ahora) {
-                const nombre = it.nombre_agenda || it.nombre || it.nombre_negocio || it.tel;
-                const nom = c.el.querySelector('.live-nombre');
-                nom.textContent = nombre;
-                nom.title = it.nombre_negocio && it.nombre_negocio !== nombre ? nombre + ' · ' + it.nombre_negocio : nombre;
-                c.el.querySelector('.live-hace').textContent = hace(it.ts, ahora);
-                const sub = c.el.querySelector('.live-sub');
-                sub.textContent = '';
-                const pill = (txt, cls) => {
-                    const s = document.createElement('span');
-                    s.className = 'pill ' + cls; s.textContent = txt; sub.appendChild(s);
-                };
-                pill(it.canal === 'instagram' ? 'Instagram' : 'WhatsApp', 'tipo');
-                // Lo que hizo el bot en esta charla (9-oct): qué le cotizó, si ofreció la demo, si hay sugerencia o el revisor corrigió.
-                const b = it.bot || {};
-                if (b.solucion) pill(String(b.solucion).replace(/_/g, ' ') + (b.mensual ? ' · ' + b.mensual + '/mes' : ''), 'live-pill-bot');
-                if (b.oferta) pill('demo ofrecida', 'live-pill-bot');
-                if (b.sugerencia) pill('💡 sugerencia', 'live-pill-sug');
-                if (b.revision === 'corregida') pill('🔎 el revisor corrigió', 'live-pill-rev');
-                else if (b.revision === 'dudosa') pill('⚠ revisar', 'live-pill-alerta');
-                if (!b.solucion && it.fase) {
-                    const f = document.createElement('span');
-                    f.textContent = String(it.fase).replace(/_/g, ' ');
-                    sub.appendChild(f);
-                }
-                const a = document.createElement('a');
-                a.className = 'live-abrir';
-                a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
-                a.textContent = 'Abrir ↗';
-                sub.appendChild(a);
-                if (it.demo_url) {
-                    const demo = document.createElement('a');
-                    demo.className = 'live-demo';
-                    demo.href = it.demo_url;
-                    demo.target = '_blank';
-                    demo.rel = 'noopener noreferrer';
-                    demo.textContent = 'Ver demo ↗';
-                    sub.appendChild(demo);
-                }
-                /* El formulario CON el código de esta charla: así lo que el
-                 * cliente complete cae en esta conversación aunque el link lo
-                 * mande Pablo a mano. Desde Instagram es la única forma. */
-                const form = document.createElement('button');
-                form.type = 'button';
-                form.className = 'live-form';
-                form.textContent = 'Form al chat';
-                form.title = 'Pone en el cuadro de respuesta el mensaje con el link del formulario de esta conversación';
-                form.addEventListener('click', () => copiarFormLink(it.tel, form, c.el.querySelector('.live-responder textarea')));
-                sub.appendChild(form);
-                const del = document.createElement('button');
-                del.type = 'button';
-                del.className = 'live-eliminar';
-                del.textContent = 'Eliminar';
-                del.title = 'Eliminar esta conversación';
-                del.addEventListener('click', () => eliminar(it.tel, nombre, del));
-                sub.appendChild(del);
-            }
-
-            async function eliminar(tel, nombre, boton) {
-                if (!confirm('Eliminar la conversación con ' + nombre + ' para siempre? No se puede deshacer.')) return;
-                boton.disabled = true;
-                try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'conv_eliminar', tel, ajax: '1' }) });
-                    const j = await r.json();
-                    if (!j.ok) throw new Error('no se borró');
-                } catch (e) {
-                    boton.disabled = false;
-                    alert('No se pudo eliminar la conversación. Probá de nuevo.');
-                    return;
-                }
-                const c = cols.get(tel);
-                if (c) { c.el.remove(); cols.delete(tel); }
-                refrescar();
-            }
-
-            function pintarChat(c, it) {
-                const firma = JSON.stringify(it.transcript || []);
-                if (firma === c.firma) return;
-                c.firma = firma;
-                const chat = c.el.querySelector('.live-chat');
-                chat.textContent = '';
-                for (const t of it.transcript || []) {
-                    const d = document.createElement('div');
-                    d.className = 'burb ' + t.q;
-                    d.textContent = t.t;
-                    if (t.cita) d.prepend(burbujaCita(t, null));
-                    if (t.media) {
-                        const md = document.createElement('span');
-                        md.className = 'live-media';
-                        md.textContent = '📎 ' + t.media;
-                        d.appendChild(md);
-                    }
-                    const m = document.createElement('div');
-                    m.className = 'meta';
-                    const f = new Date(t.ts * 1000);
-                    m.textContent = (t.plantilla ? 'Plantilla · ' : '') + (t.q === 'humano' ? 'vos · ' : '') + dd(f.getHours()) + ':' + dd(f.getMinutes());
-                    d.appendChild(m);
-                    chat.appendChild(d);
-                }
-            }
-
-            async function refrescar() {
-                if (cargando) return;
-                cargando = true;
-                let j = null;
-                try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'live' }) });
-                    j = await r.json();
-                } catch (e) {
-                    punto.classList.add('caido');
-                    estado.textContent = 'Sin conexión, reintentando…';
-                    cargando = false;
-                    return;
-                }
-                cargando = false;
-                punto.classList.remove('caido');
-                const items = Array.isArray(j && j.items) ? j.items : [];
-                const ahora = (j && j.ahora) || Math.floor(Date.now() / 1000);
-                const hoy = new Date();
-                const modo = (j && j.modo) || 'off';
-                estado.textContent = items.length + (items.length === 1 ? ' charla en manos del bot' : ' charlas en manos del bot')
-                    + ' · ' + (MODOS[modo] || modo) + ' · actualizado ' + dd(hoy.getHours()) + ':' + dd(hoy.getMinutes()) + ':' + dd(hoy.getSeconds());
-                vacio.hidden = items.length > 0;
-                if (!items.length) vacio.textContent = modo === 'off'
-                    ? 'El bot no tiene charlas ahora. Con el flujo nuevo apagado, acá aparecen las que el bot saludó y el cliente contestó, hasta que las tomás vos.'
-                    : 'El bot no tiene charlas ahora. Cuando un cliente le escriba, aparece acá; cuando te la pasa, sale.';
-                // Las que salieron de las manos del bot en la última media hora, con el motivo.
-                const salieron = Array.isArray(j && j.salieron) ? j.salieron : [];
-                salieronBox.hidden = salieron.length === 0;
-                salieronBox.textContent = '';
-                if (salieron.length) {
-                    const t = document.createElement('span');
-                    t.className = 'live-salieron-titulo';
-                    t.textContent = 'Salieron hace poco:';
-                    salieronBox.appendChild(t);
-                    for (const s of salieron) {
-                        const a = document.createElement('a');
-                        a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(s.tel);
-                        a.textContent = s.nombre + ' · ' + s.motivo + ' · ' + hace(s.ts, ahora);
-                        salieronBox.appendChild(a);
-                    }
-                }
-
-                // Mover una columna en el DOM le resetea el scroll: se guarda antes.
-                const scrolls = new Map();
-                cols.forEach((c, tel) => {
-                    const ch = c.el.querySelector('.live-chat');
-                    scrolls.set(tel, { top: ch.scrollTop, abajo: ch.scrollHeight - ch.scrollTop - ch.clientHeight < 60 });
-                });
-                const primeraAntes = board.firstElementChild;
-                const pegadoIzquierda = board.scrollLeft < 40;
-
-                const vivas = new Set();
-                for (const it of items) {
-                    vivas.add(it.tel);
-                    let c = cols.get(it.tel);
-                    const nueva = !c;
-                    if (nueva) { c = crearColumna(); prepararRespuesta(c, it.tel); cols.set(it.tel, c); }
-                    const movio = !nueva && it.ts > c.ts;
-                    c.ts = it.ts;
-                    pintarCabecera(c, it, ahora);
-                    pintarChat(c, it);
-                    actualizarRespuesta(c, it);
-                    if (movio) { c.el.classList.remove('movio'); void c.el.offsetWidth; c.el.classList.add('movio'); }
-                }
-                cols.forEach((c, tel) => { if (!vivas.has(tel)) { c.el.remove(); cols.delete(tel); } });
-
-                // El orden del tablero sigue al de la respuesta: la más reciente primero.
-                let cursor = board.firstElementChild;
-                for (const it of items) {
-                    const el = cols.get(it.tel).el;
-                    if (el === cursor) cursor = cursor.nextElementSibling;
-                    else board.insertBefore(el, cursor);
-                }
-
-                cols.forEach((c, tel) => {
-                    const ch = c.el.querySelector('.live-chat');
-                    const s = scrolls.get(tel);
-                    ch.scrollTop = (!s || s.abajo) ? ch.scrollHeight : s.top;
-                });
-                // Si estabas mirando el principio, la charla que se movió queda a la vista.
-                if (pegadoIzquierda && board.firstElementChild !== primeraAntes) board.scrollLeft = 0;
-            }
-
-            refrescar();
-            // Tampoco con el iframe del admin oculto (Pablo en otra pestaña del admin), 9-oct.
-            const aLaVista = () => {
-                if (document.hidden) return false;
-                try { const m = window.frameElement; if (m && !m.getClientRects().length) return false; } catch (e) {}
-                return true;
-            };
-            setInterval(() => { if (aLaVista()) refrescar(); }, 4000);
-            document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
-        })();
-        </script>
 
     <?php endif; ?>
 

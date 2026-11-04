@@ -798,6 +798,9 @@ function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
     $ab = function_exists('wabot_ab_rr_categoria') ? wabot_ab_rr_categoria($conv, $cfg) : null;
     if ($ab) $salida[] = $ab;
     $sinAnual = $ab && is_array($conv) && wabot_ab_sin_anual($conv, $cfg);
+    /* 4-nov: en una charla del A2 (todas las nuevas desde el 3-nov) el precio de arriba ya es el bloque
+     * del bot con sus montos; los dos bloques guardados de "Respuestas" lo repetían (y con otro texto). */
+    $sinBloques = $ab && is_array($conv) && wabot_ab_grupo($conv, $cfg) === 'a2';
     foreach ((array)$categorias as $categoria) {
         if (!empty($categoria['oculta'])) continue;
         if (($categoria['titulo'] ?? '') === 'Propiedad absoluta del código'
@@ -805,6 +808,7 @@ function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
         $items = [];
         foreach ((array)($categoria['items'] ?? []) as $texto) {
             if ($sinAnual && wabot_ab_rr_menciona_anual($texto)) continue;
+            if ($sinBloques && wabot_rr_bloque_precio_grupo($texto) !== null) continue;
             $items[] = wabot_respuestas_rapidas_montos($texto, $conv, $cfg);
         }
         if (!$items) continue;
@@ -1188,13 +1192,80 @@ function wabot_rr_un_plan_3nov(array $categorias, $ruta) {
     return $categorias;
 }
 
+/* 4-nov (Pablo): «las respuestas rápidas están mal los precios y los textos». Los dos bloques de precio
+   guardados seguían con «Tenemos distintas modalidades… 1) Plan anual» y el anual de la tienda en
+   $210.000, mientras el bot da desde el 3-nov el texto del A2, tal cual («Tenemos dos modalidades…»,
+   1. y 2., sin renglón antes de «Mantenimiento:») y $190.000. Una sola vez:
+   - los bloques de precio pasan al texto del A2, con sus marcadores ({landing_*} / {ecommerce_*});
+   - en "Planes" quedan solo los cuatro vigentes, en orden (mensual $20.000 y $30.000, anual $140.000 y
+     $190.000); los links de la prueba A/B (anual $210.000, pago único, pago inicial) pasan a su propia
+     categoría, visible y al final: «todavía no me los saques» (3-nov).
+   Lo que Pablo cambie después desde la pestaña Respuestas queda. */
+const WABOT_RR_A2_INFORMATIVA_4NOV = "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {landing_anual}\n2. Plan mensual: {landing_mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
+const WABOT_RR_A2_PANEL_4NOV = "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {ecommerce_anual}\n2. Plan mensual: {ecommerce_mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico";
+const WABOT_RR_PLANES_VIGENTES_4NOV = ['pago/mensual20000', 'pago/mensual30000', 'pago/anual140', 'pago/anual190'];
+const WABOT_RR_PLANES_AB_4NOV = ['pago/anual210', 'pago/unico', 'pago/inicial'];
+const WABOT_RR_TITULO_PLANES_AB = 'Planes de la prueba A/B (solo a quien se le ofrecieron)';
+
+/** ¿Es uno de los bloques de precio con «Plan anual» y «Plan mensual» y sus marcadores? → 'landing' / 'ecommerce' / null. */
+function wabot_rr_bloque_precio_grupo($texto) {
+    $texto = (string)$texto;
+    if (mb_stripos($texto, 'plan mensual') === false || mb_stripos($texto, 'plan anual') === false) return null;
+    if (mb_stripos($texto, 'pago único') !== false) return null;   // el del modelo A (pago único + mensual) no se toca
+    if (strpos($texto, '{landing_anual}') !== false) return 'landing';
+    foreach (['ecommerce', 'elearning', 'inmobiliaria'] as $g) if (strpos($texto, '{' . $g . '_anual}') !== false) return 'ecommerce';
+    return null;
+}
+
+function wabot_rr_precios_a2_4nov(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-a2-4nov';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    $ab = [];
+    foreach ($categorias as &$categoria) {
+        if (!empty($categoria['oculta'])) continue;
+        foreach ($categoria['items'] as &$texto) {
+            $g = wabot_rr_bloque_precio_grupo($texto);
+            $nuevo = $g === 'landing' ? WABOT_RR_A2_INFORMATIVA_4NOV : ($g === 'ecommerce' ? WABOT_RR_A2_PANEL_4NOV : $texto);
+            if ($nuevo !== $texto) { $texto = $nuevo; $cambio = true; }
+        }
+        unset($texto);
+        $categoria['items'] = array_values(array_unique($categoria['items']));
+        if (($categoria['titulo'] ?? '') !== 'Planes') continue;
+        $vigentes = array_fill(0, count(WABOT_RR_PLANES_VIGENTES_4NOV), null);
+        $otros = [];
+        foreach ($categoria['items'] as $texto) {
+            foreach (WABOT_RR_PLANES_VIGENTES_4NOV as $i => $link) {
+                if (preg_match('#' . preg_quote($link, '#') . '(?!\d)#', $texto) && $vigentes[$i] === null) { $vigentes[$i] = $texto; continue 2; }
+            }
+            foreach (WABOT_RR_PLANES_AB_4NOV as $link) {
+                if (strpos($texto, $link) !== false) { $ab[] = $texto; continue 2; }
+            }
+            $otros[] = $texto;
+        }
+        $ordenados = array_merge(array_values(array_filter($vigentes, 'is_string')), $otros);
+        if ($ordenados !== $categoria['items']) { $categoria['items'] = $ordenados; $cambio = true; }
+    }
+    unset($categoria);
+    if ($ab) {
+        $categorias[] = ['ico' => '🗂️', 'titulo' => WABOT_RR_TITULO_PLANES_AB, 'items' => array_values(array_unique($ab))];
+        $cambio = true;
+    }
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_precios_a2_4nov(wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

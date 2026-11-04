@@ -2515,7 +2515,7 @@ async function sincronizarPresentados() {
         wabotPresentados = data.items || [];
         // Repinta solo si cambió algo que el botón muestra: renderSeg rehace la
         // tabla y se llevaría puesta una nota que Pablo esté escribiendo.
-        const firma = JSON.stringify(wabotPresentados.map(it => [it.clave, it.cliente_id, it.canal, it.template_72h_ts, it.favorito, it.template_interesado_ts]));
+        const firma = JSON.stringify(wabotPresentados.map(it => [it.clave, it.cliente_id, it.canal, it.template_72h_ts, it.favorito, it.template_interesado_ts, it.slug]));
         if (firma !== wabotPresentadosFirma) {
             wabotPresentadosFirma = firma;
             if (activeTab === "seguimientos") renderSeg();
@@ -4450,9 +4450,24 @@ function _botonTemplateInteresado(c) {
    y el panel lo busca como al presentar la demo. */
 function _botonVerChat(c) {
     const destino = presentadoDeCliente(c)?.clave || (cleanArgPhone(c.telefono).length >= 8 ? c.telefono : "");
-    if (!destino) return "";
+    if (!destino) { const demo = _botonVerDemo(c); return demo ? `<div class="ver-chat-demo">${demo}</div>` : ""; }
     const titulo = [c.nombre, c.proyecto, c.telefono].filter(Boolean).join(" · ");
-    return `<div><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de la pestaña">Ver chat</button></div>`;
+    return `<div class="ver-chat-demo"><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de la pestaña">Ver chat</button>${_botonVerDemo(c)}</div>`;
+}
+
+/* «Ver demo» al lado de «Ver chat» (Pablo, 4-nov). La demo vive en
+   gokywebs.com/demo/<slug>/: el slug con el que el bot la presentó o, si no,
+   el del negocio del boceto / proyecto del cliente (mismo slugNegocio que Bocetos). */
+function slugDemoDeCliente(c) {
+    const p = propuestaDeCliente(c);
+    return presentadoDeCliente(c)?.slug
+        || slugNegocio(p ? getPropuestaNegocioFields(p).nombreNegocio : "")
+        || slugNegocio(c.proyecto);
+}
+function _botonVerDemo(c) {
+    const slug = slugDemoDeCliente(c);
+    if (!slug) return "";
+    return `<a href="https://gokywebs.com/demo/${encodeURIComponent(slug)}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;margin-left:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slug)}/ en otra pestaña">Ver demo ↗</a>`;
 }
 
 const TEMPLATE_72H_MOTIVOS = {

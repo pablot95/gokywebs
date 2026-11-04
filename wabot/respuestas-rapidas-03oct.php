@@ -3,9 +3,12 @@
 function wabot_rr_03oct_montos() {
     return [
         'landing' => ['anual' => '$140.000', 'mensual' => '$20.000', 'unico' => '$240.000'],
-        'ecommerce' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'elearning' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
-        'inmobiliaria' => ['anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        // 4-nov: el anual de tienda, cursos e inmobiliaria vuelve a $190.000 (el 3-nov se cambió en textos.php
+        // y acá quedó en $210.000: las respuestas rápidas lo mostraban mal). A las charlas que ya se les pasó
+        // $210.000 les sigue saliendo el suyo (precio_cotizado, wabot_respuestas_rapidas_montos).
+        'ecommerce' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'elearning' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
+        'inmobiliaria' => ['anual' => '$190.000', 'mensual' => '$30.000', 'unico' => '$330.000'],
     ];
 }
 

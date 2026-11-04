@@ -125,6 +125,8 @@ function wabot_ab_rr_categoria($conv, $cfg) {
             $items[] = "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/pago/" . $pagina;
         }
     }
+    // 4-nov: con la prueba apagada el A2 es el precio de todos: sin el «(grupo A2)» ni el tubo de ensayo.
+    if ($grupo === 'a2' && !wabot_ab_activa($cfg)) return $items ? ['ico' => '💰', 'titulo' => 'Precio de esta charla', 'items' => $items] : null;
     return $items ? ['ico' => '🧪', 'titulo' => 'Precio de esta charla (grupo ' . strtoupper($grupo) . ')', 'items' => $items] : null;
 }
 
