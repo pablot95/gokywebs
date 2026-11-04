@@ -92,7 +92,7 @@ function wabot_textos_default() {
     // sitio profesional y la carga de productos va aparte.
     'carga_producto' => '$500',
     // Texto de Pablo (28-sep): "va aparte" sonaba a que cargar productos siempre se paga.
-    'catalogo_carga' => 'Los productos los podés cargar vos desde el panel. Si son menos de 30, los cargamos nosotros sin costo; si son más y querés que hagamos toda la carga, tiene un costo de {carga_producto} por producto.',
+    'catalogo_carga' => 'Los productos los podés cargar vos desde el panel. Si son hasta 30, los cargamos nosotros sin costo; si son más y querés que hagamos toda la carga, tiene un costo de {carga_producto} por producto.',
     'cierre_comparando' => 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
     /* Lo que no entra en el precio de lista: se nombra el motivo y lo toma el
      * desarrollador (18-sep). Nunca un precio estándar para un proyecto que no
@@ -203,13 +203,13 @@ function wabot_textos_default() {
         'hosting' => 'Sí, el hosting y el dominio .com.ar van incluidos y nos ocupamos nosotros.',
         'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en el plan mensual y en el anual.',
         // Menos de 30 productos: la carga la hacemos nosotros (Pablo, 1-nov).
-        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Si son menos de 30 productos los cargamos todos nosotros; si son más, los primeros, y cuando esté lista te mostramos cómo se usa.',
+        'carga' => 'Sí, lo manejás vos desde tu panel, cuando quieras y sin costo extra. Si son hasta 30 productos los cargamos todos nosotros; si son más, los primeros, y cuando esté lista te mostramos cómo se usa.',
         /* "Se pueden cargar todos ustedes?" no es "lo puedo manejar yo?" (Pablo,
          * 9-oct: la respuesta de arriba contradecía la pregunta). Con sus palabras
          * del 22-sep: algunos los cargamos para entregarla funcionando; todos,
          * también, con un costo adicional según la cantidad. */
-        'carga_nosotros' => 'Si son menos de 30 productos, los cargamos todos nosotros sin costo. Si son más, también podemos cargarlos todos, con un costo adicional según la cantidad, o cargamos algunos y el resto lo cargás vos desde el panel sin costo.',
-        // La misma, cuando ya dijo cuántos son y son menos de 30 (la elige el sistema, no el modelo).
+        'carga_nosotros' => 'Si son hasta 30 productos, los cargamos todos nosotros sin costo. Si son más, también podemos cargarlos todos, con un costo adicional según la cantidad, o cargamos algunos y el resto lo cargás vos desde el panel sin costo.',
+        // La misma, cuando ya dijo cuántos son y son hasta 30 (la elige el sistema, no el modelo).
         'carga_pocos' => 'Con {cantidad} productos, los cargamos todos nosotros sin costo. Después los manejás vos desde el panel cuando quieras.',
         // La web informativa de $20.000 no tiene panel (Pablo, 9-oct a la noche). Con el límite del plan a la vista (2-nov, Caballo Crew: «los hacemos nosotros» sin el uno por mes).
         'manual_sitio' => 'No hace falta: en la web informativa los cambios los hacemos nosotros, uno por mes incluido. Vos solo nos pedís lo que quieras cambiar.',
@@ -222,7 +222,7 @@ function wabot_textos_default() {
         'marca' => 'Tener el dominio no protege el nombre comercial: para que nadie lo use como marca hay que registrarla, que es un trámite aparte.',
         'cobros_internacionales' => 'Sí, para cobrar en el exterior se integra PayPal u otra pasarela internacional, además de Mercado Pago para Argentina.',
         // Pablo en sus chats del 9-oct ("los medios de pago te los pasaría yo?" y el nombre de fantasía al cobrar).
-        'medios_pago_tienda' => 'Por lo general integramos Mercado Pago, pero si tenés otra billetera virtual de preferencia, integramos esa. También podés ofrecer transferencia o efectivo.',
+        'medios_pago_tienda' => 'Por lo general integramos Mercado Pago, pero también podemos integrar otra billetera virtual si tiene API para conectarla. También podés ofrecer transferencia o efectivo.',
         'mp_nombre_negocio' => 'Sí, eso depende de cómo tengas configurado Mercado Pago: ahí elegís el nombre del negocio, y cuando te pagan figura ese nombre.',
         'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
         'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',

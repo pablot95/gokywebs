@@ -43,7 +43,7 @@ function wabot_flujo_comercial($cfg = null) {
  * inmobiliaria, que cuestan lo mismo) y qué tipo del motor se guarda en la
  * charla para el boceto, la demo y el panel (`tipo`). El catálogo con pedidos
  * por WhatsApp va con el plan de tienda porque incluye panel; los cursos,
- * presenciales u online, siempre con el plan con panel; las reservas de turnos
+ * virtuales o mixtos con panel, presenciales informativos sin panel; las reservas de turnos
  * también.
  */
 function wabot_comercial_soluciones() {
@@ -548,7 +548,28 @@ function wabot_comercial_instrucciones($cfg, $postdemo = false) {
  * llamada), lo anterior resumido; el mensaje nuevo hasta 6000 caracteres: un
  * audio largo no pierde el final.
  */
+/** Conserva toda la tanda sin respuesta, aunque el disparador traiga solo el último mensaje. */
+function wabot_comercial_tanda_pendiente($texto, $conv) {
+    $pendientes = [];
+    $inicio = (int)($conv['session_started_ts'] ?? 0);
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if ($inicio > 0 && (int)($fila['ts'] ?? 0) < $inicio) break;
+        $quien = $fila['q'] ?? '';
+        if (in_array($quien, ['bot', 'humano'], true)) break;
+        if ($quien === 'cliente' && trim((string)($fila['t'] ?? '')) !== '') array_unshift($pendientes, trim($fila['t']));
+    }
+    $tanda = implode("\n", $pendientes);
+    $normalizar = function ($s) { return trim(preg_replace('/\s+/u', ' ', $s)); };
+    $nuevo = $normalizar((string)$texto);
+    $previo = $normalizar($tanda);
+    if ($previo === '' || ($nuevo !== '' && strpos($nuevo, $previo) !== false)) return (string)$texto;
+    if ($nuevo === '' || in_array($nuevo, array_map($normalizar, $pendientes), true)
+        || $previo === $nuevo || str_starts_with($previo, $nuevo . ' ') || str_ends_with($previo, ' ' . $nuevo)) return $tanda;
+    return $tanda . "\n" . $texto;
+}
+
 function wabot_comercial_contexto($texto, $conv, $cfg) {
+    $texto = wabot_comercial_tanda_pendiente($texto, $conv);
     $f = wabot_ficha($conv);
     $dato = function ($v) { $v = is_array($v) ? implode(', ', array_filter(array_map('strval', $v))) : trim((string)$v); return $v === '' ? '(no lo dijo)' : $v; };
     $funciones = [];
@@ -698,10 +719,11 @@ function wabot_comercial_esquema($cfg, $postdemo = false) {
         'schema' => [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => array_merge(['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'], array_keys($propiedadesPostdemo)),
+            'required' => array_merge(['accion', 'solucion', 'segunda_solucion', 'modalidad_clases', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha'], array_keys($propiedadesPostdemo)),
             'properties' => $propiedadesPostdemo + [
                 'accion' => ['type' => 'string', 'enum' => ['responder', 'cotizar', 'formulario', 'humano', 'esperar']],
                 'solucion' => ['type' => 'string', 'enum' => array_keys(wabot_comercial_soluciones())],
+                'modalidad_clases' => ['type' => 'string', 'enum' => ['no_aplica', 'desconocida', 'presencial', 'virtual', 'mixta']],
                 // La otra web, si pide dos distintas (Pablo, 10-oct): se cotizan juntas con descuento.
                 'segunda_solucion' => ['type' => 'string', 'enum' => array_merge(array_keys(wabot_comercial_soluciones()), ['ninguna'])],
                 'intencion' => ['type' => 'string', 'enum' => ['acepta', 'posterga', 'rechaza', 'condiciona', 'ninguna']],
@@ -755,6 +777,7 @@ function wabot_comercial_normalizar($d, $cfg, $postdemo = false) {
     return [
         'accion' => $accion,
         'solucion' => array_key_exists($solucion, wabot_comercial_soluciones()) ? $solucion : 'sin_definir',
+        'modalidad_clases' => in_array($d['modalidad_clases'] ?? '', ['no_aplica', 'desconocida', 'presencial', 'virtual', 'mixta'], true) ? $d['modalidad_clases'] : 'no_aplica',
         'segunda_solucion' => array_key_exists($segunda, wabot_comercial_soluciones()) && $segunda !== 'sin_definir' ? $segunda : null,
         'intencion' => in_array($d['intencion'] ?? '', ['acepta', 'posterga', 'rechaza', 'condiciona', 'ninguna'], true) ? $d['intencion'] : 'ninguna',
         'pago_unico' => !empty($d['pago_unico']),
@@ -1132,6 +1155,7 @@ function wabot_comercial_revision_pedido(array $revision) {
  * Devuelve ['ok', 'error', 'decision', 'ajustes', 'b', 'modelo', 'revision', 'gastado', 'segundos'].
  */
 function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
+    $texto = wabot_comercial_tanda_pendiente($texto, $conv);
     // Los textos y montos del grupo de la prueba de precios (31-oct) para todo el turno.
     $cfg = wabot_ab_cfg($cfg, $conv);
     $inicio = microtime(true);
@@ -1603,7 +1627,7 @@ function wabot_comercial_dudas($d, $texto, $conv) {
         $dudas[] = 'pedir publicidad, marketing, redes o difusión no es motivo para pasarlo a una persona: pedí la respuesta oficial marketing y seguí con la web (si ya sabés a qué se dedica, cotizá; si no, preguntáselo)';
     }
     if (in_array($d['accion'], ['responder', 'cotizar'], true) && $d['solucion'] === 'cursos') {
-        $agregadas = wabot_comercial_cursos_funciones_de_mas(implode("\n", $d['mensajes']), $cliente);
+        $agregadas = wabot_comercial_cursos_funciones_de_mas(implode("\n", $d['mensajes']), $cliente, $d['modalidad_clases'] ?? 'no_aplica');
         if ($agregadas) {
             $dudas[] = 'la propuesta nombra ' . implode(', ', $agregadas) . ', pero el cliente no lo pidió: describí solo lo que contó (sus capacitaciones o cursos, la información de cada uno y el contacto) y el panel para cargarlos y actualizarlos, sin preguntarle por esas funciones';
         }
@@ -1617,7 +1641,7 @@ function wabot_comercial_dudas($d, $texto, $conv) {
  * ofreció un sistema para gestionar alumnos; Marcelo quería "algo simple").
  * El plan con panel se mantiene: lo que se frena es describir de más.
  */
-function wabot_comercial_cursos_funciones_de_mas($propuesta, $cliente) {
+function wabot_comercial_cursos_funciones_de_mas($propuesta, $cliente, $modalidad = 'no_aplica') {
     $p = mb_strtolower((string)$propuesta);
     $c = mb_strtolower((string)$cliente);
     // Si vende o cobra los cursos por la web, alumnos, inscripción y acceso vienen con eso.
@@ -1631,6 +1655,7 @@ function wabot_comercial_cursos_funciones_de_mas($propuesta, $cliente) {
     ];
     $de_mas = [];
     foreach ($funciones as $nombre => [$enPropuesta, $loDijo]) {
+        if (in_array($modalidad, ['virtual', 'mixta'], true) && in_array($nombre, ['alumnos', 'inscripción', 'acceso a una plataforma'], true)) continue;
         if (preg_match($enPropuesta, $p) && !preg_match($loDijo, $c)) $de_mas[] = $nombre;
     }
     return $de_mas;
@@ -1642,6 +1667,15 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     $sol = $d['solucion'];
     // Con una cotización ya dada, el negocio está claro aunque la ficha no lo tenga (una charla vieja o de Pablo).
     $negocio = wabot_comercial_negocio_conocido($conv, $d) || wabot_comercial_cotizacion($conv, $cfg) !== null;
+
+    // La modalidad cambia el plan. El modelo debe extraerla de toda la charla.
+    if (($d['modalidad_clases'] ?? '') === 'desconocida' && $d['accion'] === 'cotizar'
+        && in_array($sol, ['cursos', 'informativa', 'informativa_panel', 'sin_definir'], true)
+        && wabot_comercial_cotizacion($conv, $cfg) === null) {
+        $d['accion'] = 'responder';
+        $d['mensajes'] = ['Te consulto, las clases son presenciales o virtuales?'];
+        $ajustes[] = 'preguntar_modalidad_clases';
+    }
 
     /* Respuestas oficiales angostas que el cliente nunca nombró (26/27-oct:
      * "Publicidad y redes no hacemos" a una abogada por "los clientes no llegan",
@@ -2416,10 +2450,10 @@ function wabot_comercial_info_textos(array $claves, $conv, $cfg, $sinMontos, $te
     foreach ($claves as $k) {
         $una = isset($extra[$k]) ? (string)$extra[$k] : wabot_info_lineas([$k], $conv, $cfg);
         if ($una === '') continue;
-        /* Menos de 30 productos los cargamos todos nosotros (Pablo, 1-nov): si ya
+        /* Hasta 30 productos los cargamos todos nosotros (Pablo, 1-nov): si ya
          * dijo cuántos son, la respuesta con su cantidad. */
         $cant = (int)(wabot_ficha($conv)['cantidad_productos'] ?? 0);
-        if ($k === 'carga_nosotros' && $cant > 0 && $cant < 30 && trim((string)($cfg['info']['carga_pocos'] ?? '')) !== '') {
+        if ($k === 'carga_nosotros' && $cant > 0 && $cant <= 30 && trim((string)($cfg['info']['carga_pocos'] ?? '')) !== '') {
             $una = str_replace('{cantidad}', (string)$cant, (string)$cfg['info']['carga_pocos']);
         }
         /* "Te pasamos el valor y, si te interesa…" con el valor ya pasado (22-oct,
@@ -2954,7 +2988,7 @@ function wabot_comercial_etiqueta($efecto) {
  */
 function wabot_comercial_turno($texto, &$conv, $cfg) {
     wabot_turno_preparar($conv, $cfg, time());
-    $texto = (string)$texto;
+    $texto = wabot_comercial_tanda_pendiente((string)$texto, $conv);
     if (trim($texto) !== '') {
         wabot_ficha_actualizar($conv, $texto);
         if (function_exists('wabot_web_propia_anotar')) wabot_web_propia_anotar($conv, $texto, $cfg);

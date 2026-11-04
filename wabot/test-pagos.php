@@ -133,7 +133,7 @@ $deps = [
     'avisar' => function ($t, $c) use (&$avisos) { $avisos[] = $t . ' | ' . $c; return 1; },
 ];
 $pago = wabot_pagos_normalizar(mp_suscripcion('10', 30000, $hace(1)), $YO) + ['modo' => 'monto_avisado'];
-$convA['control_manual'] = true; $convA['bot_off'] = true; $convA['ctwa_clid'] = 'clid-123';
+$convA['control_manual'] = false; $convA['bot_off'] = false; $convA['ctwa_clid'] = 'clid-123';
 $cfgCapi = array_merge($cfg, ['capi_dataset_id' => '1', 'capi_token' => 't', 'capi_waba_id' => '123456789012345']);
 $r = wabot_pago_confirmar($convA, $pago, 'mensual', $cfgCapi, $deps);
 caso('queda en la charla: cuándo, cuánto, qué y cómo', $r['ok'] && $convA['pago_confirmado_ts'] === $ahora && $convA['pago_id'] === '10' && $convA['pago_monto'] === 30000
@@ -402,4 +402,10 @@ caso('lo que entra después de ese mail se asigna solo al cliente', ($j3['estado
 
 array_map('unlink', glob($tmp . '/*') ?: []);
 @rmdir($tmp);
+
+// 4-nov: confirmar el pago no reactiva una conversación tomada por Pablo.
+$cvManual = conv_nueva('AUDITORIAPAGOTEST', ['control_manual' => true, 'bot_off' => true, 'ultimo_cliente_ts' => $ahora, 'tipo' => 'ecommerce']);
+$rManual = wabot_pago_confirmar($cvManual, $pago, 'mensual', array_merge($cfg, ['onboarding_activo' => true]), $deps);
+caso('con control manual no inicia onboarding ni confirma otra vez al cliente', $rManual['ok'] && $rManual['mensajes'] === [] && empty($cvManual['onboarding']) && !empty($cvManual['control_manual']) && !empty($cvManual['bot_off']));
+
 todo_ok();

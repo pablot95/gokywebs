@@ -25,7 +25,7 @@ Validación local sin red: `test-comercial.php` 299/299, `test-sugerencias.php` 
 | informativa_panel — la misma, con panel para que el cliente cambie el contenido | con panel | $30.000 | $190.000 | $330.000 | landing (con panel) |
 | tienda — vende productos, carrito y cobro con Mercado Pago | con panel | $30.000 | $190.000 | $330.000 | ecommerce |
 | catalogo — productos con fotos y precios, pedido por WhatsApp, sin cobro online | con panel | $30.000 | $190.000 | $330.000 | ecommerce |
-| cursos — online o presenciales, aunque solo muestre y reciba consultas | con panel | $30.000 | $190.000 | $330.000 | elearning |
+| cursos virtuales o mixtos — se asume enseñanza desde la web | con panel | $30.000 | $190.000 | $330.000 | elearning |
 | inmobiliaria — publica propiedades, aunque solo reciba consultas | con panel | $30.000 | $190.000 | $330.000 | inmobiliaria |
 | reservas — web pública con reserva de turnos online | con panel | $30.000 | $190.000 | $330.000 | landing (con panel) |
 | cualquiera que cobre a clientes del exterior (PayPal u otra pasarela) | internacional | $40.000 | $240.000 | — (Pablo) | según la solución |
@@ -39,7 +39,7 @@ integrados; internacional $40.000 por mes; el dominio se transfiere con el prime
 
 Los montos salen de `tipos` en `textos.php` (landing para el plan informativa; ecommerce para el plan
 con panel). Cambios respecto del código anterior, por decisión del plan: el catálogo con pedidos por
-WhatsApp y los cursos presenciales ya no bajan al precio del sitio profesional; la web con reservas
+WhatsApp conserva el plan con panel. Las clases presenciales solo informativas van como sitio profesional; la web con reservas
 de turnos es una solución aprobada del plan con panel.
 
 Reglas:
@@ -138,11 +138,9 @@ Estándar (se cotiza y se contesta solo):
 - Informativa: secciones, trabajos, formulario de contacto, mapa, Instagram, reseñas, idiomas,
   carta (gastronomía), botón para pedir turno por WhatsApp. Gastronomía con pedidos desde la web
   es tienda (Pablo, pizzería del 9-oct).
-- Cursos: videos y material con acceso propio de cada alumno, cobro por Mercado Pago; o solo
-  mostrarlos e inscribirse por WhatsApp. Siempre plan con panel, pero la propuesta describe solo lo
-  que pidió: alumnos, inscripción o pago online, campus o "sistema" únicamente si los nombró o si
-  vende/cobra los cursos (Pablo, 16-oct, por Roque y Marcelo; `wabot_comercial_cursos_funciones_de_mas`
-  pide una corrección).
+- Cursos (Pablo, 4-nov): preguntar si son presenciales o virtuales cuando aún no lo dijo.
+  Virtuales o mixtos: se asume enseñanza desde la web, con panel, acceso de alumnos y material.
+  Solo presenciales para mostrar y recibir consultas: informativa; autogestión o reservas según lo pedido.
 - Inmobiliaria: fichas con fotos y video, buscador por zona, tipo y precio, consultas por WhatsApp.
 - Reservas: turnos online donde el cliente elige día y horario.
 - Cualquier web: pixel de Meta, Analytics, SSL, hosting y dominio.

@@ -716,7 +716,7 @@ function wabot_pago_confirmar(&$conv, array $pago, $modalidad, $cfg, array $deps
     /* Si Pablo ya le escribió después del pago ("Genial, recibido, te escribo
      * desde otro número", Neuro Test, 1-nov), ese chat ya lo derivó él: el
      * onboarding tampoco arranca, aunque esté prendido. Queda como de fábrica. */
-    if ($onboarding && wabot_pagos_pablo_escribio_despues($conv)) {
+    if ($onboarding && (!empty($conv['control_manual']) || wabot_pagos_pablo_escribio_despues($conv))) {
         $onboarding = false;
         wabot_log('onboarding_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
     }
@@ -809,6 +809,7 @@ function wabot_pagos_pablo_escribio_despues($conv) {
  * ventana de 24 h de WhatsApp está cerrada o el envío falló).
  */
 function wabot_pago_recibido_enviar(&$conv, $cfg, $ahora, array $deps = []) {
+    $yaAtendido = !empty($conv['control_manual']) || !empty($conv['pago_recibido_ts']) || wabot_pagos_pablo_escribio_despues($conv);
     // Como cuando escribe Pablo: el bot no contesta más en este chat.
     if (function_exists('wabot_conv_tomar_control')) wabot_conv_tomar_control($conv);
     else { $conv['control_manual'] = true; $conv['bot_off'] = true; }
@@ -817,7 +818,7 @@ function wabot_pago_recibido_enviar(&$conv, $cfg, $ahora, array $deps = []) {
     /* Pablo ya le escribió después del pago (1-nov, Neuro Test: el bot mandó la
      * apertura justo después de su «te escribo desde otro número»): ya lo
      * atendió él, el mensaje sobra. */
-    if (wabot_pagos_pablo_escribio_despues($conv)) {
+    if ($yaAtendido) {
         $conv['pago_recibido_omitido'] = 'pablo_escribio';
         wabot_log('pago_recibido_omitido', ['clave' => $conv['conversation_key'] ?? '', 'motivo' => 'pablo_escribio']);
         return [];

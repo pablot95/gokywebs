@@ -3374,7 +3374,7 @@ function burbujaCita(t, chat) {
                 </div>
                 <div style="margin-top:8px">
                     <label>Texto aprobado en Meta (es lo que queda escrito en el chat)</label>
-                    <input type="text" name="plantilla_<?= $e($clavePlant) ?>_texto" value="<?= $e((string)($p['texto'] ?? '')) ?>" style="width:100%">
+                    <textarea name="plantilla_<?= $e($clavePlant) ?>_texto" rows="5" style="width:100%"><?= $e((string)($p['texto'] ?? '')) ?></textarea>
                 </div>
             <?php endforeach; ?>
         </div>

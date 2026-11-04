@@ -220,6 +220,11 @@ function wabot_ajustes_claves() {
         wabot_ia_ajustes_claves());
 }
 
+/** Repara únicamente el texto oficial al que el antiguo input quitó los saltos. */
+function wabot_plantilla_restaurar_saltos($texto, $oficial) {
+    return str_replace(["\r", "\n"], '', $oficial) === $texto ? $oficial : $texto;
+}
+
 function wabot_config_load() {
     wabot_ensure_dirs();
     require_once __DIR__ . '/textos.php';
@@ -240,6 +245,11 @@ function wabot_config_load() {
                 $cfg[$k] = $k === 'plantillas' && is_array($guardado[$k])
                     ? array_replace($cfg[$k], $guardado[$k]) : $guardado[$k];
             }
+        }
+    }
+    foreach (wabot_textos_default()['plantillas'] as $clave => $oficial) {
+        if (isset($cfg['plantillas'][$clave]['texto'])) {
+            $cfg['plantillas'][$clave]['texto'] = wabot_plantilla_restaurar_saltos($cfg['plantillas'][$clave]['texto'], (string)($oficial['texto'] ?? ''));
         }
     }
     if (trim((string)($cfg['gemini_modelo'] ?? '')) === '') $cfg['gemini_modelo'] = wabot_gemini_modelo_default();
@@ -1560,7 +1570,8 @@ function wabot_conv_resolver($tel, &$motivo = null) {
 function wabot_conv_hermana($clave) {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if ($clave === '') return null;
-    $abonados = wabot_tel_abonados(stripos($clave, 'ig') === 0 ? '' : $clave);
+    $telefono = stripos($clave, 'ig') === 0 ? wabot_conv_wsp_crudo(WABOT_DATA . '/conv/' . $clave . '.json') : $clave;
+    $abonados = wabot_tel_abonados($telefono);
     if (!$abonados) return null;
 
     $hermanas = [];
@@ -4230,7 +4241,7 @@ function wabot_ig_nombre($igsid) {
     $cache = WABOT_DATA . '/ig-profile/' . $igsid . '.json';
     if (file_exists($cache) && filemtime($cache) > time() - 30 * 86400) {
         $j = json_decode((string)@file_get_contents($cache), true);
-        return trim((string)($j['nombre'] ?? ''));
+        if (is_array($j) && array_key_exists('username', $j)) return trim((string)($j['nombre'] ?? ''));
     }
 
     $url = 'https://graph.instagram.com/' . WABOT_GRAPH_VERSION . '/' . rawurlencode($igsid)
@@ -4248,7 +4259,7 @@ function wabot_ig_nombre($igsid) {
     }
     $j = json_decode((string)$res, true);
     $nombre = trim((string)($j['name'] ?? $j['username'] ?? ''));
-    if ($nombre !== '') wabot_json_guardar_atomico($cache, ['nombre' => $nombre, 'ts' => time()]);
+    if ($nombre !== '') wabot_json_guardar_atomico($cache, ['nombre' => $nombre, 'username' => (string)($j['username'] ?? ''), 'ts' => time()]);
     return $nombre;
 }
 
@@ -6217,6 +6228,43 @@ function wabot_retomar_detectar(&$conv, $texto, $ts, $quien) {
  * 4-oct. Sale una vez por link, en horario de contacto y con la ventana de 24 h
  * abierta; nunca en medio de una charla (2 h sin mensajes de nadie).
  */
+/** Una despedida final cierra los seguimientos hasta que el cliente retome. */
+function wabot_seguimiento_finalizado($cv) {
+    $fin = !empty($cv['ultima_llamada_enviada']) ? (int)($cv['ultima_llamada_ts'] ?? 0) : 0;
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (!in_array(($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        $texto = wabot_normalizar_frase((string)($fila['t'] ?? ''));
+        if (preg_match('/\b(ultima vez que te (escribo|contacto)|te (escribo|contacto) por ultima vez)\b/u', $texto)) $fin = max($fin, (int)($fila['ts'] ?? 0));
+    }
+    return $fin > 0 && wabot_ultimo_cliente_ts($cv) <= $fin;
+}
+
+/** El mismo cliente puede haber completado la demo por el otro canal. */
+function wabot_form_completado_otro_canal($cv) {
+    $hermana = wabot_conv_hermana(wabot_conversation_key($cv));
+    if ($hermana !== null) {
+        $otra = json_decode((string)@file_get_contents(WABOT_DATA . '/conv/' . $hermana . '.json'), true);
+        if (is_array($otra) && (!empty($otra['form_completado_ts']) || !empty($otra['lead_creado']) || !empty($otra['presentado_ts']))) return true;
+    }
+    // Si abrió el form sin ?c=, cruzamos el usuario exacto de Instagram que dejó
+    // en el formulario con el de Meta. Nunca usamos el nombre visible del negocio.
+    if (wabot_canal($cv) !== 'instagram') return false;
+    $id = preg_replace('/[^0-9A-Za-z]/', '', wabot_channel_user_id($cv));
+    wabot_ig_nombre($id); // renueva caches antiguos que solo conservaban el nombre
+    $perfil = json_decode((string)@file_get_contents(WABOT_DATA . '/ig-profile/' . $id . '.json'), true);
+    $usuario = strtolower(trim((string)($perfil['username'] ?? '')));
+    if ($usuario === '') return false;
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $archivo) {
+        if (!ctype_digit(basename($archivo, '.json'))) continue;
+        $otra = json_decode((string)@file_get_contents($archivo), true);
+        if (!is_array($otra) || (int)($otra['form_completado_ts'] ?? 0) < max(1, (int)($cv['form_link_mandado_ts'] ?? 0))) continue;
+        $ig = strtolower(trim((string)($otra['instagram'] ?? '')));
+        if (preg_match('~instagram\.com/([a-z0-9._]{1,30})(?:[/?#]|$)~', $ig, $m)) $ig = $m[1];
+        if (ltrim($ig, '@') === $usuario) return true;
+    }
+    return false;
+}
+
 function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['form_recordatorio_activo'])) return false;
@@ -6235,12 +6283,14 @@ function wabot_form_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     $horas = max(1, (float)($cfg['form_recordatorio_horas'] ?? 12));
     if ($ahora - $link < $horas * 3600) return false;
     if (wabot_auto_reciente($cv, $ahora)) return false;
+    if (wabot_seguimiento_finalizado($cv)) return false;
     $t = (array)($cv['transcript'] ?? []);
     $ult = end($t);
     if ($ult && $ahora - (int)($ult['ts'] ?? 0) < 2 * 3600) return false;
     // Texto libre solo con la ventana abierta, y con margen para que llegue.
     if (wabot_ventana_restante($cv, $ahora) < 1800) return false;
-    return wabot_seguimiento_hora_ok($cfg, $ahora);
+    if (!wabot_seguimiento_hora_ok($cfg, $ahora)) return false;
+    return !wabot_form_completado_otro_canal($cv);
 }
 
 /** El mismo link que se le mandó (el último del bot o de Pablo); si no se encuentra, el de la charla. */
@@ -6418,6 +6468,7 @@ function wabot_texto_es_oferta_entrega($texto) {
 }
 
 function wabot_oferta_entrega_seguimiento_corresponde($cv, $cfg, $ahora = null) {
+    if (wabot_seguimiento_finalizado($cv)) return false;
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['oferta_entrega_seguimiento_activo'])) return false;
     if (!empty($cv['oferta_entrega_seguimiento_ts'])) return false;
@@ -6485,6 +6536,7 @@ function wabot_oferta_entrega_seguimiento_correr($cfg, $ahora = null) {
  * Es distinto del seguimiento de 3 h: aquel empuja, este es el aviso final.
  */
 function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
+    if (wabot_seguimiento_finalizado($cv)) return false;
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['ultima_llamada_activa'])) return false;
     if (!empty($cv['ultima_llamada_enviada']) || !empty($cv['seguimiento_bloqueado'])) return false;
@@ -6622,6 +6674,7 @@ function wabot_plantilla_auto_activa($clave, $cfg) {
 }
 
 function wabot_plantillas_auto_contacto_ok($cv, $ahora) {
+    if (wabot_seguimiento_finalizado($cv)) return false;
     if (!empty($cv['postprecio_derivacion']) || !empty($cv['postprecio_auto'])) return false;
     if (wabot_canal($cv) !== 'whatsapp' || !empty($cv['archivado'])) return false;
     if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
@@ -6762,6 +6815,7 @@ function wabot_template_72h_enviar(&$conv, $cfg) {
  * la demo, si tuvo demo y nunca le llegó, y si no, nada.
  */
 function wabot_seguimiento_interesado_plantilla($cv) {
+    if (wabot_seguimiento_finalizado($cv)) return '';
     $intento = (int)($cv['seguimiento_interesado_auto_intento_ts'] ?? 0);
     if (empty($cv['seguimiento_interesado_enviado'])) return $intento > 0 ? '' : 'seguimiento_interesado';
     $enviado = (int)($cv['seguimiento_interesado_ts'] ?? 0);
@@ -6781,6 +6835,7 @@ function wabot_template_saludo_enviar(&$conv, $cfg) {
 
 /** La misma plantilla sirve a mano en Seguimientos; el cron sigue siendo solo para favoritos. */
 function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = false) {
+    if (wabot_seguimiento_finalizado($conv)) return 'ya';
     if (wabot_canal($conv) === 'instagram') return 'canal';
     if (!$permitirSinFavorito && empty($conv['favorito'])) return 'no_interesado';
     $plantilla = empty($conv['seguimiento_interesado_enviado']) ? 'seguimiento_interesado' : wabot_seguimiento_interesado_plantilla($conv);

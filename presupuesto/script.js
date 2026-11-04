@@ -779,7 +779,7 @@ function getSiteType() {
      permanencia; con la primera mensualidad armamos la web. Incluye el
      mantenimiento (renovación de hosting y dominio, actualizaciones de SDK y
      plugins, arreglo de errores, soporte, copia de seguridad y un cambio por
-     mes). La mensualidad se actualiza una vez al año. MENSUALIDAD tiene que
+     mes). El valor de los planes mensual y anual se actualiza una vez al año. MENSUALIDAD tiene que
      coincidir con el monto de los dos planes de Mercado Pago y con
      MENSUALIDAD de exito.html.
    · Plan anual: sin suscripción. Una seña para arrancar, el resto al entregar
@@ -800,10 +800,10 @@ function getSiteType() {
    (lo mismo PRECIO_ANUAL y PRECIO_PAGO_UNICO). Son montos que nunca se suman
    entre sí. Clave 'landing' = sitio profesional.
    Montos al 26-oct-2026, los mismos que wabot/textos.php y las páginas de
-   /pago: mensual $20.000 / $30.000, anual $140.000 / $210.000 (seña $60.000) y
+   /pago: mensual $20.000 / $30.000, anual $140.000 / $190.000 (seña $60.000) y
    pago único $240.000 / $330.000 (seña $80.000 / $100.000; hasta el 26-oct el
    del sitio profesional era $220.000 y las dos señas, $60.000). */
-const PRECIO_ANUAL      = { landing: 140000, ecommerce: 210000, inmobiliaria: 210000, elearning: 210000 };
+const PRECIO_ANUAL      = { landing: 140000, ecommerce: 190000, inmobiliaria: 190000, elearning: 190000 };
 const PRECIO_PAGO_UNICO = { landing: 240000, ecommerce: 330000, inmobiliaria: 330000, elearning: 330000 };
 const SENA              = { landing: 60000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
 const SENA_PAGO_UNICO   = { landing: 80000,  ecommerce: 100000, inmobiliaria: 100000, elearning: 100000 };

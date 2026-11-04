@@ -130,7 +130,7 @@ caso('el revisor lee sus reglas, el resumen de las del asistente y la informaci�
     && strpos($insRevC, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false && strpos($insRevC, 'CÓMO ESCRIBIR') === false && mb_strlen($insRevC) < 33000, (string)mb_strlen($insRevC));
 caso('el modelo ve los últimos 20 mensajes enteros (27-oct, antes 30)', (int)($cfg['comercial']['historial'] ?? 0) === 20);
 caso('el descuento y "pagar antes?" se pueden pedir por clave', in_array('descuento', wabot_comercial_info_claves($cfg), true) && in_array('pago_antes_demo', wabot_comercial_info_claves($cfg), true));
-caso('el esquema exige todos los campos (con la segunda web, 10-oct)', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'segunda_solucion', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
+caso('el esquema exige todos los campos (con la segunda web, 10-oct)', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'segunda_solucion', 'modalidad_clases', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
 
 echo "— 2. La secuencia de la cotización: tres mensajes —\n";
 $c = cv();
@@ -139,11 +139,11 @@ oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto,
 $r = turno('Hola! Vendo zapatillas', $c, $cfg);
 caso('«Vendo zapatillas» → tres mensajes separados', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('1: la propuesta breve del modelo, con el saludo devuelto (el nombre del perfil no se usa)', ($r[0] ?? '') === 'Hola! Perfecto, te podemos armar una tienda online para que vendas las zapatillas directo desde la web, sin estar pendiente de cada consulta', $r[0] ?? '');
-caso('2: los planes con panel, anual primero, $210.000 / $30.000', ($r[1] ?? '') === planes('panel', '$210.000', '$30.000'), $r[1] ?? '');
+caso('2: los planes con panel, anual primero, $190.000 / $30.000', ($r[1] ?? '') === planes('panel', '$190.000', '$30.000'), $r[1] ?? '');
 caso('3: la oferta de la demo, tal cual, sin coletilla', ($r[2] ?? '') === OFERTA, $r[2] ?? '');
 caso('una sola llamada al modelo', count(pedidos()) === 1);
-caso('queda cotizada: precio congelado, tipo tienda, oferta abierta', !empty($c['precio_dado']) && ($c['tipo'] ?? '') === 'ecommerce' && ($c['comercial_cotizacion']['anual'] ?? '') === '$210.000'
-    && ($c['precio_cotizado'] ?? '') === '$210.000' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && !empty($c['comercial_oferta_ts']) && ($c['fase'] ?? '') === 'prediseno', json_encode(array_intersect_key($c, array_flip(['precio_dado', 'tipo', 'comercial_cotizacion', 'fase']))));
+caso('queda cotizada: precio congelado, tipo tienda, oferta abierta', !empty($c['precio_dado']) && ($c['tipo'] ?? '') === 'ecommerce' && ($c['comercial_cotizacion']['anual'] ?? '') === '$190.000'
+    && ($c['precio_cotizado'] ?? '') === '$190.000' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && !empty($c['comercial_oferta_ts']) && ($c['fase'] ?? '') === 'prediseno', json_encode(array_intersect_key($c, array_flip(['precio_dado', 'tipo', 'comercial_cotizacion', 'fase']))));
 caso('la ficha guarda lo que entendió', wabot_ficha($c)['rubro'] === 'tu local de zapatillas' && ($c['comercial_solucion'] ?? '') === 'tienda');
 caso('y nada queda pendiente para Pablo', empty($c['handoff_pendiente']) && empty($c['control_manual']));
 $ctx = (string)(pedidos()[0]['input'][0]['content'] ?? '');
@@ -153,7 +153,7 @@ caso('el mensaje nuevo va entero en el contexto', strpos($ctx, 'Hola! Vendo zapa
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'catalogo', 'mensajes' => ['Perfecto, te podemos armar un catálogo con tus suplementos para que armen el pedido y te llegue por WhatsApp.'], 'ficha' => ['que_vende' => 'suplementos']])]);
 $r = turno('Vendo suplementos, solo quiero mostrarlos y que me pidan por WhatsApp', $c, $cfg);
-caso('catálogo sin cobro → plan con panel (tienda), no la informativa barata', ($r[1] ?? '') === planes('panel', '$210.000', '$30.000') && ($c['tipo'] ?? '') === 'ecommerce' && ($c['comercial_solucion'] ?? '') === 'catalogo', $r[1] ?? '');
+caso('catálogo sin cobro → plan con panel (tienda), no la informativa barata', ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($c['tipo'] ?? '') === 'ecommerce' && ($c['comercial_solucion'] ?? '') === 'catalogo', $r[1] ?? '');
 
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Buenísimo, te podemos armar una página con tu información y el contacto directo por WhatsApp.'], 'ficha' => ['rubro' => 'tu consultorio de psicología']])]);
@@ -164,14 +164,13 @@ foreach (['reservas' => 'landing', 'cursos' => 'elearning', 'inmobiliaria' => 'i
     $c = cv();
     oa([dc(['accion' => 'cotizar', 'solucion' => $sol, 'mensajes' => ['Perfecto, te la podemos armar.'], 'ficha' => ['rubro' => 'tu negocio de ' . $sol]])]);
     $r = turno('Tengo un negocio de ' . $sol . ' y quiero una web', $c, $cfg);
-    caso("$sol → plan con panel ($210.000 / $30.000), tipo $tipo", ($r[1] ?? '') === planes('panel', '$210.000', '$30.000') && ($c['tipo'] ?? '') === $tipo, json_encode($r, JSON_UNESCAPED_UNICODE));
+    caso("$sol → plan con panel ($190.000 / $30.000), tipo $tipo", ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($c['tipo'] ?? '') === $tipo, json_encode($r, JSON_UNESCAPED_UNICODE));
 }
 $c = cv();
 // La inscripción no la pidió ("que me escriban"): una corrección (16-oct), y el plan sigue con panel.
-oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Perfecto, te podemos armar una web con tus cursos de maquillaje y la inscripción desde ahí.'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']]),
-    dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Perfecto, te podemos armar una web para mostrar tus cursos de maquillaje y que te escriban directo'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']])]);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'modalidad_clases' => 'presencial', 'mensajes' => ['Perfecto, te podemos armar una web para mostrar tus cursos de maquillaje y que te escriban directo'], 'ficha' => ['que_vende' => 'cursos de maquillaje presenciales']])]);
 $r = turno('Dicto cursos de maquillaje presenciales, para mostrarlos y que me escriban', $c, $cfg);
-caso('cursos presenciales solo para mostrar → igual el plan con panel (no se rebajan a informativa)', ($r[1] ?? '') === planes('panel', '$210.000', '$30.000') && count(pedidos()) === 2 && mb_stripos($r[0] ?? '', 'inscrip') === false, $r[1] ?? '');
+caso('cursos presenciales solo para mostrar → informativa sin panel', ($r[1] ?? '') === planes('info', '$140.000', '$20.000') && count(pedidos()) === 1 && ($c['comercial_solucion'] ?? '') === 'informativa', $r[1] ?? '');
 
 echo "— 3. La propuesta: adaptada por el modelo, con red —\n";
 $c = cv();
@@ -210,7 +209,7 @@ oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Buenísim
         'ficha' => ['rubro' => 'tu negocio', 'que_vende' => 'productos que vende por Mercado Libre']])]);
 $r = turno('Vendo  por mercado libre y necesito tener un canal de venta alternativo', $c, $cfg);
 caso('el caso de Charlie: vende por Mercado Libre y quiere otro canal → se cotiza la tienda (propuesta, planes y oferta)',
-    count($r) === 3 && mb_stripos($r[0], 'además de Mercado Libre') !== false && ($r[1] ?? '') === planes('panel', '$210.000', '$30.000') && ($r[2] ?? '') === OFERTA,
+    count($r) === 3 && mb_stripos($r[0], 'además de Mercado Libre') !== false && ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($r[2] ?? '') === OFERTA,
     json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 4. Sin negocio no hay precio —\n";
@@ -378,8 +377,8 @@ $r = turno('Dale, y que se sincronice con Mercado Libre', $c, $cfg);
 caso('una conexión no aprobada frena el formulario aunque acepte la demo', $r === [] && empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'Mercado Libre') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Dos webs (Pablo, 10-oct): juntas con $10.000 menos por mes y $50.000 menos por año sobre la suma.
-foreach ([['informativa', 'informativa', '$230.000', '$30.000'], ['informativa', 'tienda', '$300.000', '$40.000'], ['tienda', 'reservas', '$370.000', '$50.000'],
-          ['cursos', 'informativa_panel', '$370.000', '$50.000']] as [$a, $b, $anual, $mensual]) {
+foreach ([['informativa', 'informativa', '$230.000', '$30.000'], ['informativa', 'tienda', '$280.000', '$40.000'], ['tienda', 'reservas', '$330.000', '$50.000'],
+          ['cursos', 'informativa_panel', '$330.000', '$50.000']] as [$a, $b, $anual, $mensual]) {
     $m = wabot_comercial_dos_webs_montos($a, $b, $cfg);
     caso("dos webs $a + $b → $anual anual y $mensual mensual por las dos", ($m['anual'] ?? '') === $anual && ($m['mensual'] ?? '') === $mensual, json_encode($m));
 }
@@ -391,7 +390,7 @@ oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'segunda_solucion' =
 $r = turno('Necesito dos webs, una para mi agencia de viajes y otra para la pañalera de mi hija', $c, $cfg);
 caso('pide dos webs de entrada → propuesta, el precio de las dos con descuento y la oferta (antes iba a Pablo)',
     count($r) === 3 && mb_stripos($r[0], 'agencia de viajes') !== false
-    && strpos($r[1], 'Por las dos webs (web informativa y tienda online)') === 0 && strpos($r[1], '$300.000 por las dos (en vez de $350.000)') !== false
+    && strpos($r[1], 'Por las dos webs (web informativa y tienda online)') === 0 && strpos($r[1], '$280.000 por las dos (en vez de $330.000)') !== false
     && strpos($r[1], '$40.000 por mes por las dos (en vez de $50.000)') !== false && $r[2] === OFERTA
     && ($c['comercial_dos_webs']['mensual'] ?? '') === '$40.000' && ($c['comercial_cotizacion']['plan'] ?? '') === 'informativa' && !empty($c['comercial_oferta_ts']),
     json_encode($r, JSON_UNESCAPED_UNICODE));
@@ -402,7 +401,7 @@ oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'segunda_solucion' => 
 $r = turno('Si dale, y me gustaría otra web para venta de productos', $c, $cfg);
 caso('acepta la demo y pide otra web en el mismo mensaje → el precio de las dos y el formulario (no se calla)',
     count($r) === 3 && strpos($r[1], 'Por las dos webs (las dos son tienda online)') === 0 && strpos($r[1], '$50.000 por mes por las dos') !== false
-    && con_form([$r[2]]) && !empty($c['link_form_enviado']) && ($c['comercial_dos_webs']['anual'] ?? '') === '$370.000', json_encode($r, JSON_UNESCAPED_UNICODE));
+    && con_form([$r[2]]) && !empty($c['link_form_enviado']) && ($c['comercial_dos_webs']['anual'] ?? '') === '$330.000', json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'segunda_solucion' => 'crm'])]);
 $r = turno('Y aparte quiero un sistema para manejar los clientes', $c, $cfg);
@@ -573,9 +572,9 @@ $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto, te podemos armar una tienda online para tus zapatillas.'], 'ficha' => ['que_vende' => 'zapatillas']])]);
 wabot_procesar_entrante(['channel_user_id' => $tel, 'conversation_key' => $tel, 'id' => uniqid('tc.1'), 'canal' => 'whatsapp', 'texto' => 'Vendo zapatillas', 'nombre' => 'Marta', 'media' => null], $cfg);
 $cvd = wabot_conv_load($tel);
-caso('el webhook manda los tres mensajes y guarda la charla cotizada', count($GLOBALS['WABOT_TEST_ENVIADOS']) === 3 && !empty($cvd['precio_dado']) && ($cvd['comercial_cotizacion']['anual'] ?? '') === '$210.000'
+caso('el webhook manda los tres mensajes y guarda la charla cotizada', count($GLOBALS['WABOT_TEST_ENVIADOS']) === 3 && !empty($cvd['precio_dado']) && ($cvd['comercial_cotizacion']['anual'] ?? '') === '$190.000'
     && count(array_filter($cvd['transcript'], fn($l) => $l['q'] === 'bot')) === 3, json_encode($GLOBALS['WABOT_TEST_ENVIADOS'], JSON_UNESCAPED_UNICODE));
-caso('el segundo mensaje enviado es el bloque de planes exacto', ($GLOBALS['WABOT_TEST_ENVIADOS'][1][1] ?? '') === planes('panel', '$210.000', '$30.000'));
+caso('el segundo mensaje enviado es el bloque de planes exacto', ($GLOBALS['WABOT_TEST_ENVIADOS'][1][1] ?? '') === planes('panel', '$190.000', '$30.000'));
 $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
 wabot_procesar_entrante(['channel_user_id' => $tel, 'conversation_key' => $tel, 'id' => uniqid('tc.2'), 'canal' => 'whatsapp', 'texto' => 'Dale, armala', 'nombre' => 'Marta', 'media' => null], $cfg);
@@ -602,16 +601,16 @@ $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
 
 echo "— 13. Reglas del 9-oct a la noche (Pablo) —\n";
 $GLOBALS['TC_DICE_RUBRO'] = true;
-caso('anual de lista (24-oct): $140.000 la informativa y $210.000 el resto; mantenimiento del pago único $15.000 para todos',
-    $cfg['tipos']['landing']['precio'] === '$140.000' && $cfg['tipos']['ecommerce']['precio'] === '$210.000' && $cfg['tipos']['elearning']['precio'] === '$210.000'
-    && $cfg['tipos']['inmobiliaria']['precio'] === '$210.000' && $cfg['tipos']['landing']['mantenimiento'] === '$15.000' && $cfg['tipos']['ecommerce']['mantenimiento'] === '$15.000');
+caso('anual de lista (4-nov): $140.000 la informativa y $190.000 el resto; mantenimiento del pago único $15.000 para todos',
+    $cfg['tipos']['landing']['precio'] === '$140.000' && $cfg['tipos']['ecommerce']['precio'] === '$190.000' && $cfg['tipos']['elearning']['precio'] === '$190.000'
+    && $cfg['tipos']['inmobiliaria']['precio'] === '$190.000' && $cfg['tipos']['landing']['mantenimiento'] === '$15.000' && $cfg['tipos']['ecommerce']['mantenimiento'] === '$15.000');
 caso('pago único $240.000 / $330.000 (26-oct)', $cfg['tipos']['landing']['precio_unico'] === '$240.000' && $cfg['tipos']['ecommerce']['precio_unico'] === '$330.000');
-caso('las páginas de pago del anual son anual140 y anual210 (24-oct; antes anual190)', wabot_planes_paginas()['landing']['anual']['pagina'] === 'anual140' && wabot_planes_paginas()['ecommerce']['anual']['pagina'] === 'anual210');
+caso('las páginas de pago del anual son anual140 y anual190 (4-nov)', wabot_planes_paginas()['landing']['anual']['pagina'] === 'anual140' && wabot_planes_paginas()['ecommerce']['anual']['pagina'] === 'anual190');
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa_panel', 'mensajes' => ['Perfecto, te podemos armar una web para tu estudio, con un panel para que cambies vos los textos y las fotos.'], 'ficha' => ['rubro' => 'tu estudio de arquitectura']])]);
 $r = turno('Soy arquitecta y quiero una web para mostrar mis obras, y poder cambiar yo misma las fotos', $c, $cfg);
-caso('informativa con panel (quiere cambiar ella el contenido) → plan con panel $210.000 / $30.000, tipo landing con panel',
-    ($r[1] ?? '') === planes('panel', '$210.000', '$30.000') && ($c['tipo'] ?? '') === 'landing' && !empty($c['landing_con_panel']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('informativa con panel (quiere cambiar ella el contenido) → plan con panel $190.000 / $30.000, tipo landing con panel',
+    ($r[1] ?? '') === planes('panel', '$190.000', '$30.000') && ($c['tipo'] ?? '') === 'landing' && !empty($c['landing_con_panel']), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('a esa charla sí le corresponde el texto con panel', !wabot_conv_sin_panel($c));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Buenísimo, te podemos armar una página para tu estudio contable.'], 'ficha' => ['rubro' => 'tu estudio contable']])]);
@@ -692,9 +691,9 @@ caso('carga_nosotros: con las palabras de Pablo (costo adicional según la canti
     mb_stripos($cn, 'costo adicional según la cantidad') !== false && mb_strlen($cn) <= 260 && strpos($cn, '$') === false, $cn);
 $infoTxt = wabot_comercial_info($cfg);
 // Menos de 30 productos los cargamos todos nosotros (Pablo, 1-nov).
-caso('carga y carga_nosotros dicen que con menos de 30 productos la carga la hacemos nosotros',
-    mb_stripos($cn, 'menos de 30') !== false && mb_stripos((string)$cfg['info']['carga'], 'menos de 30') !== false
-    && mb_strlen((string)$cfg['info']['carga']) <= 260 && mb_stripos($ins, 'menos de 30') !== false);
+caso('carga y carga_nosotros dicen que con hasta 30 productos la carga la hacemos nosotros',
+    mb_stripos($cn, 'hasta 30') !== false && mb_stripos((string)$cfg['info']['carga'], 'hasta 30') !== false
+    && mb_strlen((string)$cfg['info']['carga']) <= 260 && mb_stripos($ins, 'hasta 30') !== false);
 caso('carga_pocos no se le ofrece al modelo (la elige el sistema con la cantidad)', !in_array('carga_pocos', wabot_comercial_info_claves($cfg), true)
     && strpos($infoTxt, '- carga_pocos:') === false);
 $cp = cv_cotizada('tienda');
@@ -766,7 +765,7 @@ foreach (['Cuánto sale?' => true, 'Si tiene un costo' => true, 'Precio?' => tru
           'Y cuánto tardan en hacerla?' => false, 'Y hacen logos también?' => false] as $m => $esperado) {
     caso("¿pregunta el costo? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_pregunta_costo($m) === $esperado);
 }
-$conConReservas = "Con reservas quedaría en:\n\n1) Pago único: \$330.000\n2) Plan anual: \$210.000\n3) Plan mensual: \$30.000";
+$conConReservas = "Con reservas quedaría en:\n\n1) Pago único: \$330.000\n2) Plan anual: \$190.000\n3) Plan mensual: \$30.000";
 $c = cv_turnos();
 oa([dc($propPelu + ['accion' => 'responder', 'mensajes' => ['Depende de cómo quieras los turnos']])]);
 $r = turno('Si tiene un costo', $c, $cfg);
@@ -789,17 +788,17 @@ $r = turno('Con reservas', $c, $cfg);
 // Pablo, 10-oct: "dio dos veces el precio": los montos con reservas ya los vio en "Con reservas quedaría en".
 caso('elige con reservas → "Perfecto, entonces" pegado a la oferta, sin repetir los planes, y queda congelado el plan con panel',
     count($r) === 1 && $r[0] === 'Perfecto, entonces si te interesa, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. Querés que la armemos?'
-    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && ($c['precio_cotizado'] ?? '') === '$210.000'
+    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && ($c['precio_cotizado'] ?? '') === '$190.000'
     && !empty($c['comercial_oferta_ts']) && !empty($c['landing_con_panel']), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = $cDos;
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces la web de la clínica va con reservas para que los pacientes elijan día y horario desde la página'], 'ficha' => ['rubro' => 'tu clínica']])]);
 $r = turno('Ok me sirve con reservas', $c, $cfg);
 caso('elige con reservas con una confirmación más larga → la confirmación y la oferta (como pasó el 10-oct, sin el bloque de planes)',
-    count($r) === 2 && mb_stripos($r[0], 'va con reservas') !== false && $r[1] === OFERTA && strpos(implode(' ', $r), '$210.000') === false
+    count($r) === 2 && mb_stripos($r[0], 'va con reservas') !== false && $r[1] === OFERTA && strpos(implode(' ', $r), '$190.000') === false
     && ($c['mensualidad_cotizada'] ?? '') === '$30.000', json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => [], 'ficha' => ['rubro' => 'tu clínica']])]);
 $r = turno('Cuánto era con reservas?', $c, $cfg);
-caso('y si después pide el precio, se le repiten los planes con reservas (los congelados)', count($r) >= 1 && strpos(implode(' ', $r), '$210.000') !== false && strpos(implode(' ', $r), '$140.000') === false,
+caso('y si después pide el precio, se le repiten los planes con reservas (los congelados)', count($r) >= 1 && strpos(implode(' ', $r), '$190.000') !== false && strpos(implode(' ', $r), '$140.000') === false,
     json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv('5491100009004TEST');
 wabot_conv_transcript($c, 'cliente', 'Soy masajista');
@@ -826,10 +825,10 @@ wabot_conv_transcript($c, 'bot', "Podemos armarte una web para presentar tu trab
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu trabajo en psicología']])]);
 $r = turno('Directamente si', $c, $cfg);
 caso('"Directamente si" a la pregunta de los turnos → se cotiza con reservas (planes con panel + oferta), no se repregunta',
-    count($r) === 2 && $r[0] === 'Perfecto, entonces t' . mb_substr(planes('panel', '$210.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+    count($r) === 2 && $r[0] === 'Perfecto, entonces t' . mb_substr(planes('panel', '$190.000', '$30.000'), 1) && $r[1] === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // 19-oct, una masajista: "Ambas opciones son buenas" se llevó solo la informativa, y "Sería para turnos señado?" quedó para Pablo,
-// que le pasó el plan de la tienda ($30.000 / $210.000) con la seña por Mercado Pago incluida.
+// que le pasó el plan de la tienda ($30.000 / $190.000) con la seña por Mercado Pago incluida.
 foreach (['Ambas opciones son buenas' => true, 'Las dos' => true, 'ambas cosas' => true, 'Los 2 me sirven' => true,
           'Solo WhatsApp' => false, 'Por WhatsApp' => false, 'Las dos, pero sin reservas' => false, 'Me da lo mismo' => false] as $m => $esperado) {
     caso("¿elige las dos opciones? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_elige_las_dos($m) === $esperado);
@@ -849,7 +848,7 @@ caso('"Ambas opciones son buenas" a la pregunta de los turnos → los dos precio
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno('Con reservas, sería para turnos señado?', $c, $cfg);
 caso('y si elige con reservas preguntando por la seña → la seña (incluida), el plan con panel congelado y la oferta, sin repetir los montos',
-    count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && mb_stripos($r[1], 'demo gratis') !== false && strpos(implode(' ', $r), '$210.000') === false
+    count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && mb_stripos($r[1], 'demo gratis') !== false && strpos(implode(' ', $r), '$190.000') === false
     && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Ya cotizada la informativa con la demo ofrecida: pide el precio con reservas y pregunta por la seña → se lo pasa (no lo deriva ni pregunta si lo quiere).
@@ -860,8 +859,8 @@ $antesOferta = (int)($c['comercial_oferta_ts'] ?? 0);
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['En ese caso'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno("Si también\nSería para turnos señado?", $c, $cfg);
 caso('informativa ya cotizada + "Sería para turnos señado?" → la seña y "En ese caso podés elegir…" con el plan de la tienda, sin volver a ofrecer la demo',
-    $antesOferta > 0 && count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && $r[1] === 'En ese caso t' . mb_substr(planes('panel', '$210.000', '$30.000'), 1)
-    && !in_array(OFERTA, $r, true) && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['precio_cotizado'] ?? '') === '$210.000'
+    $antesOferta > 0 && count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && $r[1] === 'En ese caso t' . mb_substr(planes('panel', '$190.000', '$30.000'), 1)
+    && !in_array(OFERTA, $r, true) && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['precio_cotizado'] ?? '') === '$190.000'
     && !empty($c['landing_con_panel']) && empty($c['comercial_pausa']) && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la seña de los turnos es una respuesta oficial (corta) y las instrucciones dicen que las reservas salen lo mismo que una tienda',
     in_array('turnos_sena', wabot_comercial_info_claves($cfg), true) && mb_strlen((string)$cfg['info']['turnos_sena']) <= 260
@@ -908,13 +907,10 @@ caso('catálogo pedido expresamente → sin corrección (una sola llamada)', cou
 
 // Cursos: plan con panel siempre, pero sin agregar funciones que no pidió (Pablo, 16-oct: Roque y Marcelo).
 $c = cv();
-oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Podemos armarte una web para tus capacitaciones con un sistema para gestionar alumnos, inscripciones y pagos online'], 'ficha' => ['que_vende' => 'capacitaciones']]),
-    dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ["Buenísimo. Podemos armarte una web para mostrar tus capacitaciones, con la información de cada una y contacto directo\n\nDespués tendrías un panel para cargar y actualizar las capacitaciones cuando quieras"], 'ficha' => ['que_vende' => 'capacitaciones']])]);
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'modalidad_clases' => 'desconocida', 'mensajes' => ['Podemos armarte una web para tus capacitaciones'], 'ficha' => ['que_vende' => 'capacitaciones']])]);
 $r = turno('Doy capacitaciones', $c, $cfg);
-$correccion = (string)(pedidos()[1]['input'][2]['content'] ?? '');
-caso('"doy capacitaciones" con alumnos/inscripción/pagos/sistema en la propuesta → una corrección, sigue con panel', count(pedidos()) === 2 && ($c['comercial_solucion'] ?? '') === 'cursos'
-    && strpos($correccion, 'alumnos') !== false && strpos($correccion, 'inscripción') !== false && strpos($correccion, 'pago online') !== false && strpos($correccion, 'sistema') !== false
-    && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && strpos($r[0] ?? '', 'alumnos') === false, json_encode([$r, $correccion], JSON_UNESCAPED_UNICODE));
+caso('sin modalidad pregunta presencial o virtual antes de cotizar', $r === ['Te consulto, las clases son presenciales o virtuales?'] && empty($c['precio_dado']), json_encode($r));
+
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'mensajes' => ['Podemos armarte una web de cursos online donde tus alumnos se inscriben y pagan desde la web'], 'ficha' => ['que_vende' => 'cursos de cocina']])]);
 turno('Doy cursos de cocina online y quiero que los alumnos se inscriban y paguen desde la web', $c, $cfg);
@@ -1036,6 +1032,27 @@ oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pide conectar
 turno('Se puede conectar con Mercado Libre?', $c, $cfg);
 caso('sin revisión no hay sombra (pasarlo a Pablo no gasta)', count($GLOBALS['OA_SOMBRAS']) === 0);
 unset($GLOBALS['WABOT_TEST_REVISOR_SOMBRA'], $GLOBALS['WABOT_TEST_DESPUES_AL_TOQUE']);
+
+// 4-nov: Johana pregunta por las clases en vivo y luego dice que vuelve a la tarde.
+$c = cv_cotizada('cursos');
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Puedo dar las clases en vivo?', 'ts' => time()];
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Te contacto esta tarde', 'ts' => time()];
+$mal = dc(['accion' => 'responder', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'mensajes' => ['Dale, hablamos esta tarde']]);
+$bien = dc(['accion' => 'responder', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'mensajes' => ['Sí, podés dar acceso desde la web a tus clases en vivo por Zoom o Meet. Dale, hablamos esta tarde']]);
+oa([$mal, $bien], [['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'No respondió sobre las clases en vivo']], 'falta_contestar' => ['clases en vivo']], ['ok' => true, 'problemas' => [], 'falta_contestar' => []]]);
+$r = turno('Te contacto esta tarde', $c, $cfg);
+$payload = json_encode(pedidos(), JSON_UNESCAPED_UNICODE);
+caso('la pregunta anterior llega al modelo y al revisor aunque el disparador sea la despedida', str_contains($payload, 'Puedo dar las clases en vivo?') && count(pedidos()) === 2 && str_contains(implode(' ', $r), 'Zoom o Meet'), json_encode($r));
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'ficha' => ['que_vende' => 'clases virtuales de cocina'], 'mensajes' => ['Podemos armarte una web con acceso para tus alumnos a las clases y materiales desde la plataforma']])]);
+$r = turno('Doy clases virtuales de cocina', $c, $cfg);
+caso('virtuales implica enseñar desde la web sin volver a preguntar ni quitar el acceso de alumnos', count(pedidos()) === 1 && ($r[1] ?? '') === planes('panel', '$190.000', '$30.000'), json_encode($r));
+$c = cv_cotizada('tienda');
+$c['ficha']['cantidad_productos'] = 30;
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['carga_nosotros']])]);
+$r = turno('Son 30 productos, los cargan ustedes?', $c, $cfg);
+caso('exactamente 30 productos se cargan sin costo', str_contains(implode(' ', $r), 'sin costo') && !str_contains(implode(' ', $r), 'costo adicional'), json_encode($r));
+
 foreach ((array)glob($tmp . '/sombra/*') as $f) @unlink($f);
 @rmdir($tmp . '/sombra');
 
@@ -1160,7 +1177,7 @@ $r = turno('Vendo vinos. Quisiera saber cuánto sale, cómo son los envíos, con
 caso('cotiza y contesta cuatro dudas aunque no haya signos de pregunta, incluido el proceso', count($r) === 4
     && str_starts_with($r[0], $cfg['info']['envios']) && strpos($r[0], $cfg['info']['medios_pago_tienda']) !== false
     && strpos($r[0], $cfg['info']['proceso']) !== false && strpos($r[0], 'mantenimiento') !== false
-    && strpos($r[2], 'Plan anual: $210.000') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
+    && strpos($r[2], 'Plan anual: $190.000') !== false && end($r) === OFERTA, json_encode($r, JSON_UNESCAPED_UNICODE));
 // Con el valor ya pasado, "Te pasamos el valor y…" no va (22-oct, Maxi: "Cómo se comenzaría?").
 $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['proceso']])]);
@@ -1285,7 +1302,7 @@ $c['mensualidad_cotizada'] = '$35.000';
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'info_claves' => ['pago', 'envios']])]);
 $r = turno('Cuánto sale? Cómo se paga y cómo son los envíos?', $c, $cfg);
 caso('las dudas con montos usan la cotización histórica, no los precios de lista', strpos(implode(' ', $r), '$35.000') !== false
-    && strpos(implode(' ', $r), '$250.000') !== false && strpos(implode(' ', $r), '$210.000') === false
+    && strpos(implode(' ', $r), '$250.000') !== false && strpos(implode(' ', $r), '$190.000') === false
     && strpos(implode(' ', $r), '{') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = cv();
@@ -1529,6 +1546,27 @@ caso('un mensaje de sistema de WhatsApp no se contesta; el texto, la foto y el r
     && !wabot_wa_tipo_ignorado('text') && !wabot_wa_tipo_ignorado('image') && !wabot_wa_tipo_ignorado('request_welcome'));
 caso('las instrucciones traen las reglas del 26/27-oct', mb_stripos($ins, 'hoy debería ser plan mensual') !== false && mb_stripos($ins, 'Toowebs') !== false
     && mb_stripos($ins, 'Transmisiones en vivo') !== false && mb_stripos($ins, 'EN ESE MISMO TURNO') !== false && mb_stripos($ins, 'NO preguntes por turnos') !== false);
+
+
+// 4-nov: Johana pregunta por las clases en vivo y luego dice que vuelve a la tarde.
+$c = cv_cotizada('cursos');
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Puedo dar las clases en vivo?', 'ts' => time()];
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Te contacto esta tarde', 'ts' => time()];
+$mal = dc(['accion' => 'responder', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'mensajes' => ['Dale, hablamos esta tarde']]);
+$bien = dc(['accion' => 'responder', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'mensajes' => ['Sí, podés dar acceso desde la web a tus clases en vivo por Zoom o Meet. Dale, hablamos esta tarde']]);
+oa([$mal, $bien], [['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'No respondió sobre las clases en vivo']], 'falta_contestar' => ['clases en vivo']], ['ok' => true, 'problemas' => [], 'falta_contestar' => []]]);
+$r = turno('Te contacto esta tarde', $c, $cfg);
+$payload = json_encode(pedidos(), JSON_UNESCAPED_UNICODE);
+caso('la pregunta anterior llega al modelo y al revisor aunque el disparador sea la despedida', str_contains($payload, 'Puedo dar las clases en vivo?') && count(pedidos()) === 2 && str_contains(implode(' ', $r), 'Zoom o Meet'), json_encode($r));
+$c = cv();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'cursos', 'modalidad_clases' => 'virtual', 'ficha' => ['que_vende' => 'clases virtuales de cocina'], 'mensajes' => ['Podemos armarte una web con acceso para tus alumnos a las clases y materiales desde la plataforma']])]);
+$r = turno('Doy clases virtuales de cocina', $c, $cfg);
+caso('virtuales implica enseñar desde la web sin volver a preguntar ni quitar el acceso de alumnos', count(pedidos()) === 1 && ($r[1] ?? '') === planes('panel', '$190.000', '$30.000'), json_encode($r));
+$c = cv_cotizada('tienda');
+$c['ficha']['cantidad_productos'] = 30;
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['carga_nosotros']])]);
+$r = turno('Son 30 productos, los cargan ustedes?', $c, $cfg);
+caso('exactamente 30 productos se cargan sin costo', str_contains(implode(' ', $r), 'sin costo') && !str_contains(implode(' ', $r), 'costo adicional'), json_encode($r));
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);
