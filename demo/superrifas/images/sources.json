@@ -1,0 +1,30 @@
+{
+  "demo": "superrifas",
+  "fecha": "2026-11-04",
+  "cliente_whatsapp": {
+    "origen": "Fotos que mandó el cliente por WhatsApp/formulario (wabot/data/media/5493846492197), bajadas con imagenes-bajar.php",
+    "premio-caja.webp": "01-imagen.jpg (387x516), caja del Samsung Galaxy A06 en la mano, ampliada x2",
+    "premio-frente.webp": "06-imagen.jpg (381x500), frente y dorso verde agua, ampliada x2",
+    "premio-dorso.webp": "05-imagen.jpg, mitad de arriba (dorso con doble cámara), ampliada x2",
+    "premio-colores.webp": "05-imagen.jpg, mitad de abajo (cuatro colores de perfil), ampliada x2",
+    "premio-variantes.webp": "04-imagen.jpg (447x447), tres colores; oculta por defecto en la tirilla",
+    "premio-video.mp4": "video de muestra armado con ffmpeg desde premio-caja, premio-frente, premio-dorso y premio-colores (10 s, sin audio)",
+    "premio-video.webp": "cuadro del video usado como portada"
+  },
+  "zip_chatgpt": {
+    "origen": "Zip de imágenes de ChatGPT (01-09 + 10_mockup_720x480.png), ilustrativas",
+    "proxima-celular.webp": "01_imagen.jpg (celular genérico) para «Próximas rifas»",
+    "extra-auriculares.webp": "02_imagen.jpg recorte cuadrado",
+    "extra-cargadores.webp": "04_imagen.jpg",
+    "extra-planchitas.webp": "05_imagen.jpg",
+    "extra-mascarillas.webp": "06_imagen.jpg",
+    "extra-utiles.webp": "07_imagen.jpg",
+    "extra-remeras.webp": "08_imagen.jpg",
+    "sin_usar": ["03_imagen.jpg (pendrive, se agrupó en cargadores)", "09_imagen.jpg (cartuchera, se agrupó en útiles)"]
+  },
+  "generadas_localmente": {
+    "og-superrifas.jpg": "composición 1200x630 con premio-caja y el wordmark",
+    "favicon.png / favicon-180.png": "inicial S en el azul de la marca"
+  },
+  "bancos_externos": []
+}
