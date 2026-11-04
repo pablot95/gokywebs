@@ -1,0 +1,14 @@
+{"id":"corazones","name":"Cortantes corazón","category":"reposteria","price":4800,"image":"03-corazones.jpg","description":"Un dúo de corazones para crear galletitas y detalles dulces.","featured":true}
+{"id":"dinosaurio","name":"Cortante dinosaurio","category":"reposteria","price":4200,"image":"04-dinosaurio.jpg","description":"Una figura divertida para masas y proyectos creativos.","featured":true}
+{"id":"estrellas","name":"Cortantes estrella","category":"reposteria","price":4600,"image":"05-estrellas.jpg","description":"Estrellas en distintos tamaños para tus preparaciones.","featured":true}
+{"id":"hoja","name":"Cortante hoja botánica","category":"porcelana","price":5200,"image":"06-hoja-porcelana.jpg","description":"Forma botánica para piezas de porcelana fría.","featured":true}
+{"id":"arco","name":"Cortante arco","category":"ceramica","price":5400,"image":"07-arco-ceramica.jpg","description":"Una silueta de arco para trabajar con arcilla.","featured":true}
+{"id":"festonados","name":"Cortantes festonados","category":"reposteria","price":4900,"image":"08-festonados.jpg","description":"Bordes festonados para galletitas y otras creaciones.","featured":true}
+{"id":"mariposa","name":"Cortante mariposa","category":"porcelana","price":5100,"image":"09-mariposa.jpg","description":"Una mariposa delicada para porcelana fría.","featured":true}
+{"id":"corazon-mini","name":"Corazón mini","category":"reposteria","price":3200,"image":"03-corazones.jpg","description":"Formato pequeño para sumar detalles a tus dulces.","featured":false}
+{"id":"dino-mini","name":"Dinosaurio mini","category":"reposteria","price":3400,"image":"04-dinosaurio.jpg","description":"Versión pequeña de la figura dinosaurio.","featured":false}
+{"id":"estrella-mini","name":"Estrella mini","category":"reposteria","price":3100,"image":"05-estrellas.jpg","description":"Una estrella pequeña para galletitas.","featured":false}
+{"id":"hoja-mini","name":"Hoja mini","category":"porcelana","price":3500,"image":"06-hoja-porcelana.jpg","description":"Detalle de hoja para piezas pequeñas.","featured":false}
+{"id":"arco-mini","name":"Arco mini","category":"ceramica","price":3600,"image":"07-arco-ceramica.jpg","description":"Formato pequeño de arco para arcilla.","featured":false}
+{"id":"festonados-mini","name":"Festonados mini","category":"reposteria","price":3300,"image":"08-festonados.jpg","description":"Cortantes de borde festonado en formato pequeño.","featured":false}
+{"id":"mariposa-mini","name":"Mariposa mini","category":"porcelana","price":3500,"image":"09-mariposa.jpg","description":"Una mariposa pequeña para detalles artesanales.","featured":false}
