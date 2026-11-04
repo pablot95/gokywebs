@@ -1,0 +1,37 @@
+{
+ "origen": "Zip de imágenes de ChatGPT para la propuesta (Copiar 10), 4-nov-2026: 9 de contenido + mock up. Todas ilustrativas: el cliente no mandó fotos propias (imagenes_recibidas = 0). Sin fotos de bancos.",
+ "originales": [
+  "01_imagen.jpg (900x1600, placa de mármol Carrara en showroom)",
+  "02_imagen.jpg (1600x900, cocina roble con isla de mármol)",
+  "03_imagen.jpg (granito gris, canto)",
+  "04_imagen.jpg (muestra de granito negro)",
+  "05_imagen.jpg (vanitory con mesada de mármol)",
+  "06_imagen.jpg (mesa de comedor de mármol)",
+  "07_imagen.jpg (placar de puertas corredizas roble)",
+  "08_imagen.jpg (cocina en L blanca)",
+  "09_imagen.jpg (mesada de granito claro con bacha)",
+  "10_mockup_720x480.png (mock up de referencia, no se publica en la web)"
+ ],
+ "derivadas": {
+  "cocina-roble.webp / cocina-roble-900.webp": "02 (hero M1, galería)",
+  "cocina-roble-espejo.webp / cocina-roble-espejo-900.webp": "02 espejada (hero M2)",
+  "mundo-piedra.webp": "01 recorte 4:5 (escena, mundo Piedra)",
+  "mundo-melamina.webp": "07 recorte 1:1 (escena, mundo Melamina)",
+  "p-gris-mara.webp": "03",
+  "p-negro-brasil.webp": "04",
+  "p-itaunas.webp": "09",
+  "p-vanitory.webp": "05",
+  "p-mesa-calacatta.webp": "06",
+  "p-placa-carrara.webp": "01 recorte de la superficie",
+  "p-bacha.webp": "09 recorte de la bacha",
+  "p-bajo-mesada.webp": "02 recorte de los bajo mesada",
+  "p-alacena.webp": "02 recorte de las alacenas",
+  "p-isla.webp": "02 recorte de la isla",
+  "p-cocina-blanca.webp": "08",
+  "p-placar.webp": "07",
+  "p-frente-placar.webp": "07 recorte de las puertas",
+  "g-*.webp": "02, 05, 06, 08, 09 (galería de trabajos, marcada como propuesta ilustrativa)",
+  "amb-*.webp": "08, 05, 07, 06 recortes 3:4 (ambientes M2)",
+  "og-marmoleriaymueblerialg.jpg": "02 recorte 1200x630"
+ }
+}
