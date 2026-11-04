@@ -34,7 +34,7 @@
 # 3-nov (Pablo: "que las demo que se hacen automaticamente con claude, se turnen con chat gpt,
 # 1 y 1"): tomar alterna el motor (estado.json -> ultimoMotor) y lo devuelve en el JSON.
 # -Simular: hace todo menos lanzar Claude. -Descargas / -Datos: otras carpetas (para probar).
-param([ValidateSet('claude', 'tomar', 'terminar', 'gpt', 'imagenes')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '', [string]$Pedido = '',
+param([ValidateSet('claude', 'tomar', 'terminar', 'gpt', 'imagenes', 'cortadas')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '', [string]$Pedido = '',
       [switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'))
 
 $ErrorActionPreference = 'Stop'
@@ -259,6 +259,100 @@ if ($Modo -eq 'gpt') {
     Terminar $ZipNombre $final 'chatgpt' | Out-Null
     Write-Output $final
     exit 0
+}
+
+# --- Demos que se cortaron (4-nov; Pablo: "si, hacelo" a que la automatica relance sola las que
+# se cortan). Manjares y Umbra Sagrada quedaron 'en proceso' a las 13:45 sin nadie trabajando y
+# nadie las relanzo. Una 'en proceso' sin ningun archivo nuevo en demo\<slug> (ni en su pedido)
+# hace $MinutosCortada min, y si es de GPT sin el codex exec vivo, se corto: tomar la devuelve
+# primero (antes que un zip nuevo) con retomar.md delante del pedido. Una sola vez: si se vuelve
+# a cortar, queda DEMO ERROR y se avisa. -Modo cortadas: solo lista, no toca nada.
+$MinutosCortada = 45
+
+function Datos-Del-Log([string]$zipNombre) {
+    $d = @{}
+    if (-not (Test-Path -LiteralPath $Log)) { return $d }
+    $esc = [regex]::Escape($zipNombre)
+    foreach ($l in [IO.File]::ReadAllLines($Log, $Utf8)) {
+        if ($l -match ('  Zip ' + $esc + ' -> (\S+) \(prospecto ([A-Za-z0-9]+)\)')) { $d = @{ slug = $Matches[1]; id = $Matches[2]; motor = 'claude' } }
+        elseif ($d.slug -and $l -match ('Tomado por una sesion de Desktop(?: \((\w+)\))?: ' + [regex]::Escape($d.slug) + ' \(pedido (.+)\)$')) {
+            if ($Matches[1]) { $d.motor = $Matches[1] }
+            $d.pedido = $Matches[2]
+        }
+    }
+    return $d
+}
+
+function Ultima-Actividad([string]$slug, [string]$pedido) {
+    $fechas = @()
+    $carpeta = Join-Path $Repo ('demo\' + $slug)
+    if (Test-Path -LiteralPath $carpeta) { $fechas += @(Get-ChildItem -LiteralPath $carpeta -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { $_.LastWriteTime }) }
+    if ($pedido) {
+        $base = Join-Path $Repo ($pedido -replace '\.md$', '')
+        $fechas += @(Get-ChildItem -Path ($base + '*') -File -ErrorAction SilentlyContinue | ForEach-Object { $_.LastWriteTime })
+    }
+    if (-not $fechas.Count) { return [datetime]::MinValue }
+    return ($fechas | Sort-Object -Descending | Select-Object -First 1)
+}
+
+function Codex-Vivo([string]$pedido) {
+    $nombre = [IO.Path]::GetFileNameWithoutExtension(($pedido -replace '-retomada\.md$', '.md'))
+    $vivos = @(Get-CimInstance Win32_Process -Filter "Name='codex.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($nombre) })
+    return ($vivos.Count -gt 0)
+}
+
+# Devuelve la primera demo cortada (y la deja marcada como retomada) o $null.
+function Reclamar-Cortada([switch]$SoloVer) {
+    Bajo-Candado {
+        $e = Leer-Estado
+        $lista = @()
+        foreach ($h in @($e.hechos)) {
+            if ($h.resultado -ne 'en proceso') { continue }
+            $fecha = [datetime]::Parse($h.fecha)
+            if ($fecha -lt (Get-Date).AddHours(-12)) { continue }
+            $d = Datos-Del-Log $h.zip
+            if (-not $d.slug -or -not $d.pedido) { continue }
+            $ultima = Ultima-Actividad $d.slug $d.pedido
+            if ($fecha -gt $ultima) { $ultima = $fecha }
+            if ($ultima -gt (Get-Date).AddMinutes(-$MinutosCortada)) { continue }
+            if ($d.motor -eq 'gpt' -and (Codex-Vivo $d.pedido)) { continue }
+            $c = [pscustomobject]@{ zip = $h.zip; id = $d.id; slug = $d.slug; motor = $d.motor; pedido = $d.pedido
+                                    nombre = (($h.zip -replace '_[A-Za-z0-9]{20}(?: \(\d+\))?\.zip$', '') -replace '_', ' ')
+                                    minutos = [math]::Round(((Get-Date) - $ultima).TotalMinutes); reintentos = [int]$h.reintentos }
+            if ($SoloVer) { $lista += $c; continue }
+            if ($c.reintentos -lt 1) {
+                $h | Add-Member -NotePropertyName reintentos -NotePropertyValue ($c.reintentos + 1) -Force
+                $h.fecha = (Get-Date).ToString('o')
+                Guardar-Estado $e
+            }
+            return $c
+        }
+        if ($SoloVer) { return $lista }
+        return $null
+    }
+}
+
+if ($Modo -eq 'cortadas') { @(Reclamar-Cortada -SoloVer) | ConvertTo-Json -Compress; exit 0 }
+
+if ($Modo -eq 'tomar') {
+    try {
+        while ($c = Reclamar-Cortada) {
+            if ($c.reintentos -ge 1) {
+                $por = if ($c.motor -eq 'gpt') { 'chatgpt' } else { 'claude' }
+                Terminar $c.zip ('DEMO ERROR se corto dos veces sin terminar (demo/' + $c.slug + '), hacela a mano') $por | Out-Null
+                continue
+            }
+            $original = Join-Path $Repo $c.pedido
+            $nuevo = ($original -replace '(-retomada)?\.md$', '') + '-retomada.md'
+            $nota = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'retomar.md'), $Utf8).Replace('{SLUG}', $c.slug).Replace('{NOMBRE}', $c.nombre).Replace('{MINUTOS}', [string]$c.minutos)
+            [IO.File]::WriteAllText($nuevo, $nota + [IO.File]::ReadAllText($original, $Utf8), $Utf8)
+            $relativo = $nuevo.Substring($Repo.Length + 1).Replace('\', '/')
+            Anotar ('Retomada (' + $c.motor + '): ' + $c.slug + ', cortada hace ' + $c.minutos + ' min (pedido ' + $relativo + ')')
+            [Console]::OutputEncoding = $Utf8
+            [pscustomobject]@{ ok = $true; retomada = $true; motor = $c.motor; zip = $c.zip; id = $c.id; nombre = $c.nombre; slug = $c.slug; pedido = $relativo } | ConvertTo-Json -Compress
+            exit 0
+        }
+    } catch { Anotar ('No se pudieron revisar las demos cortadas: ' + $_.Exception.Message) }
 }
 
 $zip = $null
