@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261104-hace-todo">
+    <link rel="stylesheet" href="styles.css?v=20261104-redisenio">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -327,32 +327,21 @@
         </section>
 
         <!-- Tab: Mantenimiento (suscriptores) -->
-        <section class="panel tab-panel" id="tabMantenimiento" hidden>
-            <div class="panel-header">
+        <section class="panel tab-panel pg" id="tabMantenimiento" hidden>
+            <!-- 4-nov (rediseño): encabezado común con los links de Mercado Pago en un desplegable, un resumen
+                 chico de números (#mantKpis, renderMantResumen) y vistas + buscador en una sola fila. -->
+            <header class="pg-head">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <div class="panel-sub"><span class="muted">Los clientes con su plan: mensual por Mercado Pago o anual.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p></details></div>
+                    <div class="pg-sub"><span>Los clientes con su plan: mensual por Mercado Pago o anual.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p></details></div>
                 </div>
-                <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
-            </div>
-            <div class="mant-toolbar">
-                <div class="mant-planes" id="mantPlanes" role="group" aria-label="Plan">
-                    <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
-                    <!-- 4-nov: «Pagan por afuera», «Vincular con MP» y los «Intentos de cobro» (antes en el Calendario) son una sola vista. -->
-                    <button type="button" class="mant-plan-btn" data-mantplan="cobros" aria-pressed="false" title="Intentos de cobro de Mercado Pago, qué suscripción es de cada cliente y los que pagan por afuera">Cobros <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
-                </div>
-            </div>
-            <div class="mant-search-row">
-                <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off">
-            </div>
-            <div id="mantMensual">
-            <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
-            <div class="mant-links" id="mantLinks">
-                <p class="mant-links-title">Links de suscripción por mes · tocá el monto para copiar</p>
-                <div class="mant-links-grid">
+                <div class="pg-acciones">
+                    <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
+                    <details class="mant-links-menu" id="mantLinks">
+                        <summary class="btn-ghost">Links de suscripción ▾</summary>
+                        <div class="mant-links-pop">
+                            <p class="mant-links-title">Tocá el monto para copiar el link</p>
+                            <div class="mant-links-grid">
                     <button type="button" class="mant-link" data-mant-link="https://mpago.la/2KGENxL" title="Copiar link de $10.000 por mes">$10.000</button>
                     <button type="button" class="mant-link" data-mant-link="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=17321dd1a34e4ea0979175293297d60f" title="Copiar link de $15.000 por mes">$15.000</button>
                     <button type="button" class="mant-link" data-mant-link="https://mpago.la/1pfejMG" title="Copiar link de $20.000 por mes">$20.000</button>
@@ -361,7 +350,25 @@
                     <button type="button" class="mant-link" data-mant-link="https://mpago.la/1hYAiTM" title="Copiar link de $35.000 por mes">$35.000</button>
                     <button type="button" class="mant-link" data-mant-link="https://mpago.la/2GhZD56" title="Copiar link de $40.000 por mes">$40.000</button>
                 </div>
+                        </div>
+                    </details>
+                    <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
+                </div>
+            </header>
+            <div class="kpis mant-kpis" id="mantKpis"></div>
+            <div class="mant-toolbar">
+                <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Plan">
+                    <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
+                    <!-- 4-nov: «Pagan por afuera», «Vincular con MP» y los «Intentos de cobro» (antes en el Calendario) son una sola vista. -->
+                    <button type="button" class="mant-plan-btn" data-mantplan="cobros" aria-pressed="false" title="Intentos de cobro de Mercado Pago, qué suscripción es de cada cliente y los que pagan por afuera">Cobros <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
+                </div>
+                <input type="search" id="searchMant" class="mant-buscar" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" aria-label="Buscar en Mantenimiento">
             </div>
+            <div id="mantMensual">
+            <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
             <div class="seg-views" id="mantViews">
                 <button class="seg-chip active" data-mantview="todas">Todos <span class="seg-chip-count" id="mantCountTodas">0</span></button>
                 <button class="seg-chip" data-mantview="activo">Activos <span class="seg-chip-count" id="mantCountActivo">0</span></button>
@@ -375,15 +382,14 @@
                         <tr>
                             <th>Cliente</th>
                             <th>Plan / precio</th>
-                            <th class="col-telefono">WhatsApp</th>
-                            <th>Dominio</th>
+                            <th>Contacto y web</th>
                             <th class="center">Suscripción</th>
                             <th class="center">Cambios del mes</th>
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="mantTbody">
-                        <tr class="empty-row"><td colspan="7">Cargando…</td></tr>
+                        <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -581,30 +587,32 @@
              de primer contacto en wabot) terminaron pasando a Cliente acá, sin
              importar cuándo. Nativo (no iframe): cruza wabot/admin.php?accion=
              cohortes_json con la colección `clientes` que ya está en memoria. -->
-        <section class="panel tab-panel" id="tabInversion" hidden>
-            <div class="panel-header">
+        <section class="panel tab-panel pg" id="tabInversion" hidden>
+            <!-- 4-nov (rediseño): encabezado común, vistas en botones segmentados, gráfico de semanas y números en tiles. -->
+            <header class="pg-head">
                 <div>
                     <h1>Inversión</h1>
+                    <p class="pg-sub">Lo que trae la publicidad: contactos, clientes y cuánto cuesta cada uno.</p>
                 </div>
-                <div class="fila" style="gap:10px;align-items:center">
-                    <label class="muted" style="display:flex;align-items:center;gap:6px;margin:0" title="Pesos por dólar para los US$ que van al lado de los totales">
-                        Dólar $ <input type="number" id="inversionDolar" min="1" step="1" inputmode="decimal" value="1510" style="width:80px">
+                <div class="pg-acciones">
+                    <label class="inv-dolar" title="Pesos por dólar para los US$ que van al lado de los totales">
+                        <span>US$ 1 =</span> $ <input type="number" id="inversionDolar" min="1" step="1" inputmode="decimal" value="1510">
                     </label>
                     <button type="button" class="btn-ghost" id="inversionRecargarBtn">Actualizar</button>
                 </div>
-            </div>
+            </header>
             <!-- 11-oct-2026: el calendario de ingresos (cobros por día) pasó a la pestaña Calendario. dashboard.js: renderCal / ingresosPorDia. -->
-            <nav class="subtab-nav" id="inversionNav">
-                <button type="button" class="subtab-btn active" data-inv="contactos">👥 Contactos y clientes</button>
+            <nav class="seg-ctl inv-nav" id="inversionNav" aria-label="Vistas de Inversión">
+                <button type="button" class="subtab-btn active" data-inv="contactos">Contactos y clientes</button>
                 <!-- 10-oct-2026: el embudo de cada anuncio (wabot/anuncios-stats.php) cruzado con Clientes. dashboard.js: renderAnuncios. -->
-                <button type="button" class="subtab-btn" data-inv="anuncios">📣 Por anuncio</button>
+                <button type="button" class="subtab-btn" data-inv="anuncios">Por anuncio</button>
                 <!-- 13-oct-2026: clientes según quién hizo su demo, Claude o ChatGPT (desde el 4-oct). dashboard.js: renderAutores. -->
-                <button type="button" class="subtab-btn" data-inv="autores">🤖 Claude vs ChatGPT</button>
+                <button type="button" class="subtab-btn" data-inv="autores">Claude vs ChatGPT</button>
                 <!-- 1-nov-2026: la prueba de precios A/B (wabot/ab-precios.php) con los cobros de cada grupo. dashboard.js: renderAb. -->
-                <button type="button" class="subtab-btn" data-inv="ab">🧪 Precios A vs B</button>
+                <button type="button" class="subtab-btn" data-inv="ab">Precios A vs B</button>
             </nav>
             <div id="invVistaContactos">
-                <div class="panel-sub"><span class="muted">Cuántos contactos y clientes trajo cada semana de publicidad.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta (se trae solo de la API de Meta, o lo cargás a mano), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p></details></div>
+                <div class="panel-sub inv-sub"><span class="muted">Cada contacto cuenta en la semana en que escribió por primera vez.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta (se trae solo de la API de Meta, o lo cargás a mano), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p></details></div>
                 <div class="seg-views" id="inversionSemanas"></div>
                 <div id="inversionContent"><p class="muted">Cargando…</p></div>
             </div>
@@ -619,66 +627,89 @@
              Firestore `errores_web`. -->
         <!-- Finanzas (12-oct-2026): ganancia del mes = lo cobrado y lo que se espera cobrar, menos los gastos fijos y adicionales.
              dashboard.js: renderFinanzas / finanzasMes. Gastos en Firestore: colección finanzasGastos (firestore.rules). -->
-        <section class="panel tab-panel" id="tabFinanzas" hidden>
-            <div class="panel-header">
+        <section class="panel tab-panel pg" id="tabFinanzas" hidden>
+            <!-- 4-nov (rediseño): un número grande (la ganancia), la barra de lo que entró vs lo que falta,
+                 los gastos en una tarjeta y la publicidad en dólares en otra; los formularios, plegados. -->
+            <header class="pg-head">
                 <div>
                     <h1>Finanzas</h1>
-                    <p class="muted">La ganancia del mes: lo que ya se cobró y lo que se espera cobrar, menos los gastos.</p>
+                    <p class="pg-sub">Lo que entra, lo que sale y lo que queda en el mes.</p>
                 </div>
-                <select id="finMes" class="mes-select" aria-label="Mes"></select>
-            </div>
+                <div class="pg-acciones">
+                    <div class="mes-step" role="group" aria-label="Mes">
+                        <button type="button" id="finMesPrev" title="Mes anterior" aria-label="Mes anterior">&#8249;</button>
+                        <select id="finMes" aria-label="Mes"></select>
+                        <button type="button" id="finMesNext" title="Mes siguiente" aria-label="Mes siguiente">&#8250;</button>
+                    </div>
+                </div>
+            </header>
             <div id="finAviso"></div>
-            <div class="stats-box stats-box--periods fin-cards" id="finCards"></div>
-            <div class="fin-cols">
-                <div class="fin-bloque">
-                    <div class="fin-bloque-cab"><h2>Gastos fijos <span class="muted">(todos los meses)</span></h2><strong id="finFijosTotal"></strong></div>
-                    <form class="fin-form" id="finFijoForm">
-                        <input type="text" name="nombre" placeholder="Ej: Hosting, dominio, IA…" maxlength="80" required>
-                        <input type="number" name="monto" placeholder="Monto por mes" min="1" step="1" inputmode="numeric" required>
-                        <button type="submit" class="btn-primary">Agregar</button>
-                    </form>
-                    <ul class="fin-lista" id="finFijosLista"></ul>
+            <div class="kpis fin-kpis" id="finCards"></div>
+            <div class="card2 fin-hist" id="finHist"></div>
+            <div class="grid-2">
+                <div class="card2" id="finGastosCard">
+                    <div class="card2-head">
+                        <h2>Gastos del mes</h2>
+                        <span class="card2-total" id="finGastosTotal"></span>
+                    </div>
+                    <div class="fx-grupo-titulo"><span>Fijos · todos los meses</span><span id="finFijosTotal"></span></div>
+                    <ul class="fx-lista" id="finFijosLista"></ul>
+                    <details class="agregar-plegable" id="finFijoDet">
+                        <summary><span class="ap-mas">+</span> Agregar gasto fijo</summary>
+                        <form class="fin-form" id="finFijoForm">
+                            <input type="text" name="nombre" placeholder="Ej: Hosting, dominio, IA…" maxlength="80" required aria-label="Nombre del gasto fijo">
+                            <input type="number" name="monto" placeholder="Monto por mes" min="1" step="1" inputmode="numeric" required aria-label="Monto por mes">
+                            <button type="submit" class="btn-primary">Agregar</button>
+                        </form>
+                    </details>
+                    <div class="fx-grupo-titulo"><span>Adicionales · solo este mes</span><span id="finAdicTotal"></span></div>
+                    <ul class="fx-lista" id="finAdicLista"></ul>
+                    <details class="agregar-plegable" id="finAdicDet">
+                        <summary><span class="ap-mas">+</span> Agregar gasto del mes</summary>
+                        <form class="fin-form" id="finAdicForm">
+                            <input type="text" name="nombre" placeholder="Ej: Dominio nuevo, curso…" maxlength="80" required aria-label="Nombre del gasto">
+                            <input type="number" name="monto" placeholder="Monto" min="1" step="1" inputmode="numeric" required aria-label="Monto">
+                            <input type="date" name="fecha" required aria-label="Fecha">
+                            <button type="submit" class="btn-primary">Agregar</button>
+                        </form>
+                    </details>
                 </div>
-                <div class="fin-bloque">
-                    <div class="fin-bloque-cab"><h2>Gastos adicionales <span class="muted">(del mes)</span></h2><strong id="finAdicTotal"></strong></div>
-                    <form class="fin-form" id="finAdicForm">
-                        <input type="text" name="nombre" placeholder="Ej: Dominio nuevo, curso…" maxlength="80" required>
-                        <input type="number" name="monto" placeholder="Monto" min="1" step="1" inputmode="numeric" required>
-                        <input type="date" name="fecha" required>
-                        <button type="submit" class="btn-primary">Agregar</button>
-                    </form>
-                    <ul class="fin-lista" id="finAdicLista"></ul>
+                <!-- Publicidad en dólares (16-oct-2026): gastos de publicidad en US$, repartidos entre personas, para llevar la
+                     cuenta de lo invertido. En total, sin dividir por mes (no depende de #finMes). Van en finanzasGastos con
+                     tipo "dolar"; no se restan de la ganancia en pesos (Pablo, 4-nov: «lo invertido en Meta es algo aparte»). -->
+                <div class="card2 fin-usd" id="finUsdBloque">
+                    <div class="card2-head">
+                        <h2>Publicidad en dólares <small>total invertido, aparte de la ganancia</small></h2>
+                        <span class="card2-total" id="finUsdTotal"></span>
+                    </div>
+                    <div id="finUsdResumen"></div>
+                    <ul class="fx-lista" id="finUsdLista"></ul>
+                    <details class="agregar-plegable" id="finUsdDet">
+                        <summary><span class="ap-mas">+</span> <span id="finUsdDetTxt">Agregar gasto en US$</span></summary>
+                        <form class="fin-usd-form" id="finUsdForm" autocomplete="off">
+                            <div class="fin-usd-fila-datos">
+                                <input type="text" name="nombre" placeholder="Concepto (ej: Meta Ads, campaña de octubre…)" maxlength="80" aria-label="Concepto">
+                                <input type="number" name="usd" placeholder="Total en US$" min="0.01" step="0.01" inputmode="decimal" required aria-label="Total en dólares">
+                                <input type="date" name="fecha" required aria-label="Fecha">
+                            </div>
+                            <div class="fin-usd-reparto">
+                                <div class="fin-usd-reparto-cab"><span>Repartir entre</span>
+                                    <span class="fin-usd-acciones">
+                                        <button type="button" class="btn-ghost" id="finUsdIgual">Partes iguales</button>
+                                        <button type="button" class="btn-ghost" id="finUsdMasPersona">+ Persona</button>
+                                    </span>
+                                </div>
+                                <div id="finUsdFilas"></div>
+                                <p class="muted fin-usd-chequeo" id="finUsdChequeo"></p>
+                            </div>
+                            <div class="fin-usd-botones">
+                                <button type="submit" class="btn-primary" id="finUsdGuardar">Agregar gasto</button>
+                                <button type="button" class="btn-ghost" id="finUsdCancelar" hidden>Cancelar</button>
+                            </div>
+                        </form>
+                    </details>
+                    <datalist id="finUsdSugeridas"></datalist>
                 </div>
-            </div>
-            <!-- Publicidad en dólares (16-oct-2026): gastos de publicidad en US$, repartidos entre personas, para llevar la
-                 cuenta de lo invertido. En total, sin dividir por mes (no depende de #finMes). Van en finanzasGastos con
-                 tipo "dolar"; no se restan de la ganancia en pesos. -->
-            <div class="fin-bloque fin-usd" id="finUsdBloque">
-                <div class="fin-bloque-cab"><h2>💵 Publicidad en dólares <span class="muted">(total invertido)</span></h2><strong id="finUsdTotal"></strong></div>
-                <form class="fin-usd-form" id="finUsdForm" autocomplete="off">
-                    <div class="fin-usd-fila-datos">
-                        <input type="text" name="nombre" placeholder="Concepto (ej: Meta Ads, campaña de octubre…)" maxlength="80">
-                        <input type="number" name="usd" placeholder="Total en US$" min="0.01" step="0.01" inputmode="decimal" required>
-                        <input type="date" name="fecha" required>
-                    </div>
-                    <div class="fin-usd-reparto">
-                        <div class="fin-usd-reparto-cab"><span>Repartir entre</span>
-                            <span class="fin-usd-acciones">
-                                <button type="button" class="btn-ghost" id="finUsdIgual">Dividir en partes iguales</button>
-                                <button type="button" class="btn-ghost" id="finUsdMasPersona">+ Persona</button>
-                            </span>
-                        </div>
-                        <div id="finUsdFilas"></div>
-                        <p class="muted fin-usd-chequeo" id="finUsdChequeo"></p>
-                    </div>
-                    <div class="fin-usd-botones">
-                        <button type="submit" class="btn-primary" id="finUsdGuardar">Agregar gasto</button>
-                        <button type="button" class="btn-ghost" id="finUsdCancelar" hidden>Cancelar</button>
-                    </div>
-                </form>
-                <datalist id="finUsdSugeridas"></datalist>
-                <div id="finUsdResumen"></div>
-                <ul class="fin-lista" id="finUsdLista"></ul>
             </div>
         </section>
 
@@ -760,32 +791,45 @@
         </section>
 
         <!-- Tab: Calendario -->
-        <section class="panel tab-panel" id="tabCalendario" hidden>
-            <!-- 4-nov: los Intentos de cobro pasaron a Mantenimiento → Cobros; acá queda la agenda. -->
+        <section class="panel tab-panel pg" id="tabCalendario" hidden>
+            <!-- 4-nov (rediseño): mes y «+ Tarea» arriba, los cobros del mes en números, el calendario ancho y
+                 a la derecha lo que viene en los próximos 7 días y la suma de suscripciones. Los Intentos de
+                 cobro están en Mantenimiento → Cobros. dashboard.js: renderCal / renderCalProximos. -->
+            <header class="pg-head">
+                <div>
+                    <h1>Calendario</h1>
+                    <p class="pg-sub">Tareas, a quién hablarle y los cobros de cada día.</p>
+                </div>
+                <div class="pg-acciones">
+                    <div class="mes-step" role="group" aria-label="Mes">
+                        <button type="button" id="calPrev" title="Mes anterior" aria-label="Mes anterior">&#8249;</button>
+                        <span id="calMonthLabel" class="mes-step-label" aria-live="polite"></span>
+                        <button type="button" id="calNext" title="Mes siguiente" aria-label="Mes siguiente">&#8250;</button>
+                        <button type="button" id="calHoy" class="mes-step-hoy" title="Volver al mes de hoy">Hoy</button>
+                    </div>
+                    <button class="btn-primary" id="addTareaHoyBtn">+ Tarea</button>
+                </div>
+            </header>
             <div id="calVistaCalendario">
-            <!-- 11-oct-2026: los cobros por día (antes en Inversión) viven acá, junto a las tareas. dashboard.js: renderCal. -->
-            <div id="calResumen"></div>
-            <div class="cal-layout">
-                <aside class="cal-sidebar">
-                    <div class="cal-nav">
-                        <button id="calPrev" class="btn-ghost cal-nav-btn" title="Mes anterior" aria-label="Mes anterior">&#8249;</button>
-                        <span id="calMonthLabel" class="cal-month-label" aria-live="polite"></span>
-                        <button id="calNext" class="btn-ghost cal-nav-btn" title="Mes siguiente" aria-label="Mes siguiente">&#8250;</button>
-                        <button id="calHoy" class="btn-ghost btn-xs cal-hoy-btn" title="Volver al mes de hoy">Hoy</button>
+                <div id="calResumen"></div>
+                <div class="cal-layout2">
+                    <div class="cal-main">
+                        <div class="cal-grid" id="calGrid"></div>
+                        <div class="cal-leyenda cal-leyenda--fila">
+                            <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Tarea urgente</span>
+                            <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Tarea</span>
+                            <span class="cal-leyenda-item"><span class="cal-badge badge-hablar"></span> Hablarle</span>
+                            <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--subs"></span> Suscripción que ya entró</span>
+                            <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--falta"></span> Suscripción que falta cobrar</span>
+                            <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--otros"></span> Otro pago (seña, saldo, anual)</span>
+                        </div>
                     </div>
-                    <!-- 16-oct-2026: suma de las suscripciones de los días elegidos, de uno o más meses. dashboard.js: _renderCalSuma. -->
-                    <div class="cal-suma" id="calSuma" aria-live="polite"></div>
-                    <div class="cal-leyenda">
-                        <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Importancia 1</span>
-                        <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Importancia 2</span>
-                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--subs"></span> Suscripción que ya entró</span>
-                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--falta"></span> Suscripción que falta cobrar</span>
-                        <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--otros"></span> Otro pago (seña, saldo, anual)</span>
-                    </div>
-                    <button class="btn-primary cal-add-btn" id="addTareaHoyBtn">+ Agregar tarea hoy</button>
-                </aside>
-                <div class="cal-grid" id="calGrid"></div>
-            </div>
+                    <aside class="cal-rail">
+                        <div class="card2 cal-proximos" id="calProximos"></div>
+                        <!-- 16-oct-2026: suma de las suscripciones de los días elegidos, de uno o más meses. dashboard.js: _renderCalSuma. -->
+                        <div class="cal-suma" id="calSuma" aria-live="polite"></div>
+                    </aside>
+                </div>
             </div>
         </section>
     </main>
@@ -1444,6 +1488,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261104-hace-todo"></script>
+    <script type="module" src="dashboard.js?v=20261104-redisenio"></script>
 </body>
 </html>

@@ -1151,8 +1151,8 @@ function rangoInversionHtml(semanas) {
         `Se restan ${fmtMoney(r.sumaVentaTotal)} → costo neto ${fmtMoney(r.costoNetoTotal)}` + divisor) : "") : "";
     const rapidos = [["Desde el 04-oct", "2026-10-04"], ["Últimos 30 días", ymdAgregarDias(hoy, -29)]];
     // Arranca minimizado y se expande con un clic; queda como lo dejó al redibujar (Pablo, 24-oct).
-    return `<details class="panel" style="margin-bottom:14px" data-inv-rango-panel${inversionRangoAbierto ? " open" : ""}>
-        <summary style="cursor:pointer"><strong>Promedio de un rango</strong> <span class="muted">· ${r.clientes} cliente${r.clientes === 1 ? "" : "s"}: ${r.suscripciones} suscripci${r.suscripciones === 1 ? "ón" : "ones"}, ${r.anuales} anual${r.anuales === 1 ? "" : "es"}, ${r.unicos} pago${r.unicos === 1 ? "" : "s"} único${r.unicos === 1 ? "" : "s"}</span></summary>
+    return `<details class="card2 inv-rango" data-inv-rango-panel${inversionRangoAbierto ? " open" : ""}>
+        <summary><strong>Promedio de un rango</strong> <span class="muted">· ${r.clientes} cliente${r.clientes === 1 ? "" : "s"}: ${r.suscripciones} suscripci${r.suscripciones === 1 ? "ón" : "ones"}, ${r.anuales} anual${r.anuales === 1 ? "" : "es"}, ${r.unicos} pago${r.unicos === 1 ? "" : "s"} único${r.unicos === 1 ? "" : "s"}</span></summary>
         <p class="muted" style="margin:4px 0 10px">Suma todas las semanas (enteras, de domingo a sábado) que toca el rango: ${r.semanas} semana${r.semanas === 1 ? "" : "s"} · ${r.contactos} contactos · ${r.clientes} pasaron a Cliente.</p>
         <div class="anu-rango">
             <label class="muted">Desde <input type="date" data-inv-rango-desde value="${rg.desde}" max="${rg.hasta}"></label>
@@ -1187,35 +1187,44 @@ function renderInversion() {
     if (!claves.length) { chips.innerHTML = ""; cont.innerHTML = '<p class="muted">Todavía no hay contactos registrados.</p>'; return; }
     if (inversionSemanaSel === null) inversionSemanaSel = claves[0];
 
-    chips.innerHTML = "";
-    const chipTodas = document.createElement("button");
-    chipTodas.type = "button";
-    chipTodas.className = "seg-chip" + (inversionSemanaSel === "todas" ? " active" : "");
-    chipTodas.textContent = "Todas";
-    chipTodas.addEventListener("click", () => { inversionSemanaSel = "todas"; renderInversion(); });
-    chips.appendChild(chipTodas);
-    for (const key of claves) {
-        const s = semanas.get(key);
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = "seg-chip" + (inversionSemanaSel === key ? " active" : "");
-        chip.innerHTML = `${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)} <span class="seg-chip-count">${s.contactos.length}</span>`;
-        chip.addEventListener("click", () => { inversionSemanaSel = key; renderInversion(); });
-        chips.appendChild(chip);
-    }
+    /* 4-nov (rediseño): en vez de un chip por semana (crecía sin fin), un gráfico de las últimas
+       semanas —contactos, y cuántos pasaron a Cliente— donde se toca la semana; las más viejas, en el
+       desplegable. Las cuentas son las mismas (calcSemanaInversion). */
+    const visibles = claves.slice(0, 12).reverse();   // de la más vieja a la más nueva
+    const maxC = Math.max(1, ...visibles.map(k => semanas.get(k).contactos.length));
+    chips.innerHTML = `
+        <div class="card2 inv-grafico">
+            <div class="card2-head">
+                <h2>Semana a semana <small>contactos y cuántos pasaron a Cliente</small></h2>
+                <div class="inv-grafico-acc">
+                    <span class="meter-leyenda"><span><i class="meter-ok"></i>Pasaron a Cliente</span><span><i style="background:rgba(96,165,250,.45)"></i>Resto de los contactos</span></span>
+                    <select id="invSemanaSel" class="inv-semana-sel" aria-label="Elegir semana">
+                        <option value="todas"${inversionSemanaSel === "todas" ? " selected" : ""}>Todas las semanas</option>
+                        ${claves.map(k => `<option value="${k}"${inversionSemanaSel === k ? " selected" : ""}>${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))} · ${semanas.get(k).contactos.length} contactos</option>`).join("")}
+                    </select>
+                </div>
+            </div>
+            <div class="ig-barras">
+                ${visibles.map(k => {
+                    const sm = semanas.get(k);
+                    const n = sm.contactos.length, cl = sm.clientesN;
+                    const g = gastoSemanaInversion(k).total;
+                    const tip = `${fechaCorta(k)} a ${fechaCorta(ymdAgregarDias(k, 6))}: ${n} contacto${n === 1 ? "" : "s"} · ${cl} pasaron a Cliente${g ? ` · gasto ${fmtMoney(g)}` : ""}`;
+                    return `<button type="button" class="ig-col${inversionSemanaSel === k ? " sel" : ""}" data-inv-semana="${k}" aria-label="${escapeHtml(tip)}" data-tip="${escapeHtml(tip)}">
+                        <span class="ig-valor">${inversionSemanaSel === k ? n : ""}</span>
+                        <span class="ig-zona"><span class="ig-pila" style="height:${Math.max(3, Math.round(n / maxC * 100))}%">
+                            ${n - cl > 0 ? `<span class="ig-resto" style="flex:${n - cl}"></span>` : ""}${cl > 0 ? `<span class="ig-cli" style="flex:${cl}"></span>` : ""}
+                        </span></span>
+                        <span class="ig-fecha">${fechaCorta(k)}</span>
+                    </button>`;
+                }).join("")}
+            </div>
+        </div>`;
+    chips.querySelectorAll("[data-inv-semana]").forEach(b => b.addEventListener("click", () => { inversionSemanaSel = b.dataset.invSemana; renderInversion(); }));
+    chips.querySelector("#invSemanaSel").addEventListener("change", e => { inversionSemanaSel = e.target.value; renderInversion(); });
 
     const aMostrar = inversionSemanaSel === "todas" ? claves : claves.filter(k => k === inversionSemanaSel);
     cont.innerHTML = gastoMetaEstadoHtml();
-    {
-        const pr = document.createElement("div");
-        pr.innerHTML = rangoInversionHtml(semanas);
-        cont.appendChild(pr);
-        const redibujar = () => renderInversion();
-        pr.querySelector("[data-inv-rango-panel]").addEventListener("toggle", e => { inversionRangoAbierto = e.target.open; });
-        pr.querySelector("[data-inv-rango-desde]").addEventListener("change", e => { if (e.target.value) { inversionRango.desde = e.target.value; redibujar(); } });
-        pr.querySelector("[data-inv-rango-hasta]").addEventListener("change", e => { if (e.target.value) { inversionRango.hasta = e.target.value; redibujar(); } });
-        pr.querySelectorAll("[data-inv-rango-rapido]").forEach(b => b.addEventListener("click", () => { inversionRango = { desde: b.dataset.invRangoRapido, hasta: _diaDe(new Date()) }; redibujar(); }));
-    }
     for (const key of aMostrar) {
         const s = semanas.get(key);
         const { convertidos, suscriptores, pagoUnico, sumaPagoUnico, gastoSemana, gastoIngresado, gasto, extraPaginas, gastoTotal, costoNeto, ingresoMensual, tramos, costoPorSuscriptor, sumaVentaTotal, costoNetoTotal, costoPorSuscriptorTotal } = calcSemanaInversion(s, key);
@@ -1223,9 +1232,7 @@ function renderInversion() {
         // La columna Costo de cada cliente se sacó (Pablo, 11-oct): el costo queda en los cuadritos.
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
-            // El plan anual y el pago único muestran el total de la venta, no la seña: para
-            // comparar lo que deja cada cliente hay que ver la venta entera (Pablo, 11-oct). Lo
-            // cobrado hasta ahora va abajo, chiquito.
+            // El plan anual y el pago único muestran el total de la venta, no la seña (Pablo, 11-oct).
             const pu = pagoUnicoDe(c._clienteDoc);
             const ventaTotal = mod === "unico" || mod === "propia" ? Math.max(pu.precio, pu.cobrado) : 0;
             const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : ventaTotal || pu.cobrado;
@@ -1234,37 +1241,24 @@ function renderInversion() {
             const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Pago único" : mod === "unico" ? "Anual" : "—";
             return `
             <tr>
-                <td>${escapeHtml(c.nombre || c.tel)}</td>
-                <td>${escapeHtml(c.canal)}</td>
+                <td><strong>${escapeHtml(c.nombre || c.tel)}</strong></td>
+                <td><span class="canal-pill canal-pill--${c.canal === "instagram" ? "ig" : "wa"}">${c.canal === "instagram" ? "Instagram" : "WhatsApp"}</span></td>
                 <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
                 <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
-                <td>${escapeHtml(modLabel)}</td>
-                <td>${paga ? fmtMoney(paga) : "—"}${pagaDetalle}</td>
+                <td><span class="mod-pill mod-pill--${mod || "x"}">${escapeHtml(modLabel)}</span></td>
+                <td class="num">${paga ? fmtMoney(paga) : "—"}${pagaDetalle}</td>
             </tr>`;
         }).join("");
 
-        // Los números de costo de la semana, en cuadritos (Pablo, 10-oct).
-        const tarjeta = (titulo, valor, detalle, color = "") =>
-            `<div class="inv-card"><span class="inv-card-titulo">${titulo}</span><span class="inv-card-valor"${color ? ` style="color:${color}"` : ""}>${valor}</span><span class="inv-card-detalle">${detalle}</span></div>`;
-        const verde = "var(--accent-green,#4ade80)";
+        const n = (x) => String(Math.round(x * 100) / 100).replace(".", ",");
         const divisor = tramos > 0
-            ? ` ÷ ${String(Math.round(tramos * 100) / 100).replace(".", ",")} (${fmtMoney(ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})`
-            : ` · sin ingreso mensual todavía`;
-        const porIngreso = `Por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual`;
-        const tarjetas = [];
-        if (gastoTotal > 0) {
-            tarjetas.push(tarjeta(`${porIngreso} · según lo cobrado (seña)`,
-                tramos > 0 ? fmtMoney(costoPorSuscriptor) + enDolares(costoPorSuscriptor) : "—",
-                (sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}` : `Costo neto ${fmtMoney(costoNeto)}`)
-                    + divisor, verde));
-            if (sumaVentaTotal > sumaPagoUnico) {
-                tarjetas.push(tarjeta(`${porIngreso} · según el total de la venta`,
-                    tramos > 0 ? fmtMoney(costoPorSuscriptorTotal) + enDolares(costoPorSuscriptorTotal) : "—",
-                    `Se restan ${fmtMoney(sumaVentaTotal)} de pago único/anual → costo neto ${fmtMoney(costoNetoTotal)}`
-                        + divisor, verde));
-            }
-        }
-        const tarjetasCosto = tarjetas.length ? `<div class="inv-cards">${tarjetas.join("")}</div>` : "";
+            ? `÷ ${n(tramos)} (${fmtMoney(ingresoMensual)} de ingreso mensual ÷ ${fmtMoney(INGRESO_MENSUAL_BASE)})`
+            : `sin ingreso mensual todavía`;
+        const nContactos = s.contactos.length;
+        const pctConv = nContactos ? Math.round(s.clientesN / nContactos * 100) : 0;
+        const costoContacto = nContactos && gasto ? gasto / nContactos : 0;
+        const nAnual = pagoUnico.filter(c => modalidadDe(c._clienteDoc) === "unico").length;
+        const nUnico = pagoUnico.length - nAnual;
 
         // De dónde sale el gasto: Meta (solo) o a mano, con lo de Meta al lado para comparar.
         const esSemanaActual = gastoMeta?.hoy && key === ymdAgregarDias(gastoMeta.hoy, -ymdDiaSemana(gastoMeta.hoy));
@@ -1272,38 +1266,55 @@ function renderInversion() {
         if (gastoSemana.origen === "meta") {
             origenGasto = `<span class="inv-meta-tag" title="Leído de Meta Ads, sin impuestos. Si escribís otro número, queda el tuyo.">de Meta${esSemanaActual ? " · va hasta hoy" : ""}</span>`;
         } else if (gastoSemana.origen === "manual" && gastoSemana.meta !== null && Math.abs(gastoSemana.meta - gastoIngresado) >= 1) {
-            origenGasto = `<span class="muted">Meta: ${fmtMoney(gastoSemana.meta)} sin imp. (${fmtMoney(gastoSemana.meta * RECARGO_PUBLICIDAD)} con imp.)</span>
-                <button type="button" class="btn-ghost inv-usar-meta" data-semana="${key}" title="Borra el número cargado a mano y usa el de Meta">Usar el de Meta</button>`;
+            origenGasto = `<span class="inv-meta-tag inv-meta-tag--manual" title="Meta dice ${escapeHtml(fmtMoney(gastoSemana.meta))} sin impuestos (${escapeHtml(fmtMoney(gastoSemana.meta * RECARGO_PUBLICIDAD))} con impuestos)">a mano · Meta ${fmtMoney(gastoSemana.meta)}</span>
+                <button type="button" class="btn-ghost btn-xs inv-usar-meta" data-semana="${key}" title="Borra el número cargado a mano y usa el de Meta">Usar el de Meta</button>`;
+        } else if (gastoSemana.origen === "manual") {
+            origenGasto = `<span class="inv-meta-tag inv-meta-tag--manual">a mano</span>`;
         }
+        const detalleGasto = !gastoIngresado ? "Sin gasto cargado" : [
+            gastoSemana.recargo ? `× ${String(gastoSemana.recargo).replace(".", ",")} imp. = <strong>${fmtMoney(gasto)}</strong>` : "ya incluye impuestos",
+            convertidos.length ? `+ ${fmtMoney(extraPaginas)} de páginas = <strong>${fmtMoney(gastoTotal)}</strong>` : "",
+        ].filter(Boolean).join(" ");
 
         const div = document.createElement("div");
-        div.className = "panel";
-        div.style.marginBottom = "14px";
+        div.className = "card2 inv-semana";
         div.innerHTML = `
-            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-                <strong>${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)}</strong>
-                <span class="muted">${s.contactos.length} contactos · <strong style="color:var(--accent-green,#4ade80)">${s.clientesN} pasaron a Cliente</strong></span>
+            <div class="card2-head">
+                <h2>${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)}</h2>
+                <span class="inv-origen">${origenGasto}</span>
             </div>
-            <div class="fila" style="gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
-                <label class="muted" style="display:flex;align-items:center;gap:8px;margin:0">
-                    Gasto en publicidad esa semana
-                    <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
-                           data-semana="${key}" value="${gastoIngresado ? Math.round(gastoIngresado) : ""}" placeholder="0" style="width:120px">
-                </label>
-                ${origenGasto}
-                ${!gastoIngresado ? "" : gastoSemana.recargo
-                    ? `<span class="muted">× ${String(gastoSemana.recargo).replace(".", ",")} = <strong style="color:var(--text)">${fmtMoney(gasto)}</strong></span>`
-                    : `<span class="muted" title="Se cargó con los impuestos incluidos. Si lo cambiás, el número nuevo se toma sin impuestos (× 1,23).">ya incluye impuestos</span>`}
-                ${convertidos.length ? `<span class="muted">+ ${fmtMoney(COSTO_POR_PAGINA)} × ${convertidos.length} cliente${convertidos.length === 1 ? "" : "s"} = ${fmtMoney(extraPaginas)} · <strong>total ${fmtMoney(gastoTotal)}</strong></span>` : ""}
+            <div class="kpis inv-kpis">
+                <div class="kpi">
+                    <span class="kpi-label">Gasto en publicidad</span>
+                    <label class="inv-gasto-edit"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
+                        data-semana="${key}" value="${gastoIngresado ? Math.round(gastoIngresado) : ""}" placeholder="0" aria-label="Gasto en publicidad de la semana, sin impuestos"></label>
+                    <span class="kpi-sub">${detalleGasto}</span>
+                </div>
+                <div class="kpi">
+                    <span class="kpi-label">Contactos</span>
+                    <span class="kpi-valor">${nContactos}</span>
+                    <span class="kpi-sub">${costoContacto ? `${fmtMoney(costoContacto)} cada uno` : "—"}</span>
+                </div>
+                <div class="kpi">
+                    <span class="kpi-label"><span class="kpi-dot meter-ok"></span>Pasaron a Cliente</span>
+                    <span class="kpi-valor">${s.clientesN} <small>${nContactos ? `${pctConv} %` : ""}</small></span>
+                    <span class="kpi-sub">${convertidos.length ? `${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"} · ${nAnual} anual${nAnual === 1 ? "" : "es"} · ${nUnico} único${nUnico === 1 ? "" : "s"}` : "Ninguno todavía"}</span>
+                </div>
+                <div class="kpi inv-kpi-costo">
+                    <span class="kpi-label">Costo por cada ${fmtMoney(INGRESO_MENSUAL_BASE)} de ingreso mensual</span>
+                    <span class="kpi-valor">${gastoTotal > 0 && tramos > 0 ? fmtMoney(costoPorSuscriptor) + enDolares(costoPorSuscriptor) : "—"}</span>
+                    <span class="kpi-sub">${gastoTotal > 0
+                        ? `Según lo cobrado: ${sumaPagoUnico > 0 ? `se restan ${fmtMoney(sumaPagoUnico)} → ` : ""}costo neto ${fmtMoney(costoNeto)} ${divisor}${sumaVentaTotal > sumaPagoUnico && tramos > 0 ? `<br>Según el total de la venta: <strong>${fmtMoney(costoPorSuscriptorTotal)}</strong>` : ""}`
+                        : "Sin gasto cargado"}</span>
+                </div>
             </div>
-            ${tarjetasCosto}
             ${convertidos.length ? `
-            <div class="table-wrapper">
+            <div class="table-wrapper inv-tabla">
                 <table class="clients-table">
-                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th></tr></thead>
+                    <thead><tr><th>Cliente</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th class="num">Paga</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
-            </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
+            </div>` : `<p class="fx-vacio">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
         cont.appendChild(div);
 
         const inputGasto = div.querySelector(".gasto-input");
@@ -1313,6 +1324,17 @@ function renderInversion() {
             guardarGastoSemana(key, inputGasto.value);
         });
         div.querySelector(".inv-usar-meta")?.addEventListener("click", () => guardarGastoSemana(key, ""));
+    }
+    // El promedio de un rango, plegado, abajo de todo.
+    {
+        const pr = document.createElement("div");
+        pr.innerHTML = rangoInversionHtml(semanas);
+        cont.appendChild(pr);
+        const redibujar = () => renderInversion();
+        pr.querySelector("[data-inv-rango-panel]").addEventListener("toggle", e => { inversionRangoAbierto = e.target.open; });
+        pr.querySelector("[data-inv-rango-desde]").addEventListener("change", e => { if (e.target.value) { inversionRango.desde = e.target.value; redibujar(); } });
+        pr.querySelector("[data-inv-rango-hasta]").addEventListener("change", e => { if (e.target.value) { inversionRango.hasta = e.target.value; redibujar(); } });
+        pr.querySelectorAll("[data-inv-rango-rapido]").forEach(b => b.addEventListener("click", () => { inversionRango = { desde: b.dataset.invRangoRapido, hasta: _diaDe(new Date()) }; redibujar(); }));
     }
 }
 
@@ -1940,15 +1962,27 @@ function _cobrosResumenHTML(calMes, dias) {
     const faltaTotal = subsFalta + unicosFalta + anualFalta;
     const subTotal = lineasSub(entroTotal, faltaTotal, "suscripciones del mes + pagos únicos desde el 13/09 + pagos anuales en total");
 
+    /* 4-nov (rediseño): los mismos cuatro números, como tiles con la barra de lo que entró y lo que
+       falta; las aclaraciones largas, detrás del ⓘ de abajo. */
+    const tile = (titulo, total, entro, falta, nota, conBarra = true) => {
+        const pct = total > 0 ? Math.round(entro / total * 100) : 0;
+        return `<div class="kpi">
+            <span class="kpi-label">${titulo}</span>
+            <span class="kpi-valor">${fmtMoney(total)}</span>
+            ${conBarra && total > 0 ? `<div class="meter" role="img" aria-label="Entró el ${pct} %"><span class="meter-ok" style="width:${pct}%"></span></div>` : ""}
+            <span class="kpi-sub">${conBarra ? `Entró <strong>${fmtMoney(entro)}</strong> · falta <strong>${fmtMoney(falta)}</strong>` : ""}${nota ? `${conBarra ? "<br>" : ""}${nota}` : ""}</span>
+        </div>`;
+    };
+    const subsNota = esPasado ? "Todo cobrado" : esFuturo ? "A cobrar (estimado)" : "";
     return `
         ${_avisoMp()}
-        <div class="stats-box stats-box--periods ingcal-stats">
-            <div class="stat-item"><span class="stat-label">💳 Suscripciones</span><span class="stat-value">${fmtMoney(subsTotal)}</span><span class="muted ingcal-stat-sub">${subSubs}</span></div>
-            <div class="stat-item"><span class="stat-label">💵 Pagos únicos (total desde el 13/09)</span><span class="stat-value">${fmtMoney(unicosEntro + unicosFalta)}</span><span class="muted ingcal-stat-sub">${lineasSub(unicosEntro, unicosFalta, `${nUnicosWebs} web${nUnicosWebs === 1 ? "" : "s"} con la charla desde el 13/09 · ${nUnicos} pago${nUnicos === 1 ? "" : "s"}${nUnicosSaldo ? ` · saldo de ${nUnicosSaldo} por cobrar` : ""} · no cambia con el mes`)}</span></div>
-            <div class="stat-item"><span class="stat-label">📅 Pagos anuales (total)</span><span class="stat-value">${fmtMoney(anuales + anualFalta)}</span><span class="muted ingcal-stat-sub">${subAnuales}</span></div>
-            <div class="stat-item"><span class="stat-label">Total</span><span class="stat-value">${fmtMoney(entroTotal + faltaTotal)}</span><span class="muted ingcal-stat-sub">${subTotal}</span></div>
+        <div class="kpis cal-kpis">
+            ${tile(`Suscripciones de ${MESES_AR[parseInt(calMes.slice(5), 10) - 1]}`, subsTotal, subsCobrado, subsFalta, subsNota, !esPasado && !esFuturo)}
+            ${tile("Pagos anuales", anuales + anualFalta, anuales, anualFalta, `${notaAnuales}${nAnualSaldo ? ` · ${nAnualSaldo} saldo${nAnualSaldo === 1 ? "" : "s"} por cobrar` : ""}${nAnualRenov ? ` · ${nAnualRenov} renovación${nAnualRenov === 1 ? "" : "es"} vencida${nAnualRenov === 1 ? "" : "s"}` : ""}`)}
+            ${tile("Pagos únicos", unicosEntro + unicosFalta, unicosEntro, unicosFalta, `${nUnicosWebs} web${nUnicosWebs === 1 ? "" : "s"} desde el 13/09`)}
+            ${tile("Total", entroTotal + faltaTotal, entroTotal, faltaTotal, "")}
         </div>
-        <p class="muted ingcal-nota">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron.</p>`;
+        <div class="panel-sub cal-kpis-nota"><span class="muted">Suscripciones: las del mes que mirás. Anuales y únicos: el total, no cambian con el mes.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">"Falta cobrar" sale de las suscripciones activas de Mercado Pago (y de los mensuales cargados a mano): una tarjeta rechazada o una baja lo cambian. Los que pagan por afuera (marcados en Mantenimiento) se cuentan como cobrados cada mes, el día del alta. Los otros pagos se cuentan solo cuando ya entraron. Total: ${escapeHtml("suscripciones del mes + pagos únicos desde el 13/09 + pagos anuales en total")}.</p></details></div>`;
 }
 
 /* Quién paga una suscripción, en una línea: "Negocio · Persona · MP: Nombre en Mercado Pago". */
@@ -2108,30 +2142,91 @@ function renderFinanzas() {
     document.getElementById("finAviso").innerHTML = (finGastosError
         ? `<div class="factura-error">No se pueden leer ni guardar los gastos: ${escapeHtml(finGastosError)}. Falta publicar firestore.rules (colección finanzasGastos).</div>` : "") + _avisoMp();
 
+    /* 4-nov (rediseño): un solo número grande —la ganancia del mes (la estimada si el mes sigue
+       abierto, la real si ya cerró)— y al lado lo que entró, lo que falta y los gastos. Las cuentas
+       son las mismas de siempre (finanzasMes / finanzasGastosMes). */
+    const ingresos = cobrado + (esPasado ? 0 : esperado);
+    const pctEntro = ingresos > 0 ? Math.round(cobrado / ingresos * 100) : 0;
+    const neg = n => n < 0 ? " es-neg" : "";
+    const nombreMes = _finNombreMes(finMes).split(" ")[0].toLowerCase();
     cards.innerHTML = `
-        <div class="stat-item">
-            <span class="stat-label">✅ Cobrado</span>
-            <span class="stat-value"${rojo(gananciaCobrada)}>${fmtMoney(gananciaCobrada)}</span>
-            <span class="muted ingcal-stat-sub">Ganancia hasta ahora · entró ${fmtMoney(cobrado)} − gastos ${fmtMoney(gastos)}</span>
+        <div class="kpi kpi--hero">
+            <span class="kpi-label">${esPasado ? `Ganancia de ${nombreMes}` : "Ganancia estimada del mes"}</span>
+            <span class="kpi-valor${neg(esPasado ? gananciaCobrada : gananciaEstimada)}">${fmtMoney(esPasado ? gananciaCobrada : gananciaEstimada)}</span>
+            <span class="kpi-sub">${esPasado
+                ? `Entró ${fmtMoney(cobrado)} y se gastaron ${fmtMoney(gastos)}.`
+                : `Si entra todo lo que falta. Hasta hoy: <strong class="${gananciaCobrada < 0 ? "es-neg" : ""}">${fmtMoney(gananciaCobrada)}</strong>.`}</span>
+            ${ingresos > 0 ? `<div class="meter" role="img" aria-label="Entró el ${pctEntro} % de lo que se espera cobrar en el mes">
+                <span class="meter-ok" style="width:${pctEntro}%"></span></div>
+            <div class="meter-leyenda"><span><i class="meter-ok"></i>Entró ${pctEntro} %</span>${esPasado ? "" : `<span><i class="meter-info"></i>Falta ${100 - pctEntro} %</span>`}</div>` : ""}
         </div>
-        <div class="stat-item">
-            <span class="stat-label">⏳ Esperado a cobrar</span>
-            <span class="stat-value">${esPasado ? "—" : fmtMoney(esperado)}</span>
-            <span class="muted ingcal-stat-sub">${esPasado ? "Mes cerrado" : `Ganancia estimada del mes: <strong${rojo(gananciaEstimada)}>${fmtMoney(gananciaEstimada)}</strong>`}</span>
+        <div class="kpi">
+            <span class="kpi-label"><span class="kpi-dot meter-ok"></span>Entró</span>
+            <span class="kpi-valor">${fmtMoney(cobrado)}</span>
+            <span class="kpi-sub">Cobrado en ${nombreMes}</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi-label"><span class="kpi-dot meter-info"></span>Falta entrar</span>
+            <span class="kpi-valor">${esPasado ? "—" : fmtMoney(esperado)}</span>
+            <span class="kpi-sub">${esPasado ? "Mes cerrado" : "Suscripciones, saldos y anuales por cobrar"}</span>
+        </div>
+        <div class="kpi">
+            <span class="kpi-label"><span class="kpi-dot" style="background:var(--bad-soft)"></span>Gastos</span>
+            <span class="kpi-valor">${fmtMoney(gastos)}</span>
+            <span class="kpi-sub">Fijos ${fmtMoney(g.totalFijos)} · adicionales ${fmtMoney(g.totalAdicionales)}</span>
         </div>`;
 
+    document.getElementById("finGastosTotal").textContent = fmtMoney(gastos);
     document.getElementById("finFijosTotal").textContent = fmtMoney(g.totalFijos);
     document.getElementById("finAdicTotal").textContent = fmtMoney(g.totalAdicionales);
-    const fila = (x, detalle) => `<li class="fin-item">
-            <span class="fin-item-nombre">${escapeHtml(x.nombre || "Gasto")}${detalle ? ` <small class="muted">${detalle}</small>` : ""}</span>
-            <button type="button" class="fin-item-monto" data-fin-editar="${escapeHtml(x.id)}" title="Cambiar el monto">${fmtMoney(Number(x.monto) || 0)}</button>
-            <button type="button" class="icon-btn" data-fin-borrar="${escapeHtml(x.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(x.nombre || "gasto")}">×</button>
+    const fila = (x, detalle) => `<li class="fx-row">
+            <span class="fx-row-nombre">${escapeHtml(x.nombre || "Gasto")}${detalle ? `<small>${detalle}</small>` : ""}</span>
+            <button type="button" class="fx-row-monto fin-item-monto" data-fin-editar="${escapeHtml(x.id)}" title="Cambiar el monto">${fmtMoney(Number(x.monto) || 0)}</button>
+            <button type="button" class="icon-btn fx-quitar" data-fin-borrar="${escapeHtml(x.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(x.nombre || "gasto")}">×</button>
         </li>`;
     document.getElementById("finFijosLista").innerHTML = g.fijos.length
-        ? g.fijos.map(x => fila(x, "")).join("") : `<li class="muted fin-vacio">Todavía no cargaste gastos fijos.</li>`;
+        ? g.fijos.map(x => fila(x, "")).join("") : `<li class="fx-vacio">Todavía no cargaste gastos fijos.</li>`;
     document.getElementById("finAdicLista").innerHTML = g.adicionales.length
-        ? g.adicionales.map(x => fila(x, mantShortDate(new Date(`${x.fecha}T12:00:00`)))).join("") : `<li class="muted fin-vacio">Sin gastos adicionales en este mes.</li>`;
+        ? g.adicionales.map(x => fila(x, mantShortDate(new Date(`${x.fecha}T12:00:00`)))).join("") : `<li class="fx-vacio">Sin gastos adicionales en ${nombreMes}.</li>`;
+    renderFinanzasHistoria(meses, mesHoy);
+    const idx = meses.indexOf(finMes);   // la lista va del más nuevo al más viejo
+    document.getElementById("finMesPrev").disabled = idx < 0 || idx >= meses.length - 1;
+    document.getElementById("finMesNext").disabled = idx <= 0;
     renderFinanzasUsd();
+}
+
+/* Ganancia de los últimos 6 meses (4-nov): una barra por mes, con las mismas cuentas que las
+   tarjetas (lo cobrado menos los gastos; el mes en curso, estimada y más clara). Tocar una barra
+   lleva a ese mes. */
+function renderFinanzasHistoria(meses, mesHoy) {
+    const cont = document.getElementById("finHist");
+    if (!cont) return;
+    const lista = meses.filter(ym => ym <= mesHoy).slice(0, 6).reverse();
+    const datos = lista.map(ym => {
+        const { cobrado, esperado } = finanzasMes(ym);
+        const g = finanzasGastosMes(ym);
+        const gastos = g.totalFijos + g.totalAdicionales;
+        const abierto = ym === mesHoy;
+        return { ym, cobrado, gastos, valor: cobrado + (abierto ? esperado : 0) - gastos, abierto };
+    });
+    const max = Math.max(1, ...datos.map(d => Math.abs(d.valor)));
+    const hayNeg = datos.some(d => d.valor < 0);
+    const corto = ym => _finNombreMes(ym).slice(0, 3);
+    cont.innerHTML = `
+        <div class="card2-head"><h2>Ganancia por mes <small>últimos ${datos.length} meses · el actual, estimado</small></h2></div>
+        <div class="fh-barras${hayNeg ? " fh-con-neg" : ""}" role="list">
+            ${datos.map(d => {
+                const h = Math.max(2, Math.round(Math.abs(d.valor) / max * 100));
+                const tip = `${_finNombreMes(d.ym)}: ${fmtMoney(d.valor)}${d.abierto ? " (estimada)" : ""} · entró ${fmtMoney(d.cobrado)} · gastos ${fmtMoney(d.gastos)}`;
+                return `<button type="button" class="fh-col${d.ym === finMes ? " sel" : ""}" data-fin-ir="${d.ym}" role="listitem" aria-label="${escapeHtml(tip)}" data-tip="${escapeHtml(tip)}">
+                    <span class="fh-valor">${d.ym === finMes ? fmtMoney(d.valor) : ""}</span>
+                    <span class="fh-zona fh-zona--pos">${d.valor >= 0 ? `<span class="fh-barra${d.abierto ? " fh-barra--est" : ""}" style="height:${h}%"></span>` : ""}</span>
+                    ${hayNeg ? `<span class="fh-zona fh-zona--neg">${d.valor < 0 ? `<span class="fh-barra fh-barra--neg" style="height:${h}%"></span>` : ""}</span>` : ""}
+                    <span class="fh-mes">${corto(d.ym)}</span>
+                </button>`;
+            }).join("")}
+        </div>`;
+    cont.querySelectorAll("[data-fin-ir]").forEach(b => b.addEventListener("click", () => { finMes = b.dataset.finIr; renderFinanzas(); }));
 }
 
 /* ── Publicidad en dólares (Pablo, 16-oct-2026) ──
@@ -2169,26 +2264,26 @@ function renderFinanzasUsd() {
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
         .map(x => `<option value="${escapeHtml(x.nombre)}"></option>`).join("");
 
-    document.getElementById("finUsdResumen").innerHTML = porPersona.size ? `
-        <table class="fin-usd-tabla">
-            <thead><tr><th>Persona</th><th class="num">Total invertido</th></tr></thead>
-            <tbody>${[...porPersona.values()].sort((a, b) => b.c - a.c).map(x => `
-                <tr><td>${escapeHtml(x.nombre)}</td><td class="num">${fmtUsd(x.c)}</td></tr>`).join("")}
-            </tbody>
-            <tfoot><tr><td>Total</td><td class="num">${fmtUsd(total)}</td></tr></tfoot>
-        </table>` : "";
+    // 4-nov: lo de cada persona en fichas con su parte del total (antes una tabla).
+    document.getElementById("finUsdResumen").innerHTML = porPersona.size ? `<div class="usd-personas">${[...porPersona.values()]
+        .sort((a, b) => b.c - a.c).map(x => `<div class="usd-persona">
+            <span class="usd-persona-nombre">${escapeHtml(x.nombre)}</span>
+            <strong>${fmtUsd(x.c)}</strong>
+            <span class="usd-persona-barra"><span style="width:${total ? Math.round(x.c / total * 100) : 0}%"></span></span>
+        </div>`).join("")}</div>` : "";
 
     const anioHoy = _diaDe(new Date()).slice(0, 4);
     const fecha = ymd => mantShortDate(new Date(`${ymd}T12:00:00`)) + (String(ymd).slice(0, 4) !== anioHoy ? `/${String(ymd).slice(0, 4)}` : "");
-    lista.innerHTML = todos.length ? todos.map(g => `<li class="fin-item fin-usd-item">
-            <span class="fin-item-nombre">${escapeHtml(_usdNombre(g))}
-                <small class="muted">${fecha(g.fecha)}</small>
-                <small class="fin-usd-reparto-det">${(g.reparto || []).map(r => `${escapeHtml(r.persona)} ${fmtUsd(_centavos(r.usd))}`).join(" · ")}</small>
+    lista.innerHTML = todos.length ? todos.map(g => `<li class="fx-row fx-row--usd">
+            <span class="fx-row-nombre">${escapeHtml(_usdNombre(g))}<small>${fecha(g.fecha)}</small>
+                <span class="fx-row-det">${(g.reparto || []).map(r => `${escapeHtml(r.persona)} ${fmtUsd(_centavos(r.usd))}`).join(" · ")}</span>
             </span>
-            <strong class="fin-usd-monto">${fmtUsd(_centavos(g.usd))}</strong>
-            <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este gasto" aria-label="Editar ${escapeHtml(_usdNombre(g))}">✎</button>
-            <button type="button" class="icon-btn" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(_usdNombre(g))}">×</button>
-        </li>`).join("") : `<li class="muted fin-vacio">Todavía no cargaste gastos de publicidad en dólares.</li>`;
+            <strong class="fx-row-monto">${fmtUsd(_centavos(g.usd))}</strong>
+            <span class="fx-row-acc">
+                <button type="button" class="icon-btn" data-usd-editar="${escapeHtml(g.id)}" title="Editar este gasto" aria-label="Editar ${escapeHtml(_usdNombre(g))}">✎</button>
+                <button type="button" class="icon-btn fx-quitar" data-usd-borrar="${escapeHtml(g.id)}" title="Borrar este gasto" aria-label="Borrar ${escapeHtml(_usdNombre(g))}">×</button>
+            </span>
+        </li>`).join("") : `<li class="fx-vacio">Todavía no cargaste gastos de publicidad en dólares.</li>`;
 }
 
 function finUsdFila(persona = "", usd = "") {
@@ -2227,6 +2322,8 @@ function finUsdReset() {
     finUsdFila();
     document.getElementById("finUsdGuardar").textContent = "Agregar gasto";
     document.getElementById("finUsdCancelar").hidden = true;
+    const det = document.getElementById("finUsdDet");
+    if (det) { det.open = false; document.getElementById("finUsdDetTxt").textContent = "Agregar gasto en US$"; }
     finUsdChequeo();
 }
 
@@ -2304,12 +2401,20 @@ if (document.getElementById("finUsdForm")) {
         if (!f.querySelector(".fin-usd-fila")) finUsdFila();
         document.getElementById("finUsdGuardar").textContent = "Guardar cambios";
         document.getElementById("finUsdCancelar").hidden = false;
+        document.getElementById("finUsdDet").open = true;
+        document.getElementById("finUsdDetTxt").textContent = `Editando «${_usdNombre(g)}»`;
         finUsdChequeo();
         f.scrollIntoView({ block: "center", behavior: "smooth" });
     });
 }
 
 document.getElementById("finMes")?.addEventListener("change", e => { finMes = e.target.value; renderFinanzas(); });
+for (const [id, paso] of [["finMesPrev", -1], ["finMesNext", 1]]) {
+    document.getElementById(id)?.addEventListener("click", () => {
+        const sig = _mesMas(finMes || _diaDe(new Date()).slice(0, 7), paso);
+        if (_finMesesDisponibles().includes(sig)) { finMes = sig; renderFinanzas(); }
+    });
+}
 
 async function finGuardarGasto(datos) {
     try {
@@ -2329,7 +2434,7 @@ document.getElementById("finFijoForm")?.addEventListener("submit", async e => {
     if (!(monto > 0)) return;
     // Cuenta desde el mes que se está mirando (hasta el actual: un gasto fijo no empieza en el futuro por error).
     const desde = finMes && finMes <= _diaDe(new Date()).slice(0, 7) ? finMes : _diaDe(new Date()).slice(0, 7);
-    if (await finGuardarGasto({ tipo: "fijo", nombre: f.nombre.value.trim(), monto, desde })) f.reset();
+    if (await finGuardarGasto({ tipo: "fijo", nombre: f.nombre.value.trim(), monto, desde })) { f.reset(); document.getElementById("finFijoDet").open = false; }
 });
 
 document.getElementById("finAdicForm")?.addEventListener("submit", async e => {
@@ -2340,6 +2445,7 @@ document.getElementById("finAdicForm")?.addEventListener("submit", async e => {
     if (await finGuardarGasto({ tipo: "adicional", nombre: f.nombre.value.trim(), monto, fecha: f.fecha.value })) {
         finMes = f.fecha.value.slice(0, 7);   // salta al mes del gasto para verlo
         f.reset();
+        document.getElementById("finAdicDet").open = false;
         renderFinanzas();
     }
 });
@@ -2354,9 +2460,30 @@ document.getElementById("tabFinanzas")?.addEventListener("click", async e => {
             if (!confirm(`¿Borrar el gasto "${g.nombre}"?${g.tipo === "fijo" ? "\n\nDeja de contar en todos los meses." : ""}`)) return;
             await deleteDoc(doc(db, "finanzasGastos", g.id));
         } else {
-            const r = prompt(`Nuevo monto de "${g.nombre}":`, String(g.monto));
-            const monto = r === null ? 0 : Math.round(Number(String(r).replace(/\D/g, "")));
-            if (monto > 0 && monto !== g.monto) await updateDoc(doc(db, "finanzasGastos", g.id), { monto });
+            // 4-nov: se edita en el lugar (antes un prompt()). Enter guarda, Escape o salir sin cambios vuelve.
+            const btn = editar;
+            const inp = document.createElement("input");
+            inp.type = "number"; inp.min = "1"; inp.step = "1"; inp.inputMode = "numeric";
+            inp.className = "fx-monto-input"; inp.value = String(g.monto || "");
+            inp.setAttribute("aria-label", `Nuevo monto de ${g.nombre || "el gasto"}`);
+            btn.replaceWith(inp);
+            inp.focus(); inp.select();
+            let listo = false;
+            const terminar = async (guardar) => {
+                if (listo) return;
+                listo = true;
+                const monto = Math.round(Number(inp.value));
+                if (guardar && monto > 0 && monto !== g.monto) {
+                    try { await updateDoc(doc(db, "finanzasGastos", g.id), { monto }); }
+                    catch (err) { console.error(err); alert("No se pudo guardar el cambio: " + err.message); }
+                }
+                renderFinanzas();
+            };
+            inp.addEventListener("keydown", ev => {
+                if (ev.key === "Enter") { ev.preventDefault(); terminar(true); }
+                if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); terminar(false); }
+            });
+            inp.addEventListener("blur", () => terminar(true));
         }
     } catch (err) {
         console.error(err);
@@ -8864,7 +8991,7 @@ function renderCal() {
         let badges = "";
         if (imp2.length > 0) badges += `<span class="cal-badge badge-imp2">${imp2.length}</span>`;
         if (imp1.length > 0) badges += `<span class="cal-badge badge-imp1">${imp1.length}</span>`;
-        if (hablar.length > 0) badges += `<span class="cal-badge badge-hablar" title="${hablar.length === 1 ? "1 persona a la que hablarle" : `${hablar.length} personas a las que hablarles`}: ${escapeHtml(hablar.map(c => c.nombre || c.proyecto).join(", "))}">💬 ${hablar.length}</span>`;
+        if (hablar.length > 0) badges += `<span class="cal-badge badge-hablar" title="${hablar.length === 1 ? "1 persona a la que hablarle" : `${hablar.length} personas a las que hablarles`}: ${escapeHtml(hablar.map(c => c.nombre || c.proyecto).join(", "))}">${hablar.length}</span>`;
         html += `<div class="${cls}" data-date="${dateStr}" role="button" tabindex="0" aria-label="${d} de ${MONTHS_ES[calMonth]}${tareasDelDia.length ? `, ${tareasDelDia.length} tarea${tareasDelDia.length === 1 ? "" : "s"}` : ""}${hablar.length ? `, ${hablar.length} a quien hablarle` : ""}">
             <span class="cal-day-num">${d}</span>
             <div class="cal-cell-badges">${badges}</div>
@@ -8889,6 +9016,45 @@ function renderCal() {
         });
     });
     _renderCalSuma();
+    renderCalProximos();
+}
+
+/* Próximos 7 días (4-nov): lo que viene, sin tener que abrir cada día — tareas, a quién hablarle
+   y lo que falta cobrar —, más los seguimientos que quedaron atrasados. Tocar un día abre su detalle. */
+function renderCalProximos() {
+    const cont = document.getElementById("calProximos");
+    if (!cont) return;
+    const base = new Date();
+    const dias = [];
+    for (let i = 0; i < 7; i++) dias.push(ymdLocal(new Date(base.getFullYear(), base.getMonth(), base.getDate() + i)));
+    const cobros = ingresosPorDia(dias[6]);
+    const atrasados = clients.filter(c => ESTADOS_HABLAR.includes(getEstado(c)) && c.hablarleElDia && c.hablarleElDia < dias[0]);
+    const nombreDia = (ymd, i) => i === 0 ? "Hoy" : i === 1 ? "Mañana"
+        : new Date(`${ymd}T12:00:00`).toLocaleDateString("es-AR", { weekday: "long", day: "numeric" });
+    const grupos = dias.map((ymd, i) => {
+        const t = tareas.filter(x => x.fecha === ymd).sort((a, b) => (a.hora || "99").localeCompare(b.hora || "99"));
+        const h = aQuienHablar(ymd);
+        const c = (cobros.get(ymd) || []).filter(it => !it.cobrado);
+        if (!t.length && !h.length && !c.length) return "";
+        const totalCobros = c.reduce((a, it) => a + it.monto, 0);
+        return `<div class="prox-dia">
+            <button type="button" class="prox-dia-cab" data-prox-dia="${ymd}"><span>${escapeHtml(nombreDia(ymd, i))}</span>${totalCobros ? `<span class="prox-dia-plata">${fmtMoney(totalCobros)} a cobrar</span>` : ""}</button>
+            <ul class="prox-lista">
+                ${t.map(x => `<li><span class="prox-ico ${x.importancia == 2 ? "badge-imp2" : "badge-imp1"}"></span><span>${x.hora ? `<b>${escapeHtml(x.hora)}</b> ` : ""}${escapeHtml(x.texto)}</span></li>`).join("")}
+                ${h.map(x => `<li><span class="prox-ico badge-hablar"></span><span>Hablarle a ${escapeHtml(x.nombre || x.proyecto || "—")}${x.proyecto && x.nombre ? ` <small>${escapeHtml(x.proyecto)}</small>` : ""}</span></li>`).join("")}
+                ${c.slice(0, 3).map(it => `<li><span class="prox-ico prox-ico--plata"></span><span>${escapeHtml(it.negocio || it.persona || it.nombre || it.tipo)} <small>${fmtMoney(it.monto)}${it.atrasada ? " · atrasada" : ""}</small></span></li>`).join("")}
+                ${c.length > 3 ? `<li class="prox-mas">y ${c.length - 3} cobro${c.length - 3 === 1 ? "" : "s"} más</li>` : ""}
+            </ul>
+        </div>`;
+    }).join("");
+    cont.innerHTML = `
+        <div class="card2-head"><h2>Próximos 7 días</h2></div>
+        ${atrasados.length ? `<button type="button" class="prox-atrasados" data-prox-atrasados>
+            <strong>${atrasados.length}</strong> seguimiento${atrasados.length === 1 ? "" : "s"} atrasado${atrasados.length === 1 ? "" : "s"}
+            <small>${escapeHtml(atrasados.slice(0, 3).map(c => c.nombre || c.proyecto).join(", "))}${atrasados.length > 3 ? "…" : ""}</small></button>` : ""}
+        ${grupos || `<p class="fx-vacio">Nada agendado para esta semana.</p>`}`;
+    cont.querySelectorAll("[data-prox-dia]").forEach(b => b.addEventListener("click", () => openDayModal(b.dataset.proxDia)));
+    cont.querySelector("[data-prox-atrasados]")?.addEventListener("click", () => document.querySelector('.tab-btn[data-tab="seguimientos"]')?.click());
 }
 
 function _elegirDiaCal(ymd, rango) {
@@ -9926,8 +10092,7 @@ function _mantFilaAvisoHTML(fila) {
                     <div>${escapeHtml(planLabel)}</div>
                     <div class="muted" style="font-size:12px">${fmtMoney(monto)}/mes · <span class="muted" style="font-size:11px">vía Mercado Pago</span></div>
                 </td>
-                <td class="col-telefono"><span class="muted">—</span></td>
-                <td><span class="muted">—</span></td>
+                <td class="mant-contacto"><span class="muted">—</span></td>
                 <td class="center">${_mantEstadoHTML(fila)}</td>
                 <td class="center"><span class="muted">—</span></td>
                 <td class="actions-col">
@@ -10152,7 +10317,7 @@ function _mantFilaClienteHTML(c) {
             <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div>
             ${s.estado === "baja" ? "" : _anioMantHTML(s.desde || mantToDate(c.entregadoAt))}</td>
         <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div>${_mpVinculoHTML(c, true)}</td>
-        <td class="col-telefono">${contacto.telefono}</td><td>${contacto.dominio}</td>
+        <td class="mant-contacto">${contacto.telefono}<div class="mant-dom">${contacto.dominio}</div></td>
         <td class="center"><span style="color:${color};font-weight:700">● ${estado}</span>${s.desde ? `<div class="muted" style="font-size:11px">desde ${mantLongDate(s.desde)}</div>` : ""}</td>
         <td class="center">${periodo && estado === "Activo" ? `<label title="Se habilita nuevamente el ${mantLongDate(periodo.next)}"><input type="checkbox" data-cli-cambio="${escapeHtml(c.id)}" ${pidio ? "checked" : ""}></label><div style="font-size:12px;color:#93b4e8">${mantShortDate(periodo.start)} al ${mantShortDate(periodo.next)}</div><div class="muted" style="font-size:11px">se renueva ${dias === 0 ? "hoy" : `en ${dias} días`}</div>` : `<span class="muted">—</span>`}</td>
         <td class="actions-col">${!webEntregada(c) ? `<button class="icon-btn btn-terminada" data-terminada-id="${escapeHtml(c.id)}" title="Marcar la web como terminada">✓</button>` : ""}
@@ -10713,6 +10878,37 @@ function _updateMantCounters(filas, sinSusc) {
     }
 }
 
+/* Resumen de Mantenimiento (4-nov, rediseño): cuatro números chicos arriba. Las tarjetas grandes de
+   totales se habían sacado el 20-oct; esto es más liviano y cada número lleva a su vista. */
+function renderMantResumen(filas, sinSusc, anual, conteo) {
+    const cont = document.getElementById("mantKpis");
+    if (!cont) return;
+    const clientesActivos = clients.filter(c => getEstado(c) === "cliente");
+    const deMercadoPago = filas.filter(f => f.m && f.clave === "activo")
+        .reduce((sum, f) => sum + Number(f.m.monto ?? MANT_PLAN_MONTO[f.m.plan] ?? 0), 0);
+    const aMano = clientesActivos.filter(c => !_conSena(modalidadDe(c)) && !mantenimientoDeCliente(c))
+        .map(suscripcionDe).filter(s => s.estado === "activa").reduce((sum, s) => sum + s.mensual, 0);
+    const anualesACobrar = clientesActivos.map(renovacionAnualDe)
+        .filter(r => r && !r.legado && (r.estado === "vencido" || r.estado === "por_vencer"));
+    const vencidos = anualesACobrar.filter(r => r.estado === "vencido").length;
+    const revisar = Number(document.getElementById("mantCountVincular")?.textContent || 0) || 0;
+    const atrasados = (ingresosMp?.suscripciones || []).filter(x => x.estado === "authorized" && (x.semaforo === "yellow" || x.semaforo === "red")).length;
+    const tile = (vista, label, valor, sub, tono = "") => `<button type="button" class="kpi kpi--link${tono ? ` kpi--${tono}` : ""}" data-mant-ir="${vista}">
+        <span class="kpi-label">${label}</span><span class="kpi-valor">${valor}</span><span class="kpi-sub">${sub}</span></button>`;
+    cont.innerHTML = [
+        tile("mensual", "Ingreso mensual", fmtMoney(deMercadoPago + aMano), `${conteo.activo} suscripci${conteo.activo === 1 ? "ón activa" : "ones activas"}${conteo.pausado ? ` · ${conteo.pausado} pausada${conteo.pausado === 1 ? "" : "s"}` : ""}`),
+        tile("anual", "Plan anual", String(anual.length), anualesACobrar.length
+            ? `${anualesACobrar.length} a cobrar · ${fmtMoney(anualesACobrar.reduce((a, r) => a + r.monto, 0))}${vencidos ? ` · ${vencidos} vencido${vencidos === 1 ? "" : "s"}` : ""}`
+            : "Ningún cobro anual cerca", vencidos ? "mal" : anualesACobrar.length ? "aviso" : ""),
+        tile("cobros", "Cobros a revisar", String(revisar + atrasados), `${atrasados ? `${atrasados} atrasado${atrasados === 1 ? "" : "s"} en Mercado Pago · ` : ""}${revisar} por vincular`, revisar + atrasados ? "aviso" : ""),
+        tile("mensual", "Sin suscripción", String(conteo.sin_susc), conteo.sin_susc ? "Mensuales sin Mercado Pago" : "Todos tienen suscripción", conteo.sin_susc ? "aviso" : ""),
+    ].join("");
+    cont.querySelectorAll("[data-mant-ir]").forEach(b => b.addEventListener("click", () => {
+        mantPlan = b.dataset.mantIr;
+        renderMantenimiento();
+    }));
+}
+
 // Plan anual: las webs entregadas, el cobro más cercano primero (las que no tienen fecha, al final).
 function _renderMantAnual(anual, term) {
     const tb = document.getElementById("mantAnualTbody");
@@ -10782,6 +10978,7 @@ function renderMantenimiento() {
     _renderMantPorFuera(term);
     _renderMantVincular(term);
     _renderMantSuscripciones(tbody, filas, sinSusc, term);
+    renderMantResumen(filas, sinSusc, anual, conteo);   // después de Vincular: usa su contador
     // Facturación consulta Mercado Pago: se carga al entrar la primera vez (o con "Actualizar"), no con cada cambio de Firestore.
     if (mantPlan === "facturacion" && !factAuto && !factAutoCargando && !factAutoError) cargarFactAuto();
     else {
@@ -11458,7 +11655,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
 
     if (list.length === 0) {
         const vacio = { todas: "mantenimientos", activo: "mantenimientos activos", pausado: "suscripciones pausadas", baja: "bajas", sin_susc: "clientes sin suscripción" }[mantVista];
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No hay ${vacio}${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No hay ${vacio}${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
         return;
     }
 
@@ -11504,8 +11701,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
                     <div class="muted" style="font-size:12px">${fmtMoney(monto)}/mes · ${origen}</div>
                     ${fila.clave === "activo" ? _mpVinculoHTML(m, false) : ""}
                 </td>
-                <td class="col-telefono">${contacto.telefono}</td>
-                <td>${contacto.dominio}</td>
+                <td class="mant-contacto">${contacto.telefono}<div class="mant-dom">${contacto.dominio}</div></td>
                 <td class="center">${estado}</td>
                 <td class="center">
                     ${fila.clave === "baja" ? `<span class="muted">—</span>` : `
