@@ -118,6 +118,7 @@ const ERR_REPOS = [
     'vitamov.com.ar' => 'pablot95/vitamov',
     'faestrategias.com.ar' => 'pablot95/francoalegre',
     'bgherreriaycarpinteria.com.ar' => 'pablot95/bgherreriaycarpinteria',
+    'marmoleriaymueblerialg.com.ar' => 'pablot95/marmoleriaymueblerialg',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
