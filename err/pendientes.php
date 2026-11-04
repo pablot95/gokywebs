@@ -119,6 +119,7 @@ const ERR_REPOS = [
     'faestrategias.com.ar' => 'pablot95/francoalegre',
     'bgherreriaycarpinteria.com.ar' => 'pablot95/bgherreriaycarpinteria',
     'marmoleriaymueblerialg.com.ar' => 'pablot95/marmoleriaymueblerialg',
+    'marketpremium.com.ar' => 'pablot95/marketpremium',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
