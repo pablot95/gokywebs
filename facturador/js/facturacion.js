@@ -7,8 +7,8 @@ import {
     $, formatPesos, fechaInput, generarRequestId, llenarSelect, snapshotCampos, confirmarDescartarCambios,
     SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, CONDICION_IVA_MONOTRIBUTO, ALICUOTAS_IVA,
     prepararCarpetaFacturas, guardarFactura,
-} from './utils.js?v=20261004';
-import { estado, emisorEsResponsableInscripto } from './state.js?v=20261004';
+} from './utils.js?v=20261104';
+import { estado, emisorEsResponsableInscripto } from './state.js?v=20261104';
 
 const facturaModal = $('facturaModal');
 let clienteAFacturar = null;
@@ -168,7 +168,7 @@ function requestIdDeTanda(cliente) {
 // emitió, tira un Error con .grave = true cuando no tiene sentido seguir con los
 // demás (no se sabe si salió, falta configurar ARCA); un rechazo de ARCA o un
 // dato inválido de este cliente no es grave.
-export async function emitirFacturaDeCliente(cliente, carpeta) {
+export async function emitirFacturaDeCliente(cliente, carpeta, fechas = {}) {
     const tipo = tipoComprobanteDeCliente(cliente);
     const total = Math.round(Number(cliente.precio) * 100) / 100;
     let ivaDetalle = null;
@@ -185,9 +185,9 @@ export async function emitirFacturaDeCliente(cliente, carpeta) {
         concepto: 2,
         descripcion: cliente.descripcion || '',
         condicionVenta: 'Contado',
-        servicioDesde: fechaInput(-30),
-        servicioHasta: fechaInput(),
-        vencimientoPago: fechaInput(),
+        servicioDesde: fechas.desde || fechaInput(-30),
+        servicioHasta: fechas.hasta || fechaInput(),
+        vencimientoPago: fechas.vencimiento || fechaInput(),
         ...(facturaDeClienteIdentificada(cliente)
             ? {
                 tipoDocumento: Number(cliente.tipoDocumento),

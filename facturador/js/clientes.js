@@ -5,10 +5,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
     $, escapeHtml, formatPesos, llenarSelect, toast, snapshotCampos, confirmarDescartarCambios,
-    TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO, prepararCarpetaFacturas,
-} from './utils.js?v=20261004';
-import { estado, arcaListoParaFacturar } from './state.js?v=20261004';
-import { abrirFacturaModal, emitirFacturaDeCliente, motivoParaNoEmitir, letraDeCliente } from './facturacion.js?v=20261004';
+    TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO, prepararCarpetaFacturas, fechaInput,
+} from './utils.js?v=20261104';
+import { estado, arcaListoParaFacturar } from './state.js?v=20261104';
+import { abrirFacturaModal, emitirFacturaDeCliente, motivoParaNoEmitir, letraDeCliente } from './facturacion.js?v=20261104';
 
 let clientes = [];
 let snapshotClienteInicial = null;
@@ -111,11 +111,13 @@ async function emitirTodas() {
 
         const total = listos.reduce((s, c) => s + Number(c.precio), 0);
         const lineas = listos.map(c => `• ${c.nombre} — Factura ${letraDeCliente(c)} por ${formatPesos(Number(c.precio))}${c.documento ? '' : ' (consumidor final)'}`);
-        if (!confirm(`¿Emitir ${listos.length} factura${listos.length === 1 ? '' : 's'} por un total de ${formatPesos(total)}?\n\n`
-            + lineas.join('\n')
+        const fechas = await pedirFechasTanda(
+            `¿Emitir ${listos.length} factura${listos.length === 1 ? '' : 's'} por un total de ${formatPesos(total)}?`,
+            lineas.join('\n')
             + (yaFacturados ? `\n\nQuedan afuera ${yaFacturados} que ya facturaste este mes.` : '')
             + (lineasAfuera.length ? `\n\nTambién quedan afuera:\n${lineasAfuera.join('\n')}` : '')
-            + '\n\nCada una sale con su precio y su descripción, servicios de los últimos 30 días y Contado. Una vez emitidas no se pueden anular, solo con una nota de crédito.')) return;
+            + '\n\nCada una sale con su precio, su descripción, servicios y Contado.');
+        if (!fechas) return;
 
         const avisarAlSalir = (e) => { e.preventDefault(); e.returnValue = ''; };
         window.addEventListener('beforeunload', avisarAlSalir);
@@ -128,7 +130,7 @@ async function emitirTodas() {
             for (const [i, c] of listos.entries()) {
                 boton.textContent = `Emitiendo ${i + 1} de ${listos.length}…`;
                 try {
-                    emitidas.push({ cliente: c, ...(await emitirFacturaDeCliente(c, carpeta)) });
+                    emitidas.push({ cliente: c, ...(await emitirFacturaDeCliente(c, carpeta, fechas)) });
                     fallasSeguidas = 0;
                     render();
                 } catch (err) {
@@ -160,6 +162,43 @@ async function emitirTodas() {
         boton.textContent = 'Emitir todas';
         render();
     }
+}
+
+// Modal de la tanda: muestra a quiénes se les factura y deja elegir el período
+// facturado y el vencimiento (antes salía fijo: últimos 30 días y vence hoy).
+// Devuelve { desde, hasta, vencimiento } o null si se canceló.
+function pedirFechasTanda(titulo, resumen) {
+    const modal = $('tandaModal');
+    $('tandaTitulo').textContent = titulo;
+    $('tandaResumen').textContent = resumen;
+    $('tandaDesde').value = fechaInput(-30);
+    $('tandaHasta').value = fechaInput();
+    $('tandaVencimiento').value = fechaInput();
+    $('tandaError').hidden = true;
+    modal.hidden = false;
+    return new Promise((resolve) => {
+        const terminar = (valor) => {
+            modal.hidden = true;
+            $('tandaEmitirBtn').removeEventListener('click', emitir);
+            $('tandaCancelarBtn').removeEventListener('click', cancelar);
+            $('closeTandaModalBtn').removeEventListener('click', cancelar);
+            modal.removeEventListener('click', fondo);
+            resolve(valor);
+        };
+        const error = (msg) => { $('tandaError').textContent = msg; $('tandaError').hidden = false; };
+        const emitir = () => {
+            const desde = $('tandaDesde').value, hasta = $('tandaHasta').value, vencimiento = $('tandaVencimiento').value;
+            if (!desde || !hasta || !vencimiento) return error('Completá las tres fechas.');
+            if (desde > hasta) return error('El período empieza después de terminar.');
+            terminar({ desde, hasta, vencimiento });
+        };
+        const cancelar = () => terminar(null);
+        const fondo = (e) => { if (e.target === modal) terminar(null); };
+        $('tandaEmitirBtn').addEventListener('click', emitir);
+        $('tandaCancelarBtn').addEventListener('click', cancelar);
+        $('closeTandaModalBtn').addEventListener('click', cancelar);
+        modal.addEventListener('click', fondo);
+    });
 }
 
 function render() {

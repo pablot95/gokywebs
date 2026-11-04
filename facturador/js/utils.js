@@ -1,5 +1,5 @@
 // Helpers compartidos entre clientes.js, facturacion.js y arca-setup.js.
-import { estado } from './state.js?v=20261004';
+import { estado } from './state.js?v=20261104';
 
 export const $ = id => document.getElementById(id);
 
