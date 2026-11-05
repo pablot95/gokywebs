@@ -293,7 +293,7 @@ function initRailDrag(vp) {
     if (!moved) {
       moved = true;
       vp.classList.add('dragging');
-      try { vp.setPointerCapture?.(pointerId); } catch (err) { /* sin capture igual arrastra */ }
+      try { vp.setPointerCapture?.(pointerId); } catch (err) { vp.classList.add('dragging'); }
     }
     e.preventDefault();
     vp.scrollLeft = startScroll - dx;
@@ -302,7 +302,7 @@ function initRailDrag(vp) {
     if (!dragging || (e && pointerId !== null && e.pointerId !== pointerId)) return;
     dragging = false;
     if (moved) {
-      try { vp.releasePointerCapture?.(pointerId); } catch (err) { /* ya liberado */ }
+      try { vp.releasePointerCapture?.(pointerId); } catch (err) { pointerId = null; }
       vp.classList.remove('dragging');
       const kill = ev => { ev.stopPropagation(); ev.preventDefault(); };
       vp.addEventListener('click', kill, { capture: true, once: true });
