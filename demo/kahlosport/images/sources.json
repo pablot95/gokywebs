@@ -1,0 +1,11 @@
+{
+  "originales": "01_imagen.jpg a 09_imagen.jpg y 10_mockup_720x480.png: zip de imágenes del prospecto (ChatGPT, Copiar 10). Imágenes ilustrativas.",
+  "derivadas": {
+    "p-*.webp": "fotos de producto 4:5 (fondo extendido, sin recorte de la prenda)",
+    "p-top-rosa, p-top-salvia, p-biker-ciruela, p-biker-negro, p-campera-lila, p-manga-azul, p-short-lila, p-short-negro, p-crop-lila, p-crop-celeste, p-calza-azul": "variantes de color recoloreadas desde la foto original (HSV / tinte por luminancia)",
+    "p-conjunto-lila, p-conjunto-rosa, p-conjunto-blanco": "composición de dos fotos originales sobre el mismo fondo",
+    "h-*.webp, c-*.webp": "fondo blanqueado para mezclar en multiply sobre los campos de color",
+    "og-kahlosport.jpg, favicon*.png": "generadas para la demo"
+  },
+  "bancos": []
+}
