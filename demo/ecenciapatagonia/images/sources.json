@@ -1,0 +1,16 @@
+{
+  "source": "Imágenes ilustrativas suministradas en el archivo de la sesión automática; originales conservados.",
+  "externalDownloads": [],
+  "images": [
+    {"file":"01_imagen.webp","original":"01_imagen.jpg","width":900,"height":1600,"usage":"Hero y propuesta combinada"},
+    {"file":"02_imagen.webp","original":"02_imagen.jpg","width":1600,"height":900,"usage":"El Chaltén"},
+    {"file":"03_imagen.webp","original":"03_imagen.jpg","width":1254,"height":1254,"usage":"Perito Moreno, detalle"},
+    {"file":"04_imagen.webp","original":"04_imagen.jpg","width":1254,"height":1254,"usage":"Pasarelas del glaciar"},
+    {"file":"05_imagen.webp","original":"05_imagen.jpg","width":1254,"height":1254,"usage":"El Calafate esencial"},
+    {"file":"06_imagen.webp","original":"06_imagen.jpg","width":1254,"height":1254,"usage":"Recepción y paquete El Calafate"},
+    {"file":"07_imagen.webp","original":"07_imagen.jpg","width":1254,"height":1254,"usage":"Vuelos"},
+    {"file":"08_imagen.webp","original":"08_imagen.jpg","width":1254,"height":1254,"usage":"Aeropuerto"},
+    {"file":"09_imagen.webp","original":"09_imagen.jpg","width":1254,"height":1254,"usage":"El Chaltén y sus miradores"}
+  ],
+  "reference":"10_mockup_720x480.png, referencia de diseño sin publicar como contenido"
+}
