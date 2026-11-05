@@ -1,0 +1,16 @@
+{
+  "origen": "Zip de ChatGPT del prospecto (Copiar 10). Imágenes ilustrativas, no fotos propias del cliente.",
+  "fotos": [
+    { "archivo": "iruya.webp", "desde": "01_imagen.jpg", "ratio": "9:16", "slot": "Destino Iruya (visor M1, rail M2)" },
+    { "archivo": "salinas-grandes.webp", "desde": "02_imagen.jpg", "ratio": "16:9", "slot": "Portada de los dos modelos" },
+    { "archivo": "santa-ana.webp", "desde": "03_imagen.jpg", "ratio": "1:1", "slot": "Destino Santa Ana" },
+    { "archivo": "caspala.webp", "desde": "04_imagen.jpg", "ratio": "1:1", "slot": "Destino Caspalá" },
+    { "archivo": "valle-colorado.webp", "desde": "05_imagen.jpg", "ratio": "1:1", "slot": "Destino Valle Colorado" },
+    { "archivo": "inca-cueva.webp", "desde": "06_imagen.jpg", "ratio": "1:1", "slot": "Destino Inca Cueva" },
+    { "archivo": "valle-de-la-luna.webp", "desde": "07_imagen.jpg", "ratio": "1:1", "slot": "Destino Valle de la Luna" },
+    { "archivo": "salinas-ojo-de-agua.webp", "desde": "08_imagen.jpg", "ratio": "1:1", "slot": "Destino Salinas Grandes" },
+    { "archivo": "camino.webp", "desde": "09_imagen.jpg", "ratio": "1:1", "slot": "Así viajamos" }
+  ],
+  "referencia": "10_mockup_720x480.png (solo referencia de diseño, no se publica en la página)",
+  "bancos_externos": []
+}
