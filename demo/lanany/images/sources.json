@@ -1,0 +1,33 @@
+{
+ "p-carbon.webp": {
+  "fuente": "Pexels",
+  "id": 10709388,
+  "url": "https://www.pexels.com/photo/10709388/",
+  "slot": "producto Carbón vegetal"
+ },
+ "p-papas.webp": {
+  "fuente": "Pexels",
+  "id": 32457159,
+  "url": "https://www.pexels.com/photo/32457159/",
+  "slot": "producto Papas fritas"
+ },
+ "p-limpieza.webp": {
+  "fuente": "Pexels",
+  "id": 5217889,
+  "url": "https://www.pexels.com/photo/5217889/",
+  "slot": "producto Limpieza del hogar"
+ },
+ "p-chorizos.webp": {
+  "fuente": "Pexels",
+  "id": 28736361,
+  "url": "https://www.pexels.com/photo/28736361/",
+  "slot": "producto Chorizos parrilleros"
+ },
+ "p-gaseosa.webp": {
+  "fuente": "Pexels",
+  "id": 26791665,
+  "url": "https://www.pexels.com/photo/26791665/",
+  "slot": "producto Gaseosa de naranja (recorte de la botella naranja, fondo extendido)"
+ },
+ "resto": "01-09 y el mock up 10 vienen del zip de imágenes de ChatGPT del prospecto (ilustrativas)"
+}
