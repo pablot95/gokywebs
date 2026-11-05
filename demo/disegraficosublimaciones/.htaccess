@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "\.(ndjson|test\.js)$">
+ Require all denied
+</FilesMatch>
