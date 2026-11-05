@@ -1,0 +1,28 @@
+{
+  "project": "Jesucristo Un Estilo de Vida",
+  "provided_images": {
+    "source": "Set ilustrativo provisto con el pedido de demo; originales JPEG preservados.",
+    "01_imagen.webp": "Portada: Biblia abierta, 900×1600.",
+    "02_imagen.webp": "Quiénes somos: salón de reunión, 1600×900.",
+    "03_imagen.webp": "Niños y preadolescentes, 1254×1254.",
+    "04_imagen.webp": "Adolescentes y jóvenes, 1254×1254.",
+    "05_imagen.webp": "Acompañamiento, 1254×1254.",
+    "06_imagen.webp": "Solidaridad, 1254×1254.",
+    "07_imagen.webp": "Adultos y matrimonios, 1254×1254.",
+    "08_imagen.webp": "Adultos mayores, 1254×1254.",
+    "09_imagen.webp": "Acceso a videos en Instagram, 1254×1254.",
+    "10_mockup_720x480.png": "Referencia visual solamente; no se muestra en la web."
+  },
+  "logo": {
+    "file": "logo.webp",
+    "original": "logo-original.jpg",
+    "profile": "https://linktr.ee/iglesiajuev",
+    "source": "https://ugc.production.linktr.ee/a5b28965-392c-4d68-885f-a8d1d4a40dc7_AIdro-kGQ6NaZv0yiOvm-KGwKUyS9pjBxHMy71VONBbHL-CwJkA-s800-c-k-c0x00ffffff-no-rj.jpeg",
+    "retrieved": "2026-11-05",
+    "note": "Avatar del perfil público que enlaza el Instagram iglesiajuev indicado por el cliente. Sin redibujar ni quitar el fondo."
+  },
+  "video": {
+    "destination": "https://www.instagram.com/iglesiajuev/reels/",
+    "note": "Acceso externo a los videos de la cuenta suministrada. No se recibió archivo o URL de video individual. El canal YouTube enlazado desde Linktree devolvió 404 al comprobarlo y se omitió."
+  }
+}
