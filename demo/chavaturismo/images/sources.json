@@ -1,0 +1,55 @@
+{
+  "provenance": "Nueve imágenes ilustrativas provistas en el pedido de demo; no son fotografías documentadas del operador.",
+  "mockup": "10_mockup_720x480.png, referencia visual, no se muestra como contenido.",
+  "images": [
+    {
+      "original": "01_imagen.jpg",
+      "webp": "01_imagen.webp",
+      "slot": "galería y presentación"
+    },
+    {
+      "original": "02_imagen.jpg",
+      "webp": "02_imagen.webp",
+      "slot": "portada"
+    },
+    {
+      "original": "03_imagen.jpg",
+      "webp": "03_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "04_imagen.jpg",
+      "webp": "04_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "05_imagen.jpg",
+      "webp": "05_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "06_imagen.jpg",
+      "webp": "06_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "07_imagen.jpg",
+      "webp": "07_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "08_imagen.jpg",
+      "webp": "08_imagen.webp",
+      "slot": "galería"
+    },
+    {
+      "original": "09_imagen.jpg",
+      "webp": "09_imagen.webp",
+      "slot": "galería"
+    }
+  ],
+  "notes": [
+    "Originales conservados. No hay fotos de bancos externos.",
+    "Hero 1600x900 y vertical 900x1600 por debajo de los pisos recomendados; no se amplían artificialmente."
+  ]
+}
