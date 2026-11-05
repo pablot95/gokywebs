@@ -309,7 +309,8 @@ function wabot_textos_default() {
         // Pablo, 9-oct (noche): "hosting incluido, pero si quiere todo a su nombre, es aparte".
         'hosting_pago_unico' => 'Con el pago único, el hosting y el dominio van incluidos el primer año y los gestionamos nosotros. Si querés tenerlos a tu nombre, se contratan aparte.',
         // Las que faltaban según las charlas del 11-sep al 2-oct (2-oct).
-        'mensual' => 'Sí, el mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas. El valor se actualiza una vez al año.',
+        // Sin «Sí,» adelante: a «el plan 2 cómo sería?» le contestaba «Sí,…» (Omar, 5-nov 13:42).
+        'mensual' => 'El mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas. El valor se actualiza una vez al año.',
         'cuotas' => 'Sí, se puede pagar con tarjeta: el mensual se paga por Mercado Pago con cualquier tarjeta.',
         // Pablo, 9-oct (noche): se transfiere con el primer pago.
         'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: te lo transferimos con el primer pago.',
