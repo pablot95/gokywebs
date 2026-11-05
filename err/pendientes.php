@@ -118,6 +118,7 @@ const ERR_REPOS = [
     'vitamov.com.ar' => 'pablot95/vitamov',
     'faestrategias.com.ar' => 'pablot95/francoalegre',
     'bgherreriaycarpinteria.com.ar' => 'pablot95/bgherreriaycarpinteria',
+    'gestoriabernardon.com.ar' => 'pablot95/gestoriabernardon',
     'marmoleriaymueblerialg.com.ar' => 'pablot95/marmoleriaymueblerialg',
     'marketpremium.com.ar' => 'pablot95/marketpremium',
     'todopernil.com.ar' => 'pablot95/todopernil',
