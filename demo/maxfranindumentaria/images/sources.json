@@ -1,0 +1,32 @@
+{
+  "nota": "Fotos de producto ilustrativas (zip de ChatGPT del 5-nov-2026, Copiar 10). Logo, diseños y fotos reales: los mandó el cliente por WhatsApp el 4-nov-2026 (Downloads/imagenes-prospectos/maxfranindumentaria).",
+  "imagenes": {
+    "h-conjunto.webp": "01_imagen.jpg (9:16, zip)",
+    "h-camiseta.webp": "02_imagen.jpg (16:9, zip)",
+    "p-conjunto.webp": "01_imagen.jpg con fondo extendido a 1:1",
+    "p-camiseta.webp": "02_imagen.jpg recorte 1:1",
+    "p-musculosa.webp": "03_imagen.jpg",
+    "p-arquero.webp": "04_imagen.jpg",
+    "p-campera.webp": "05_imagen.jpg",
+    "p-invierno.webp": "06_imagen.jpg",
+    "p-buzo.webp": "07_imagen.jpg",
+    "p-pantalon.webp": "08_imagen.jpg",
+    "p-gorro.webp": "09_imagen.jpg",
+    "p-chomba.webp": "cliente 40-imagen.jpg (camiseta del DT), recorte de la chomba de frente",
+    "d-martinfierro.webp": "cliente 20-imagen.jpg (diseño Martín Fierro negro y oro)",
+    "d-remanso.webp": "cliente 43-imagen.jpg",
+    "d-elaguante.webp": "cliente 22-imagen.jpg",
+    "d-elarco.webp": "cliente 31-imagen.jpg",
+    "d-colombia.webp": "cliente 38-imagen.jpg",
+    "d-quincho.webp": "cliente 34-imagen.jpg",
+    "d-buzo-mf.webp": "cliente 18-imagen.jpg",
+    "d-sinmangas.webp": "cliente 47-imagen.jpg",
+    "r-remanso.webp": "cliente 16-imagen.jpg (foto real), recortada sin la marca de agua",
+    "logo-maxfran.webp": "cliente 01-logo.jpg (versión de abajo, león dorado), fondo blanco quitado",
+    "logo-maxfran-claro.webp": "la misma, letras azules pasadas a blanco para fondos oscuros",
+    "escudo-leon.webp": "el escudo del león del logo",
+    "og-maxfran.jpg": "composición: logo claro + diseño Martín Fierro",
+    "logo-maxfran.png": "la misma versión del logo en PNG (para el JSON-LD)",
+    "favicon.png / favicon-180.png": "escudo del león sobre noche"
+  }
+}
