@@ -121,6 +121,7 @@ const ERR_REPOS = [
     'marmoleriaymueblerialg.com.ar' => 'pablot95/marmoleriaymueblerialg',
     'marketpremium.com.ar' => 'pablot95/marketpremium',
     'todopernil.com.ar' => 'pablot95/todopernil',
+    'superrifas.com.ar' => 'pablot95/superrifas',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
