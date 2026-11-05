@@ -108,6 +108,16 @@ $ult = end($cv['transcript']);
 caso('en el chat queda el texto con los datos', strpos((string)($ult['t'] ?? ''), 'Hola Juan, hoy se renueva el plan mensual de Panadería Sol: $20.000 por mes.') === 0, (string)($ult['t'] ?? ''));
 caso('y el bot queda apagado en ese chat (contesta Pablo)', !empty($cv['bot_off']));
 
+echo "\n=== Registro de avisos: no se borra con la lista (5-nov) ===\n";
+$ahoraP = gmmktime(15, 0, 0, 11, 5, 2026);
+$env = ['clientes:AAA' => ['mes' => '2026-11', 'ts' => $ahoraP - 3600, 'ok' => true],
+        'clientes:BBB' => ['mes' => '2026-10', 'ts' => $ahoraP - 20 * 86400, 'ok' => true],
+        'clientes:VIE' => ['mes' => '2026-08', 'ts' => $ahoraP - 70 * 86400, 'ok' => true],
+        'roto' => 'x'];
+$pod = wabot_renovacion_enviados_podar($env, $ahoraP);
+caso('los avisos recientes quedan aunque no estén en la lista', isset($pod['clientes:AAA'], $pod['clientes:BBB']), json_encode($pod));
+caso('los de hace más de dos meses y los rotos se sacan', !isset($pod['clientes:VIE']) && !isset($pod['roto']));
+
 echo "\n=== Clave del chat para un número sin charla ===\n";
 foreach (['011 15 4444-5555' => '5491144445555', '+54 9 11 4444-5555' => '5491144445555', '0351 15 512-3456' => '5493515123456', '2214567890' => '5492214567890'] as $tel => $esperada) {
     $c = wabot_renovacion_clave($tel, $m);

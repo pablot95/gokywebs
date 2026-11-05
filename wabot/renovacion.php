@@ -27,6 +27,8 @@ const WABOT_RENOVACION_ARCHIVO = WABOT_DATA . '/renovaciones.json';
 const WABOT_RENOVACION_HORA = 10;
 // Una lista que el admin no actualiza hace más de esto puede tener bajas que el bot no sabe.
 const WABOT_RENOVACION_LISTA_VIEJA = 35 * 86400;
+// Cuánto se guarda cada aviso enviado (el del mes no se repite; los viejos se podan).
+const WABOT_RENOVACION_ENVIADOS_DIAS = 62;
 
 function wabot_renovacion_estado() {
     $j = json_decode((string)@file_get_contents(WABOT_RENOVACION_ARCHIVO), true);
@@ -64,15 +66,23 @@ function wabot_renovacion_fila($f) {
     ];
 }
 
+/** Los avisos de hace más de dos meses ya no frenan nada: se sacan para que el archivo no crezca. */
+function wabot_renovacion_enviados_podar(array $enviados, $ahora) {
+    $limite = (int)$ahora - WABOT_RENOVACION_ENVIADOS_DIAS * 86400;
+    return array_filter($enviados, function ($e) use ($limite) {
+        return is_array($e) && (int)($e['ts'] ?? 0) >= $limite;
+    });
+}
+
 /** Lo que manda el admin. Devuelve el estado guardado. */
 function wabot_renovacion_sync(array $lista, $ahora = null) {
     $estado = wabot_renovacion_estado();
     $estado['lista'] = array_values(array_filter(array_map('wabot_renovacion_fila', $lista)));
     $estado['sync_ts'] = $ahora ?? time();
     $estado['aviso_vieja_ts'] = 0;
-    // Los avisos de los que ya no están en la lista no hacen falta.
-    $ids = array_column($estado['lista'], 'id');
-    $estado['enviados'] = array_intersect_key($estado['enviados'], array_flip($ids));
+    // Los avisos NO se atan a la lista (5-nov): una lista que llegaba incompleta los borraba todos,
+    // la tabla dejaba de mostrarlos y el mismo día el cron podía mandar el aviso dos veces.
+    $estado['enviados'] = wabot_renovacion_enviados_podar($estado['enviados'], $estado['sync_ts']);
     wabot_renovacion_guardar($estado);
     return $estado;
 }
@@ -119,7 +129,7 @@ function wabot_renovacion_nombre($persona) {
 
 /**
  * Manda la plantilla a una fila. $enviar(clave, fila, valores) reemplaza la red
- * en los tests. Devuelve 'ok', 'sin_chat', 'telefono', 'ambiguo', 'ocupado' o 'error'.
+ * en los tests. Devuelve 'ok', 'ya' (el chat ya lo tuvo este mes), 'sin_chat', 'telefono', 'ambiguo', 'ocupado' o 'error'.
  */
 function wabot_renovacion_enviar_fila(array $f, $cfg, $enviar = null) {
     $negocio = $f['negocio'] !== '' ? $f['negocio'] : 'tu web';
@@ -135,6 +145,9 @@ function wabot_renovacion_enviar_fila(array $f, $cfg, $enviar = null) {
     if (!$lock) return 'ocupado';
     try {
         $conv = wabot_conv_load($clave);
+        // Segundo candado: si el chat ya recibió el aviso este mes, no se repite aunque el registro se haya perdido.
+        $ya = (int)($conv['renovacion_aviso_ts'] ?? 0);
+        if ($ya && gmdate('Y-m', $ya - 3 * 3600) === gmdate('Y-m', time() - 3 * 3600)) return 'ya';
         if (trim((string)($conv['nombre_negocio'] ?? '')) === '' && $f['negocio'] !== '') $conv['nombre_negocio'] = $f['negocio'];
         if (!wabot_enviar_plantilla($conv, 'renovacion_por_fuera', $cfg, $valores)) return 'error';
         $conv['renovacion_aviso_ts'] = time();
@@ -183,6 +196,11 @@ function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = 
 
         $r = wabot_renovacion_enviar_fila($f, $cfg, $enviar);
         if ($r === 'ocupado') continue;   // otro proceso tiene el chat: la próxima pasada
+        if ($r === 'ya') {   // ya lo tenía en el chat: se anota y no se avisa nada
+            $estado['enviados'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => true, 'resultado' => 'ya'];
+            if ($enDisco) wabot_renovacion_guardar($estado);
+            continue;
+        }
         $estado['enviados'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => $r === 'ok', 'resultado' => $r];
         // Guardado enseguida: si la corrida se corta, la siguiente no le manda otro.
         if ($enDisco) wabot_renovacion_guardar($estado);
