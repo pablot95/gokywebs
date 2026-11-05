@@ -2668,12 +2668,12 @@ body.no-scroll .float-btn {
     padding-bottom: 20px;
   }
   .m2 .featured-grid .prod-main {
-    min-height: 164px;
+    min-height: 220px;
     aspect-ratio: auto;
   }
   .m2 .featured-grid .prod-main > img {
     width: 128px;
-    height: 164px;
+    height: 220px;
   }
   .m2 .featured-grid .prod-info {
     padding-left: 146px;
