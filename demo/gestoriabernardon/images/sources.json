@@ -1,0 +1,72 @@
+[
+  {
+    "file": "llaves.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/8482859/",
+    "pexelsId": 8482859,
+    "usage": "Hero y pasos (manos que entregan las llaves con la documentación)"
+  },
+  {
+    "file": "lancha.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/18651018/",
+    "pexelsId": 18651018,
+    "usage": "Pieza vertical 9:16 (lancha amarrada en un río); nombre del casco borrado"
+  },
+  {
+    "file": "rio.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/12845520/",
+    "pexelsId": 12845520,
+    "usage": "Franja 16:9 de preguntas (lancha en el río)"
+  },
+  {
+    "file": "auto.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/15194849/",
+    "pexelsId": 15194849,
+    "usage": "Legajo Automotor y guía"
+  },
+  {
+    "file": "muelle.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/38899788/",
+    "pexelsId": 38899788,
+    "usage": "Legajo Naval"
+  },
+  {
+    "file": "moto.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/39971236/",
+    "pexelsId": 39971236,
+    "usage": "Guía: opción Moto"
+  },
+  {
+    "file": "velero.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/19034079/",
+    "pexelsId": 19034079,
+    "usage": "Guía: opción Embarcación"
+  },
+  {
+    "file": "sello.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/6358834/",
+    "pexelsId": 6358834,
+    "usage": "Cómo trabajamos (sello sobre el papel); recortada sin la remera con texto"
+  },
+  {
+    "file": "firma.webp",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/7054502/",
+    "pexelsId": 7054502,
+    "usage": "Cómo trabajamos (firma del formulario)"
+  },
+  {
+    "file": "og.jpg",
+    "source": "Pexels",
+    "sourceUrl": "https://www.pexels.com/photo/8482859/",
+    "pexelsId": 8482859,
+    "usage": "Imagen para compartir (Open Graph)"
+  }
+]
