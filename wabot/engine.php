@@ -8388,6 +8388,8 @@ function wabot_dice_que_completo_form($texto) {
         if (strpos($t, $f) !== false) return true;
     }
     if (preg_match('/\b(ya|recien|listo|ahi)\b.{0,25}\b(complete|llene|cargue|envie|mande|termine|rellene)\b/u', $t)) return true;
+    // "Si si ya lo hice!" (Gü, 5-nov 11:40): contestó el recordatorio sin el verbo del formulario.
+    if (preg_match('/\b(ya|recien|listo|ahi)\b.{0,10}\blo (hice|hicimos|completamos|llenamos|enviamos|mandamos)\b/u', $t)) return true;
     return (bool)preg_match('/\b(formulario|form|link|datos)\b.{0,20}\b(completo|completado|completados|enviado|enviados|mandado|mandados|cargado|cargados|listo)\b/u', $t);
 }
 
