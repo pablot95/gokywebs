@@ -1,0 +1,27 @@
+{
+  "demo": "chacoporaagropecuariayforestal",
+  "nota": "Sin fotos de bancos. Las p-* y hero-* salen del zip de ChatGPT (ilustrativas). Las real-* son fotos que el cliente subió al formulario (wabot/data/media/5493644502808, 5-nov-2026), recortadas y pasadas a WebP.",
+  "zip_chatgpt": {
+    "hero-bolsa.webp": "01_imagen.jpg (9:16)",
+    "hero-lena.webp": "02_imagen.jpg (16:9)",
+    "p-carbon-bolsa.webp": "01_imagen.jpg, recorte 1:1",
+    "p-lena-tonelada.webp": "02_imagen.jpg, recorte 1:1",
+    "p-quebracho-poste.webp": "03_imagen.jpg",
+    "p-guayacan-poste.webp": "04_imagen.jpg",
+    "p-carbon-granel.webp": "05_imagen.jpg",
+    "p-lena-atado.webp": "06_imagen.jpg",
+    "p-quebracho-esquinero.webp": "07_imagen.jpg",
+    "p-guayacan-punta.webp": "08_imagen.jpg",
+    "p-carbon-bolson.webp": "09_imagen.jpg"
+  },
+  "cliente_formulario": {
+    "real-hornos-atardecer.webp": "imagen 1 de 15 (hornos humeando al atardecer)",
+    "p-lena-carga.webp": "imagen 4 de 15 (acoplado con leña), recorte 1:1",
+    "real-camion.webp": "imagen 8 de 15 (camión con bolsones)",
+    "real-carga-noche.webp": "imagen 9 de 15 (carga nocturna)",
+    "real-bolsones.webp": "imagen 10 de 15 (bolsones frente a los hornos)",
+    "real-trozos.webp": "imagen 12 de 15 (trozos de madera dura)",
+    "real-horno-carga.webp": "imagen 14 de 15 (leña dentro del horno)",
+    "og-chacopora.jpg": "imagen 1 de 15, recorte 1200x630"
+  }
+}
