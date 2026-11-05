@@ -1,0 +1,31 @@
+{
+  "origen": "Zip de ChatGPT «Copiar 10» del prospecto 5SEAiv4gr731G1G7iP1k (Punto_pan_5SEAiv4gr731G1G7iP1k.zip): 9 imágenes ilustrativas + mock up. Sin fotos propias del cliente ni logo.",
+  "originales": {
+    "01_imagen.jpg": "hogaza de masa madre sobre lino, 900x1600 (9:16)",
+    "02_imagen.jpg": "bandeja de medialunas, 1600x900 (16:9)",
+    "03_imagen.jpg": "baguettes sobre tabla, 1254x1254",
+    "04_imagen.jpg": "masas secas con dulce de frambuesa, 1254x1254",
+    "05_imagen.jpg": "tarta de frutos rojos, 1254x1254",
+    "06_imagen.jpg": "torta de chocolate, 1254x1254",
+    "07_imagen.jpg": "alfajores de dulce de leche, 1254x1254",
+    "08_imagen.jpg": "masas finas surtidas, 1254x1254",
+    "09_imagen.jpg": "sándwiches de miga triples, 1254x1254",
+    "10_mockup_720x480.png": "mock up de referencia (Modelo 1)"
+  },
+  "derivadas": {
+    "hero-hogaza.webp": "01 entera (9:16)",
+    "hero-medialunas.webp": "02 entera (16:9)",
+    "p-masa-madre.webp": "01 recorte 1:1 (900, y 380-1280)",
+    "p-medialunas.webp": "02 recorte 1:1 central (900, x 330-1230)",
+    "p-baguette.webp": "03 a 900",
+    "p-masas-secas.webp": "04 a 900",
+    "p-tarta.webp": "05 a 900",
+    "p-torta.webp": "06 a 900",
+    "p-alfajores.webp": "07 a 900",
+    "p-masas-finas.webp": "08 a 900",
+    "p-sandwiches.webp": "09 a 900",
+    "og-puntopan.jpg": "02 a 1200x630",
+    "favicon.png / favicon-180.png": "«P» + punto en caramelo sobre espresso (Georgia Bold Italic)"
+  },
+  "bancos": "Ninguna foto de bancos externos."
+}
