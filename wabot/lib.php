@@ -239,6 +239,18 @@ function wabot_config_load() {
         $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaPostdemo, date('c') . "\n");
     }
+    /* 6-nov (Pablo, por Yesi/SINCHI que pasó sola a Cliente): «no tienen que hacerlo
+     * automáticamente; el bot, después de entregar la demo, se calla y no hace nada».
+     * Se apaga una sola vez el cruce de pagos de MP guardado (y el onboarding); si después
+     * lo vuelve a prender desde Ajustes, queda. */
+    $marcaPagos = WABOT_DATA . '/migrated/pagos-auto-apagado-6nov';
+    if (is_array($guardado) && (!array_key_exists('pagos_auto', $guardado) || !empty($guardado['pagos_auto']) || !empty($guardado['onboarding_activo']))
+        && !is_file($marcaPagos) && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $guardado['pagos_auto'] = false;
+        $guardado['onboarding_activo'] = false;
+        $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaPagos, date('c') . "\n");
+    }
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
             if (array_key_exists($k, $guardado)) {

@@ -953,7 +953,8 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
      * orden de WABOT_ONBOARDING_PASOS: modelo (1, 2 o una mezcla), email solo si la web tiene panel con
      * login, logo y fotos, cambios. Pablo (1-nov a la noche): "nunca tiene que pedir datos para
      * facturar"; dominios y horarios tampoco. La apertura ya no dice "te escribo desde otro número". */
-    'pagos_auto' => true,
+    // Apagado de fábrica (Pablo, 6-nov): después de la demo nada es automático; el pago y el pase a Cliente los hace él.
+    'pagos_auto' => false,
     // Apagado de fábrica (Pablo, 1-nov a la noche): al recibir el pago el bot manda `pago_recibido` y se calla.
     'onboarding_activo' => false,
     // El mensaje de Pablo al recibir el pago (sus chats), tal cual. El bot lo manda y no contesta más en ese chat.

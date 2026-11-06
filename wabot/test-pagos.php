@@ -15,6 +15,7 @@ $tmp = sys_get_temp_dir() . '/wabot-test-pagos-' . getmypid();
 $GLOBALS['WABOT_TEST_PAGOS_ARCHIVO'] = $tmp . '/pagos-mp.json';
 $GLOBALS['WABOT_TEST_LOGS'] = false;
 $cfg = wabot_config_load();
+$cfg['pagos_auto'] = true;   // 6-nov: apagado de fábrica; acá se prueba la máquina prendida.
 $YO = '221070899';
 $ahora = gmmktime(15, 0, 0, 11, 2, 2026);   // 2-nov-2026 12:00 Argentina
 $iso = function ($ts) { return gmdate('Y-m-d\TH:i:s.000\Z', $ts); };

@@ -3191,9 +3191,9 @@ function burbujaCita(t, chat) {
             <?= $quePasa('bot_postdemo_activo', 'Seguir la charla después de la demo',
                 'Con el flujo comercial en Automático: pregunta qué modelo le gustó, manda el link de pago y anota los cambios. Si escribís vos, se pausa.', !empty($cfg['bot_postdemo_activo'])) ?>
             <?= $quePasa('pagos_auto', 'Reconocer solo los pagos de Mercado Pago',
-                'Cruza los cobros de los últimos 3 días con los chats; lo dudoso queda en «pagos sin asignar» de Clientes.', !array_key_exists('pagos_auto', $cfg) || !empty($cfg['pagos_auto'])) ?>
+                'Cruza los cobros de los últimos 3 días con los chats; lo dudoso queda en «pagos sin asignar» de Clientes.', !empty($cfg['pagos_auto'])) ?>
             <?= $quePasa('onboarding_activo', 'Pedir por el chat lo que falta para la web después del pago',
-                'De a una cosa: modelo, email del panel, logo y fotos, cambios. Si escribís vos, se pausa.', !array_key_exists('onboarding_activo', $cfg) || !empty($cfg['onboarding_activo'])) ?>
+                'De a una cosa: modelo, email del panel, logo y fotos, cambios. Si escribís vos, se pausa.', !empty($cfg['onboarding_activo'])) ?>
 
             <?php /* Las explicaciones largas de antes (4-nov): no se borraron, quedaron acá plegadas. */ ?>
             <details class="plegable" style="margin-top:14px">
