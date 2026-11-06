@@ -1,0 +1,17 @@
+{
+  "nota": "Las 9 fotos y el mock up vienen del zip de ChatGPT del prospecto (imágenes ilustrativas, sin fotos propias del cliente). Sin fotos de bancos.",
+  "archivos": {
+    "tips-almendra.webp": "01_imagen.jpg",
+    "estudio-mesa.webp": "02_imagen.jpg",
+    "acrilico-pincel.webp": "03_imagen.jpg",
+    "poligel-espatula.webp": "04_imagen.jpg",
+    "soft-gel.webp": "05_imagen.jpg",
+    "fresas-torno.webp": "06_imagen.jpg",
+    "pedicura-separadores.webp": "07_imagen.jpg",
+    "spa-pies.webp": "08_imagen.jpg",
+    "instrumental.webp": "09_imagen.jpg",
+    "og.jpg": "02_imagen.jpg (recorte 1200x630)",
+    "favicon.png": "dibujado (uña sobre grafito)",
+    "apple-touch-icon.png": "dibujado (uña sobre grafito)"
+  }
+}
