@@ -1,0 +1,12 @@
+{
+ "nota": "Las 9 fotos y el mock up vienen del zip de ChatGPT (imágenes ilustrativas). Sin fotos de bancos.",
+ "derivadas": {
+  "p-body-cruzado.webp": "01 con los costados completados con el lino de la misma foto",
+  "p-campera.webp": "02 con arriba y abajo completados con la tela de la misma foto",
+  "p-*.webp": "03-09 a 1000 px",
+  "h-campera.webp": "02",
+  "v-body.webp": "01",
+  "c-*.webp": "recortes de 03, 07, 05 y 04",
+  "og-aurora.jpg": "02"
+ }
+}
