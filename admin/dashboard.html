@@ -333,7 +333,7 @@
             <header class="pg-head">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <div class="pg-sub"><span>Los clientes con su plan: mensual por Mercado Pago o anual.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Los clientes según su plan, desde que pasan a Cliente (con la web entregada o todavía en desarrollo). Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y los clientes del plan, que quedan con la suscripción activa al pasar a Cliente. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p></details></div>
+                    <div class="pg-sub"><span>Cómo paga cada cliente: suscripción, anual o por afuera, y los cobros que fallaron.</span><details class="info-mas"><summary aria-label="Más información" title="Más información">ⓘ</summary><p class="muted">Suscripción: los que pagan mensual por Mercado Pago y están activos. Pago anual: el próximo cobro de cada año, contado desde la seña. Por afuera: los que te transfieren, con su día de cobro. Cobros fallidos: lo que Mercado Pago rechazó, lo que está reintentando y las suscripciones que se dieron de baja o se pausaron; desde ahí se pasan a Por afuera o se ocultan. Al pasar a Cliente con el plan mensual, tocar Cancelar en el nombre de Mercado Pago lo deja como que paga por afuera.</p></details></div>
                 </div>
                 <div class="pg-acciones">
                     <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
@@ -357,25 +357,16 @@
             </header>
             <div class="kpis mant-kpis" id="mantKpis"></div>
             <div class="mant-toolbar">
-                <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Plan">
-                    <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
-                    <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
-                    <!-- 4-nov: «Pagan por afuera», «Vincular con MP» y los «Intentos de cobro» (antes en el Calendario) son una sola vista. -->
-                    <button type="button" class="mant-plan-btn" data-mantplan="cobros" aria-pressed="false" title="Intentos de cobro de Mercado Pago, qué suscripción es de cada cliente y los que pagan por afuera">Cobros <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></button>
+                <!-- 6-nov (Pablo): Suscripción, Pago anual, Por afuera y Cobros fallidos son los cuatro recuadros de
+                     arriba (#mantKpis); acá quedan solo Facturación y Contraseñas. -->
+                <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Más">
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
                 </div>
                 <input type="search" id="searchMant" class="mant-buscar" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" aria-label="Buscar en Mantenimiento">
             </div>
             <div id="mantMensual">
-            <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
-            <div class="seg-views" id="mantViews">
-                <button class="seg-chip active" data-mantview="todas">Todos <span class="seg-chip-count" id="mantCountTodas">0</span></button>
-                <button class="seg-chip" data-mantview="activo">Activos <span class="seg-chip-count" id="mantCountActivo">0</span></button>
-                <button class="seg-chip" data-mantview="pausado">Pausados <span class="seg-chip-count" id="mantCountPausado">0</span></button>
-                <button class="seg-chip" data-mantview="baja">Bajas <span class="seg-chip-count" id="mantCountBaja">0</span></button>
-                <button class="seg-chip" data-mantview="sin_susc" title="Webs del plan mensual sin suscripción de Mercado Pago registrada">Sin suscripción <span class="seg-chip-count" id="mantCountSinSusc">0</span></button>
-            </div>
+            <!-- 6-nov: sin viñetas Todos/Activos/Pausados/Bajas: las bajas y pausas están en Cobros fallidos. -->
             <div class="table-wrapper" id="mantSuscWrap">
                 <table class="clients-table">
                     <thead>
@@ -412,10 +403,30 @@
                     </table>
                 </div>
             </div>
-            <!-- Intentos de cobro (24-oct en el Calendario; desde el 4-nov acá, en «Cobros»). -->
-            <div id="mantIntentos" hidden>
-                <h3 class="mant-sec-titulo">Intentos de cobro</h3>
-                <div id="calVistaIntentos"></div>
+            <!-- Cobros fallidos (6-nov, Pablo): solo lo que falló, lo que MP reintenta y las bajas, uno por cliente,
+                 con «Pagó por afuera» y «Ocultar». Debajo, plegado, el historial completo de cobros. -->
+            <div id="mantFallidos" hidden>
+                <div class="mant-vinc-barra" id="mantFallidosBarra"></div>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Monto</th>
+                                <th>Qué pasó</th>
+                                <th>Detalle</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantFallidosTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <details class="mant-plegado" id="mantIntentos">
+                    <summary>Todos los cobros de Mercado Pago <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></summary>
+                    <div id="calVistaIntentos"></div>
+                </details>
             </div>
             <!-- Pagan por afuera (19-oct-2026): el día del mes en que se le cobra a cada uno. -->
             <div id="mantPorFuera" hidden>
@@ -443,8 +454,9 @@
             </div>
             <!-- Vincular con MP (24-oct-2026): cada mensual con su suscripción de Mercado Pago, guardada en
                  preapprovalId. Sin vínculo, el admin la adivina por monto, fecha de alta y nombre. -->
-            <div id="mantVincular" hidden>
-                <h3 class="mant-sec-titulo">Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></h3>
+            <!-- 6-nov: plegado debajo de Suscripción. -->
+            <details class="mant-plegado" id="mantVincular" hidden>
+                <summary>Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></summary>
                 <p class="muted mant-pf-nota">Elegí la suscripción de Mercado Pago de cada cliente y guardala: queda fija y el Calendario, Finanzas y las bajas usan esa. Las que no están vinculadas se adivinan por monto, fecha de alta y nombre (“sugerida”).</p>
                 <div class="mant-vinc-barra" id="mantVincularBarra"></div>
                 <div class="table-wrapper">
@@ -464,7 +476,7 @@
                     </table>
                 </div>
                 <div id="mantVincularLibres"></div>
-            </div>
+            </details>
             <!-- Facturación (26-sep-2026): cada mensualidad que cobra Mercado Pago se factura sola.
                  Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
                  no de Firestore; lo emite el cron (mantenimiento/api/facturar-cobros.php). -->
@@ -798,7 +810,7 @@
             <header class="pg-head">
                 <div>
                     <h1>Calendario</h1>
-                    <p class="pg-sub">Tareas, a quién hablarle y los cobros de cada día.</p>
+                    <p class="pg-sub">Tareas y cobros de cada día.</p>
                 </div>
                 <div class="pg-acciones">
                     <div class="mes-step" role="group" aria-label="Mes">
@@ -818,7 +830,6 @@
                         <div class="cal-leyenda cal-leyenda--fila">
                             <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Tarea urgente</span>
                             <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Tarea</span>
-                            <span class="cal-leyenda-item"><span class="cal-badge badge-hablar"></span> Hablarle</span>
                             <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--subs"></span> Suscripción que ya entró</span>
                             <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--falta"></span> Suscripción que falta cobrar</span>
                             <span class="cal-leyenda-item"><span class="ingcal-punto ingcal-punto--otros"></span> Otro pago (seña, saldo, anual)</span>
