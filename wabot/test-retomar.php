@@ -28,6 +28,10 @@ foreach ([
     'el mes que viene arrancamos'                                => '2026-11-10',
     'el lunes lo hablo con mi socio y el miércoles te confirmo' => '2026-10-14',
     'hoy a la noche te escribo'                                  => '2026-10-10',
+    // Rosita (5-nov): "El sábado me comunico" no frenaba el recordatorio del formulario.
+    'Si, pero aún estoy esperando las etiquetas. El sábado me comunico. Me interesa!' => '2026-10-17',
+    'el lunes te contacto'                                       => '2026-10-12',
+    'cuando tenga todo te contacto nuevamente'                   => '',
     // Sin cita: una fecha suelta, un horario o nada.
     'trabajo de lunes a viernes'                                 => '',
     'te escribo porque abro de lunes a viernes de 9 a 18'        => '',

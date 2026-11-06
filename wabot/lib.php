@@ -6209,6 +6209,8 @@ function wabot_fecha_prometida($texto, $ts = null) {
            . '|\b(hablamos|vemos|seguimos|arrancamos|avanzamos|retomamos|charlamos|definimos|coordinamos|confirmamos|empezamos|cerramos)\b'
            . '|\b(lo|la|los|las)\s+(veo|vemos|reviso|miro|pienso|defino|charlo|hablo|hablamos|consulto|confirmo|hacemos)\b'
            . '|\b(escribime|hablame|contactame|llamame|avisame)\b|\bvuelvo a (escribir|hablar)\b|\bnos (hablamos|vemos|escribimos)\b'
+           // "El sábado me comunico" (Rosita, 5-nov): le salió el recordatorio del formulario igual.
+           . '|\b(me|nos)\s+(comunico|comunicamos|contacto|contactamos)\b|\b(te|le|les)\s+contacto\b'
            . '|\b(cobro|cobre|cobramos|me pagan|me depositan)\b/u';
     if (!preg_match($verbo, $t)) return '';
 
