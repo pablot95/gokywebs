@@ -945,7 +945,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     'form_confirmacion_activo' => true,
     'form_confirmacion_minutos' => 5,
     'form_confirmacion' => '{saludo}, ya recibimos tu formulario. Con esos datos preparamos la demo. Estará lista para {entrega}.',
-    'form_recordatorio_activo' => true,
+    'form_recordatorio_activo' => false, // apagado el 6-nov a pedido de Pablo
     'form_recordatorio_horas' => 12,
     'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.',
     /* Después del pago (1-nov, pagos.php + onboarding.php). pagos_auto apaga el poller de Mercado Pago;

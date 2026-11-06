@@ -251,6 +251,16 @@ function wabot_config_load() {
         $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaPagos, date('c') . "\n");
     }
+    /* 6-nov (Pablo, por la de viajes de turismo que lo había completado con otro
+     * número): «anulamos desde ahora los envíos de ¿pudiste completar el formulario?».
+     * Se apaga una sola vez el recordatorio guardado; si lo vuelve a prender desde Ajustes, queda. */
+    $marcaFormRec = WABOT_DATA . '/migrated/form-recordatorio-apagado-6nov';
+    if (is_array($guardado) && (!array_key_exists('form_recordatorio_activo', $guardado) || !empty($guardado['form_recordatorio_activo']))
+        && !is_file($marcaFormRec) && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $guardado['form_recordatorio_activo'] = false;
+        $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaFormRec, date('c') . "\n");
+    }
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
             if (array_key_exists($k, $guardado)) {
