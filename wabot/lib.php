@@ -6193,9 +6193,10 @@ function wabot_fecha_prometida($texto, $ts = null) {
     $ts = $ts ?? time();
     $t = wabot_retomar_normalizar($texto);
     if ($t === '') return '';
-    $verbo = '/\b(te|le|les)\s+((lo|la|los|las)\s+)?(hablo|escribo|aviso|confirmo|digo|contesto|respondo|llamo|mando|paso|transfiero|pago|deposito|comento|cuento|consulto)\b'
+    $verbo = '/\b(te|le|les)\s+((lo|la|los|las)\s+)?(hablo|escribo|aviso|confirmo|digo|contesto|respondo|llamo|mando|paso|transfiero|pago|deposito|comento|cuento|consulto|contacto|comunico)\b'
            . '|\b(hablamos|vemos|seguimos|arrancamos|avanzamos|retomamos|charlamos|definimos|coordinamos|confirmamos|empezamos|cerramos)\b'
-           . '|\b(lo|la|los|las)\s+(veo|vemos|reviso|miro|pienso|defino|charlo|hablo|hablamos|consulto|confirmo|hacemos)\b'
+           . '|\b(lo|la|los|las)\s+(veo|vemos|reviso|miro|pienso|defino|charlo|hablo|hablamos|consulto|confirmo|hacemos|contacto)\b'
+           . '|\bme\s+(comunico|contacto|pongo en contacto)\b|\bnos (comunicamos|contactamos)\b'   // «los contacto mañana», «el sábado me comunico» (revisión 5-nov)
            . '|\b(escribime|hablame|contactame|llamame|avisame)\b|\bvuelvo a (escribir|hablar)\b|\bnos (hablamos|vemos|escribimos)\b'
            . '|\b(cobro|cobre|cobramos|me pagan|me depositan)\b/u';
     if (!preg_match($verbo, $t)) return '';
