@@ -8387,7 +8387,17 @@ function wabot_dice_que_completo_form($texto) {
               'te pase todo', 'te mande todo', 'en lo que te mande', 'ya esta completo', 'ya esta hecho'] as $f) {
         if (strpos($t, $f) !== false) return true;
     }
+    /* "Todavía no lo completé" o "aún no lo llené" no avisan nada (Laura O,
+     * 6-nov: "aún no, voy a tratar de hacerlo a la noche"). */
+    if (preg_match('/\b(no|todavia no|aun no)\b.{0,12}\b(complete|llene|cargue|envie|mande|termine|rellene|hice)\b/u', $t)) return false;
     if (preg_match('/\b(ya|recien|listo|ahi)\b.{0,25}\b(complete|llene|cargue|envie|mande|termine|rellene)\b/u', $t)) return true;
+    /* Sin el "ya" delante también avisa (revisión del 6-nov: Doris, 08:45, "Hola
+     * / Si / Lo complete ayer"; la de viajes de turismo, 08:56, "Si complete";
+     * Gü, 5-nov, "Si si ya lo hice!"). Ninguno entraba: el agente contestó
+     * "Gracias por avisar" o nada, sin decir que el formulario no había llegado. */
+    if (preg_match('/\b(lo|si|sii)\s+(complete|llene|rellene|termine|cargue)\b/u', $t)) return true;
+    if (preg_match('/^(complete|llene|rellene)\b/u', $t)) return true;
+    if (preg_match('/\bya lo hice\b/u', $t)) return true;
     return (bool)preg_match('/\b(formulario|form|link|datos)\b.{0,20}\b(completo|completado|completados|enviado|enviados|mandado|mandados|cargado|cargados|listo)\b/u', $t);
 }
 

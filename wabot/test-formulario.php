@@ -50,10 +50,13 @@ foreach (['Vestidos y conjuntos', 'Consultas y vacunacion', 'Reservas online', '
 caso('"Sí, cuánto tarda?" acepta y pregunta', wabot_acepta_demo('Sí, cuánto tarda?', true));
 caso('pero "cuánto tarda?" solo es una pregunta', !wabot_acepta_demo('cuánto tarda?', true));
 foreach (['ya esta todo arriba, fijate', 'ya lo completé', 'listo, ya lo llené', 'ya te mandé los datos',
-          'el formulario ya está completado', 'ahí lo envié'] as $dice) {
+          'el formulario ya está completado', 'ahí lo envié',
+          // Revisión del 6-nov: Doris, la de viajes de turismo y Gü.
+          "Hola\nSi\nLo complete ayer", 'Si complete', 'Si si ya lo hice!', 'completé recién'] as $dice) {
     caso("\"$dice\" dice que completó el formulario", wabot_dice_que_completo_form($dice));
 }
-foreach (['listo', 'ok', 'ya te dije que vendo ropa', 'dale'] as $noDice) {
+foreach (['listo', 'ok', 'ya te dije que vendo ropa', 'dale',
+          'Buenas, aún no, voy a tratar de hacerlo a la noche', 'todavía no lo completé', 'no lo llené todavía'] as $noDice) {
     caso("\"$noDice\" no dice que lo completó", !wabot_dice_que_completo_form($noDice));
 }
 foreach (['Hola! Quiero mi demo gratis para mi negocio.', 'Dale, me interesa la muestra gratis', 'armame la muestra', 'igual mandame la demo asi la veo tranquila'] as $frase) {
