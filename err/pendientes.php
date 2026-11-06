@@ -123,6 +123,7 @@ const ERR_REPOS = [
     'marketpremium.com.ar' => 'pablot95/marketpremium',
     'todopernil.com.ar' => 'pablot95/todopernil',
     'superrifas.com.ar' => 'pablot95/superrifas',
+    'sinchijoyasyaccesorios.com.ar' => 'pablot95/sinchi',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
