@@ -10920,11 +10920,17 @@ function _cobrosFallidos() {
     const reboteDe = new Map(rebotes.map(g => [g.clave, g]));
     const nro = _intentosNumerados();
     const limite = Date.now() - 45 * 86400000;
+    const nombresPorFuera = new Set([...(clients || []), ...(mantenimiento || [])]
+        .filter(x => x.pagaPorFuera === true)
+        // El nombre de MP guardado o, igual completo, el de la persona (Bernal Fleet, 6-nov: MP «Andrés Bernal»).
+        .flatMap(x => [x.nombreMp, x.nombre, x.contactoNombre].map(claveN).filter(n => n.includes(" "))));
     for (const [sub, c] of ultimo) {
         const e = _intentoEstado(c);
         if (e.clase !== "reintentando" && e.clase !== "rechazado") continue;
         if (new Date(c.fecha).getTime() < limite) continue;
         if (String(aprobadoDe.get(claveN(c.nombre)) || "") > String(c.fecha)) continue;
+        // A nombre de alguien que ya paga por afuera (su nombre de MP quedó en la ficha).
+        if (claveN(c.nombre) && nombresPorFuera.has(claveN(c.nombre))) continue;
         const primerPago = nro.get(c) === 1;
         const rebote = primerPago ? reboteDe.get(claveN(c.nombre) || c.suscripcion) : null;
         if (rebote?.seSuscribio) continue;
@@ -10961,17 +10967,19 @@ function _renderMantFallidos(term) {
     if (barra) barra.innerHTML = `<span class="muted mant-vinc-resumen">${partes.join(" · ") || "Ningún cobro fallido"}. «Pagó por afuera» lo pasa a Por afuera; «Ocultar» lo saca de esta lista.</span>
         ${nOcultos ? `<button type="button" class="btn-ghost btn-sm" data-fallido-mostrar title="Vuelve a mostrar los que ocultaste">Mostrar ocultos (${nOcultos})</button>` : ""}`;
     const lista = term ? todos.filter(r => [r.nombre, r.persona, r.nombreMp].join(" ").toLowerCase().includes(term)) : todos;
-    const candidatos = [...mantCruce.values()].filter(k => !k.porFuera)
-        .map(k => ({ destino: `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`, nombre: k.negocio || k.nombre, persona: k.persona, monto: k.monto, dia: _mantVincDiaCobro(k) }))
+    // Todos los mensuales activos, también los que ya pagan por afuera (Librería JD, 6-nov: ya estaba marcada y su
+    // suscripción vieja de MP, a nombre de Natalia Zelaya, seguía reintentando sin dueño).
+    const candidatos = [...mantCruce.values()]
+        .map(k => ({ destino: `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`, nombre: k.negocio || k.nombre, persona: k.persona, monto: k.monto, dia: _mantVincDiaCobro(k), porFuera: k.porFuera }))
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const fh = d => { if (!d) return ""; const x = new Date(d); return Number.isNaN(x.getTime()) ? "" : fechaCortaJs(x).slice(0, 5); };
     tb.innerHTML = lista.length ? lista.map(r => {
         const t = FALLIDO_TIPO[r.tipo];
         const fuera = r.destino
             ? `<button type="button" class="btn-ghost btn-sm" data-fallido-fuera="${escapeHtml(r.destino)}" data-dia="${r.dia || 0}" data-aviso="${escapeHtml(r.avisoId || "")}" data-oculto="${escapeHtml(r.oculto)}" title="Te transfiere: sale de acá y pasa a Por afuera${r.dia ? `, con día de cobro el ${r.dia}` : ""}">💵 Pagó por afuera</button>`
-            : `<select class="mant-vinc-select mant-fallido-select" data-fallido-asignar data-oculto="${escapeHtml(r.oculto)}" aria-label="De qué cliente es">
+            : `<select class="mant-vinc-select mant-fallido-select" data-fallido-asignar data-oculto="${escapeHtml(r.oculto)}" data-nombre-mp="${escapeHtml(r.nombreMp || "")}" aria-label="De qué cliente es">
                 <option value="">💵 Pagó por afuera… ¿quién es?</option>
-                ${candidatos.map(k => `<option value="${escapeHtml(k.destino)}" data-dia="${k.dia || 0}">${escapeHtml([k.nombre, k.persona, fmtMoney(k.monto)].filter(Boolean).join(" · "))}</option>`).join("")}
+                ${candidatos.map(k => `<option value="${escapeHtml(k.destino)}" data-dia="${k.dia || 0}">${escapeHtml([k.nombre, k.persona, fmtMoney(k.monto), k.porFuera ? "ya paga por afuera" : ""].filter(Boolean).join(" · "))}</option>`).join("")}
               </select>`;
         return `<tr>
             <td><div>${escapeHtml(r.nombre)}</div>${r.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(r.persona)}</div>` : ""}${r.nombreMp && r.nombreMp !== r.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(r.nombreMp)}${r.aConfirmar ? " · a confirmar" : ""}</div>` : ""}</td>
@@ -10998,13 +11006,15 @@ async function _mantOcultosGuardar(claves) {
 /* Pasa a pagar por afuera desde Cobros fallidos: el vínculo de siempre (_mantVincGuardar, con su día de cobro)
    y, como la suscripción se cortó, el estado vuelve a activo y se borra el aviso de baja o pausa: si no, seguiría
    contando como baja y no aparecería en Por afuera. */
-async function _mantFallidoAPorFuera(destino, dia, avisoId, oculto) {
+async function _mantFallidoAPorFuera(destino, dia, avisoId, oculto, nombreMp = "") {
     const [coleccion, id] = destino.split(":");
     await _mantVincGuardar([{ destino, valor: MANT_VINC_FUERA, dia }]);
     const ref = (coleccion === "clientes" ? clients : mantenimiento).find(x => x.id === id);
     const extra = coleccion === "clientes"
         ? (ref?.estadoSuscripcion === "baja" ? { estadoSuscripcion: "activa" } : {})
         : ((ref?.estado || "activo") !== "activo" ? { estado: "activo" } : {});
+    // El nombre de Mercado Pago queda en la ficha: si esa suscripción vieja vuelve a fallar, se reconoce sola.
+    if (nombreMp && !String(ref?.nombreMp || "").trim()) extra.nombreMp = nombreMp;
     const avisos = new Set([avisoId, ...mantenimientoAvisos.filter(a => ref && _avisoEsDe(a, ref)).map(a => a.id)].filter(Boolean));
     try {
         if (Object.keys(extra).length) await updateDoc(doc(db, coleccion, id), { ...extra, updatedAt: serverTimestamp() });
@@ -11051,7 +11061,7 @@ document.addEventListener("change", async (e) => {
     const dia = Number(opt?.dataset.dia) || 0;
     if (!confirm(`¿Es de ${opt.textContent.trim()} y pagó por afuera?\n\nPasa a Por afuera${dia ? `, con día de cobro el ${dia}` : ""}, y este cobro sale de la lista.`)) { sel.value = ""; return; }
     sel.disabled = true;
-    await _mantFallidoAPorFuera(sel.value, dia, "", sel.dataset.oculto);
+    await _mantFallidoAPorFuera(sel.value, dia, "", sel.dataset.oculto, sel.dataset.nombreMp || "");
 });
 
 function _claveMantCliente(c) {
