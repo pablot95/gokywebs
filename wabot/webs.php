@@ -429,6 +429,78 @@ function wabot_webs_err_datos($mes) {
 }
 
 /**
+ * Lo de err/data de un dominio aunque esté escrito distinto: err.js anota el
+ * host del navegador (avanzamás.com.ar llega como xn--avanzams-fza.com.ar) y
+ * la ficha puede tenerlo sin tilde o con www. (Pablo, 6-nov: avanzamás iba a
+ * salir «sin visitas registradas» con 45 en el mes).
+ */
+function wabot_webs_dominio_clave($d) {
+    $d = strtolower(trim((string)$d));
+    if (strpos($d, 'www.') === 0) $d = substr($d, 4);
+    $labels = [];
+    foreach (explode('.', $d) as $l) {
+        if (strpos($l, 'xn--') === 0) {
+            $u = function_exists('idn_to_utf8') ? @idn_to_utf8($l, 0, defined('INTL_IDNA_VARIANT_UTS46') ? INTL_IDNA_VARIANT_UTS46 : 0) : false;
+            if (!is_string($u) || $u === '') $u = wabot_webs_punycode_decode(substr($l, 4));
+            if (is_string($u) && $u !== '') $l = $u;
+        }
+        $labels[] = $l;
+    }
+    $d = implode('.', $labels);
+    $d = strtr($d, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n',
+                    'Á' => 'a', 'É' => 'e', 'Í' => 'i', 'Ó' => 'o', 'Ú' => 'u', 'Ü' => 'u', 'Ñ' => 'n']);
+    return $d;
+}
+
+/** RFC 3492, solo para leer dominios con tilde cuando PHP no trae intl. */
+function wabot_webs_punycode_decode($in) {
+    $n = 128; $i = 0; $bias = 72; $out = [];
+    $pos = strrpos($in, '-');
+    if ($pos !== false) {
+        for ($j = 0; $j < $pos; $j++) $out[] = ord($in[$j]);
+        $in = substr($in, $pos + 1);
+    }
+    $len = strlen($in); $k0 = 0;
+    while ($k0 < $len) {
+        $oldi = $i; $w = 1;
+        for ($k = 36; ; $k += 36) {
+            if ($k0 >= $len) return false;
+            $c = ord($in[$k0++]);
+            if ($c >= 48 && $c <= 57) $digit = $c - 22;
+            elseif ($c >= 97 && $c <= 122) $digit = $c - 97;
+            elseif ($c >= 65 && $c <= 90) $digit = $c - 65;
+            else return false;
+            $i += $digit * $w;
+            $t = $k <= $bias ? 1 : ($k >= $bias + 26 ? 26 : $k - $bias);
+            if ($digit < $t) break;
+            $w *= 36 - $t;
+        }
+        $num = count($out) + 1;
+        $delta = $oldi === 0 ? intdiv($i - $oldi, 700) : intdiv($i - $oldi, 2);
+        $delta += intdiv($delta, $num);
+        for ($kk = 0; $delta > 455; $kk += 36) $delta = intdiv($delta, 35);
+        $bias = $kk + intdiv(36 * $delta, $delta + 38);
+        $n += intdiv($i, $num);
+        $i %= $num;
+        array_splice($out, $i, 0, [$n]);
+        $i++;
+    }
+    $s = '';
+    foreach ($out as $cp) $s .= mb_chr($cp, 'UTF-8');
+    return $s;
+}
+
+/** La entrada de visitas-/errores-AAAA-MM.json de un dominio (con o sin tilde, www., punycode). */
+function wabot_webs_err_de(array $tabla, $dominio) {
+    if (is_array($tabla[$dominio] ?? null)) return $tabla[$dominio];
+    $clave = wabot_webs_dominio_clave($dominio);
+    foreach ($tabla as $k => $v) {
+        if (is_array($v) && wabot_webs_dominio_clave($k) === $clave) return $v;
+    }
+    return [];
+}
+
+/**
  * Los cuatro renglones del reporte de un dominio para un mes, con los textos
  * listos para la plantilla, o null si ese mes no se monitoreó.
  */
@@ -459,11 +531,11 @@ function wabot_webs_reporte_datos($dominio, $mes, array $monitor, array $err) {
         }
     }
 
-    $visitas = (int)($err['visitas'][$dominio]['total'] ?? 0);
+    $visitas = (int)(wabot_webs_err_de((array)($err['visitas'] ?? []), $dominio)['total'] ?? 0);
     $visitasTxt = $visitas === 0 ? 'sin visitas registradas'
         : wabot_webs_numero($visitas) . ($visitas === 1 ? ' visita' : ' visitas');
 
-    $grupos = array_keys((array)($err['errores'][$dominio]['grupos'] ?? []));
+    $grupos = array_keys((array)(wabot_webs_err_de((array)($err['errores'] ?? []), $dominio)['grupos'] ?? []));
     $n = count($grupos);
     if ($n === 0) {
         $erroresTxt = 'ninguno detectado';

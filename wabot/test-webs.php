@@ -179,6 +179,15 @@ $errTodos = $err; $errTodos['estados'] = ['aaa' => ['estado' => 'pr'], 'bbb' => 
 caso('todos corregidos', wabot_webs_reporte_datos('panaderiasol.com.ar', '2026-10', $monitor, $errTodos)['errores'] === '3 detectados, los 3 ya corregidos');
 $errUno = $err; $errUno['errores']['panaderiasol.com.ar']['grupos'] = ['aaa' => 5]; $errUno['estados'] = [];
 caso('uno en revisión', wabot_webs_reporte_datos('panaderiasol.com.ar', '2026-10', $monitor, $errUno)['errores'] === '1 detectado, en revisión');
+// Dominio con tilde: err.js lo anota en punycode y la ficha lo tiene sin tilde (6-nov).
+$monTilde = ['avanzamas.com.ar' => $monitor['panaderiasol.com.ar']];
+$errTilde = ['visitas' => ['xn--avanzams-fza.com.ar' => ['total' => 45]], 'errores' => ['xn--avanzams-fza.com.ar' => ['veces' => 2, 'grupos' => ['aa' => 1, 'bb' => 1]]], 'estados' => []];
+$dT = wabot_webs_reporte_datos('avanzamas.com.ar', '2026-10', $monTilde, $errTilde);
+caso('visitas de avanzamás aunque la ficha diga avanzamas', ($dT['visitas'] ?? '') === '45 visitas', json_encode($dT, JSON_UNESCAPED_UNICODE));
+caso('y sus errores también', ($dT['errores_n'] ?? 0) === 2);
+caso('punycode con ñ', wabot_webs_dominio_clave('xn--espacioacompaarte-rxb.com.ar') === 'espacioacompanarte.com.ar');
+caso('www. no cambia el dominio', wabot_webs_dominio_clave('www.Floreriaromina.com.ar') === 'floreriaromina.com.ar');
+caso('un dominio parecido no se confunde', wabot_webs_err_de(['avanzamas2.com.ar' => ['total' => 9]], 'avanzamas.com.ar') === []);
 
 echo "\n=== Cuándo sale el reporte ===\n";
 $estadoBase = function ($ahora) use ($lista) { return ['lista' => $lista, 'sync_ts' => $ahora - 3600, 'reportes' => [], 'aviso_vieja_ts' => 0]; };
