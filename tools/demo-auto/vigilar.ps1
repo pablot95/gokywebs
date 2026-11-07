@@ -204,7 +204,10 @@ function Marcar-Demos {
     } catch { Anotar ('No se pudieron marcar las demos en el admin: ' + $_.Exception.Message) }
     finally { $ErrorActionPreference = 'Stop' }
 }
-if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; Marcar-Demos; exit 0 }
+# Marcar-Demos ya no corre (6-nov, Pablo: «que no lo marque mas nada de eso, no importa»):
+# releia todos los bocetos y clientes desde el 4-oct cada 20 min (~34k lecturas/dia) y
+# agotaba la cuota de Firestore a la noche, y sin cuota no salian las demos programadas.
+if ($Modo -eq 'imagenes') { Bajar-Imagenes-Prospectos; exit 0 }
 if ($Modo -eq 'claude') { Bajar-Imagenes-Prospectos }
 
 # --- Fin de una demo hecha por una sesion de Desktop ---
