@@ -124,6 +124,7 @@ const ERR_REPOS = [
     'todopernil.com.ar' => 'pablot95/todopernil',
     'superrifas.com.ar' => 'pablot95/superrifas',
     'sinchijoyasyaccesorios.com.ar' => 'pablot95/sinchi',
+    'pinturasgalfa.com.ar' => 'pablot95/pinturasgalfa',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
