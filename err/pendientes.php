@@ -124,6 +124,7 @@ const ERR_REPOS = [
     'todopernil.com.ar' => 'pablot95/todopernil',
     'superrifas.com.ar' => 'pablot95/superrifas',
     'sinchijoyasyaccesorios.com.ar' => 'pablot95/sinchi',
+    'redmundialdesaludmental.com.ar' => 'pablot95/redmundialdesaludmental',
     'pinturasgalfa.com.ar' => 'pablot95/pinturasgalfa',
 ];
 
