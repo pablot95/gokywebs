@@ -261,6 +261,17 @@ function wabot_config_load() {
         $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaFormRec, date('c') . "\n");
     }
+    /* 8-nov (Pablo, con el análisis de las charlas del 20-sep al 8-nov): «Buenas, avisame
+     * si te interesa la idea de que te armemos una primera entrega gratis» salió 167 veces
+     * y no trajo ningún cliente. Se apaga una sola vez el guardado; si lo vuelve a prender
+     * desde Ajustes, queda. */
+    $marcaOferta = WABOT_DATA . '/migrated/oferta-entrega-apagado-8nov';
+    if (is_array($guardado) && (!array_key_exists('oferta_entrega_seguimiento_activo', $guardado) || !empty($guardado['oferta_entrega_seguimiento_activo']))
+        && !is_file($marcaOferta) && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $guardado['oferta_entrega_seguimiento_activo'] = false;
+        $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaOferta, date('c') . "\n");
+    }
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
             if (array_key_exists($k, $guardado)) {

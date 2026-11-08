@@ -937,7 +937,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
      * último que le mandamos fue la oferta ("Siempre antes de avanzar, armamos
      * una primera entrega de la web, sin costo…") y no contestó, a las 23 h
      * de su último mensaje. Texto de Pablo, tal cual. */
-    'oferta_entrega_seguimiento_activo' => true,
+    'oferta_entrega_seguimiento_activo' => false, // apagado el 8-nov a pedido de Pablo: 167 enviados, 0 clientes
     'oferta_entrega_seguimiento_horas' => 23,
     'oferta_entrega_seguimiento' => 'Buenas, avisame si te interesa la idea de que te armemos una primera entrega gratis',
     /* Confirmación del formulario (Pablo, 12-oct): a los 5 minutos de que lo completa, si no
