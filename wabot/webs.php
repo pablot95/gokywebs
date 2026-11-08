@@ -57,6 +57,27 @@ const WABOT_WEBS_AVISO_CADA = 86400;
 const WABOT_WEBS_LISTA_VIEJA = 35 * 86400;
 const WABOT_WEBS_UA = 'Mozilla/5.0 (compatible; GokywebsMonitor/1.0; +https://gokywebs.com)';
 
+/* Las mejoras que les hicimos, en el resumen (Pablo, 8-nov: "se puede agregar las actualizaciones que
+   hicimos, si es tienda o cursos"). Van con la plantilla `reporte_mensual_novedades` (la de siempre + una
+   línea «🆕 Mejoras»); sin ella activa, o sin mejoras para ese mes y ese tipo de web, sale la de siempre.
+   La clave es el mes que cuenta el resumen (el de noviembre sale el 1-dic). Cursos todavía no tiene
+   mejoras para contar. Las tiendas son las 29 que el 21/25-oct pasaron al motor del template (1.11.0):
+   las 18 de Mantenimiento + las 11 publicadas de EnProceso; las que se armaron después ya nacieron con todo. */
+const WABOT_WEBS_TIENDAS = [
+    'autoserviciohudson.com.ar', 'carinapelusomuebleria.com.ar', 'centrodecajaslanus.com.ar', 'ecopiscinaschaco.com.ar',
+    'floreriaromina.com.ar', 'libreriajd.com.ar', 'lodebasim.com.ar', 'losfantasmasdelapesca.com.ar', 'mdliving.com.ar',
+    'meencantoperfumes.com.ar', 'micoloridomundo.com.ar', 'paoladivella.com.ar', 'regalartejuguetes.com.ar',
+    'tatetimegusta.com.ar', 'tintamorenabelleza.com.ar', 'vicenzabricokits.com.ar', 'reinamomo.com.ar', 'yanzon.com.ar',
+    'abperfumes.com.ar', 'adaradermocosmiatria.com.ar', 'altapintablanqueria.com.ar', 'armoniapisos.com.ar',
+    'burgeradonai.com.ar', 'byjoyas.com.ar', 'joawindumentaria.com.ar', 'indumentarialulu.com.ar',
+    'mipatadeternera.com.ar', 'pataclub.ar', 'petshopbony.com.ar',
+];
+const WABOT_WEBS_NOVEDADES = [
+    'tienda' => [
+        '2026-11' => 'pestaña Pagos en el panel, fotos distintas para celular y computadora, lista de clientes, exportar productos, cambio de precios en tanda, duplicar productos, imprimir remitos, integraciones, avisos de carrito abandonado y de stock bajo, y mensajes de error más claros',
+    ],
+];
+
 /* ─────────────────── Estado en disco ─────────────────── */
 
 function wabot_webs_estado() {
@@ -371,6 +392,17 @@ function wabot_webs_enviar(array $f, $plantilla, array $valores, $cfg, $enviar =
     }
 }
 
+/** "tienda" si el dominio es una de las tiendas del template; "" si no. */
+function wabot_webs_tipo($dominio) {
+    return in_array(wabot_webs_dominio($dominio), WABOT_WEBS_TIENDAS, true) ? 'tienda' : '';
+}
+
+/** Las mejoras que se le cuentan a esa web en el resumen de $mes ("" si no hay). */
+function wabot_webs_novedades($dominio, $mes) {
+    $tipo = wabot_webs_tipo($dominio);
+    return $tipo !== '' ? (string)(WABOT_WEBS_NOVEDADES[$tipo][$mes] ?? '') : '';
+}
+
 /** "Juan" / el negocio / "cómo estás" para el {{1}} de la plantilla, como en la renovación. */
 function wabot_webs_nombre(array $f) {
     return wabot_renovacion_nombre($f['persona']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
@@ -604,9 +636,15 @@ function wabot_webs_reporte_correr($cfg, $ahora, array $estado, array $monitor, 
             'visitas'        => $datos['visitas'],
             'errores'        => $datos['errores'],
         ];
-        $r = wabot_webs_enviar($f, 'reporte_mensual_web', $valores, $cfg, $enviar);
+        $plantilla = 'reporte_mensual_web';
+        $novedades = wabot_webs_novedades($f['dominio'], $mes);
+        if ($novedades !== '' && wabot_plantilla_config('reporte_mensual_novedades', $cfg) !== null) {
+            $plantilla = 'reporte_mensual_novedades';
+            $valores['novedades'] = $novedades;
+        }
+        $r = wabot_webs_enviar($f, $plantilla, $valores, $cfg, $enviar);
         if ($r === 'ocupado') continue;   // otro proceso tiene el chat: la próxima pasada
-        $estado['reportes'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => $r === 'ok', 'resultado' => $r];
+        $estado['reportes'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => $r === 'ok', 'resultado' => $r, 'novedades' => $plantilla !== 'reporte_mensual_web'];
         $res['detalle'][] = ['id' => $f['id'], 'dominio' => $f['dominio'], 'resultado' => $r];
         wabot_log('web_reporte', ['id' => $f['id'], 'dominio' => $f['dominio'], 'resultado' => $r, 'mes' => $mes]);
         if ($r === 'ok') {
@@ -687,7 +725,8 @@ function wabot_webs_resumen_admin(array $estado, $cfg, $ahora = null) {
             'ok' => $e['ok'], 'desde_ts' => (int)$e['desde_ts'], 'ultimo_ts' => (int)$e['ultimo_ts'],
             'motivo' => (string)$e['motivo'], 'ssl_hasta_ts' => (int)($e['ssl_hasta_ts'] ?? 0),
             'mes' => $datos ? ['disponibilidad' => $datos['disponibilidad'], 'visitas' => $datos['visitas'], 'errores' => $datos['errores'],
-                                'visitas_n' => $datos['visitas_n'], 'errores_n' => $datos['errores_n'], 'dias' => $datos['dias']] : null,
+                                'visitas_n' => $datos['visitas_n'], 'errores_n' => $datos['errores_n'], 'dias' => $datos['dias'],
+                                'novedades' => wabot_webs_novedades($d, $mes)] : null,
         ];
     }
     $pr = wabot_plantilla_config('reporte_mensual_web', $cfg);

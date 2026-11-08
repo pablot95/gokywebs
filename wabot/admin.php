@@ -641,7 +641,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'reporte_mensual_web', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'reporte_mensual_web', 'reporte_mensual_novedades', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -3414,6 +3414,7 @@ function burbujaCita(t, chat) {
                 'saludo' => 'Saludo · Marketing (solo a mano desde el chat)',
                 'renovacion_por_fuera' => 'Renovación del plan mensual · Utilidad (pagan por afuera)',
                 'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
+                'reporte_mensual_novedades' => 'Resumen mensual con las mejoras · Utilidad (tiendas, el mes que hay mejoras para contar)',
                 'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
                 'aviso_pablo' => 'Aviso a Pablo fuera de las 24 h · Utilidad (va a tu número, no a clientes)',
                 'presentar_demo' => 'Demo con la ventana de 24 h cerrada · Utilidad',
@@ -3421,6 +3422,7 @@ function burbujaCita(t, chat) {
             $plantillasVariables = [
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
+                'reporte_mensual_novedades' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores, {{7}} mejoras',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
                 'aviso_pablo' => '{{1}} el título del aviso (quién escribió, pago confirmado…), {{2}} el detalle en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
                 'presentar_demo' => '{{1}} negocio, {{2}} slug de la demo (el link gokywebs.com/demo/{{2}} va en el cuerpo, sin botón)',
@@ -3428,6 +3430,7 @@ function burbujaCita(t, chat) {
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
+                'reporte_mensual_novedades' => 'En lugar de la de arriba, a las tiendas el mes que hay mejoras para contar (la primera vez: el 1-dic, con noviembre)',
                 'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
                 'aviso_pablo' => 'Automática con cada aviso (mensaje sin contestar, pago, revisión…), solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',
                 'presentar_demo' => 'Al presentar (botón o automático), cuando la ventana de 24 h está cerrada: el número del formulario que nunca escribió o el que escribió hace más de 24 h',

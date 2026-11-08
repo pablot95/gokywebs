@@ -105,6 +105,41 @@ De dónde sale cada número:
   cuentan como corregidos; `descartado`/`no_reproduce`/`sin_repo` como revisados sin
   impacto; el resto, en revisión.
 
+### Resumen mensual con las mejoras (8-nov)
+
+El mismo resumen con una línea más al final: lo que le sumamos a esa web. Hoy
+solo para las tiendas (las 29 que pasaron al motor del template en octubre) y
+solo el mes que hay mejoras para contar: la primera vez sale el **1-dic** con el
+resumen de noviembre; los meses sin mejoras sale la de arriba. Si esta no está
+activa en Ajustes, las tiendas reciben la de arriba. Las mejoras de cada mes se
+cargan en `WABOT_WEBS_NOVEDADES` (`wabot/webs.php`).
+
+| Campo | Valor |
+|---|---|
+| **Clave en el bot** | `plantillas.reporte_mensual_novedades` |
+| **Nombre en Meta** | `reporte_mensual_novedades` |
+| **Idioma** | `es_AR` |
+| **Categoría** | Utilidad |
+| **Variables** | {{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores, {{7}} mejoras |
+
+**Cuerpo para cargar en Meta:**
+
+```
+Hola {{1}}, te paso el resumen de {{2}} de la web de {{3}}:
+✅ Disponibilidad: {{4}}
+👥 Visitas: {{5}}
+🛠️ Errores: {{6}}
+🆕 Mejoras que sumamos: {{7}}
+
+Si necesitas algo, escribime, saludos!
+```
+
+Ejemplos de valores: `Juan`, `noviembre`, `Panadería Sol`, `100 % (online todo el mes)`,
+`312 visitas`, `ninguno detectado`, `pestaña Pagos en el panel, fotos distintas para celular y
+computadora, lista de clientes, exportar productos, cambio de precios en tanda, duplicar productos,
+imprimir remitos, integraciones, avisos de carrito abandonado y de stock bajo, y mensajes de error
+más claros`.
+
 ### Web caída y resuelta
 
 Cuando una web que estuvo caída 20 minutos o más vuelve a responder, en horario
