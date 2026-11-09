@@ -663,23 +663,6 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'params' => ['nombre', 'mes', 'negocio', 'disponibilidad', 'visitas', 'errores'],
             'texto' => "Hola {nombre}, te paso el resumen de {mes} de la web de {negocio}:\n✅ Disponibilidad: {disponibilidad}\n👥 Visitas: {visitas}\n🛠️ Errores: {errores}\n\nSi necesitas algo, escribime, saludos!",
         ],
-        // Utilidad (8-nov): el mismo resumen con una línea más, las mejoras que le hicimos a esa web
-        // (WABOT_WEBS_NOVEDADES en webs.php; por ahora solo tiendas). Sin ella activa sale la de arriba.
-        'reporte_mensual_novedades' => [
-            'nombre' => 'reporte_mensual_novedades',
-            'idioma' => 'es_AR',
-            'categoria' => 'UTILITY',
-            'activa' => false,
-            'automatico' => true,
-            'params' => ['nombre', 'mes', 'negocio', 'disponibilidad', 'visitas', 'errores', 'novedades'],
-            'texto' => "Hola {nombre}, te paso el resumen de {mes} de la web de {negocio}:
-✅ Disponibilidad: {disponibilidad}
-👥 Visitas: {visitas}
-🛠️ Errores: {errores}
-🆕 Mejoras que sumamos: {novedades}
-
-Si necesitas algo, escribime, saludos!",
-        ],
         // Utilidad (29-oct): cuando una web que estuvo caída vuelve a responder (webs.php).
         'web_caida_resuelta' => [
             'nombre' => 'web_caida_resuelta',

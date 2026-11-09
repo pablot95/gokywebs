@@ -10581,7 +10581,7 @@ function _mantWebBotHTML(dominio, id) {
         } else {
             partes.push(`<div class="mp-vinculo mp-vinculo--falta" title="El bot no pudo cargar la portada. Te avisó por push y le avisa al cliente cuando vuelva (si la plantilla está activa).">🔴 No responde desde el ${escapeHtml(_websFechaHora(w.desde_ts))}${w.motivo ? ` · ${escapeHtml(w.motivo)}` : ""}</div>`);
         }
-        if (w.mes) partes.push(`<div class="muted" style="font-size:11px" title="Lo que va a decir el resumen mensual del bot (${w.mes.dias} ${w.mes.dias === 1 ? "día monitoreado" : "días monitoreados"})">📊 ${escapeHtml(_websMesNombre(websBot.mes))}: ${escapeHtml(w.mes.disponibilidad)} · ${escapeHtml(w.mes.visitas)} · errores: ${escapeHtml(w.mes.errores)}${w.mes.novedades ? ` · <span title="${escapeHtml("Mejoras que sumamos: " + w.mes.novedades)}">🆕 con mejoras</span>` : ""}</div>`);
+        if (w.mes) partes.push(`<div class="muted" style="font-size:11px" title="Lo que va a decir el resumen mensual del bot (${w.mes.dias} ${w.mes.dias === 1 ? "día monitoreado" : "días monitoreados"})">📊 ${escapeHtml(_websMesNombre(websBot.mes))}: ${escapeHtml(w.mes.disponibilidad)} · ${escapeHtml(w.mes.visitas)} · errores: ${escapeHtml(w.mes.errores)}</div>`);
     }
     const r = id ? websBot.reportes?.[id] : null;
     if (r && r.mes) {

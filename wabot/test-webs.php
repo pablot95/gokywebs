@@ -245,39 +245,6 @@ $tv = wabot_webs_correr($cfg, $h, ['estado' => $vieja, 'monitor' => $monitor, 'p
 caso('con la lista de hace 40 días monitorea igual pero avisa una vez', !empty($tv['lista_vieja']) && $avisos[0][0] === 'Lista de webs sin actualizar' && $tv['chequeo']['chequeadas'] === 2);
 caso('sin lista no hace nada', !empty(wabot_webs_correr($cfg, $h, ['estado' => ['lista' => [], 'sync_ts' => 0, 'reportes' => [], 'aviso_vieja_ts' => 0], 'monitor' => []])['sin_lista']));
 
-echo "\n=== Las mejoras en el resumen de las tiendas (8-nov) ===\n";
-caso('una tienda del template es tienda', wabot_webs_tipo('https://www.ReinaMomo.com.ar/') === 'tienda' && wabot_webs_tipo('floreriaromina.com.ar') === 'tienda');
-caso('una web que no es tienda no tiene tipo', wabot_webs_tipo('panaderiasol.com.ar') === '');
-caso('las mejoras van en el resumen de noviembre', strpos(wabot_webs_novedades('floreriaromina.com.ar', '2026-11'), 'pestaña Pagos') === 0);
-caso('octubre y diciembre no tienen mejoras', wabot_webs_novedades('floreriaromina.com.ar', '2026-10') === '' && wabot_webs_novedades('floreriaromina.com.ar', '2026-12') === '');
-caso('a una web que no es tienda no se le cuentan', wabot_webs_novedades('panaderiasol.com.ar', '2026-11') === '');
-// El 1-dic, con noviembre: la florería (tienda) y la panadería (no).
-$aNov = function ($m) { $m['meses'] = ['2026-11' => $m['meses']['2026-10']]; $m['caidas'] = []; return $m; };
-$monNov = ['floreriaromina.com.ar' => $aNov($monitor['gomeria.com.ar']), 'panaderiasol.com.ar' => $aNov($monitor['panaderiasol.com.ar'])];
-$listaNov = array_values(array_filter(array_map('wabot_webs_fila', [
-    ['id' => 'mantenimiento:FLO', 'tel' => '1166667777', 'persona' => 'Romina', 'negocio' => 'Florería Romina', 'dominio' => 'floreriaromina.com.ar'],
-    ['id' => 'clientes:AAA', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'dominio' => 'panaderiasol.com.ar'],
-])));
-$estNov = ['lista' => $listaNov, 'sync_ts' => $ar('2026-12-01 09:00:00'), 'reportes' => [], 'aviso_vieja_ts' => 0];
-$hDic = $ar('2026-12-01 10:05:00');
-$conNov = $cfg; $conNov['plantillas']['reporte_mensual_novedades'] = array_merge((array)($cfg['plantillas']['reporte_mensual_novedades'] ?? []), ['activa' => true, 'automatico' => true]);
-$mandados = [];
-$rN = wabot_webs_reporte_correr($conNov, $hDic, $estNov, $monNov, $err, $enviar, $avisar);
-$porId = array_column($mandados, null, 1);
-caso('a la tienda le sale la plantilla con mejoras', ($porId['mantenimiento:FLO'][2] ?? '') === 'reporte_mensual_novedades' && strpos($porId['mantenimiento:FLO'][3]['novedades'] ?? '', 'pestaña Pagos') === 0 && $porId['mantenimiento:FLO'][3]['mes'] === 'noviembre', json_encode($mandados, JSON_UNESCAPED_UNICODE));
-caso('a la que no es tienda, la de siempre con sus 6 datos', ($porId['clientes:AAA'][2] ?? '') === 'reporte_mensual_web' && !isset($porId['clientes:AAA'][3]['novedades']));
-caso('queda anotado quién recibió las mejoras', !empty($rN['estado']['reportes']['mantenimiento:FLO']['novedades']) && empty($rN['estado']['reportes']['clientes:AAA']['novedades']));
-$mandados = [];
-wabot_webs_reporte_correr($cfg, $hDic, $estNov, $monNov, $err, $enviar, $avisar);
-caso('sin la plantilla de mejoras activa, la tienda recibe la de siempre', count($mandados) === 2 && $mandados[0][2] === 'reporte_mensual_web' && $mandados[1][2] === 'reporte_mensual_web');
-$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
-$cvN = conv_nueva();
-$okN = wabot_enviar_plantilla($cvN, 'reporte_mensual_novedades', $conNov, $porId['mantenimiento:FLO'][3]);
-$plN = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
-$txN = (string)(end($cvN['transcript'])['t'] ?? '');
-caso('la de mejoras va con 7 variables, las mejoras al final', $okN && count($plN[3] ?? []) === 7 && strpos(end($plN[3]), 'pestaña Pagos') === 0, json_encode($plN, JSON_UNESCAPED_UNICODE));
-caso('y en el chat queda la línea de mejoras antes del saludo', strpos($txN, "\n🆕 Mejoras que sumamos: pestaña Pagos") !== false && str_ends_with($txN, "más claros\n\nSi necesitas algo, escribime, saludos!"), $txN);
-
 echo "\n=== Las plantillas en el chat ===\n";
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $cv = conv_nueva();
