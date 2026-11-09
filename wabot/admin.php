@@ -1139,8 +1139,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ];
         /* Si nada cambió desde la vuelta anterior (el panel manda la firma que
          * recibió), la respuesta es un «igual» de 20 bytes en vez del chat entero
-         * cada pocos segundos (9-nov). La ventana de 24 h se cuenta en el panel. */
-        $firma = md5(json_encode($salida, JSON_UNESCAPED_UNICODE));
+         * cada pocos segundos (9-nov). La ventana de 24 h entra en la firma
+         * redondeada al minuto: en segundos cambiaba en cada vuelta, la firma nunca
+         * coincidía y los 22 KB del chat seguían viajando cada 3 s (visto en
+         * producción el 9-nov). El texto «Podés responder por 23 h 56 min más» se
+         * refresca así una vez por minuto, que es lo que muestra. */
+        $paraFirma = $salida;
+        $paraFirma['ventana'] = intdiv((int)$salida['ventana'], 60);
+        $firma = md5(json_encode($paraFirma, JSON_UNESCAPED_UNICODE));
         if ((string)($_POST['firma'] ?? '') === $firma) { echo json_encode(['igual' => true]); exit; }
         $salida['firma'] = $firma;
         echo json_encode($salida, JSON_UNESCAPED_UNICODE);
