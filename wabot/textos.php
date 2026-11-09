@@ -227,6 +227,12 @@ function wabot_textos_default() {
         'mp_nombre_negocio' => 'Sí, eso depende de cómo tengas configurado Mercado Pago: ahí elegís el nombre del negocio, y cuando te pagan figura ese nombre.',
         'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
         'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',
+        /* Flyers, videos, fotos, banners, Spotify, recuperar un Facebook… (9-nov): 14
+         * charlas del 12-oct al 7-nov se derivaron por pedir algo que no hacemos y
+         * nadie contestó la mayoría. Misma idea que marketing y logo: se dice y se
+         * sigue con la web. Texto armado acá, no de Pablo: si lo quiere distinto, se
+         * cambia desde Ajustes (bot-config.json) o acá. */
+        'no_hacemos' => 'Eso no lo hacemos, nos dedicamos a la web: diseño, desarrollo, hosting y mantenimiento. Si tenés fotos o material propio lo usamos, y si no, la armamos igual.',
         'reuniones' => 'Sí, claro. Las llamadas las coordinamos con el desarrollador cuando avanzamos con la web, en el horario que te quede cómodo.',
         'tecnologia' => 'Trabajamos con código propio, a medida, y hosting en Hostinger. No usamos WordPress ni plantillas.',
         // Marca interna de "no sé": desde el 19-sep NO se manda (Pablo: "cuando

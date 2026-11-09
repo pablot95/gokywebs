@@ -2064,6 +2064,11 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
          * mensaje de casi todos) no cuenta: "hacen anuncios?" o "los anuncios" sí. */
         'marketing'     => '(publicidad|propaganda|marketing|pauta|(?<!tu )(?<!su )(?<!tus )(?<!sus )(?<!el )(?<!un )(?<!este )anuncio|ads|redes|red social|instagram|facebook|tik ?tok'
                          . '|community|seguidores|posteo|campana|promocion|promocionar|promocionamos|promocionen|mueven|muevan|moverla|moverlo)',
+        /* Lo que no hacemos y no es la web (9-nov): flyers, videos, fotos tomadas
+         * por alguien, banners, Spotify, recuperar una cuenta, imprimir. «Tengo
+         * fotos» no cuenta: eso es material para la web. */
+        'no_hacemos'    => '(flyer|flyers|folleto|folletos|volante|volantes|baner|baners|banner|banners|video|videos|filma|filmen|edicion|editar|editen|fotograf|sesion de fotos|(sacar|saquen|tomar|tomen|tomadas|hagan|producir) (las )?(fotos|imagenes)|(fotos|imagenes)[a-z ]{0,25}(tomadas|sacadas|hechas) por'
+                         . '|spotify|podcast|youtube|musica|cancion|recuperar|recupere|hackea|me robaron|cuenta de (facebook|instagram)|tarjeta|tarjetas|imprimir|impresion|imagen (para|en) (redes|instagram|facebook)|imagenes (para|en) redes|diseno (para|en) redes|disenos (para|en) redes|contenido para redes)',
         /* Jardín maternal (26-oct): preguntaba dónde la encuentran y el modelo
          * le contestó "te vinculamos Google Analytics". */
         'estadisticas'  => '(estadistica|metrica|analitica|analytics|visitas|visitan|cuanta gente|cuantos entran|cuantas personas entran'

@@ -2353,6 +2353,10 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
         $conv['archivado'] = false;
         $conv['desarchivado_ts'] = $fila['ts'];
     }
+    /* Pablo contestó a mano (9-nov): las dudas que el revisor había dejado
+     * pendientes eran para él, y ya las vio. Si no se borran, cuando el bot
+     * retoma la charla las sigue arrastrando turno tras turno. */
+    if ($quien === 'humano' && !empty($conv['comercial_pendientes'])) $conv['comercial_pendientes'] = [];
     if ($quien === 'bot' || $quien === 'humano') {
         /* El pedido de los datos por el chat (9-nov) cuenta como el link mandado: mismo
          * estado, mismo embudo. Su marca propia, datos_pedidos_ts, es desde dónde se

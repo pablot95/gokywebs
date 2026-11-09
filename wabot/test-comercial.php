@@ -124,7 +124,8 @@ $info = wabot_comercial_info($cfg);
 caso('la descripción de las soluciones y planes no trae montos', strpos((string)strstr($info, 'RESPUESTAS OFICIALES', true), '$') === false);
 caso('y lista las respuestas oficiales (incluido el descuento), sin los ejemplos de cómo preguntan (27-oct, gasto)', strpos($info, '- descuento:') !== false && strpos($info, '- pago_antes_demo:') !== false && strpos($info, 'lo preguntan así') === false);
 // 27-oct: sin los ejemplos el prompt del asistente pasó de 72.600 a 49.400 caracteres; el del revisor, de 78.000 a 29.500.
-caso('el prompt del asistente no vuelve a crecer (menos de 55.000 caracteres)', mb_strlen(wabot_comercial_instrucciones($cfg)) < 55000, (string)mb_strlen(wabot_comercial_instrucciones($cfg)));
+// 9-nov: +3.600 caracteres por el índice duda → clave y las cinco respuestas post-demo que ahora también van antes (se derivaban teniendo respuesta).
+caso('el prompt del asistente no vuelve a crecer (menos de 58.000 caracteres)', mb_strlen(wabot_comercial_instrucciones($cfg)) < 58000, (string)mb_strlen(wabot_comercial_instrucciones($cfg)));
 $insRevC = wabot_comercial_instrucciones_revisor_completas($cfg);
 caso('el revisor lee sus reglas, el resumen de las del asistente y la información comercial, no las reglas enteras', strpos($insRevC, 'LAS REGLAS DEL ASISTENTE (resumen') !== false
     && strpos($insRevC, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false && strpos($insRevC, 'CÓMO ESCRIBIR') === false && mb_strlen($insRevC) < 33000, (string)mb_strlen($insRevC));
@@ -936,11 +937,32 @@ $revIn = (string)($GLOBALS['OA_REVISIONES'][0]['input'][0]['content'] ?? '');
 caso('el revisor recibe la charla y la respuesta propuesta con su tipo', strpos($revIn, 'Y hacen envíos al interior?') !== false
     && strpos($revIn, 'RESPUESTA PROPUESTA') !== false && strpos($revIn, '[Respuesta oficial] La web queda lista en unos 7 días') !== false, mb_substr($revIn, -400));
 caso('y sus instrucciones traen la información comercial (para ver si inventa)', strpos((string)($GLOBALS['OA_REVISIONES'][0]['instructions'] ?? ''), 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false);
+// 9-nov: si lo corregido sigue mal, el modelo corrige una vez más; después de eso solo inventar, prometer o contradecir frenan.
 $c = cv_cotizada('tienda');
-oa([$decMal, $decMal], [$revMal, $revMal]);
+oa([$decMal, $decMal, $decMal], [$revMal, $revMal, $revMal]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
-caso('si lo corregido sigue mal (grave), en automático sale solo el aviso de derivación y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano'
-    && str_starts_with((string)($c['comercial_motivo'] ?? ''), 'Revisión: ') && !empty($c['handoff_pendiente']), json_encode([$r, $c['comercial_motivo'] ?? ''], JSON_UNESCAPED_UNICODE));
+caso('si lo corregido sigue contradiciendo tras el tercer intento, en automático no sale y lo ve Pablo con el motivo', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano'
+    && str_starts_with((string)($c['comercial_motivo'] ?? ''), 'Revisión: ') && !empty($c['handoff_pendiente']) && count(pedidos()) === 3 && count($GLOBALS['OA_REVISIONES']) === 3
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'frenada', json_encode([$r, $c['comercial_motivo'] ?? '', count(pedidos())], JSON_UNESCAPED_UNICODE));
+$pedido3 = (string)(pedidos()[2]['input'][2]['content'] ?? '');
+caso('el tercer intento recibe lo que el revisor vio en lo corregido y sabe que es la segunda corrección', strpos($pedido3, 'Es la segunda corrección') !== false
+    && strpos($pedido3, 'Preguntó por los envíos y se le contesta el plazo de entrega') !== false, $pedido3);
+$c = cv_cotizada('tienda');
+oa([$decMal, $decMal, $decBien], [$revMal, $revMal]);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+caso('si el tercer intento lo resuelve, sale la corregida', $r === [$cfg['info']['envios']] && empty($c['comercial_pausa']) && count(pedidos()) === 3
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'corregida' && in_array('revision_tercer_intento', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode($r, JSON_UNESCAPED_UNICODE));
+$revInventa = ['ok' => false, 'problemas' => [['tipo' => 'inventa', 'detalle' => 'Dice que la tienda avisa por mail cada envío, una función que no está aprobada']], 'falta_contestar' => []];
+$c = cv_cotizada('tienda');
+oa([$decBien, $decBien, $decBien], [$revInventa, $revInventa, $revInventa]);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+caso('inventar también frena después del tercer intento', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && strpos((string)$c['comercial_motivo'], 'avisa por mail') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+$revSaltea = ['ok' => false, 'problemas' => [['tipo' => 'se_saltea_paso', 'detalle' => 'Debería repetir los planes antes de la respuesta']], 'falta_contestar' => []];
+$c = cv_cotizada('tienda');
+oa([$decBien, $decBien, $decBien], [$revSaltea, $revSaltea, $revSaltea]);
+$r = turno('Y hacen envíos al interior?', $c, $cfg);
+caso('un problema de forma que el revisor sigue viendo tras tres intentos ya no frena: sale igual, anotado como dudosa', $r === [$cfg['info']['envios']] && empty($c['comercial_pausa'])
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa' && in_array('revision_sale_igual', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode([$r, $c['comercial_ultimo']['revision'] ?? null], JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada('tienda');
 oa([$decBien, $decBien], [$revRepite, $revRepite]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
@@ -1108,16 +1130,17 @@ foreach (['No te preocupes, vas a vender más', 'No solo vas a vender más, tamb
 $revFalta = ['ok' => false, 'problemas' => [['tipo' => 'no_contesta', 'detalle' => 'Preguntó cómo es el proceso y no se le contesta']], 'falta_contestar' => ['cómo es el tema']];
 $decCotiza = dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Buenísimo. Podemos armarte una web para presentar la escuela de artes marciales, las clases, horarios y contacto por WhatsApp'],
                  'ficha' => ['rubro' => 'tu escuela de artes marciales', 'que_vende' => 'clases de artes marciales']]);
+// 9-nov: una duda sin contestar ya no frena el precio (se frenaban 30 charlas en 27 días y Pablo mandaba a mano lo mismo): sale y queda pendiente.
 $c = cv();
-oa([$decCotiza, $decCotiza], [$revFalta, $revFalta]);
+oa([$decCotiza, $decCotiza, $decCotiza], [$revFalta, $revFalta, $revFalta]);
 $r = turno('Cuánto sale hacer una web para una entidad de artes marciales? Cómo es el tema?', $c, $cfg);
-caso('cotizando, una duda sin resolver frena la salida y queda para Pablo con el detalle', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano' && empty($c['precio_dado'])
-    && ($c['comercial_pendientes'] ?? []) === ['cómo es el tema'] && strpos($c['comercial_motivo'] ?? '', 'cómo es el tema') !== false
-    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'frenada', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
+caso('cotizando, una duda sin resolver ya no frena la salida: sale la cotización y la duda queda pendiente', count($r) === 3 && empty($c['comercial_pausa']) && !empty($c['precio_dado'])
+    && ($c['comercial_pendientes'] ?? []) === ['cómo es el tema'] && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode([$r, $c['comercial_pausa'] ?? ''], JSON_UNESCAPED_UNICODE));
 $c = cv_cotizada('tienda');
-oa([$decMal, $decMal], [$revFalta, $revFalta]);
+oa([$decMal, $decMal, $decMal], [$revFalta, $revFalta, $revFalta]);
 $r = turno('Y hacen envíos al interior?', $c, $cfg);
-caso('contestando una duda, lo que queda sin contestar sí la frena (lo ve Pablo)', $r === [] && ($c['comercial_pausa'] ?? '') === 'humano', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('contestando una duda, lo que queda sin contestar sale igual y queda pendiente para el turno siguiente', $r === [$cfg['info']['plazos']] && empty($c['comercial_pausa'])
+    && ($c['comercial_pendientes'] ?? []) === ['cómo es el tema'], json_encode($r, JSON_UNESCAPED_UNICODE));
 // "Renovación de hosting y dominio, no sé qué vendría a ser eso": respuesta oficial con las dos cosas.
 caso('respuesta oficial que_es_hosting: hosting y dominio, incluidos, corta y ofrecida al modelo', mb_stripos((string)($cfg['info']['que_es_hosting'] ?? ''), 'servidor') !== false
     && mb_stripos((string)$cfg['info']['que_es_hosting'], 'dominio') !== false && mb_strlen((string)$cfg['info']['que_es_hosting']) <= 260
@@ -1245,33 +1268,33 @@ caso('el revisor pide completar y la respuesta corregida resuelve todas las duda
     && ($c['comercial_pendientes'] ?? null) === [] && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'corregida');
 
 $c = cv_cotizada('tienda');
-oa([$parcial, $parcial], [$faltaDos, $faltaDos]);
+oa([$parcial, $parcial, $parcial], [$faltaDos, $faltaDos, $faltaDos]);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('si no se corrige, conserva las dos dudas y las muestra en el motivo para Pablo', $r === []
-    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && !empty($c['handoff_pendiente'])
-    && strpos($c['comercial_motivo'], 'Qué plataforma usan?') !== false && strpos($c['comercial_motivo'], 'Quién carga los productos?') !== false);
+caso('si no se corrige en tres intentos, sale lo que hay y conserva las dos dudas pendientes (9-nov: antes se frenaba y lo veía Pablo)', count($r) === 1 && mb_stripos($r[0], 'hosting') !== false
+    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && empty($c['comercial_pausa'])
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode([$r, $c['comercial_pendientes'] ?? null], JSON_UNESCAPED_UNICODE));
 caso('los pendientes llegan al contexto del turno siguiente', strpos(wabot_comercial_contexto('Hola', $c, $cfg), 'DUDAS QUE QUEDARON PENDIENTES') !== false
     && strpos(wabot_comercial_contexto('Hola', $c, $cfg), 'Quién carga los productos?') !== false);
-// Simula que Pablo vuelve a habilitar la charla: solo se limpian tras una revisión satisfactoria.
-$c['comercial_pausa'] = ''; $c['control_manual'] = false; $c['bot_off'] = false;
+// En el turno siguiente el modelo las contesta: solo se limpian tras una revisión satisfactoria.
 oa([$completa]);
 $r = turno('Y lo que te pregunté?', $c, $cfg);
-// Es su segundo mensaje después de la oferta y se le contesta sin preguntarle nada: va también la repregunta de la demo (26-oct).
-caso('al resolver pendientes verificados se limpian y no quedan arrastrados', count($r) === 4 && ($c['comercial_pendientes'] ?? null) === []
-    && $r[3] === wabot_comercial_texto_confirmar_demo($cfg), json_encode($r, JSON_UNESCAPED_UNICODE));
+// Es su segundo mensaje después de la oferta y se le contesta sin preguntarle nada: va también la repregunta de la demo (26-oct). El hosting ya salió y no se repite.
+caso('al resolver pendientes verificados se limpian y no quedan arrastrados', count($r) === 3 && ($c['comercial_pendientes'] ?? null) === []
+    && $r[2] === wabot_comercial_texto_confirmar_demo($cfg), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = cv_cotizada('tienda');
 oa([$parcial, $completa], [$faltaDos, 'falla']);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('si falla la segunda revisión, no se da por resuelta una omisión conocida', $r === []
-    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && ($c['comercial_pausa'] ?? '') === 'humano');
+caso('si falla la segunda revisión, sale lo corregido pero la omisión conocida no se da por resuelta: sigue pendiente', count($r) === 3
+    && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar'] && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = cv_cotizada('tienda');
 $c['comercial_pendientes'] = ['Quién carga los productos?'];
 oa([$completa], ['falla']);
 $r = turno('Y lo que te pregunté?', $c, $cfg);
-caso('si falla la primera revisión con pendientes previos, los conserva para Pablo', $r === []
-    && ($c['comercial_pendientes'] ?? []) === ['Quién carga los productos?'] && ($c['comercial_pausa'] ?? '') === 'humano');
+caso('si falla la primera revisión con pendientes previos, la respuesta sale y los conserva pendientes (9-nov: antes derivaba el turno entero)', count($r) >= 3
+    && ($c['comercial_pendientes'] ?? []) === ['Quién carga los productos?'] && empty($c['comercial_pausa'])
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = cv_cotizada('tienda');
 oa([$parcial, dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pablo debe confirmar el caso'])], [$faltaDos]);
@@ -1281,9 +1304,37 @@ caso('derivar durante la corrección conserva las preguntas para que Pablo las c
 
 $c = cv_cotizada('tienda');
 $revInconsistente = $faltaDos; $revInconsistente['ok'] = true;
-oa([$parcial, $parcial], [$revInconsistente, $revInconsistente]);
+oa([$parcial, $parcial, $parcial], [$revInconsistente, $revInconsistente, $revInconsistente]);
 $r = turno('Incluye hosting? Qué plataforma usan? Quién carga los productos?', $c, $cfg);
-caso('ok=true no oculta un falta_contestar no vacío', $r === [] && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar']);
+caso('ok=true no oculta un falta_contestar no vacío', count($r) === 1 && ($c['comercial_pendientes'] ?? []) === $faltaDos['falta_contestar']
+    && ($c['comercial_ultimo']['revision']['estado'] ?? '') === 'dudosa', json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// 9-nov: Pablo contestó a mano → las dudas pendientes eran para él y el bot no las arrastra más.
+$c = cv_cotizada('tienda');
+$c['comercial_pendientes'] = ['Quién carga los productos?'];
+wabot_conv_transcript($c, 'humano', 'Si son pocos los cargamos nosotros');
+caso('si Pablo contesta a mano, las dudas pendientes del bot se limpian', ($c['comercial_pendientes'] ?? null) === []);
+
+echo "— 17b. Lo que no hacemos y las dudas que se derivaban teniendo respuesta (9-nov) —\n";
+caso('respuesta oficial no_hacemos: existe, corta, ofrecida al modelo y conocida por el revisor', mb_strlen((string)($cfg['info']['no_hacemos'] ?? '')) > 0 && mb_strlen((string)$cfg['info']['no_hacemos']) <= 260
+    && in_array('no_hacemos', wabot_comercial_info_claves($cfg), true) && strpos(wabot_comercial_info($cfg), '- no_hacemos:') !== false
+    && mb_stripos(wabot_comercial_instrucciones_comportamiento(), 'no_hacemos') !== false && mb_stripos(wabot_comercial_reglas_resumen(), 'no_hacemos') !== false);
+caso('la información comercial ya no manda a humano lo que no hacemos: publicidad, logos y flyers van con su respuesta oficial', strpos(wabot_comercial_info($cfg), 'LO QUE NO HACEMOS (no se deriva') !== false
+    && preg_match('/LO QUE NO ES DE LISTA \(accion humano[^\n]*publicidad/u', wabot_comercial_info($cfg)) === 0);
+caso('rastro de no_hacemos: lo que pidieron de verdad sí, «tengo fotos» no', wabot_info_clave_tiene_rastro('no_hacemos', 'Yo te digo el servicio q ofrezco y ustedes me hacen flyer o videos', ['transcript' => []])
+    && wabot_info_clave_tiene_rastro('no_hacemos', 'También me pueden armar Spotify', ['transcript' => []])
+    && !wabot_info_clave_tiene_rastro('no_hacemos', 'Tengo fotos de mis productos y quiero una tienda', ['transcript' => []]));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['no_hacemos']])]);
+$r = turno('Yo te digo el servicio q ofrezco y ustedes me hacen flyer o videos?', $c, $cfg);
+caso('pedir flyers o videos se contesta con no_hacemos y la charla sigue con el bot', count($r) >= 1 && $r[0] === $cfg['info']['no_hacemos'] && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('las respuestas post-demo que preguntan antes ya se pueden pedir antes; las que dan por entregada la demo, no',
+    in_array('google_difusion', wabot_comercial_info_claves($cfg), true) && in_array('dejo_de_pagar', wabot_comercial_info_claves($cfg), true) && in_array('cambios_demo', wabot_comercial_info_claves($cfg), true)
+    && !in_array('material_web', wabot_comercial_info_claves($cfg), true) && !in_array('tiempo_entrega', wabot_comercial_info_claves($cfg), true)
+    && in_array('material_web', wabot_comercial_info_claves($cfg, true), true));
+caso('el índice duda → clave está en las instrucciones, y dejo_de_pagar dejó de ser motivo de humano', mb_stripos(wabot_comercial_instrucciones_comportamiento(), 'Antes de decidir humano porque') !== false
+    && mb_stripos(wabot_comercial_instrucciones_comportamiento(), 'dominio_a_nombre, accesos, titularidad') !== false
+    && mb_stripos(wabot_comercial_instrucciones_comportamiento(), 'es una duda, no esto: respuesta oficial dejo_de_pagar') !== false);
 
 $c = cv_cotizada('tienda');
 oa([$parcial, $parcial], [$faltaDos, $faltaDos]);

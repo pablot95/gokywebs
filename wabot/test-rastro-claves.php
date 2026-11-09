@@ -51,9 +51,19 @@ foreach ([
     caso("«{$texto}» → " . ($esperado ? 'con rastro' : 'sin rastro'), $r('estadisticas', $texto) === $esperado);
 }
 
+echo "\n=== Lo que no hacemos (9-nov): solo si lo pide ===\n";
+foreach ([
+    'Yo te digo el servicio q ofrezco y ustedes me hacen flyer o videos' => true,
+    'También me pueden armar Spotify'                                     => true,
+    'Tengo fotos de mis productos'                                        => false,
+    'Vendo ropa y quiero una tienda'                                      => false,
+] as $texto => $esperado) {
+    caso("«{$texto}» → " . ($esperado ? 'con rastro' : 'sin rastro'), $r('no_hacemos', $texto) === $esperado);
+}
+
 echo "\n=== Las formas reales de preguntar (consultas-ejemplos.php) siguen pasando ===\n";
 $ejemplos = (array)(require __DIR__ . '/consultas-ejemplos.php');
-foreach (['bilingue', 'marketing', 'estadisticas'] as $clave) {
+foreach (['bilingue', 'marketing', 'estadisticas', 'no_hacemos'] as $clave) {
     $sin = [];
     foreach ((array)($ejemplos[$clave] ?? []) as $ej) if (!$r($clave, $ej)) $sin[] = $ej;
     caso("$clave: los " . count((array)($ejemplos[$clave] ?? [])) . ' ejemplos tienen rastro', !$sin, implode(' | ', $sin));

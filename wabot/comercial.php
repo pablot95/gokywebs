@@ -487,17 +487,25 @@ function wabot_comercial_info_extra($cfg) {
 }
 
 /**
- * Las respuestas oficiales que solo pide la etapa post-demo (1-nov): fuera de
- * ella no entran al prompt ni al esquema, así las llamadas de antes no crecen.
+ * Las respuestas oficiales que escribió Pablo para la etapa post-demo (1-nov).
+ * Hasta el 9-nov ninguna entraba al prompt antes de la demo, y las charlas de
+ * octubre las preguntaban antes (si sale en Google, qué pasa si dejo de pagar,
+ * si la demo se puede cambiar, la comisión de Mercado Pago, .com o .com.ar) y
+ * el bot las derivaba por «no hay respuesta aprobada». Ahora se piden en las
+ * dos etapas; solo quedan para después las dos que hablan de la demo entregada.
  */
 function wabot_comercial_info_claves_postdemo() {
     return ['google_difusion', 'dominio_com_ar', 'dejo_de_pagar', 'cambios_demo', 'comisiones_mp', 'tiempo_entrega', 'material_web'];
+}
+/** Las que no tienen sentido antes de la demo: dan por entregada la demo o repiten plazos y que_necesitan. */
+function wabot_comercial_info_claves_solo_postdemo() {
+    return ['tiempo_entrega', 'material_web'];
 }
 
 /** Las claves de respuestas oficiales que puede pedir en este flujo ($postdemo: también las de después de la demo). */
 function wabot_comercial_info_claves($cfg, $postdemo = false) {
     $claves = array_values(array_filter(array_keys((array)($cfg['info'] ?? [])), function ($k) use ($postdemo) {
-        if (!$postdemo && in_array($k, wabot_comercial_info_claves_postdemo(), true)) return false;
+        if (!$postdemo && in_array($k, wabot_comercial_info_claves_solo_postdemo(), true)) return false;
         // turnos dice "incluido, no se paga aparte", y las reservas online son del plan con panel (Pablo, 9-oct): la cubre la solución reservas.
         // carga_pocos la elige el sistema con la cantidad contada (ver wabot_comercial_info_textos).
         return !in_array($k, ['otra', 'rangos', 'turnos', 'carga_pocos'], true);
@@ -520,7 +528,8 @@ function wabot_comercial_info($cfg, $postdemo = false) {
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
     $l[] = '- Dos webs distintas para el mismo cliente (dos negocios o dos sitios separados): se cotizan juntas con descuento sobre la suma de los dos planes. Marcá solucion (una) y segunda_solucion (la otra): el sistema arma el precio de las dos. Vos nunca escribís esos montos.';
     $l[] = '- Tecnología: desarrollo a medida (HTML, CSS y JavaScript), no WordPress, Tiendanube ni Wix. Se puede tomar una web de referencia visual.';
-    $l[] = "\nLO QUE NO HACEMOS O NO ES DE LISTA (accion humano, sin contestar): publicidad, redes sociales y marketing (eso es aparte: la web complementa las redes); diseño de logos; registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales, filtros o noticias; apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
+    $l[] = "\nLO QUE NO ES DE LISTA (accion humano, sin contestar): registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales, filtros o noticias; apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
+    $l[] = "LO QUE NO HACEMOS (no se deriva: va la respuesta oficial y seguís con la web): publicidad, redes sociales y marketing → marketing (eso es aparte: la web complementa las redes); diseño de logos → logo; flyers, videos, fotos o imágenes para redes, banners, podcasts o Spotify, recuperar cuentas de Facebook o Instagram, impresiones y tarjetas → no_hacemos.";
     $l[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema con los montos de esta charla). Pedilas en info_claves; nunca las copies ni las parafrasees:";
     /* Sin los ejemplos de «lo preguntan así» (Pablo, 27-oct): eran 88 renglones,
      * 35.800 caracteres, la mitad del prompt, y se pagaban en cada llamada. La
@@ -922,6 +931,17 @@ function wabot_comercial_revision_tipos() {
 function wabot_comercial_revision_graves() {
     return ['no_contesta', 'contradice', 'incoherente', 'decide_por_cliente', 'se_saltea_paso', 'inventa', 'promete'];
 }
+/**
+ * Los que frenan la salida aunque el modelo haya corregido dos veces (9-nov).
+ * De las 30 charlas frenadas del 12-oct al 7-nov, Pablo terminó mandando a
+ * mano lo que el bot ya tenía escrito en 22: el revisor marcaba forma
+ * («debería repetir los planes», «no contesta el precio»), no una mentira. Lo
+ * que el revisor sigue viendo como inventado, prometido o contradictorio no
+ * sale; el resto sale igual, anotado como dudosa y con las dudas pendientes.
+ */
+function wabot_comercial_revision_frenan() {
+    return ['inventa', 'promete', 'contradice'];
+}
 
 function wabot_comercial_revision_esquema() {
     return [
@@ -1144,6 +1164,9 @@ function wabot_comercial_revision_pedido(array $revision) {
     if (!empty($revision['falta'])) $l[] = 'Le falta contestar: ' . implode(' / ', (array)$revision['falta']);
     $l[] = "Lo que iba a recibir:\n" . (string)($revision['borrador'] ?? '');
     $l[] = 'Devolvé la decisión corregida: que conteste lo que preguntó, sin desviarse, sin repetir y sin decidir por el cliente. Las reglas de siempre siguen valiendo (montos, planes, demo y formulario los pone el sistema).';
+    if ((int)($revision['intento'] ?? 2) >= 3) {
+        $l[] = 'Es la segunda corrección: resolvé exactamente lo señalado. Si pide el precio y ya sabés la solución, accion cotizar; si falta una respuesta oficial, pedila en info_claves; si algo no lo podés contestar con lo aprobado, contestá lo demás igual.';
+    }
     return implode("\n", $l);
 }
 
@@ -1151,10 +1174,14 @@ function wabot_comercial_revision_pedido(array $revision) {
  * Un turno completo: piensa, valida, construye y revisa (Pablo, 9-oct: "que
  * pueda autodarse cuenta de que está desviándose o respondiendo idioteces
  * incoherentes, o si se saltea respuestas"). Si el revisor ve un problema, el
- * modelo corrige UNA vez con lo que dijo; si lo corregido sigue con un problema
- * grave, en automático no sale y lo ve Pablo con el motivo, y en sugerencias
- * sale con el aviso para que Pablo decida. Un fallo del revisor nunca borra
- * dudas ya detectadas: quedan para Pablo. Sin dudas previas sigue como estaba.
+ * modelo corrige con lo que dijo; si lo corregido sigue con un problema grave,
+ * en automático corrige UNA vez más (9-nov) y, si el revisor sigue viendo que
+ * inventa, promete o contradice, no sale y lo ve Pablo con el motivo; cualquier
+ * otro problema sale igual, anotado como dudosa, con las dudas sin contestar
+ * pendientes para el turno siguiente (hasta el 9-nov todo problema grave
+ * frenaba: 30 charlas en 27 días, 22 contestadas a mano por Pablo con lo que el
+ * bot tenía escrito). En sugerencias sale con el aviso para que Pablo decida.
+ * Un fallo del revisor nunca borra dudas ya detectadas: quedan pendientes.
  * Devuelve ['ok', 'error', 'decision', 'ajustes', 'b', 'modelo', 'revision', 'gastado', 'segundos'].
  */
 function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
@@ -1213,21 +1240,55 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
                     $revision['error'] = (string)($rev2['error'] ?? 'sin_datos');
                 }
             }
+            $esGrave = function ($p) { return in_array($p['tipo'], wabot_comercial_revision_graves(), true); };
+            if ($finales && array_filter($finales, $esGrave) && $modo !== 'sugerencia' && $r2['ok'] && ($rev2['ok'] ?? null) === false && $b['accion'] !== 'humano') {
+                /* Tercer intento (9-nov): la corrección del revisor sobre lo corregido.
+                 * Antes acá ya se frenaba, y en la mayoría Pablo mandaba a mano lo mismo. */
+                $r3 = wabot_comercial_pensar($texto, $conv, $cfg, $modo, ['crudo' => (string)($r2['crudo'] ?? ''), 'problemas' => $rev2['problemas'],
+                    'falta' => $rev2['falta'], 'borrador' => wabot_comercial_borrador_texto($b['mensajes']), 'intento' => 3]);
+                $sumar($r3['gastado'] ?? []);
+                if ($r3['ok']) {
+                    [$d3, $aj3] = wabot_comercial_validar($r3['decision'], $texto, $conv, $cfg);
+                    $b3 = wabot_comercial_construir($d3, $texto, $conv, $cfg);
+                    $rev3 = (wabot_comercial_hay_que_revisar($b3, $texto) || ($pendientes && $b3['accion'] !== 'humano')) ? wabot_comercial_revisar($texto, $conv, $cfg, $b3, $modo)
+                        : ['ok' => true, 'problemas' => [], 'falta' => [], 'gastado' => []];
+                    $sumar($rev3['gastado']);
+                    [$r, $d, $b] = [$r3, $d3, $b3];
+                    $ajustes = array_merge($aj3, ['revision_corrigio', 'revision_tercer_intento']);
+                    if ($b3['accion'] === 'humano') {
+                        $finales = [];
+                    } elseif ($rev3['ok'] === true) {
+                        $finales = [];
+                        $pendientes = [];
+                    } elseif ($rev3['ok'] === false) {
+                        $finales = $rev3['problemas'];
+                        $pendientes = wabot_comercial_revision_pendientes($rev3, $pendientes);
+                    } else {
+                        $revision['error'] = (string)($rev3['error'] ?? 'sin_datos');
+                    }
+                }
+            }
             if ($finales) {
                 $revision['estado'] = 'dudosa';
                 $revision['problemas_finales'] = $finales;
-                $graves = array_values(array_filter($finales, function ($p) {
-                    return in_array($p['tipo'], wabot_comercial_revision_graves(), true);
+                $graves = array_values(array_filter($finales, $esGrave));
+                $frenan = array_values(array_filter($graves, function ($p) {
+                    return in_array($p['tipo'], wabot_comercial_revision_frenan(), true);
                 }));
-                if ($graves && $modo !== 'sugerencia') {
-                    // En automático no sale algo que el revisor sigue viendo mal: lo contesta Pablo, con el motivo.
+                if ($frenan && $modo !== 'sugerencia') {
+                    // En automático no sale algo que el revisor sigue viendo inventado, prometido o contradictorio: lo contesta Pablo, con el motivo.
                     $d['accion'] = 'humano';
                     $d['mensajes'] = [];
-                    $d['motivo'] = 'Revisión: ' . $graves[0]['detalle']
+                    $d['motivo'] = 'Revisión: ' . $frenan[0]['detalle']
                         . ($pendientes ? ' Pendiente: ' . implode(' / ', $pendientes) : '');
                     $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
                     $revision['estado'] = 'frenada';
                     $ajustes[] = 'revision_frenada';
+                } elseif ($graves && $modo !== 'sugerencia') {
+                    // Sale igual (9-nov): lo que el revisor sigue viendo queda anotado, y lo sin contestar, pendiente.
+                    $ajustes[] = 'revision_sale_igual';
+                    wabot_log('comercial_revision_sale', ['tel' => (string)wabot_conversation_key($conv), 'modo' => $modo,
+                        'problemas' => implode(' | ', array_map(function ($p) { return $p['tipo'] . ': ' . $p['detalle']; }, $graves))]);
                 }
             }
         } else {
@@ -1235,16 +1296,13 @@ function wabot_comercial_decidir($texto, $conv, $cfg, $modo = 'real') {
             $revision['error'] = (string)($rev['error'] ?? '');
         }
     }
-    // Si había dudas de otro turno, un fallo del revisor no las da por respondidas.
+    /* Si había dudas de otro turno, un fallo del revisor no las da por
+     * respondidas: siguen pendientes. Hasta el 9-nov además se derivaba el
+     * turno entero, y una duda vieja dejaba sin contestar la pregunta nueva
+     * aunque fuera simple. */
     if ($pendientes && $revision['estado'] === 'sin_revisar' && $b['accion'] !== 'humano') {
-        $revision['estado'] = $modo === 'sugerencia' ? 'dudosa' : 'frenada';
+        $revision['estado'] = 'dudosa';
         $revision['problemas_finales'] = [['tipo' => 'no_contesta', 'detalle' => 'No se pudo verificar la respuesta a: ' . implode(' / ', $pendientes)]];
-        if ($modo !== 'sugerencia') {
-            $d['accion'] = 'humano';
-            $d['mensajes'] = [];
-            $d['motivo'] = 'Pendiente: ' . implode(' / ', $pendientes);
-            $b = wabot_comercial_construir($d, $texto, $conv, $cfg);
-        }
     }
     if ($pendientes && $b['accion'] === 'humano' && strpos((string)$d['motivo'], 'Pendiente: ') === false) {
         $d['motivo'] = trim((string)$d['motivo'] . ' Pendiente: ' . implode(' / ', $pendientes));

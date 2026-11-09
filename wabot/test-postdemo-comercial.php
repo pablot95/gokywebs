@@ -139,15 +139,18 @@ if ($flujoTest !== null) $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = $flujoTest;
 $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = true;
 $insPre = wabot_comercial_instrucciones($cfg);
 $insPost = wabot_comercial_instrucciones($cfg, true);
-caso('antes de la demo el prompt es el de siempre: sin el bloque post-demo ni sus respuestas', strpos($insPre, 'DESPUÉS DE LA DEMO') === false && strpos($insPre, '- google_difusion:') === false
-    && strpos($insPre, '- cambios_demo:') === false && mb_strlen($insPre) < 55000, (string)mb_strlen($insPre));
+// 9-nov: cinco de las siete respuestas post-demo también van antes de la demo (las preguntaban antes y se derivaban); solo quedan para después las que dan por entregada la demo.
+caso('antes de la demo el prompt no trae el bloque post-demo ni las respuestas que dan por entregada la demo', strpos($insPre, 'DESPUÉS DE LA DEMO') === false
+    && strpos($insPre, '- material_web:') === false && strpos($insPre, '- tiempo_entrega:') === false
+    && strpos($insPre, '- google_difusion:') !== false && strpos($insPre, '- cambios_demo:') !== false && mb_strlen($insPre) < 58000, (string)mb_strlen($insPre));
 caso('después de la demo el prompt trae el bloque y las respuestas nuevas', strpos($insPost, 'DESPUÉS DE LA DEMO') !== false && strpos($insPost, '- google_difusion:') !== false
     && strpos($insPost, '- dejo_de_pagar:') !== false && strpos($insPost, '- material_web:') !== false);
 foreach (['modelo_elegido', 'quiere_avanzar', 'pide_pago', 'pide_transferencia', 'pide_cambios', 'avisa_pago', 'lo veo y te aviso', 'comprobante'] as $p) {
     caso("el bloque post-demo habla de «{$p}»", mb_stripos($insPost, $p) !== false);
 }
-caso('las claves nuevas solo entran al esquema post-demo', !in_array('google_difusion', wabot_comercial_info_claves($cfg), true) && in_array('google_difusion', wabot_comercial_info_claves($cfg, true), true)
-    && count(wabot_comercial_info_claves($cfg, true)) === count(wabot_comercial_info_claves($cfg)) + count(wabot_comercial_info_claves_postdemo()));
+caso('solo tiempo_entrega y material_web quedan para el esquema post-demo (9-nov)', !in_array('material_web', wabot_comercial_info_claves($cfg), true) && in_array('material_web', wabot_comercial_info_claves($cfg, true), true)
+    && in_array('google_difusion', wabot_comercial_info_claves($cfg), true)
+    && count(wabot_comercial_info_claves($cfg, true)) === count(wabot_comercial_info_claves($cfg)) + count(wabot_comercial_info_claves_solo_postdemo()));
 caso('el esquema post-demo es otro, con sus campos; el de antes no cambia', (wabot_comercial_esquema($cfg)['name'] ?? '') === 'turno_comercial_v3'
     && (wabot_comercial_esquema($cfg, true)['name'] ?? '') === 'turno_postdemo_v1'
     && in_array('avisa_pago', wabot_comercial_esquema($cfg, true)['schema']['required'], true) && !in_array('avisa_pago', wabot_comercial_esquema($cfg)['schema']['required'], true));

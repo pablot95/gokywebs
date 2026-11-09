@@ -116,6 +116,18 @@ return [
         'el diseño del logo esta incluido?',
         'necesito logo, lo arman?',
     ],
+    // Lo que no hacemos y no es la web (9-nov): pedidos reales del 12-oct al 6-nov.
+    'no_hacemos' => [
+        'Yo te digo el servicio q ofrezco y ustedes me hacen flyer o videos',
+        'Baner y esas cosas',
+        'Necesito una imagen en redes, crear el diseño',
+        'Pero necesitaba que las imágenes también sean tomadas por alguien que sepa',
+        'Una pagina para youtube para subir mi musica con foto alegorica de fondo',
+        'También me pueden armar Spotify',
+        'te consulto, hacen algo para recuperar mi página de Facebook?',
+        'Te hago otra consulta, tema videos. Necesitan hacer videos. Eso lo hacen ustedes?',
+        'Quiero esa tarjeta en tamaño 13cm vertical sin el escrito',
+    ],
     'marketing' => [
         'Trabajan con community manager?',
         'Uds lo mueven para llegar a más personas, o tengo que pagar en otro lado?',
