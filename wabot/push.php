@@ -725,3 +725,135 @@ function wabot_push_reaviso_correr($ahora = null, $convs = null, $enviar = null)
     $res['detalle'] = array_column($items, 'clave');
     return $res;
 }
+
+/* ── Resumen diario de los chats sin responder (9-nov) ─────────────────────
+ *
+ * Pablo: «¿se puede agregar algo que cada 20 hs me diga si hay chats que
+ * quedaron pendientes? quizás los abro y después no me doy cuenta». A las
+ * 20 h (aviso_pendientes_hora, pestaña Estado) le llega a su WhatsApp la
+ * lista de lo que le toca y sigue sin respuesta: el mismo SL del panel
+ * (wabot_conv_es_sl), que NO mira si abrió el chat, solo si alguien le
+ * contestó al cliente. Renglón por renglón lo de los últimos 3 días (los
+ * urgentes primero, hasta 8), lo más viejo como número (ya tiene la ventana
+ * de Meta cerrada y vive en el panel). Una vez por día; sin pendientes
+ * recientes no manda nada. El push de cada 2 h (wabot_push_reaviso_correr)
+ * sigue igual: este es el repaso del final del día, a su WhatsApp.
+ *
+ * Fuera de su ventana de 24 h con el bot sale con la plantilla aviso_pablo
+ * (wabot_aviso_whatsapp_enviar): sin ella aprobada y activa, a las 20 h casi
+ * nunca llegaría (visto el 9-nov: 32 avisos sin salir en una tarde).
+ */
+const WABOT_AVISO_PENDIENTES_DIAS = 3;
+const WABOT_AVISO_PENDIENTES_RENGLONES = 8;
+const WABOT_AVISO_PENDIENTES_HORA_DEFAULT = 20;
+
+function wabot_aviso_pendientes_archivo() {
+    return (string)($GLOBALS['WABOT_TEST_AVISO_PENDIENTES_ARCHIVO'] ?? (WABOT_DATA . '/aviso-pendientes.json'));
+}
+
+function wabot_aviso_pendientes_activo($cfg = null) {
+    $cfg = $cfg ?? wabot_config_load();
+    return !empty($cfg['aviso_pendientes_activo']) && wabot_aviso_whatsapp_activo($cfg);
+}
+
+/** A qué hora de Argentina sale (0-23); fuera de rango, las 20. */
+function wabot_aviso_pendientes_hora($cfg = null) {
+    $cfg = $cfg ?? wabot_config_load();
+    $h = (int)($cfg['aviso_pendientes_hora'] ?? WABOT_AVISO_PENDIENTES_HORA_DEFAULT);
+    return ($h >= 0 && $h <= 23) ? $h : WABOT_AVISO_PENDIENTES_HORA_DEFAULT;
+}
+
+/**
+ * Lo que le toca a Pablo y sigue sin respuesta, partido en dos:
+ * ['recientes' => [...], 'viejas' => n]. Recientes = el cliente escribió hace
+ * menos de WABOT_AVISO_PENDIENTES_DIAS; cada una con quién, cuándo, urgencia,
+ * sus mensajes sin contestar y si Pablo ya la abrió. Urgentes primero y,
+ * dentro de cada grupo, de la más nueva a la que más espera: a las 20 h lo
+ * de hoy todavía se contesta como texto (ventana de Meta abierta); lo de
+ * hace dos días ya necesita plantilla y suele ser un «gracias, lo miro».
+ */
+function wabot_aviso_pendientes_items($convs, $ahora) {
+    $recientes = [];
+    $viejas = 0;
+    foreach ($convs as $cv) {
+        if (!is_array($cv)) continue;
+        $clave = (string)($cv['conversation_key'] ?? $cv['tel'] ?? '');
+        if ($clave === '' || stripos($clave, 'TEST') !== false) continue;
+        if (!wabot_conv_es_sl($cv)) continue;
+        $ult = (int)wabot_conv_ultimo_ts($cv);
+        if ($ult <= 0) continue;
+        if ($ahora - $ult > WABOT_AVISO_PENDIENTES_DIAS * 86400) { $viejas++; continue; }
+        $recientes[] = [
+            'clave'    => $clave,
+            'quien'    => wabot_push_quien($cv),
+            'ult'      => $ult,
+            'urgencia' => wabot_push_urgencia($cv),
+            'textos'   => wabot_push_textos_pendientes($cv),
+            'abierta'  => (int)($cv['panel_visto_ts'] ?? 0) >= $ult,
+        ];
+    }
+    usort($recientes, function ($a, $b) {
+        return [($a['urgencia'] === '') ? 1 : 0, $b['ult']] <=> [($b['urgencia'] === '') ? 1 : 0, $a['ult']];
+    });
+    return ['recientes' => $recientes, 'viejas' => $viejas];
+}
+
+/** El mensaje: [titulo, cuerpo]. El título es el primer renglón (y {quien} en la plantilla). */
+function wabot_aviso_pendientes_texto($items, $ahora) {
+    $rec = $items['recientes'];
+    $n = count($rec);
+    $abiertas = count(array_filter($rec, function ($i) { return !empty($i['abierta']); }));
+    $titulo = 'Chats sin responder: ' . $n . ($abiertas > 0 ? " ($abiertas ya " . ($abiertas === 1 ? 'abierto' : 'abiertos') . ')' : '');
+    $l = [];
+    foreach (array_slice($rec, 0, WABOT_AVISO_PENDIENTES_RENGLONES) as $i) {
+        $ultimo = trim((string)(end($i['textos']) ?: ''));
+        if (mb_strlen($ultimo) > 80) $ultimo = mb_substr($ultimo, 0, 79) . '…';
+        $l[] = ($i['urgencia'] !== '' ? '⚠ ' : '• ') . $i['quien'] . ' (hace ' . wabot_push_espera_texto($ahora - $i['ult']) . ')'
+             . ($ultimo !== '' ? ': ' . $ultimo : '');
+    }
+    if ($n > WABOT_AVISO_PENDIENTES_RENGLONES) $l[] = 'y ' . ($n - WABOT_AVISO_PENDIENTES_RENGLONES) . ' más';
+    if ((int)$items['viejas'] > 0) $l[] = 'De más de ' . WABOT_AVISO_PENDIENTES_DIAS . ' días: ' . (int)$items['viejas'] . '.';
+    return [$titulo, implode("\n", $l)];
+}
+
+/**
+ * La pasada del cron (seguimiento.php, cada 30 min): a la hora elegida y una
+ * vez por día. Si el envío falla (Meta, plantilla todavía sin aprobar) no se
+ * anota el día y la vuelta siguiente lo reintenta mientras siga siendo esa
+ * hora. $convs, $enviar y $cfg solo los pasan las pruebas.
+ */
+function wabot_aviso_pendientes_correr($ahora = null, $convs = null, $enviar = null, $cfg = null) {
+    $ahora = $ahora ?? time();
+    $cfg = $cfg ?? wabot_config_load();
+    $res = ['enviado' => false];
+    if ($enviar === null && !wabot_aviso_pendientes_activo($cfg)) return $res + ['motivo' => 'apagado'];
+    if (wabot_hora_local($ahora) !== wabot_aviso_pendientes_hora($cfg)) return $res + ['motivo' => 'no_es_la_hora'];
+    $dia = gmdate('Y-m-d', $ahora - 3 * 3600);
+    $archivo = wabot_aviso_pendientes_archivo();
+    $estado = is_file($archivo) ? (array)json_decode((string)@file_get_contents($archivo), true) : [];
+    if ((string)($estado['ultimo_dia'] ?? '') === $dia) return $res + ['motivo' => 'ya_mandado_hoy'];
+    if ($convs === null) {
+        $convs = [];
+        foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+            $clave = basename($f, '.json');
+            if (stripos($clave, 'TEST') !== false) continue;
+            $convs[] = wabot_conv_load($clave);
+        }
+    }
+    $items = wabot_aviso_pendientes_items($convs, $ahora);
+    $res['recientes'] = count($items['recientes']);
+    $res['viejas'] = $items['viejas'];
+    if (!$items['recientes']) return $res + ['motivo' => 'sin_pendientes'];
+    [$titulo, $cuerpo] = wabot_aviso_pendientes_texto($items, $ahora);
+    if ($enviar === null) {
+        $enviar = function ($t, $c) use ($cfg) {
+            return wabot_aviso_whatsapp_enviar($t, $c, ['tel' => '-', 'link' => 'https://www.gokywebs.com/wabot/admin.php?tab=conversaciones'], $cfg);
+        };
+    }
+    if (!$enviar($titulo, $cuerpo)) return $res + ['motivo' => 'no_salio'];
+    @file_put_contents($archivo, json_encode(['ultimo_dia' => $dia, 'ts' => $ahora, 'recientes' => count($items['recientes']), 'viejas' => $items['viejas']]), LOCK_EX);
+    wabot_log('aviso_pendientes', ['recientes' => array_column($items['recientes'], 'clave'), 'viejas' => $items['viejas']]);
+    $res['enviado'] = true;
+    $res['detalle'] = array_column($items['recientes'], 'clave');
+    return $res;
+}

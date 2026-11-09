@@ -71,6 +71,8 @@ try { wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['don
 $reaviso = wabot_push_reaviso_correr();
 // El resumen de los sin leer a su WhatsApp: los que entraron mientras se esperaban los 10 minutos (3-nov).
 try { $resumen = wabot_aviso_resumen_correr(); } catch (\Throwable $e) { $resumen = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
+// El resumen diario de los chats sin responder a su WhatsApp, a la hora elegida en Estado (9-nov).
+try { $pendientes = wabot_aviso_pendientes_correr(); } catch (\Throwable $e) { $pendientes = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 
 echo json_encode([
     'ultima_llamada' => [
@@ -87,6 +89,7 @@ echo json_encode([
     'webs' => $webs,
     'push_reaviso' => $reaviso,
     'aviso_resumen' => $resumen,
+    'aviso_pendientes' => $pendientes,
     'pagos' => $pagos,
     'onboarding' => $onboarding,
 ], JSON_UNESCAPED_UNICODE) . "\n";

@@ -219,7 +219,9 @@ function wabot_ajustes_claves() {
             // El gasto en publicidad leído de Meta para Inversión (meta-gasto.php, 13-oct).
             'meta_ads_token', 'meta_ads_cuenta',
             // Avisos a Pablo por WhatsApp y sus números propios (push.php, 1-nov).
-            'aviso_whatsapp_activo', 'aviso_whatsapp_tel', 'numeros_propios'],
+            'aviso_whatsapp_activo', 'aviso_whatsapp_tel', 'numeros_propios',
+            // El resumen diario de los chats sin responder a su WhatsApp (push.php, 9-nov).
+            'aviso_pendientes_activo', 'aviso_pendientes_hora'],
         // Modo de IA y OpenAI (27-sep): ver ia.php.
         wabot_ia_ajustes_claves());
 }

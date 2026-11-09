@@ -559,6 +559,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
      * desde ahí no es un cliente (webhook.php). */
     if ($a === 'aviso_guardar') {
         $cfg['aviso_whatsapp_activo'] = !empty($_POST['aviso_whatsapp_activo']);
+        // El resumen diario de los chats sin responder y su hora (push.php, 9-nov).
+        $cfg['aviso_pendientes_activo'] = !empty($_POST['aviso_pendientes_activo']);
+        $horaPend = (int)($_POST['aviso_pendientes_hora'] ?? WABOT_AVISO_PENDIENTES_HORA_DEFAULT);
+        $cfg['aviso_pendientes_hora'] = ($horaPend >= 0 && $horaPend <= 23) ? $horaPend : WABOT_AVISO_PENDIENTES_HORA_DEFAULT;
         $telAviso = preg_replace('/[^0-9]/', '', (string)($_POST['aviso_whatsapp_tel'] ?? ''));
         if (strlen($telAviso) >= 10) {
             $cfg['aviso_whatsapp_tel'] = $telAviso;
@@ -2441,11 +2445,14 @@ function burbujaCita(t, chat) {
                 <div>
                     <strong>Avisos por WhatsApp <?= $avisoActivo ? 'activos' : 'apagados' ?></strong>
                     <p class="meta">El bot te escribe a tu WhatsApp (<?= $avisoTel !== '' ? htmlspecialchars(wabot_formatear_tel($avisoTel)) : 'sin número' ?>) solo cuando te escribe alguien con la demo entregada: <code>Tenés un mensaje de …</code>. Si esa misma persona sigue escribiendo no te vuelve a avisar; vuelve a sonar cuando escribe otra demo entregada. Los chats normales y los de demo por presentar no avisan.</p>
+                    <p class="meta"><strong>Resumen de pendientes (9-nov):</strong> a la hora elegida te manda la lista de los chats que te tocan y siguen sin respuesta, los hayas abierto o no (el mismo SL de la lista): los de los últimos 3 días uno por renglón, los urgentes primero, y los más viejos como número. Si no hay ninguno reciente, no manda nada. Fuera de tu ventana de 24 h con el bot sale con la plantilla.</p>
                 </div>
                 <form method="post" class="fila" style="gap:8px;flex-wrap:wrap;align-items:center">
                     <input type="hidden" name="accion" value="aviso_guardar">
                     <label class="meta" style="margin:0"><input type="checkbox" name="aviso_whatsapp_activo" value="1" <?= !empty($cfg['aviso_whatsapp_activo']) ? 'checked' : '' ?> style="width:auto"> Activo</label>
                     <input type="text" name="aviso_whatsapp_tel" value="<?= htmlspecialchars($avisoTel) ?>" placeholder="549…" inputmode="numeric" style="<?= $estiloCampo ?>;width:17ch">
+                    <label class="meta" style="margin:0"><input type="checkbox" name="aviso_pendientes_activo" value="1" <?= !empty($cfg['aviso_pendientes_activo']) ? 'checked' : '' ?> style="width:auto"> Resumen de pendientes a las</label>
+                    <input type="number" name="aviso_pendientes_hora" value="<?= (int)wabot_aviso_pendientes_hora($cfg) ?>" min="0" max="23" style="<?= $estiloCampo ?>;width:7ch" title="Hora de Argentina, 0 a 23"> <span class="meta">h</span>
                     <button class="sec">Guardar</button>
                     <button type="button" class="sec" id="pushProbar">Probar</button>
                 </form>
@@ -2464,6 +2471,10 @@ function burbujaCita(t, chat) {
             </p>
             <?php if (!empty($avisoEstado['ultimo_aviso_ts'])): ?>
                 <p class="meta">Último aviso: <?= date('d/m H:i', (int)$avisoEstado['ultimo_aviso_ts']) ?>, por <?= htmlspecialchars((string)($avisoEstado['ultimo_aviso_via'] ?? '')) ?><?= !empty($avisoEstado['ultimo_aviso_ok']) ? ' ✓' : ' ✗ no salió' ?>.</p>
+            <?php endif; ?>
+            <?php $pendEstado = is_file(wabot_aviso_pendientes_archivo()) ? json_decode((string)@file_get_contents(wabot_aviso_pendientes_archivo()), true) : null;
+            if (is_array($pendEstado) && !empty($pendEstado['ts'])): ?>
+                <p class="meta">Último resumen de pendientes: <?= date('d/m H:i', (int)$pendEstado['ts']) ?> (<?= (int)($pendEstado['recientes'] ?? 0) ?> de los últimos 3 días, <?= (int)($pendEstado['viejas'] ?? 0) ?> más viejos).</p>
             <?php endif; ?>
         </div>
         <div class="card">

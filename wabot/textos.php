@@ -76,6 +76,12 @@ function wabot_textos_default() {
     'aviso_whatsapp_activo' => false,
     'aviso_whatsapp_tel' => '5491125068578',
     'numeros_propios' => ['5491125068578'],
+    /* El resumen diario de los chats que le tocan y siguen sin respuesta (9-nov, Pablo:
+     * «cada 20 hs me diga si hay chats que quedaron pendientes, quizás los abro y
+     * después no me doy cuenta»). Solo sale si los avisos por WhatsApp están prendidos.
+     * Ver wabot_aviso_pendientes_correr (push.php); se edita en la pestaña Estado. */
+    'aviso_pendientes_activo' => true,
+    'aviso_pendientes_hora' => 20,
     'adicional_bilingue' => '$30.000',
     'baja' => 'Listo, no te escribimos más. Gracias por avisar.',
     'cambio_modalidad' => 'Arrancás con el plan que más te sirva hoy. Si más adelante querés pasarte de uno al otro, las condiciones de ese cambio las coordinás con el desarrollador.',
@@ -682,13 +688,14 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         // Utilidad (1-nov): el aviso a Pablo cuando pasaron más de 24 h desde su
         // último mensaje al bot (push.php, wabot_aviso_whatsapp_enviar). El botón
-        // es la URL del panel con `?ver={clave}` al final. Apagada hasta que Meta
-        // la apruebe: mientras, fuera de la ventana solo sale el push.
+        // es la URL del panel con `?ver={clave}` al final. Creada por la API y
+        // aprobada por Meta el 9-nov (id 1108575475137265): hasta ese día no existía
+        // y fuera de la ventana no salía nada (32 avisos perdidos en una tarde).
         'aviso_pablo' => [
             'nombre' => 'aviso_pablo_mensaje',
             'idioma' => 'es_AR',
             'categoria' => 'UTILITY',
-            'activa' => false,
+            'activa' => true,
             'automatico' => true,
             'params' => ['quien', 'texto'],
             'boton' => ['clave'],
