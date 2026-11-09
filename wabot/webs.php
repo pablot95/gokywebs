@@ -53,6 +53,9 @@ const WABOT_WEBS_REPORTE_MIN_DIAS = 15;
 const WABOT_WEBS_CAIDA_MIN = 20 * 60;
 // Entre un aviso de caída y otro a la misma web, por lo menos un día.
 const WABOT_WEBS_AVISO_CADA = 86400;
+// Y a un mismo cliente, como mucho uno por mes (Pablo, 9-nov: el 8-nov un 508 de media hora
+// del hosting les llegó a 16 clientes; más de uno por mes ya es molestar).
+const WABOT_WEBS_AVISO_CLIENTE_CADA = 30 * 86400;
 // Una lista que el admin no actualiza hace más de esto puede tener bajas que el bot no sabe.
 const WABOT_WEBS_LISTA_VIEJA = 35 * 86400;
 const WABOT_WEBS_UA = 'Mozilla/5.0 (compatible; GokywebsMonitor/1.0; +https://gokywebs.com)';
@@ -376,12 +379,22 @@ function wabot_webs_nombre(array $f) {
     return wabot_renovacion_nombre($f['persona']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
 }
 
+/** Cuándo le salió a este cliente el último aviso de caída (lo guarda wabot_webs_enviar en su chat). */
+function wabot_webs_ultimo_aviso(array $f) {
+    if ($f['tel'] === '') return 0;
+    $clave = wabot_renovacion_clave($f['tel'], $motivo);
+    if ($clave === null || !wabot_conv_existe($clave)) return 0;
+    return (int)(wabot_conv_load($clave)['web_caida_resuelta_ts'] ?? 0);
+}
+
 /**
  * Los avisos de caída resuelta que quedaron pendientes: salen en horario, una
- * vez por día por web, a cada cliente de ese dominio.
+ * vez por día por web y como mucho una vez por mes a cada cliente de ese dominio.
+ * $ultimo(fila) reemplaza la lectura del chat en los tests.
  */
-function wabot_webs_avisos_correr(array $lista, $ahora, array $monitor, $cfg, $enviar = null, $avisar = null) {
-    $res = ['enviados' => 0, 'fallidos' => 0, 'detalle' => []];
+function wabot_webs_avisos_correr(array $lista, $ahora, array $monitor, $cfg, $enviar = null, $avisar = null, $ultimo = null) {
+    $ultimo = $ultimo ?? 'wabot_webs_ultimo_aviso';
+    $res = ['enviados' => 0, 'fallidos' => 0, 'salteados' => 0, 'detalle' => []];
     $p = wabot_plantilla_config('web_caida_resuelta', $cfg);
     $activa = $p !== null && (!array_key_exists('automatico', $p) || !empty($p['automatico']));
     foreach ($monitor as $d => $e) {
@@ -395,6 +408,12 @@ function wabot_webs_avisos_correr(array $lista, $ahora, array $monitor, $cfg, $e
         $monitor[$d]['aviso_ts'] = $ahora;
         foreach ($lista as $f) {
             if ($f['dominio'] !== $d) continue;
+            if ($ahora - (int)$ultimo($f) < WABOT_WEBS_AVISO_CLIENTE_CADA) {
+                $res['salteados']++;
+                $res['detalle'][] = ['id' => $f['id'], 'dominio' => $d, 'resultado' => 'mes'];
+                wabot_log('web_caida_aviso', ['id' => $f['id'], 'dominio' => $d, 'resultado' => 'mes']);
+                continue;
+            }
             $valores = [
                 'nombre'  => wabot_webs_nombre($f),
                 'negocio' => $f['negocio'] !== '' ? $f['negocio'] : 'tu negocio',
@@ -653,7 +672,7 @@ function wabot_webs_correr($cfg, $ahora = null, array $deps = []) {
     $chequeo = wabot_webs_chequear($estado['lista'], $ahora, $monitor, $deps['pedir'] ?? null, $avisar);
     $monitor = $chequeo['monitor'];
     unset($chequeo['monitor']);
-    $avisos = wabot_webs_avisos_correr($estado['lista'], $ahora, $monitor, $cfg, $deps['enviar'] ?? null, $avisar);
+    $avisos = wabot_webs_avisos_correr($estado['lista'], $ahora, $monitor, $cfg, $deps['enviar'] ?? null, $avisar, $deps['ultimo'] ?? null);
     $monitor = $avisos['monitor'];
     unset($avisos['monitor']);
     if ($enDisco) wabot_webs_monitor_guardar($monitor);

@@ -147,6 +147,18 @@ $mon = $av4['monitor']; $mon['gomeria.com.ar']['aviso_pendiente'] = ['desde' => 
 $av5 = wabot_webs_avisos_correr($lista, $ar('2026-10-30 11:00:00'), $mon, $apagada, $enviar, $avisar);
 caso('con la plantilla en manual no sale y el pendiente se descarta', !$mandados && $av5['monitor']['gomeria.com.ar']['aviso_pendiente'] === null);
 
+// 9-nov (Pablo): a un mismo cliente, como mucho un aviso de caída por mes.
+$mandados = [];
+$mon = $av4['monitor'];
+$mon['gomeria.com.ar']['aviso_ts'] = 0;
+$mon['gomeria.com.ar']['aviso_pendiente'] = ['desde' => $n0, 'hasta' => $n0 + 1800];
+$hace20 = function ($f) use ($ar) { return $f['id'] === 'mantenimiento:BBB' ? $ar('2026-10-20 10:00:00') : 0; };
+$av6 = wabot_webs_avisos_correr($lista, $ar('2026-11-08 10:00:00'), $mon, $cfg, $enviar, $avisar, $hace20);
+caso('con un aviso hace 19 días no le sale otro', !$mandados && $av6['salteados'] === 1 && $av6['detalle'][0]['resultado'] === 'mes' && $av6['monitor']['gomeria.com.ar']['aviso_pendiente'] === null, json_encode($av6));
+$mon['gomeria.com.ar']['aviso_pendiente'] = ['desde' => $n0, 'hasta' => $n0 + 1800];
+$av7 = wabot_webs_avisos_correr($lista, $ar('2026-11-20 10:00:00'), $mon, $cfg, $enviar, $avisar, $hace20);
+caso('pasados 30 días sí sale', count($mandados) === 1 && $av7['enviados'] === 1 && $av7['salteados'] === 0, json_encode($av7));
+
 echo "\n=== El resumen del mes ===\n";
 // Un octubre entero monitoreado: 20 días, 48 chequeos por día, una caída de 1 hora.
 $monitorMes = function ($fallidos, $caidas, $dias = 20) {
