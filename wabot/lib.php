@@ -18,6 +18,8 @@ define('WABOT_DATA', __DIR__ . '/data');
 
 // OpenAI (27-sep): el modo de IA, la llamada, el costo y la conversación antes del precio.
 require_once __DIR__ . '/ia.php';
+// Los datos de la demo por el chat en vez del link del formulario (Pablo, 9-nov): ver datos-demo.php.
+require_once __DIR__ . '/datos-demo.php';
 
 /* ─────────────────────────── Infraestructura ─────────────────────────── */
 
@@ -209,6 +211,8 @@ function wabot_ajustes_claves() {
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'form_confirmacion_activo', 'form_confirmacion_minutos',
+            // Los datos de la demo por el chat en vez del link del formulario (datos-demo.php, 9-nov).
+            'datos_por_chat',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
             // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
             'revision_activa', 'revision_gasto_max_usd',
@@ -2349,9 +2353,15 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
         $conv['archivado'] = false;
         $conv['desarchivado_ts'] = $fila['ts'];
     }
-    if (($quien === 'bot' || $quien === 'humano') && empty($conv['form_link_mandado_ts'])
-        && wabot_texto_tiene_link_form($texto)) {
-        $conv['form_link_mandado_ts'] = $fila['ts'];
+    if ($quien === 'bot' || $quien === 'humano') {
+        /* El pedido de los datos por el chat (9-nov) cuenta como el link mandado: mismo
+         * estado, mismo embudo. Su marca propia, datos_pedidos_ts, es desde dónde se
+         * leen las respuestas (datos-demo.php). Vale también si lo manda Pablo a mano. */
+        $pideDatos = is_string($texto) && function_exists('wabot_texto_pide_datos_demo') && wabot_texto_pide_datos_demo($texto);
+        if (empty($conv['form_link_mandado_ts']) && (wabot_texto_tiene_link_form($texto) || $pideDatos)) {
+            $conv['form_link_mandado_ts'] = $fila['ts'];
+        }
+        if ($pideDatos && empty($conv['datos_pedidos_ts'])) $conv['datos_pedidos_ts'] = $fila['ts'];
     }
     // "Te hablo el martes" (del cliente, o de Pablo desde el panel): ningún aviso
     // automático sale antes de esa fecha (wabot_retomar_activo, 11-oct).
@@ -2395,7 +2405,8 @@ function wabot_conv_form_recibido($cv) {
         || (int)($cv['form_completado_ts'] ?? 0) > 0 || !empty($cv['lead_creado'])) return true;
     foreach ((array)($cv['transcript'] ?? []) as $fila) {
         $q = $fila['q'] ?? '';
-        if (($q === 'bot' || $q === 'humano') && wabot_texto_tiene_link_form($fila['t'] ?? '')) return true;
+        if (($q === 'bot' || $q === 'humano') && (wabot_texto_tiene_link_form($fila['t'] ?? '')
+            || (function_exists('wabot_texto_pide_datos_demo') && wabot_texto_pide_datos_demo($fila['t'] ?? '')))) return true;
     }
     return false;
 }
@@ -7106,7 +7117,12 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     // `rubro` + `productos_servicios` + `objetivo_web` son los tres campos que
     // el admin junta en "Sobre el negocio y qué quiere lograr con la web".
     $brief = $conv['brief'] ?? null;
-    $marca    = trim((string)($brief['marca']    ?? ''));
+    /* El nombre que dio el cliente (por el chat desde el 9-nov, o en el formulario) manda;
+     * si no lo dijo, el que la IA sacó de la charla; si tampoco, uno armado del rubro. Antes
+     * el de la IA pisaba al escrito y, sin IA, el escrito se perdía por el armado del rubro
+     * (y el slug de la demo automática sale de este campo). */
+    $marca    = trim((string)($conv['nombre_negocio'] ?? ''));
+    if ($marca === '') $marca = trim((string)($brief['marca'] ?? ''));
     $rubro    = $brief['negocio']  ?? '';
     $ofrece   = $brief['ofrece']   ?? '';
     $objetivo = $brief['objetivo'] ?? '';
@@ -7175,6 +7191,8 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'colores'            => ['stringValue' => (string)$conv['colores']],
         // `referencias` es el campo que ya lee briefDetailHTML del admin.
         'referencias'        => ['stringValue' => (string)($conv['referencia'] ?? '')],
+        // El Instagram del negocio (9-nov): por el chat llega antes de crear la ficha; el formulario lo sigue completando con su PATCH.
+        'instagram'          => ['stringValue' => (string)($conv['instagram'] ?? '')],
         // Paso 2 del formulario (10-sep; los objetivos, 27-sep). El admin los
         // muestra y los copia en sus filas; `objetivos` es "Objetivos de la web".
         'estilo_pagina'      => ['stringValue' => $estilo],

@@ -254,7 +254,8 @@ function wabot_sugerencia_enviar($clave, $id, array $finales, $envioId, $cfg) {
             $efecto = (string)($m['efecto'] ?? 'texto');
             if ($texto !== trim((string)$m['t'])) $editada = true;
             // Si Pablo cambió el mensaje, el efecto vale solo si el contenido sigue ahí.
-            if ($efecto === 'formulario' && !wabot_texto_tiene_link_form($texto)) $efecto = 'texto';
+            if ($efecto === 'formulario' && !wabot_texto_tiene_link_form($texto)
+                && !(function_exists('wabot_texto_pide_datos_demo') && wabot_texto_pide_datos_demo($texto, $cfg))) $efecto = 'texto';
             if ($efecto === 'planes') { $v = wabot_comercial_montos_de_texto($texto); if ($v['mensual'] === '' || ($v['anual'] === '' && $v['unico'] === '' && $v['inicial'] === '')) $efecto = 'texto'; }
             if ($efecto === 'oferta' && !wabot_comercial_texto_es_oferta($texto, $cfg)) $efecto = 'texto';
             $idEnvio = $envioId !== '' ? $envioId . '-' . $i : '';

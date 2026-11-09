@@ -261,7 +261,8 @@ function wabot_textos_default() {
         'google' => 'La web queda preparada para que Google la encuentre. El puesto en que aparece depende del rubro y del tiempo, no se puede garantizar.',
         'maps' => 'Sí, si tenés local podemos sumar el mapa con tu ubicación y el acceso directo a Google Maps para que te lleguen con el GPS.',
         'ampliar_despues' => 'Sí, podés arrancar con lo que necesitás hoy y sumar funciones más adelante, sin rehacer la web.',
-        'que_necesitan' => 'Muy poco: completás un formulario cortito (nombre del negocio, qué ofrecés, colores y contacto) y con eso armamos la muestra. Si tenés logo y fotos, mejor, pero no hacen falta.',
+        // 9-nov: sin «completás un formulario», que ya no se manda (los datos se piden por el chat).
+        'que_necesitan' => 'Muy poco: el nombre del negocio, qué ofrecés y, si tenés, los colores de tu marca. Nos lo pasás por acá y con eso armamos la demo. Si tenés logo y fotos, mejor, pero no hacen falta.',
         'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         /* "Su nombre?", "con quién hablo?" (26-sep): se contesta primero y
          * después sigue la pregunta comercial pendiente, en el mismo turno. */
@@ -320,7 +321,7 @@ function wabot_textos_default() {
         'demo_gratis' => 'No tiene costo ni compromiso: es un primer diseño para que veas cómo quedaría tu web antes de decidir.',
         // "Cuánto tarda la demo?" (1-nov, charla en vivo): sin esta respuesta GPT la pasaba a Pablo y
         // el chat quedaba en control manual para siempre. Plazo de Pablo: "La entregamos en menos de 24 hs".
-        'demo_tiempo' => 'La demo la entregamos en menos de 24 hs desde que completás el formulario, sin costo ni compromiso. Si después avanzamos, la web completa queda lista en unos 7 días.',
+        'demo_tiempo' => 'La demo la entregamos en menos de 24 hs desde que nos pasás los datos, sin costo ni compromiso. Si después avanzamos, la web completa queda lista en unos 7 días.',
         'alternativas' => 'Son alternativas, elegís una sola: no se suman. Las dos incluyen el mantenimiento.',
         'plataformas' => 'No usamos Tiendanube, Shopify ni WordPress: te hacemos tu propia web a medida, con funciones parecidas (panel, carrito, Mercado Pago), y la armamos nosotros.',
         'recomendar_plan' => 'Si querés arrancar con poca inversión, el mensual; si preferís pagar una vez por año, el anual, que sale menos que doce meses.',
@@ -713,7 +714,7 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     'prediseno_completo' => 'Listo {nombre}, ya tenemos los datos para preparar la demo y te la mandamos por acá {entrega}. Si tenés {imagenes}, mandámelos para personalizarla; podemos empezar igual si todavía no los tenés.',
     'prediseno_completo_con_fotos' => 'Listo {nombre}, con eso ya lo preparamos. Con las fotos que me pasaste te la dejo lista {entrega} y te la mando por acá.',
     'prediseno_completo_solo_logo' => 'Listo {nombre}, el logo ya lo tengo y te mandamos la demo por acá {entrega}. Si tenés {imagenes}, mandámelas para personalizarla; podemos empezar igual sin ellas.',
-    'prediseno_espera' => 'Perfecto, cuando completes el formulario arrancamos con tu propuesta. Cualquier duda, escribime por acá.',
+    'prediseno_espera' => 'Perfecto, cuando me pases los datos arrancamos con tu propuesta. Cualquier duda, escribime por acá.',
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
@@ -944,10 +945,32 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
      * escribió nada más ni nadie le contestó, el bot le confirma que llegó. */
     'form_confirmacion_activo' => true,
     'form_confirmacion_minutos' => 5,
-    'form_confirmacion' => '{saludo}, ya recibimos tu formulario. Con esos datos preparamos la demo. Estará lista para {entrega}.',
+    'form_confirmacion' => '{saludo}, ya recibimos tus datos. Con eso preparamos la demo. Estará lista para {entrega}.',
     'form_recordatorio_activo' => false, // apagado el 6-nov a pedido de Pablo
     'form_recordatorio_horas' => 12,
-    'form_recordatorio' => '{saludo}, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.',
+    'form_recordatorio' => '{saludo}, ¿pudiste pasarnos los datos para la demo? Si tuviste algún problema, avisame y te ayudo.',
+    /* Los datos de la demo por el chat (Pablo, 9-nov: «no se envía más el link del formulario. El bot
+     * en lugar de dar form, pide los datos… y el bot arma el prospecto»). En el lugar del link va este
+     * pedido (texto de Pablo + la lista de lo que pedía el formulario, en su orden); lo que el cliente
+     * contesta lo lee GPT campo por campo y se crea la misma ficha de `propuestas` que creaba el
+     * formulario (datos-demo.php). Con datos_por_chat en false (Ajustes → IA) vuelve el link. */
+    'datos_por_chat' => true,
+    'datos_demo_pedido' => "Para armar la demo necesito los siguientes datos, no son todos obligatorios pero cuanto más nos pases, más personalizada quedará:\n{lista}",
+    'datos_demo_lista' => [
+        'Nombre de tu negocio o marca',
+        'Qué ofrecés (productos o servicios), en pocas líneas',
+        'Instagram del negocio',
+        'Colores de tu marca',
+        'Alguna web que te guste como referencia',
+        'Cosas que quieras incluir sí o sí (galería, mapa, horarios…)',
+        'Logo y fotos de tus productos, tu local o tus trabajos',
+    ],
+    // En Instagram se suma: del IGSID no sale ningún teléfono y la demo se entrega por WhatsApp.
+    'datos_demo_lista_instagram' => ['Tu número de WhatsApp, para mandarte la demo por ahí'],
+    // Con los datos recibidos, en el mismo turno (reemplaza a la confirmación de los 5 minutos). {entrega} como en form_confirmacion.
+    'datos_demo_recibidos' => 'Perfecto, con eso armamos la demo. Estará lista para {entrega}. Si querés sumar fotos, el logo o algún dato más, mandámelo por acá.',
+    // Mandó algo pero falta lo esencial (el nombre o qué ofrece): se le pide una vez; {faltan} es la lista.
+    'datos_demo_faltan' => 'Dale, anotado. Para arrancar me falta {faltan}.',
     /* Después del pago (1-nov, pagos.php + onboarding.php). pagos_auto apaga el poller de Mercado Pago;
      * onboarding_activo, que el bot pida lo que falta para la web. Las preguntas van UNA por vez, en el
      * orden de WABOT_ONBOARDING_PASOS: modelo (1, 2 o una mezcla), email solo si la web tiene panel con

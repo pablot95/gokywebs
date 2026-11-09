@@ -20,6 +20,10 @@ $GLOBALS['WABOT_TEST_TOTAL']  = 0;
 if (!isset($GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'])) $GLOBALS['WABOT_TEST_SOLO_BIENVENIDA'] = false;
 // La prueba de precios A/B (31-oct, ab-precios.php) va apagada salvo en test-ab-precios.php: el resto prueba lo de siempre.
 if (!isset($GLOBALS['WABOT_TEST_SIN_AB'])) $GLOBALS['WABOT_TEST_SIN_AB'] = true;
+/* Desde el 9-nov el bot pide los datos de la demo por el chat (datos-demo.php) y el link
+ * de /form/ queda como alternativa (datos_por_chat en false). Estas suites prueban el
+ * camino del link, que sigue vivo; test-datos-demo.php prueba el pedido por el chat. */
+if (!isset($GLOBALS['WABOT_TEST_FORM_LINK'])) $GLOBALS['WABOT_TEST_FORM_LINK'] = true;
 
 require_once __DIR__ . '/redactor.php';
 

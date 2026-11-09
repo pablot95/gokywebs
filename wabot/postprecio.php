@@ -307,6 +307,11 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
         case 'demo_plazo':
             $recibido = (int)($conv['form_completado_ts'] ?? 0);
             if (!empty($conv['presentado_ts']) || ($recibido > 0 && time() - $recibido >= 86400)) return null;
+            // Desde el 9-nov los datos se piden por el chat (datos-demo.php); con datos_por_chat en false, el formulario.
+            if (function_exists('wabot_datos_por_chat') && wabot_datos_por_chat($cfg)) {
+                return $recibido > 0 ? 'Ya recibimos tus datos. La demo se prepara en menos de 24 hs desde que los recibimos.'
+                    : 'Para preparar la demo necesitamos los datos de tu negocio. Desde que nos los pasás por acá, se prepara en menos de 24 hs.';
+            }
             return $recibido > 0 ? 'Ya recibimos el formulario. La primera muestra se prepara en menos de 24 hs desde que lo recibimos.'
                 : 'Para preparar la primera muestra necesitamos recibir el formulario. Desde que lo completás, se prepara en menos de 24 hs.';
         case 'demo_aceptar':
@@ -319,8 +324,11 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
             $conv['esProspecto'] = true;
             return $form;
         case 'form_estado':
-            if (!empty($conv['form_completado_ts'])) return 'Sí, recibimos el formulario. Con esos datos preparamos la muestra.';
+            if (!empty($conv['form_completado_ts'])) return 'Sí, recibimos tus datos. Con eso preparamos la muestra.';
             if (!empty($conv['presentado_ts'])) return null;
+            if (function_exists('wabot_datos_por_chat') && wabot_datos_por_chat($cfg)) {
+                return (int)($conv['datos_pedidos_ts'] ?? 0) > 0 ? 'Todavía no me llegaron los datos. Mandámelos por acá cuando puedas y arrancamos con la demo.' : null;
+            }
             $link = wabot_form_link($conv, $cfg);
             return $link === '' ? null : 'Todavía no figura recibido el formulario. Revisá que hayas tocado Enviar al final: ' . $link;
         case 'modelo':

@@ -1358,7 +1358,7 @@ caso('el motivo de la corrección llega al modelo', strpos(json_encode(pedidos()
 caso('las instrucciones dicen que gastronomía es tienda sin preguntar y que publicidad no se deriva',
     strpos(wabot_comercial_instrucciones_comportamiento(), '"gastronomía" a secas') !== false
     && strpos(wabot_comercial_instrucciones_comportamiento(), 'Pedir publicidad, marketing') !== false
-    && strpos(wabot_comercial_instrucciones_comportamiento(), 'DESPUÉS DEL FORMULARIO') !== false);
+    && strpos(wabot_comercial_instrucciones_comportamiento(), 'DESPUÉS DE PEDIR LOS DATOS') !== false);   // 9-nov: antes «DESPUÉS DEL FORMULARIO»
 
 echo "\n— 26-oct: el número que elige es el del bloque con el pago único primero —\n";
 $bloque = planes('informativa', '$140.000', '$20.000');

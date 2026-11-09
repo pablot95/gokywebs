@@ -593,6 +593,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // Pagos cruzados solos y onboarding por el chat (1-nov): pagos.php y onboarding.php.
         if (isset($_POST['postprecio_config_presente'])) $cfg['pagos_auto'] = !empty($_POST['pagos_auto']);
         if (isset($_POST['postprecio_config_presente'])) $cfg['onboarding_activo'] = !empty($_POST['onboarding_activo']);
+        // Los datos de la demo por el chat en vez del link del formulario (9-nov): datos-demo.php.
+        if (isset($_POST['postprecio_config_presente'])) $cfg['datos_por_chat'] = !empty($_POST['datos_por_chat']);
         // El flujo comercial unificado (9-oct): off, sugerencias o auto.
         if (in_array($_POST['flujo_comercial'] ?? '', ['off', 'sugerencias', 'auto'], true)) $cfg['flujo_comercial'] = (string)$_POST['flujo_comercial'];
         // La revisión de las charlas cada media hora (revision.php, 9-oct).
@@ -796,6 +798,15 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_conv_save($conv);
         // Sin código en WhatsApp desde el 2-nov: se ata por el teléfono (wabot_form_link_armar).
         $link = wabot_form_link_armar($conv, $codigo);
+        /* Desde el 9-nov (Pablo: «no se envía más el link del formulario») el botón
+         * pega el pedido de los datos por el chat; al anotarse en el transcript
+         * la charla queda igual que con el link (datos-demo.php). */
+        if (function_exists('wabot_datos_por_chat') && wabot_datos_por_chat($cfg)) {
+            $pedido = wabot_datos_demo_texto($conv, $cfg);
+            if ($pedido === '') { echo json_encode(['error' => 'Esta charla ya mandó los datos de la demo.']); exit; }
+            echo json_encode(['ok' => true, 'link' => '', 'codigo' => $codigo, 'mensaje' => $pedido]);
+            exit;
+        }
         // El mensaje completo, listo para pegar (Pablo, 21-sep): el texto de
         // textos.php (editable desde Ajustes → Textos) y abajo el link.
         $intro = trim((string)($cfg['form_link_panel'] ?? ''));
@@ -3194,6 +3205,8 @@ function burbujaCita(t, chat) {
                 'Cruza los cobros de los últimos 3 días con los chats; lo dudoso queda en «pagos sin asignar» de Clientes.', !empty($cfg['pagos_auto'])) ?>
             <?= $quePasa('onboarding_activo', 'Pedir por el chat lo que falta para la web después del pago',
                 'De a una cosa: modelo, email del panel, logo y fotos, cambios. Si escribís vos, se pausa.', !empty($cfg['onboarding_activo'])) ?>
+            <?= $quePasa('datos_por_chat', 'Pedir los datos de la demo por el chat (sin el link del formulario)',
+                'Cuando acepta la demo le pide los datos en el chat y con la respuesta arma el prospecto solo. Destildado, vuelve el link de gokywebs.com/form/.', !array_key_exists('datos_por_chat', (array)$cfg) || !empty($cfg['datos_por_chat'])) ?>
 
             <?php /* Las explicaciones largas de antes (4-nov): no se borraron, quedaron acá plegadas. */ ?>
             <details class="plegable" style="margin-top:14px">

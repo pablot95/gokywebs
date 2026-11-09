@@ -59,7 +59,7 @@ echo "Texto\n";
 $c = fr_conv(12.5);
 $texto = wabot_form_recordatorio_texto_auto($c, $cfg, $ahora);
 caso('saludo según la hora y sin mandar el link otra vez',
-    $texto === 'Hola, buenas tardes, ¿pudiste completar el formulario? Si tuviste algún problema, avisame y te ayudo.', $texto);
+    $texto === 'Hola, buenas tardes, ¿pudiste pasarnos los datos para la demo? Si tuviste algún problema, avisame y te ayudo.', $texto);   // texto neutro desde el 9-nov (datos por el chat)
 $conLink = wabot_form_recordatorio_texto_auto($c, array_merge($cfg, ['form_recordatorio' => '{saludo}, acá está: {link}']), $ahora);
 caso('si algún día el texto pide {link}, va el mismo link que se le mandó', $conLink === 'Hola, buenas tardes, acá está: https://gokywebs.com/form/?c=AB12', $conLink);
 

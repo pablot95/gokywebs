@@ -213,7 +213,8 @@ oa([dc(['accion' => 'responder', 'info_claves' => ['plazos']])]);
 $r = turno('Y cuánto tarda?', $c, $cfg);
 // Entre el formulario y la demo, "plazos" es cuándo llega LA DEMO (wabot_texto_plazos, caso Lara del 28-ago), no los 7 días de la web.
 caso('«Y cuánto tarda?» → cuándo le llega la demo, y la charla sigue sin control manual', count($r) === 1 && strpos($r[0], 'la demo te llega') !== false && empty($c['control_manual']) && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('el modelo sabe que ya completó el formulario y cuándo llega la demo', strpos(contexto_pedido(), 'Ya completó el formulario de la demo') !== false && strpos(contexto_pedido(), 'la demo se la mandamos nosotros por acá') !== false);
+// 9-nov: la línea del contexto dice «Ya tenemos los datos de la demo (completó el formulario)»; por el chat, «(los mandó por el chat)».
+caso('el modelo sabe que ya completó el formulario y cuándo llega la demo', strpos(contexto_pedido(), 'Ya tenemos los datos de la demo (completó el formulario)') !== false && strpos(contexto_pedido(), 'la demo se la mandamos nosotros por acá') !== false);
 caso('y sigue con el prompt de antes de la demo (sin el bloque post-demo)', str_ends_with(tarea_pedida(), '-comercial') && strpos((string)pedidos()[0]['instructions'], 'DESPUÉS DE LA DEMO') === false);
 oa([dc(['accion' => 'esperar'])]);
 $r = turno('Dale, gracias', $c, $cfg);

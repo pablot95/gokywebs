@@ -62,9 +62,10 @@ Reglas:
 2. Planes: `comercial.planes_informativa` o `comercial.planes_panel` (anual primero) con los montos
    de la charla. Con pago único pedido, la línea `comercial.pago_unico` debajo.
 3. Oferta de la demo: `comercial.oferta_demo`, tal cual.
-4. Con el sí (aceptación leída en contexto, sin frase literal): `prediseno_link` con el link del
-   formulario de esa charla. Si además trae una duda habitual, la respuesta oficial va antes, en
-   el mismo turno.
+4. Con el sí (aceptación leída en contexto, sin frase literal): el pedido de los datos por el chat
+   (`datos_demo_pedido` + `datos_demo_lista`, desde el 9-nov; con `datos_por_chat` en false, el
+   link del formulario de `prediseno_link`). Si además trae una duda habitual, la respuesta oficial
+   va antes, en el mismo turno. Ver «Los datos de la demo por el chat», más abajo.
 
 Rubros con turnos (Pablo, chats del 9-oct): primero un mensaje con la web que le podemos armar y la
 pregunta "Te consulto: querés que la gente solamente te escriba por WhatsApp o también que pueda
@@ -186,6 +187,42 @@ El poller (`pagos.php`) cruza los cobros de Mercado Pago con los chats; al confi
 el «Genial, recibido… te escribo desde otro número» de Pablo y se calla (el onboarding por el chat
 —modelo, email si hay panel, logo y fotos, cambios— existe pero está apagado de fábrica).
 
+### Los datos de la demo por el chat (9-nov, `datos-demo.php`)
+Pablo, 9-nov: «no se envía más el link del formulario. El bot en lugar de dar form, pide los datos…
+y el bot arma el prospecto». Cómo quedó:
+- En el lugar del link (`wabot_oferta_diseno_form_texto`, que usan el flujo comercial, el borde
+  viejo y el botón «form» del panel) va el texto de Pablo con la lista de lo que pedía el
+  formulario, en su orden: nombre del negocio, qué ofrece, Instagram, colores, referencia, qué
+  incluir sí o sí, logo y fotos. En Instagram se suma el WhatsApp. Al que ya mandó los datos no se
+  le vuelven a pedir.
+- La charla queda como con el link mandado (`link_form_enviado`, `form_link_mandado_ts`, estado
+  `formulario`): embudo, columna del panel y reglas de después del link iguales. La marca propia es
+  `datos_pedidos_ts` (la pone `wabot_conv_transcript`, también si Pablo pega el texto desde el panel).
+- Con el pedido hecho, cada mensaje del cliente se lee primero con GPT (tarea `datos_demo`, JSON
+  estricto `datos_demo_v1`: ¿son los datos?, y cada campo por separado), juntando todo lo que escribió
+  desde el pedido (de a varios mensajes también). Un «ok», «dale», «después te paso» o una pregunta
+  corta no gastan la llamada. Si no son los datos, sigue el flujo de siempre (dudas, material, humano).
+- Con los datos: se completa la charla igual que `wabot_form_lead_procesar` (nombre_negocio,
+  descripcion, colores o «A elección del diseñador», instagram, referencia, incluir, telefono_wsp en
+  Instagram), línea `[Datos de la demo por chat] …` en el transcript, `form_completado_ts`,
+  `origen_prediseno = chat`, la MISMA ficha de `propuestas` con `wabot_firestore_lead` (Copiar 10,
+  demo automática y Presentar no cambian; el nombre que dio el cliente manda sobre el de la IA en
+  `nombre_negocio`), `LeadSubmitted` a Meta, `bot_off` (salvo «Bot después de la demo») y la
+  confirmación en el mismo turno (`datos_demo_recibidos`, con «hoy a la tarde» / «mañana»). La de los
+  5 minutos ya no sale.
+- Falta lo esencial (el nombre, o qué ofrece cuando la charla tampoco lo sabe): se le pide una vez
+  (`datos_demo_faltan`); la segunda vez sin eso, lo ve Pablo en silencio. Instagram sin WhatsApp:
+  `prediseno_whatsapp` hasta dos veces.
+- Sin OpenAI (caída, sin key): un texto con cuerpo y sin pregunta se toma como los datos, todo en el
+  resumen, y la línea del transcript avisa «leído sin IA».
+- Casilla Ajustes → IA «Pedir los datos de la demo por el chat» (`datos_por_chat`, prendida de
+  fábrica): destildada vuelve el link de /form/. Las suites viejas corren con el link
+  (`WABOT_TEST_FORM_LINK` en test-lib.php); `test-datos-demo.php` prueba el pedido por el chat.
+- Lo que NO cambió: /form/ sigue en línea (links viejos y quien lo complete a mano siguen creando
+  la ficha), las fotos que mandan por WhatsApp se cuelgan de la ficha como siempre
+  (`wabot_logo_sincronizar`), y la hora de la demo ya no se pregunta (Presentar usa el turno de
+  siempre según la hora en que llegan los datos).
+
 ## 5. Contradicciones y vacíos que necesitan decisión de Pablo
 
 **Resueltas el 9-oct a la noche:** la informativa no tiene panel (punto 9: las reservas online son
@@ -239,7 +276,7 @@ El bot no inventa ninguna de estas condiciones: donde hay dos versiones usa la q
     página, con publicaciones mensuales" y quería gestionarla él. El bot sigue preguntando.
 13. **Dropshipping.** Pablo cotizó a mano $40.000 / $260.000 a una mayorista con dropshipping (9-oct).
     El bot se lo pasa a Pablo; falta decidir si ese es un plan de lista.
-14. **`que_necesitan`** dice que el formulario pide el nombre; el formulario no lo pide desde el 2-oct.
+14. ~~**`que_necesitan`** dice que el formulario pide el nombre; el formulario no lo pide desde el 2-oct.~~ Resuelto el 9-nov: el texto ya no nombra el formulario (los datos se piden por el chat).
 
 ## 6. El revisor (9-oct a la noche)
 

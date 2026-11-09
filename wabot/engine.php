@@ -6460,6 +6460,10 @@ function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
  * chat venía. Vacío si el formulario está apagado o ya lo completó.
  */
 function wabot_oferta_diseno_form_texto(&$conv, $cfg) {
+    /* Desde el 9-nov (Pablo: «no se envía más el link del formulario»): en el mismo
+     * lugar va el pedido de los datos por el chat (datos-demo.php). Con
+     * datos_por_chat en false vuelve el link. */
+    if (function_exists('wabot_datos_por_chat') && wabot_datos_por_chat($cfg)) return wabot_datos_demo_texto($conv, $cfg);
     $link = wabot_form_link($conv, $cfg);
     if ($link === '') return '';
     $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
@@ -8449,6 +8453,11 @@ function wabot_form_ya_recibido_texto() {
  * al agente o al motor como siempre.
  */
 function wabot_form_enviado_responder($texto, &$conv, $cfg) {
+    // Los datos pedidos por el chat (9-nov): si esto son los datos, la ficha se arma acá mismo.
+    if (function_exists('wabot_datos_demo_turno')) {
+        $datos = wabot_datos_demo_turno($texto, $conv, $cfg);
+        if ($datos !== null) return $datos;
+    }
     $avisoCompleto = wabot_dice_que_completo_form($texto)
         && (mb_strpos((string)$texto, '?') === false || wabot_form_pregunta_recepcion($texto));
     // El formulario ya llegó: "ya lo completé, fijate" se confirma una vez.

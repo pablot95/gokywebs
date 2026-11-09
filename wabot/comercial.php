@@ -385,7 +385,7 @@ function wabot_comercial_elegible($conv, $cfg, $modo = 'auto') {
     if ($modo === 'auto' && (!empty($conv['control_manual']) || !empty($conv['bot_off']))) return [false, 'Lo sigue Pablo (control manual)'];
     $estado = wabot_comercial_estado($conv);
     if ($estado === 'postdemo') return wabot_comercial_postdemo_elegible($conv, $cfg);
-    if ($estado === 'formulario') return [false, 'Formulario enviado: lo sigue Pablo. El recordatorio automático sigue vigente.'];
+    if ($estado === 'formulario') return [false, 'Datos de la demo pedidos (o formulario enviado): lo sigue Pablo. Si manda los datos, el bot arma la ficha.'];
     if ($estado === 'humano') return [false, 'Pendiente para Pablo: ' . (string)($conv['comercial_motivo'] ?? 'caso especial')];
     if ($estado === 'rechazo') return [false, 'El cliente no quiso avanzar'];
     if (!empty($conv['pago_avisado_ts']) || !empty($conv['cliente_id'])) return [false, 'Pago avisado o cliente: lo sigue Pablo'];
@@ -632,10 +632,13 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
             ? '- Ya le ofrecimos la demo gratis y todavía no la aceptó: si este mensaje la acepta (aunque sea con otras palabras), accion formulario.'
             : '- Todavía no le ofrecimos la demo: sale sola después de los planes cuando cotizás.';
     } elseif (wabot_comercial_estado($conv) === 'formulario') {
+        $porChat = function_exists('wabot_datos_por_chat') && wabot_datos_por_chat($cfg);
         $c[] = ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']))
-            ? '- Ya completó el formulario de la demo: la demo se la mandamos nosotros por acá, ' . (function_exists('wabot_form_entrega_frase') ? wabot_form_entrega_frase($conv) : 'en menos de 24 hs')
-                . '. Si pregunta cuándo llega, decile eso con tus palabras. No le pidas más datos ni le mandes nada más: lo simple se contesta como en DESPUÉS DEL FORMULARIO y lo demás es humano.'
-            : '- YA LE MANDAMOS EL FORMULARIO DE LA DEMO y todavía no lo completó: seguí lo de DESPUÉS DEL FORMULARIO.';
+            ? '- Ya tenemos los datos de la demo' . ($porChat ? ' (los mandó por el chat)' : ' (completó el formulario)') . ': la demo se la mandamos nosotros por acá, ' . (function_exists('wabot_form_entrega_frase') ? wabot_form_entrega_frase($conv) : 'en menos de 24 hs')
+                . '. Si pregunta cuándo llega, decile eso con tus palabras. No le pidas más datos ni le mandes nada más: lo simple se contesta como en DESPUÉS DE PEDIR LOS DATOS y lo demás es humano.'
+            : ($porChat
+                ? '- YA LE PEDIMOS LOS DATOS DE LA DEMO POR EL CHAT y todavía no los mandó: seguí lo de DESPUÉS DE PEDIR LOS DATOS. Si este mensaje trae los datos, el sistema ya los tomó antes de llegar a vos.'
+                : '- YA LE MANDAMOS EL FORMULARIO DE LA DEMO y todavía no lo completó: seguí lo de DESPUÉS DE PEDIR LOS DATOS.');
     } elseif (wabot_comercial_estado($conv) === 'postdemo') {
         foreach (wabot_comercial_contexto_postdemo($conv, $cfg) as $linea) $c[] = $linea;
     }
@@ -2918,7 +2921,10 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         } elseif ($efecto === 'transferencia') {
             $conv['postdemo_transferencia_ts'] = $ahora;
         } elseif ($efecto === 'formulario') {
-            if (!wabot_texto_tiene_link_form($t)) continue;
+            // El link del formulario o, desde el 9-nov, el pedido de los datos por el chat (datos-demo.php).
+            $pideDatos = function_exists('wabot_texto_pide_datos_demo') && wabot_texto_pide_datos_demo($t, $cfg);
+            if (!wabot_texto_tiene_link_form($t) && !$pideDatos) continue;
+            if ($pideDatos && empty($conv['datos_pedidos_ts'])) $conv['datos_pedidos_ts'] = $ahora;
             $conv['link_form_enviado'] = true;
             $conv['esProspecto'] = true;
             $conv['precio_cta_pendiente'] = false;
@@ -3060,6 +3066,15 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
         $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Un acuse después de la demo',
                                      'ajustes' => ['postdemo_acuse'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
         return [];
+    }
+
+    /* Los datos de la demo por el chat (Pablo, 9-nov): con el pedido mandado, lo
+     * que escribe se lee primero como posible respuesta a ese pedido
+     * (datos-demo.php). Si son los datos, se arma la ficha y se le confirma; si
+     * es otra cosa (una duda, un «dale»), sigue lo de siempre. */
+    if ($postForm && function_exists('wabot_datos_demo_turno')) {
+        $datos = wabot_datos_demo_turno($texto, $conv, $cfg);
+        if ($datos !== null) return $datos;
     }
 
     /* "No puedo abrir el link" con el formulario mandado (Sabrina, Instagram,
