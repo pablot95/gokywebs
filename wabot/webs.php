@@ -10,7 +10,7 @@
  *     visitas y errores. Una vez por mes y por cliente.
  *   - `web_caida_resuelta`: cuando una web que estuvo caída vuelve a responder,
  *     el aviso de que pasó y ya está. Solo si estuvo caída un rato de verdad
- *     (WABOT_WEBS_CAIDA_MIN), en horario de contacto (si fue de noche, sale a la
+ *     (WABOT_WEBS_CAIDA_MIN y al menos WABOT_WEBS_CAIDA_CHEQUEOS chequeos fallidos seguidos), en horario de contacto (si fue de noche, sale a la
  *     mañana) y como mucho una vez por día por web. Pablo recibe el push siempre,
  *     al caerse y al volver.
  *
@@ -51,6 +51,13 @@ const WABOT_WEBS_HORA_HASTA = 20;
 const WABOT_WEBS_REPORTE_MIN_DIAS = 15;
 // Una caída más corta que esto no se le cuenta al cliente (Pablo igual recibe el push).
 const WABOT_WEBS_CAIDA_MIN = 20 * 60;
+// Y tiene que haber fallado en tantos chequeos seguidos (cada media hora). Con uno solo no se sabe si
+// estuvo caída 30 minutos o 10 segundos: el 8-nov un pico de 508 en el plan de las tiendas, que el
+// chequeo agarró una vez, les llegó a 16 clientes como caída de media hora (Pablo, 9-nov).
+const WABOT_WEBS_CAIDA_CHEQUEOS = 2;
+// Cuántas webs se piden a la vez: unas 45 están en el mismo plan de Hostinger, y pedirlas todas juntas
+// le suma 45 procesos de golpe a un plan que ya anda cerca del tope (el 508 es justo eso).
+const WABOT_WEBS_A_LA_VEZ = 6;
 // Entre un aviso de caída y otro a la misma web, por lo menos un día.
 const WABOT_WEBS_AVISO_CADA = 86400;
 // Y a un mismo cliente, como mucho uno por mes (Pablo, 9-nov: el 8-nov un 508 de media hora
@@ -179,7 +186,7 @@ function wabot_webs_numero($n) {
 /* ─────────────────── Monitoreo ─────────────────── */
 
 /**
- * Pide la portada de cada dominio por https, todas a la vez. Devuelve, por
+ * Pide la portada de cada dominio por https, de a WABOT_WEBS_A_LA_VEZ. Devuelve, por
  * dominio: ['ok' => bool, 'http' => int, 'motivo' => '', 'ssl_hasta' => ts|0].
  * Una web "ok" responde 2xx/3xx con el certificado válido y no es la página de
  * cuenta suspendida de Hostinger.
@@ -187,9 +194,7 @@ function wabot_webs_numero($n) {
 function wabot_webs_pedir(array $dominios) {
     $out = [];
     if (!$dominios) return $out;
-    $mh = curl_multi_init();
-    $chs = [];
-    foreach ($dominios as $d) {
+    $nuevo = function ($d) {
         $ch = curl_init('https://' . $d . '/');
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
@@ -203,35 +208,61 @@ function wabot_webs_pedir(array $dominios) {
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_HTTPHEADER     => ['Accept: text/html,*/*;q=0.8', 'Accept-Language: es-AR,es;q=0.9'],
         ]);
-        curl_multi_add_handle($mh, $ch);
-        $chs[$d] = $ch;
-    }
-    do {
-        $st = curl_multi_exec($mh, $activos);
-        if ($activos) curl_multi_select($mh, 1.0);
-    } while ($activos && $st === CURLM_OK);
-    // En multi, curl_errno() no sirve: el código de cada pedido llega por curl_multi_info_read().
-    $codigos = [];
-    while ($info = curl_multi_info_read($mh)) {
-        $codigos[spl_object_id($info['handle'])] = (int)$info['result'];
-    }
-
-    foreach ($chs as $d => $ch) {
-        $errno = $codigos[spl_object_id($ch)] ?? curl_errno($ch);
-        $http  = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        $body  = (string)curl_multi_getcontent($ch);
-        $sslHasta = 0;
-        $certs = curl_getinfo($ch, CURLINFO_CERTINFO);
-        if (is_array($certs) && isset($certs[0]['Expire date'])) {
-            $t = strtotime((string)$certs[0]['Expire date']);
-            if ($t) $sslHasta = $t;
+        return $ch;
+    };
+    // Ventana: entran de a WABOT_WEBS_A_LA_VEZ y la siguiente se suma cuando termina una. Así el
+    // tiempo de espera de cada una corre desde que se pide, no desde que entró a la cola.
+    $cola = array_values($dominios);
+    $mh = curl_multi_init();
+    $activas = [];   // spl_object_id => [dominio, handle]
+    $sumar = function () use (&$cola, &$activas, $mh, $nuevo) {
+        while ($cola && count($activas) < WABOT_WEBS_A_LA_VEZ) {
+            $d = array_shift($cola);
+            $ch = $nuevo($d);
+            curl_multi_add_handle($mh, $ch);
+            $activas[spl_object_id($ch)] = [$d, $ch];
         }
-        $out[$d] = wabot_webs_resultado($errno, curl_error($ch), $http, $body, $sslHasta);
+    };
+    $sumar();
+    while ($activas) {
+        $st = curl_multi_exec($mh, $corriendo);
+        if ($st !== CURLM_OK) break;
+        // En multi, curl_errno() no sirve: el código de cada pedido llega por curl_multi_info_read().
+        while ($info = curl_multi_info_read($mh)) {
+            $id = spl_object_id($info['handle']);
+            if (!isset($activas[$id])) continue;
+            [$d, $ch] = $activas[$id];
+            $out[$d] = wabot_webs_respuesta($ch, (int)$info['result']);
+            curl_multi_remove_handle($mh, $ch);
+            curl_close($ch);
+            unset($activas[$id]);
+        }
+        $sumar();
+        if ($activas && $corriendo) curl_multi_select($mh, 1.0);
+    }
+    // Lo que quedó sin respuesta (multi roto): como error de conexión.
+    foreach ($activas as [$d, $ch]) {
+        $out[$d] = wabot_webs_respuesta($ch, curl_errno($ch) ?: 7);
         curl_multi_remove_handle($mh, $ch);
         curl_close($ch);
     }
+    foreach ($cola as $d) $out[$d] = wabot_webs_resultado(7, '', 0, '');
     curl_multi_close($mh);
-    return $out;
+    // En el orden en que se pidieron.
+    $orden = [];
+    foreach ($dominios as $d) if (isset($out[$d])) $orden[$d] = $out[$d];
+    return $orden;
+}
+
+/** El resultado de un pedido terminado. */
+function wabot_webs_respuesta($ch, $errno) {
+    $sslHasta = 0;
+    $certs = curl_getinfo($ch, CURLINFO_CERTINFO);
+    if (is_array($certs) && isset($certs[0]['Expire date'])) {
+        $t = strtotime((string)$certs[0]['Expire date']);
+        if ($t) $sslHasta = $t;
+    }
+    return wabot_webs_resultado((int)$errno, curl_error($ch), (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE), (string)curl_multi_getcontent($ch), $sslHasta);
 }
 
 /** Interpreta una respuesta; separado de curl para probarlo sin red. */
@@ -319,16 +350,20 @@ function wabot_webs_chequear(array $lista, $ahora, array $monitor, $pedir = null
             $duro = $ahora - $desde;
             $e['caidas'][] = ['desde' => $desde, 'hasta' => $ahora, 'motivo' => (string)($e['motivo_caida'] ?? '')];
             $e['caidas'] = array_slice($e['caidas'], -30);
-            if ($duro >= WABOT_WEBS_CAIDA_MIN) $e['aviso_pendiente'] = ['desde' => $desde, 'hasta' => $ahora];
+            // Sin el contador (caídas de antes del 9-nov) se avisa como antes.
+            $fallos = (int)($e['fallos_seguidos'] ?? WABOT_WEBS_CAIDA_CHEQUEOS);
+            if ($duro >= WABOT_WEBS_CAIDA_MIN && $fallos >= WABOT_WEBS_CAIDA_CHEQUEOS) $e['aviso_pendiente'] = ['desde' => $desde, 'hasta' => $ahora];
             // Que volvió no se avisa (Pablo, 2-nov: solo lo que pide algo de él); la caída sí.
             $res['volvieron'][] = $d;
-            unset($e['motivo_caida']);
+            unset($e['motivo_caida'], $e['fallos_seguidos']);
         } elseif (!$x['ok'] && $e['ok'] !== false) {
             // Se cayó (o nunca respondió).
             $e['motivo_caida'] = $x['motivo'];
+            $e['fallos_seguidos'] = 1;
             $avisar('Se cayó la web de ' . $quien, $d . ': ' . $x['motivo'] . '. Te aviso cuando vuelva.');
             $res['caidas'][] = $d;
         } elseif (!$x['ok']) {
+            $e['fallos_seguidos'] = (int)($e['fallos_seguidos'] ?? 1) + 1;
             $res['siguen_caidas'][] = $d;
         }
         // Solo lo que falla o cambia queda en el log: 36 webs cada media hora serían 1.700 líneas por día.

@@ -128,17 +128,35 @@ $respuestas = [];
 $c7 = wabot_webs_chequear($lista, $t2 + 1800 + 600, $c6['monitor'], $pedir, $avisar);
 caso('una caída de 10 minutos vuelve sin aviso pendiente', $c7['monitor']['gomeria.com.ar']['ok'] === true && empty($c7['monitor']['gomeria.com.ar']['aviso_pendiente']));
 
-// De noche: el aviso espera a la mañana.
+// Un solo chequeo fallido y al siguiente anda (8-nov: el pico de 508 a las 20:30): no se sabe cuánto duró, no se le cuenta.
+$respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$u0 = $ar('2026-10-29 20:30:00');
+$cu1 = wabot_webs_chequear($lista, $u0, $c7['monitor'], $pedir, $avisar);
+caso('un chequeo fallido lleva la cuenta en 1', ($cu1['monitor']['gomeria.com.ar']['fallos_seguidos'] ?? 0) === 1);
+$respuestas = [];
+$cu2 = wabot_webs_chequear($lista, $u0 + 1800, $cu1['monitor'], $pedir, $avisar);
+caso('una sola falla de 30 min vuelve sin aviso al cliente', $cu2['monitor']['gomeria.com.ar']['ok'] === true && empty($cu2['monitor']['gomeria.com.ar']['aviso_pendiente']), json_encode($cu2['monitor']['gomeria.com.ar']));
+caso('pero queda anotada como caída para el resumen', end($cu2['monitor']['gomeria.com.ar']['caidas'])['desde'] === $u0);
+caso('y la cuenta se borra al volver', !isset($cu2['monitor']['gomeria.com.ar']['fallos_seguidos']));
+// Una caída de antes del 9-nov (sin la cuenta) avisa como siempre.
+$viejo = $cu1['monitor']; unset($viejo['gomeria.com.ar']['fallos_seguidos']);
+$cu3 = wabot_webs_chequear($lista, $u0 + 1800, $viejo, $pedir, $avisar);
+caso('una caída sin la cuenta (de antes) avisa como antes', ($cu3['monitor']['gomeria.com.ar']['aviso_pendiente'] ?? null) === ['desde' => $u0, 'hasta' => $u0 + 1800]);
+
+// De noche: el aviso espera a la mañana. Falla a las 3:00 y a las 3:30, vuelve a las 4.
 $respuestas = ['gomeria.com.ar' => [$mal, $mal]];
 $n0 = $ar('2026-10-30 03:00:00');
-$c8 = wabot_webs_chequear($lista, $n0, $c7['monitor'], $pedir, $avisar);
+$c8a = wabot_webs_chequear($lista, $n0, $cu2['monitor'], $pedir, $avisar);
+$respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$c8 = wabot_webs_chequear($lista, $n0 + 1800, $c8a['monitor'], $pedir, $avisar);
+caso('dos chequeos fallidos seguidos', ($c8['monitor']['gomeria.com.ar']['fallos_seguidos'] ?? 0) === 2);
 $respuestas = [];
-$c9 = wabot_webs_chequear($lista, $n0 + 1800, $c8['monitor'], $pedir, $avisar);
+$c9 = wabot_webs_chequear($lista, $n0 + 3600, $c8['monitor'], $pedir, $avisar);
 $mandados = [];
-$av3 = wabot_webs_avisos_correr($lista, $n0 + 1800, $c9['monitor'], $cfg, $enviar, $avisar);
-caso('a las 3:30 no se le escribe al cliente, queda pendiente', !$mandados && $av3['monitor']['gomeria.com.ar']['aviso_pendiente'] === ['desde' => $n0, 'hasta' => $n0 + 1800]);
+$av3 = wabot_webs_avisos_correr($lista, $n0 + 3600, $c9['monitor'], $cfg, $enviar, $avisar);
+caso('a las 4 no se le escribe al cliente, queda pendiente', !$mandados && $av3['monitor']['gomeria.com.ar']['aviso_pendiente'] === ['desde' => $n0, 'hasta' => $n0 + 3600]);
 $av4 = wabot_webs_avisos_correr($lista, $ar('2026-10-30 10:05:00'), $av3['monitor'], $cfg, $enviar, $avisar);
-caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandados[0][1] === 'mantenimiento:BBB' && $mandados[0][3]['desde'] === 'hoy a las 3:00' && $mandados[0][3]['hasta'] === 'hoy a las 3:30', json_encode($mandados, JSON_UNESCAPED_UNICODE));
+caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandados[0][1] === 'mantenimiento:BBB' && $mandados[0][3]['desde'] === 'hoy a las 3:00' && $mandados[0][3]['hasta'] === 'hoy a las 4:00', json_encode($mandados, JSON_UNESCAPED_UNICODE));
 caso('sin negocio dice "tu negocio" y el nombre es la persona', $mandados[0][3]['negocio'] === 'tu negocio' && $mandados[0][3]['nombre'] === 'Ana');
 
 $mandados = [];
