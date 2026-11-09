@@ -278,6 +278,17 @@ function wabot_config_load() {
         $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaOferta, date('c') . "\n");
     }
+    /* 9-nov: la plantilla aviso_pablo (aviso_pablo_mensaje) estaba guardada como inactiva y en
+     * Meta nunca se había creado; ese día se creó por la API y la aprobaron. Se prende una sola
+     * vez la guardada (el resumen de pendientes de las 20 h y los «Tenés un mensaje de X» salen
+     * por ella cuando Pablo no le escribió al bot en 24 h); si después la apaga desde Plantillas, queda. */
+    $marcaAvisoPablo = WABOT_DATA . '/migrated/aviso-pablo-activa-9nov';
+    if (is_array($guardado) && is_array($guardado['plantillas']['aviso_pablo'] ?? null)
+        && empty($guardado['plantillas']['aviso_pablo']['activa']) && !is_file($marcaAvisoPablo) && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $guardado['plantillas']['aviso_pablo']['activa'] = true;
+        $json = json_encode($guardado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json)) @file_put_contents($marcaAvisoPablo, date('c') . "\n");
+    }
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
             if (array_key_exists($k, $guardado)) {

@@ -55,9 +55,14 @@ caso('queda anotado cómo salió', !empty($est['ultimo_aviso_ok']) && ($est['ult
 echo "Con la ventana cerrada\n";
 wabot_aviso_estado_guardar(['entrante_ts' => time() - 25 * 3600]);
 caso('cerrada a las 25 h', !wabot_aviso_ventana_abierta());
+// Hasta el 9-nov la plantilla no existía en Meta y venía apagada de fábrica; ese día se creó,
+// la aprobaron y pasó a activa. El caso la apaga a mano para ver qué pasa sin ella.
+caso('de fábrica la plantilla aviso_pablo está activa (9-nov)', !empty(wabot_textos_default()['plantillas']['aviso_pablo']['activa']));
+$cfgSinPlantilla = $cfg;
+$cfgSinPlantilla['plantillas']['aviso_pablo']['activa'] = false;
 $GLOBALS['WABOT_TEST_ENVIADOS'] = []; $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
-$n = wabot_aviso_whatsapp_enviar('Marcela', 'hola?', ['tel' => '549TEST1', 'link' => $link]) ? 1 : 0;
-caso('sin la plantilla aprobada no sale nada por WhatsApp', $n === 0 && empty($GLOBALS['WABOT_TEST_ENVIADOS']) && empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
+$n = wabot_aviso_whatsapp_enviar('Marcela', 'hola?', ['tel' => '549TEST1', 'link' => $link], $cfgSinPlantilla) ? 1 : 0;
+caso('con la plantilla apagada no sale nada por WhatsApp', $n === 0 && empty($GLOBALS['WABOT_TEST_ENVIADOS']) && empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
 caso('y queda anotado que no salió', empty(wabot_aviso_estado()['ultimo_aviso_ok']) && (wabot_aviso_estado()['ultimo_aviso_via'] ?? '') === 'ninguna');
 
 $cfgPlantilla = $cfg;
