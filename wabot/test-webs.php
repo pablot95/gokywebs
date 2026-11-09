@@ -128,18 +128,47 @@ $respuestas = [];
 $c7 = wabot_webs_chequear($lista, $t2 + 1800 + 600, $c6['monitor'], $pedir, $avisar);
 caso('una caída de 10 minutos vuelve sin aviso pendiente', $c7['monitor']['gomeria.com.ar']['ok'] === true && empty($c7['monitor']['gomeria.com.ar']['aviso_pendiente']));
 
-// De noche: el aviso espera a la mañana.
+// 9-nov: un solo chequeo fallido (508 en la pasada de las 20:30, bien a las 21:00) no es media
+// hora de caída: a Pablo le llega el push, al cliente no se le cuenta.
+$avisos = []; $respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$u0 = $ar('2026-10-29 20:30:00');
+$cu1 = wabot_webs_chequear($lista, $u0, $c7['monitor'], $pedir, $avisar);
+caso('el chequeo fallido avisa a Pablo y anota desde cuándo', count($avisos) === 1 && $cu1['monitor']['gomeria.com.ar']['ok'] === false && $cu1['monitor']['gomeria.com.ar']['ultimo_fallo_ts'] === $u0);
+$respuestas = [];
+$cu2 = wabot_webs_chequear($lista, $u0 + 1800, $cu1['monitor'], $pedir, $avisar);
+caso('con un solo chequeo fallido vuelve sin aviso al cliente', $cu2['monitor']['gomeria.com.ar']['ok'] === true && empty($cu2['monitor']['gomeria.com.ar']['aviso_pendiente']) && !array_key_exists('ultimo_fallo_ts', $cu2['monitor']['gomeria.com.ar']), json_encode($cu2['monitor']['gomeria.com.ar']['aviso_pendiente']));
+caso('pero la caída queda anotada para el resumen', end($cu2['monitor']['gomeria.com.ar']['caidas']) === ['desde' => $u0, 'hasta' => $u0 + 1800, 'motivo' => 'no responde (tiempo de espera agotado)'], json_encode($cu2['monitor']['gomeria.com.ar']['caidas']));
+// Dos chequeos fallidos seguidos (30 min vistos) sí se le cuentan.
+$respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$cu3 = wabot_webs_chequear($lista, $u0 + 3600, $cu2['monitor'], $pedir, $avisar);
+$respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$cu4 = wabot_webs_chequear($lista, $u0 + 5400, $cu3['monitor'], $pedir, $avisar);
+$respuestas = [];
+$cu5 = wabot_webs_chequear($lista, $u0 + 7200, $cu4['monitor'], $pedir, $avisar);
+caso('dos chequeos fallidos seguidos = aviso pendiente del primero a la vuelta', $cu5['monitor']['gomeria.com.ar']['aviso_pendiente'] === ['desde' => $u0 + 3600, 'hasta' => $u0 + 7200], json_encode($cu5['monitor']['gomeria.com.ar']['aviso_pendiente']));
+$c7 = $cu5; $c7['monitor']['gomeria.com.ar']['aviso_pendiente'] = null;
+
+// De noche: el aviso espera a la mañana (caída vista en dos chequeos, 3:00 y 3:30; vuelve a las 4:00).
 $respuestas = ['gomeria.com.ar' => [$mal, $mal]];
 $n0 = $ar('2026-10-30 03:00:00');
 $c8 = wabot_webs_chequear($lista, $n0, $c7['monitor'], $pedir, $avisar);
+$respuestas = ['gomeria.com.ar' => [$mal, $mal]];
+$c8b = wabot_webs_chequear($lista, $n0 + 1800, $c8['monitor'], $pedir, $avisar);
 $respuestas = [];
-$c9 = wabot_webs_chequear($lista, $n0 + 1800, $c8['monitor'], $pedir, $avisar);
+$c9 = wabot_webs_chequear($lista, $n0 + 3600, $c8b['monitor'], $pedir, $avisar);
 $mandados = [];
-$av3 = wabot_webs_avisos_correr($lista, $n0 + 1800, $c9['monitor'], $cfg, $enviar, $avisar);
-caso('a las 3:30 no se le escribe al cliente, queda pendiente', !$mandados && $av3['monitor']['gomeria.com.ar']['aviso_pendiente'] === ['desde' => $n0, 'hasta' => $n0 + 1800]);
+$av3 = wabot_webs_avisos_correr($lista, $n0 + 3600, $c9['monitor'], $cfg, $enviar, $avisar);
+caso('a las 4:00 no se le escribe al cliente, queda pendiente', !$mandados && $av3['monitor']['gomeria.com.ar']['aviso_pendiente'] === ['desde' => $n0, 'hasta' => $n0 + 3600], json_encode($av3['monitor']['gomeria.com.ar']['aviso_pendiente']));
 $av4 = wabot_webs_avisos_correr($lista, $ar('2026-10-30 10:05:00'), $av3['monitor'], $cfg, $enviar, $avisar);
-caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandados[0][1] === 'mantenimiento:BBB' && $mandados[0][3]['desde'] === 'hoy a las 3:00' && $mandados[0][3]['hasta'] === 'hoy a las 3:30', json_encode($mandados, JSON_UNESCAPED_UNICODE));
+caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandados[0][1] === 'mantenimiento:BBB' && $mandados[0][3]['desde'] === 'hoy a las 3:00' && $mandados[0][3]['hasta'] === 'hoy a las 4:00', json_encode($mandados, JSON_UNESCAPED_UNICODE));
 caso('sin negocio dice "tu negocio" y el nombre es la persona', $mandados[0][3]['negocio'] === 'tu negocio' && $mandados[0][3]['nombre'] === 'Ana');
+
+// 9-nov: «Hola _,» (ARMONIA, persona "_") y «Hola Todo,» (Todo Pernil, persona = negocio).
+caso('una persona sin letras saluda con el negocio', wabot_webs_nombre(['persona' => '_', 'negocio' => 'ARMONIA']) === 'ARMONIA');
+caso('un emoji solo también', wabot_webs_nombre(['persona' => '😎', 'negocio' => 'Lulu indumentaria']) === 'Lulu indumentaria');
+caso('persona igual al negocio: el negocio entero, no la primera palabra', wabot_webs_nombre(['persona' => 'Todo Pernil', 'negocio' => 'Todo Pernil']) === 'Todo Pernil');
+caso('la persona de verdad sigue cortándose a la primera palabra', wabot_webs_nombre(['persona' => 'Fernanda Gutierrez', 'negocio' => 'Los Fantasmas de la Pesca']) === 'Fernanda');
+caso('sin letras ni negocio: "cómo estás"', wabot_webs_nombre(['persona' => '_', 'negocio' => '']) === 'cómo estás');
 
 $mandados = [];
 $apagada = $cfg; $apagada['plantillas']['web_caida_resuelta']['automatico'] = false;

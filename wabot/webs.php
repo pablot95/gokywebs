@@ -10,7 +10,8 @@
  *     visitas y errores. Una vez por mes y por cliente.
  *   - `web_caida_resuelta`: cuando una web que estuvo caída vuelve a responder,
  *     el aviso de que pasó y ya está. Solo si estuvo caída un rato de verdad
- *     (WABOT_WEBS_CAIDA_MIN), en horario de contacto (si fue de noche, sale a la
+ *     (WABOT_WEBS_CAIDA_MIN entre el primer chequeo fallido y el último: un solo
+ *     chequeo fallido no se le cuenta), en horario de contacto (si fue de noche, sale a la
  *     mañana) y como mucho una vez por día por web. Pablo recibe el push siempre,
  *     al caerse y al volver.
  *
@@ -24,7 +25,7 @@
  * El monitoreo corre en cada pasada del cron (seguimiento.php, 0 y 30): pide la
  * portada de cada dominio por https (las que fallan se vuelven a pedir en la
  * misma pasada antes de darlas por caídas) y guarda data/webs-estado.json, por
- * dominio: {ok, desde_ts, ultimo_ts, http, motivo, ssl_hasta_ts,
+ * dominio: {ok, desde_ts, ultimo_ts, ultimo_fallo_ts (mientras está caída), http, motivo, ssl_hasta_ts,
  *           meses: {"YYYY-MM": {chequeos, fallidos, dias: {"DD": 1}}},
  *           caidas: [{desde, hasta, motivo}], aviso_pendiente: {desde, hasta}|null, aviso_ts}
  *
@@ -311,15 +312,19 @@ function wabot_webs_chequear(array $lista, $ahora, array $monitor, $pedir = null
         $quien = wabot_webs_quien($lista, $d);
 
         if ($x['ok'] && $e['ok'] === false) {
-            // Volvió.
+            // Volvió. Lo que se le cuenta al cliente es lo que se VIO caído: del primer
+            // chequeo fallido al último, no hasta la pasada en que ya respondía. Un solo
+            // chequeo fallido no son 30 minutos: el 8-nov a las 20:30 dieciséis webs dieron
+            // 508 en una pasada, a las 21:00 estaban bien, y a los 16 clientes les llegó
+            // «dejó de responder a las 20:30 y a las 21:00 ya estaba funcionando otra vez».
             $desde = (int)$e['desde_ts'];
-            $duro = $ahora - $desde;
+            $duro = (int)($e['ultimo_fallo_ts'] ?? $desde) - $desde;
             $e['caidas'][] = ['desde' => $desde, 'hasta' => $ahora, 'motivo' => (string)($e['motivo_caida'] ?? '')];
             $e['caidas'] = array_slice($e['caidas'], -30);
             if ($duro >= WABOT_WEBS_CAIDA_MIN) $e['aviso_pendiente'] = ['desde' => $desde, 'hasta' => $ahora];
             // Que volvió no se avisa (Pablo, 2-nov: solo lo que pide algo de él); la caída sí.
             $res['volvieron'][] = $d;
-            unset($e['motivo_caida']);
+            unset($e['motivo_caida'], $e['ultimo_fallo_ts']);
         } elseif (!$x['ok'] && $e['ok'] !== false) {
             // Se cayó (o nunca respondió).
             $e['motivo_caida'] = $x['motivo'];
@@ -331,6 +336,7 @@ function wabot_webs_chequear(array $lista, $ahora, array $monitor, $pedir = null
         // Solo lo que falla o cambia queda en el log: 36 webs cada media hora serían 1.700 líneas por día.
         if (!$x['ok'] || $x['ok'] !== $e['ok']) wabot_log('web_chequeo', ['dominio' => $d, 'ok' => $x['ok'], 'http' => $x['http'], 'motivo' => $x['motivo']]);
         if ($x['ok'] !== $e['ok']) $e['desde_ts'] = $ahora;
+        if (!$x['ok']) $e['ultimo_fallo_ts'] = $ahora;
         $e['ok'] = $x['ok'];
         $e['ultimo_ts'] = $ahora;
         $monitor[$d] = $e;
@@ -373,7 +379,7 @@ function wabot_webs_enviar(array $f, $plantilla, array $valores, $cfg, $enviar =
 
 /** "Juan" / el negocio / "cómo estás" para el {{1}} de la plantilla, como en la renovación. */
 function wabot_webs_nombre(array $f) {
-    return wabot_renovacion_nombre($f['persona']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
+    return wabot_renovacion_nombre($f['persona'], $f['negocio']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
 }
 
 /**
