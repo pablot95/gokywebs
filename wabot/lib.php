@@ -3352,6 +3352,48 @@ function wabot_ultima_foto_cliente($cv) {
 }
 
 /**
+ * Miniatura cuadrada de una foto del cliente para la lista del panel (9-nov).
+ * Se genera una vez en data/media/<clave>/mini/<archivo>.jpg (96 px: la lista
+ * la muestra a 34, con pantallas de 2x y 3x) y el panel la sirve con caché
+ * larga porque el nombre del archivo es único. Devuelve la ruta de la
+ * miniatura, o null si no se pudo (sin GD, formato raro, archivo roto): ahí
+ * el panel manda la original, como antes.
+ */
+function wabot_media_miniatura($ruta, $lado = 96) {
+    $dir = dirname($ruta) . '/mini';
+    $destino = $dir . '/' . basename($ruta) . '.jpg';
+    if (is_file($destino) && filesize($destino) > 0) return $destino;
+    if (!function_exists('imagecreatefromstring') || !function_exists('imagecreatetruecolor')) return null;
+    $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) return null;
+    $datos = @file_get_contents($ruta);
+    if ($datos === false || $datos === '') return null;
+    $src = @imagecreatefromstring($datos);
+    if (!$src) return null;
+    // Las fotos del celular vienen giradas por EXIF: enderezarlas antes de recortar.
+    if (in_array($ext, ['jpg', 'jpeg'], true) && function_exists('exif_read_data')) {
+        $exif = @exif_read_data($ruta);
+        $giro = [3 => 180, 6 => -90, 8 => 90][(int)($exif['Orientation'] ?? 1)] ?? 0;
+        if ($giro !== 0) {
+            $rot = @imagerotate($src, $giro, 0);
+            if ($rot) { imagedestroy($src); $src = $rot; }
+        }
+    }
+    $w = imagesx($src);
+    $h = imagesy($src);
+    if ($w < 1 || $h < 1) { imagedestroy($src); return null; }
+    $corte = min($w, $h);
+    $dst = imagecreatetruecolor($lado, $lado);
+    imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // fondo para los PNG con transparencia
+    imagecopyresampled($dst, $src, 0, 0, (int)(($w - $corte) / 2), (int)(($h - $corte) / 2), $lado, $lado, $corte, $corte);
+    imagedestroy($src);
+    if (!is_dir($dir)) @mkdir($dir, 0700, true);
+    $ok = @imagejpeg($dst, $destino, 82);
+    imagedestroy($dst);
+    return $ok && is_file($destino) && filesize($destino) > 0 ? $destino : null;
+}
+
+/**
  * Qué foto del cliente usar como logo del boceto: la última que mandó con
  * "logo" en el texto o el pie de foto, o si nunca lo aclaró, la última foto
  * que mandó en toda la charla (nadie manda referencias de diseño después
@@ -3604,6 +3646,8 @@ function wabot_lista_items() {
     // Un deploy que cambia el código (lib.php, engine.php) la arma de cero: las filas pueden traer campos nuevos.
     $version = @filemtime(__FILE__) . '-' . @filemtime(__DIR__ . '/engine.php');
     $cache = is_array($guardada) && ($guardada['version'] ?? '') === $version && is_array($guardada['filas'] ?? null) ? $guardada['filas'] : [];
+    // Las charlas que salieron de la lista hace menos de un día (9-nov): el panel las saca sin recargar.
+    $borrados = is_array($guardada) && is_array($guardada['borrados'] ?? null) ? $guardada['borrados'] : [];
     $ahora = time();
     $nuevo = [];
     $cambio = false;
@@ -3622,16 +3666,63 @@ function wabot_lista_items() {
             $nuevo[$tel] = $c;
             continue;
         }
+        $fila = wabot_lista_item($tel);
+        /* Cuándo cambió por última vez lo que el panel ve de esta fila (9-nov): si
+         * la releída es igual a la guardada (releer por vencimiento no cambia nada),
+         * conserva la fecha. Con eso el panel pide solo lo que cambió desde su
+         * última vuelta en vez de las 3.300 filas enteras. */
+        $firma = wabot_lista_fila_firma($fila);
+        $cambioTs = (is_array($c) && ($c['f'] ?? null) === $firma && !empty($c['c'])) ? (int)$c['c'] : $ahora;
         $nuevo[$tel] = ['m' => $m, 's' => $s, 'n' => $n, 'vence' => $ahora + WABOT_LISTA_CACHE_SEG - random_int(0, (int)(WABOT_LISTA_CACHE_SEG / 2)),
-                        'i' => wabot_lista_item($tel)];
+                        'f' => $firma, 'c' => $cambioTs, 'i' => $fila];
         $cambio = true;
     }
+    foreach (array_diff_key($cache, $nuevo) as $tel => $x) { $borrados[$tel] = $ahora; $cambio = true; }
+    foreach ($borrados as $tel => $ts) if ((int)$ts < $ahora - 86400 || isset($nuevo[$tel])) { unset($borrados[$tel]); $cambio = true; }
     if ($usarCache && ($cambio || count($nuevo) !== count($cache))) {
-        wabot_json_guardar_atomico($rutaCache, ['version' => $version, 'filas' => $nuevo]);
+        wabot_json_guardar_atomico($rutaCache, ['version' => $version, 'filas' => $nuevo, 'borrados' => $borrados]);
     }
-    $items = array_values(array_column($nuevo, 'i'));
+    $GLOBALS['WABOT_LISTA_BORRADOS'] = $borrados;
+    $items = [];
+    foreach ($nuevo as $e) {
+        $it = $e['i'];
+        $it['cambio_ts'] = (int)($e['c'] ?? 0);
+        $items[] = $it;
+    }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
     return $items;
+}
+
+/** Cuántos días de movimiento trae la primera vuelta de la lista del panel; lo anterior se carga a pedido (9-nov). */
+const WABOT_LISTA_PANEL_DIAS = 30;
+
+/**
+ * Los campos de una fila que usa el JS de la lista del panel (9-nov): 30 de
+ * los 43 de wabot_lista_item. ventana, espera, sl, tipo, fase, bot_tiene y los
+ * demás los leen otros lados (Conversaciones live, el aviso de demos, los
+ * seguimientos), no la lista. Menos campos: menos bytes por vuelta y una firma
+ * que no cambia por lo que depende de la hora.
+ */
+function wabot_lista_fila_panel(array $it) {
+    static $campos = ['tel', 'channel_user_id', 'canal', 'nombre', 'nombre_negocio', 'nombre_agenda', 'codigo', 'telefono_wsp', 'foto', 'ult', 'quien', 'ts',
+                      'inicio_ts', 'ultimo_cliente_ts', 'ultimo_salida_ts', 'estado', 'grupo', 'handoff_pendiente', 'sugerencia', 'bot_conversa_ts', 'no_leido',
+                      'sin_leer_cuenta', 'rta', 'contestado', 'favorito', 'retomar_ts', 'form_recibido', 'sin_respuesta_bienvenida', 'form_completado', 'cliente'];
+    $out = [];
+    foreach ($campos as $k) if (array_key_exists($k, $it)) $out[$k] = $it[$k];
+    return $out;
+}
+
+/** La firma de lo que el panel ve de una fila (sin «cliente», que se marca después desde la caché de clientes). */
+function wabot_lista_fila_firma(array $it) {
+    $p = wabot_lista_fila_panel($it);
+    unset($p['cliente']);
+    return md5(json_encode($p, JSON_UNESCAPED_UNICODE));
+}
+
+/** Las charlas que salieron de la lista desde $desde (borradas o pasadas a historial), después de una llamada a wabot_lista_items(). */
+function wabot_lista_borrados_desde($desde) {
+    $b = (array)($GLOBALS['WABOT_LISTA_BORRADOS'] ?? []);
+    return array_values(array_keys(array_filter($b, function ($ts) use ($desde) { return (int)$ts >= (int)$desde; })));
 }
 
 /** Cuánto puede tener una fila de la lista sin volver a leer su charla (si el archivo no cambió).

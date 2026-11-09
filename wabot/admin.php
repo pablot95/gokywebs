@@ -40,6 +40,22 @@ if (!empty($_POST['clave'])) {
     else { $errorLogin = 'Clave incorrecta'; }
 }
 $logueado = !empty($_SESSION['wabot']);
+/* La sesión ya está leída: se suelta el archivo acá (9-nov). PHP lo tiene
+ * trabado hasta que termina el script, así que cada pedido del panel —la
+ * lista, el chat, cada foto de la lista, el envío— esperaba al anterior en
+ * fila: con 50 fotos por pantalla el panel se sentía tildado. Nada de acá en
+ * adelante escribe en $_SESSION (el login, «salir» y el modo embebido están
+ * arriba; auth.php tiene su propio inicio). */
+session_write_close();
+
+/* Solo el chat (9-nov): el panel abre un chat sin recargar la página. Con
+ * ?solo=chat la respuesta es el <section class="conv-main"> de esa charla y su
+ * script, nada más; el JS de la lista reemplaza la sección y corre el script.
+ * La página entera se arma igual que siempre, pero en un búfer que se descarta
+ * salvo esas dos partes (los marcadores están en la plantilla). */
+$soloChat = $logueado && ($_GET['tab'] ?? '') === 'conversaciones' && ($_GET['solo'] ?? '') === 'chat' && trim((string)($_GET['ver'] ?? '')) !== '';
+$fragChat = '';
+if ($soloChat) ob_start();
 
 $cfg = wabot_config_load();
 $respuestasRapidas = wabot_respuestas_rapidas_load();
@@ -91,18 +107,31 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     // inline lo que el navegador sabe mostrar sin ejecutar nada: un .docx o un
     // .zip servido inline no aporta y abre superficie al pedo.
     $inlineOk = ['jpg','png','webp','gif','ogg','mp3','m4a','amr','wav','aac','mp4','3gp','mov','webm','pdf','txt'];
-    $disposicion = (($_GET['modo'] ?? '') === 'ver' && in_array($ext, $inlineOk, true)) ? 'inline' : 'attachment';
+    /* modo=mini (9-nov): la foto chica para la lista de chats. La lista mostraba
+     * la original (30 a 90 KB, 50 por pantalla) y la volvía a bajar en cada
+     * cambio de chat. Se genera una vez (wabot_media_miniatura) y, si no se
+     * puede, sale la original. */
+    $mini = ($_GET['modo'] ?? '') === 'mini';
+    $servir = $ruta;
+    $tipo = $mimes[$ext] ?? 'application/octet-stream';
+    if ($mini) {
+        $rutaMini = wabot_media_miniatura($ruta);
+        if ($rutaMini !== null) { $servir = $rutaMini; $tipo = 'image/jpeg'; }
+    }
+    $disposicion = ((($_GET['modo'] ?? '') === 'ver' || $mini) && in_array($ext, $inlineOk, true)) ? 'inline' : 'attachment';
     // El nombre real que le puso el cliente al archivo se guarda en el
     // transcript, no en disco: acá el archivo se llama por su timestamp.
     $nombreDescarga = trim((string)($_GET['nombre'] ?? ''));
     $nombreDescarga = preg_replace('/[^\w .\-()]+/u', '', $nombreDescarga);
     if ($nombreDescarga === '' || strlen($nombreDescarga) > 120) $nombreDescarga = $clave . '-' . $archivo;
-    header('Content-Type: ' . ($mimes[$ext] ?? 'application/octet-stream'));
+    header('Content-Type: ' . $tipo);
     header('X-Content-Type-Options: nosniff');
-    header('Content-Length: ' . filesize($ruta));
+    header('Content-Length: ' . filesize($servir));
     header('Content-Disposition: ' . $disposicion . '; filename="' . $nombreDescarga . '"');
-    header('Cache-Control: private, max-age=0, no-store');
-    readfile($ruta);
+    /* El archivo no cambia nunca (el nombre lleva fecha y hash): lo que se ve
+     * en línea queda un mes en el navegador (9-nov). La descarga sigue sin caché. */
+    header('Cache-Control: ' . ($disposicion === 'inline' ? 'private, max-age=2592000, immutable' : 'private, max-age=0, no-store'));
+    readfile($servir);
     exit;
 }
 
@@ -1098,7 +1127,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (!empty($_POST['visto']) && $ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
             wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
         }
-        echo json_encode([
+        $salida = [
             // Con las tildes de enviado/entregado/leído de WhatsApp (4-nov, wabot_transcript_estados).
             'transcript' => wabot_transcript_estados(wabot_transcript_citas(wabot_transcript_completo($_POST['tel'], $conv)), $conv),
             'fase'       => $conv['fase'],
@@ -1107,7 +1136,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'handoff_pendiente' => !empty($conv['handoff_pendiente']),
             // La sugerencia del flujo comercial para este chat (sugerencias.php, 9-oct), si el modo está prendido.
             'sugerencia' => wabot_flujo_comercial($cfg) !== 'off' ? wabot_sugerencia_para_panel($conv, $cfg) : null,
-        ], JSON_UNESCAPED_UNICODE);
+        ];
+        /* Si nada cambió desde la vuelta anterior (el panel manda la firma que
+         * recibió), la respuesta es un «igual» de 20 bytes en vez del chat entero
+         * cada pocos segundos (9-nov). La ventana de 24 h se cuenta en el panel. */
+        $firma = md5(json_encode($salida, JSON_UNESCAPED_UNICODE));
+        if ((string)($_POST['firma'] ?? '') === $firma) { echo json_encode(['igual' => true]); exit; }
+        $salida['firma'] = $firma;
+        echo json_encode($salida, JSON_UNESCAPED_UNICODE);
         exit;
     }
     /* Modo de sugerencias del flujo comercial (9-oct, sugerencias.php): mandar
@@ -1204,8 +1240,36 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'lista') {
         header('Content-Type: application/json; charset=utf-8');
+        /* Incremental (9-nov): el panel manda el «ts» de su vuelta anterior y recibe
+         * solo las filas que cambiaron desde entonces (cambio_ts, lib.php) y las que
+         * desaparecieron. Sin «desde» (la primera vuelta) van las que tuvieron
+         * movimiento en los últimos WABOT_LISTA_PANEL_DIAS días; con todo=1, todas.
+         * Hasta el 9-nov iban las 3.301 filas enteras (3 MB) cada 8 segundos, y
+         * además metidas en la página en cada cambio de chat. Nada de esto toca
+         * Firebase: la lista sale de los JSON del disco y de lista-cache.json. */
+        $ahora = time();
+        $desde = max(0, (int)($_POST['desde'] ?? 0));
+        $todo = !empty($_POST['todo']);
+        $items = wabot_clientes_marcar_lista(wabot_lista_items());
+        // Si cambió la caché de clientes, la marca «cliente» de cualquier fila pudo cambiar: va todo.
+        $clientesTs = (int)@filemtime(wabot_clientes_cache_archivo());
+        $incremental = $desde > 0 && $clientesTs < $desde - 1;
+        $corte = $todo ? 0 : $ahora - WABOT_LISTA_PANEL_DIAS * 86400;
+        $filas = [];
+        $omitidas = 0;
+        foreach ($items as $it) {
+            if ($incremental) {
+                if ((int)($it['cambio_ts'] ?? 0) < $desde - 1) continue;
+            } elseif ($corte > 0 && max((int)($it['ts'] ?? 0), (int)($it['ultimo_cliente_ts'] ?? 0)) < $corte) {
+                $omitidas++;
+                continue;
+            }
+            $filas[] = wabot_lista_fila_panel($it);
+        }
         // Con los pagos de MP sin asignar (4-nov): el aviso de arriba de la lista se mantiene al día solo.
-        echo json_encode(['items' => wabot_clientes_marcar_lista(wabot_lista_items()),
+        echo json_encode(['ts' => $ahora, 'incremental' => $incremental, 'items' => $filas,
+                          'quitados' => $incremental ? wabot_lista_borrados_desde($desde - 1) : [],
+                          'total' => count($items), 'omitidas' => $omitidas,
                           'pagos_sin_asignar' => function_exists('wabot_pagos_sin_asignar') ? count(wabot_pagos_sin_asignar()) : 0], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -1626,6 +1690,13 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 /* Lo que escribiste vos se distingue de lo que escribió el bot: mismo lado,
    distinto tono, más un borde que lo separa sin gritar. */
 .burb.humano { align-self:flex-end; background:#2c2a1a; border:1px solid #4a4326; border-bottom-right-radius:4px; }
+/* Envío optimista (9-nov): la burbuja sale al instante y el estado se ve en el borde. */
+.burb.pendiente { opacity:.65; }
+.burb.pendiente::after { content:' 🕓'; font-size:11px; }
+.burb.enviado::after { content:' ✓'; font-size:11px; opacity:.75; }
+.burb.fallo { border-color:var(--bad); }
+.burb-reintentar { display:block; margin-top:6px; font-size:12px; background:transparent; color:var(--bad); border:1px solid var(--bad); border-radius:6px; padding:3px 8px; cursor:pointer; }
+.conv-main.cargando { opacity:.55; transition:opacity .15s; }
 .burb.sistema { align-self:center; background:transparent; border:1px dashed var(--line-fuerte); color:var(--dim); font-size:12px; text-align:center; max-width:92%; }
 .media-box { margin-top:6px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
 .burb.bot .media-box, .burb.humano .media-box { align-items:flex-end; }
@@ -1908,6 +1979,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-item.pago-avisado { border-left-color:var(--ac); background:var(--ac-tenue); }
 .conv-list[data-grupo="presentadas_48"] .conv-list-head { color:var(--bad); }
 .conv-vacio { padding:16px; color:var(--dim); font-size:13px; }
+.conv-cargar-mas { display:block; margin:10px auto 14px; font-size:12.5px; }
 /* Sin conexión / sesión vencida (4-nov): banda arriba de la lista y el chat.
    Vacía no ocupa lugar; con texto empuja el resto hacia abajo (no tapa nada). */
 .conexion-aviso { flex:none; margin:0 0 8px; padding:8px 12px; border:1px solid var(--warn); border-radius:9px;
@@ -3621,9 +3693,10 @@ function burbujaCita(t, chat) {
         // puede restaurar el iframe del admin en ese chat sin que Pablo lo esté
         // mirando. Lo marca el JS del chat apenas carga, si está a la vista
         // (chatALaVista), y enseguida refresca la lista.
-        // La lista la arma lib.php y se pinta por JS: el render inicial y el
-        // refresco automático usan exactamente los mismos datos y el mismo código.
-        $items = wabot_clientes_marcar_lista(wabot_lista_items());
+        /* La lista la arma lib.php y la pide el JS apenas carga (accion=lista,
+         * incremental desde el 9-nov): ya no viaja adentro de la página. Con 3.301
+         * charlas eran 3,2 MB de HTML en cada cambio de chat. */
+        $hayConvs = (bool)glob(WABOT_DATA . '/conv/*.json');
         // Los pagos de MP que entraron sin chat: el aviso de la vista Clientes lleva a asignarlos.
         $pagosSinAsignar = function_exists('wabot_pagos_sin_asignar') ? count(wabot_pagos_sin_asignar()) : 0;
 
@@ -3706,6 +3779,7 @@ function burbujaCita(t, chat) {
                 <div class="conv-items" id="listaItems"></div>
             </aside>
 
+            <?php if ($soloChat) ob_clean(); ?>
             <section class="conv-main">
             <?php if ($conv): ?>
                 <a href="admin.php?tab=conversaciones" class="conv-volver">← Todas las conversaciones</a>
@@ -3981,14 +4055,16 @@ function burbujaCita(t, chat) {
 
             <?php else: ?>
                 <div class="conv-nada">
-                    <?= $items ? 'Elegí una conversación de la izquierda para leerla y responder.' : 'Todavía no hay conversaciones. Cuando alguien le escriba al bot, va a aparecer acá.' ?>
+                    <?= $hayConvs ? 'Elegí una conversación de la izquierda para leerla y responder.' : 'Todavía no hay conversaciones. Cuando alguien le escriba al bot, va a aparecer acá.' ?>
                 </div>
             <?php endif; ?>
             </section>
+            <?php if ($soloChat) { $fragChat = ob_get_clean(); ob_start(); } ?>
         </div>
 
         <script>
-        const SEL = <?= json_encode($ver) ?>;
+        let SEL = <?= json_encode($ver) ?>;
+        try { history.replaceState({ tel: SEL }, '', location.href); } catch (e) {}
 
         /* ── Lista de la izquierda ── */
         // "Sin leer" compara los timestamps reales del último cliente y de la
@@ -4078,6 +4154,29 @@ function burbujaCita(t, chat) {
         // El nombre de cada filtro, antes de que se le pegue el globito de sin leer.
         for (const b of document.querySelectorAll('[data-grupo], [data-canal]')) b.dataset.etiqueta = b.textContent.trim();
         let itemsCache = [];
+        /* La lista incremental (9-nov): el server manda solo lo que cambió desde la
+           vuelta anterior (ts) y lo que desapareció. La primera vuelta trae los
+           últimos 30 días; «Cargar anteriores», buscar un chat, filtrar por fecha o la
+           vista Archivados traen el resto una sola vez. */
+        const itemsPorTel = new Map();
+        let listaTs = 0, listaCompleta = false, listaTotal = 0, listaVersion = 0, listaCargandoTodo = false, listaPintadaUnaVez = false;
+        function aplicarLista(j) {
+            let cambio = false;
+            if (!j.incremental) { itemsPorTel.clear(); cambio = true; listaCompleta = !(Number(j.omitidas) > 0); }
+            for (const it of (j.items || [])) { itemsPorTel.set(it.tel, it); cambio = true; }
+            for (const tel of (j.quitados || [])) { if (itemsPorTel.delete(tel)) cambio = true; }
+            if (typeof j.ts === 'number') listaTs = j.ts;
+            if (typeof j.total === 'number') listaTotal = j.total;
+            if (cambio) {
+                listaVersion++;
+                itemsCache = [...itemsPorTel.values()].sort((a, b) => Number(b.ts || 0) - Number(a.ts || 0));
+            }
+            pintarLista(itemsCache);
+            if (!listaPintadaUnaVez) { listaPintadaUnaVez = true; restaurarScrollLista(); }
+        }
+        function necesitaListaCompleta() {
+            return !listaCompleta && (buscarChatsEl.value.trim().length > 0 || fechasChatsSeleccionadas.size > 0 || vistaActiva === 'archivado');
+        }
         /* "Copiar" (Pablo, 3-nov): con la vista Sin leer, todos esos chats juntos,
          * los últimos 10 mensajes de cada uno. Los arma el server (la lista no trae los mensajes).
          * Con el canal elegido (4-nov), solo los de ese canal: lo mismo que se ve en la lista. */
@@ -4386,8 +4485,10 @@ function burbujaCita(t, chat) {
                     if (k && k.startsWith('wabot_borrador_')) firmaBorradores += k + '=' + localStorage.getItem(k) + '\n';
                 }
             } catch (e) {}
-            const firma = JSON.stringify(items) + '|' + vistaActiva + '/' + canalActivo + '|' + termino + '|'
-                + [...fechasChatsSeleccionadas].sort().join(',') + '|' + firmaBorradores;
+            // Lo que falta de la lista (chats viejos) se pide una sola vez cuando hace falta.
+            if (necesitaListaCompleta() && !listaCargandoTodo) refrescarLista({ todo: true });
+            const firma = listaVersion + '/' + items.length + '|' + vistaActiva + '/' + canalActivo + '|' + termino + '|'
+                + [...fechasChatsSeleccionadas].sort().join(',') + '|' + firmaBorradores + '|' + (listaCompleta ? 'c' : listaTotal) + (listaCargandoTodo ? 'L' : '');
             if (firma === firmaLista) return;
             firmaLista = firma;
 
@@ -4414,11 +4515,12 @@ function burbujaCita(t, chat) {
                 const a = document.createElement('a');
                 a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (esNoLeido(it) ? ' sin-leer' : '') + (it.grupo === 'pago' ? ' pago-avisado' : '');
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
+                a.addEventListener('click', ev => alClickFila(ev, it.tel));
 
                 if (it.foto) {
                     const foto = document.createElement('img');
                     foto.className = 'conv-item-foto';
-                    foto.src = 'admin.php?accion=media&tel=' + encodeURIComponent(it.tel) + '&archivo=' + encodeURIComponent(it.foto) + '&modo=ver';
+                    foto.src = 'admin.php?accion=media&tel=' + encodeURIComponent(it.tel) + '&archivo=' + encodeURIComponent(it.foto) + '&modo=mini';
                     foto.loading = 'lazy';
                     foto.alt = '';
                     a.appendChild(foto);
@@ -4574,8 +4676,18 @@ function burbujaCita(t, chat) {
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || vistaActiva || canalActivo;
                 listaEl.innerHTML = '<p class="conv-vacio">'
-                    + (filtrando ? 'No hay chats que coincidan con los filtros.' : 'Ninguna demo ni charla con demo entregada.')
+                    + (filtrando ? (listaCargandoTodo ? 'Buscando también en los chats anteriores…' : 'No hay chats que coincidan con los filtros.') : 'Ninguna demo ni charla con demo entregada.')
                     + '</p>';
+            }
+            // Los chats sin movimiento en los últimos 30 días se cargan a pedido (9-nov).
+            if (!listaCompleta && !buscandoGeneral && listaTotal > itemsCache.length) {
+                const mas = document.createElement('button');
+                mas.type = 'button';
+                mas.className = 'sec conv-cargar-mas';
+                mas.textContent = listaCargandoTodo ? 'Cargando…' : 'Cargar los ' + (listaTotal - itemsCache.length) + ' chats anteriores';
+                mas.disabled = listaCargandoTodo;
+                mas.addEventListener('click', () => refrescarLista({ todo: true }));
+                listaEl.appendChild(mas);
             }
         }
 
@@ -4613,6 +4725,7 @@ function burbujaCita(t, chat) {
                 const a = document.createElement('a');
                 a.className = 'conv-item conv-item-mensaje';
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
+                a.addEventListener('click', ev => alClickFila(ev, it.tel));
 
                 const body = document.createElement('div');
                 body.className = 'conv-item-body';
@@ -4766,12 +4879,16 @@ function burbujaCita(t, chat) {
             setTimeout(() => { boton.textContent = previo; boton.classList.remove('copiado'); }, 1200);
         });
 
-        pintarLista(<?= json_encode($items, JSON_UNESCAPED_UNICODE) ?>);
+        // La lista llega por accion=lista apenas carga la página (9-nov): la página ya no la trae adentro.
+        listaEl.innerHTML = '<p class="conv-vacio">Cargando…</p>';
+        refrescarLista();
 
-        const scrollListaGuardado = sessionStorage.getItem('wabotListaScroll');
-        if (scrollListaGuardado !== null) {
-            listaEl.scrollTop = Number(scrollListaGuardado);
-            sessionStorage.removeItem('wabotListaScroll');
+        function restaurarScrollLista() {
+            const scrollListaGuardado = sessionStorage.getItem('wabotListaScroll');
+            if (scrollListaGuardado !== null) {
+                listaEl.scrollTop = Number(scrollListaGuardado);
+                sessionStorage.removeItem('wabotListaScroll');
+            }
         }
         window.addEventListener('beforeunload', () => {
             sessionStorage.setItem('wabotListaScroll', String(listaEl.scrollTop));
@@ -4819,20 +4936,106 @@ function burbujaCita(t, chat) {
             throw error;
         }
 
-        async function refrescarLista() {
+        /* Abrir un chat sin recargar la página (9-nov). Antes cada fila era un link a
+           admin.php?ver=…: la página entera de nuevo (3,2 MB con la lista adentro, unos
+           6 segundos). Ahora se pide solo la sección del chat (?solo=chat) y se
+           reemplaza; el script del chat anterior se apaga (window.__wabotChat). La URL
+           se actualiza igual (pushState), así «atrás» y recargar siguen funcionando. */
+        let abriendoChat = '';
+        function alClickFila(ev, tel) {
+            if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+            ev.preventDefault();
+            abrirChat(tel);
+        }
+        function mostrarChat(si) {
+            const split = document.querySelector('.conv-split');
+            if (split) split.classList.toggle('has-sel', !!si);
+        }
+        function apagarChatActual() {
+            const actual = window.__wabotChat;
+            window.__wabotChat = null;
+            if (actual && typeof actual.destruir === 'function') { try { actual.destruir(); } catch (e) { console.error(e); } }
+        }
+        async function abrirChat(tel, opciones) {
+            const empujar = !(opciones && opciones.empujar === false);
+            const url = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(tel);
+            if (tel === SEL && window.__wabotChat && window.__wabotChat.tel === tel) {
+                mostrarChat(true);
+                if (empujar) try { history.pushState({ tel }, '', url); } catch (e) {}
+                return;
+            }
+            abriendoChat = tel;
+            SEL = tel;
+            firmaLista = '';
+            pintarLista(itemsCache);
+            const seccion = document.querySelector('section.conv-main');
+            if (seccion) seccion.classList.add('cargando');
+            mostrarChat(true);
+            let html = '';
+            try {
+                const r = await fetch(url + '&solo=chat', { credentials: 'same-origin' });
+                if (r.ok) html = await r.text();
+            } catch (e) {}
+            if (abriendoChat !== tel) return;   // eligió otro mientras cargaba
+            abriendoChat = '';
+            const tpl = document.createElement('template');
+            tpl.innerHTML = html;
+            const nueva = tpl.content.querySelector('section.conv-main');
+            if (!nueva) { location.href = url; return; }   // sesión vencida u otro problema: como antes, la página entera
+            const scripts = [...tpl.content.querySelectorAll('script')];
+            scripts.forEach(sc => sc.remove());
+            apagarChatActual();
+            const vieja = document.querySelector('section.conv-main');
+            if (vieja) vieja.replaceWith(nueva); else return;
+            // Los <script> no corren al insertarlos con innerHTML: se recrean en orden.
+            for (const sc of scripts) {
+                const n = document.createElement('script');
+                n.textContent = sc.textContent;
+                document.body.appendChild(n);
+                n.remove();
+            }
+            if (empujar) try { history.pushState({ tel }, '', url); } catch (e) {}
+        }
+        function cerrarChat(empujar) {
+            apagarChatActual();
+            SEL = '';
+            mostrarChat(false);
+            firmaLista = '';
+            pintarLista(itemsCache);
+            if (empujar) try { history.pushState({ tel: '' }, '', 'admin.php?tab=conversaciones'); } catch (e) {}
+        }
+        window.addEventListener('popstate', ev => {
+            const tel = (ev.state && ev.state.tel) || new URL(location.href).searchParams.get('ver') || '';
+            if (tel) abrirChat(tel, { empujar: false }); else cerrarChat(false);
+        });
+        // «← Todas las conversaciones» (celular) también sin recargar.
+        document.addEventListener('click', ev => {
+            const a = ev.target.closest('a.conv-volver');
+            if (!a || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey) return;
+            ev.preventDefault();
+            cerrarChat(true);
+        });
+
+        async function refrescarLista(opciones) {
+            // Incremental (9-nov): desde = el ts de la vuelta anterior; todo = también los chats anteriores a 30 días.
+            const todo = !!(opciones && opciones.todo) || listaCompleta || necesitaListaCompleta();
+            const cargaCompleta = todo && !listaCompleta;
+            if (cargaCompleta) { if (listaCargandoTodo) return; listaCargandoTodo = true; firmaLista = ''; pintarLista(itemsCache); }
             let j;
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'lista' }) });
+                    body: new URLSearchParams({ accion: 'lista', desde: String(cargaCompleta ? 0 : listaTs), todo: todo ? '1' : '' }) });
                 j = await leerJsonPanel(r);
             } catch (e) {
+                if (cargaCompleta) listaCargandoTodo = false;
                 conexionResultado('lista', false, !!(e && e.sesion));
                 return;
             }
+            if (cargaCompleta) listaCargandoTodo = false;
             conexionResultado('lista', true);
             // Un error al pintar no es la conexión: va a la consola, como antes no rompe nada.
             try {
-                if (j.items) pintarLista(j.items);
+                if (j.items) aplicarLista(j);
                 pintarAvisoPagos(j.pagos_sin_asignar);
             } catch (e) { console.error(e); }
         }
@@ -4849,15 +5052,34 @@ function burbujaCita(t, chat) {
             } catch (e) {}
             return true;
         }
-        setInterval(() => { if (panelALaVista()) refrescarLista(); }, 8000);
+        setInterval(() => { if (panelALaVista()) refrescarLista(); }, 5000);
         // Al volver a la pestaña, al día enseguida.
         document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescarLista(); });
         </script>
 
         <?php if ($conv): ?>
         <script src="vendor/opus-recorder/recorder.min.js?v=8.0.5"></script>
+        <?php if ($soloChat) ob_clean(); ?>
         <script>
+        (() => {
         const TEL = <?= json_encode($convClave) ?>;
+        /* Abrir otro chat sin recargar la página (9-nov): este script corre una vez
+           por chat abierto, adentro de una función, y antes de reemplazar la sección
+           el panel llama a window.__wabotChat.destruir(): corta el refresco y los
+           listeners del documento (todos van con esta señal) y guarda el borrador. */
+        const _chatAbort = new AbortController();
+        const _chatTimers = [];
+        function _escuchar(objetivo, evento, fn, opciones) {
+            const extra = { signal: _chatAbort.signal };
+            objetivo.addEventListener(evento, fn, opciones === undefined ? extra
+                : (typeof opciones === 'object' && opciones ? Object.assign({}, opciones, extra) : Object.assign({ capture: !!opciones }, extra)));
+        }
+        window.__wabotChat = { tel: TEL, destruir() {
+            _chatAbort.abort();
+            _chatTimers.forEach(clearInterval);
+            try { if (typeof pararGrabacion === 'function') pararGrabacion(false); } catch (e) {}
+            try { if (typeof borradorChatGuardar === 'function') borradorChatGuardar(); } catch (e) {}
+        } };
         let ventana = <?= (int)$restante ?>;
         /* Charlas de antes del 9-oct que vinieron de un anuncio: el mensaje no
            guardaba el anuncio (ni su imagen), pero la charla sí su título. */
@@ -4971,7 +5193,7 @@ function burbujaCita(t, chat) {
                 txt.style.overflowY = txt.scrollHeight > alto + 1 ? 'auto' : 'hidden';
             };
             txt.addEventListener('input', ajustarAlto);
-            window.addEventListener('resize', ajustarAlto);
+            _escuchar(window, 'resize', ajustarAlto);
             ajustarAlto();
             resizeGrip.addEventListener('dblclick', () => { altoManual = 0; ajustarAlto(); });
             resizeGrip.addEventListener('pointerdown', ev => {
@@ -5118,7 +5340,7 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             }
             if (e.key === 'Enter') { e.preventDefault(); rrElegir(rrSeleccion); }
         });
-        document.addEventListener('keydown', e => {
+        _escuchar(document, 'keydown', e => {
             if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || !rrBuscador.hidden) return;
             const objetivo = e.target;
             const escribiendo = objetivo instanceof HTMLInputElement || objetivo instanceof HTMLTextAreaElement
@@ -5127,7 +5349,7 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             e.preventDefault();
             rrAbrir();
         });
-        document.addEventListener('mousedown', e => {
+        _escuchar(document, 'mousedown', e => {
             if (!rrBuscador.hidden && !rrBuscador.contains(e.target)) rrCerrar();
         });
 
@@ -5182,8 +5404,8 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
                 rrInsertar(RESPUESTAS_RAPIDAS[c].items[j]);
                 cerrar();
             });
-            document.addEventListener('click', () => { if (abierta >= 0) cerrar(); });
-            document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && abierta >= 0) cerrar(); });
+            _escuchar(document, 'click', () => { if (abierta >= 0) cerrar(); });
+            _escuchar(document, 'keydown', ev => { if (ev.key === 'Escape' && abierta >= 0) cerrar(); });
         })();
 
         const TILDES_WSP = {
@@ -5358,6 +5580,7 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
                 chat.appendChild(d);
             }
             if (abajo) chat.scrollTop = chat.scrollHeight;
+            if (typeof pendientesRepintar === 'function') pendientesRepintar();
         }
 
         // Edición en el lugar: la burbuja se convierte en un textarea. Enter
@@ -5428,18 +5651,22 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
            la vista el refresco lo marca leído. */
         function chatALaVista() { return panelALaVista(); }
 
+        let firmaChat = '';
         async function refrescar() {
             // Si falla, la banda de «sin conexión» de arriba (conexionResultado, 4-nov).
             let j;
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'transcript', tel: TEL, visto: chatALaVista() ? '1' : '' }) });
+                    body: new URLSearchParams({ accion: 'transcript', tel: TEL, visto: chatALaVista() ? '1' : '', firma: firmaChat }) });
                 j = await leerJsonPanel(r);
             } catch (e) {
                 conexionResultado('chat', false, !!(e && e.sesion));
                 return;
             }
             conexionResultado('chat', true);
+            // Nada cambió desde la vuelta anterior (9-nov): el server contesta «igual» y no hay nada que pintar.
+            if (j.igual) return;
+            if (typeof j.firma === 'string') firmaChat = j.firma;
             try {
                 if (j.transcript) pintar(j.transcript);
                 if (typeof j.ventana === 'number') { ventana = j.ventana; estadoVentana(); }
@@ -5603,34 +5830,77 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             try { return crypto.randomUUID().replace(/-/g, ''); }
             catch (e) { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12); }
         }
-        async function enviar() {
-            if (enviando) return;
-            // Con imágenes elegidas, Enviar las manda (con el texto como epígrafe de la primera).
-            if (typeof adjuntos !== 'undefined' && adjuntos.length) return enviarAdjuntos();
-            const t = txt.value.trim(); if (!t) return;
-            if (!envioId || t !== envioTexto) { envioId = nuevoEnvioId(); envioTexto = t; }
-            enviando = true;
-            btn.disabled = true; est.textContent = 'Enviando…'; est.style.color = 'var(--dim)';
+        /* Envío optimista (9-nov): el mensaje aparece al instante con el relojito,
+           como en WhatsApp, el cuadro se vacía y se puede seguir escribiendo; el
+           envío va por detrás, de a uno y en orden. Antes el botón esperaba a Meta
+           y después volvía a bajar el chat y la lista entera (2 a 4 segundos) para
+           recién ahí decir «Enviado». Si falla, la burbuja queda marcada con
+           «Reintentar» (mismo envio_id: si ya había salido, el server no lo repite). */
+        const pendientesEnvio = [];
+        let colaEnvio = Promise.resolve();
+        function burbujaPendiente(texto) {
+            const d = document.createElement('div');
+            d.className = 'burb humano pendiente';
+            d.textContent = texto;
+            chat.appendChild(d);
+            chat.scrollTop = chat.scrollHeight;
+            return d;
+        }
+        function pendientesRepintar() {
+            // Después de cada pintado del server: lo que ya está en el transcript se suelta; lo demás sigue abajo.
+            for (const p of [...pendientesEnvio]) {
+                const llego = lineasChat.some(l => l.q === 'humano' && Number(l.ts || 0) >= p.ts - 120 && (l.t || '') === p.texto);
+                if (llego) { pendientesEnvio.splice(pendientesEnvio.indexOf(p), 1); p.el.remove(); continue; }
+                chat.appendChild(p.el);
+            }
+            if (pendientesEnvio.length) chat.scrollTop = chat.scrollHeight;
+        }
+        function envioFallo(p, msg) {
+            p.el.classList.remove('pendiente');
+            p.el.classList.add('fallo');
+            est.textContent = msg; est.style.color = 'var(--bad)';
+            if (!p.el.querySelector('.burb-reintentar')) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'burb-reintentar';
+                b.textContent = 'No salió · Reintentar';
+                b.addEventListener('click', () => { b.remove(); colaEnvio = colaEnvio.then(() => mandarPendiente(p)); });
+                p.el.appendChild(b);
+            }
+        }
+        async function mandarPendiente(p) {
+            p.el.classList.remove('fallo');
+            p.el.classList.add('pendiente');
+            est.textContent = 'Enviando…'; est.style.color = 'var(--dim)';
             const corte = new AbortController();
             const reloj = setTimeout(() => corte.abort(), 45000);
             try {
                 const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: corte.signal,
-                    body: new URLSearchParams({ accion: 'responder', tel: TEL, texto: t, envio_id: envioId }) });
+                    body: new URLSearchParams({ accion: 'responder', tel: TEL, texto: p.texto, envio_id: p.id }) });
                 const j = await r.json();
                 if (j.ok) {
-                    envioId = ''; envioTexto = '';
-                    txt.value = '';
-                    txt.dispatchEvent(new Event('input', { bubbles:true }));
+                    p.el.classList.remove('pendiente');
+                    p.el.classList.add('enviado');
                     document.getElementById('handoffPill')?.remove();
-                    await refrescar(); await refrescarLista();
-                    est.textContent = 'Enviado. El bot queda en silencio en este chat.';
+                    est.textContent = 'Enviado. El bot queda en silencio en este chat.'; est.style.color = 'var(--dim)';
+                    refrescar().then(() => refrescarLista());
+                } else {
+                    envioFallo(p, j.error || 'No se pudo enviar.');
                 }
-                else { est.textContent = j.error || 'No se pudo enviar.'; est.style.color = 'var(--bad)'; btn.disabled = false; }
             } catch (e) {
-                est.textContent = (e && e.name === 'AbortError' ? 'El servidor no respondió.' : 'Error de red: ' + e)
-                    + ' Mirá si el mensaje salió; si no, tocá Enviar de nuevo (si ya había salido, no se repite).';
-                est.style.color = 'var(--bad)'; btn.disabled = false;
-            } finally { clearTimeout(reloj); enviando = false; }
+                envioFallo(p, (e && e.name === 'AbortError' ? 'El servidor no respondió.' : 'Error de red: ' + e)
+                    + ' Si el mensaje no salió, tocá «Reintentar» (si ya había salido, no se repite).');
+            } finally { clearTimeout(reloj); }
+        }
+        async function enviar() {
+            // Con imágenes elegidas, Enviar las manda (con el texto como epígrafe de la primera).
+            if (typeof adjuntos !== 'undefined' && adjuntos.length) return enviarAdjuntos();
+            const t = txt.value.trim(); if (!t) return;
+            const p = { id: nuevoEnvioId(), texto: t, ts: Math.floor(Date.now() / 1000), el: burbujaPendiente(t) };
+            pendientesEnvio.push(p);
+            txt.value = '';
+            txt.dispatchEvent(new Event('input', { bubbles: true }));
+            colaEnvio = colaEnvio.then(() => mandarPendiente(p));
         }
 
         btn.onclick = enviar;
@@ -5661,8 +5931,8 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
         convMenus.forEach(m => m.addEventListener('toggle', () => {
             if (m.open) convMenus.forEach(o => { if (o !== m) o.open = false; });
         }));
-        document.addEventListener('click', ev => convMenus.forEach(m => { if (m.open && !m.contains(ev.target)) m.open = false; }));
-        document.addEventListener('keydown', ev => { if (ev.key === 'Escape') convMenus.forEach(m => { m.open = false; }); });
+        _escuchar(document, 'click', ev => convMenus.forEach(m => { if (m.open && !m.contains(ev.target)) m.open = false; }));
+        _escuchar(document, 'keydown', ev => { if (ev.key === 'Escape') convMenus.forEach(m => { m.open = false; }); });
 
         // El menú "⋯" de acciones solo se usa en el celular; en pantalla grande
         // el botón está oculto por CSS y las acciones se ven siempre.
@@ -5683,13 +5953,13 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
                     menu.scrollTop = 0;
                 }
             });
-            document.addEventListener('click', ev => {
+            _escuchar(document, 'click', ev => {
                 if (!accionesWrap.contains(ev.target)) {
                     accionesWrap.classList.remove('abierto');
                     accionesBtn.setAttribute('aria-expanded', 'false');
                 }
             });
-            document.addEventListener('keydown', ev => {
+            _escuchar(document, 'keydown', ev => {
                 if (ev.key === 'Escape') {
                     accionesWrap.classList.remove('abierto');
                     accionesBtn.setAttribute('aria-expanded', 'false');
@@ -5877,9 +6147,9 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
 
         // Salir de la pestaña o cerrarla cancela lo que se estaba grabando: el
         // micrófono nunca queda tomado por una página que ya no se usa.
-        window.addEventListener('pagehide', () => pararGrabacion(false));
-        window.addEventListener('beforeunload', () => pararGrabacion(false));
-        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pararGrabacion(false); });
+        _escuchar(window, 'pagehide', () => pararGrabacion(false));
+        _escuchar(window, 'beforeunload', () => pararGrabacion(false));
+        _escuchar(document, 'visibilitychange', () => { if (document.visibilityState === 'hidden') pararGrabacion(false); });
 
         if (btnGrabar) {
             if (!opusDisponible() && !formatoGrabable()) {
@@ -5889,7 +6159,7 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             // Un toque empieza; mientras graba, el micrófono no hace nada (se
             // termina con Enviar o Cancelar).
             btnGrabar.addEventListener('click', () => { if (!grab && !btnGrabar.disabled) empezarGrabacion(); });
-            document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && grab) pararGrabacion(false); });
+            _escuchar(document, 'keydown', ev => { if (ev.key === 'Escape' && grab) pararGrabacion(false); });
             btnGrabCancel.onclick = () => pararGrabacion(false);
             btnGrabEnviar.onclick = () => pararGrabacion(true);
         }
@@ -6036,15 +6306,17 @@ const RESPUESTAS_RAPIDAS = (<?= json_encode(array_map(function ($cat) {
             }
         } catch (e) {}
         txt.addEventListener('input', borradorChatGuardar);
-        window.addEventListener('pagehide', borradorChatGuardar);
+        _escuchar(window, 'pagehide', borradorChatGuardar);
 
         // Solo a la vista (9-oct); al volver, visibilitychange y el admin lo refrescan enseguida.
-        setInterval(() => { if (chatALaVista()) refrescar(); }, 5000);
+        _chatTimers.push(setInterval(() => { if (chatALaVista()) refrescar(); }, 3000));
         // Abrirlo lo marca leído al instante (antes lo hacía el PHP al cargar) y
         // la lista sale con el contador ya descontado.
         if (chatALaVista()) refrescar().then(refrescarLista);
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
+        _escuchar(document, 'visibilitychange', () => { if (!document.hidden) refrescar(); });
+        })();
         </script>
+        <?php if ($soloChat) { echo $fragChat, ob_get_clean(); exit; } ?>
         <?php endif; ?>
 
     <?php endif; ?>

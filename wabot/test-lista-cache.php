@@ -58,9 +58,36 @@ $cache['filas'][$claves[1]]['vence'] = time() - 1;
 $escribir($cache);
 caso('una fila vencida se vuelve a leer', ($fila($claves[1])['nombre'] ?? '') === 'Cliente 1');
 
+// La lista incremental del panel (9-nov): cada fila guarda la firma de lo que ve el panel y cuándo cambió.
+$cache = $leer();
+$c1 = $cache['filas'][$claves[1]] ?? [];
+caso('cada fila guarda la firma de lo que ve el panel (f) y cuándo cambió (c), y la fila lo trae como cambio_ts',
+    isset($c1['f'], $c1['c']) && (int)$c1['c'] > 0 && (int)($fila($claves[1])['cambio_ts'] ?? -1) === (int)$c1['c']);
+$cAntes = (int)$c1['c'];
+sleep(1);
+$cache = $leer();
+$cache['filas'][$claves[1]]['vence'] = time() - 1;
+$escribir($cache);
+caso('releer una fila vencida sin cambios conserva cambio_ts', (int)($fila($claves[1])['cambio_ts'] ?? -1) === $cAntes);
+$c = wabot_conv_load($claves[1]);
+wabot_conv_transcript($c, 'cliente', 'otro mensaje más para que cambie la fila');
+wabot_conv_save($c);
+clearstatcache();
+$f1 = $fila($claves[1]);
+caso('si lo que ve el panel cambia, cambio_ts avanza y la firma es otra', (int)($f1['cambio_ts'] ?? 0) > $cAntes && ($leer()['filas'][$claves[1]]['f'] ?? '') !== ($c1['f'] ?? ''));
+$panel = wabot_lista_fila_panel($f1);
+caso('la fila para el panel trae solo lo que usa el JS (≤ 30 campos): tel, grupo, ts, ult… y no ventana, espera, sl ni cambio_ts',
+    count($panel) <= 30 && isset($panel['tel'], $panel['grupo'], $panel['ts'], $panel['ult'], $panel['no_leido'])
+    && !array_key_exists('ventana', $panel) && !array_key_exists('espera', $panel) && !array_key_exists('sl', $panel) && !array_key_exists('cambio_ts', $panel), json_encode(array_keys($panel)));
+$conCliente = $f1; $conCliente['cliente'] = true;
+caso('la firma no mira «cliente» (lo marca la caché de clientes) pero sí lo demás', wabot_lista_fila_firma($conCliente) === wabot_lista_fila_firma($f1)
+    && wabot_lista_fila_firma(array_merge($f1, ['ult' => 'distinto'])) !== wabot_lista_fila_firma($f1));
+
 // Una charla borrada desaparece de la lista y de la caché.
 @unlink(wabot_conv_path($claves[1]));
 caso('una charla borrada sale de la lista', $fila($claves[1]) === null && !isset($leer()['filas'][$claves[1]]));
+caso('y queda anotada como borrada para que el panel la saque sin recargar', in_array($claves[1], wabot_lista_borrados_desde(time() - 5), true)
+    && wabot_lista_borrados_desde(time() + 5) === [] && isset($leer()['borrados'][$claves[1]]));
 
 caso('la lista sigue ordenada por actividad', (function () {
     $ts = array_map(fn($it) => (int)$it['ts'], wabot_lista_items());
