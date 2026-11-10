@@ -128,7 +128,20 @@ caso('y lista las respuestas oficiales (incluido el descuento), sin los ejemplos
 caso('el prompt del asistente no vuelve a crecer (menos de 58.000 caracteres)', mb_strlen(wabot_comercial_instrucciones($cfg)) < 58000, (string)mb_strlen(wabot_comercial_instrucciones($cfg)));
 $insRevC = wabot_comercial_instrucciones_revisor_completas($cfg);
 caso('el revisor lee sus reglas, el resumen de las del asistente y la información comercial, no las reglas enteras', strpos($insRevC, 'LAS REGLAS DEL ASISTENTE (resumen') !== false
-    && strpos($insRevC, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false && strpos($insRevC, 'CÓMO ESCRIBIR') === false && mb_strlen($insRevC) < 33000, (string)mb_strlen($insRevC));
+    && strpos($insRevC, 'INFORMACIÓN COMERCIAL DE GOKYWEBS') !== false && strpos($insRevC, 'CÓMO ESCRIBIR') === false && mb_strlen($insRevC) < 34000, (string)mb_strlen($insRevC));   // 10-nov: +1.000 por las decisiones de Pablo (dudas generales, portal de noticias, cuatro respuestas nuevas)
+// Pablo, 10-nov: las dudas generales las contesta el asistente; lo que necesita un dato que no hay sigue yendo a él.
+caso('10-nov: una duda general se contesta con criterio y lo que pide un dato que no hay sigue siendo humano', mb_strpos($ins, 'una duda general (') !== false
+    && mb_strpos($ins, 'no lo adivines: accion humano con el motivo') !== false && mb_strpos($ins, 'Cualquier cosa que no sabés contestar con lo aprobado') === false
+    && mb_strpos(wabot_comercial_reglas_resumen(), 'Dudas generales (Pablo, 10-nov)') !== false);
+caso('10-nov: portal de noticias, clases en vivo, elegir profesional y tienda con caja se cotizan', mb_strpos($ins, 'Un portal, diario o página de noticias también') !== false
+    && mb_strpos($ins, 'Dar clases en vivo es cursos') !== false && mb_strpos($ins, 'con qué profesional atenderse también es reservas') !== false
+    && mb_strpos($ins, 'llevar la caja o los ingresos y egresos del local tampoco es motivo') !== false
+    && wabot_comercial_fuera_de_lista(['ficha' => ['senales' => ['portal']]], $cfg) === ''
+    && wabot_comercial_fuera_de_lista(['ficha' => ['senales' => ['mercadolibre']]], $cfg) !== '');
+caso('10-nov: dominio propio, aumento e Instagram tienen su respuesta oficial, y el mensual ya no habla del aumento', mb_strpos($info, '- dominio_propio: Sí, se puede usar el dominio que ya tenés.') !== false
+    && mb_strpos($info, '- dominio_propio_precio:') !== false && mb_strpos($info, '- actualizacion_precio: El valor se actualiza una vez al año.') !== false
+    && mb_strpos($info, '- instagram: Nuestro Instagram es instagram.com/gokywebs') !== false
+    && mb_strpos((string)$cfg['info']['mensual'], 'se actualiza') === false);
 caso('el modelo ve los últimos 20 mensajes enteros (27-oct, antes 30)', (int)($cfg['comercial']['historial'] ?? 0) === 20);
 caso('el descuento y "pagar antes?" se pueden pedir por clave', in_array('descuento', wabot_comercial_info_claves($cfg), true) && in_array('pago_antes_demo', wabot_comercial_info_claves($cfg), true));
 caso('el esquema exige todos los campos (con la segunda web, 10-oct)', (wabot_comercial_esquema($cfg)['schema']['required'] ?? []) === ['accion', 'solucion', 'segunda_solucion', 'modalidad_clases', 'intencion', 'pago_unico', 'internacional', 'mensajes', 'info_claves', 'motivo', 'ficha']);
@@ -376,6 +389,14 @@ $c['ficha']['senales'] = ['mercadolibre'];
 oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
 $r = turno('Dale, y que se sincronice con Mercado Libre', $c, $cfg);
 caso('una conexión no aprobada frena el formulario aunque acepte la demo', $r === [] && empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'humano' && stripos((string)$c['comercial_motivo'], 'Mercado Libre') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Pablo, 10-nov: el portal de noticias se cotiza con el plan con panel; la señal de la ficha ya no lo frena.
+$c = cv();
+$c['ficha']['senales'] = ['portal'];
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa_panel', 'mensajes' => ['Buenísimo. Podemos armarte un portal de noticias para que publiques tus notas desde el panel.'], 'ficha' => ['rubro' => 'tu portal de noticias']])]);
+$r = turno('Queremos armar un portal de noticias', $c, $cfg);
+caso('un portal de noticias se cotiza con el plan con panel, no va a Pablo', count($r) === 3 && !empty($c['precio_dado']) && ($c['comercial_pausa'] ?? '') !== 'humano'
+    && strpos(implode(' ', $r), '$30.000') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // Dos webs (Pablo, 10-oct): juntas con $10.000 menos por mes y $50.000 menos por año sobre la suma.
 foreach ([['informativa', 'informativa', '$230.000', '$30.000'], ['informativa', 'tienda', '$280.000', '$40.000'], ['tienda', 'reservas', '$330.000', '$50.000'],
@@ -1181,7 +1202,7 @@ oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['tras
 $r = turno('Y después de los 18 meses cuánto debería abonar para que me hagan el traspaso? Y puedo pasarme al pago único?', $c, $cfg);
 caso('el traspaso dice el mantenimiento de la charla y el pago único su monto (marcadores completados)', count($r) === 2 && strpos($r[0], '$15.000 por mes') !== false
     && strpos($r[1], 'pago único, de $') !== false && strpos(implode(' ', $r), '{') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('los banners ya no son "fuera de lista" (con panel, sí); el portal sigue siendo para Pablo', mb_stripos($infoTxt, 'noticias o banners') === false
+caso('los banners ya no son "fuera de lista" (con panel, sí); el portal de fichas sigue siendo para Pablo (el de noticias se cotiza desde el 10-nov)',mb_stripos($infoTxt, 'noticias o banners') === false
     && mb_stripos($insNuevas, 'noticias, banners') === false && mb_stripos($infoTxt, 'portales con fichas de profesionales') !== false);
 caso('instrucciones: "te hago el pago ya" / el link de pago lo sigue Pablo; preguntar cómo se paga es una duda',
     mb_stripos($insNuevas, 'te hago el pago ya') !== false && mb_stripos($insNuevas, 'es una duda (medios_pago o pago)') !== false);

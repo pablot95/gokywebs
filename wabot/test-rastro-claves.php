@@ -61,6 +61,24 @@ foreach ([
     caso("«{$texto}» → " . ($esperado ? 'con rastro' : 'sin rastro'), $r('no_hacemos', $texto) === $esperado);
 }
 
+echo "\n=== Dominio propio, aumento e Instagram (10-nov): solo si lo nombra ===\n";
+foreach ([
+    ['dominio_propio',        'Ya tengo un dominio contratado. ¿Pueden utilizarlo?', true],
+    ['dominio_propio',        'Tengo mi tienda.com.ar hace años, se puede usar ese?', true],
+    ['dominio_propio',        'Vendo ropa y quiero una tienda',                      false],
+    ['dominio_propio_precio', 'Si pongo yo el dominio cambia el precio?',            true],
+    ['actualizacion_precio',  'El precio aumenta?',                                  true],
+    ['actualizacion_precio',  'Cada cuánto sube la cuota?',                          true],
+    ['actualizacion_precio',  'Se mantiene el valor todo el año?',                   true],
+    ['actualizacion_precio',  'Quiero subir mis productos yo',                       false],
+    ['actualizacion_precio',  'Cuánto sale el mensual?',                             false],
+    ['instagram',             'Tienen Instagram?',                                   true],
+    ['instagram',             'Pasame su ig así los sigo',                           true],
+    ['instagram',             'Es igual para una peluquería?',                       false],
+] as [$clave, $texto, $esperado]) {
+    caso("{$clave}: «{$texto}» → " . ($esperado ? 'con rastro' : 'sin rastro'), $r($clave, $texto) === $esperado);
+}
+
 echo "\n=== Las formas reales de preguntar (consultas-ejemplos.php) siguen pasando ===\n";
 $ejemplos = (array)(require __DIR__ . '/consultas-ejemplos.php');
 foreach (['bilingue', 'marketing', 'estadisticas', 'no_hacemos'] as $clave) {

@@ -949,4 +949,26 @@ return [
         'sos el que hace la web?',
         'hablo con un bot?',
     ],
+    // Decisiones de Pablo del 10-nov: dominio que ya tiene, si el precio aumenta y nuestro Instagram.
+    'dominio_propio' => [
+        'Te hago algunas consultas: Ya tengo un dominio contratado. ¿Pueden utilizarlo?',
+        'Quiero una web nueva pero conservando mi dominio actual',
+        'Yo ya tengo el dominio comprado, sirve?',
+        'Tengo mi .com.ar hace años, se puede usar ese?',
+    ],
+    'dominio_propio_precio' => [
+        'Ya tengo dominio, me sale más barato?',
+        'Si pongo yo el dominio cambia el precio?',
+    ],
+    'actualizacion_precio' => [
+        'El precio aumenta?',
+        'Cada cuánto sube la cuota?',
+        'Se mantiene el valor todo el año?',
+        'La mensualidad tiene aumentos?',
+    ],
+    'instagram' => [
+        'Tienen Instagram?',
+        'Cuál es el instagram de ustedes?',
+        'Pasame su ig así los sigo',
+    ],
 ];

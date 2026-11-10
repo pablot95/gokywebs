@@ -515,7 +515,7 @@ function wabot_comercial_info_claves($cfg, $postdemo = false) {
 
 /** La parte B: soluciones, qué incluye cada plan, qué no hacemos y las respuestas oficiales. Igual en cada llamada de la misma etapa (caché). */
 function wabot_comercial_info($cfg, $postdemo = false) {
-    $l = ['INFORMACIÓN COMERCIAL DE GOKYWEBS (es la única fuente válida; no agregues nada)'];
+    $l = ['INFORMACIÓN COMERCIAL DE GOKYWEBS (la única fuente válida de precios, plazos, condiciones y funciones)'];
     $l[] = "\nSOLUCIONES Y PLANES (los montos los pone el sistema; vos nunca los escribís):";
     $l[] = '- informativa → plan "informativa" (el más económico). Incluye el desarrollo completo de la web, adaptada para celular, preparada para Google, un cambio por mes (lo hacemos nosotros), hosting, dominio, actualizaciones y soporte técnico. NO tiene panel: el cliente no edita nada solo.';
     $l[] = '- informativa_panel → plan "con panel": la misma web informativa, pero con panel para que el cliente cambie él mismo textos, fotos y servicios. Corresponde si dice que quiere manejar o actualizar el contenido por su cuenta.';
@@ -528,7 +528,7 @@ function wabot_comercial_info($cfg, $postdemo = false) {
     $l[] = '- La tienda: productos con fotos, precios, stock, variantes y categorías, carrito y compra directa, Mercado Pago, transferencia o efectivo, botón de WhatsApp, precios mayoristas y minoristas, productos a pedido con su demora, envíos con Correo Argentino o Andreani integrados (cálculo por código postal) o costo por provincia, franjas horarias de entrega para que el cliente elija, cupones, estadísticas, usuarios. Se pueden cargar miles de productos (si son muchos, que avisen antes). Cursos: programa, fechas, modalidad, inscripción y pago online, videos y material con acceso propio de cada alumno. Inmobiliaria: fichas con fotos, buscador por zona, tipo y precio, consultas por WhatsApp. Cualquier web: formulario de contacto, mapa, Instagram vinculado, reseñas, videos, hasta 3 idiomas, pixel de Meta y Analytics. Con panel, también espacios de publicidad (banners) que el cliente cambia solo.';
     $l[] = '- Dos webs distintas para el mismo cliente (dos negocios o dos sitios separados): se cotizan juntas con descuento sobre la suma de los dos planes. Marcá solucion (una) y segunda_solucion (la otra): el sistema arma el precio de las dos. Vos nunca escribís esos montos.';
     $l[] = '- Tecnología: desarrollo a medida (HTML, CSS y JavaScript), no WordPress, Tiendanube ni Wix. Se puede tomar una web de referencia visual.';
-    $l[] = "\nLO QUE NO ES DE LISTA (accion humano, sin contestar): registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales, filtros o noticias; apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
+    $l[] = "\nLO QUE NO ES DE LISTA (accion humano, sin contestar): registro de marca; conexión con Mercado Libre, con el sistema o la API de un proveedor o con un sistema que ya usa; varios vendedores en una web; entrega automática de archivos al pagar; portales con fichas de profesionales o comercios (el de noticias sí es de lista: informativa_panel); apps; sistemas de gestión o CRM; cuotas sin interés; facturación electrónica.";
     $l[] = "LO QUE NO HACEMOS (no se deriva: va la respuesta oficial y seguís con la web): publicidad, redes sociales y marketing → marketing (eso es aparte: la web complementa las redes); diseño de logos → logo; flyers, videos, fotos o imágenes para redes, banners, podcasts o Spotify, recuperar cuentas de Facebook o Instagram, impresiones y tarjetas → no_hacemos.";
     $l[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema con los montos de esta charla). Pedilas en info_claves; nunca las copies ni las parafrasees:";
     /* Sin los ejemplos de «lo preguntan así» (Pablo, 27-oct): eran 88 renglones,
@@ -1334,7 +1334,7 @@ function wabot_comercial_negocio_conocido($conv, $d = null) {
 function wabot_comercial_fuera_de_lista($conv, $cfg) {
     $f = wabot_ficha($conv);
     $nombres = ['mercadolibre' => 'conexión con Mercado Libre', 'integracion' => 'conexión con un sistema que ya usa', 'marketplace' => 'web con varios vendedores',
-                'entrega_digital' => 'entrega automática de archivos al pagar', 'portal' => 'portal de noticias'];
+                'entrega_digital' => 'entrega automática de archivos al pagar'];   // el portal de noticias se cotiza con el plan con panel (Pablo, 10-nov)
     foreach ($nombres as $s => $n) if (in_array($s, (array)$f['senales'], true)) return $n;
     return '';
 }

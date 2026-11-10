@@ -247,6 +247,8 @@ function wabot_textos_default() {
         'otra' => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
         'pago_generico' => 'Hay 2 modalidades: mensual o anual. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
         'precio_sin_rubro' => 'Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.',
+        // Pablo, 10-nov: «instagram.com/gokywebs» (el perfil existe; el gokywebs.net que enlaza el sitio da «página no disponible»).
+        'instagram' => 'Nuestro Instagram es instagram.com/gokywebs',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
         /* La propiedad del código, con sus plazos (Pablo, 20-sep). El 19-sep
          * el bot se callaba con estas preguntas y era peor: cortaba la venta. */
@@ -323,10 +325,15 @@ function wabot_textos_default() {
         'hosting_pago_unico' => 'Con el pago único, el hosting y el dominio van incluidos el primer año y los gestionamos nosotros. Si querés tenerlos a tu nombre, se contratan aparte.',
         // Las que faltaban según las charlas del 11-sep al 2-oct (2-oct).
         // Sin «Sí,» adelante: a «el plan 2 cómo sería?» le contestaba «Sí,…» (Omar, 5-nov 13:42).
-        'mensual' => 'El mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas. El valor se actualiza una vez al año.',
+        'mensual' => 'El mensual se paga todos los meses por Mercado Pago y no tiene permanencia: la web queda activa mientras lo mantengas.',
+        // Pablo, 10-nov: «se actualiza al año pero no hace falta decirlo, solo si preguntan». Antes iba pegado al final de `mensual`.
+        'actualizacion_precio' => 'El valor se actualiza una vez al año.',
         'cuotas' => 'Sí, se puede pagar con tarjeta: el mensual se paga por Mercado Pago con cualquier tarjeta.',
         // Pablo, 9-oct (noche): se transfiere con el primer pago.
         'dominio_a_nombre' => 'Sí, el dominio puede quedar a tu nombre: te lo transferimos con el primer pago.',
+        // Pablo, 10-nov: «que se puede usar ese, pero el precio no cambia (no aclarar lo del precio, solo si pregunta)».
+        'dominio_propio' => 'Sí, se puede usar el dominio que ya tenés.',
+        'dominio_propio_precio' => 'El precio no cambia por usar tu dominio.',
         'que_es_dominio' => 'El dominio es la dirección de tu web, por ejemplo www.tunegocio.com.ar. Va incluido y el nombre lo elegís vos.',
         // "Renovación de hosting y dominio, no sé qué vendría a ser eso" (10-oct: el bot explicaba el dominio y no el hosting, y se callaba).
         'que_es_hosting' => 'El hosting es el servidor donde se guarda tu web para que esté online todo el día, y el dominio es su dirección (por ejemplo tunegocio.com.ar). Los dos van incluidos en el plan y los renovamos nosotros.',

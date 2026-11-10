@@ -2077,6 +2077,13 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
          * cada una contesta algo puntual que el cliente tiene que haber nombrado. */
         'google_difusion' => '(google|buscador|aparec|encuentr|encontr|indexa|posicion|seo|redes|instagram|facebook|tiktok|compartir|link|enlace|difusion|difund|viral|publicidad|llegar|llegue)',
         'dominio_com_ar'  => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
+        /* Decisiones de Pablo del 10-nov: usar el dominio que ya tiene, si el precio
+         * aumenta y nuestro Instagram. Cada una solo si el cliente lo nombró («tengo
+         * Instagram» alcanza como rastro; que la pida o no lo decide el modelo). */
+        'dominio_propio'        => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
+        'dominio_propio_precio' => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
+        'actualizacion_precio'  => '(aument|actualiz|sube\b|suben\b|suba\b|subir el|subida|ajust|inflacion|increment|se mantiene|mantien|congel|precio fijo|valor fijo|mismo precio|mismo valor|cambia el precio|cambia el valor)',
+        'instagram'             => '(instagram|insta|ig\b|redes)',
         'dejo_de_pagar'   => '(dej(o|e|ar|as|en) de pagar|no (puedo|pueda|llego|llegue) (a )?pagar|si no pago|un mes no|cancel|dar de baja|doy de baja|baja|corto el plan|dejo el plan|dejar el plan'
                            . '|indefinid|cuantos meses|cantidad de meses|para siempre|de por vida|titularidad|18 meses|mes de gracia|pierdo la (web|pagina))',
         'cambios_demo'    => '(cambi|modific|ajust|corr(e|i)g|sac(a|á)r|agreg|sum(a|á)r|reemplaz|poner|pon(e|é)r|quit|mover|otro color|otra foto|otras fotos|el logo|mi logo|textos?|fotos?|imagen|imagenes|colores?|diseno|dise[nñ]o|editar|a mi gusto|queda asi|como la demo)',
@@ -2086,7 +2093,7 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
     ];
     if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
     // ".com" y ".com.ar" se van con los links (wabot_texto_sin_urls): para el dominio vale el texto crudo.
-    if ($clave === 'dominio_com_ar' && preg_match('/\.(com|ar)\b/iu', (string)$texto)) return true;
+    if (in_array($clave, ['dominio_com_ar', 'dominio_propio', 'dominio_propio_precio'], true) && preg_match('/\.(com|ar)\b/iu', (string)$texto)) return true;
 
     $re = '/\b' . $rastros[$clave] . '\w*/u';
     $limpio = function ($t) use ($clave) {
