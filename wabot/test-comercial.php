@@ -514,6 +514,21 @@ oa([dc(['accion' => 'responder', 'mensajes' => ['Te consulto, a qué te dedicás
 $GLOBALS['TC_DICE_RUBRO'] = false;
 $r = turno('Hola', $c, $cfg);
 caso('en Instagram no hay bienvenida: contesta el flujo', $r === ['Hola! Te consulto, a qué te dedicás?'], json_encode($r, JSON_UNESCAPED_UNICODE));
+// Adriana (3-nov 12:36): vuelve días después con el texto del anuncio, sin haber dicho nunca el rubro.
+$c = cv('5491100009011TEST', ['fase' => 'menu']);
+wabot_conv_transcript($c, 'cliente', 'Hola. ¿Puedo obtener más información sobre esto?');
+wabot_conv_transcript($c, 'bot', trim((string)$cfg['bienvenida']));
+foreach ($c['transcript'] as &$fila) $fila['ts'] = time() - 5 * 86400;
+unset($fila);
+oa([dc(['accion' => 'responder', 'info_claves' => ['proceso']])]);
+$r = turno('Hola. Puedo obtener más información?', $c, $cfg);
+caso('vuelve días después con el texto del anuncio y sin rubro → otra vez la bienvenida (sin modelo)', $r === [trim((string)$cfg['bienvenida'])] && count(pedidos()) === 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv('5491100009012TEST', ['fase' => 'menu']);
+wabot_conv_transcript($c, 'cliente', 'Hola');
+wabot_conv_transcript($c, 'bot', trim((string)$cfg['bienvenida']));
+oa([dc(['accion' => 'responder', 'mensajes' => ['Te consulto, a qué te dedicás?']])]);
+$r = turno('Hola, info', $c, $cfg);
+caso('recién preguntado (menos de 12 h) → no se repite la bienvenida', $r !== [trim((string)$cfg['bienvenida'])], json_encode($r, JSON_UNESCAPED_UNICODE));
 $GLOBALS['TC_DICE_RUBRO'] = true;
 $c = cv();
 oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
