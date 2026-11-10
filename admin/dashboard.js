@@ -10445,6 +10445,9 @@ document.addEventListener("click", async (e) => {
    cobrarlos a los que están pagando por afuera"). Los mensuales activos con la marca `pagaPorFuera`, con
    el día del mes del cobro (`diaCobro`, en el suscriptor o en el cliente; sin día, el del alta) y el
    próximo cobro. Debajo, los que no aparecen en Mercado Pago, para marcarlos desde acá. */
+// Pablo, 10-nov: «si es la primera vez, se asume que ya pagaron». Los cobros hasta el día que se estrenó
+// «Pagó» cuentan como pagados; desde el siguiente hay que marcarlos.
+const PF_PAGADOS_HASTA = "2026-11-10";
 function _mantPorFueraLista() {
     const out = [];
     const clientePorMant = _clientePorSuscripcion();
@@ -10476,7 +10479,7 @@ function _mantPorFueraLista() {
         const pagado = String(f.ref.pagadoHasta || "");
         let ultimo = _ymdDelMes(hy, hm - 1, dia);
         if (ultimo > hoy) ultimo = _ymdDelMes(hy, hm - 2, dia);
-        if (ultimo > alta && ultimo > pagado) f.pendiente = ultimo;
+        if (ultimo > alta && ultimo > pagado && ultimo > PF_PAGADOS_HASTA) f.pendiente = ultimo;
         let k = hm - 1, ymd = _ymdDelMes(hy, k, dia);
         while ((ymd <= hoy || ymd <= pagado) && k < hm + 24) ymd = _ymdDelMes(hy, ++k, dia);
         if (alta && ymd < alta) ymd = alta;
