@@ -121,9 +121,14 @@ function wabot_renovacion_clave($tel, &$motivo = null) {
 }
 
 /** "Juan Pérez" → "Juan". */
-function wabot_renovacion_nombre($persona) {
+function wabot_renovacion_nombre($persona, $negocio = '') {
     $p = trim((string)$persona);
     if ($p === '') return '';
+    // Sin una sola letra («_», un emoji) no es el nombre de nadie: salió «Hola _,» (ARMONIA, 9-nov).
+    if (!preg_match('/\p{L}/u', $p)) return '';
+    // Si la ficha tiene el negocio en el lugar de la persona («Todo Pernil» / «Todo Pernil»),
+    // cortar a la primera palabra da «Hola Todo,»: que el que llama use el negocio entero.
+    if ($negocio !== '' && mb_strtolower($p, 'UTF-8') === mb_strtolower(trim((string)$negocio), 'UTF-8')) return '';
     return (string)preg_split('/\s+/u', $p)[0];
 }
 
@@ -133,7 +138,7 @@ function wabot_renovacion_nombre($persona) {
  */
 function wabot_renovacion_enviar_fila(array $f, $cfg, $enviar = null) {
     $negocio = $f['negocio'] !== '' ? $f['negocio'] : 'tu web';
-    $nombre = wabot_renovacion_nombre($f['persona']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
+    $nombre = wabot_renovacion_nombre($f['persona'], $f['negocio']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
     $valores = ['nombre' => $nombre, 'negocio' => $negocio, 'monto' => wabot_moneda($f['monto']) . ' por mes'];
 
     if ($f['tel'] === '') return 'sin_chat';

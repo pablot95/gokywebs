@@ -411,7 +411,7 @@ function wabot_webs_enviar(array $f, $plantilla, array $valores, $cfg, $enviar =
 
 /** "Juan" / el negocio / "cómo estás" para el {{1}} de la plantilla, como en la renovación. */
 function wabot_webs_nombre(array $f) {
-    return wabot_renovacion_nombre($f['persona']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
+    return wabot_renovacion_nombre($f['persona'], $f['negocio']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
 }
 
 /** Cuándo le salió a este cliente el último aviso de caída (lo guarda wabot_webs_enviar en su chat). */

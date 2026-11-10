@@ -159,6 +159,13 @@ $av4 = wabot_webs_avisos_correr($lista, $ar('2026-10-30 10:05:00'), $av3['monito
 caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandados[0][1] === 'mantenimiento:BBB' && $mandados[0][3]['desde'] === 'hoy a las 3:00' && $mandados[0][3]['hasta'] === 'hoy a las 4:00', json_encode($mandados, JSON_UNESCAPED_UNICODE));
 caso('sin negocio dice "tu negocio" y el nombre es la persona', $mandados[0][3]['negocio'] === 'tu negocio' && $mandados[0][3]['nombre'] === 'Ana');
 
+// 9-nov: «Hola _,» (ARMONIA, persona "_") y «Hola Todo,» (Todo Pernil, persona = negocio).
+caso('una persona sin letras saluda con el negocio', wabot_webs_nombre(['persona' => '_', 'negocio' => 'ARMONIA']) === 'ARMONIA');
+caso('un emoji solo también', wabot_webs_nombre(['persona' => '😎', 'negocio' => 'Lulu indumentaria']) === 'Lulu indumentaria');
+caso('persona igual al negocio: el negocio entero, no la primera palabra', wabot_webs_nombre(['persona' => 'Todo Pernil', 'negocio' => 'Todo Pernil']) === 'Todo Pernil');
+caso('la persona de verdad sigue cortándose a la primera palabra', wabot_webs_nombre(['persona' => 'Fernanda Gutierrez', 'negocio' => 'Los Fantasmas de la Pesca']) === 'Fernanda');
+caso('sin letras ni negocio: "cómo estás"', wabot_webs_nombre(['persona' => '_', 'negocio' => '']) === 'cómo estás');
+
 $mandados = [];
 $apagada = $cfg; $apagada['plantillas']['web_caida_resuelta']['automatico'] = false;
 $mon = $av4['monitor']; $mon['gomeria.com.ar']['aviso_pendiente'] = ['desde' => $n0, 'hasta' => $n0 + 1800];
