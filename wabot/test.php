@@ -2846,6 +2846,61 @@ caso('no se vuelve a mandar el mismo dos veces', wabot_logo_sincronizar($tarde) 
 $tarde['transcript'][] = $img('20260821-130000-eeeeeeee.png', '[foto] perdón, este es el logo bueno');
 caso('pero si manda otro logo, se actualiza de nuevo', wabot_logo_sincronizar($tarde) === true);
 
+echo "— Firestore rechaza el logo: un intento, no uno por turno (10-nov) —\n";
+
+/* Del 3 al 9-nov las reglas de Firestore devolvían 403 al PATCH del logo y,
+ * como nada quedaba anotado, cada turno de la charla lo repetía (hasta 130
+ * pedidos por día). Ahora el rechazo se anota y se espera antes de insistir. */
+$tarde['transcript'][] = $img('20260821-140000-ffffffff.png', '[foto] y este es el logo definitivo');
+$tarde['imagenes_recibidas'] = 3;
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 403;
+caso('Firestore da 403: el logo nuevo queda sin sincronizar',
+    wabot_logo_sincronizar($tarde) === false && $tarde['logo_sincronizado'] === '20260821-130000-eeeeeeee.png');
+caso('y el rechazo queda anotado en la charla',
+    (int)($tarde['logo_sync_fallo']['http'] ?? 0) === 403 && ($tarde['logo_sync_fallo']['archivo'] ?? '') === '20260821-140000-ffffffff.png'
+    && (int)($tarde['logo_sync_fallo']['cuantas'] ?? 0) === 3);
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 200;   // si volviera a pedir, ahora saldría bien: el false prueba que NO pide
+caso('en el turno siguiente no se vuelve a pedir', wabot_logo_sincronizar($tarde) === false);
+$tarde['transcript'][] = $img('20260821-150000-gggggggg.png', '[foto] otra');
+$tarde['imagenes_recibidas'] = 4;
+caso('ni aunque llegue otra foto: las reglas no cambian de un turno a otro', wabot_logo_sincronizar($tarde) === false);
+$tarde['logo_sync_fallo']['ts'] = time() - 25 * 3600;
+// La foto «otra» no dice «logo»: el logo sigue siendo el último que sí lo dijo, pero la cantidad ya es 4.
+caso('pasadas 24 h se prueba de nuevo, y al salir bien la ficha queda al día',
+    wabot_logo_sincronizar($tarde) === true && $tarde['logo_sincronizado'] === '20260821-140000-ffffffff.png'
+    && (int)$tarde['imagenes_sincronizadas'] === 4 && empty($tarde['logo_sync_fallo']));
+
+// Cuota (429) o red caída: no es definitivo, se vuelve a probar a la hora.
+$tarde['transcript'][] = $img('20260821-160000-hhhhhhhh.png', '[foto] el logo en png');
+$tarde['imagenes_recibidas'] = 5;
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 429;
+caso('con 429 de cuota tampoco se insiste en el mismo turno',
+    wabot_logo_sincronizar($tarde) === false && (int)($tarde['logo_sync_fallo']['http'] ?? 0) === 429);
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 200;
+caso('ni en el turno siguiente', wabot_logo_sincronizar($tarde) === false);
+$tarde['logo_sync_fallo']['ts'] = time() - 3700;
+caso('pero a la hora sí', wabot_logo_sincronizar($tarde) === true && (int)$tarde['imagenes_sincronizadas'] === 5);
+
+// La ficha que Pablo ya pasó a Clientes no está más: 403 también, pero no hay nada que completar.
+$borrada = conv_nueva();
+$borrada['tel'] = 'TESTLOGO';
+$borrada['lead_creado'] = true;
+$borrada['lead_doc'] = 'projects/x/databases/(default)/documents/propuestas/BORRADA';
+$borrada['transcript'] = [$img('20260821-170000-iiiiiiii.png', '[foto] logo')];
+$borrada['imagenes_recibidas'] = 1;
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 403;
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = true;
+caso('ficha borrada: no se sincroniza y queda anotado qué documento no está',
+    wabot_logo_sincronizar($borrada) === false && $borrada['lead_doc_borrado'] === $borrada['lead_doc'] && empty($borrada['logo_sync_fallo']));
+$GLOBALS['WABOT_TEST_LOGO_HTTP'] = 200;
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = false;
+$borrada['transcript'][] = $img('20260821-180000-jjjjjjjj.png', '[foto] logo bueno');
+$borrada['imagenes_recibidas'] = 2;
+caso('y con ese documento no se intenta más, venga la foto que venga', wabot_logo_sincronizar($borrada) === false);
+$borrada['lead_doc'] = 'projects/x/databases/(default)/documents/propuestas/NUEVA';
+caso('con una ficha nueva (form nuevo) vuelve a sincronizar', wabot_logo_sincronizar($borrada) === true && (int)$borrada['imagenes_sincronizadas'] === 2);
+unset($GLOBALS['WABOT_TEST_LOGO_HTTP'], $GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO']);
+
 $sinBoceto = conv_nueva();
 $sinBoceto['tel'] = 'TESTLOGO';
 $sinBoceto['transcript'] = [$img('20260821-120000-dddddddd.png', '[foto] te paso el logo')];

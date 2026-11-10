@@ -212,7 +212,7 @@ function wabot_ajustes_claves() {
             'form_recordatorio_activo', 'form_recordatorio_horas', 'oferta_entrega_seguimiento_activo',
             'form_confirmacion_activo', 'form_confirmacion_minutos',
             // Los datos de la demo por el chat en vez del link del formulario (datos-demo.php, 9-nov).
-            'datos_por_chat',
+            'datos_por_chat', 'datos_demo_espera_min',
             'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas',
             // La revisión de las charlas cada media hora (revision.php, 9-oct); sin tope de gasto de fábrica (10-oct).
             'revision_activa', 'revision_gasto_max_usd',
@@ -1870,6 +1870,11 @@ function wabot_conv_load($clave) {
         // logo: permiten completarlo si el cliente lo pasa después.
         'lead_doc'         => null,
         'logo_sincronizado'=> null,
+        // Cuántas imágenes ya sabe la ficha (viajan con el logo desde el 2-nov) y
+        // el último PATCH del logo que Firestore rechazó, para no repetirlo en
+        // cada turno (ver wabot_logo_sincronizar).
+        'imagenes_sincronizadas' => null,
+        'logo_sync_fallo'  => null,
         // La forma de pago que eligió el cliente ('unico' o 'mensual') y la que
         // ya quedó escrita en su boceto (15-sep).
         'modalidad_elegida'      => '',
@@ -2052,6 +2057,9 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['lead_creado'] = false;
     $conv['lead_doc'] = null;
     $conv['logo_sincronizado'] = null;
+    $conv['imagenes_sincronizadas'] = null;
+    $conv['logo_sync_fallo'] = null;
+    $conv['lead_doc_borrado'] = null;
     $conv['modalidad_elegida'] = '';
     $conv['modalidad_sincronizada'] = '';
     $conv['sistema_lead_creado'] = false;
@@ -7740,6 +7748,11 @@ function wabot_firestore_lead(&$conv, $cfg) {
     $nombreDoc = json_decode((string)$res, true)['name'] ?? '';
     if ($nombreDoc !== '') $conv['lead_doc'] = $nombreDoc;
     $conv['logo_sincronizado'] = wabot_logo_cliente($conv);
+    // La cantidad de imágenes también viajó en el alta: sin anotarla acá, el
+    // turno siguiente mandaba un PATCH con los mismos datos (uno por ficha).
+    $conv['imagenes_sincronizadas'] = (int)($conv['imagenes_recibidas'] ?? 0);
+    $conv['logo_sync_fallo'] = null;
+    $conv['lead_doc_borrado'] = null;
     // La forma elegida ya viajó en el alta: no hace falta completarla después.
     $conv['modalidad_sincronizada'] = (string)($conv['modalidad_elegida'] ?? '');
 
@@ -7751,6 +7764,21 @@ function wabot_firestore_lead(&$conv, $cfg) {
  * El cliente mandó el logo DESPUÉS de que se creara el boceto: se completa el
  * documento que ya existe en vez de perderlo. No hace nada si no hay boceto,
  * si no mandó ninguna imagen, o si esa imagen ya se había sincronizado.
+ *
+ * Un fallo no se repite en cada turno (10-nov): entre el 3 y el 9-nov hubo
+ * 36-130 PATCH por día rechazados con 403 —las reglas de Firestore no dejaban
+ * tocar `imagenes_recibidas` sin login— contra una cuota que ya daba 429.
+ * El rechazo queda anotado en `logo_sync_fallo` y se vuelve a probar recién
+ * pasadas 24 h si fue 403 (las reglas no cambian de un turno a otro) o 1 h si
+ * fue otra cosa (429 de cuota, 5xx, sin red). Y si la ficha ya no existe
+ * (Pablo la pasó a Clientes y la borró) no hay nada que completar: queda en
+ * `lead_doc_borrado` y no se intenta más con ese documento.
+ *
+ * `currentDocument.exists=true` es lo que evita resucitarla: sin la
+ * precondición el PATCH a un documento borrado lo CREA (la regla de alta es
+ * libre), y así `propuestas` juntó 111 fichas huérfanas con solo el logo
+ * entre el 28-ago y el 9-nov, invisibles en el admin porque no tienen
+ * `createdAt`.
  */
 function wabot_logo_sincronizar(&$conv) {
     if (empty($conv['lead_creado'])) return false;
@@ -7764,41 +7792,61 @@ function wabot_logo_sincronizar(&$conv) {
 
     $doc = trim((string)($conv['lead_doc'] ?? ''));
     if ($doc === '') return false;
+    if ($doc === (string)($conv['lead_doc_borrado'] ?? '')) return false;
 
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
-        $conv['logo_sincronizado'] = $archivo;
-        $conv['imagenes_sincronizadas'] = $cuantas;
-        return true;
+    $fallo = (array)($conv['logo_sync_fallo'] ?? []);
+    if ($fallo) {
+        $espera = (int)($fallo['http'] ?? 0) === 403 ? 24 * 3600 : 3600;
+        if (time() - (int)($fallo['ts'] ?? 0) < $espera) return false;
     }
 
-    $campos = [
-        'logoUrl'    => ['stringValue' => wabot_logo_url(wabot_conversation_key($conv), $archivo)],
-        'logoNombre' => ['stringValue' => wabot_logo_nombre($conv, $archivo)],
-        'imagenes_recibidas' => ['integerValue' => (string)$cuantas],
-        'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
-    ];
-    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
-         . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=imagenes_recibidas&updateMask.fieldPaths=updatedAt';
+    $clave = wabot_conversation_key($conv);
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) {
+        // Las suites simulan la respuesta de Firestore con WABOT_TEST_LOGO_HTTP (200 si no está).
+        $code = (int)($GLOBALS['WABOT_TEST_LOGO_HTTP'] ?? 200);
+        $res  = '';
+    } else {
+        $campos = [
+            'logoUrl'    => ['stringValue' => wabot_logo_url($clave, $archivo)],
+            'logoNombre' => ['stringValue' => wabot_logo_nombre($conv, $archivo)],
+            'imagenes_recibidas' => ['integerValue' => (string)$cuantas],
+            'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+        ];
+        $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
+             . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=imagenes_recibidas&updateMask.fieldPaths=updatedAt'
+             . '&currentDocument.exists=true';
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST => 'PATCH',
-        CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 20,
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST => 'PATCH',
+            CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $res  = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    }
 
     if ($code < 200 || $code >= 300) {
-        wabot_log('error', ['donde' => 'firestore_logo', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        /* Sobre un documento que no está, la regla de update se evalúa sin
+         * `resource` y Firestore contesta 403 (no 404): la misma sonda que usa
+         * el formulario dice si la ficha sigue. Si no sigue, no se insiste. */
+        if (in_array($code, [403, 404], true) && !wabot_lead_doc_existe($conv)) {
+            $conv['lead_doc_borrado'] = $doc;
+            $conv['logo_sync_fallo'] = null;
+            wabot_log('logo_sin_ficha', ['clave' => $clave, 'doc' => $doc, 'http' => $code]);
+            return false;
+        }
+        $conv['logo_sync_fallo'] = ['archivo' => $archivo, 'cuantas' => $cuantas, 'http' => $code, 'ts' => time()];
+        wabot_log('error', ['donde' => 'firestore_logo', 'clave' => $clave, 'doc' => $doc, 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
         return false;
     }
     $conv['logo_sincronizado'] = $archivo;
     $conv['imagenes_sincronizadas'] = $cuantas;
-    wabot_log('logo_agregado', ['clave' => wabot_conversation_key($conv), 'archivo' => $archivo]);
+    $conv['logo_sync_fallo'] = null;
+    wabot_log('logo_agregado', ['clave' => $clave, 'archivo' => $archivo, 'imagenes' => $cuantas]);
     return true;
 }
 

@@ -37,9 +37,16 @@ service cloud.firestore {
         // después de que se creara el boceto (wabot, 15-sep-2026).
         // Marca esta ficha como prospecto: el cliente vio el precio y afirmó
         // una forma de pago, el bot dejó de responder (wabot, 15/16-sep-2026).
-        'modalidad', 'esProspecto', 'prospectoAt', 'modelosElegidos'
+        'modalidad', 'esProspecto', 'prospectoAt', 'modelosElegidos',
+        // El wabot completa la cantidad de fotos junto con el logo cuando el
+        // cliente las manda después de creada la ficha (2-nov-2026). Sin esto
+        // Firestore rechazaba el PATCH entero con 403 y el logo no llegaba.
+        'imagenes_recibidas'
       ]) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['esProspecto'])
               || request.resource.data.esProspecto == true)
+         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['imagenes_recibidas'])
+              || (request.resource.data.imagenes_recibidas is int
+                  && request.resource.data.imagenes_recibidas >= 0))
          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modalidad'])
               || request.resource.data.modalidad in ['unico', 'mensual', 'propia'])
          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modelosElegidos'])
