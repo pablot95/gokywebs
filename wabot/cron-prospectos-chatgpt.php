@@ -187,6 +187,18 @@ function prospecto_chatgpt_cron(): void {
 }
 
 if (realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
+    /* Los datos de la demo por el chat (10-nov): al cliente que lleva unos minutos sin
+     * escribir se le arma la ficha o se le pide lo que falta (datos-demo.php). Va acá
+     * porque este es el cron que corre cada 5 minutos; engine.php trae lo que usa la
+     * ficha (handoff, ficha del precio, IA). Un error acá no frena los prospectos. */
+    if (!in_array('--check', $argv ?? [], true)) {
+        try {
+            require_once __DIR__ . '/engine.php';
+            wabot_datos_demo_espera_correr();
+        } catch (Throwable $e) {
+            wabot_log('error', ['donde' => 'datos_demo_espera_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]);
+        }
+    }
     try {
         if (in_array('--check', $argv ?? [], true)) {
             $docs = prospecto_chatgpt_nuevos(gmdate('Y-m-d\TH:i:s\Z', time() - 60));

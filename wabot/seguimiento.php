@@ -73,6 +73,8 @@ $reaviso = wabot_push_reaviso_correr();
 try { $resumen = wabot_aviso_resumen_correr(); } catch (\Throwable $e) { $resumen = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 // El resumen diario de los chats sin responder a su WhatsApp, a la hora elegida en Estado (9-nov).
 try { $pendientes = wabot_aviso_pendientes_correr(); } catch (\Throwable $e) { $pendientes = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
+// Los datos de la demo por el chat: al que lleva unos minutos sin escribir se le arma la ficha (10-nov). También corre cada 5 min en cron-prospectos-chatgpt.php.
+try { $datosDemo = wabot_datos_demo_espera_correr($cfg); } catch (\Throwable $e) { $datosDemo = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 
 echo json_encode([
     'ultima_llamada' => [
@@ -90,6 +92,7 @@ echo json_encode([
     'push_reaviso' => $reaviso,
     'aviso_resumen' => $resumen,
     'aviso_pendientes' => $pendientes,
+    'datos_demo_espera' => $datosDemo,
     'pagos' => $pagos,
     'onboarding' => $onboarding,
 ], JSON_UNESCAPED_UNICODE) . "\n";

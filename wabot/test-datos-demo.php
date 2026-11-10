@@ -31,6 +31,9 @@ $GLOBALS['WABOT_TEST_OPENAI_KEY'] = 'sk-test-no-es-una-key-real';
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'openai';
 $GLOBALS['WABOT_TEST_FLUJO_COMERCIAL'] = 'auto';
 $GLOBALS['TC_DICE_RUBRO'] = true;
+// La espera antes de armar la ficha (10-nov): el índice del cron va a un archivo de prueba.
+$GLOBALS['WABOT_TEST_DATOS_DEMO_ESPERA_ARCHIVO'] = $tmp . '/datos-demo-espera.json';
+@unlink($GLOBALS['WABOT_TEST_DATOS_DEMO_ESPERA_ARCHIVO']);
 
 const INTRO = 'Para armar la demo necesito los siguientes datos';
 
@@ -108,6 +111,17 @@ function linea_sistema($c, $prefijo) {
     foreach ((array)$c['transcript'] as $f) if (($f['q'] ?? '') === 'sistema' && str_starts_with((string)$f['t'], $prefijo)) return (string)$f['t'];
     return '';
 }
+/**
+ * Pasa el cron a los $min minutos del último mensaje del cliente (10-nov): devuelve lo
+ * que le mandó a esa charla, o null si todavía no le tocaba.
+ */
+function espera_pasa(&$c, $min) {
+    global $cfg;
+    $convs = [&$c];
+    $ahora = wabot_datos_demo_ultimo_cliente_ts($c) + $min * 60;
+    $res = wabot_datos_demo_espera_correr($cfg, $ahora, $convs);
+    return $res['detalle'][wabot_conversation_key($c)] ?? null;
+}
 
 echo "— 1. El pedido de datos (textos.php) —\n";
 $c = cv();
@@ -155,12 +169,21 @@ oa([dc(['accion' => 'formulario'])]);
 $r = turno('Sí dale', $c, $cfg);
 caso('un segundo sí no repite el pedido', !count(array_filter($r, fn($m) => str_contains((string)$m, INTRO))), implode(' | ', $r));
 
-echo "\n— 4. Manda los datos: se arma la ficha y se le confirma —\n";
+echo "\n— 4. Manda los datos: espera unos minutos de silencio, arma la ficha y le confirma —\n";
 $c = cv_con_pedido();
 oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas deportivas y urbanas, venta online y en el local de Lanús',
             'instagram' => 'zapaslanus', 'colores' => 'negro y dorado', 'referencia' => 'nike.com', 'incluir' => 'un mapa con la ubicación'])]);
 $r = turno("Zapas Lanús\nVendemos zapatillas deportivas y urbanas, online y en el local de Lanús\nIg @zapaslanus\nColores negro y dorado\nMe gusta nike.com\nQuiero un mapa con la ubicación", $c, $cfg);
-caso('contesta la confirmación', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto, con eso armamos la demo'), implode(' | ', $r));
+caso('en el turno no contesta: espera a que termine de mandar', $r === [] && empty($c['lead_creado']) && (int)($c['datos_demo_espera_ts'] ?? 0) > 0, implode(' | ', $r));
+caso('lo leído queda anotado y el panel ve que espera', ($c['datos_demo_parcial']['nombre_negocio'] ?? '') === 'Zapas Lanús' && ($c['comercial_ultimo']['accion'] ?? '') === 'esperar');
+caso('la charla queda anotada para el cron', array_key_exists(wabot_conversation_key($c), wabot_datos_demo_espera_indice()));
+caso('a los 4 minutos el cron todavía no la toca', espera_pasa($c, 4) === null && empty($c['lead_creado']));
+$r = espera_pasa($c, 6);
+caso('a los 6 minutos sin escribir arma la ficha y le confirma', is_array($r) && count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto, con eso armamos la demo'), implode(' | ', (array)$r));
+$ultima = end($c['transcript']);
+caso('la confirmación quedó en el chat', ($ultima['q'] ?? '') === 'bot' && str_starts_with((string)($ultima['t'] ?? ''), 'Perfecto, con eso armamos'));
+caso('y ya no está anotada para el cron', !array_key_exists(wabot_conversation_key($c), wabot_datos_demo_espera_indice()));
+caso('sin volver a gastar la lectura (no escribió nada más)', count(pedidos_datos()) === 1);
 caso('con la entrega (hoy a la tarde / mañana / hora)', str_contains((string)($r[0] ?? ''), 'Estará lista para '), (string)($r[0] ?? ''));
 caso('le pidió la lectura a GPT (datos_demo_v1)', count(pedidos_datos()) === 1 && (pedidos_datos()[0]['text']['format']['name'] ?? '') === 'datos_demo_v1');
 caso('la lectura lleva lo que escribió y lo que ya sabíamos', str_contains((string)(pedidos_datos()[0]['input'] ?? ''), 'Zapas Lanús') && str_contains((string)(pedidos_datos()[0]['input'] ?? ''), 'zapatillas'));
@@ -211,36 +234,79 @@ $c = cv('5491100009010TEST');
 wabot_conv_transcript($c, 'bot', $pedido);   // sin ficha: la charla no sabe a qué se dedica
 oa([], [dd(['nombre_negocio' => 'Pelu Mari'])]);
 $r = turno('Se llama Pelu Mari', $c, $cfg);
-caso('solo el nombre: pide lo que falta, una vez', count($r) === 1 && str_contains((string)$r[0], 'Para arrancar me falta') && str_contains((string)$r[0], 'resumen'), implode(' | ', $r));
-caso('sin ficha todavía', empty($c['lead_creado']) && empty($c['form_completado_ts']));
+caso('solo el nombre: en el turno no dice nada (puede estar buscando el resto)', $r === [] && empty($c['lead_creado']), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('a los minutos de silencio pide lo que falta, una vez', is_array($r) && count($r) === 1 && str_contains((string)$r[0], 'Para arrancar me falta') && str_contains((string)$r[0], 'resumen'), implode(' | ', (array)$r));
+caso('sin ficha todavía, y ya no espera', empty($c['lead_creado']) && empty($c['form_completado_ts']) && !wabot_datos_demo_espera_sigue($c));
 oa([], [dd(['nombre_negocio' => 'Pelu Mari', 'resumen' => 'Peluquería en Lanús: cortes, color y peinados'])]);
 $r = turno('Hago cortes, color y peinados en Lanús', $c, $cfg);
 caso('la lectura lee los dos mensajes juntos', str_contains((string)(pedidos_datos()[0]['input'] ?? ''), 'Se llama Pelu Mari') && str_contains((string)(pedidos_datos()[0]['input'] ?? ''), 'Hago cortes'));
-caso('con el resumen se completa', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto, con eso armamos la demo') && !empty($c['lead_creado']), implode(' | ', $r));
+caso('vuelve a esperar', $r === [] && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('con el resumen se completa', is_array($r) && count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto, con eso armamos la demo') && !empty($c['lead_creado']), implode(' | ', (array)$r));
 caso('colores a elección del diseñador cuando no los dijo', ($c['colores'] ?? '') === 'A elección del diseñador');
 caso('nombre y descripción', ($c['nombre_negocio'] ?? '') === 'Pelu Mari' && str_contains((string)$c['descripcion'], 'Peluquería'));
 
 $c = cv_con_pedido();   // la ficha ya sabe que vende zapatillas
 oa([], [dd(['nombre_negocio' => 'Zapas Lanús'])]);
 $r = turno('El negocio se llama Zapas Lanús', $c, $cfg);
-caso('solo el nombre pero la charla ya sabe el rubro: se completa', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', $r));
+caso('solo el nombre pero la charla ya sabe el rubro: igual espera (hasta el 9-nov se armaba al instante)', $r === [] && empty($c['lead_creado']), implode(' | ', $r));
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'instagram' => 'zapaslanus', 'colores' => 'negro y dorado'])]);
+$r = turno('El ig es @zapaslanus y los colores negro y dorado', $c, $cfg);
+caso('lo que manda a los 2 minutos se suma, sin armar todavía', $r === [] && ($c['datos_demo_parcial']['instagram'] ?? '') === 'zapaslanus' && empty($c['lead_creado']), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('después del silencio se completa con todo', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto') && ($c['instagram'] ?? '') === 'zapaslanus' && ($c['colores'] ?? '') === 'negro y dorado', implode(' | ', (array)$r));
 caso('la descripción sale de la ficha', str_contains((string)($c['descripcion'] ?? ''), 'zapatillas'), (string)($c['descripcion'] ?? ''));
+
+// «Listo» mientras espera: terminó de mandar, se arma en el turno.
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'colores' => 'negro'])]);
+turno('Zapas Lanús, colores negro', $c, $cfg);
+oa([], [dd(['nombre_negocio' => 'no debería leerse'])]);
+$r = turno('Listo, eso es todo', $c, $cfg);
+caso('un «listo, eso es todo» mientras espera: arma en el turno, sin otra lectura', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto') && !empty($c['lead_creado']) && count(pedidos_datos()) === 0 && ($c['nombre_negocio'] ?? '') === 'Zapas Lanús', implode(' | ', $r));
+caso('wabot_datos_demo_es_acuse', wabot_datos_demo_es_acuse('listo') && wabot_datos_demo_es_acuse('Sí, con eso alcanza') && wabot_datos_demo_es_acuse('ya está todo')
+    && !wabot_datos_demo_es_acuse('ok, después te paso las fotos') && !wabot_datos_demo_es_acuse('cuánto tarda?') && !wabot_datos_demo_es_acuse('Zapas Lanús, colores negro'));
+
+// «Después te paso» mientras espera: ni arma ni gasta lectura; el cron la arma igual a los minutos.
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús'])]);
+turno('Zapas Lanús', $c, $cfg);
+oa([dc(['accion' => 'esperar'])], [dd(['nombre_negocio' => 'no debería leerse'])]);
+$r = turno('Después te paso las fotos', $c, $cfg);
+caso('un «después te paso» no arma ni gasta lectura: sigue esperando', count(pedidos_datos()) === 0 && empty($c['lead_creado']) && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+caso('el silencio se cuenta desde ese último mensaje', espera_pasa($c, 4) === null && is_array(espera_pasa($c, 6)) && !empty($c['lead_creado']));
+
+// Una pregunta en el medio: la contesta el flujo; al vencer, como escribió después de la lectura, se relee todo.
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús'])]);
+turno('Zapas Lanús', $c, $cfg);
+oa([dc(['accion' => 'responder', 'mensajes' => ['No, la demo no tiene costo.']])], [dd(['es_datos' => false]), dd(['nombre_negocio' => 'Zapas Lanús', 'incluir' => 'un mapa'])]);
+$r = turno('La demo tiene costo?', $c, $cfg);
+caso('una pregunta en el medio la contesta el flujo y la espera sigue', count($r) === 1 && str_starts_with((string)$r[0], 'No, la demo') && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('al vencer relee todo (escribió después de la lectura) y arma', !empty($c['lead_creado']) && count(pedidos_datos()) === 2 && ($c['incluir'] ?? '') === 'un mapa', implode(' | ', (array)$r));
 
 $c = cv('5491100009011TEST');
 wabot_conv_transcript($c, 'bot', $pedido);
 oa([], [dd(['colores' => 'rojo y blanco'])]);
-$r = turno('Los colores son rojo y blanco', $c, $cfg);
-caso('solo colores: pide nombre y resumen', str_contains((string)($r[0] ?? ''), 'nombre de tu negocio') && str_contains((string)($r[0] ?? ''), 'resumen'), implode(' | ', $r));
+turno('Los colores son rojo y blanco', $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('solo colores: al vencer la espera pide nombre y resumen', str_contains((string)($r[0] ?? ''), 'nombre de tu negocio') && str_contains((string)($r[0] ?? ''), 'resumen'), implode(' | ', (array)$r));
 oa([], [dd(['colores' => 'rojo y blanco', 'referencia' => 'adidas.com'])]);
 $r = turno('Y me gusta adidas.com', $c, $cfg);
-caso('sigue sin lo esencial la segunda vez: lo ve Pablo, en silencio', $r === [] && !empty($c['handoff_pendiente']) && empty($c['lead_creado']), implode(' | ', $r));
+caso('sigue sin lo esencial: vuelve a esperar', $r === [] && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('la segunda vez sin lo esencial: lo ve Pablo, en silencio', $r === [] && !empty($c['handoff_pendiente']) && empty($c['lead_creado']), implode(' | ', (array)$r));
 
 echo "\n— 7. Instagram: hace falta el WhatsApp —\n";
 $c = cv('IGTEST777', ['canal' => 'instagram', 'channel_user_id' => 'IGTEST777']);
 wabot_conv_transcript($c, 'bot', wabot_datos_demo_texto($c, $cfg));
 oa([], [dd(['nombre_negocio' => 'Velas Luz', 'resumen' => 'Velas artesanales de soja', 'colores' => 'beige y verde'])]);
 $r = turno('Velas Luz, velas artesanales de soja, colores beige y verde', $c, $cfg);
-caso('con los datos pero sin número, pide el WhatsApp', count($r) === 1 && str_contains((string)$r[0], 'WhatsApp') && empty($c['lead_creado']), implode(' | ', $r));
+caso('con los datos pero sin número: primero la espera', $r === [] && empty($c['lead_creado']), implode(' | ', $r));
+$r = espera_pasa($c, 6);
+caso('al vencer pide el WhatsApp', is_array($r) && count($r) === 1 && str_contains((string)$r[0], 'WhatsApp') && empty($c['lead_creado']), implode(' | ', (array)$r));
 $r = turno('Es 11 2506-8578', $c, $cfg);
 caso('con el número se completa', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', $r));
 caso('telefono_wsp guardado', !empty($c['telefono_wsp']), (string)($c['telefono_wsp'] ?? ''));
@@ -248,15 +314,17 @@ caso('la ficha lleva ese teléfono', str_contains((string)(wabot_lead_campos($c,
 $c = cv('IGTEST778', ['canal' => 'instagram', 'channel_user_id' => 'IGTEST778']);
 wabot_conv_transcript($c, 'bot', wabot_datos_demo_texto($c, $cfg));
 oa([], [dd(['nombre_negocio' => 'Velas Luz', 'resumen' => 'Velas artesanales', 'whatsapp' => '11 2506 8578'])]);
-$r = turno('Velas Luz, velas artesanales, mi wsp 11 2506 8578', $c, $cfg);
-caso('si el número viene con los datos, se completa de una', !empty($c['lead_creado']) && !empty($c['telefono_wsp']), implode(' | ', $r));
+turno('Velas Luz, velas artesanales, mi wsp 11 2506 8578', $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('si el número viene con los datos, al vencer se completa sin pedir nada', !empty($c['lead_creado']) && !empty($c['telefono_wsp']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
 
 echo "\n— 8. Sin OpenAI: reglas —\n";
 $c = cv_con_pedido();
 $key = $GLOBALS['WABOT_TEST_OPENAI_KEY'];
 $GLOBALS['WABOT_TEST_OPENAI_KEY'] = '';
-$r = turno("Zapas Lanús, vendemos zapatillas deportivas y urbanas en Lanús, colores negro y dorado, ig @zapaslanus", $c, $cfg);
-caso('un texto con cuerpo se toma como los datos', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', $r));
+turno("Zapas Lanús, vendemos zapatillas deportivas y urbanas en Lanús, colores negro y dorado, ig @zapaslanus", $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('un texto con cuerpo se toma como los datos (y se arma al vencer la espera)', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
 caso('todo el texto queda como descripción', str_contains((string)$c['descripcion'], 'zapatillas deportivas'));
 caso('el Instagram sale igual', ($c['instagram'] ?? '') === 'zapaslanus');
 caso('y la línea avisa que se leyó sin IA', str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'sin IA'));
@@ -266,8 +334,20 @@ caso('una pregunta sin OpenAI no se toma como datos', empty($c['lead_creado']), 
 $GLOBALS['WABOT_TEST_OPENAI_KEY'] = $key;
 $c = cv_con_pedido();
 oa([], ['falla', 'falla', 'falla', 'falla', 'falla']);
-$r = turno("Zapas Lanús, vendemos zapatillas deportivas y urbanas en Lanús, colores negro y dorado", $c, $cfg);
-caso('si la API falla también valen las reglas', !empty($c['lead_creado']), implode(' | ', $r));
+turno("Zapas Lanús, vendemos zapatillas deportivas y urbanas en Lanús, colores negro y dorado", $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('si la API falla también valen las reglas', !empty($c['lead_creado']), implode(' | ', (array)$r));
+
+echo "\n— 8b. Con la espera en 0 minutos se arma en el mismo turno (como el 9-nov) —\n";
+$cfg0 = ['datos_demo_espera_min' => 0] + $cfg;
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas en Lanús'])]);
+$r = turno('Zapas Lanús, zapatillas en Lanús', $c, $cfg0);
+caso('en el turno: ficha y confirmación', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto') && !empty($c['lead_creado']), implode(' | ', $r));
+caso('los minutos: 5 de fábrica, de 0 a 120, lo raro vuelve a 5', wabot_datos_demo_espera_min([]) === 5 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 0]) === 0
+    && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 500]) === 5 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 12]) === 12);
+$rc = wabot_datos_demo_espera_correr(['datos_por_chat' => false] + $cfg, time());
+caso('con el pedido por chat apagado el cron no hace nada', ($rc['motivo'] ?? '') === 'apagado');
 
 echo "\n— 9. Con datos_por_chat apagado vuelve el link —\n";
 $cfgLink = array_merge($cfg, ['datos_por_chat' => false]);

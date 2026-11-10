@@ -23,6 +23,11 @@
  *  - Después, lo mismo que el formulario completo: `form_completado_ts`, el bot se apaga
  *    en el chat (salvo «Bot después de la demo») y la ficha queda para Pablo. La
  *    confirmación sale en el mismo turno, no a los 5 minutos.
+ *  - Con los datos leídos NO contesta (10-nov, Pablo: «seguro se toman un tiempo para buscar
+ *    la info»): anota lo leído y espera a que el cliente lleve datos_demo_espera_min minutos sin
+ *    escribir; recién ahí el cron arma la ficha o le pide lo esencial que falta
+ *    (wabot_datos_demo_espera_correr, cada 5 min). Un «listo» o «eso es todo» la arma en el
+ *    turno. Con 0 minutos se arma en el mismo turno, como el 9-nov.
  *  - Lo que no son los datos (una duda, un «ok», «después te paso») sigue el camino de
  *    siempre: el flujo comercial contesta lo simple y lo demás lo ve Pablo.
  *  - `datos_por_chat` false (Ajustes → IA) vuelve al link del formulario. Las suites viejas
@@ -348,7 +353,9 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     $conv['form_confirmacion_auto_ts'] = $ahora;
     $conv['comercial_pausa'] = 'formulario';
     $conv['comercial_pausa_ts'] = $ahora;
-    unset($conv['datos_demo_faltan_n'], $conv['datos_demo_espera_wsp']);
+    unset($conv['datos_demo_faltan_n'], $conv['datos_demo_espera_wsp'], $conv['datos_demo_parcial'],
+          $conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas']);
+    wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
     if (function_exists('wabot_evento_sesion')) {
         wabot_evento_sesion($conv, 'datos_demo_recibidos', [
             'campos' => array_keys(array_filter($d, function ($v, $k) { return $k !== 'es_datos' && substr((string)$k, 0, 1) !== '_' && $v !== '' && $v !== false; }, ARRAY_FILTER_USE_BOTH)),
@@ -375,10 +382,148 @@ function wabot_datos_demo_anotar_turno(&$conv, $accion, $motivo, $ajuste) {
                                  'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
 }
 
+/* ──────────── La espera antes de armar la ficha (Pablo, 10-nov) ────────────
+ *
+ * «Seguro se toman un tiempo para buscar la info»: el que manda el nombre y se va a
+ * buscar el Instagram y las fotos no tiene que quedar con la ficha armada con el
+ * nombre solo. Con los datos leídos el bot no contesta: anota lo leído y espera a que
+ * el cliente lleve datos_demo_espera_min minutos sin escribir. Recién ahí el cron
+ * (cada 5 min con cron-prospectos-chatgpt.php; a las y media con seguimiento.php) arma
+ * la ficha y le confirma, o le pide lo esencial que falta. Si en el medio escribe
+ * «listo» o «eso es todo», se arma en ese turno. Con 0 minutos vuelve a armarse en el
+ * mismo turno, como del 9-nov.
+ */
+const WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT = 5;
+
+/** Minutos de silencio del cliente antes de armar la ficha (Ajustes → IA); 0 = en el mismo turno. */
+function wabot_datos_demo_espera_min($cfg) {
+    if (!is_array($cfg) || !array_key_exists('datos_demo_espera_min', $cfg)) return WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT;
+    $m = (int)$cfg['datos_demo_espera_min'];
+    return ($m >= 0 && $m <= 120) ? $m : WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT;
+}
+
+/** Las charlas que están mandando los datos ({clave: ts}), para que el cron no recorra todas. */
+function wabot_datos_demo_espera_archivo() {
+    return $GLOBALS['WABOT_TEST_DATOS_DEMO_ESPERA_ARCHIVO'] ?? (WABOT_DATA . '/datos-demo-espera.json');
+}
+function wabot_datos_demo_espera_indice() {
+    $f = wabot_datos_demo_espera_archivo();
+    $idx = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+    return is_array($idx) ? $idx : [];
+}
+function wabot_datos_demo_espera_marcar($conv, $ts) {
+    $idx = wabot_datos_demo_espera_indice();
+    $idx[wabot_conversation_key($conv)] = (int)$ts;
+    @file_put_contents(wabot_datos_demo_espera_archivo(), json_encode($idx), LOCK_EX);
+}
+function wabot_datos_demo_espera_quitar($clave) {
+    $idx = wabot_datos_demo_espera_indice();
+    if (!array_key_exists((string)$clave, $idx)) return;
+    unset($idx[(string)$clave]);
+    @file_put_contents(wabot_datos_demo_espera_archivo(), json_encode($idx), LOCK_EX);
+}
+
+/** El último mensaje del cliente: el silencio se cuenta desde ahí. */
+function wabot_datos_demo_ultimo_cliente_ts($conv) {
+    $ts = 0;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $f) {
+        if (($f['q'] ?? '') === 'cliente') { $ts = (int)($f['ts'] ?? 0); break; }
+    }
+    return max($ts, (int)($conv['ultimo_cliente_ts'] ?? 0));
+}
+
+/** Lo último que escribió el cliente (sin la descripción de una foto ni el «[audio]»): para distinguir un «listo» de más datos. */
+function wabot_datos_demo_ultimo_texto_cliente($conv) {
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $f) {
+        if (($f['q'] ?? '') !== 'cliente') continue;
+        $t = trim((string)preg_replace('/\n\(.*$/su', '', trim((string)($f['t'] ?? ''))));
+        return trim((string)preg_replace('/^\[(foto|imagen|documento|video|sticker|audio)\]\s*/iu', '', $t));
+    }
+    return '';
+}
+
+/** Cuántas cosas escribió el cliente en la charla: si crece, hay algo nuevo que leer. */
+function wabot_datos_demo_cliente_filas($conv) {
+    $n = 0;
+    foreach ((array)($conv['transcript'] ?? []) as $f) if (($f['q'] ?? '') === 'cliente') $n++;
+    return $n;
+}
+
+/** ¿Terminó de mandar? Un «listo», «ok», «eso es todo» con datos ya leídos (una postergación, no). */
+function wabot_datos_demo_es_acuse($texto) {
+    $t = wabot_datos_demo_norm($texto);
+    if ($t === '' || mb_strlen($t) > 40) return false;
+    if (preg_match('/\b(despues|mas tarde|manana|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio)\b/u', $t)) return false;
+    if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( \p{L}+)?$/u', $t)) return true;
+    return preg_match('/\b(eso es todo|es todo|seria todo|ya esta|nada mas|con eso|listo)\b/u', $t) === 1;
+}
+
+/** ¿Está esperando el silencio para armar? (datos leídos, sin estar pidiendo el WhatsApp) */
+function wabot_datos_demo_espera_sigue($conv) {
+    return wabot_datos_demo_pendiente($conv) && (int)($conv['datos_demo_espera_ts'] ?? 0) > 0
+        && is_array($conv['datos_demo_parcial'] ?? null) && empty($conv['datos_demo_espera_wsp']);
+}
+
+/** ¿Ya pasó el silencio que esperábamos? */
+function wabot_datos_demo_espera_vencida($conv, $cfg, $ahora) {
+    if (!wabot_datos_demo_espera_sigue($conv)) return false;
+    $desde = max((int)$conv['datos_demo_espera_ts'], wabot_datos_demo_ultimo_cliente_ts($conv));
+    return $ahora - $desde >= wabot_datos_demo_espera_min($cfg) * 60;
+}
+
 /**
- * El turno con los datos pedidos y sin recibir. Devuelve los mensajes a mandar,
- * o null cuando el mensaje no son los datos (una duda, un acuse): ahí sigue el
- * flujo de siempre. $texto es la tanda del cliente (lo que no se contestó aún).
+ * Con los datos leídos, qué toca: pedir lo esencial que falta (una vez), pedir el
+ * WhatsApp (Instagram) o armar la ficha y confirmar. Devuelve los mensajes para el
+ * cliente; [] cuando lo ve Pablo en silencio.
+ */
+function wabot_datos_demo_resolver(array $d, &$conv, $cfg, $ahora = null) {
+    unset($conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas']);
+    wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
+
+    $faltan = wabot_datos_demo_faltan($conv, $d);
+    if ($faltan) {
+        $n = (int)($conv['datos_demo_faltan_n'] ?? 0);
+        $tieneAlgo = $d['nombre_negocio'] !== '' || $d['resumen'] !== '' || trim((string)($conv['nombre_negocio'] ?? '')) !== ''
+            || trim((string)($conv['descripcion'] ?? '')) !== '';
+        if ($n === 0 || !$tieneAlgo) {
+            unset($conv['datos_demo_parcial']);
+            if ($n >= 1) {
+                // Dos veces sin lo esencial: lo ve Pablo, con todo lo que escribió.
+                $conv['handoff_pendiente'] = true;
+                wabot_datos_demo_anotar_turno($conv, 'humano', 'Mandó datos para la demo pero falta ' . implode(' y ', $faltan), 'datos_demo_incompletos');
+                wabot_log('datos_demo_incompletos', ['tel' => $conv['tel'] ?? '', 'faltan' => $faltan]);
+                return [];
+            }
+            $conv['datos_demo_faltan_n'] = $n + 1;
+            $plantilla = trim((string)($cfg['datos_demo_faltan'] ?? ''));
+            if ($plantilla === '') $plantilla = 'Dale, anotado. Para arrancar me falta {faltan}.';
+            wabot_datos_demo_anotar_turno($conv, 'responder', 'Mandó parte de los datos: se le pide lo que falta', 'datos_demo_faltan');
+            $conv['_comercial_salida'] = true;
+            return [trim(wabot_personalizar(strtr($plantilla, ['{faltan}' => implode(' y ', $faltan)]), $conv))];
+        }
+        // Ya se lo pedimos una vez y mandó algo más: se arma con lo que hay (la ficha completa lo que falte).
+    }
+
+    // Instagram sin WhatsApp: se le pide el número antes de cerrar (sin él la demo no tiene a dónde ir).
+    if (wabot_canal($conv) === 'instagram' && empty($conv['telefono_wsp'])
+        && ($d['whatsapp'] === '' || !function_exists('wabot_extraer_celular') || wabot_extraer_celular($d['whatsapp']) === null)) {
+        $conv['datos_demo_parcial'] = $d;
+        $conv['datos_demo_espera_wsp'] = 1;
+        wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por Instagram: falta el WhatsApp', 'datos_demo_pide_wsp');
+        $conv['_comercial_salida'] = true;
+        return [(string)($cfg['prediseno_whatsapp'] ?? 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.')];
+    }
+
+    wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por el chat', 'datos_demo_completo');
+    $conv['_comercial_salida'] = true;
+    return [wabot_datos_demo_completar($conv, $d, $cfg, $ahora)];
+}
+
+/**
+ * El turno con los datos pedidos y sin recibir. Devuelve los mensajes a mandar
+ * ([] cuando lo tomó y no contesta: está esperando el silencio), o null cuando el
+ * mensaje no son los datos (una duda, un acuse): ahí sigue el flujo de siempre.
+ * $texto es la tanda del cliente (lo que no se contestó aún).
  */
 function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     if (!wabot_datos_por_chat($cfg) || !wabot_datos_demo_pendiente($conv)) return null;
@@ -412,47 +557,108 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     // Solo fotos o un audio sin transcripción: no hay nada que leer (el flujo agradece el material).
     $todo = wabot_datos_demo_texto_cliente($conv);
     if ($todo === '') return null;
+
+    $esperando = wabot_datos_demo_espera_sigue($conv);
+    /* $texto trae la tanda sin contestar (con los datos ya leídos, porque el turno que los
+     * leyó no contestó): lo nuevo es lo último que escribió. */
+    $ultimo = $esperando ? wabot_datos_demo_ultimo_texto_cliente($conv) : '';
+    // Ya leímos datos y está esperando el silencio: «listo», «eso es todo» → se arma ya, sin otra lectura.
+    if ($esperando && wabot_datos_demo_es_acuse($ultimo)) {
+        wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'acuse']);
+        return wabot_datos_demo_resolver($conv['datos_demo_parcial'], $conv, $cfg);
+    }
     // Lo obvio sin gastar una llamada: una pregunta corta o un «dale» no son los datos.
-    if (wabot_datos_demo_es_acuse_o_posterga($todo)) return null;
+    if (wabot_datos_demo_es_acuse_o_posterga($esperando ? $ultimo : $todo)) return null;
 
     $d = wabot_datos_demo_extraer($todo, $conv, $cfg);
     if ($d === null) $d = wabot_datos_demo_extraer_reglas($todo, $conv);
     if (empty($d['es_datos'])) return null;
 
-    $faltan = wabot_datos_demo_faltan($conv, $d);
-    if ($faltan) {
-        $n = (int)($conv['datos_demo_faltan_n'] ?? 0);
-        $tieneAlgo = $d['nombre_negocio'] !== '' || $d['resumen'] !== '' || trim((string)($conv['nombre_negocio'] ?? '')) !== ''
-            || trim((string)($conv['descripcion'] ?? '')) !== '';
-        if ($n === 0 || !$tieneAlgo) {
-            if ($n >= 1) {
-                // Dos veces sin lo esencial: lo ve Pablo, con todo lo que escribió.
-                $conv['handoff_pendiente'] = true;
-                wabot_datos_demo_anotar_turno($conv, 'humano', 'Mandó datos para la demo pero falta ' . implode(' y ', $faltan), 'datos_demo_incompletos');
-                wabot_log('datos_demo_incompletos', ['tel' => $conv['tel'] ?? '', 'faltan' => $faltan]);
-                return [];
-            }
-            $conv['datos_demo_faltan_n'] = $n + 1;
-            $plantilla = trim((string)($cfg['datos_demo_faltan'] ?? ''));
-            if ($plantilla === '') $plantilla = 'Dale, anotado. Para arrancar me falta {faltan}.';
-            wabot_datos_demo_anotar_turno($conv, 'responder', 'Mandó parte de los datos: se le pide lo que falta', 'datos_demo_faltan');
-            $conv['_comercial_salida'] = true;
-            return [trim(wabot_personalizar(strtr($plantilla, ['{faltan}' => implode(' y ', $faltan)]), $conv))];
-        }
-        // Ya se lo pedimos una vez y mandó algo más: se arma con lo que hay (la ficha completa lo que falte).
-    }
+    $min = wabot_datos_demo_espera_min($cfg);
+    if ($min <= 0) return wabot_datos_demo_resolver($d, $conv, $cfg);
 
-    // Instagram sin WhatsApp: se le pide el número antes de cerrar (sin él la demo no tiene a dónde ir).
-    if (wabot_canal($conv) === 'instagram' && empty($conv['telefono_wsp'])
-        && ($d['whatsapp'] === '' || !function_exists('wabot_extraer_celular') || wabot_extraer_celular($d['whatsapp']) === null)) {
-        $conv['datos_demo_parcial'] = $d;
-        $conv['datos_demo_espera_wsp'] = 1;
-        wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por Instagram: falta el WhatsApp', 'datos_demo_pide_wsp');
-        $conv['_comercial_salida'] = true;
-        return [(string)($cfg['prediseno_whatsapp'] ?? 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.')];
-    }
-
-    wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por el chat', 'datos_demo_completo');
+    // Se anota lo leído y se espera a que termine de mandar: lo arma el cron (wabot_datos_demo_espera_correr).
+    $ahora = time();
+    $conv['datos_demo_parcial'] = $d;
+    $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
+    if (empty($conv['datos_demo_espera_ts'])) $conv['datos_demo_espera_ts'] = $ahora;
+    wabot_datos_demo_espera_marcar($conv, $ahora);
+    wabot_datos_demo_anotar_turno($conv, 'esperar', 'Está mandando los datos de la demo: la ficha se arma a los ' . $min . ' min sin que escriba', 'datos_demo_espera');
     $conv['_comercial_salida'] = true;
-    return [wabot_datos_demo_completar($conv, $d, $cfg)];
+    return [];
+}
+
+/**
+ * Lo que hace el cron con una charla cuya espera venció: si escribió algo después de
+ * la última lectura relee todo, resuelve (ficha / lo que falta / WhatsApp) y manda.
+ * Devuelve los mensajes que salieron.
+ */
+function wabot_datos_demo_espera_atender(&$cv, $cfg, $ahora) {
+    $d = $cv['datos_demo_parcial'];
+    $releido = false;
+    if (wabot_datos_demo_cliente_filas($cv) > (int)($cv['datos_demo_leido_filas'] ?? 0)) {
+        $todo = wabot_datos_demo_texto_cliente($cv);
+        if ($todo !== '') {
+            $nuevo = wabot_datos_demo_extraer($todo, $cv, $cfg) ?? wabot_datos_demo_extraer_reglas($todo, $cv);
+            if (!empty($nuevo['es_datos'])) { $d = $nuevo; $releido = true; }
+        }
+    }
+    $desde = (int)($cv['datos_demo_espera_ts'] ?? 0);
+    $msgs = wabot_datos_demo_resolver($d, $cv, $cfg, $ahora);
+    foreach ($msgs as $m) {
+        $m = trim((string)$m);
+        if ($m === '') continue;
+        if (wabot_enviar($cv, $m)) {
+            $cv['auto_ultimo_ts'] = $ahora;
+            wabot_conv_transcript($cv, 'bot', $m);
+        }
+    }
+    wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($cv), 'minutos' => $desde > 0 ? round(($ahora - $desde) / 60) : null,
+                                    'releido' => $releido, 'mensajes' => count($msgs), 'ficha' => !empty($cv['lead_creado'])]);
+    return $msgs;
+}
+
+/**
+ * El cron: a las charlas anotadas (wabot_datos_demo_espera_marcar) cuyo cliente lleva
+ * datos_demo_espera_min minutos sin escribir, les arma la ficha o les pide lo que
+ * falta. Con $convs (pruebas) trabaja sobre esas charlas en memoria, sin lock ni disco.
+ */
+function wabot_datos_demo_espera_correr($cfg = null, $ahora = null, &$convs = null) {
+    $cfg = $cfg ?? wabot_config_load();
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'atendidas' => 0, 'detalle' => []];
+    if (!wabot_datos_por_chat($cfg)) return $res + ['motivo' => 'apagado'];
+
+    if ($convs !== null) {
+        foreach ($convs as &$cv) {
+            if (!wabot_datos_demo_espera_vencida($cv, $cfg, $ahora)) continue;
+            $res['revisadas']++;
+            $res['detalle'][wabot_conversation_key($cv)] = wabot_datos_demo_espera_atender($cv, $cfg, $ahora);
+            $res['atendidas']++;
+        }
+        unset($cv);
+        return $res;
+    }
+
+    foreach (wabot_datos_demo_espera_indice() as $clave => $ts) {
+        $clave = (string)$clave;
+        if (stripos($clave, 'TEST') !== false && empty($GLOBALS['WABOT_TEST_SIN_RED'])) { wabot_datos_demo_espera_quitar($clave); continue; }
+        $cv = wabot_conv_load($clave);
+        if (!wabot_datos_demo_espera_sigue($cv)) { wabot_datos_demo_espera_quitar($clave); continue; }
+        if (!wabot_datos_demo_espera_vencida($cv, $cfg, $ahora)) continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_datos_demo_espera_vencida($cv, $cfg, $ahora)) continue;
+            $res['detalle'][$clave] = wabot_datos_demo_espera_atender($cv, $cfg, $ahora);
+            wabot_conv_save($cv);
+            $res['atendidas']++;
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
 }
