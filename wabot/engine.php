@@ -5336,7 +5336,13 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // Palabras completas: "catálogo" contiene "logo" como substring y no es
     // una consulta sobre identidad visual.
     if (preg_match('/(?:^|\s)(?:logo|isotipo|identidad|marca grafica)(?:\s|$)/u', $t)) return 'logo';
-    if (preg_match('/\b(publicidad|propaganda|marketing|pauta|anuncios|posteos|redes sociales|(hacen|manejan|llevan) (las )?redes|community)\b/u', $t)) return 'marketing';
+    /* Laura O (5-nov 14:56): "Me dedico al marketing de afiliados" contaba su
+     * oficio y en el turno siguiente se llevó "Publicidad y redes no hacemos".
+     * Si cuenta que se dedica al marketing y no nos pide nada, no es consulta. */
+    $cuentaOficioMarketing = preg_match('/\b(me dedico|nos dedicamos|trabajo|trabajamos|soy|somos)\b.{0,25}\bmarketing\b|\bmarketing (de afiliados|multinivel)\b/u', $t)
+        && !$tienePregunta
+        && !preg_match('/\b(hacen|ofrecen|manejan|llevan|pueden|podrian|incluye|incluyen|ustedes|necesito|quiero|busco)\b/u', $t);
+    if (!$cuentaOficioMarketing && preg_match('/\b(publicidad|propaganda|marketing|pauta|anuncios|posteos|redes sociales|(hacen|manejan|llevan) (las )?redes|community)\b/u', $t)) return 'marketing';
     if (preg_match('/\b(de donde son|donde estan|donde quedan|en que (ciudad|provincia|zona|localidad)|son de (aca|argentina)|tienen (oficina|local|sucursal)|puedo ir|nos podemos ver|donde los ubico|de que (ciudad|provincia|pais))\b/u', $t)) return 'ubicacion';
     // "Atiendo por videollamada" cuenta el servicio; "podemos hacer una reunión?" pregunta (9-sep).
     if (preg_match('/\b(reunion|reuniones|videollamada|llamada|nos juntamos|zoom|meet)\b/u', $t)

@@ -960,4 +960,12 @@ caso('la zapatería escucha que la publicidad no la hacemos, y el precio no prom
     mb_strpos(implode(' ', $r), 'La publicidad y el manejo de redes no los hacemos') !== false
     && mb_strpos(implode(' ', $r), 'el acceso a tu Instagram') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// Laura O (5-nov 14:56): contar que se dedica al marketing no es pedir publicidad.
+caso('«me dedico al marketing de afiliados» no persigue la respuesta de marketing',
+    !in_array('marketing', wabot_preguntas_del_mensaje('Hola bien y vos? Es para un curso de canva. Me dedico al marketing de afiliados y es para vender el curso', [], 'prediseno'), true));
+caso('«me dedico al marketing, ustedes hacen publicidad?» sigue siendo marketing',
+    wabot_info_por_palabras('Me dedico al marketing, ustedes hacen publicidad?', 'prediseno') === 'marketing');
+caso('«necesito marketing para mi negocio» sigue siendo marketing',
+    wabot_info_por_palabras('necesito marketing para mi negocio', 'prediseno') === 'marketing');
+
 todo_ok();
