@@ -1567,9 +1567,24 @@ function wabot_comercial_ultimo_es_pregunta_turnos($conv) {
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
         $q = (string)($fila['q'] ?? '');
         if ($q === 'cliente' || $q === 'sistema') continue;
-        return wabot_comercial_es_pregunta_turnos((string)($fila['t'] ?? ''));
+        $t = (string)($fila['t'] ?? '');
+        return wabot_comercial_es_pregunta_turnos($t) || wabot_comercial_es_pregunta_reservas_pagina($t);
     }
     return false;
+}
+
+/**
+ * La misma pregunta sin la palabra «turnos» (10-nov, una cabaña en Bariloche:
+ * "preferís coordinar las reservas por WhatsApp o que puedan reservar directamente
+ * desde la página?" → "Dame las 2 opciones" se llevó solo la informativa). Solo
+ * para reconocer el «las dos»; la cuenta de la pregunta pendiente no cambia.
+ */
+function wabot_comercial_es_pregunta_reservas_pagina($texto) {
+    $crudo = function_exists('wabot_texto_sin_links') ? wabot_texto_sin_links((string)$texto) : (string)$texto;
+    if (strpos($crudo, '?') === false) return false;
+    $t = wabot_normalizar_frase($crudo);
+    return (bool)preg_match('/\breserv\w*/u', $t) && (bool)preg_match('/\b(whatsapp|wsp|wpp)\b/u', $t)
+        && (bool)preg_match('/\b(desde|en|por) la (pagina|web)\b/u', $t);
 }
 
 /** ¿Elige las dos opciones ("ambas opciones son buenas", "las dos")? Pedir solo WhatsApp o "sin reservas" no. */

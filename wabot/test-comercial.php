@@ -852,6 +852,21 @@ caso('y si elige con reservas preguntando por la seña → la seña (incluida), 
     count($r) === 2 && $r[0] === $cfg['info']['turnos_sena'] && mb_stripos($r[1], 'demo gratis') !== false && strpos(implode(' ', $r), '$190.000') === false
     && ($c['comercial_cotizacion']['plan'] ?? '') === 'panel' && ($c['mensualidad_cotizada'] ?? '') === '$30.000' && empty($c['comercial_pausa']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// 10-nov, una cabaña en Bariloche: la pregunta salió sin la palabra «turnos» ("coordinar las reservas por WhatsApp o que puedan
+// reservar directamente desde la página?") y "Dame las 2 opciones" se llevó solo la informativa.
+$c = cv('5491100009107TEST');
+wabot_conv_transcript($c, 'cliente', 'Deseo hacer una página con mi cabaña de alquiler en Bariloche');
+wabot_conv_transcript($c, 'bot', "Perfecto, la tenés publicada en Airbnb\n\nPara tu web propia, preferís coordinar las reservas por WhatsApp o que puedan reservar directamente desde la página?");
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu cabaña en Bariloche']])]);
+$r = turno('Dame las 2 opciones', $c, $cfg);
+caso('"Dame las 2 opciones" a "reservas por WhatsApp o reservar desde la página?" (sin la palabra turnos) → los dos precios',
+    count($r) === 3 && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
+    && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('la pregunta de reservas sin «turnos» se reconoce; una frase con reservas pero sin la disyuntiva, no',
+    wabot_comercial_es_pregunta_reservas_pagina('Preferís coordinar las reservas por WhatsApp o que puedan reservar directamente desde la página?')
+    && !wabot_comercial_es_pregunta_reservas_pagina('Querés que te armemos la demo así ves cómo quedaría?')
+    && !wabot_comercial_es_pregunta_reservas_pagina('La web tendría contacto directo a tu WhatsApp para que coordinen las reservas con vos'));
+
 // Ya cotizada la informativa con la demo ofrecida: pide el precio con reservas y pregunta por la seña → se lo pasa (no lo deriva ni pregunta si lo quiere).
 $c = cv_masajista();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);

@@ -267,6 +267,10 @@ $r = turno('Listo, eso es todo', $c, $cfg);
 caso('un «listo, eso es todo» mientras espera: arma en el turno, sin otra lectura', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto') && !empty($c['lead_creado']) && count(pedidos_datos()) === 0 && ($c['nombre_negocio'] ?? '') === 'Zapas Lanús', implode(' | ', $r));
 caso('wabot_datos_demo_es_acuse', wabot_datos_demo_es_acuse('listo') && wabot_datos_demo_es_acuse('Sí, con eso alcanza') && wabot_datos_demo_es_acuse('ya está todo')
     && !wabot_datos_demo_es_acuse('ok, después te paso las fotos') && !wabot_datos_demo_es_acuse('cuánto tarda?') && !wabot_datos_demo_es_acuse('Zapas Lanús, colores negro'));
+// 10-nov, GREY INOVACION: mandó el logo y «Dale aguantame»; el bot armó la ficha en el momento y los datos llegaron 15 minutos después.
+caso('«Dale aguantame», «esperame un toque», «dale, bancame» piden tiempo: no arman la ficha',
+    !wabot_datos_demo_es_acuse('Dale aguantame') && !wabot_datos_demo_es_acuse('esperame un toque') && !wabot_datos_demo_es_acuse('dale, bancame')
+    && !wabot_datos_demo_es_acuse('Dale espera') && wabot_datos_demo_es_acuse('dale') && wabot_datos_demo_es_acuse('dale gracias'));
 
 // «Después te paso» mientras espera: ni arma ni gasta lectura; el cron la arma igual a los minutos.
 $c = cv_con_pedido();

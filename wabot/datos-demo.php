@@ -454,6 +454,8 @@ function wabot_datos_demo_es_acuse($texto) {
     $t = wabot_datos_demo_norm($texto);
     if ($t === '' || mb_strlen($t) > 40) return false;
     if (preg_match('/\b(despues|mas tarde|manana|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio)\b/u', $t)) return false;
+    // «Dale aguantame» (10-nov, GREY INOVACION): pide tiempo para juntar los datos, no es «listo».
+    if (preg_match('/\b(aguant\w*|esper[ae]\w*|banc[ae]\w*|un (momento|momentito|minuto|segundo|toque|ratito|rato))\b/u', $t)) return false;
     if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( \p{L}+)?$/u', $t)) return true;
     return preg_match('/\b(eso es todo|es todo|seria todo|ya esta|nada mas|con eso|listo)\b/u', $t) === 1;
 }
