@@ -550,7 +550,8 @@ function erroresNorm(s) {
    - recurso: un script o CSS propio que err.js confirmó que no está en el servidor
      (detalle "HTTP 404"). Sin confirmar es la conexión del visitante o un bloqueador.
    - En los dos, el hosting que no atendió un momento (429/502/503/504 sin motivo) es
-     aviso menor hasta que se repite 3 veces en el mes (erroresMomentaneo).
+     aviso menor hasta que se repite 3 veces en el mes (erroresMomentaneo). Lo mismo un
+     403 a un recurso propio: Hostinger bloqueó a ese visitante (erroresBloqueado).
    - error/promesa: salió de un archivo de la propia web, en un navegador actual; o
      Firestore sin cuota o sin permisos, que deja la web sin datos.
    El resto es aviso menor: plegado y sin contar. Los bots ni aparecen (log.php ya no
@@ -605,7 +606,15 @@ const ERRORES_INYECTADOS = /_META\b|IABInnerFrame|__gCrWeb|webkit\.messageHandle
 // respuesta no trajo motivo: un 503 de nuestro PHP (Firestore sin cuota) sí lo trae y es crítico.
 // Una vez es aviso menor; si se repite (ERRORES_MOMENTANEO_VECES en el mes) pasa a crítico.
 const ERRORES_MOMENTANEO_VECES = 3;
+// 403 a un script propio (10-nov: Armonía y Florería): el archivo está y da 200; es la protección
+// de Hostinger que rechazó a ese visitante (un navegador viejo tipo Chrome 74, que suele ser un robot,
+// o el navegador de Instagram en iPhone), y le cae a todos los scripts de esa carga. Va como el 429:
+// menor, y crítico si se repite. Con un navegador viejo ni cuenta para repetirse.
+function erroresBloqueado(d) {
+    return d.tipo === "recurso" && String(d.detalle || "") === "HTTP 403";
+}
 function erroresMomentaneo(d) {
+    if (erroresBloqueado(d)) return !erroresNavegadorViejo(d.ua, d.msg);
     if (d.tipo === "recurso") return /^HTTP (429|50[234])$/.test(String(d.detalle || ""));
     if (d.tipo === "fetch") return /^HTTP (429|50[234]) en /.test(String(d.msg || "")) && !d.detalle;
     return false;
@@ -613,7 +622,7 @@ function erroresMomentaneo(d) {
 
 function erroresEsCritico(d) {
     if (d.nivel !== "alto" || erroresEsBot(d.ua)) return false;
-    if (erroresMomentaneo(d)) return false;
+    if (erroresMomentaneo(d) || erroresBloqueado(d)) return false;
     if (d.tipo === "fetch") return true;
     if (d.tipo === "recurso") return /^HTTP \d{3}$/.test(String(d.detalle || ""));
     if (erroresNavegadorViejo(d.ua, d.msg)) return false;
@@ -623,6 +632,7 @@ function erroresEsCritico(d) {
 
 // Qué es, en criollo, para la lista (un crítico) o por qué no cuenta (un aviso menor).
 function erroresQueEs(d) {
+    if (erroresBloqueado(d)) return "el hosting bloquea el archivo seguido (revisar permisos)";
     if (erroresMomentaneo(d)) return "el hosting no responde seguido";
     if (d.tipo === "fetch") return "falla el servidor de la web";
     if (d.tipo === "recurso") return /^HTTP 4/.test(String(d.detalle || "")) ? "falta el archivo en el servidor" : "falla el servidor de la web";
@@ -630,6 +640,9 @@ function erroresQueEs(d) {
 }
 function erroresPorQueMenor(d) {
     if ((d.tipo === "error" || d.tipo === "promesa") && erroresNavegadorViejo(d.ua, d.msg)) return "navegador viejo";
+    if (erroresBloqueado(d)) {
+        return erroresNavegadorViejo(d.ua, d.msg) ? "el hosting bloqueó un navegador viejo (suele ser un robot)" : "el hosting bloqueó a ese visitante";
+    }
     if (d.nivel === "alto" && erroresMomentaneo(d)) {
         return /429/.test(String(d.detalle || d.msg || "")) ? "el hosting frenó muchas cargas seguidas" : "el hosting no respondió en ese momento";
     }
