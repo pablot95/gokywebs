@@ -230,6 +230,8 @@ function wabot_textos_default() {
         'cobros_internacionales' => 'Sí, para cobrar en el exterior se integra PayPal u otra pasarela internacional, además de Mercado Pago para Argentina.',
         // Pablo en sus chats del 9-oct ("los medios de pago te los pasaría yo?" y el nombre de fantasía al cobrar).
         'medios_pago_tienda' => 'Por lo general integramos Mercado Pago, pero también podemos integrar otra billetera virtual si tiene API para conectarla. También podés ofrecer transferencia o efectivo.',
+        // 10-nov, de la respuesta de Pablo a Marie («Ok Galicia o dni» quedó sin contestar 78 minutos).
+        'cobro_banco' => 'Con esa cuenta podés cobrar por transferencia y confirmar el pago vos. Si querés que se confirme automáticamente, podemos integrar Mercado Pago.',
         'mp_nombre_negocio' => 'Sí, eso depende de cómo tengas configurado Mercado Pago: ahí elegís el nombre del negocio, y cuando te pagan figura ese nombre.',
         'logo' => 'Logos no hacemos, pero no hace falta: si tenés uno lo usamos, y si no, armamos tu nombre con una tipografía que quede bien.',
         'marketing' => 'Publicidad y redes no hacemos, nos dedicamos a la web. Te la dejamos lista para compartir en tus redes y para conectar tus anuncios.',
@@ -277,7 +279,7 @@ function wabot_textos_default() {
         'ampliar_despues' => 'Sí, podés arrancar con lo que necesitás hoy y sumar funciones más adelante, sin rehacer la web.',
         // 9-nov: sin «completás un formulario», que ya no se manda (los datos se piden por el chat).
         'que_necesitan' => 'Muy poco: el nombre del negocio, qué ofrecés y, si tenés, los colores de tu marca. Nos lo pasás por acá y con eso armamos la demo. Si tenés logo y fotos, mejor, pero no hacen falta.',
-        'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
+        'soy_bot' => 'Soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         /* "Su nombre?", "con quién hablo?" (26-sep): se contesta primero y
          * después sigue la pregunta comercial pendiente, en el mismo turno. */
         'quien_atiende' => 'Soy el asistente de Gokywebs. Te oriento con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',

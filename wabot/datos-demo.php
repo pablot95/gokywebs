@@ -115,13 +115,17 @@ function wabot_datos_demo_pendiente($conv) {
  * y dorado») se lee junto. La descripción automática de una foto no es un dato
  * suyo y se saltea; el epígrafe de la foto y la transcripción de un audio sí.
  */
-function wabot_datos_demo_texto_cliente($conv) {
+function wabot_datos_demo_texto_cliente($conv, $desdeFila = null) {
     $t = (array)($conv['transcript'] ?? []);
     $desde = (int)($conv['datos_pedidos_ts'] ?? 0);
     // Desde el renglón del pedido (por si varios mensajes comparten el segundo).
     $inicio = 0;
-    foreach ($t as $i => $fila) {
-        if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
+    if ($desdeFila !== null) {
+        $inicio = max(1, (int)$desdeFila);   // lo que mandó después de armada la ficha (wabot_datos_demo_tardios)
+    } else {
+        foreach ($t as $i => $fila) {
+            if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
+        }
     }
     $partes = [];
     foreach ($t as $i => $fila) {
@@ -215,11 +219,23 @@ function wabot_datos_demo_normalizar($d) {
     return $out;
 }
 
+/**
+ * «Dale aguantame», «esperame un toque», «bancame que busco el logo»: está juntando
+ * los datos, no terminó (10-nov, GREY: mandó el logo, escribió «Dale aguantame», el
+ * «dale» se leyó como «listo» y la ficha se armó con el nombre solo; el brief
+ * completo llegó a los 15 minutos y quedó afuera).
+ */
+function wabot_datos_demo_pide_tiempo($texto) {
+    $t = wabot_datos_demo_norm($texto);
+    return preg_match('/\b(aguant\w*|esperame|esperen|espera|esperate|bancame|banca|bancate|un momento|un momentito|un segundo|un toque|un ratito|un rato|un cachito|ya vuelvo|ya te (paso|mando|envio)|ahora te (paso|mando|envio|busco)|ahi te (paso|mando|envio)|voy a buscar|lo busco|los busco|te busco)\b/u', $t) === 1;
+}
+
 /** Un «ok», «dale», «gracias», «después te paso»: no son los datos. */
 function wabot_datos_demo_es_acuse_o_posterga($texto) {
     $t = wabot_datos_demo_norm($texto);
     if ($t === '') return true;
     if (mb_strlen($t) <= 14 && preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya|ahi va|ahora|ahi te paso|ya te paso)( \p{L}+)?$/u', $t)) return true;
+    if (mb_strlen($t) <= 90 && wabot_datos_demo_pide_tiempo($t)) return true;
     return preg_match('/\b(despues|mas tarde|manana|a la noche|a la tarde|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio|lo veo|lo hablo|lo consulto)\b/u', $t) === 1
         && mb_strlen($t) <= 90;
 }
@@ -317,6 +333,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
 
     $conv['form_completado_ts'] = $ahora;
     $conv['datos_recibidos_ts'] = $ahora;
+    $conv['datos_demo_tarde_filas'] = wabot_datos_demo_cliente_filas($conv);   // lo que mande después: wabot_datos_demo_tardios
     $conv['origen_prediseno'] = ($conv['origen_prediseno'] ?? '') ?: 'chat';
 
     /* La ficha, igual que en wabot_form_lead_procesar(): si la charla dice tener
@@ -449,11 +466,29 @@ function wabot_datos_demo_cliente_filas($conv) {
     return $n;
 }
 
+/** Cuántas fotos o archivos mandó desde que se le pidieron los datos. */
+function wabot_datos_demo_material_recibido($conv) {
+    $t = (array)($conv['transcript'] ?? []);
+    $desde = (int)($conv['datos_pedidos_ts'] ?? 0);
+    $inicio = 0;
+    foreach ($t as $i => $fila) {
+        if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
+    }
+    $n = 0;
+    foreach ($t as $i => $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if ($inicio > 0 ? $i < $inicio : (int)($fila['ts'] ?? 0) < $desde) continue;
+        if (in_array((string)($fila['media']['clase'] ?? ''), ['imagen', 'documento'], true)) $n++;
+    }
+    return $n;
+}
+
 /** ¿Terminó de mandar? Un «listo», «ok», «eso es todo» con datos ya leídos (una postergación, no). */
 function wabot_datos_demo_es_acuse($texto) {
     $t = wabot_datos_demo_norm($texto);
     if ($t === '' || mb_strlen($t) > 40) return false;
     if (preg_match('/\b(despues|mas tarde|manana|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio)\b/u', $t)) return false;
+    if (wabot_datos_demo_pide_tiempo($t)) return false;   // «Dale aguantame» no es un «listo»
     if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( \p{L}+)?$/u', $t)) return true;
     return preg_match('/\b(eso es todo|es todo|seria todo|ya esta|nada mas|con eso|listo)\b/u', $t) === 1;
 }
@@ -554,11 +589,26 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
         return [(string)($cfg['prediseno_whatsapp_invalido'] ?? 'Ese número no me cierra. Pasámelo con característica, por ejemplo 11 2506-8578.')];
     }
 
+    $esperando = wabot_datos_demo_espera_sigue($conv);
+    /* Mandó fotos o un flyer y ningún dato escrito (10-nov, Walter: el flyer de la cabaña,
+     * «Usamos las fotos y la información del flyer para armar la demo» y la charla quedó
+     * sin ficha y sin que nadie le pidiera el nombre). El material cuenta como haber
+     * empezado a mandar: se anota la espera con los datos en blanco y, cuando deja de
+     * escribir, se arma la ficha con lo que la charla ya sabe o se le pide lo esencial
+     * que falta. En este turno no cambia nada: el flujo agradece el material como siempre. */
+    if (!$esperando && wabot_datos_demo_material_recibido($conv) > 0) {
+        $ahoraM = time();
+        $conv['datos_demo_parcial'] = ['_material' => true] + wabot_datos_demo_normalizar(['es_datos' => true]);
+        $conv['datos_demo_leido_filas'] = 0;   // lo escrito hasta acá se relee al armar
+        $conv['datos_demo_espera_ts'] = $ahoraM;
+        wabot_datos_demo_espera_marcar($conv, $ahoraM);
+        wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'material']);
+    }
+
     // Solo fotos o un audio sin transcripción: no hay nada que leer (el flujo agradece el material).
     $todo = wabot_datos_demo_texto_cliente($conv);
     if ($todo === '') return null;
 
-    $esperando = wabot_datos_demo_espera_sigue($conv);
     /* $texto trae la tanda sin contestar (con los datos ya leídos, porque el turno que los
      * leyó no contestó): lo nuevo es lo último que escribió. */
     $ultimo = $esperando ? wabot_datos_demo_ultimo_texto_cliente($conv) : '';
@@ -598,6 +648,8 @@ function wabot_datos_demo_espera_atender(&$cv, $cfg, $ahora) {
     $releido = false;
     if (wabot_datos_demo_cliente_filas($cv) > (int)($cv['datos_demo_leido_filas'] ?? 0)) {
         $todo = wabot_datos_demo_texto_cliente($cv);
+        // Con solo material anotado, un «ok» o una pregunta suelta no gastan una lectura.
+        if (!empty($d['_material']) && (wabot_datos_demo_es_acuse_o_posterga($todo) || mb_strlen(wabot_datos_demo_norm($todo)) < 12)) $todo = '';
         if ($todo !== '') {
             $nuevo = wabot_datos_demo_extraer($todo, $cv, $cfg) ?? wabot_datos_demo_extraer_reglas($todo, $cv);
             if (!empty($nuevo['es_datos'])) { $d = $nuevo; $releido = true; }
@@ -661,4 +713,143 @@ function wabot_datos_demo_espera_correr($cfg = null, $ahora = null, &$convs = nu
         }
     }
     return $res;
+}
+
+/* ──────────── Lo que manda después de armada la ficha (10-nov) ────────────
+ *
+ * GREY mandó el logo y la ficha se armó; a los 15 minutos llegó el brief entero (qué
+ * ofrece de verdad, los colores, lo que quiere sí o sí) y quedó solo en el chat: la
+ * demo iba a salir con «mis miniapp, mis libros» y «Colores: no eligió». Hasta que la
+ * demo se entrega (y por WABOT_DATOS_DEMO_TARDE_HORAS), un mensaje con cuerpo que llega
+ * después de la ficha se lee igual que los datos: lo que trae pisa lo anterior en la
+ * charla, se anota «[Datos de la demo por chat: actualización]» y se completa la ficha
+ * de `propuestas`. El bot no contesta (después de la ficha contesta Pablo): queda
+ * pendiente para él. Un «ok», una pregunta corta o una foto no gastan una lectura.
+ */
+const WABOT_DATOS_DEMO_TARDE_HORAS = 72;
+
+/** Fila del transcript desde la que hay que leer lo tardío: después de lo ya leído. */
+function wabot_datos_demo_tarde_desde($conv) {
+    $t = (array)($conv['transcript'] ?? []);
+    if (array_key_exists('datos_demo_tarde_filas', $conv)) {
+        $leidas = (int)$conv['datos_demo_tarde_filas'];
+        $n = 0;
+        foreach ($t as $i => $fila) {
+            if (($fila['q'] ?? '') !== 'cliente') continue;
+            if (++$n > $leidas) return $i;
+        }
+        return count($t);
+    }
+    // Fichas de antes de este arreglo: desde la línea que la anotó.
+    $ultima = -1;
+    foreach ($t as $i => $fila) {
+        if (($fila['q'] ?? '') === 'sistema' && strpos((string)($fila['t'] ?? ''), '[Datos de la demo por chat') === 0) $ultima = $i;
+    }
+    return $ultima >= 0 ? $ultima + 1 : count($t);
+}
+
+/**
+ * Lee lo que mandó después de la ficha y, si son datos, actualiza la charla y la
+ * ficha. Devuelve true si cambió algo. Se llama en cada mensaje entrante (webhook),
+ * con el bot prendido o apagado.
+ */
+function wabot_datos_demo_tardios(&$conv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (!wabot_datos_por_chat($cfg)) return false;
+    $recibido = (int)($conv['datos_recibidos_ts'] ?? 0);
+    if ($recibido <= 0 || ($conv['origen_prediseno'] ?? '') !== 'chat' || empty($conv['lead_creado'])) return false;
+    if ((int)($conv['presentado_ts'] ?? 0) > 0 || $ahora - $recibido > WABOT_DATOS_DEMO_TARDE_HORAS * 3600) return false;
+    $filas = wabot_datos_demo_cliente_filas($conv);
+    if (array_key_exists('datos_demo_tarde_filas', $conv) && $filas <= (int)$conv['datos_demo_tarde_filas']) return false;
+
+    $nuevo = wabot_datos_demo_texto_cliente($conv, wabot_datos_demo_tarde_desde($conv));
+    // Sin cuerpo no hay datos que leer: se sigue juntando hasta que lo haya.
+    if (mb_strlen(wabot_datos_demo_norm($nuevo)) < 40 && substr_count($nuevo, "\n") < 2) return false;
+    $conv['datos_demo_tarde_filas'] = $filas;
+    if (wabot_datos_demo_es_acuse_o_posterga($nuevo)) return false;
+
+    $d = wabot_datos_demo_extraer($nuevo, $conv, $cfg);
+    if ($d === null || empty($d['es_datos'])) return false;
+
+    $cambios = [];
+    $negocio = $d['nombre_negocio'] !== '' && function_exists('wabot_nombre_negocio_limpiar') ? wabot_nombre_negocio_limpiar($d['nombre_negocio']) : $d['nombre_negocio'];
+    if ($negocio !== '' && $negocio !== trim((string)($conv['nombre_negocio'] ?? ''))) { $conv['nombre_negocio'] = $negocio; $cambios[] = 'Negocio: ' . $negocio; }
+    if ($d['resumen'] !== '' && $d['resumen'] !== trim((string)($conv['descripcion'] ?? ''))) { $conv['descripcion'] = $d['resumen']; $cambios[] = 'Resumen: ' . $d['resumen']; }
+    if ($d['colores'] !== '' && $d['colores'] !== trim((string)($conv['colores'] ?? ''))) {
+        $conv['colores'] = $d['colores'];
+        $conv['colores_hex'] = function_exists('wabot_colores_a_hex') ? wabot_colores_a_hex($d['colores']) : null;
+        $cambios[] = 'Colores: ' . $d['colores'];
+    }
+    $ig = wabot_datos_demo_instagram_usuario($d['instagram']);
+    if ($ig !== '' && $ig !== trim((string)($conv['instagram'] ?? ''))) { $conv['instagram'] = $ig; $cambios[] = 'Instagram: instagram.com/' . $ig; }
+    if ($d['referencia'] !== '' && $d['referencia'] !== trim((string)($conv['referencia'] ?? ''))
+        && (!function_exists('wabot_referencia_utilizable') || wabot_referencia_utilizable($d['referencia']))) {
+        $conv['referencia'] = $d['referencia']; $cambios[] = 'Referencia: ' . $d['referencia'];
+    }
+    if ($d['incluir'] !== '' && $d['incluir'] !== trim((string)($conv['incluir'] ?? ''))) { $conv['incluir'] = $d['incluir']; $cambios[] = 'Incluir sí o sí: ' . $d['incluir']; }
+    if (!$cambios) return false;
+
+    wabot_conv_transcript($conv, 'sistema', '[Datos de la demo por chat: actualización] ' . implode(' · ', $cambios));
+    $conv['datos_demo_tarde_ts'] = $ahora;
+    // El brief era de la charla de antes: se rearma con todo (si la IA no contesta, queda el anterior).
+    if (function_exists('wabot_resumen_negocio')) {
+        $brief = wabot_resumen_negocio($conv, $cfg);
+        if (is_array($brief) && $brief) $conv['brief'] = $brief;
+    }
+    $ok = wabot_datos_demo_ficha_actualizar($conv, $cfg, $d);
+    if (empty($conv['control_manual'])) $conv['handoff_pendiente'] = true;
+    wabot_log('datos_demo_tarde', ['clave' => wabot_conversation_key($conv), 'campos' => count($cambios), 'ficha' => $ok]);
+    return true;
+}
+
+/**
+ * Completa la ficha que ya existe con lo que llegó después. Sin login, las reglas de
+ * `propuestas` solo dejan tocar algunos campos: el nombre, el rubro, los colores, el
+ * Instagram y `objetivos` («Objetivos de la web»), que es donde va lo que no tiene
+ * campo editable (qué ofrece, qué quiere incluir, la referencia). Con
+ * currentDocument.exists: una ficha que Pablo ya procesó no se resucita.
+ */
+function wabot_datos_demo_ficha_actualizar(&$conv, $cfg, array $d) {
+    $doc = trim((string)($conv['lead_doc'] ?? ''));
+    if ($doc === '' || $doc === (string)($conv['lead_doc_borrado'] ?? '')) return false;
+    $brief = is_array($conv['brief'] ?? null) ? $conv['brief'] : [];
+    $rubro = trim((string)($brief['negocio'] ?? '')) ?: trim((string)($conv['descripcion'] ?? ''));
+    $nota = ['Actualizó los datos por el chat después de armada la ficha.'];
+    $ofrece = $d['resumen'] !== '' ? $d['resumen'] : trim((string)($brief['ofrece'] ?? ''));
+    if ($ofrece !== '') $nota[] = 'Qué ofrece: ' . $ofrece;
+    if (trim((string)($conv['incluir'] ?? '')) !== '') $nota[] = 'Incluir sí o sí: ' . trim((string)$conv['incluir']);
+    if ($d['referencia'] !== '') $nota[] = 'Referencia: ' . $d['referencia'];
+    $campos = [
+        'nombre_negocio'   => ['stringValue' => (string)($conv['nombre_negocio'] ?? '')],
+        'rubro'            => ['stringValue' => $rubro],
+        'negocio_rubro'    => ['stringValue' => $rubro],
+        'colores'          => ['stringValue' => (string)($conv['colores'] ?? '')],
+        'color_principal'  => ['stringValue' => (string)($conv['colores_hex']['principal'] ?? '')],
+        'color_secundario' => ['stringValue' => (string)($conv['colores_hex']['secundario'] ?? '')],
+        'color_fondos'     => ['stringValue' => (string)($conv['colores_hex']['fondos'] ?? '')],
+        'instagram'        => ['stringValue' => (string)($conv['instagram'] ?? '')],
+        'objetivos'        => ['stringValue' => mb_substr(implode("\n", $nota), 0, 4000)],
+        'updatedAt'        => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+    ];
+    $clave = wabot_conversation_key($conv);
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) {
+        $GLOBALS['WABOT_TEST_DATOS_TARDE_PATCH'] = $campos;
+        return true;
+    }
+    $mask = '';
+    foreach (array_keys($campos) as $k) $mask .= '&updateMask.fieldPaths=' . $k;
+    $ch = curl_init('https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY . $mask . '&currentDocument.exists=true');
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) return true;
+    wabot_log('error', ['donde' => 'firestore_datos_tarde', 'clave' => $clave, 'doc' => $doc, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+    return false;
 }

@@ -318,6 +318,11 @@ function wabot_procesar_entrante($ev, $cfg) {
             }
             $conv['ultimo_cliente_ts'] = time();   // reabre la ventana de 24 h
             wabot_logo_sincronizar($conv);
+            // Datos que llegan después de armada la ficha de la demo (10-nov): se suman a la ficha.
+            if (function_exists('wabot_datos_demo_tardios')) {
+                try { wabot_datos_demo_tardios($conv, $cfg); }
+                catch (Throwable $err) { wabot_log('error', ['donde' => 'datos_demo_tarde', 'msg' => mb_substr($err->getMessage(), 0, 200)]); }
+            }
             if ($primerContacto) $conv['lead_recibido_evento'] = true;
 
             /* La baja se levanta si el cliente vuelve pidiendo una web. Ese
@@ -548,6 +553,10 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         }
         $conv['ultimo_cliente_ts'] = time();
         wabot_logo_sincronizar($conv);
+        if (function_exists('wabot_datos_demo_tardios')) {
+            try { wabot_datos_demo_tardios($conv, $cfg); }
+            catch (Throwable $err) { wabot_log('error', ['donde' => 'datos_demo_tarde', 'msg' => mb_substr($err->getMessage(), 0, 200)]); }
+        }
         if ($usables) wabot_oferta_diseno_reabrir($conv, implode("\n", $usables));
         $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && empty($conv['control_manual']) && time() >= (int)$conv['pausado_hasta'];
         if ($activo && !$usables && wabot_solo_bienvenida($cfg)) $usables = [''];

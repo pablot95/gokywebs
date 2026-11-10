@@ -1522,6 +1522,8 @@ function wabot_comercial_oferta_ts($conv, $cfg = null) {
  */
 function wabot_comercial_reoferta_corresponde($d, $texto, $conv, $cfg, array $msgs) {
     if (!$msgs || !empty($conv['comercial_reoferta_ts'])) return false;
+    // «Mañana te mando un audio y lo vemos»: avisó que vuelve, no se le insiste con la demo (10-nov, la agencia de viajes).
+    if ((int)($conv['retomar_ts'] ?? 0) > time()) return false;
     if (($d['intencion'] ?? 'ninguna') !== 'ninguna') return false;
     if (wabot_comercial_estado($conv) !== 'atencion' || !wabot_comercial_oferta_hecha($conv, $cfg)) return false;
     if (wabot_comercial_cotizacion($conv, $cfg) === null) return false;
@@ -1558,7 +1560,10 @@ function wabot_comercial_es_pregunta_turnos($texto) {
     $crudo = function_exists('wabot_texto_sin_links') ? wabot_texto_sin_links((string)$texto) : (string)$texto;
     if (strpos($crudo, '?') === false) return false;
     $t = wabot_normalizar_frase($crudo);
-    return (bool)preg_match('/\breserv\w*/u', $t) && (bool)preg_match('/\b(turnos?|dia y horario|horarios?|agenda)\b/u', $t)
+    /* Un alojamiento no habla de turnos (10-nov, la cabaña de Bariloche: «preferís coordinar
+     * las reservas por WhatsApp o que puedan reservar directamente desde la página?» no se
+     * reconocía y a «Dame las 2 opciones» le llegó un solo precio). */
+    return (bool)preg_match('/\breserv\w*/u', $t) && (bool)preg_match('/\b(turnos?|dia y horario|horarios?|agenda|desde la (pagina|web)|en la (pagina|web)|por la (pagina|web))\b/u', $t)
         && (bool)preg_match('/\b(whatsapp|wsp|wpp|consultas?|contact\w*|escrib\w*|mostrar)\b/u', $t);
 }
 

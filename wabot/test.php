@@ -3506,8 +3506,9 @@ caso('la bienvenida son dos mensajes con el texto de Pablo: el saludo y las tres
     && $cfg['menu_opciones'] === "Para orientarte mejor, contame qué tipo de web estás buscando:\n- Una web informativa para presentar tu negocio, empresa o servicios\n- Una tienda online para vender productos, cursos o servicios\n- Algo diferente"
     && stripos($cfg['menu'] . $cfg['menu_opciones'], 'rubro') === false);
 
-caso('soy_bot ya no arranca contestando "Sí" a "sos una persona?"',
-    mb_stripos($cfg['info']['soy_bot'], 'No, soy el asistente') === 0);
+// 10-nov: tampoco con "No" (a "es un bot o q" salía "No, soy el asistente automático").
+caso('soy_bot no arranca contestando "Sí" ni "No": sirve para "sos una persona?" y para "es un bot?"',
+    mb_stripos($cfg['info']['soy_bot'], 'Soy el asistente automático') === 0);
 
 caso('ningún texto dice que el dominio y el hosting quedan del cliente por defecto',
     mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), 'siendo tuyos los dos') === false);
