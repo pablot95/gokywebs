@@ -7588,6 +7588,9 @@ const facturaModal = document.getElementById("facturaModal");
 let clienteAFacturar = null;
 let facturaEsAdhoc = false;
 let facturaRequestId = null;
+// «Pagó» en Pagan por afuera (10-nov): qué hacer después de emitir y el botón de pagado sin factura.
+let facturaAlEmitir = null;
+let facturaSinFacturar = null;
 
 const SIN_IDENTIFICAR = 99;
 // Condicion frente al IVA que se propone segun el documento. Es solo el valor
@@ -7664,6 +7667,8 @@ function cerrarFacturaModal() {
     clienteAFacturar = null;
     facturaEsAdhoc = false;
     facturaRequestId = null;
+    facturaAlEmitir = null;
+    facturaSinFacturar = null;
 }
 
 async function llamarFacturacion(accion, cuerpo, extra = {}, endpoint = "facturar.php") {
@@ -7717,9 +7722,11 @@ async function abrirFacturaModal(cliente, opts = {}) {
     clienteAFacturar = cliente;
     facturaEsAdhoc = !!opts.adhoc;
     facturaRequestId = generarRequestId();
+    facturaAlEmitir = opts.alEmitir || null;
+    facturaSinFacturar = opts.sinFacturar || null;
 
     document.getElementById("facturaModalTitulo").textContent =
-        facturaEsAdhoc ? "Emitir factura" : "Emitir factura y marcar entregada";
+        opts.titulo || (facturaEsAdhoc ? "Emitir factura" : "Emitir factura y marcar entregada");
     document.getElementById("facturaCliente").textContent = etiquetaCliente(cliente);
     /* Al entregar se propone lo cobrado al arrancar (15-sep-2026). Plan anual o web
        propia: lo cobrado o, si no se registró, la seña del plan. Plan mensual: vacío
@@ -7736,11 +7743,12 @@ async function abrirFacturaModal(cliente, opts = {}) {
     campoFactura("Comprobante").textContent = "Consultando a ARCA…";
     campoFactura("EntornoAviso").hidden = true;
     campoFactura("EmitirBtn").disabled = true;
-    campoFactura("SinFacturarBtn").hidden = facturaEsAdhoc;
+    campoFactura("SinFacturarBtn").hidden = facturaEsAdhoc && !facturaSinFacturar;
+    campoFactura("SinFacturarBtn").textContent = facturaSinFacturar?.texto || "Marcar entregada sin facturar";
 
     campoFactura("Concepto").value = "2";
-    campoFactura("Desde").value = fechaInput(-30);
-    campoFactura("Hasta").value = fechaInput();
+    campoFactura("Desde").value = opts.periodo?.desde || fechaInput(-30);
+    campoFactura("Hasta").value = opts.periodo?.hasta || fechaInput();
     campoFactura("Vencimiento").value = fechaInput();
     campoFactura("Descripcion").value = "";
     campoFactura("Documento").value = "";
@@ -7860,8 +7868,13 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
                 : { tipoDocumento: SIN_IDENTIFICAR, documento: "" })
         });
         const f = datos.factura;
+        const alEmitir = facturaAlEmitir;
         if (!facturaEsAdhoc) await completarCliente(cliente.id, f);
         cerrarFacturaModal();
+        if (alEmitir) {
+            try { await alEmitir(f); }
+            catch (err) { console.error(err); alert("La factura salió, pero no se pudo marcar como pagado: " + err.message); }
+        }
         if (datos.recuperada) {
             alert(
                 `${numeroComprobante(f.puntoVenta, f.numero)} (${fmtMoney(f.total)}) ya se había emitido en un intento anterior ` +
@@ -7886,6 +7899,16 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
 document.getElementById("facturaSinFacturarBtn")?.addEventListener("click", async () => {
     if (!clienteAFacturar) return;
     const cliente = clienteAFacturar;
+    if (facturaSinFacturar) {
+        try {
+            await facturaSinFacturar.accion();
+            cerrarFacturaModal();
+        } catch (err) {
+            console.error(err);
+            mostrarErrorFactura(err.message);
+        }
+        return;
+    }
     if (!confirm(`Marcar la web de "${cliente.nombre}" como entregada sin emitir factura? Sigue en Clientes (con su plan) y queda el registro en Completados.`)) return;
     try {
         await completarCliente(cliente.id, null);
@@ -10440,16 +10463,27 @@ function _mantPorFueraLista() {
     }
     const hoy = _diaDe(new Date());
     const [hy, hm] = hoy.split("-").map(Number);
+    /* «Pagó» (Pablo, 10-nov: "un botón que diga Pagó que emita la factura, y hasta no marcarlo como pagado
+       no se vaya hasta abajo de la lista"). `pagadoHasta` (YYYY-MM-DD) es el último cobro que se marcó
+       pagado. El cobro de este ciclo que ya llegó (hoy incluido) y no está marcado queda `pendiente` y
+       arriba de todo; el del alta no cuenta (se cobra al pasar a Cliente). */
     for (const f of out) {
         f.dia = Number(f.ref.diaCobro) || 0;
+        f.pendiente = "";
         const dia = f.dia || f.desde?.getDate() || 0;
         if (!dia) { f.proximo = ""; continue; }
-        let ymd = _ymdDelMes(hy, hm - 1, dia);
-        if (ymd < hoy) ymd = _ymdDelMes(hy, hm, dia);
-        if (f.desde && ymd < _diaDe(f.desde)) ymd = _diaDe(f.desde);
+        const alta = f.desde ? _diaDe(f.desde) : "";
+        const pagado = String(f.ref.pagadoHasta || "");
+        let ultimo = _ymdDelMes(hy, hm - 1, dia);
+        if (ultimo > hoy) ultimo = _ymdDelMes(hy, hm - 2, dia);
+        if (ultimo > alta && ultimo > pagado) f.pendiente = ultimo;
+        let k = hm - 1, ymd = _ymdDelMes(hy, k, dia);
+        while ((ymd <= hoy || ymd <= pagado) && k < hm + 24) ymd = _ymdDelMes(hy, ++k, dia);
+        if (alta && ymd < alta) ymd = alta;
         f.proximo = ymd;
     }
-    return out.sort((a, b) => (a.proximo || "9999").localeCompare(b.proximo || "9999"));
+    return out.sort((a, b) => (a.pendiente ? 0 : 1) - (b.pendiente ? 0 : 1)
+        || (a.pendiente || a.proximo || "9999").localeCompare(b.pendiente || b.proximo || "9999"));
 }
 
 /* Aviso de renovación (Pablo, 25-oct: "quiero que el bot envíe esta plantilla cuando sea la fecha de
@@ -10638,14 +10672,27 @@ function _renderMantPorFuera(term) {
         const dias = Math.round((_fechaMp(ymd) - hoy) / 86400000);
         return `${d}/${m}/${y} <span class="muted">· ${dias === 0 ? "hoy" : dias === 1 ? "mañana" : `en ${dias} días`}</span>`;
     };
+    const vencio = ymd => {
+        const [y, m, d] = ymd.split("-");
+        const dias = Math.round((hoy - _fechaMp(ymd)) / 86400000);
+        return `<span class="mant-pf-vencido">${dias === 0 ? "Hoy" : `Venció el ${d}/${m}/${y}`}</span> <span class="muted">· ${dias === 0 ? "sin marcar como pagado" : `hace ${dias} ${dias === 1 ? "día" : "días"}, sin pagar`}</span>`;
+    };
+    const pagoNota = f => {
+        const r = f.ref;
+        if (!r.pagadoHasta || !r.pagadoAt) return "";
+        const at = mantToDate(r.pagadoAt);
+        if (!at || hoy - at > 40 * 86400000) return "";
+        const [, m, d] = String(r.pagadoHasta).split("-");
+        return `<div class="muted" style="font-size:12px">✓ Cobro del ${d}/${m} pagado${r.pagadoFactura ? ` · ${escapeHtml(r.pagadoFactura)}` : " · sin factura"} <button type="button" class="mp-vinculo-btn" data-pf-deshacer="${f.coleccion}:${escapeHtml(r.id)}" title="Vuelve a quedar sin pagar (la factura, si salió, no se anula)">Deshacer</button></div>`;
+    };
     tb.innerHTML = lista.length ? lista.map(f => {
         const destino = `${f.coleccion}:${escapeHtml(f.ref.id)}`;
-        return `<tr>
-            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${_renovacionNota(destino)}${reboteDe.has(f.ref) ? (g => `<div class="mp-vinculo mp-vinculo--falta" title="Intentó suscribirse en Mercado Pago como ${escapeHtml(g.nombre)} y no quedó suscripto${g.porNombre ? "" : " (encontrado por monto y fecha: a confirmar)"}">Intentó suscribirse el ${escapeHtml(fechaCortaJs(g.ultimo).slice(0, 5))}${g.motivo ? ` · ${escapeHtml(g.motivo)}` : ""}${g.intentos > 1 ? ` · ${g.intentos} intentos` : ""}</div>`)(reboteDe.get(f.ref)) : ""}</td>
+        return `<tr${f.pendiente ? ` class="mant-pf-fila-pendiente"` : ""}>
+            <td><div>${escapeHtml(f.nombre)}</div>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${pagoNota(f)}${_renovacionNota(destino)}${reboteDe.has(f.ref) ? (g => `<div class="mp-vinculo mp-vinculo--falta" title="Intentó suscribirse en Mercado Pago como ${escapeHtml(g.nombre)} y no quedó suscripto${g.porNombre ? "" : " (encontrado por monto y fecha: a confirmar)"}">Intentó suscribirse el ${escapeHtml(fechaCortaJs(g.ultimo).slice(0, 5))}${g.motivo ? ` · ${escapeHtml(g.motivo)}` : ""}${g.intentos > 1 ? ` · ${g.intentos} intentos` : ""}</div>`)(reboteDe.get(f.ref)) : ""}</td>
             <td>${fmtMoney(f.monto)}/mes</td>
             <td><input type="number" class="mant-pf-dia" min="1" max="31" step="1" inputmode="numeric" value="${f.dia || ""}" placeholder="${f.desde ? f.desde.getDate() : ""}" data-dia-cobro="${destino}" aria-label="Día del mes en que se le cobra a ${escapeHtml(f.nombre)}" title="Día del mes (1 a 31). Vacío: el día del alta"></td>
-            <td>${cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
-            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-por-fuera="${destino}" data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">Ya no paga por afuera</button></td>
+            <td>${f.pendiente ? vencio(f.pendiente) : cuando(f.proximo) || `<span class="muted">sin fecha</span>`}</td>
+            <td class="actions-cell"><button type="button" class="${f.pendiente ? "btn-primary" : "btn-ghost"} btn-sm" data-pf-pago="${destino}" title="${f.pendiente ? "Marca este cobro como pagado y abre la factura" : "Pagó por adelantado: marca el próximo cobro como pagado y abre la factura"}">💵 Pagó</button> <button type="button" class="btn-ghost btn-sm" data-por-fuera="${destino}" data-por-fuera-valor="0" title="Sacar la marca: se vuelve a buscar su suscripción en Mercado Pago">Ya no paga por afuera</button></td>
         </tr>`;
     }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nadie que pague por afuera con esa búsqueda." : "Nadie marcado como que paga por afuera. Marcalos abajo o en Plan mensual."}</td></tr>`;
 
@@ -10657,6 +10704,63 @@ function _renderMantPorFuera(term) {
         <p class="mant-pf-titulo">No aparecen en Mercado Pago (${sinMp.length})</p>
         <div class="mant-pf-sinmp">${sinMp.map(k => `<div class="mp-vinculo mp-vinculo--falta">${escapeHtml(k.negocio || k.nombre)} · ${fmtMoney(k.monto)}/mes <button type="button" class="mp-vinculo-btn" data-por-fuera="${k.esCliente ? "clientes" : "mantenimiento"}:${escapeHtml(k.ref.id)}" data-por-fuera-valor="1">Paga por afuera</button></div>`).join("")}</div>` : "";
 }
+
+/* «💵 Pagó»: abre la factura de la mensualidad (importe y período del ciclo ya cargados) y, al emitirla
+   —o con «Pagó, sin factura»—, guarda `pagadoHasta` con ese cobro: la fila deja de estar arriba y
+   pasa a esperar el del mes que viene. */
+document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-pf-pago]");
+    if (!b) return;
+    const [coleccion, id] = b.dataset.pfPago.split(":");
+    const f = _mantPorFueraLista().find(x => x.coleccion === coleccion && x.ref.id === id);
+    if (!f) return;
+    const cobro = f.pendiente || f.proximo || _diaDe(new Date());
+    const [y, m, d] = cobro.split("-").map(Number);
+    const hasta = _diaDe(new Date(_fechaMp(_ymdDelMes(y, m, f.dia || f.desde?.getDate() || d)).getTime() - 86400000));
+    const ref = f.ref;
+    const c = coleccion === "clientes" ? ref : _clientePorSuscripcion().get(ref.id);
+    const guardar = async (factura) => {
+        await updateDoc(doc(db, coleccion, id), {
+            pagadoHasta: cobro,
+            pagadoAnterior: ref.pagadoHasta || null,
+            pagadoAt: serverTimestamp(),
+            pagadoFactura: factura ? numeroComprobante(factura.puntoVenta, factura.numero) : "",
+            updatedAt: serverTimestamp()
+        });
+    };
+    const [, mm, dd] = cobro.split("-");
+    abrirFacturaModal({
+        ...(c || {}),
+        id: c?.id || `mantenimiento:${ref.id}`,
+        nombre: c?.nombre || ref.nombre || ref.email || "Suscriptor",
+        proyecto: c?.proyecto || "",
+        modalidad: "mensual",
+        montoMensual: f.monto,
+        // Paga por afuera: la factura no es de ninguna suscripción de Mercado Pago.
+        preapprovalId: ""
+    }, {
+        adhoc: true,
+        titulo: `Pagó el cobro del ${dd}/${mm}`,
+        periodo: { desde: cobro, hasta: hasta >= cobro ? hasta : cobro },
+        alEmitir: guardar,
+        sinFacturar: { texto: "Pagó, sin factura", accion: () => guardar(null) }
+    });
+});
+
+document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-pf-deshacer]");
+    if (!b) return;
+    const [coleccion, id] = b.dataset.pfDeshacer.split(":");
+    const ref = (coleccion === "clientes" ? clients : mantenimiento).find(x => x.id === id);
+    if (!ref) return;
+    if (!confirm(`¿Deshacer el pago de "${ref.proyecto || ref.nombre || "este cliente"}"?\n\nEl cobro vuelve a quedar sin pagar.${ref.pagadoFactura ? ` La ${ref.pagadoFactura} NO se anula.` : ""}`)) return;
+    try {
+        await updateDoc(doc(db, coleccion, id), { pagadoHasta: ref.pagadoAnterior || null, pagadoAnterior: null, pagadoAt: null, pagadoFactura: "", updatedAt: serverTimestamp() });
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
+    }
+});
 
 document.addEventListener("change", async (e) => {
     const input = e.target.closest("[data-dia-cobro]");
@@ -11153,7 +11257,9 @@ function renderMantResumen(n) {
         tile("anual", "Pago anual", String(n.anual), n.anualesACobrar
             ? `${n.anualesACobrar} a cobrar${n.anualVencidos ? ` · ${n.anualVencidos} vencido${n.anualVencidos === 1 ? "" : "s"}` : ""}`
             : "Ningún cobro anual cerca", n.anualVencidos ? "mal" : n.anualesACobrar ? "aviso" : ""),
-        tile("porfuera", "Por afuera", String(n.porFuera), `${fmtMoney(n.porFueraMonto)}/mes · por transferencia`),
+        tile("porfuera", "Por afuera", String(n.porFuera), n.porFueraPendientes
+            ? `${n.porFueraPendientes} sin pagar · ${fmtMoney(n.porFueraMonto)}/mes`
+            : `${fmtMoney(n.porFueraMonto)}/mes · por transferencia`, n.porFueraPendientes ? "aviso" : ""),
         tile("fallidos", "Cobros fallidos", n.fallidos === null ? "…" : String(n.fallidos),
             n.fallidos === null ? "Leyendo Mercado Pago…" : n.fallidos ? "Fallaron, se reintentan o se dieron de baja" : "Ninguno", n.fallidos ? "mal" : ""),
     ].join("");
@@ -11240,6 +11346,7 @@ function renderMantenimiento() {
         anualVencidos: anualesACobrar.filter(r => r.estado === "vencido").length,
         porFuera: porFuera.length,
         porFueraMonto: porFuera.reduce((a, f) => a + (f.monto || 0), 0),
+        porFueraPendientes: porFuera.filter(f => f.pendiente).length,
         fallidos,
     });
     // Facturación consulta Mercado Pago: se carga al entrar la primera vez (o con "Actualizar"), no con cada cambio de Firestore.

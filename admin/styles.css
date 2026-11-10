@@ -2376,6 +2376,8 @@ body.modal-open { overflow: hidden; }
 #mantPorFueraSinMp > .mant-pf-nota { margin-top: 12px; }
 .clients-table .mant-pf-dia { width: 72px; max-width: 72px; background: var(--navy-bg-2); border: 1px solid var(--navy-border); border-radius: 8px; color: var(--navy-text); font: inherit; font-size: 14px; padding: 6px 8px; }
 .mant-pf-dia:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.mant-pf-vencido { color: var(--warning); font-weight: 600; }
+.clients-table tr.mant-pf-fila-pendiente td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
 .mant-pf-titulo { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
 .mant-pf-sinmp { display: flex; flex-direction: column; gap: 6px; }
 .mant-pf-sinmp .mp-vinculo { font-size: 13px; margin: 0; }
