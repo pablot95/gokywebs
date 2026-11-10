@@ -227,7 +227,10 @@ function wabot_datos_demo_normalizar($d) {
  */
 function wabot_datos_demo_pide_tiempo($texto) {
     $t = wabot_datos_demo_norm($texto);
-    return preg_match('/\b(aguant\w*|esperame|esperen|espera|esperate|bancame|banca|bancate|un momento|un momentito|un segundo|un toque|un ratito|un rato|un cachito|ya vuelvo|ya te (paso|mando|envio)|ahora te (paso|mando|envio|busco)|ahi te (paso|mando|envio)|voy a buscar|lo busco|los busco|te busco)\b/u', $t) === 1;
+    /* Solo formas que piden tiempo sin duda. «Un toque», «espera» o «banca» sueltos quedaron
+     * afuera: aparecen en los datos («negro con un toque de dorado», «La Espera Bar»,
+     * «Banca Digital») y hacían que no se leyeran (revisión del 10-nov). */
+    return preg_match('/\b(aguant\w*|esperame|esperen|esperate|bancame|bancate|(dame|deme|esperame|aguantame|bancame) (un|1) (toque|segundo|momento|momentito|ratito|rato|cachito|minuto)|ya vuelvo|ya te (paso|mando|envio)|ahora te (paso|mando|envio|busco)|ahi te (paso|mando|envio)|voy a buscar)\b/u', $t) === 1;
 }
 
 /** Un «ok», «dale», «gracias», «después te paso»: no son los datos. */
@@ -235,7 +238,8 @@ function wabot_datos_demo_es_acuse_o_posterga($texto) {
     $t = wabot_datos_demo_norm($texto);
     if ($t === '') return true;
     if (mb_strlen($t) <= 14 && preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya|ahi va|ahora|ahi te paso|ya te paso)( \p{L}+)?$/u', $t)) return true;
-    if (mb_strlen($t) <= 90 && wabot_datos_demo_pide_tiempo($t)) return true;
+    // Corto y sin signos de lista: «Pelu Mari, ahora te paso el logo» trae un dato y se lee.
+    if (mb_strlen($t) <= 40 && !preg_match('/[,:@\n]/u', (string)$texto) && wabot_datos_demo_pide_tiempo($t)) return true;
     return preg_match('/\b(despues|mas tarde|manana|a la noche|a la tarde|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio|lo veo|lo hablo|lo consulto)\b/u', $t) === 1
         && mb_strlen($t) <= 90;
 }
