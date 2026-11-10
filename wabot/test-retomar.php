@@ -28,6 +28,14 @@ foreach ([
     'el mes que viene arrancamos'                                => '2026-11-10',
     'el lunes lo hablo con mi socio y el miércoles te confirmo' => '2026-10-14',
     'hoy a la noche te escribo'                                  => '2026-10-10',
+    // Revisión 5-nov (mar66pam / Rosita): «contacto» y «me comunico» también son cita.
+    'me voy a descansar los contacto mañana gracias'             => '2026-10-11',
+    'aún estoy esperando las etiquetas. El sábado me comunico'   => '2026-10-17',
+    'el lunes te contacto'                                       => '2026-10-12',
+    'mañana me pongo en contacto'                                => '2026-10-11',
+    'me comunico de lunes a viernes'                             => '',
+    'Si, pero aún estoy esperando las etiquetas. El sábado me comunico. Me interesa!' => '2026-10-17',
+    'cuando tenga todo te contacto nuevamente'                   => '',
     // Sin cita: una fecha suelta, un horario o nada.
     'trabajo de lunes a viernes'                                 => '',
     'te escribo porque abro de lunes a viernes de 9 a 18'        => '',
