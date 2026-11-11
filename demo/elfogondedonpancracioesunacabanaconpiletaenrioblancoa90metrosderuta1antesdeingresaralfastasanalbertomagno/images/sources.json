@@ -1,0 +1,13 @@
+{
+  "contentImages": "01_imagen.webp a 09_imagen.webp son versiones optimizadas de las imágenes ilustrativas provistas en el ZIP del pedido.",
+  "clientFiles": {
+    "01-logo.webp": "Opciones de logo enviadas por el cliente. Se muestra por encuadre CSS la opción superior derecha.",
+    "02-imagen.webp": "Imagen enviada por el cliente por WhatsApp, presentada como ambientación ilustrativa."
+  },
+  "san-cristobal.svg": {
+    "source": "https://webinstitucional.blob.core.windows.net/master/2022/10/Logo-SCS.svg",
+    "page": "https://www.sancristobal.com.ar/institucional/",
+    "purpose": "Identidad oficial de la compañía mencionada expresamente en el pedido del cliente.",
+    "downloaded": "2026-11-11"
+  }
+}
