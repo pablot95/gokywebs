@@ -1,0 +1,22 @@
+{
+  "business": "Mensajería EMES",
+  "contentImages": {
+    "source": "Nueve imágenes ilustrativas provistas en el ZIP de la sesión; originales JPG conservados en images.",
+    "01_imagen.webp": "Portada: moto con caja de mensajería. Original 900 × 1600.",
+    "02_imagen.webp": "Operación: utilitario junto a depósito. Original 1600 × 900.",
+    "03_imagen.webp": "Servicio: entregas de paquetes.",
+    "04_imagen.webp": "Servicio: última milla.",
+    "05_imagen.webp": "Servicio: coordinación operativa.",
+    "06_imagen.webp": "Servicio: distribución programada.",
+    "07_imagen.webp": "Servicio: trámites y documentación.",
+    "08_imagen.webp": "Servicio: retiros de mercadería.",
+    "09_imagen.webp": "Operación: mesa de despacho. Imágenes 03–09 de 1024 × 1024."
+  },
+  "brand": {
+    "folleto-emes.webp": "Folleto corporativo enviado por el cliente, 01-imagen.jpg de Downloads/imagenes-prospectos/mensajeriaemes. Logo presentado mediante encuadre CSS, sin modificar la identidad ni borrar el original.",
+    "favicon.svg": "Inicial E tipográfica para la demo."
+  },
+  "reference": "10_mockup_720x480.png: referencia de composición, no publicado como contenido.",
+  "additionalStock": [],
+  "optimization": "Copias WebP, sin alterar ni eliminar originales. Calidad 82 para contenido y 88 para el folleto."
+}

@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mensajería EMES — Envíos y logística en AMBA</title>
+    <meta
+      name="description"
+      content="Mensajería, retiros y entregas para comercios y tiendas online en CABA y GBA. Conocé las tarifas por zona y coordiná tu envío por WhatsApp con EMES.">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="canonical" href="https://gokywebs.com/demo/mensajeriaemes/">
+    <meta property="og:type" content="website">
+    <meta
+      property="og:title"
+      content="Mensajería EMES — Tu negocio en movimiento">
+    <meta
+      property="og:description"
+      content="Mensajería y logística en AMBA. Retiros, entregas y distribución con tarifas por zona y atención directa por WhatsApp.">
+    <meta
+      property="og:url"
+      content="https://gokywebs.com/demo/mensajeriaemes/">
+    <meta
+      property="og:image"
+      content="https://gokywebs.com/demo/mensajeriaemes/images/02_imagen.webp">
+    <meta property="og:locale" content="es_AR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&amp;family=Manrope:wght@400;500&amp;display=swap">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles.css?v=20261111091731">
+    <noscript>
+      <style>
+        [data-animate] {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          clip-path: none !important;
+        }
+        [data-animate] img {
+          scale: none !important;
+        }
+        .main-nav {
+          visibility: visible !important;
+          transform: none !important;
+          position: static !important;
+        }
+        .menu-toggle {
+          display: none !important;
+        }
+      </style>
+    </noscript>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Mensajería EMES",
+        "description": "Mensajería y logística para comercios, empresas y tiendas online en CABA y Gran Buenos Aires.",
+        "telephone": "+54 9 11 7893-8552",
+        "url": "https://gokywebs.com/demo/mensajeriaemes/",
+        "image": "https://gokywebs.com/demo/mensajeriaemes/images/02_imagen.webp",
+        "areaServed": ["CABA", "Gran Buenos Aires", "AMBA"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Villa Lynch, General San Martín",
+          "addressRegion": "Buenos Aires",
+          "addressCountry": "AR"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Cómo coordino un envío?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Escribinos por WhatsApp con la zona de retiro, el destino, el tipo de paquete y la fecha. Confirmamos disponibilidad y condiciones antes de coordinar."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Trabajan con comercios y tiendas online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. Realizamos retiros de mercadería, entregas a clientes finales y distribución programada para comercios, empresas y vendedores online."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cuál es el horario de coordinación?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "De lunes a sábado, de 09:00 a 23:00. Para retiros, entregas y envíos Flex Turbo, consultá la franja disponible para tu recorrido."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo consulto el estado de mi envío?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Contactanos por WhatsApp con los datos de tu envío. El servicio contempla asignación por zona y seguimiento; en esta demo la consulta se realiza con el equipo."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body class="m2">
+    <nav class="gw-modelos" aria-label="Modelos de la web">
+      <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+      <a
+        class="gw-modelos__btn"
+        href="modelo-2.html"
+        data-modelo="2"
+        aria-current="page"
+      >
+        Modelo 2
+      </a>
+    </nav>
+    <header class="site-header" id="top">
+      <div class="header-inner container">
+        <a class="brand" href="#top" aria-label="EMES Mensajería, inicio">
+          <span class="brand-crop">
+            <img
+              src="images/folleto-emes.webp"
+              width="1024"
+              height="1536"
+              alt="EMES Mensajería">
+          </span>
+        </a>
+        <div class="header-caption">
+          Mensajería &amp; logística
+          <span>CABA · GBA · AMBA</span>
+        </div>
+        <nav class="main-nav" id="mainNav" aria-label="Principal">
+          <button
+            type="button"
+            class="nav-close"
+            id="navClose"
+            aria-label="Cerrar menú"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <a href="#servicios">Servicios</a>
+          <a href="#tarifas">Tarifas y zonas</a>
+          <a href="#operacion">Cómo trabajamos</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
+        <button
+          type="button"
+          class="menu-toggle"
+          id="menuToggle"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-layout container">
+          <div class="hero-copy">
+            <div class="hero-eyebrow">
+              <span class="route-dot"></span>
+              Tu negocio, en movimiento
+            </div>
+            <h1 id="hero-title">
+              Mensajería y logística en
+              <span>AMBA.</span>
+            </h1>
+            <p class="hero-lead">
+              Retiramos, coordinamos y entregamos. Conectamos tu negocio con sus
+              clientes en CABA y Gran Buenos Aires.
+            </p>
+            <div class="hero-ctas">
+              <a
+                class="btn"
+                href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20en%20AMBA."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Coordiná tu envío
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+              <a class="text-link" href="#tarifas">
+                Ver tarifas
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </div>
+            <div class="hero-proof hero-badge">
+              CABA desde
+              <strong>$5.000</strong>
+              <span>Atención directa por WhatsApp</span>
+            </div>
+          </div>
+          <figure class="hero-photo">
+            <img
+              src="images/01_imagen.webp"
+              width="900"
+              height="1600"
+              alt="Moto de mensajería con caja roja en una calle de Buenos Aires"
+              fetchpriority="high"
+              data-hero-img>
+          </figure>
+          <div class="hero-sign hero-badge">
+            <span class="brand-crop">
+              <img
+                src="images/folleto-emes.webp"
+                width="1024"
+                height="1536"
+                alt="EMES Mensajería">
+            </span>
+            <span>Tu envío, nuestra prioridad.</span>
+          </div>
+        </div>
+        <div class="hero-bottom container">
+          <span>01 / DEL RETIRO A LA ENTREGA</span>
+          <span>San Martín · Villa Lynch</span>
+        </div>
+      </section>
+      <section class="services" id="servicios">
+        <div class="container">
+          <div
+            class="section-head"
+            data-animate="despacho"
+            style="opacity: 0; transform: translateY(-24px)"
+          >
+            <div>
+              <p class="eyebrow">Para comercios, empresas y tiendas online</p>
+              <h2>
+                Cada envío tiene
+                <br>
+                su recorrido.
+              </h2>
+            </div>
+            <p>Un servicio para cada parte de tu operación.</p>
+          </div>
+          <div class="service-grid">
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/08_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Retiros de mercadería — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">01</span>
+                <h3>Retiros de mercadería</h3>
+                <p>Colectas en comercios, depósitos y puntos de despacho.</p>
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/03_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Entregas de paquetes — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">02</span>
+                <h3>Entregas de paquetes</h3>
+                <p>Distribución en CABA y Gran Buenos Aires.</p>
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/04_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Última milla — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">03</span>
+                <h3>Última milla</h3>
+                <p>Entregas directas a tus clientes finales.</p>
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/07_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Trámites y documentación — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">04</span>
+                <h3>Trámites y documentación</h3>
+                <p>Mensajería y gestiones para empresas y comercios.</p>
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/06_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Distribución programada — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">05</span>
+                <h3>Distribución programada</h3>
+                <p>Recorridos según zonas, volumen y frecuencia.</p>
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <figure class="card-photo">
+                <img
+                  src="images/05_imagen.webp"
+                  width="1024"
+                  height="1024"
+                  alt="Coordinación operativa — imagen ilustrativa">
+              </figure>
+              <div class="service-copy">
+                <span class="folio">06</span>
+                <h3>Coordinación operativa</h3>
+                <p>
+                  Organización de envíos según las necesidades de tu negocio.
+                </p>
+              </div>
+            </article>
+          </div>
+          <p
+            class="image-note"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            Las fotografías de esta demo son ilustrativas.
+          </p>
+        </div>
+      </section>
+      <section class="operation" id="operacion">
+        <div class="container operation-layout">
+          <div class="operation-visual">
+            <figure
+              class="operation-main"
+              data-animate="mascara"
+              style="clip-path: inset(100% 0 0 0)"
+            >
+              <img
+                src="images/02_imagen.webp"
+                width="1600"
+                height="900"
+                alt="Utilitario junto a un depósito de paquetería">
+            </figure>
+            <figure
+              class="operation-detail"
+              data-animate="mascara"
+              style="clip-path: inset(100% 0 0 0)"
+            >
+              <img
+                src="images/09_imagen.webp"
+                width="1024"
+                height="1024"
+                alt="Paquete, balanza y lector en una mesa de despacho">
+            </figure>
+            <span
+              class="operation-label"
+              data-animate="escala"
+              style="opacity: 0; transform: scale(0.96)"
+            >
+              Del despacho
+              <br>
+              a la puerta.
+            </span>
+          </div>
+          <div class="operation-copy">
+            <div
+              data-animate="despacho"
+              style="opacity: 0; transform: translateY(-24px)"
+            >
+              <p class="eyebrow">Una operación coordinada</p>
+              <h2>
+                Tu mercadería,
+                <br>
+                en buenas manos.
+              </h2>
+              <p>
+                Mensajería y distribución para que puedas concentrarte en tu
+                negocio.
+              </p>
+            </div>
+            <ol class="steps">
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <span class="step-number">01</span>
+                <div>
+                  <h3>Colecta</h3>
+                  <p>Los pedidos se escanean al momento del retiro.</p>
+                </div>
+              </li>
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <span class="step-number">02</span>
+                <div>
+                  <h3>Asignación por zona</h3>
+                  <p>Cada envío se asigna según su destino y cadete.</p>
+                </div>
+              </li>
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <span class="step-number">03</span>
+                <div>
+                  <h3>Datos y seguimiento</h3>
+                  <p>
+                    Los datos del envío permiten consultar su estado con el
+                    equipo.
+                  </p>
+                </div>
+              </li>
+            </ol>
+            <p
+              class="operation-extra"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              También realizamos envíos Flex Turbo y emitimos factura A.
+              Consultá las condiciones para tu operación.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="tariffs" id="tarifas">
+        <div class="container">
+          <div
+            class="section-head"
+            data-animate="despacho"
+            style="opacity: 0; transform: translateY(-24px)"
+          >
+            <div>
+              <p class="eyebrow">CABA + Gran Buenos Aires</p>
+              <h2>
+                Un destino.
+                <br>
+                Una tarifa clara.
+              </h2>
+            </div>
+            <p>Consultá tu zona y coordiná el recorrido con nosotros.</p>
+          </div>
+          <div class="tariff-grid">
+            <article
+              class="tariff"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <span class="folio">01</span>
+              <h3>CABA</h3>
+              <p>Ciudad de Buenos Aires</p>
+              <strong class="price">$5.000</strong>
+              <a
+                class="zone-link"
+                href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20a%20CABA%2C%20con%20tarifa%20publicada%20de%20%245.000."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Consultar zona
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </article>
+            <article
+              class="tariff"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <span class="folio">02</span>
+              <h3>Primer cordón</h3>
+              <p>Gran Buenos Aires</p>
+              <strong class="price">$7.500</strong>
+              <a
+                class="zone-link"
+                href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20a%20Primer%20cord%C3%B3n%2C%20con%20tarifa%20publicada%20de%20%247.500."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Consultar zona
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </article>
+            <article
+              class="tariff"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <span class="folio">03</span>
+              <h3>Segundo cordón</h3>
+              <p>Gran Buenos Aires</p>
+              <strong class="price">$8.000</strong>
+              <a
+                class="zone-link"
+                href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20a%20Segundo%20cord%C3%B3n%2C%20con%20tarifa%20publicada%20de%20%248.000."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Consultar zona
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </article>
+            <article
+              class="tariff"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <span class="folio">04</span>
+              <h3>Tercer cordón</h3>
+              <p>Gran Buenos Aires</p>
+              <strong class="price">$9.000</strong>
+              <a
+                class="zone-link"
+                href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20a%20Tercer%20cord%C3%B3n%2C%20con%20tarifa%20publicada%20de%20%249.000."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Consultar zona
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+              </a>
+            </article>
+          </div>
+          <div
+            class="tariff-note"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <p>
+              Tarifas informadas por EMES. Confirmá el importe según el
+              recorrido y las características del envío.
+            </p>
+            <span>CABA · 1.er · 2.º · 3.er cordón</span>
+          </div>
+        </div>
+      </section>
+      <section class="contact" id="contacto">
+        <div class="container">
+          <div
+            class="section-head"
+            data-animate="despacho"
+            style="opacity: 0; transform: translateY(-24px)"
+          >
+            <div>
+              <p class="eyebrow">El próximo recorrido empieza acá</p>
+              <h2>
+                Contanos qué
+                <br>
+                necesitás enviar.
+              </h2>
+            </div>
+            <a
+              class="btn"
+              href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20en%20AMBA."
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Consultá por WhatsApp
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          </div>
+          <div class="contact-layout">
+            <div class="contact-details">
+              <div
+                class="contact-data"
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <p class="small-label">WHATSAPP</p>
+                <a
+                  class="phone"
+                  href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20en%20AMBA."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  11 7893-8552
+                </a>
+                <p>Alternativo: 11 2541-6039</p>
+                <p class="hours">
+                  <strong>Coordinación · lunes a sábado</strong>
+                  <br>
+                  09:00 a 23:00 hs
+                </p>
+                <p>
+                  San Martín · Villa Lynch
+                  <br>
+                  Cobertura en CABA y GBA
+                </p>
+              </div>
+              <div
+                class="map-wrap"
+                data-animate="mascara"
+                style="clip-path: inset(100% 0 0 0)"
+              >
+                <div
+                  id="coverage-map"
+                  class="coverage-map"
+                  role="group"
+                  aria-label="Mapa de referencia de San Martín, Villa Lynch y Buenos Aires"
+                ></div>
+                <p>
+                  Mapa de referencia de la zona. No indica una dirección de
+                  atención.
+                </p>
+              </div>
+            </div>
+            <div
+              class="contact-form-wrap"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <h3>Dejanos los datos del recorrido</h3>
+              <p class="form-note">
+                Formulario de muestra. Para coordinar un envío, escribinos por
+                WhatsApp.
+              </p>
+              <form id="contact-form" method="post" novalidate>
+                <label for="name">Tu nombre</label>
+                <input
+                  id="name"
+                  type="text"
+                  name="name"
+                  autocomplete="name"
+                  required
+                  maxlength="100"
+                  placeholder="¿Cómo te llamás?"
+                  aria-describedby="name-error">
+                <p class="field-error" id="name-error" hidden>
+                  Ingresá tu nombre.
+                </p>
+                <label for="phone">Tu WhatsApp</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  required
+                  placeholder="11 2345-6789"
+                  aria-describedby="phone-error">
+                <p class="field-error" id="phone-error" hidden>
+                  Ingresá un teléfono válido con código de área.
+                </p>
+                <label for="message">¿Qué necesitás enviar?</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="3"
+                  required
+                  minlength="10"
+                  maxlength="1000"
+                  placeholder="Zona de retiro, destino, paquete y fecha"
+                  aria-describedby="message-error"
+                ></textarea>
+                <p class="field-error" id="message-error" hidden>
+                  Contanos el recorrido en al menos 10 caracteres.
+                </p>
+                <button class="btn" type="submit">
+                  Consultar por mi envío
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                  >
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="faq-layout">
+            <div
+              data-animate="despacho"
+              style="opacity: 0; transform: translateY(-24px)"
+            >
+              <p class="eyebrow">Antes de coordinar</p>
+              <h2>
+                Todo listo
+                <br>
+                para salir.
+              </h2>
+            </div>
+            <div class="faq-items">
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <summary>
+                  ¿Cómo coordino un envío?
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>
+                  Escribinos por WhatsApp con la zona de retiro, el destino, el
+                  tipo de paquete y la fecha. Confirmamos disponibilidad y
+                  condiciones antes de coordinar.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <summary>
+                  ¿Trabajan con comercios y tiendas online?
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>
+                  Sí. Realizamos retiros de mercadería, entregas a clientes
+                  finales y distribución programada para comercios, empresas y
+                  vendedores online.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <summary>
+                  ¿Cuál es el horario de coordinación?
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>
+                  De lunes a sábado, de 09:00 a 23:00. Para retiros, entregas y
+                  envíos Flex Turbo, consultá la franja disponible para tu
+                  recorrido.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <summary>
+                  ¿Cómo consulto el estado de mi envío?
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>
+                  Contactanos por WhatsApp con los datos de tu envío. El
+                  servicio contempla asignación por zona y seguimiento; en esta
+                  demo la consulta se realiza con el equipo.
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-main">
+          <div
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <a href="#top" aria-label="EMES Mensajería, volver al inicio">
+              <span class="brand-crop">
+                <img
+                  src="images/folleto-emes.webp"
+                  width="1024"
+                  height="1536"
+                  alt="EMES Mensajería">
+              </span>
+            </a>
+            <p>Tu negocio en movimiento.</p>
+          </div>
+          <div
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <p>Mensajería y logística en AMBA.</p>
+            <p>Instagram: Emes Mensajería</p>
+          </div>
+          <div
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <a
+              class="footer-link"
+              href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20en%20AMBA."
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Coordiná tu envío
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </a>
+          </div>
+        </div>
+        <div
+          class="footer-bottom"
+          data-animate="subir"
+          style="opacity: 0; transform: translateY(32px)"
+        >
+          <span>© 2026 Mensajería EMES</span>
+          <a
+            href="https://gokywebs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Developed and designed by Gokywebs
+          </a>
+        </div>
+      </div>
+    </footer>
+    <a
+      class="wsp-float"
+      id="wsp-float"
+      href="https://wa.me/5491178938552?text=Hola%20Mensajer%C3%ADa%20EMES%2C%20quiero%20consultar%20por%20un%20env%C3%ADo%20en%20AMBA."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Escribir por WhatsApp"
+    >
+      <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <path
+          d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"
+        />
+      </svg>
+    </a>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/imask@7.6.1/dist/imask.min.js"></script>
+    <script src="script.js?v=20261111091731"></script>
+    <script src="/demo/track.js" defer></script>
+  </body>
+</html>
