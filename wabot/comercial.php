@@ -913,6 +913,19 @@ function wabot_comercial_pensar($texto, $conv, $cfg, $modo = 'real', $revision =
         $entrada[] = ['role' => 'user', 'content' => 'Esa respuesta no se puede mandar: ' . implode('; ', $problemas)
             . '. Recordá: nada de montos, plazos, promociones, links, funciones no aprobadas ni promesas de contacto en tus mensajes; para eso están info_claves, cotizar o humano. Devolvé la respuesta corregida.'];
     }
+    /* Dos veces el texto no se pudo mandar. Antes se tiraba el turno entero y el cliente quedaba
+     * sin respuesta aunque preguntara el precio (21 y 27-oct: «Que precio tiene esto»). Ahora se
+     * descarta solo el texto libre: la acción y las respuestas oficiales que eligió siguen, y las
+     * reglas de después completan lo que falte (repetir los planes, pedir el rubro). */
+    if (isset($d) && is_array($d)) {
+        $d['mensajes'] = [];
+        if (!wabot_comercial_problemas($d)) {
+            $d['_sin_texto'] = true;
+            wabot_log('comercial_sin_texto', ['tel' => $clave, 'accion' => (string)($d['accion'] ?? ''), 'info' => implode(',', (array)($d['info_claves'] ?? []))]);
+            return ['ok' => true, 'decision' => $d, 'modelo' => $r['modelo'], 'gastado' => $gastado, 'corregida' => true,
+                    'segundos' => round(microtime(true) - $inicio, 2), 'crudo' => (string)$r['texto']];
+        }
+    }
     return ['ok' => false, 'error' => 'mensajes_no_validos', 'gastado' => $gastado];
 }
 
@@ -1594,7 +1607,10 @@ function wabot_comercial_contesta_turnos($texto) {
      * la charla quedaba sin el precio). Sin preguntar otra cosa ni el precio. */
     if (count(explode(' ', $t)) <= 5 && strpos((string)$texto, '?') === false && !wabot_comercial_pregunta_costo($texto)
         && preg_match('/^(si+|sip|claro|obvio|dale|exacto)\b|\b(si+|claro|obvio|dale)$/u', $t)) return true;
-    return (bool)preg_match('/\b(whats\w*|wsp|wpp|wapp|guasap|reserv\w*|online|on line|en linea|agenda\w*|calendario|turnero|sistema de turnos'
+    /* «Por washapt los turnos» (4-nov, un enfermero): no se reconocía, el bot repitió la
+     * pregunta, el revisor lo frenó y quedó sin el precio. Entran las formas en que se
+     * escribe WhatsApp: wasap, washap, watsap, wasapp, wathsapp, whasapp, wp. */
+    return (bool)preg_match('/\b(whats\w*|w+h?a+t*h?s+h?a+p+\w*|wsp|wpp|wapp|wp|guasap\w*|reserv\w*|online|on line|en linea|agenda\w*|calendario|turnero|sistema de turnos'
         . '|directamente|directo|ellos mismos|solos|solas|autom\w*|las 2|los 2|esa opcion'
         . '|desde la (web|pagina)|por la (web|pagina)|en la (web|pagina)|la primera|la segunda|lo primero|lo segundo|(primera|segunda) opcion'
         . '|las dos|los dos|ambas|ambos|cualquiera|da igual|da lo mismo|recomend\w*|no se|nose|como (vos|quieras|te parezca)|lo que (vos|sea|me)'
@@ -1794,6 +1810,7 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
      * explicación de los planes). Si lo último nuestro es una pregunta, el
      * "dale" puede contestar eso y lo decide el modelo. */
     $yaCotizado = wabot_comercial_cotizacion($conv, $cfg) !== null;
+    if (!empty($d['_sin_texto'])) $ajustes[] = 'sin_texto';   // el texto del modelo se descartó (wabot_comercial_pensar)
     if ((in_array($d['accion'], ['responder', 'esperar'], true) || ($d['accion'] === 'cotizar' && $yaCotizado && !wabot_comercial_pide_precio_otra_vez($texto)))
         && wabot_comercial_estado($conv) === 'atencion' && wabot_comercial_si_claro($texto)
         && (wabot_comercial_ultimo_es_oferta($conv, $cfg) || wabot_comercial_oferta_sigue_abierta($conv, $cfg))
@@ -1859,6 +1876,18 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
             $ajustes[] = 'post_form_sin_repetir';
         }
     }
+    /* Ya tiene el precio, lo vuelve a pedir y el modelo no devolvió nada para mandar (3-nov:
+     * eligió «responder» sin mensajes, esperando que el sistema repitiera los planes, y el
+     * cliente quedó sin respuesta). Se repiten los planes de su cotización. */
+    if ($yaCotizado && in_array($d['accion'], ['responder', 'esperar'], true) && !$d['mensajes'] && !$d['info_claves']
+        && in_array(wabot_comercial_estado($conv), ['atencion', 'formulario'], true) && wabot_comercial_pide_precio_otra_vez($texto)) {
+        $solCot = (string)($conv['comercial_solucion'] ?? '');
+        if (wabot_comercial_solucion_estandar($solCot)) {
+            $d['accion'] = 'cotizar';
+            $d['solucion'] = $sol = $solCot;
+            $ajustes[] = 'repite_planes';
+        }
+    }
     // La etapa post-demo (1-nov): lo que detectan las reglas (modelo, plan, pago, transferencia, cambios) manda sobre lo que marcó el modelo.
     if (wabot_comercial_estado($conv) === 'postdemo') [$d, $ajustes] = wabot_comercial_validar_postdemo($d, $texto, $conv, $cfg, $ajustes);
     // Cotizar exige una solución estándar y saber a qué se dedica.
@@ -1872,6 +1901,16 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $hayPregunta = (bool)array_filter($d['mensajes'], function ($m) { return strpos($m, '?') !== false; });
         if (!$hayPregunta) $d['mensajes'] = empty($conv['rubro_preguntado']) ? [trim((string)($cfg['comercial']['pregunta_negocio'] ?? 'Te consulto, a qué te dedicás o qué vendés?'))] : [];
         $ajustes[] = 'cotizar_sin_negocio';
+    }
+    /* Pide el precio sin haber contado a qué se dedica y no quedó nada para mandarle («Q sale»,
+     * 28-oct: el rubro ya se le había preguntado el día anterior y el turno salió vacío). Va la
+     * respuesta oficial, que le vuelve a pedir el rubro para pasarle el valor. */
+    if (!$yaCotizado && !$negocio && in_array($d['accion'], ['responder', 'esperar'], true) && !$d['mensajes'] && !$d['info_claves']
+        && wabot_comercial_estado($conv) === 'atencion' && wabot_comercial_pregunta_costo($texto)
+        && trim((string)($cfg['info']['precio_sin_rubro'] ?? '')) !== '') {
+        $d['accion'] = 'responder';
+        $d['info_claves'] = ['precio_sin_rubro'];
+        $ajustes[] = 'precio_sin_rubro_respaldo';
     }
     /* La pregunta de los turnos (WhatsApp o reservas) queda pendiente hasta que
      * la conteste (Pablo, 9-oct: "debería conservar la pregunta pendiente o
@@ -2486,6 +2525,11 @@ function wabot_comercial_pide_precio_otra_vez($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if (preg_match('/\bcuanto\b/u', $t)) return true;
     if (preg_match('/\b(pasame|pasar|decime|repetime|me pasas|me decis|mandame|cual es|cual era|cuales son|cuales eran)\b.{0,25}\b(precios?|valor\w*|planes|montos?|costo)\b/u', $t)) return true;
+    /* «Pero quería tener una idea de lo que sale una página» (3-nov): no entraba por largo
+     * y, con el precio ya dado, no salía nada. */
+    if (preg_match('/\b(lo que|que|a cuanto|q) (me )?(sale|salen|saldria|cuesta|cuestan|costaria|vale|valen)\b/u', $t)) return true;
+    if (preg_match('/\b(que|cual) (precio|valor|costo) (tiene|tienen|es|seria|sale|manejan|manejas)\b/u', $t)) return true;
+    if (preg_match('/\b(una idea|saber|conocer)\b.{0,30}\b(precios?|valor|valores|costos?|presupuesto)\b/u', $t)) return true;
     // "Precios?", "y el valor?": la pregunta corta, sin más.
     return mb_strlen($t) <= 25 && (bool)preg_match('/\b(precios?|valor\w*|costo|planes)\b/u', $t);
 }
@@ -3210,6 +3254,11 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     $conv = $b['conv'];
     $conv['comercial_ultimo']['ajustes'] = $res['ajustes'];
     $conv['comercial_ultimo']['revision'] = $res['revision'];
+    // El texto del modelo se descartó y no quedó nada para mandar: lo ve Pablo, como antes.
+    if (!$b['mensajes'] && in_array('sin_texto', (array)$res['ajustes'], true) && !in_array($b['accion'], ['humano', 'esperar'], true)) {
+        $conv['handoff_pendiente'] = true;
+        wabot_log('comercial_respaldo', ['tel' => $conv['tel'] ?? '', 'error' => 'sin_texto_y_sin_respuesta']);
+    }
     /* Al derivar, en silencio (27-oct: "que se siga callando"), pero solo en ESA
      * pregunta (1-nov: "solo calla en esa"): le suena el aviso a Pablo y, si el
      * cliente vuelve a escribir sin que Pablo haya contestado, el flujo sigue.

@@ -197,7 +197,11 @@ $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te armamos la tienda integrada con Mercado Libre.'], 'ficha' => ['que_vende' => 'ropa']]),
     dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Te la armamos con facturación electrónica incluida.'], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Vendo ropa', $c, $cfg);
-caso('si insiste con una función no aprobada, falla y el turno se calla (nunca improvisa)', $r === [] && !empty($c['handoff_pendiente']) && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+// 10-nov: ya no se tira el turno entero (el cliente quedaba sin respuesta, hasta pidiendo el precio): se descarta el texto del modelo y sale lo fijo aprobado.
+caso('si insiste con una función no aprobada, su texto se descarta y sale lo fijo aprobado (nunca improvisa)', count($r) >= 2
+    && !str_contains(implode(' ', $r), 'facturación electrónica') && !str_contains(implode(' ', $r), 'Mercado Libre')
+    && str_contains((string)$r[0], (string)$cfg['comercial']['propuesta_fija']['tienda']) && !empty($c['precio_dado'])
+    && in_array('sin_texto', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => [], 'ficha' => ['que_vende' => 'ropa']])]);
 $r = turno('Vendo ropa', $c, $cfg);
@@ -1657,4 +1661,40 @@ caso('exactamente 30 productos se cargan sin costo', str_contains(implode(' ', $
 
 foreach ((array)glob($tmp . '/uso/*') as $f) @unlink($f);
 @rmdir($tmp . '/uso'); @rmdir($tmp);
+echo "\n— Revisión del 10-nov: wasap, «referido a» y el precio que no salía —\n";
+foreach (['Por washapt los turnos', 'por wasap', 'por watsap', 'por wasapp', 'por wathsapp', 'por whasapp', 'x wp nomas'] as $tW) {
+    caso("«{$tW}» contesta la pregunta de los turnos", wabot_comercial_contesta_turnos($tW));
+}
+caso('«todo referido a Salud» no es un conocido', !wabot_texto_es_conocido('Hago venta por Mercado Libre de descartables Hospitalarios y accesorios (todo referido a Salud) y todo venta libre'));
+caso('«vengo referido por Juan» sigue siéndolo', wabot_texto_es_conocido('Hola, vengo referido por Juan') && wabot_texto_es_conocido('soy un referido de Marta'));
+caso('pedir el precio otra vez, con otras palabras', wabot_comercial_pide_precio_otra_vez('Pero queria tener una idea de lo que sale una página')
+    && wabot_comercial_pide_precio_otra_vez('Que precio tiene esto') && wabot_comercial_pide_precio_otra_vez('a cuanto sale?')
+    && !wabot_comercial_pide_precio_otra_vez('Solo quiero mostrar los productos, nada más') && !wabot_comercial_pide_precio_otra_vez('Dale, me interesa'));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => [], 'motivo' => 'Pide nuevamente el precio; repetir los planes'])]);
+$r = turno('Pero queria tener una idea de lo que sale una página', $c, $cfg);
+caso('con el precio ya dado, lo vuelve a pedir y el modelo no manda nada: salen los planes', count($r) >= 1 && str_contains(implode(' ', $r), '$')
+    && in_array('repite_planes', (array)($c['comercial_ultimo']['ajustes'] ?? []), true), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'esperar', 'solucion' => 'tienda', 'mensajes' => []])]);
+$r = turno('Gracias, lo veo', $c, $cfg);
+caso('un acuse con el precio ya dado no repite los planes', !str_contains(implode(' ', $r), '$'), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv();
+wabot_conv_transcript($c, 'bot', 'Hola! Hacemos páginas web a medida. Te consulto, a qué te dedicás o qué vendés?');
+$c['rubro_preguntado'] = true;
+oa([dc(['accion' => 'cotizar', 'solucion' => 'sin_definir', 'mensajes' => [], 'motivo' => 'Pidió precio y ya se le preguntó el rubro'])]);
+$r = turno('Q sale', $c, $cfg);
+caso('«Q sale» sin rubro y con el rubro ya preguntado: no queda en silencio', count($r) === 1 && $r[0] === (string)$cfg['info']['precio_sin_rubro'], json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Te la armamos integrada con Mercado Libre.']]),
+    dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Te la armamos con facturación electrónica incluida.']])]);
+$r = turno('Que precio tiene esto', $c, $cfg);
+caso('el texto del modelo se rechaza dos veces y preguntaba el precio: salen los planes, sin su texto', str_contains(implode(' ', $r), '$')
+    && !str_contains(implode(' ', $r), 'facturación') && !str_contains(implode(' ', $r), 'Mercado Libre'), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Te la armamos integrada con Mercado Libre.']]),
+    dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Te la armamos con facturación electrónica incluida.']])]);
+$r = turno('Se puede conectar con mi sistema de stock del local?', $c, $cfg);
+caso('si no queda nada aprobado para decir, se calla y queda pendiente para Pablo', $r === [] && !empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
 todo_ok();
