@@ -2135,6 +2135,12 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     $resetDias = max(1, (int)($cfg['reset_dias'] ?? 7));
     $ultimo = (int)($conv['ultimo_ts'] ?? 0);
+    /* `ultimo_ts` solo lo mueve el bot. Con la ficha armada el bot queda apagado en ese chat, así que
+     * la charla «vencía» a los 7 días de la ficha aunque el cliente hubiera escrito ayer, y su próximo
+     * mensaje le borraba la ficha y los datos (auditoría del 10-nov). Con ficha, los días se cuentan
+     * desde lo último que escribió el cliente. El que vuelve después de semanas de silencio sigue
+     * arrancando un proyecto nuevo, como siempre. */
+    if ($ultimo > 0 && !empty($conv['lead_creado'])) $ultimo = max($ultimo, (int)($conv['ultimo_cliente_ts'] ?? 0));
     if ($ultimo <= 0 || ($ahora - $ultimo) <= $resetDias * 86400) return false;
     // A quien ya recibió su demo NO se le reinicia el embudo: el reset dejaba
     // fase='nuevo' y presentado_ts=0, así que el silencio post-demo (que lo
@@ -2144,11 +2150,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     if (!empty($conv['presentado_ts']) || !empty($conv['control_manual'])
         || !empty($conv['postprecio_auto']) || !empty($conv['postprecio_derivacion'])
         // Ni al que ya pagó (1-nov): el bot le está pidiendo lo que falta para la web.
-        || !empty($conv['pago_confirmado_ts'])
-        /* Ni al que tiene la ficha armada y la demo todavía sin entregar (10-nov): `ultimo_ts` solo lo
-         * mueve el bot, así que con el bot apagado después de la ficha «vencía» a los 7 días aunque el
-         * cliente hubiera escrito ayer, y su próximo mensaje le borraba la ficha y los datos. */
-        || (!empty($conv['lead_creado']) && (int)($conv['form_completado_ts'] ?? 0) > $ahora - 30 * 86400)) return false;
+        || !empty($conv['pago_confirmado_ts'])) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',

@@ -176,12 +176,13 @@ $reinicio = wabot_conv_reset_si_vieja($v, $cfgR, time());
 caso('la charla vieja se reinicia', $reinicio === true && ($v['fase'] ?? '') === 'nuevo' && empty($v['precio_dado']));
 caso('sin datos pedidos ni espera de la charla anterior', empty($v['datos_pedidos_ts']) && !isset($v['datos_demo_parcial']) && !isset($v['datos_demo_espera_ts']) && !wabot_datos_demo_pendiente($v));
 caso('sin cotización congelada, oferta ni pausa del flujo comercial', !isset($v['comercial_cotizacion']) && empty($v['comercial_oferta_ts']) && empty($v['comercial_pausa']) && empty($v['esProspecto']));
-$conFicha = conv_nueva('5491100009994TEST', ['ultimo_ts' => time() - 9 * 86400, 'lead_creado' => true, 'form_completado_ts' => time() - 8 * 86400,
-    'descripcion' => 'Zapatillas en Lanús', 'bot_off' => true]);
-caso('con la ficha armada y la demo sin entregar no se reinicia', wabot_conv_reset_si_vieja($conFicha, $cfgR, time()) === false
+$conFicha = conv_nueva('5491100009994TEST', ['ultimo_ts' => time() - 9 * 86400, 'ultimo_cliente_ts' => time() - 86400, 'lead_creado' => true,
+    'form_completado_ts' => time() - 9 * 86400, 'descripcion' => 'Zapatillas en Lanús', 'bot_off' => true]);
+caso('con la ficha armada, si el cliente escribió ayer no se reinicia', wabot_conv_reset_si_vieja($conFicha, $cfgR, time()) === false
     && !empty($conFicha['lead_creado']) && ($conFicha['descripcion'] ?? '') === 'Zapatillas en Lanús');
-$fichaVieja = conv_nueva('5491100009995TEST', ['ultimo_ts' => time() - 60 * 86400, 'lead_creado' => true, 'form_completado_ts' => time() - 59 * 86400]);
-caso('pasado un mes sí (es un proyecto nuevo)', wabot_conv_reset_si_vieja($fichaVieja, $cfgR, time()) === true && empty($fichaVieja['lead_creado']));
+$fichaVieja = conv_nueva('5491100009995TEST', ['ultimo_ts' => time() - 20 * 86400, 'ultimo_cliente_ts' => time() - 20 * 86400, 'lead_creado' => true,
+    'form_completado_ts' => time() - 20 * 86400]);
+caso('si vuelve después de 20 días de silencio, sí (es un proyecto nuevo)', wabot_conv_reset_si_vieja($fichaVieja, $cfgR, time()) === true && empty($fichaVieja['lead_creado']));
 $v2 = conv_nueva('5491100009993TEST', ['datos_pedidos_ts' => time()]);
 wabot_conv_transcript($v2, 'bot', wabot_datos_demo_texto(conv_nueva('5491100009993TEST'), $cfgR));
 $v2['transcript'][0]['ts'] = time() - 20 * 86400;   // un pedido de la charla anterior
