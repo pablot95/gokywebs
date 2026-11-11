@@ -3233,6 +3233,8 @@ function wabot_contexto_consulta($texto, $conv = null) {
     if (preg_match('/' . $nuestra . '/u', $t)) return 'cliente_existente';
     // "Ya pagué OTRA web y fue un desastre" le pagó a otro: es un lead (9-sep).
     if (preg_match('/\b(ya (pague|abone|deposite|transferi)|hice la transferencia|ya te (pague|transferi)|mande el pago)\b/u', $t)
+        // «Ya pagué el dominio y quisiera conservarlo» (27-oct): le pagó el dominio a otro, es un lead. La renovación con nosotros sí es de un cliente.
+        && !(preg_match('/\b(dominio|hosting)\b/u', $t) && !preg_match('/\b(renov\w*|mantenimiento|mensualidad|cuota|suscripcion)\b/u', $t))
         && !preg_match('/\b(otra (web|pagina)|otro (programador|disenador|proveedor|desarrollador|lugar|lado|chico|tipo)|a otro|con otro|anterior|anteriormente|antes|un desastre|me estafaron|me cagaron|nunca me (la )?(hicieron|entregaron))\b/u', $t)) {
         return 'cliente_existente';
     }

@@ -1397,6 +1397,23 @@ function wabot_comercial_texto_posterga($texto) {
  * el sí salió como aceptación y le llegó el formulario.) Los mensajes del
  * cliente que llegan ahora (los últimos, ya en el transcript) no cuentan.
  */
+/**
+ * ¿Posterga en una frase que no es una pregunta? «Y más adelante puedo agregar productos?» o
+ * «cuando tenga las fotos se pueden cambiar?» preguntan, no postergan: antes contaban, y el
+ * «Dale» que venía después a la oferta de la demo se leía como un acuse y quedaba en silencio
+ * (revisión del 10-nov). «…te contesto entre lunes y martes. Te parece bien?» sí posterga: la
+ * postergación está en la frase de antes de la pregunta (Marcela, 1-nov).
+ */
+function wabot_comercial_posterga_fuera_de_pregunta($texto) {
+    $frases = preg_split('/(?<=[.!?…])\s+|\R+/u', trim((string)$texto)) ?: [];
+    foreach ($frases as $f) {
+        $f = trim((string)$f);
+        if ($f === '' || mb_strpos($f, '?') !== false || mb_strpos($f, '¿') !== false) continue;
+        if (wabot_comercial_texto_posterga($f)) return true;
+    }
+    return false;
+}
+
 function wabot_comercial_postergo_tras_oferta($conv, $cfg = null) {
     $filas = (array)($conv['transcript'] ?? []);
     $i = count($filas) - 1;
@@ -1405,7 +1422,7 @@ function wabot_comercial_postergo_tras_oferta($conv, $cfg = null) {
         $q = (string)($filas[$i]['q'] ?? '');
         $t = (string)($filas[$i]['t'] ?? '');
         if (in_array($q, ['bot', 'humano'], true) && wabot_comercial_texto_es_oferta($t, $cfg)) return false;
-        if ($q === 'cliente' && wabot_comercial_texto_posterga($t)) return true;
+        if ($q === 'cliente' && wabot_comercial_posterga_fuera_de_pregunta($t)) return true;
     }
     return false;
 }
@@ -1790,8 +1807,11 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
             $ajustes[] = 'dos_webs_humano';
         } elseif (!wabot_comercial_solucion_estandar($seg)) {
             $d['segunda_solucion'] = null;
-        } elseif (wabot_ab_grupo_cfg($cfg) !== '' && empty($conv['comercial_dos_webs'])) {
-            // Durante la prueba de precios (31-oct) las dos webs las cotiza Pablo: en A y B el descuento no está definido y en A2 (2-nov) se dejó igual.
+        } elseif (wabot_ab_grupo_cfg($cfg) !== '' && (wabot_ab_activa($cfg) || wabot_ab_grupo_cfg($cfg) !== 'a2') && empty($conv['comercial_dos_webs'])) {
+            /* Durante la prueba de precios (31-oct) las dos webs las cotiza Pablo: en A y B el descuento no está definido y en A2 (2-nov) se dejó igual.
+             * 10-nov: la prueba terminó el 3-nov y todas las charlas nuevas quedan en A2 (anual o mensual), que es
+             * justo para lo que está cargado el descuento de las dos webs; con la prueba apagada las cotiza el bot,
+             * como dicen sus instrucciones. Para volver atrás, sacar la condición del medio. */
             $d['accion'] = 'humano';
             $d['motivo'] = 'Pide dos webs: durante la prueba de precios las cotiza Pablo';
             $ajustes[] = 'dos_webs_prueba_precios';
@@ -2647,7 +2667,7 @@ function wabot_comercial_construir($d, $texto, $conv, $cfg) {
                     $intro = trim((string)($cfg['comercial']['dos_planes_intro'] ?? ''));
                     if ($intro !== '') $msgs[] = ['t' => $intro, 'efecto' => 'texto'];
                     $sin = trim((string)($cfg['comercial']['sin_reservas'] ?? ''));
-                    if ($sin !== '' && preg_match('/^(Podés elegir|Tenemos distintas)/u', $planes)) $planes = wabot_comercial_pegar_confirmacion($sin, $planes);
+                    if ($sin !== '' && preg_match('/^(Podés elegir|Tenemos (distintas|dos))/u', $planes)) $planes = wabot_comercial_pegar_confirmacion($sin, $planes);
                     $msgs[] = ['t' => $planes, 'efecto' => 'planes'];
                     $msgs[] = ['t' => strtr($con, ['{unico}' => $cotPanel['unico'], '{anual}' => $cotPanel['anual'], '{mensual}' => $cotPanel['mensual'], '{inicial}' => (string)($cotPanel['inicial'] ?? '')]), 'efecto' => 'alternativa'];
                     break;
@@ -3132,7 +3152,12 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     }
     // La etapa post-demo (1-nov): la demo ya se entregó y «Bot después de la demo» está prendido.
     $postdemo = $ok && wabot_comercial_estado($conv) === 'postdemo';
-    if (trim($texto) !== '' && wabot_texto_es_proveedor($texto)) {
+    /* Con los datos de la demo pedidos y sin ficha, lo que manda son los datos: «Nuestras redes
+     * sociales… botón Contactanos» se cerraba como proveedor y «ya pagué el dominio» como cliente
+     * existente, antes de llegar a leerlos (revisión del 10-nov). */
+    $datosPendientes = function_exists('wabot_datos_demo_pendiente') && function_exists('wabot_datos_por_chat')
+        && wabot_datos_por_chat($cfg) && wabot_datos_demo_pendiente($conv);
+    if (trim($texto) !== '' && !$datosPendientes && wabot_texto_es_proveedor($texto)) {
         wabot_log('proveedor_ignorado', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr($texto, 0, 90)]);
         return wabot_cerrar_proveedor($conv);
     }
@@ -3142,7 +3167,7 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
     if ($postdemo && trim($texto) !== '' && wabot_comercial_postdemo_avisa_pago($texto)) {
         return wabot_comercial_postdemo_pago_avisado($conv, $cfg, $texto);
     }
-    $contexto = trim($texto) !== '' ? wabot_contexto_consulta($texto, $conv) : null;
+    $contexto = (trim($texto) !== '' && !$datosPendientes) ? wabot_contexto_consulta($texto, $conv) : null;
     if ($contexto !== null) {
         $conv['contexto_consulta'] = $contexto;
         $conv['handoff_pendiente'] = true;

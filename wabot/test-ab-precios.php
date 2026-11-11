@@ -215,6 +215,14 @@ $d = charla('5491100009007');
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'segunda_solucion' => 'informativa', 'mensajes' => ['Perfecto.'], 'ficha' => ['rubro' => 'ropa', 'que_vende' => 'ropa']])]);
 $r = turno('Quiero una tienda y otra web para mi estudio', $d, $cfg);
 caso('dos webs durante la prueba: lo cotiza Pablo, en silencio', $r === [] && ($d['comercial_ultimo']['accion'] ?? '') === 'humano', json_encode($d['comercial_ultimo'] ?? null, JSON_UNESCAPED_UNICODE));
+// 10-nov: con la prueba apagada todas las charlas nuevas son A2 (anual o mensual) y las dos webs las cotiza el bot con el descuento cargado.
+$cfgSinPrueba = $cfg;
+$cfgSinPrueba['ab_precios']['activo'] = false;
+$d2 = charla('5491100009017');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'segunda_solucion' => 'informativa', 'mensajes' => ['Perfecto.'], 'ficha' => ['rubro' => 'ropa', 'que_vende' => 'ropa']])]);
+$r = turno('Quiero una tienda y otra web para mi estudio', $d2, $cfgSinPrueba);
+caso('dos webs con la prueba apagada: las cotiza el bot, anual y mensual con el descuento', strpos(junto($r), 'Por las dos webs') !== false
+    && strpos(junto($r), '$280.000') !== false && strpos(junto($r), '$40.000') !== false && ($d2['ab_grupo'] ?? '') === 'a2', junto($r));
 $form = file_get_contents(__DIR__ . '/form-lead.php');
 caso('form-lead acepta la modalidad inicial', strpos($form, "['unico', 'mensual', 'propia', 'inicial']") !== false);
 $html = file_get_contents(__DIR__ . '/../form/index.html');

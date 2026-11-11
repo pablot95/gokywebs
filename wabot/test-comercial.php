@@ -1697,4 +1697,20 @@ oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Te la a
 $r = turno('Se puede conectar con mi sistema de stock del local?', $c, $cfg);
 caso('si no queda nada aprobado para decir, se calla y queda pendiente para Pablo', $r === [] && !empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
+echo "\n— Revisión del 10-nov: una pregunta no posterga, datos que no son de un proveedor —\n";
+caso('una pregunta con «más adelante» no posterga', !wabot_comercial_posterga_fuera_de_pregunta('Y más adelante puedo agregar productos?')
+    && !wabot_comercial_posterga_fuera_de_pregunta('cuando tenga las fotos se pueden cambiar?'));
+caso('postergar y preguntar «te parece bien?» sí posterga (Marcela, 1-nov)', wabot_comercial_posterga_fuera_de_pregunta('Dejame q arme nombre texto y te contesto entre lunes y martes. Te parece bien?')
+    && wabot_comercial_posterga_fuera_de_pregunta('Lo hablo con mi socio y te aviso'));
+$c = cv_cotizada();
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => ['Sí, los productos los podés sumar cuando quieras desde tu panel.']])]);
+turno('Y más adelante puedo agregar productos?', $c, $cfg);
+oa([dc(['accion' => 'esperar', 'solucion' => 'tienda'])]);
+$r = turno('Dale', $c, $cfg);
+caso('«Dale» después de una pregunta con «más adelante»: es el sí a la demo, sale el formulario', con_form($r) || count(array_filter($r, fn($m) => str_contains((string)$m, 'Para armar la demo'))) > 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('«ya pagué el dominio» no es un cliente nuestro', wabot_contexto_consulta('Ya tengo pagado el dominio y quisiera conservarlo', cv()) === null
+    && wabot_contexto_consulta('Ya pagué el dominio, es dulcetentacion.com.ar', cv()) === null);
+caso('«ya pagué la renovación del hosting» sí', wabot_contexto_consulta('Hola, ya pagué la renovación del hosting', cv()) === 'cliente_existente'
+    && wabot_contexto_consulta('ya te pagué, fijate', cv()) === 'cliente_existente');
+
 todo_ok();
