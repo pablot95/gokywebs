@@ -3315,7 +3315,7 @@ function burbujaCita(t, chat) {
                 'De a una cosa: modelo, email del panel, logo y fotos, cambios. Si escribís vos, se pausa.', !empty($cfg['onboarding_activo'])) ?>
             <?= $quePasa('datos_por_chat', 'Pedir los datos de la demo por el chat (sin el link del formulario)',
                 'Cuando acepta la demo le pide los datos en el chat y con la respuesta arma el prospecto solo. Destildado, vuelve el link de gokywebs.com/form/.', !array_key_exists('datos_por_chat', (array)$cfg) || !empty($cfg['datos_por_chat'])) ?>
-            <p class="meta" style="margin:4px 0 0 22px">Con los datos leídos espera <input type="number" name="datos_demo_espera_min" value="<?= (int)wabot_datos_demo_espera_min($cfg) ?>" min="0" max="120" style="width:7ch;display:inline-block;padding:2px 6px"> minutos sin que el cliente escriba antes de armar la ficha, por si manda los datos de a poco (10-nov). Un «listo» o «eso es todo» la arma al instante; con 0, siempre al instante. El cron pasa cada 5 minutos.</p>
+            <p class="meta" style="margin:4px 0 0 22px">Con los datos leídos espera <input type="number" name="datos_demo_espera_min" value="<?= (int)wabot_datos_demo_espera_min($cfg) ?>" min="0" max="120" style="width:7ch;display:inline-block;padding:2px 6px"> minutos sin que el cliente escriba antes de armar la ficha, por si manda los datos de a poco (10-nov). Con 30 o más le acusa recibo la primera vez y solo un «eso es todo» la arma antes (un «ok» o «gracias» no); con menos, también un «listo»; con 0, siempre al instante. El cron pasa cada 5 minutos.</p>
 
             <?php /* Las explicaciones largas de antes (4-nov): no se borraron, quedaron acá plegadas. */ ?>
             <details class="plegable" style="margin-top:14px">

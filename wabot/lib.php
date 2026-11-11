@@ -2264,7 +2264,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * leía como los datos de la demo anterior. */
     foreach (['datos_pedidos_ts', 'datos_recibidos_ts', 'datos_demo_parcial', 'datos_demo_espera_ts', 'datos_demo_espera_hasta_ts', 'datos_demo_leido_filas',
               'datos_demo_faltan_n', 'datos_demo_espera_wsp', 'datos_demo_material_n', 'datos_demo_tarde_firma', 'datos_demo_tarde_ts', 'datos_demo_silencio_firma',
-              'datos_demo_ficha_fallos', 'comercial_cotizacion', 'comercial_oferta_ts', 'comercial_reoferta_ts', 'comercial_solucion', 'comercial_dos_webs',
+              'datos_demo_ficha_fallos', 'datos_demo_anotado_ts', 'datos_demo_fotos_leidas', 'comercial_cotizacion', 'comercial_oferta_ts', 'comercial_reoferta_ts', 'comercial_solucion', 'comercial_dos_webs',
               'comercial_dos_planes_ts', 'comercial_pausa', 'comercial_pausa_ts', 'comercial_pausa_n', 'comercial_pausa_cliente_ts', 'comercial_motivo',
               'comercial_derivado', 'comercial_pendientes', 'comercial_ultimo', 'ab_grupo', 'ab_grupo_ts', 'inicial_cotizado', 'esProspecto', 'prospecto_sincronizado',
               'envio_fallido_ts', 'rubro_preguntado'] as $k) unset($conv[$k]);

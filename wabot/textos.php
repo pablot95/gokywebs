@@ -983,7 +983,10 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
     'datos_por_chat' => true,
     // Minutos sin que el cliente escriba antes de armar la ficha con lo que mandó (Pablo, 10-nov: «seguro se
     // toman un tiempo para buscar la info»). La arma el cron de cada 5 min; con 0 se arma en el mismo turno.
-    'datos_demo_espera_min' => 5,
+    // 120 desde el 11-nov (Pablo: «la gente sigue mandando info, el bot tiene que esperar 2 hs»).
+    'datos_demo_espera_min' => 120,
+    // Con la espera larga, la primera vez que manda datos (la confirmación sale cuando se arma la ficha). Texto mío, no de Pablo.
+    'datos_demo_anotado' => '¡Anotado! Si tenés algo más para sumar (logo, fotos, colores), mandalo por acá. Te confirmo cuando arrancamos con la demo.',
     'datos_demo_pedido' => "Para armar la demo necesito los siguientes datos, no son todos obligatorios pero cuanto más nos pases, más personalizada quedará:\n{lista}",
     'datos_demo_lista' => [
         'Nombre de tu negocio o marca',

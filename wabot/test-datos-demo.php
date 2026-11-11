@@ -23,6 +23,8 @@ $cfg['activo'] = true;
 $cfg['form_activo'] = true;
 foreach (['demora_primer_mensaje', 'demora_segundos', 'demora_entre_mensajes', 'demora_minima', 'demora_bienvenida'] as $k) $cfg[$k] = 0;
 $cfg['demora_por_longitud'] = false;
+// Las secciones 1-20 se escribieron con la espera de 5 minutos (10-nov); la de 2 h (11-nov) se prueba en la 21.
+$cfg['datos_demo_espera_min'] = 5;
 
 $tmp = sys_get_temp_dir() . '/wabot-test-datos-demo-' . getmypid();
 @mkdir($tmp, 0755, true);
@@ -367,8 +369,8 @@ $c = cv_con_pedido();
 oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas en Lanús'])]);
 $r = turno('Zapas Lanús, zapatillas en Lanús', $c, $cfg0);
 caso('en el turno: ficha y confirmación', count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto') && !empty($c['lead_creado']), implode(' | ', $r));
-caso('los minutos: 5 de fábrica, de 0 a 120, lo raro vuelve a 5', wabot_datos_demo_espera_min([]) === 5 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 0]) === 0
-    && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 500]) === 5 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 12]) === 12);
+caso('los minutos: 120 de fábrica (11-nov), de 0 a 120, lo raro vuelve a 120', wabot_datos_demo_espera_min([]) === 120 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 0]) === 0
+    && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 500]) === 120 && wabot_datos_demo_espera_min(['datos_demo_espera_min' => 12]) === 12);
 $rc = wabot_datos_demo_espera_correr(['datos_por_chat' => false] + $cfg, time());
 caso('con el pedido por chat apagado el cron no hace nada', ($rc['motivo'] ?? '') === 'apagado');
 
@@ -702,5 +704,38 @@ if (wabot_ia_disponible() && WABOT_GEMINI_KEY !== 'COMPLETAR') {
 }
 if ($sinRed !== null) $GLOBALS['WABOT_TEST_SIN_RED'] = $sinRed;
 if ($circuitoIaAntes !== false) @file_put_contents($circuitoIa, $circuitoIaAntes);
+
+echo "\n— 21. La espera de 2 h (Pablo, 11-nov: «la gente sigue mandando info») —\n";
+$cfg5 = $cfg;
+$cfg['datos_demo_espera_min'] = 120;
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas'])]);
+$r = turno('Zapas Lanús, vendemos zapatillas', $c, $cfg);
+caso('con los primeros datos le acusa recibo, sin confirmar la demo', count($r) === 1 && str_starts_with((string)$r[0], '¡Anotado!') && empty($c['lead_creado']) && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+oa([dc(['accion' => 'esperar'])]);
+$r = turno('Gracias', $c, $cfg);
+caso('un «gracias» al acuse no arma la ficha', empty($c['lead_creado']) && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
+oa([dc(['accion' => 'esperar'])]);
+turno('Listo', $c, $cfg);
+caso('un «listo» suelto tampoco', empty($c['lead_creado']));
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas', 'colores' => 'negro y dorado'])]);
+$r = turno('Los colores son negro y dorado', $c, $cfg);
+caso('lo que manda después no repite el acuse', $r === [] && empty($c['lead_creado']), implode(' | ', $r));
+caso('a los 60 minutos todavía espera', espera_pasa($c, 60) === null && empty($c['lead_creado']));
+$r = espera_pasa($c, 121);
+caso('a las 2 h sin escribir arma con todo y confirma', !empty($c['lead_creado']) && ($c['colores'] ?? '') === 'negro y dorado' && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas'])]);
+turno('Zapas Lanús, vendemos zapatillas', $c, $cfg);
+$r = turno('Eso es todo', $c, $cfg);
+caso('«eso es todo» la arma al instante', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', $r));
+caso('cierres explícitos sí, «ok»/«listo»/«gracias» no', wabot_datos_demo_es_acuse('Nada más', true) && wabot_datos_demo_es_acuse('Ya te mandé todo', true)
+    && !wabot_datos_demo_es_acuse('ok', true) && !wabot_datos_demo_es_acuse('Listo', true) && !wabot_datos_demo_es_acuse('Gracias!', true)
+    && !wabot_datos_demo_es_acuse('No es todo, falta el logo', true));
+$c = cv_con_pedido();
+oa([], [dd(['es_datos' => false, 'pide_ejemplo' => true])]);
+$r = turno('Armala con datos de ejemplo, es para ver cómo queda', $c, $cfg);
+caso('la demo con contenido de ejemplo no espera las 2 h', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', $r));
+$cfg = $cfg5;
 
 todo_ok();

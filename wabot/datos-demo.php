@@ -509,7 +509,11 @@ function wabot_datos_demo_anotar_turno(&$conv, $accion, $motivo, $ajuste) {
  * «listo» o «eso es todo», se arma en ese turno. Con 0 minutos vuelve a armarse en el
  * mismo turno, como del 9-nov.
  */
-const WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT = 5;
+/* 2 h desde el 11-nov (Pablo: «la gente sigue mandando info, el bot tiene que esperar 2 hs para
+ * armar la ficha»): el 10 y 11-nov, 3 de 20 fichas armadas a los 5 min recibieron datos después. */
+const WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT = 120;
+/** Desde cuántos minutos la espera es «larga»: acuse de recibo y solo un cierre explícito arma antes. */
+const WABOT_DATOS_DEMO_ESPERA_LARGA_MIN = 30;
 /** Cuánto se espera al que pidió tiempo («aguantame», «ahora te paso») antes de armar con lo que haya. */
 const WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN = 30;
 
@@ -585,12 +589,20 @@ function wabot_datos_demo_material_recibido($conv) {
     return $n;
 }
 
-/** ¿Terminó de mandar? Un «listo», «ok», «eso es todo» con datos ya leídos (una postergación, no). */
-function wabot_datos_demo_es_acuse($texto) {
+/**
+ * ¿Terminó de mandar? Un «listo», «ok», «eso es todo» con datos ya leídos (una postergación, no).
+ * $estricto (la espera larga, 11-nov): solo un cierre explícito («eso es todo», «nada más», «ya te
+ * mandé todo»). Un «ok» o un «gracias» al acuse del bot no cierra: la gente sigue mandando cosas.
+ */
+function wabot_datos_demo_es_acuse($texto, $estricto = false) {
     $t = wabot_datos_demo_norm($texto);
     if ($t === '' || mb_strlen($t) > 40) return false;
     if (preg_match('/\b(despues|mas tarde|manana|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio)\b/u', $t)) return false;
     if (wabot_datos_demo_pide_tiempo($t)) return false;   // «Dale aguantame» no es un «listo»
+    if ($estricto) {
+        if (preg_match('/\b(no|todavia|aun|falta\w*)\b/u', $t)) return false;
+        return preg_match('/\b(eso es todo|es todo|seria todo|eso seria|nada mas|ya esta todo|ya (te )?(mande|pase|envie) todo|con eso (alcanza|basta|esta|estamos))\b/u', $t) === 1;
+    }
     if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( ' . wabot_datos_demo_acuse_cola() . ')?$/u', $t)) return true;
     // «Todavía no está listo el logo» no es un «listo».
     if (preg_match('/\b(no|todavia|aun|falta\w*)\b.{0,20}\blisto\b/u', $t)) return false;
@@ -733,8 +745,10 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     /* $texto trae la tanda sin contestar (con los datos ya leídos, porque el turno que los
      * leyó no contestó): lo nuevo es lo último que escribió. */
     $ultimo = $esperando ? wabot_datos_demo_ultimo_texto_cliente($conv) : '';
+    $min = wabot_datos_demo_espera_min($cfg);
     // Ya leímos datos y está esperando el silencio: «listo», «eso es todo» → se arma ya, sin otra lectura.
-    if ($esperando && wabot_datos_demo_es_acuse($ultimo)) {
+    // Con la espera larga, solo un cierre explícito: el «ok» o el «gracias» al acuse no cuentan.
+    if ($esperando && wabot_datos_demo_es_acuse($ultimo, $min >= WABOT_DATOS_DEMO_ESPERA_LARGA_MIN)) {
         wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'acuse']);
         return wabot_datos_demo_resolver($conv['datos_demo_parcial'], $conv, $cfg);
     }
@@ -753,7 +767,6 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     }
     if (empty($d['es_datos'])) return null;
 
-    $min = wabot_datos_demo_espera_min($cfg);
     if ($min <= 0) return wabot_datos_demo_resolver($d, $conv, $cfg);
 
     // Se anota lo leído y se espera a que termine de mandar: lo arma el cron (wabot_datos_demo_espera_correr).
@@ -770,6 +783,15 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     wabot_datos_demo_espera_marcar($conv, $ahora);
     wabot_datos_demo_anotar_turno($conv, 'esperar', 'Está mandando los datos de la demo: la ficha se arma a los ' . $min . ' min sin que escriba', 'datos_demo_espera');
     $conv['_comercial_salida'] = true;
+    /* Con la espera larga (2 h, Pablo 11-nov: «la gente sigue mandando info») no puede quedar
+     * callado todo ese rato: la primera vez se le acusa recibo y se lo invita a mandar el resto.
+     * Lo que manda después se lee en silencio; la confirmación sale cuando se arma la ficha. */
+    if ($min >= WABOT_DATOS_DEMO_ESPERA_LARGA_MIN && empty($conv['datos_demo_anotado_ts'])) {
+        $conv['datos_demo_anotado_ts'] = $ahora;
+        $texto = trim((string)($cfg['datos_demo_anotado'] ?? ''));
+        if ($texto === '') $texto = '¡Anotado! Si tenés algo más para sumar (logo, fotos, colores), mandalo por acá. Te confirmo cuando arrancamos con la demo.';
+        return [trim(wabot_personalizar($texto, $conv))];
+    }
     return [];
 }
 
