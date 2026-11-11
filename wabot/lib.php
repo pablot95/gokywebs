@@ -2810,9 +2810,25 @@ define('WABOT_CAPI_EVENTOS', ['Purchase', 'LeadSubmitted', 'QualifiedLead', 'Ini
  *
  * $customData va tal cual en custom_data (Purchase lleva value y currency).
  */
+/**
+ * El token con el que se mandan los eventos de conversión: el del ajuste o, si está vacío, el de
+ * WhatsApp.
+ *
+ * 11-nov: Meta rechazaba todos los eventos (subcódigo 2804132, «No hay ninguna cuenta de WhatsApp
+ * Business vinculada con este conjunto de datos») porque el conjunto de datos cargado era el del
+ * píxel. El que sirve para mensajería es el propio de la cuenta de WhatsApp, que se crea con
+ * POST /{cuenta}/dataset y al que solo llega el token de WhatsApp: el token del píxel no tiene
+ * permiso sobre él. Con el ajuste vacío se usa ese.
+ */
+function wabot_capi_token($cfg) {
+    $token = trim((string)(is_array($cfg) ? ($cfg['capi_token'] ?? '') : ''));
+    if ($token !== '') return $token;
+    return (defined('WABOT_META_TOKEN') && WABOT_META_TOKEN !== 'COMPLETAR') ? trim((string)WABOT_META_TOKEN) : '';
+}
+
 function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
     $dataset = trim((string)($cfg['capi_dataset_id'] ?? ''));
-    $token   = trim((string)($cfg['capi_token'] ?? ''));
+    $token   = wabot_capi_token($cfg);
     if ($dataset === '' || $token === '') return false;
 
     /* Para mensajería Meta acepta solo SUS nombres de evento, no los del pixel:
@@ -2862,11 +2878,12 @@ function wabot_capi_evento(&$conv, $evento, $cfg, $customData = []) {
 
     $body = json_encode(['data' => [$dato]], JSON_UNESCAPED_UNICODE);
 
-    $ch = curl_init('https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . $dataset . '/events?access_token=' . urlencode($token));
+    // El token va en la cabecera, no en la dirección (así no queda en ningún registro de pedidos).
+    $ch = curl_init('https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . $dataset . '/events');
     curl_setopt_array($ch, [
         CURLOPT_POST => true,
         CURLOPT_POSTFIELDS => $body,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $token],
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 15,
     ]);
@@ -2927,7 +2944,7 @@ function wabot_waba_id_guardar($id) {
  */
 function wabot_capi_compra(&$conv, $valor, $cfg) {
     $valor = (int)round((float)$valor);
-    if (trim((string)($cfg['capi_dataset_id'] ?? '')) === '' || trim((string)($cfg['capi_token'] ?? '')) === '') return 'sin_config';
+    if (trim((string)($cfg['capi_dataset_id'] ?? '')) === '' || wabot_capi_token($cfg) === '') return 'sin_config';
     if (trim((string)($conv['ctwa_clid'] ?? '')) === '') return 'sin_anuncio';
     if (in_array('Purchase', (array)($conv['capi_eventos'] ?? []), true)) return 'ya';
     if ($valor <= 0) return 'sin_valor';

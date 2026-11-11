@@ -233,6 +233,11 @@ $convInerte = ['tel' => 'TESTCAPI3', 'conversation_key' => 'TESTCAPI3', 'canal' 
                'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
 caso('sin configurar el dataset y el token, queda inerte',
     wabot_capi_evento($convInerte, 'LeadSubmitted', $cfgVacio) === false);
+// 11-nov: el conjunto de datos de la cuenta de WhatsApp solo acepta el token de WhatsApp; con el ajuste vacío se usa ese.
+$tokenWa = (defined('WABOT_META_TOKEN') && WABOT_META_TOKEN !== 'COMPLETAR') ? trim((string)WABOT_META_TOKEN) : '';
+caso('el token del ajuste manda si está cargado', wabot_capi_token(['capi_token' => ' TOKEN ']) === 'TOKEN');
+caso('con el ajuste vacío se usa el token de WhatsApp', wabot_capi_token(['capi_token' => '']) === $tokenWa && wabot_capi_token([]) === $tokenWa);
+caso('sin conjunto de datos no se manda aunque haya token', wabot_capi_evento($convInerte, 'LeadSubmitted', ['capi_dataset_id' => '', 'capi_token' => 'TOKEN']) === false);
 
 // La compra (17-oct): pasó a Cliente en el admin.
 caso('la compra sale con lo que pagó, en pesos',

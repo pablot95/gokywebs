@@ -3423,20 +3423,20 @@ function burbujaCita(t, chat) {
         <div class="card">
             <h2 style="margin-top:0">Atribución de anuncios (API de conversiones)</h2>
             <p class="meta" style="margin-top:0">Le avisa a Meta cuándo un clic en un anuncio terminó en algo real: un boceto cerrado o una demo entregada. Sin esto Meta no sabe qué clic sirvió, optimiza hacia un evento que nunca ve y termina mostrando el anuncio a cualquiera — es lo que hacía que la campaña marcara 0 resultados con todo el presupuesto gastado.</p>
-            <p class="meta">Los dos datos salen de <strong>Meta Events Manager → tu conjunto de datos → Configuración</strong>. Mientras estén vacíos, no se manda nada.</p>
+            <p class="meta">El conjunto de datos tiene que ser el de la <strong>cuenta de WhatsApp</strong> («Gokywebs Event Data»), no el del píxel: con el del píxel Meta rechaza todos los eventos. Con el token vacío se usa el de WhatsApp, que es el que tiene permiso sobre ese conjunto. Sin identificador no se manda nada.</p>
             <div class="fila" style="margin-top:12px;gap:14px;flex-wrap:wrap">
                 <label style="flex:1 1 220px">Identificador del conjunto de datos
                     <input type="text" name="capi_dataset_id" value="<?= $e($cfg['capi_dataset_id'] ?? '') ?>" placeholder="Solo números">
                 </label>
                 <label style="flex:1 1 260px">Token de acceso
-                    <input type="password" name="capi_token" value="" placeholder="<?= trim((string)($cfg['capi_token'] ?? '')) !== '' ? 'Ya cargado — escribí uno nuevo para cambiarlo' : 'Pegá el token acá' ?>" autocomplete="off">
+                    <input type="password" name="capi_token" value="" placeholder="<?= trim((string)($cfg['capi_token'] ?? '')) !== '' ? 'Ya cargado — escribí uno nuevo para cambiarlo' : (wabot_capi_token($cfg) !== '' ? 'Vacío: se usa el token de WhatsApp' : 'Pegá el token acá') ?>" autocomplete="off">
                 </label>
                 <label style="flex:1 1 220px">Id de la cuenta de WhatsApp (WABA)
                     <input type="text" name="capi_waba_id" value="<?= $e($cfg['capi_waba_id'] ?? '') ?>" placeholder="<?= wabot_waba_id($cfg) !== '' ? 'Detectado: ' . $e(wabot_waba_id($cfg)) : 'Lo anota solo el webhook' ?>">
                 </label>
             </div>
             <p class="meta" style="margin-top:6px">Meta exige el id de la cuenta de WhatsApp en cada evento (desde el 1-nov los rechazaba sin él). Lo toma solo del primer mensaje que llega; cargalo a mano únicamente si el estado sigue diciendo que falta (WhatsApp Manager → Configuración de la cuenta → Identificador de la cuenta de WhatsApp Business).</p>
-            <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '')
+            <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && wabot_capi_token($cfg) !== '')
                 ? (wabot_waba_id($cfg) !== '' ? 'activo (cuenta de WhatsApp ' . $e(wabot_waba_id($cfg)) . ')' : 'falta el id de la cuenta de WhatsApp: no se manda nada hasta que llegue un mensaje o lo cargues')
                 : 'sin configurar (no se manda nada)' ?></strong></p>
         </div>
