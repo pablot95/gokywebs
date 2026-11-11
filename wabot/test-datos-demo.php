@@ -582,4 +582,30 @@ wabot_conv_transcript($c, 'cliente', 'Zapas Lanús, vendemos zapatillas, colores
 oa([], [dd(['nombre_negocio' => 'no debería leerse acá'])]);
 caso('con el bot atendiendo no hace nada: lo lleva el turno', wabot_datos_demo_en_silencio($c, $cfg) === false && count(pedidos_datos()) === 0);
 
+echo "\n— 19. Con la demo ya publicada, un nombre escrito distinto no cambia el de la ficha —\n";
+$GLOBALS['WABOT_TEST_DEMO_PUBLICADA'] = [];
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'GREY INOVACION'])]);
+turno('GREY INOVACION', $c, $cfg);
+turno('Listo', $c, $cfg);
+$c['lead_doc'] = 'projects/prueba/databases/(default)/documents/propuestas/FICHATEST3';
+wabot_conv_transcript($c, 'cliente', "Nombre de mi marca: GREY INNOVACIÓN.\nColores: azul eléctrico y gris plata.\nIncluir: preguntas frecuentes.");
+oa([], [dd(['nombre_negocio' => 'GREY INNOVACIÓN', 'colores' => 'azul eléctrico y gris plata', 'incluir' => 'preguntas frecuentes'])]);
+wabot_datos_demo_tardios($c, $cfg);
+caso('sin demo publicada, el nombre nuevo se toma', ($c['nombre_negocio'] ?? '') === 'GREY INNOVACIÓN', (string)($c['nombre_negocio'] ?? ''));
+$GLOBALS['WABOT_TEST_DEMO_PUBLICADA'] = ['greyinovacion'];
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'GREY INOVACION'])]);
+turno('GREY INOVACION', $c, $cfg);
+turno('Listo', $c, $cfg);
+$c['lead_doc'] = 'projects/prueba/databases/(default)/documents/propuestas/FICHATEST4';
+wabot_conv_transcript($c, 'cliente', "Nombre de mi marca: GREY INNOVACIÓN.\nColores: azul eléctrico y gris plata.\nIncluir: preguntas frecuentes.");
+oa([], [dd(['nombre_negocio' => 'GREY INNOVACIÓN', 'colores' => 'azul eléctrico y gris plata', 'incluir' => 'preguntas frecuentes'])]);
+wabot_datos_demo_tardios($c, $cfg);
+caso('con la demo publicada, la ficha conserva el nombre (y la carpeta)', ($c['nombre_negocio'] ?? '') === 'GREY INOVACION' && str_contains((string)$c['colores'], 'azul eléctrico'), (string)($c['nombre_negocio'] ?? ''));
+caso('y el nombre nuevo queda anotado para Pablo', str_contains(linea_sistema($c, '[Datos de la demo por chat: actualización]'), 'Nombre que escribió después: GREY INNOVACIÓN'));
+caso('la ficha se actualiza con el nombre de antes', (string)(($GLOBALS['WABOT_TEST_DATOS_TARDE_PATCH']['nombre_negocio']['stringValue'] ?? '')) === 'GREY INOVACION');
+caso('un nombre que da la misma carpeta sí se acepta', wabot_datos_demo_nombre_fijo(['nombre_negocio' => 'GREY INOVACION'], 'Grey Inovación') === false);
+unset($GLOBALS['WABOT_TEST_DEMO_PUBLICADA']);
+
 todo_ok();

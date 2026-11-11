@@ -908,6 +908,22 @@ function wabot_datos_demo_tarde_desde($conv) {
 }
 
 /**
+ * ¿El nombre de la ficha ya no se puede cambiar? De ese nombre sale la carpeta de la demo
+ * (wabot_slug_demo) y la presentación automática la busca por ahí: si la demo ya está publicada
+ * y el cliente después escribe su marca de otra forma («GREY INOVACION» → «GREY INNOVACIÓN»), el
+ * cambio dejaba a la presentación buscando una carpeta que no existe. Un nombre nuevo que da la
+ * misma carpeta sí se acepta.
+ */
+function wabot_datos_demo_nombre_fijo($conv, $nuevo) {
+    $actual = trim((string)($conv['nombre_negocio'] ?? ''));
+    if ($actual === '' || !function_exists('wabot_slug_demo')) return false;
+    $slug = (string)wabot_slug_demo($actual);
+    if ($slug === '' || $slug === (string)wabot_slug_demo((string)$nuevo)) return false;
+    if (isset($GLOBALS['WABOT_TEST_DEMO_PUBLICADA'])) return in_array($slug, (array)$GLOBALS['WABOT_TEST_DEMO_PUBLICADA'], true);
+    return is_file(dirname(__DIR__) . '/demo/' . $slug . '/index.html');
+}
+
+/**
  * Lee lo que mandó después de la ficha y, si son datos, actualiza la charla y la
  * ficha. Devuelve true si cambió algo. Se llama en cada mensaje entrante (webhook),
  * con el bot prendido o apagado.
@@ -933,7 +949,14 @@ function wabot_datos_demo_tardios(&$conv, $cfg, $ahora = null) {
 
     $cambios = [];
     $negocio = $d['nombre_negocio'] !== '' && function_exists('wabot_nombre_negocio_limpiar') ? wabot_nombre_negocio_limpiar($d['nombre_negocio']) : $d['nombre_negocio'];
-    if ($negocio !== '' && $negocio !== trim((string)($conv['nombre_negocio'] ?? ''))) { $conv['nombre_negocio'] = $negocio; $cambios[] = 'Negocio: ' . $negocio; }
+    if ($negocio !== '' && $negocio !== trim((string)($conv['nombre_negocio'] ?? ''))) {
+        if (wabot_datos_demo_nombre_fijo($conv, $negocio)) {
+            $cambios[] = 'Nombre que escribió después: ' . $negocio . ' (la ficha conserva el anterior: su demo ya está publicada con ese nombre)';
+        } else {
+            $conv['nombre_negocio'] = $negocio;
+            $cambios[] = 'Negocio: ' . $negocio;
+        }
+    }
     if ($d['resumen'] !== '' && $d['resumen'] !== trim((string)($conv['descripcion'] ?? ''))) { $conv['descripcion'] = $d['resumen']; $cambios[] = 'Resumen: ' . $d['resumen']; }
     if ($d['colores'] !== '' && $d['colores'] !== trim((string)($conv['colores'] ?? ''))) {
         $conv['colores'] = $d['colores'];
