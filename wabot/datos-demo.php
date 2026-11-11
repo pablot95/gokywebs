@@ -150,15 +150,46 @@ function wabot_datos_demo_texto_cliente($conv, $desdeFila = null) {
     return trim(implode("\n", $partes));
 }
 
+/**
+ * Lo que se ve en las fotos y archivos que mandó desde el pedido (la descripción automática).
+ * No es texto suyo, pero el nombre en su logo o los servicios escritos en su flyer son sus
+ * datos: el 11-nov un carpintero mandó 7 fotos y una imagen con el logo y los servicios, sin
+ * escribir el nombre, y la ficha no se armó.
+ */
+function wabot_datos_demo_fotos_texto($conv) {
+    $t = (array)($conv['transcript'] ?? []);
+    $desde = (int)($conv['datos_pedidos_ts'] ?? 0);
+    $inicio = 0;
+    foreach ($t as $i => $fila) {
+        if ((int)($fila['ts'] ?? 0) < $desde - 5) continue;
+        if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
+    }
+    $partes = [];
+    foreach ($t as $i => $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if ($inicio > 0 ? $i < $inicio : (int)($fila['ts'] ?? 0) < $desde) continue;
+        $texto = trim((string)($fila['t'] ?? ''));
+        if (!preg_match('/^\[(foto|imagen|documento)\]\s*/iu', $texto)) continue;
+        $texto = trim((string)preg_replace('/^\[(foto|imagen|documento)\]\s*/iu', '', $texto));
+        // «epígrafe\n(descripción)»: el epígrafe ya lo lee wabot_datos_demo_texto_cliente; acá va la descripción.
+        if (preg_match('/\n\((.*)\)\s*$/su', $texto, $m)) $texto = trim($m[1]);
+        $texto = trim((string)preg_replace('/\s*\[adjunto:[^\]]*\]\s*$/u', '', $texto));
+        if (mb_strlen($texto) < 12) continue;   // «Mandó» solo: nada que leer
+        $partes[] = '- ' . $texto;
+    }
+    return mb_substr(implode("\n", $partes), 0, 3000);
+}
+
 /** El esquema estricto con el que GPT devuelve los datos: uno por campo del formulario. */
 function wabot_datos_demo_esquema() {
     $s = function ($d) { return ['type' => 'string', 'description' => $d]; };
     return ['type' => 'json_schema', 'name' => 'datos_demo_v1', 'strict' => true, 'schema' => [
         'type' => 'object', 'additionalProperties' => false,
-        'required' => ['es_datos', 'nombre_negocio', 'resumen', 'instagram', 'colores', 'referencia', 'incluir', 'whatsapp'],
+        'required' => ['es_datos', 'pide_ejemplo', 'nombre_negocio', 'resumen', 'instagram', 'colores', 'referencia', 'incluir', 'whatsapp'],
         'properties' => [
             'es_datos'       => ['type' => 'boolean', 'description' => 'true si el cliente está pasando al menos uno de los datos pedidos para la demo (nombre del negocio, qué ofrece, Instagram, colores, referencia, qué incluir, WhatsApp). false si es una pregunta, un acuse (ok, dale, gracias), una postergación (después te paso, mañana te mando) o cualquier otra cosa.'],
-            'nombre_negocio' => $s('El nombre del negocio o la marca, tal cual lo escribió (sin "mi negocio se llama"). Vacío si no lo dijo.'),
+            'pide_ejemplo'   => ['type' => 'boolean', 'description' => 'true si pide que armemos la demo con contenido o datos de ejemplo en vez de los suyos ("armala con otros datos", "poné cualquier cosa, es para ver cómo queda", "todavía no tengo nombre, inventá uno"). Una postergación ("después te paso") es false.'],
+            'nombre_negocio' => $s('El nombre del negocio o la marca, tal cual lo escribió o como se lee en su logo, flyer o cartel (sin "mi negocio se llama"). Vacío si no lo dijo.'),
             'resumen'        => $s('Qué ofrece: productos o servicios, rubro, zona, a quién le vende. Con sus palabras, corregidas solo en ortografía. Vacío si no lo dijo.'),
             'instagram'      => $s('El usuario de Instagram sin @ ni link (de "@pelumari" o "instagram.com/pelumari" queda "pelumari"). Vacío si no lo dio.'),
             'colores'        => $s('Los colores de la marca como los dijo ("negro y dorado", "#2563EB y blanco"). Vacío si no los dijo o dijo que los elijamos nosotros.'),
@@ -176,7 +207,9 @@ function wabot_datos_demo_instrucciones() {
         . "- es_datos: true solo si está pasando al menos uno de esos datos. Una pregunta, un acuse (\"ok\", \"dale\", \"gracias\"), una postergación (\"después te paso\", \"mañana te mando los datos\") o un comentario que no aporta datos es false.\n"
         . "- Cada campo con lo que dijo, sin inventar ni completar con lo que ya sabíamos: lo que no dijo en estos mensajes va vacío. No deduzcas el nombre del negocio del rubro.\n"
         . "- resumen: lo que ofrece con sus palabras; podés juntar varios mensajes en un párrafo. Sin colores, Instagram, referencia ni pedidos de funciones: esos van en su campo.\n"
-        . "- Si dice que los colores los elijamos nosotros o que no tiene, colores vacío. Si dice que no tiene Instagram o referencia, vacío.";
+        . "- Si dice que los colores los elijamos nosotros o que no tiene, colores vacío. Si dice que no tiene Instagram o referencia, vacío.\n"
+        . "- LO QUE SE VE EN SUS FOTOS lo describimos nosotros: tomá de ahí el nombre del negocio solo si se lee en SU logo, flyer o cartel, y qué ofrece si está escrito en una imagen suya con sus servicios o productos. Una captura de otra web o de otra cuenta es una referencia, no su nombre. Si su logo o flyer trae el nombre o los servicios, es_datos es true.\n"
+        . "- pide_ejemplo: true si pide que la demo se arme con contenido de ejemplo o inventado en vez de sus datos.";
 }
 
 /** Lo que ya sabemos, para que el extractor no lo pida de nuevo ni lo invente. */
@@ -196,10 +229,12 @@ function wabot_datos_demo_contexto_conocido($conv) {
  * GPT lee lo que mandó. Devuelve el JSON del esquema o null si la API no
  * contestó (ahí decide wabot_datos_demo_extraer_reglas).
  */
-function wabot_datos_demo_extraer($textoCliente, $conv, $cfg) {
+function wabot_datos_demo_extraer($textoCliente, &$conv, $cfg) {
     if (!function_exists('wabot_openai_llamar')) return null;
     $entrada = "LO QUE YA SABEMOS\n" . wabot_datos_demo_contexto_conocido($conv)
-        . "\n\nLO QUE ESCRIBIÓ DESDE QUE LE PEDIMOS LOS DATOS\n" . mb_substr((string)$textoCliente, 0, 6000);
+        . "\n\nLO QUE ESCRIBIÓ DESDE QUE LE PEDIMOS LOS DATOS\n" . (trim((string)$textoCliente) !== '' ? mb_substr((string)$textoCliente, 0, 6000) : '(nada escrito)');
+    $fotos = wabot_datos_demo_fotos_texto($conv);
+    if ($fotos !== '') $entrada .= "\n\nLO QUE SE VE EN SUS FOTOS (descripción nuestra, no texto suyo)\n" . $fotos;
     $esfuerzo = function_exists('wabot_openai_esfuerzo') && wabot_openai_esfuerzo($cfg) === 'none' ? 'none' : 'low';
     $r = wabot_openai_llamar('datos_demo', wabot_datos_demo_instrucciones(), $entrada, wabot_datos_demo_esquema(), $cfg,
         ['usuario' => wabot_conversation_key($conv), 'max_tokens' => 900, 'esfuerzo' => $esfuerzo]);
@@ -207,12 +242,14 @@ function wabot_datos_demo_extraer($textoCliente, $conv, $cfg) {
         wabot_log('datos_demo_extraer_fallo', ['tel' => $conv['tel'] ?? '', 'error' => (string)($r['error'] ?? ''), 'http' => (int)($r['http'] ?? 0)]);
         return null;
     }
+    // Las fotos que entraron en esta lectura: el cron no vuelve a pagarla por las mismas (wabot_datos_demo_espera_atender).
+    $conv['datos_demo_fotos_leidas'] = $fotos !== '' ? md5($fotos) : '';
     return wabot_datos_demo_normalizar($r['datos']);
 }
 
 /** El JSON con todos los campos, como strings recortados. */
 function wabot_datos_demo_normalizar($d) {
-    $out = ['es_datos' => !empty($d['es_datos'])];
+    $out = ['es_datos' => !empty($d['es_datos']), 'pide_ejemplo' => !empty($d['pide_ejemplo'])];
     foreach (['nombre_negocio' => 80, 'resumen' => 2000, 'instagram' => 100, 'colores' => 200, 'referencia' => 300, 'incluir' => 2000, 'whatsapp' => 40] as $k => $max) {
         $v = is_scalar($d[$k] ?? null) ? trim((string)$d[$k]) : '';
         $v = trim((string)preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $v));
@@ -310,7 +347,8 @@ function wabot_datos_demo_faltan($conv, array $d) {
     $faltan = [];
     $nombre = $d['nombre_negocio'] !== '' ? $d['nombre_negocio'] : trim((string)($conv['nombre_negocio'] ?? ''));
     if ($nombre === '' && !empty($conv['brief']['marca'])) $nombre = trim((string)$conv['brief']['marca']);
-    if ($nombre === '') $faltan[] = 'el nombre de tu negocio o marca';
+    // Pidió la demo con contenido de ejemplo (11-nov, Mica: «podrías prepararla con otros datos»): sin su nombre se arma igual.
+    if ($nombre === '' && empty($d['_ejemplo'])) $faltan[] = 'el nombre de tu negocio o marca';
     $f = function_exists('wabot_ficha') ? wabot_ficha($conv) : [];
     $descripcion = trim((string)($conv['descripcion'] ?? ''));
     $sabeRubro = $d['resumen'] !== ''
@@ -348,6 +386,9 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     }
     $conv['referencia_preguntada'] = true;   // ya se la pedimos en la lista: el chat no la vuelve a pedir
     if ($d['incluir'] !== '') $conv['incluir'] = $d['incluir'];
+    if (!empty($d['_ejemplo']) && trim((string)($conv['incluir'] ?? '')) === '') {
+        $conv['incluir'] = 'Contenido de ejemplo: pidió ver la demo sin pasar sus datos';
+    }
     if ($d['whatsapp'] !== '' && function_exists('wabot_extraer_celular')) {
         $num = wabot_extraer_celular($d['whatsapp']);
         if ($num !== null) $conv['telefono_wsp'] = $num;
@@ -364,6 +405,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     if ($d['incluir'] !== '') $partes[] = 'Incluir sí o sí: ' . $d['incluir'];
     if (!empty($conv['telefono_wsp']) && $d['whatsapp'] !== '') $partes[] = 'WhatsApp: ' . $conv['telefono_wsp'];
     if (!empty($d['_reglas'])) $partes[] = '(leído sin IA: el texto entero quedó como resumen)';
+    if (!empty($d['_ejemplo'])) $partes[] = '(pidió la demo con contenido de ejemplo)';
     wabot_conv_transcript($conv, 'sistema', '[Datos de la demo por chat] ' . implode(' · ', $partes));
 
     $conv['form_completado_ts'] = $ahora;
@@ -701,6 +743,14 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
 
     $d = wabot_datos_demo_extraer($todo, $conv, $cfg);
     if ($d === null) $d = wabot_datos_demo_extraer_reglas($todo, $conv);
+    if (!empty($d['pide_ejemplo'])) $d['_ejemplo'] = true;
+    /* «Podrías preparar la demo con otros datos, es para ver cómo sería» (11-nov, Mica): no va a
+     * mandar nada más. Antes el flujo le decía que sí y la charla quedaba sin ficha. Con el rubro
+     * sabido se arma ya, sin la espera; sin rubro se le pide qué ofrece. */
+    if (empty($d['es_datos']) && !empty($d['_ejemplo'])) {
+        wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'ejemplo']);
+        return wabot_datos_demo_resolver($d, $conv, $cfg);
+    }
     if (empty($d['es_datos'])) return null;
 
     $min = wabot_datos_demo_espera_min($cfg);
@@ -771,11 +821,16 @@ function wabot_datos_demo_en_silencio(&$conv, $cfg, $ahora = null) {
 function wabot_datos_demo_espera_atender(&$cv, $cfg, $ahora) {
     $d = $cv['datos_demo_parcial'];
     $releido = false;
-    if (wabot_datos_demo_cliente_filas($cv) > (int)($cv['datos_demo_leido_filas'] ?? 0)) {
+    // Solo si falta lo esencial: con el nombre y el rubro ya sabidos, leer las fotos no suma nada.
+    $fotos = !empty($d['_material']) && wabot_datos_demo_faltan($cv, $d) ? wabot_datos_demo_fotos_texto($cv) : '';
+    if ($fotos !== '' && md5($fotos) === (string)($cv['datos_demo_fotos_leidas'] ?? '')) $fotos = '';   // ya leídas
+    if (wabot_datos_demo_cliente_filas($cv) > (int)($cv['datos_demo_leido_filas'] ?? 0) || $fotos !== '') {
         $todo = wabot_datos_demo_texto_cliente($cv);
         // Con solo material anotado, un «ok» o una pregunta suelta no gastan una lectura.
         if (!empty($d['_material']) && (wabot_datos_demo_es_acuse_o_posterga($todo) || mb_strlen(wabot_datos_demo_norm($todo)) < 12)) $todo = '';
-        if ($todo !== '') {
+        /* Solo material, pero lo que se ve en las fotos puede traer el nombre o los servicios (un
+         * logo, un flyer): se lee una vez antes de pedirle lo que falta. */
+        if ($todo !== '' || $fotos !== '') {
             $nuevo = wabot_datos_demo_extraer($todo, $cv, $cfg) ?? wabot_datos_demo_extraer_reglas($todo, $cv);
             if (!empty($nuevo['es_datos'])) { $d = $nuevo; $releido = true; }
         }

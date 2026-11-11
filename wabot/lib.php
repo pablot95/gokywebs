@@ -5941,7 +5941,10 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
             ['text' => $prompt],
             ['inlineData' => ['mimeType' => $mime, 'data' => base64_encode($bytes)]],
         ]]],
-        'generationConfig' => ['temperature' => 0, 'maxOutputTokens' => $tipo === 'audio' ? 4000 : 800],
+        /* 800 alcanzaba con los modelos de antes; con los que piensan, lo que razonan cuenta en el
+         * mismo tope y la descripción salía cortada («Mandó», «…incluyendo servicios (muebles a medida
+         * y»): 14 de 97 fotos el 10 y 11-nov, entre ellas el logo con el nombre de una carpintería. */
+        'generationConfig' => ['temperature' => 0, 'maxOutputTokens' => $tipo === 'audio' ? 4000 : 2500],
     ], JSON_UNESCAPED_UNICODE);
 
     $modelo = wabot_gemini_modelo();
@@ -5959,10 +5962,33 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
     }
     wabot_ia_reportar_ok();
     $j = json_decode($res, true);
-    $txt = trim((string)($j['candidates'][0]['content']['parts'][0]['text'] ?? ''));
+    // Todas las partes de texto (sin las de razonamiento): leer solo la primera dejaba afuera el resto.
+    $txt = '';
+    foreach ((array)($j['candidates'][0]['content']['parts'] ?? []) as $parte) {
+        if (!empty($parte['thought'])) continue;
+        $txt .= (string)($parte['text'] ?? '');
+    }
+    $txt = trim($txt);
+    if ($tipo !== 'audio' && (string)($j['candidates'][0]['finishReason'] ?? '') === 'MAX_TOKENS') {
+        wabot_log('media_cortada', ['tipo' => $tipo, 'modelo' => $m ?? '', 'largo' => mb_strlen($txt)]);
+        $txt = wabot_media_texto_hasta_frase($txt);
+    }
 
     if ($txt === '' || in_array($txt, ['SIN_AUDIO', 'SIN_IMAGEN', 'SIN_DOC'], true)) return null;
     return trim($txt, "\"“” \n\r\t");
+}
+
+/**
+ * Una descripción que el modelo dejó por la mitad, hasta la última frase entera: «Mandó» o
+ * «…incluyendo servicios (muebles a medida y» no le sirven a nadie. Si no queda ninguna frase
+ * entera con algo de cuerpo, nada (la foto queda como «[foto]», igual que si fallara).
+ */
+function wabot_media_texto_hasta_frase($txt) {
+    $txt = trim((string)$txt);
+    if (preg_match('/[.!?)»"]$/u', $txt)) return $txt;
+    $corte = max((int)mb_strrpos($txt, '. '), (int)mb_strrpos($txt, ".\n"));
+    $frase = $corte > 0 ? trim(mb_substr($txt, 0, $corte + 1)) : '';
+    return mb_strlen($frase) >= 20 ? $frase : '';
 }
 
 /**

@@ -629,4 +629,78 @@ caso('la ficha se actualiza con el nombre de antes', (string)(($GLOBALS['WABOT_T
 caso('un nombre que da la misma carpeta sí se acepta', wabot_datos_demo_nombre_fijo(['nombre_negocio' => 'GREY INOVACION'], 'Grey Inovación') === false);
 unset($GLOBALS['WABOT_TEST_DEMO_PUBLICADA']);
 
+echo "\n— 20. Charlas del 11-nov: demo con contenido de ejemplo, logo con el nombre, fotos cortadas —\n";
+// Mica: «Podrías preparar la demo con otros datos», con el rubro ya sabido.
+$c = cv_con_pedido();
+oa([], [dd(['es_datos' => false, 'pide_ejemplo' => true])]);
+$r = turno("Podrías preparar la demo con otros datos. Es solo para ver cómo quedaría después yo me imagino mis productos en la página", $c, $cfg);
+caso('pide la demo con contenido de ejemplo: la ficha se arma en el turno', !empty($c['lead_creado']) && count($r) === 1 && str_starts_with((string)$r[0], 'Perfecto, con eso'), implode(' | ', $r));
+caso('sin pedirle el nombre', !str_contains(implode(' ', $r), 'el nombre de tu negocio'));
+caso('la ficha lo dice', str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'contenido de ejemplo') && str_contains((string)($c['incluir'] ?? ''), 'Contenido de ejemplo'), linea_sistema($c, '[Datos de la demo por chat]'));
+$c = cv_con_pedido();
+oa([], [dd(['es_datos' => false, 'pide_ejemplo' => false])]);
+oa([dc(['accion' => 'responder', 'mensajes' => ['Dale, cuando puedas me lo pasás.']])], [dd(['es_datos' => false])]);
+$r = turno('Ahora estoy trabajando, después veo bien qué te mando de todo esto', $c, $cfg);
+caso('una postergación sigue sin armar la ficha', empty($c['lead_creado']), implode(' | ', $r));
+
+// El carpintero: Pablo en el chat, fotos y una imagen con el logo y los servicios, sin escribir el nombre.
+$c = cv_con_pedido();
+wabot_conv_tomar_control($c);
+wabot_conv_transcript($c, 'cliente', 'Dame un rato y te lo armo');
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó una foto de un juego de living exterior de madera rústica.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'a.jpg']);
+wabot_conv_transcript($c, 'cliente', 'Instagram no tengo');
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'b.jpg']);
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó el logo de su carpintería «Taller Baum» con sus servicios: muebles a medida y restauración.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'c.jpg']);
+$fotos = wabot_datos_demo_fotos_texto($c);
+caso('lo que se ve en las fotos se junta (sin el «Mandó» vacío)', substr_count($fotos, "\n- ") === 1 && str_contains($fotos, 'Taller Baum') && !preg_match('/^- Mandó$/m', $fotos), $fotos);
+oa([], [dd(['nombre_negocio' => 'Taller Baum', 'resumen' => 'Muebles a medida y restauración'])]);
+caso('con Pablo en el chat se lee igual', wabot_datos_demo_en_silencio($c, $cfg) === true);
+$entrada = json_encode(pedidos_datos()[0] ?? [], JSON_UNESCAPED_UNICODE);
+caso('el lector recibe lo que se ve en las fotos', str_contains($entrada, 'LO QUE SE VE EN SUS FOTOS') && str_contains($entrada, 'Taller Baum'));
+caso('y el esquema pregunta si pide contenido de ejemplo', str_contains($entrada, 'pide_ejemplo'));
+$r = espera_pasa($c, 6);
+caso('con el nombre del logo la ficha se arma, en silencio', $r === [] && !empty($c['lead_creado']) && ($c['nombre_negocio'] ?? '') === 'Taller Baum', json_encode([$r, $c['nombre_negocio'] ?? null], JSON_UNESCAPED_UNICODE));
+
+// Solo fotos con el bot atendiendo: el cron lee una vez lo que se ve antes de pedir el nombre.
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó una imagen con el logo de «Taller Baum» y sus servicios.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'logo.jpg']);
+oa([dc(['accion' => 'responder', 'mensajes' => ['Gracias, lo sumamos!']])], []);
+turno('Ok', $c, $cfg);
+caso('una foto con un «Ok» no gasta lectura en el turno', count(pedidos_datos()) === 0 && wabot_datos_demo_espera_sigue($c));
+oa([], [dd(['nombre_negocio' => 'Taller Baum'])]);
+$r = espera_pasa($c, 6);
+caso('el cron lee el logo y arma sin pedir el nombre', count(pedidos_datos()) === 1 && !empty($c['lead_creado']) && ($c['nombre_negocio'] ?? '') === 'Taller Baum'
+    && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
+
+// Descripciones cortadas por el tope de tokens.
+caso('«Mandó» solo no queda como descripción', wabot_media_texto_hasta_frase('Mandó') === '');
+caso('una cortada queda hasta la última frase entera',
+    wabot_media_texto_hasta_frase('Mandó el logo de su carpintería Taller Baum. Incluye servicios (muebles a medida y') === 'Mandó el logo de su carpintería Taller Baum.');
+caso('una entera queda igual', wabot_media_texto_hasta_frase('Mandó una foto de sus muebles de madera clara.') === 'Mandó una foto de sus muebles de madera clara.');
+// Gemini simulado: sin «sin red» por un momento (el gancho no deja salir nada) y sin circuito abierto.
+$sinRed = $GLOBALS['WABOT_TEST_SIN_RED'] ?? null;
+unset($GLOBALS['WABOT_TEST_SIN_RED']);
+$circuitoIa = WABOT_DATA . '/ia-circuit.json';
+$circuitoIaAntes = @file_get_contents($circuitoIa);
+@unlink($circuitoIa);
+if (wabot_ia_disponible() && WABOT_GEMINI_KEY !== 'COMPLETAR') {
+    $cuerpos = [];
+    $GLOBALS['WABOT_TEST_GEMINI_HTTP'] = function ($modelo, $body) use (&$cuerpos) {
+        $cuerpos[] = json_decode($body, true);
+        return [200, json_encode(['candidates' => [['finishReason' => 'STOP', 'content' => ['parts' => [
+            ['text' => 'pensando…', 'thought' => true], ['text' => 'Mandó el logo de '], ['text' => 'Taller Baum.']]]]]], JSON_UNESCAPED_UNICODE)];
+    };
+    caso('junta todas las partes de la descripción, sin el razonamiento', wabot_media_a_texto('x', 'image/jpeg', 'imagen') === 'Mandó el logo de Taller Baum.');
+    caso('el tope de las fotos ya no es 800', (int)($cuerpos[0]['generationConfig']['maxOutputTokens'] ?? 0) >= 2000);
+    $GLOBALS['WABOT_TEST_GEMINI_HTTP'] = function ($modelo, $body) {
+        return [200, json_encode(['candidates' => [['finishReason' => 'MAX_TOKENS', 'content' => ['parts' => [['text' => 'Mandó']]]]]])];
+    };
+    caso('cortada por el tope y sin frase entera: la foto queda sin descripción', wabot_media_a_texto('x', 'image/jpeg', 'imagen') === null);
+    unset($GLOBALS['WABOT_TEST_GEMINI_HTTP']);
+} else {
+    echo "  (sin Gemini en esta PC: las pruebas de wabot_media_a_texto se saltean)\n";
+}
+if ($sinRed !== null) $GLOBALS['WABOT_TEST_SIN_RED'] = $sinRed;
+if ($circuitoIaAntes !== false) @file_put_contents($circuitoIa, $circuitoIaAntes);
+
 todo_ok();
