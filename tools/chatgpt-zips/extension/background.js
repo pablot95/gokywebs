@@ -22,6 +22,12 @@ chrome.runtime.onInstalled.addListener(() => chrome.alarms.create('revisar', { p
 chrome.runtime.onStartup.addListener(() => chrome.alarms.create('revisar', { periodInMinutes: 10, delayInMinutes: 1 }));
 chrome.alarms.onAlarm.addListener(a => { if (a.name === 'revisar') revisar(); });
 chrome.action.onClicked.addListener(() => revisar());
+// «Ver demo» del admin en una pestaña de fondo, al lado de la del admin (11-nov, admin-fondo.js).
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  const url = msg && msg.abrirFondo;
+  if (typeof url !== 'string' || !/^https:\/\/(www\.)?gokywebs\.com\//.test(url) || !sender.tab) return;
+  chrome.tabs.create({ url, active: false, index: sender.tab.index + 1, windowId: sender.tab.windowId });
+});
 
 /* Corre igual desde el service worker (base = https://chatgpt.com) o dentro de
  * la página (base = ''): por eso no usa nada de afuera. Devuelve el token y,

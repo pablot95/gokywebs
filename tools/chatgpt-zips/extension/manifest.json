@@ -1,10 +1,34 @@
 {
   "manifest_version": 3,
   "name": "Gokywebs - zips de ChatGPT",
-  "version": "1.0.0",
-  "description": "Baja a Descargas los zips de imágenes de la tarea «Gokywebs Copiar 10» de ChatGPT, cada 10 minutos.",
-  "permissions": ["alarms", "downloads", "storage", "scripting", "tabs"],
-  "host_permissions": ["https://chatgpt.com/*"],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_title": "Zips de ChatGPT: tocá para revisar ahora" }
+  "version": "1.1.0",
+  "description": "Baja a Descargas los zips de imágenes de la tarea «Gokywebs Copiar 10» de ChatGPT, cada 10 minutos. Y en el admin, «Ver demo» abre la demo en otra pestaña sin sacarte de la que estás.",
+  "permissions": [
+    "alarms",
+    "downloads",
+    "storage",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://chatgpt.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Zips de ChatGPT: tocá para revisar ahora"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gokywebs.com/admin/*",
+        "https://www.gokywebs.com/admin/*"
+      ],
+      "js": [
+        "admin-fondo.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
 }

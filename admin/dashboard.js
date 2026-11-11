@@ -4761,7 +4761,7 @@ function slugDemoDeCliente(c) {
 function _botonVerDemo(c) {
     const slug = slugDemoDeCliente(c);
     if (!slug) return "";
-    return `<a href="https://gokywebs.com/demo/${encodeURIComponent(slug)}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link" style="margin-top:4px;margin-left:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slug)}/ en otra pestaña">Ver demo ↗</a>`;
+    return `<a href="https://gokywebs.com/demo/${encodeURIComponent(slug)}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link js-demo-fondo" style="margin-top:4px;margin-left:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slug)}/ en otra pestaña">Ver demo ↗</a>`;
 }
 
 const TEMPLATE_72H_MOTIVOS = {
@@ -6871,7 +6871,7 @@ function renderPropuestas() {
                     ${/* 4-nov: «Demo / boceto» (salía solo sin Instagram) y después «Eligió avanzar» se sacaron
                          de la fila a pedido de Pablo. */ ""}
                     ${slugNegocio(nombreNegocio)
-                        ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link" style="margin-top:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
+                        ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost btn-xs btn-link js-demo-fondo" style="margin-top:4px" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
                     ${_selectorAutorDemo(p)}
                     ${p.confirmoMuestra === false
@@ -8982,6 +8982,18 @@ function renderIntentosCobro() {
             </table>
         </div>`;
 }
+
+/* «Ver demo» sin cambiar de pestaña (Pablo, 11-nov): con la extensión de Gokywebs
+   en Chrome (tools/chatgpt-zips/extension, admin-fondo.js) la demo se abre en una
+   pestaña de fondo y uno se queda en el admin. Sin la extensión, o con Ctrl/rueda,
+   el link hace lo de siempre. */
+document.addEventListener("click", (e) => {
+    const a = e.target.closest?.("a.js-demo-fondo");
+    if (!a || document.documentElement.dataset.gokyFondo !== "1") return;
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    window.postMessage({ gokyAbrirFondo: a.href }, location.origin);
+});
 
 document.addEventListener("click", (e) => {
     const vista = e.target.closest("[data-cal-vista]");
