@@ -1,0 +1,25 @@
+{
+  "ilustrativas_chatgpt": {
+    "origen": "zip de ChatGPT (Estudio_CS_Seguros_Sebastian_Charra_Bxa7zUQdDLWrf9uNuYxY.zip), originales 01-09_imagen.jpg y 10_mockup_720x480.png",
+    "archivos": {
+      "auto-blanco.webp": "01_imagen.jpg (9:16), Automotores",
+      "casa-jardin.webp": "02_imagen.jpg (16:9), Hogar y panorámica del Modelo 2",
+      "comercio-frente.webp": "03_imagen.jpg (1:1), Comercios",
+      "moto-reparto.webp": "04_imagen.jpg (1:1), portada del Modelo 1 y pestaña de repartidores",
+      "mochila-reparto.webp": "05_imagen.jpg (1:1), accidentes personales para repartidores",
+      "casco-guantes.webp": "06_imagen.jpg (1:1), vida y accidentes personales",
+      "carpeta-poliza.webp": "07_imagen.jpg (1:1), servicios (revisión de póliza)",
+      "baliza-ruta.webp": "08_imagen.jpg (1:1), servicios (siniestros)",
+      "escritorio-online.webp": "09_imagen.jpg (1:1), servicio 100% online",
+      "og.jpg": "04_imagen.jpg + logo-sc a 1200x630"
+    }
+  },
+  "del_cliente": {
+    "origen": "piezas que mandó por WhatsApp (Descargas/imagenes-prospectos/estudiocssegurossebastiancharra)",
+    "archivos": {
+      "logo-sc.webp / logo-sc-blanco.webp": "monograma SC + «Productor Asesor de Seguros» recortado de 08-imagen.jpg (fondo gris → transparente, tinta pasada a azul marino y a blanco)",
+      "monograma-sc.webp / monograma-sc-blanco.webp": "solo el monograma del mismo recorte; favicon.png y apple-touch-icon.png salen de acá",
+      "sebastian-charra.webp": "foto de perfil de 08-imagen.jpg recortada a 4:5 (416x520), con la curva azul del flyer retocada en la esquina superior izquierda"
+    }
+  }
+}
