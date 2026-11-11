@@ -36,8 +36,18 @@ $embed = !empty($_SESSION['wabot_embed']);
 /* ── Login ── */
 if (isset($_GET['salir'])) { session_destroy(); header('Location: admin.php'); exit; }
 if (!empty($_POST['clave'])) {
-    if (hash_equals(WABOT_ADMIN_PASS, $_POST['clave'])) { $_SESSION['wabot'] = true; }
-    else { $errorLogin = 'Clave incorrecta'; }
+    // Cinco intentos cada 15 minutos por IP (10-nov): antes se podía probar claves sin tope.
+    $ipLogin = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if (!wabot_form_rate_ok('login:' . $ipLogin, 5, 900)) {
+        $errorLogin = 'Demasiados intentos. Probá de nuevo en 15 minutos.';
+        wabot_log('login_bloqueado', ['ip' => $ipLogin]);
+    } elseif (hash_equals(WABOT_ADMIN_PASS, (string)$_POST['clave'])) {
+        session_regenerate_id(true);
+        $_SESSION['wabot'] = true;
+    } else {
+        $errorLogin = 'Clave incorrecta';
+        wabot_log('login_fallido', ['ip' => $ipLogin]);
+    }
 }
 $logueado = !empty($_SESSION['wabot']);
 /* La sesión ya está leída: se suelta el archivo acá (9-nov). PHP lo tiene

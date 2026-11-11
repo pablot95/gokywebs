@@ -1768,7 +1768,9 @@ function wabot_conv_load($clave) {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if ($clave === '') $clave = 'sin-tel';
     $path = wabot_conv_path($clave);
-    $cargada = file_exists($path) ? json_decode((string)@file_get_contents($path), true) : null;
+    $crudo = file_exists($path) ? (string)@file_get_contents($path) : '';
+    $cargada = $crudo !== '' ? json_decode($crudo, true) : null;
+    if (is_array($cargada)) unset($cargada['_cargada']);
 
     $canalInferido = stripos($clave, 'ig') === 0 ? 'instagram' : 'whatsapp';
     $destinoInferido = $canalInferido === 'instagram' ? substr($clave, 2) : $clave;
@@ -1988,7 +1990,92 @@ function wabot_conv_load($clave) {
             break;
         }
     }
+    wabot_conv_base_anotar($conv, $clave, $crudo);
     return $conv;
+}
+
+/* ──────────── Guardar sin pisar lo que guardó otro proceso (auditoría del 10-nov) ────────────
+ *
+ * El panel (responder, las marcas), «Presentar» y varios avisos cargan la charla, hacen lo
+ * suyo durante segundos (un envío a Meta, una llamada a la IA) y la guardan entera, sin el
+ * candado del webhook. Si en el medio entraba un mensaje del cliente o Pablo contestaba, el que
+ * guardaba último pisaba al otro: desaparecía el mensaje del cliente, la respuesta de Pablo o la
+ * marca de «demo presentada».
+ *
+ * Al cargar se recuerda cómo estaba la charla en disco (su firma queda en `_cargada`). Al
+ * guardar, si el archivo cambió desde entonces y no fuimos nosotros, no se pisa: sobre lo que
+ * hay en disco se aplican solo los cambios propios (las claves que este proceso tocó y los
+ * renglones que agregó). Sin cambios ajenos se guarda como siempre.
+ */
+function wabot_conv_base_anotar(&$conv, $clave, $crudo) {
+    unset($conv['_cargada']);
+    if ((string)$crudo === '') return;
+    $firma = md5((string)$crudo);
+    $bases = &$GLOBALS['WABOT_CONV_BASES'];
+    if (!is_array($bases)) $bases = [];
+    unset($bases[$clave . '|' . $firma]);
+    $bases[$clave . '|' . $firma] = $conv;
+    // Los crons recorren miles de charlas: solo se recuerdan las últimas (una que ya no está se guarda como siempre).
+    while (count($bases) > 6) array_shift($bases);
+    $conv['_cargada'] = $firma;
+}
+
+/** Lo que cambió este proceso ($base → $despues), aplicado sobre lo que hay ahora en disco. */
+function wabot_conv_fusionar(array $base, array $despues, $clave) {
+    $disco = wabot_conv_load($clave);
+    unset($disco['_cargada']);
+    $final = $disco;
+    $tocadas = [];
+    foreach ($despues as $k => $v) {
+        if ($k === 'transcript' || $k === '_cargada') continue;
+        if (!array_key_exists($k, $base) || $base[$k] !== $v) { $final[$k] = $v; $tocadas[] = $k; }
+    }
+    foreach ($base as $k => $v) {
+        if ($k === 'transcript' || $k === '_cargada') continue;
+        if (!array_key_exists($k, $despues)) { unset($final[$k]); $tocadas[] = '-' . $k; }
+    }
+    $tb = array_values((array)($base['transcript'] ?? []));
+    $td = array_values((array)($despues['transcript'] ?? []));
+    $tx = array_values((array)($disco['transcript'] ?? []));
+    $n = count($tb);
+    $agregados = -1;
+    if (count($td) >= $n && array_slice($td, 0, $n) === $tb) {
+        // Solo agregamos renglones: van después de los que haya en disco, sin repetir los que ya estén.
+        $firmaFila = function ($f) { return md5(json_encode([$f['q'] ?? '', $f['ts'] ?? 0, $f['t'] ?? '', $f['id'] ?? ''])); };
+        $ya = [];
+        foreach ($tx as $f) $ya[$firmaFila((array)$f)] = true;
+        $agregados = 0;
+        foreach (array_slice($td, $n) as $f) {
+            $h = $firmaFila((array)$f);
+            if (isset($ya[$h])) continue;
+            $tx[] = $f;
+            $ya[$h] = true;
+            $agregados++;
+        }
+        $final['transcript'] = $tx;
+    } else {
+        // Reescribimos renglones (editar un mensaje, resetear la charla): vale lo nuestro, como siempre.
+        $final['transcript'] = $td;
+    }
+    wabot_log('conv_fusion', ['clave' => $clave, 'claves' => implode(',', array_slice($tocadas, 0, 30)), 'renglones' => $agregados]);
+    return $final;
+}
+
+/** ¿Pablo tomó la charla (panel) mientras el bot pensaba o escribía? Mira el archivo, sin cargar la charla. */
+function wabot_conv_tomada_afuera($clave, $conv) {
+    if (!empty($conv['control_manual']) || !empty($GLOBALS['WABOT_TEST_SIN_RED'])) return false;
+    $j = json_decode((string)@file_get_contents(wabot_conv_path($clave)), true);
+    return is_array($j) && !empty($j['control_manual']);
+}
+
+/** ¿En esta charla el bot no va a contestar? (apagado del todo, apagado en el chat, tomada por Pablo o en pausa) */
+function wabot_conv_sin_bot($clave, $cfg) {
+    if (is_array($cfg) && empty($cfg['activo'])) return true;
+    $j = json_decode((string)@file_get_contents(wabot_conv_path($clave)), true);
+    if (!is_array($j)) return false;
+    // La baja pedida por el cliente se puede levantar sola si vuelve pidiendo una web: ahí el bot sí contesta.
+    if (!empty($j['bot_off']) && empty($j['control_manual']) && ($j['cierre'] ?? '') === 'baja') return false;
+    return !empty($j['bot_off']) || !empty($j['control_manual']) || time() < (int)($j['pausado_hasta'] ?? 0);
 }
 
 /** Reinicia el embudo después de N días, preservando identidad e historial. */
@@ -2326,10 +2413,28 @@ function wabot_normalizar_busqueda($texto) {
 function wabot_conv_save($conv) {
     wabot_ensure_dirs();
     $clave = wabot_conversation_key($conv);
+    $firmaCarga = (string)($conv['_cargada'] ?? '');
+    unset($conv['_cargada']);
     $conv['conversation_key'] = $clave;
     $conv['channel_user_id'] = wabot_channel_user_id($conv);
     $conv['tel'] = $conv['channel_user_id'];
     $conv['msgs'] = array_slice((array)($conv['msgs'] ?? []), -30);
+
+    /* Otro proceso guardó esta charla después de que la cargamos (y no fue este mismo): se
+     * aplican nuestros cambios sobre lo que hay en disco en vez de pisarlo (ver arriba de
+     * wabot_conv_base_anotar). Si algo falla ahí, se guarda como siempre. */
+    $pathConv = wabot_conv_path($clave);
+    if ($firmaCarga !== '' && empty($GLOBALS['WABOT_CONV_SIN_FUSION'])) {
+        $base = $GLOBALS['WABOT_CONV_BASES'][$clave . '|' . $firmaCarga] ?? null;
+        $enDisco = is_file($pathConv) ? (string)@md5_file($pathConv) : '';
+        if (is_array($base) && $enDisco !== '' && $enDisco !== $firmaCarga && $enDisco !== (string)($GLOBALS['WABOT_CONV_PROPIAS'][$clave] ?? '')) {
+            try {
+                $conv = wabot_conv_fusionar($base, $conv, $clave);
+            } catch (Throwable $err) {
+                wabot_log('error', ['donde' => 'conv_fusion', 'clave' => $clave, 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+            }
+        }
+    }
 
     $transcript = (array)($conv['transcript'] ?? []);
     if (count($transcript) > WABOT_TRANSCRIPT_VIVO) {
@@ -2338,8 +2443,9 @@ function wabot_conv_save($conv) {
         $conv['transcript'] = array_slice($transcript, -WABOT_TRANSCRIPT_VIVO);
     }
 
-    $ok = wabot_json_guardar_atomico(wabot_conv_path($clave), $conv);
+    $ok = wabot_json_guardar_atomico($pathConv, $conv);
     if (!$ok) wabot_log('error', ['donde' => 'conv_save', 'clave' => $clave]);
+    else $GLOBALS['WABOT_CONV_PROPIAS'][$clave] = (string)@md5_file($pathConv);   // lo último lo escribimos nosotros
     return $ok;
 }
 
@@ -6988,7 +7094,8 @@ function wabot_plantillas_auto_contacto_ok($cv, $ahora) {
     if (!empty($cv['postprecio_derivacion']) || !empty($cv['postprecio_auto'])) return false;
     if (wabot_canal($cv) !== 'whatsapp' || !empty($cv['archivado'])) return false;
     if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
-    if (!empty($cv['contexto_consulta']) || !empty($cv['pago_avisado_ts'])) return false;
+    // Tampoco al que ya pagó (10-nov): con el pago confirmado desde el panel no quedaba `pago_avisado_ts` y le salía igual.
+    if (!empty($cv['contexto_consulta']) || !empty($cv['pago_avisado_ts']) || !empty($cv['pago_confirmado_ts'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || wabot_retomar_activo($cv, $ahora)) return false;
     return true;
 }
@@ -7532,17 +7639,21 @@ function wabot_form_rate_ok($ip, $max = 10, $ventana = 600, $ahora = null) {
     $path = WABOT_DATA . '/form-rate.json';
     $todo = json_decode((string)@file_get_contents($path), true);
     if (!is_array($todo)) $todo = [];
+    /* Las claves comparten archivo y cada una tiene su ventana (10 min el formulario, 15 el login
+     * del panel, 1 h el tope global): se poda por la más larga y se cuenta por la propia (10-nov). */
+    $poda = max((int)$ventana, 3600);
     foreach ($todo as $k => $ts) {
-        $todo[$k] = array_values(array_filter((array)$ts, function ($t) use ($ahora, $ventana) { return (int)$t > $ahora - $ventana; }));
+        $todo[$k] = array_values(array_filter((array)$ts, function ($t) use ($ahora, $poda) { return (int)$t > $ahora - $poda; }));
         if (!$todo[$k]) unset($todo[$k]);
     }
-    $mios = (array)($todo[$ip] ?? []);
+    $guardados = (array)($todo[$ip] ?? []);
+    $mios = array_values(array_filter($guardados, function ($t) use ($ahora, $ventana) { return (int)$t > $ahora - $ventana; }));
     if (count($mios) >= $max) {
         @file_put_contents($path, json_encode($todo), LOCK_EX);
         return false;
     }
-    $mios[] = $ahora;
-    $todo[$ip] = $mios;
+    $guardados[] = $ahora;
+    $todo[$ip] = $guardados;
     @file_put_contents($path, json_encode($todo), LOCK_EX);
     return true;
 }

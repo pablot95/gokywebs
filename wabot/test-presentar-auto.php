@@ -87,6 +87,35 @@ caso('apagada en los ajustes, no hace nada', !empty($r4['apagado']) && count($ma
 wabot_presentar_auto_correr($cfg, $ar('2026-10-21', 9, 1), $props, $presentar, $marcar, $hayDemo, $avisar);
 caso('a la mañana siguiente sale la que se pasó de hora', ($marcas['H']['demo_ok'] ?? false) === true);
 
+echo "Demo anterior al pedido y memoria local (auditoría del 10-nov)\n";
+$propsV = ['V' => ['createdAt' => $iso($ar('2026-10-20', 9)), 'nombre_negocio' => 'Red Vieja', 'telefono' => '1150000010']];
+$marcarV = function ($id, $m) use (&$propsV) { $propsV[$id]['autoPresentada'] = $m; return true; };
+$siempre = function ($slug) { return true; };
+$deSeptiembre = function ($slug) use ($ar) { return $ar('2026-09-10', 12); };
+$deHoy = function ($slug) use ($ar) { return $ar('2026-10-20', 13); };
+$cuantos = function ($que) use (&$avisos) { return count(array_filter($avisos, function ($a) use ($que) { return strpos($a, $que) !== false; })); };
+$env0 = count($enviadas);
+$rV = wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 14, 5), $propsV, $presentar, $marcarV, $siempre, $avisar, $deSeptiembre);
+caso('una demo publicada antes del pedido no se manda y avisa', count($enviadas) === $env0 && empty($propsV['V']['autoPresentada']) && $cuantos('Demo anterior al pedido') === 1, json_encode($rV['detalle'], JSON_UNESCAPED_UNICODE));
+wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 14, 35), $propsV, $presentar, $marcarV, $siempre, $avisar, $deSeptiembre);
+caso('avisa una sola vez', $cuantos('Demo anterior al pedido') === 1 && count($enviadas) === $env0);
+wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 15, 5), $propsV, $presentar, $marcarV, $siempre, $avisar, $deHoy);
+caso('cuando se publica la demo nueva, sale', count($enviadas) === $env0 + 1 && !empty($propsV['V']['autoPresentada']['demo_ok']));
+
+$GLOBALS['WABOT_TEST_PRESENTAR_LOCAL'] = sys_get_temp_dir() . '/wabot-test-presentar-local-' . getmypid() . '.json';
+@unlink($GLOBALS['WABOT_TEST_PRESENTAR_LOCAL']);
+$propsL = ['L' => ['createdAt' => $iso($ar('2026-10-20', 9)), 'nombre_negocio' => 'Local Lola', 'telefono' => '1150000011'],
+           'M' => ['createdAt' => $iso($ar('2026-10-20', 9)), 'nombre_negocio' => 'Mercado Mimi', 'telefono' => '1150000012']];
+$marcasL = [];
+$marcarFalla = function ($id, $m) use (&$marcasL) { $marcasL[] = [$id, $m]; throw new RuntimeException('No se pudo anotar (HTTP 429).'); };
+$env0 = count($enviadas);
+wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 14, 5), $propsL, $presentar, $marcarFalla, $siempre, $avisar);
+caso('si Firestore no anota la marca, la corrida sigue con la que viene', count($enviadas) === $env0 + 2 && count($marcasL) === 2);
+wabot_presentar_auto_correr($cfg, $ar('2026-10-20', 14, 35), $propsL, $presentar, $marcarFalla, $siempre, $avisar);
+caso('media hora después no se manda de nuevo: solo se reintenta la marca', count($enviadas) === $env0 + 2 && count($marcasL) === 4 && ($marcasL[2][1]['demo_ok'] ?? false) === true);
+@unlink($GLOBALS['WABOT_TEST_PRESENTAR_LOCAL']);
+unset($GLOBALS['WABOT_TEST_PRESENTAR_LOCAL']);
+
 echo "Quién la llama\n";
 caso('el botón del admin usa la misma función', strpos((string)file_get_contents(__DIR__ . '/admin.php'), 'wabot_presentar_muestra([') !== false);
 caso('y el cron de seguimiento corre la automática', strpos((string)file_get_contents(__DIR__ . '/seguimiento.php'), 'wabot_presentar_auto_correr($cfg)') !== false);

@@ -318,7 +318,35 @@ function wabot_presentar_fs_marcar($id, array $marca) {
  * Para los tests: $propuestas, $presentar(datos), $marcar(id, marca),
  * $hayDemo(slug) y $avisar(titulo, cuerpo) reemplazan la red y el disco.
  */
-function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $presentar = null, $marcar = null, $hayDemo = null, $avisar = null) {
+/** Cuándo se publicó la demo (la fecha de su index.html); 0 si no está. */
+function wabot_presentar_demo_ts($slug) {
+    $f = dirname(__DIR__) . '/demo/' . $slug . '/index.html';
+    return ($slug !== '' && is_file($f)) ? (int)@filemtime($f) : 0;
+}
+
+/**
+ * Memoria local de las presentaciones automáticas (10-nov). La única marca de «ya la mandé» era
+ * `autoPresentada` en Firestore, escrita después del envío: si esa escritura fallaba (la cuota
+ * agotada del 4 al 7-nov), la demo volvía a salir cada media hora. Acá queda anotado el intento
+ * antes de enviar y el resultado después; las suites no la usan salvo que la pidan.
+ */
+function wabot_presentar_auto_local_archivo() {
+    if (isset($GLOBALS['WABOT_TEST_PRESENTAR_LOCAL'])) return (string)$GLOBALS['WABOT_TEST_PRESENTAR_LOCAL'];
+    return !empty($GLOBALS['WABOT_TEST_SIN_RED']) ? '' : WABOT_DATA . '/presentar-auto-local.json';
+}
+function wabot_presentar_auto_local_leer() {
+    $f = wabot_presentar_auto_local_archivo();
+    $j = $f !== '' ? json_decode((string)@file_get_contents($f), true) : null;
+    return is_array($j) ? $j : [];
+}
+function wabot_presentar_auto_local_guardar(array $local, $ahora) {
+    $f = wabot_presentar_auto_local_archivo();
+    if ($f === '') return;
+    foreach ($local as $k => $v) if ($ahora - (int)($v['intento'] ?? 0) > 15 * 86400) unset($local[$k]);
+    wabot_json_guardar_atomico($f, $local);
+}
+
+function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $presentar = null, $marcar = null, $hayDemo = null, $avisar = null, $demoTs = null) {
     $ahora = $ahora ?? time();
     $res = ['revisadas' => 0, 'presentadas' => 0, 'sin_enviar' => 0, 'esperando_demo' => 0, 'detalle' => []];
     // La del turno (sin hora elegida): apagada el 20-oct y prendida otra vez el 30-oct (Pablo:
@@ -333,6 +361,8 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
     $presentar = $presentar ?? function ($datos) use ($cfg) { return wabot_presentar_muestra($datos, $cfg); };
     $marcar = $marcar ?? 'wabot_presentar_fs_marcar';
     $hayDemo = $hayDemo ?? 'wabot_presentar_hay_demo';
+    $demoTs = $demoTs ?? 'wabot_presentar_demo_ts';
+    $local = wabot_presentar_auto_local_leer();
     $avisar = $avisar ?? function ($t, $c) { return wabot_push_enviar($t, $c, ['link' => 'https://www.gokywebs.com/admin/dashboard.html']); };
     $desde = max(strtotime(WABOT_PRESENTAR_AUTO_DESDE), $ahora - 7 * 86400);
     try {
@@ -389,6 +419,36 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
             continue;
         }
 
+        /* La demo tiene que ser posterior al pedido. Solo se miraba que existiera la carpeta: a la
+         * clienta que volvió a pedir (Red Mundial, 6-nov) o a otro negocio con el mismo nombre (las
+         * dos Revodigital) le salía el link de la demo vieja o ajena. Ahora no se manda y avisa. */
+        $tsDemo = $slug !== '' ? (int)$demoTs($slug) : 0;
+        if ($tsDemo > 0 && $tsDemo < $creado - 3600) {
+            $res['esperando_demo']++;
+            $res['detalle'][] = ['id' => $id, 'slug' => $slug, 'estado' => 'demo_anterior'];
+            if (empty($espera['vieja:' . $id])) {
+                $avisar('Demo anterior al pedido', 'La demo de ' . $negocio . ' (demo/' . $slug . '/) es anterior a su pedido: puede ser una demo vieja o de otro negocio con el mismo nombre. No se le mandó: revisala y presentala a mano, o publicá la nueva y sale sola.');
+                $espera['vieja:' . $id] = $ahora;
+                $esperaCambio = true;
+            }
+            continue;
+        }
+        // Ya se intentó (y Firestore no llegó a anotarlo): no se manda de nuevo.
+        if (isset($local[$id])) {
+            $previa = (array)$local[$id];
+            if (!empty($previa['marca']) && is_array($previa['marca'])) {
+                try { $marcar($id, $previa['marca']); } catch (Throwable $e) { wabot_log('error', ['donde' => 'presentar_auto_marca', 'id' => $id, 'msg' => mb_substr($e->getMessage(), 0, 160)]); }
+            } elseif (empty($previa['avisado'])) {
+                $avisar('Presentación a medias', 'La presentación automática de ' . $negocio . ' se cortó a mitad. Mirá el chat antes de reenviarle la demo.');
+                $local[$id]['avisado'] = 1;
+                wabot_presentar_auto_local_guardar($local, $ahora);
+            }
+            $res['detalle'][] = ['id' => $id, 'slug' => $slug, 'estado' => 'ya_intentada'];
+            continue;
+        }
+        $local[$id] = ['intento' => $ahora];
+        wabot_presentar_auto_local_guardar($local, $ahora);
+
         $clienteId = wabot_presentar_id_nuevo();
         $envio = ($negocio === '' || $tel === '')
             ? ['error' => 'Falta teléfono o nombre del negocio: avisale la muestra a mano.']
@@ -410,7 +470,10 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
             'textos' => array_values(array_map('strval', (array)($envio['textos'] ?? []))),
             'textos_enviados' => array_values(array_map('boolval', (array)($envio['textos_enviados'] ?? []))),
         ];
-        $marcar($id, $marca);
+        $local[$id]['marca'] = $marca;
+        wabot_presentar_auto_local_guardar($local, $ahora);
+        // Si Firestore no anota la marca, el resto de la corrida sigue y la próxima la reintenta sin reenviar.
+        try { $marcar($id, $marca); } catch (Throwable $e) { wabot_log('error', ['donde' => 'presentar_auto_marca', 'id' => $id, 'msg' => mb_substr($e->getMessage(), 0, 160)]); }
         if ($marca['demo_ok']) {
             // Salió bien: no se avisa (Pablo, 2-nov: solo lo que pide algo de él).
             $res['presentadas']++;

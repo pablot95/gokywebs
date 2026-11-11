@@ -269,6 +269,9 @@ function wabot_procesar_entrante($ev, $cfg) {
                 ? (wabot_solo_bienvenida($cfg) && $canal !== 'instagram' ? (float)($cfg['demora_bienvenida'] ?? 30) : (float)($cfg['demora_primer_mensaje'] ?? 20))
                 : (float)($cfg['demora_segundos'] ?? 10);
             $espera = wabot_demora_restante($cfg, $arranque, $objetivoDemora);
+            /* En los chats que lleva Pablo (o con el bot apagado) no hay nada que «pensar»: antes
+             * cada mensaje del cliente tardaba 10 a 30 segundos en aparecer en el panel (10-nov). */
+            if ($espera > 0 && function_exists('wabot_conv_sin_bot') && wabot_conv_sin_bot($clave, $cfg)) $espera = 0;
             if ($espera > 0) usleep((int)($espera * 1000000));
 
             $tanda = wabot_cola_drenar($clave);
@@ -455,6 +458,12 @@ function wabot_procesar_entrante($ev, $cfg) {
                 if ($recalculable && wabot_cola_tiene($clave) && ($i === 0 || !$cotizo)) {
                     if ($i === 0 && $recalculos < 2) { $descartar = true; break; }
                     wabot_log('ia_resto_descartado', ['tel' => $de, 'canal' => $canal, 'enviados' => $i]);
+                    break;
+                }
+                /* Pablo contestó desde el panel mientras el bot pensaba o escribía: el bot cede y no
+                 * manda lo que falta encima de él (10-nov). Lo que no salió se deshace abajo. */
+                if (function_exists('wabot_conv_tomada_afuera') && wabot_conv_tomada_afuera($clave, $conv)) {
+                    wabot_log('bot_cede', ['tel' => $de, 'canal' => $canal, 'enviados' => $i, 'faltaban' => count($respuestas) - $i]);
                     break;
                 }
 

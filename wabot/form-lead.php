@@ -311,9 +311,18 @@ header('Content-Type: application/json; charset=utf-8');
 // Freno por IP: el endpoint es público y sin esto se podía martillar.
 // Detrás del proxy de Cloudflare REMOTE_ADDR es la IP del borde, compartida
 // por todos los visitantes: la real viaja en CF-Connecting-IP (9-sep).
+$ipConexion = (string)($_SERVER['REMOTE_ADDR'] ?? '');
 $ipForm = trim((string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
-if ($ipForm === '') $ipForm = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-if (!wabot_form_rate_ok($ipForm)) {
+if ($ipForm === '') $ipForm = $ipConexion;
+/* La cabecera la escribe el que hace el pedido: sin un proxy adelante (el CDN está apagado desde
+ * el 9-nov) alcanzaba con inventarla para tener cupo nuevo en cada intento y probar los 961
+ * códigos del link (auditoría del 10-nov). Ahora también se frena por la IP de la conexión, con un
+ * tope más alto por si vuelve el proxy, y hay un tope de envíos por hora para todo el sitio (el
+ * formulario recibe unos 12 por día). */
+$frenoConexion = ($ipForm !== $ipConexion && $ipConexion !== '') ? wabot_form_rate_ok('conexion:' . $ipConexion, 60) : true;
+$frenoGlobal = wabot_form_rate_ok('todos', 60, 3600);
+if (!$frenoGlobal) wabot_log('form_tope_global', ['ip' => $ipConexion]);
+if (!$frenoConexion || !$frenoGlobal || !wabot_form_rate_ok($ipForm)) {
     http_response_code(429);
     echo json_encode(['ok' => false, 'error' => 'demasiados_intentos', 'reintentar' => false]);
     exit;
