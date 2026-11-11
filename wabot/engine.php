@@ -3180,7 +3180,7 @@ function wabot_texto_es_conocido($texto) {
     if (preg_match('/\bcomision\w*\b.{0,30}\b(indicacion|referencia|recomendacion|derivacion|por (pasarte|traerte|mandarte|recomendarte))\b|\b(pego|me llevo|me das|me toca|me corresponde) (una |alguna )?comision\b/u', $t)) return true;
     /* «Hago venta … (todo referido a Salud)» (2-nov): «referido a» es «relacionado con», no
      * alguien que viene recomendado; recibió «le paso tu mensaje al desarrollador» y se perdió. */
-    if (preg_match('/\breferid[oa]s?\b(?! (a|al|en|para)\b)|\bte (lo|la) refiri\w*\b|\bme refirio\b|\bde parte de\b|\bme (lo|la) recomendo\b.{0,20}\b(tu|su)\b/u', $t)) return true;
+    if (preg_match('/\breferid[oa]s?\b(?! (a|al|en)\b)|\bte (lo|la) refiri\w*\b|\bme refirio\b|\bde parte de\b|\bme (lo|la) recomendo\b.{0,20}\b(tu|su)\b/u', $t)) return true;
     // Saluda a Pablo por el nombre, como a alguien que conoce: corto y sin pedir nada.
     if (mb_strlen($t) <= 60 && preg_match('/\bpablo\b/u', $t)
         && preg_match('/\b(amigo|amiga|querido|querida|maestro|capo|genio|crack|hermano|tanto tiempo|como (va|andas|anda|vas|estas|estan|has estado|te va|andan))\b/u', $t)) return true;

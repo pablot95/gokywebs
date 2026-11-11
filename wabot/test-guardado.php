@@ -151,5 +151,40 @@ $z2['control_manual'] = false; $z2['bot_off'] = true; $z2['cierre'] = 'baja';
 wabot_conv_save($z2);
 caso('la baja pedida por el cliente conserva la demora (el bot puede volver a contestar)', wabot_conv_sin_bot($k, ['activo' => true]) === false);
 
+echo "\n— 8. Mensajes varados en la cola —\n";
+$limpiar();
+$base = wabot_conv_load($k);
+wabot_conv_transcript($base, 'bot', 'Hola cómo estás?');
+wabot_conv_save($base);
+wabot_cola_drenar($k);
+wabot_cola_encolar($k, 'Ah, y el logo es este', 'Ah, y el logo es este', 'Ana', null, 'wamid.PRUEBA1');
+caso('un mensaje recién encolado no se toca (se lo lleva el webhook)', (wabot_cola_barrer(time(), 120)['mensajes'] ?? -1) === 0 || wabot_cola_tiene($k));
+touch(wabot_cola_path($k), time() - 300);
+$rb = wabot_cola_barrer();
+$f = wabot_conv_load($k);
+caso('a los minutos el barrido lo pasa a la charla', ($rb['rescatadas'] ?? 0) >= 1 && in_array('Ah, y el logo es este', $textos($f), true) && !wabot_cola_tiene($k), json_encode($rb));
+caso('y queda pendiente para Pablo, con la hora en que escribió', !empty($f['handoff_pendiente']) && (int)$f['ultimo_cliente_ts'] > 0 && ($f['nombre'] ?? '') === 'Ana');
+caso('una segunda pasada no lo repite', count(array_keys($textos(wabot_conv_load($k)), 'Ah, y el logo es este')) === 1 && (wabot_cola_barrer()['mensajes'] ?? 0) === 0);
+
+echo "\n— 9. El reinicio a los 7 días limpia el flujo comercial y los datos por el chat —\n";
+$cfgR = wabot_config_load();
+$v = conv_nueva('5491100009992TEST', ['ultimo_ts' => time() - 9 * 86400, 'precio_dado' => true, 'datos_pedidos_ts' => time() - 9 * 86400,
+    'datos_demo_parcial' => ['es_datos' => true], 'datos_demo_espera_ts' => time() - 9 * 86400, 'comercial_pausa' => 'formulario',
+    'comercial_cotizacion' => ['plan' => 'panel', 'anual' => '$190.000', 'mensual' => '$30.000'], 'comercial_oferta_ts' => time() - 9 * 86400,
+    'comercial_solucion' => 'tienda', 'link_form_enviado' => true, 'esProspecto' => true]);
+$reinicio = wabot_conv_reset_si_vieja($v, $cfgR, time());
+caso('la charla vieja se reinicia', $reinicio === true && ($v['fase'] ?? '') === 'nuevo' && empty($v['precio_dado']));
+caso('sin datos pedidos ni espera de la charla anterior', empty($v['datos_pedidos_ts']) && !isset($v['datos_demo_parcial']) && !isset($v['datos_demo_espera_ts']) && !wabot_datos_demo_pendiente($v));
+caso('sin cotización congelada, oferta ni pausa del flujo comercial', !isset($v['comercial_cotizacion']) && empty($v['comercial_oferta_ts']) && empty($v['comercial_pausa']) && empty($v['esProspecto']));
+$v2 = conv_nueva('5491100009993TEST', ['datos_pedidos_ts' => time()]);
+wabot_conv_transcript($v2, 'bot', wabot_datos_demo_texto(conv_nueva('5491100009993TEST'), $cfgR));
+$v2['transcript'][0]['ts'] = time() - 20 * 86400;   // un pedido de la charla anterior
+wabot_conv_transcript($v2, 'cliente', 'Dato viejo de la otra charla');
+$v2['transcript'][1]['ts'] = time() - 20 * 86400;
+$v2['datos_pedidos_ts'] = time();
+wabot_conv_transcript($v2, 'bot', wabot_datos_demo_texto(conv_nueva('5491100009993TEST'), $cfgR));
+wabot_conv_transcript($v2, 'cliente', 'Kiosco El Sol, golosinas y bebidas');
+caso('los datos se leen desde el pedido de esta sesión, no desde uno viejo', wabot_datos_demo_texto_cliente($v2) === 'Kiosco El Sol, golosinas y bebidas', wabot_datos_demo_texto_cliente($v2));
+
 $limpiar();
 todo_ok();

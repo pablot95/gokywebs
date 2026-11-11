@@ -124,6 +124,8 @@ function wabot_datos_demo_texto_cliente($conv, $desdeFila = null) {
         $inicio = max(0, (int)$desdeFila);   // lo que mandó después de armada la ficha (wabot_datos_demo_tardios); 0 = todo lo que hay desde el pedido
     } else {
         foreach ($t as $i => $fila) {
+            // El pedido de esta sesión: uno de una charla anterior (antes del reinicio de los 7 días) no cuenta.
+            if ((int)($fila['ts'] ?? 0) < $desde - 5) continue;
             if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
         }
     }
@@ -538,6 +540,7 @@ function wabot_datos_demo_material_recibido($conv) {
     $desde = (int)($conv['datos_pedidos_ts'] ?? 0);
     $inicio = 0;
     foreach ($t as $i => $fila) {
+        if ((int)($fila['ts'] ?? 0) < $desde - 5) continue;
         if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
     }
     $n = 0;

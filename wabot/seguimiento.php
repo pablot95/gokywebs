@@ -50,37 +50,49 @@ $cfg = wabot_config_load();
 // En este orden: el recordatorio del formulario (más temprano en la charla),
 // la última llamada y las plantillas. Cada uno respeta wabot_auto_reciente(),
 // así que en la misma pasada nunca salen dos al mismo cliente.
-$confirmacion = wabot_form_confirmacion_correr($cfg);
-$recordatorio = wabot_form_recordatorio_correr($cfg);
-$ofertaEntrega = wabot_oferta_entrega_seguimiento_correr($cfg);
-$ultima = wabot_ultima_llamada_correr($cfg);
-$plantillas = wabot_plantillas_auto_correr($cfg);
+/* Cada paso por separado (auditoría del 10-nov): una excepción en uno cortaba todos los que
+ * venían después en esa pasada (renovaciones, webs, re-avisos, pendientes). */
+$paso = function ($nombre, callable $f) {
+    try {
+        return $f();
+    } catch (\Throwable $e) {
+        wabot_log('error', ['donde' => 'seguimiento_' . $nombre, 'msg' => mb_substr($e->getMessage(), 0, 200)]);
+        return ['error' => mb_substr($e->getMessage(), 0, 200)];
+    }
+};
+$confirmacion = $paso('form_confirmacion', function () use ($cfg) { return wabot_form_confirmacion_correr($cfg); });
+$recordatorio = $paso('form_recordatorio', function () use ($cfg) { return wabot_form_recordatorio_correr($cfg); });
+$ofertaEntrega = $paso('oferta_entrega', function () use ($cfg) { return wabot_oferta_entrega_seguimiento_correr($cfg); });
+$ultima = $paso('ultima_llamada', function () use ($cfg) { return wabot_ultima_llamada_correr($cfg); });
+$plantillas = $paso('plantillas', function () use ($cfg) { return wabot_plantillas_auto_correr($cfg); });
 // La demo de los bocetos de antes de las 15 h sale a las 18 h; la de los de después, al otro día a las 14 h (18-oct).
-$presentarAuto = wabot_presentar_auto_correr($cfg);
+$presentarAuto = $paso('presentar_auto', function () use ($cfg) { return wabot_presentar_auto_correr($cfg); });
 // El día del cobro, la plantilla de renovación a los que pagan por afuera de Mercado Pago (25-oct).
-$renovacion = wabot_renovacion_correr($cfg);
+$renovacion = $paso('renovacion', function () use ($cfg) { return wabot_renovacion_correr($cfg); });
 // Las webs en mantenimiento: ¿responden? Avisa las caídas resueltas y, desde el día 1, el resumen del mes (29-oct).
-$webs = wabot_webs_correr($cfg);
+$webs = $paso('webs', function () use ($cfg) { return wabot_webs_correr($cfg); });
 // Los pagos que entraron en Mercado Pago: atados al chat y confirmados, o a la lista de sin asignar (pagos.php, 1-nov).
-$pagos = wabot_pagos_correr($cfg);
+$pagos = $paso('pagos', function () use ($cfg) { return wabot_pagos_correr($cfg); });
 // Al que pagó y se cortó en el medio de los datos para la web, el recordatorio a las 24 h (onboarding.php).
-$onboarding = wabot_onboarding_recordatorio_correr($cfg);
+$onboarding = $paso('onboarding', function () use ($cfg) { return wabot_onboarding_recordatorio_correr($cfg); });
 // Los clientes del admin cruzados con sus chats (clientes.php): la vista Clientes de Conversaciones los lee de esta caché.
 try { wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
-$reaviso = wabot_push_reaviso_correr();
+$reaviso = $paso('push_reaviso', function () { return wabot_push_reaviso_correr(); });
 // El resumen de los sin leer a su WhatsApp: los que entraron mientras se esperaban los 10 minutos (3-nov).
 try { $resumen = wabot_aviso_resumen_correr(); } catch (\Throwable $e) { $resumen = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 // El resumen diario de los chats sin responder a su WhatsApp, a la hora elegida en Estado (9-nov).
 try { $pendientes = wabot_aviso_pendientes_correr(); } catch (\Throwable $e) { $pendientes = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 // Los datos de la demo por el chat: al que lleva unos minutos sin escribir se le arma la ficha (10-nov). También corre cada 5 min en cron-prospectos-chatgpt.php.
 try { $datosDemo = wabot_datos_demo_espera_correr($cfg); } catch (\Throwable $e) { $datosDemo = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
+// Los mensajes que quedaron varados en la cola pasan a la charla y quedan pendientes (10-nov). También corre cada 5 min.
+$colaBarrida = $paso('cola', function () { return wabot_cola_barrer(); });
 
 echo json_encode([
-    'ultima_llamada' => [
-        'revisadas' => $ultima['revisadas'],
-        'enviados'  => $ultima['enviados'],
-        'detalle'   => $ultima['detalle'],
+    'ultima_llamada' => isset($ultima['error']) ? $ultima : [
+        'revisadas' => $ultima['revisadas'] ?? 0,
+        'enviados'  => $ultima['enviados'] ?? 0,
+        'detalle'   => $ultima['detalle'] ?? [],
     ],
     'plantillas' => $plantillas,
     'form_confirmacion' => $confirmacion,
@@ -93,6 +105,7 @@ echo json_encode([
     'aviso_resumen' => $resumen,
     'aviso_pendientes' => $pendientes,
     'datos_demo_espera' => $datosDemo,
+    'cola' => $colaBarrida,
     'pagos' => $pagos,
     'onboarding' => $onboarding,
 ], JSON_UNESCAPED_UNICODE) . "\n";

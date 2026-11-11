@@ -1666,7 +1666,8 @@ foreach (['Por washapt los turnos', 'por wasap', 'por watsap', 'por wasapp', 'po
     caso("«{$tW}» contesta la pregunta de los turnos", wabot_comercial_contesta_turnos($tW));
 }
 caso('«todo referido a Salud» no es un conocido', !wabot_texto_es_conocido('Hago venta por Mercado Libre de descartables Hospitalarios y accesorios (todo referido a Salud) y todo venta libre'));
-caso('«vengo referido por Juan» sigue siéndolo', wabot_texto_es_conocido('Hola, vengo referido por Juan') && wabot_texto_es_conocido('soy un referido de Marta'));
+caso('«vengo referido por Juan» y «tengo un referido para vos» siguen siéndolo', wabot_texto_es_conocido('Hola, vengo referido por Juan')
+    && wabot_texto_es_conocido('soy un referido de Marta') && wabot_texto_es_conocido('Tengo un referido para vos'));
 caso('pedir el precio otra vez, con otras palabras', wabot_comercial_pide_precio_otra_vez('Pero queria tener una idea de lo que sale una página')
     && wabot_comercial_pide_precio_otra_vez('Que precio tiene esto') && wabot_comercial_pide_precio_otra_vez('a cuanto sale?')
     && !wabot_comercial_pide_precio_otra_vez('Solo quiero mostrar los productos, nada más') && !wabot_comercial_pide_precio_otra_vez('Dale, me interesa'));

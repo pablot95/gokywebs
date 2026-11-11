@@ -705,7 +705,59 @@ function wabot_cola_devolver($tel, array $tanda) {
 
 function wabot_cola_tiene($tel) {
     $p = wabot_cola_path($tel);
+    clearstatcache(true, $p);   // PHP recuerda el tamaño: sin esto, dentro de una misma tanda no veía lo que el cliente seguía escribiendo
     return file_exists($p) && filesize($p) > 0;
+}
+
+/**
+ * Mensajes varados en la cola (auditoría del 10-nov). Cuando el candado de la charla lo tiene
+ * un cron, el formulario o el panel, el webhook encola el mensaje y se va, suponiendo que el
+ * dueño del candado lo va a drenar; pero solo el webhook drena. El mensaje quedaba en la cola,
+ * sin aparecer en el panel ni avisarle a Pablo, hasta que el cliente volviera a escribir.
+ *
+ * El cron (cada 5 minutos) pasa a la charla lo que lleve más de dos minutos en la cola y la deja
+ * pendiente para Pablo. No contesta: solo lo hace visible.
+ */
+function wabot_cola_barrer($ahora = null, $minSeg = 120) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'rescatadas' => 0, 'mensajes' => 0];
+    clearstatcache();
+    foreach (glob(WABOT_DATA . '/cola/*.jsonl') ?: [] as $archivo) {
+        if ((int)@filesize($archivo) <= 0 || $ahora - (int)@filemtime($archivo) < $minSeg) continue;
+        $res['revisadas']++;
+        $clave = basename($archivo, '.jsonl');
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;   // lo tiene el webhook: se lo lleva él
+        try {
+            $tanda = wabot_cola_drenar($clave);
+            if (!$tanda) continue;
+            $conv = wabot_conv_load($clave);
+            $ultimoTs = 0;
+            foreach ($tanda as $item) {
+                wabot_conv_transcript($conv, 'cliente', (string)$item['t'], $item['media'] ?? null,
+                                      ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '', 'anuncio' => $item['anuncio'] ?? null]);
+                // La hora en que escribió, no la del barrido.
+                if (!empty($item['ts'])) {
+                    $conv['transcript'][count($conv['transcript']) - 1]['ts'] = (int)$item['ts'];
+                    $ultimoTs = max($ultimoTs, (int)$item['ts']);
+                }
+                if (function_exists('wabot_imagenes_contar')) wabot_imagenes_contar($conv, $item['media'] ?? null);
+                if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
+            }
+            $conv['ultimo_cliente_ts'] = max((int)($conv['ultimo_cliente_ts'] ?? 0), $ultimoTs ?: $ahora);
+            if (empty($conv['control_manual'])) $conv['handoff_pendiente'] = true;
+            wabot_conv_save($conv);
+            $res['rescatadas']++;
+            $res['mensajes'] += count($tanda);
+            wabot_log('cola_barrida', ['clave' => $clave, 'mensajes' => count($tanda)]);
+            if (function_exists('wabot_push_avisar_si_corresponde') && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+                try { wabot_push_avisar_si_corresponde(wabot_conv_load($clave)); } catch (Throwable $err) { /* el aviso no frena el barrido */ }
+            }
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
 }
 
 /** Candado no bloqueante. Devuelve el handle, o null si ya lo tiene otro. */
@@ -2198,6 +2250,17 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
     $conv['form_link_mandado_ts'] = 0;
+    /* Lo del flujo comercial (9-oct) y de los datos por el chat (9-nov) también es de la charla
+     * vieja y no se limpiaba (auditoría del 10-nov): el que volvía a los 10 días seguía «con el
+     * precio pasado», «con los datos pedidos» y con su cotización congelada, y lo que escribía se
+     * leía como los datos de la demo anterior. */
+    foreach (['datos_pedidos_ts', 'datos_recibidos_ts', 'datos_demo_parcial', 'datos_demo_espera_ts', 'datos_demo_espera_hasta_ts', 'datos_demo_leido_filas',
+              'datos_demo_faltan_n', 'datos_demo_espera_wsp', 'datos_demo_material_n', 'datos_demo_tarde_firma', 'datos_demo_tarde_ts', 'datos_demo_silencio_firma',
+              'datos_demo_ficha_fallos', 'comercial_cotizacion', 'comercial_oferta_ts', 'comercial_reoferta_ts', 'comercial_solucion', 'comercial_dos_webs',
+              'comercial_dos_planes_ts', 'comercial_pausa', 'comercial_pausa_ts', 'comercial_pausa_n', 'comercial_pausa_cliente_ts', 'comercial_motivo',
+              'comercial_derivado', 'comercial_pendientes', 'comercial_ultimo', 'ab_grupo', 'ab_grupo_ts', 'inicial_cotizado', 'esProspecto', 'prospecto_sincronizado',
+              'envio_fallido_ts', 'rubro_preguntado'] as $k) unset($conv[$k]);
+    if (function_exists('wabot_datos_demo_espera_quitar')) wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
     $conv['turnos_sin_avance'] = 0;
     $conv['repeticiones_seguidas'] = 0;
     $conv['tandas_bot'] = [];
