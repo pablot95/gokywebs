@@ -1,0 +1,52 @@
+{
+  "source": "ZIP provisto por Gokywebs para esta demo, imágenes ilustrativas",
+  "files": [
+    {
+      "file": "01_imagen.webp",
+      "original": "01_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "02_imagen.webp",
+      "original": "02_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "03_imagen.webp",
+      "original": "03_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "04_imagen.webp",
+      "original": "04_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "05_imagen.webp",
+      "original": "05_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "06_imagen.webp",
+      "original": "06_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "07_imagen.webp",
+      "original": "07_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "08_imagen.webp",
+      "original": "08_imagen.jpg",
+      "type": "provided-illustrative"
+    },
+    {
+      "file": "09_imagen.webp",
+      "original": "09_imagen.jpg",
+      "type": "provided-illustrative"
+    }
+  ],
+  "mockup": "10_mockup_720x480.png, solo referencia visual",
+  "external_downloads": []
+}
