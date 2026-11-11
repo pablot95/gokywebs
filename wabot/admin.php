@@ -4174,11 +4174,20 @@ function burbujaCita(t, chat) {
         let filtrosGuardados = [];
         try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
         if (!Array.isArray(filtrosGuardados)) filtrosGuardados = [];
-        const FILTROS_DISPONIBLES = new Set([...document.querySelectorAll('[data-grupo]')].map(b => b.dataset.grupo));
+        /* Sin leer se combina (Pablo, 11-nov: "Sin leer con Demo, así veo los chats
+         * de demo sin leer"): ya no es una vista, es un interruptor que se SUMA a la
+         * vista elegida, igual que el canal. Sin leer + Todos = todos los sin leer
+         * (lo mismo que antes era la vista Sin leer sola). Un guardado viejo con
+         * 'no_leidos' como vista queda como Todos con Sin leer prendido. */
+        const FILTROS_DISPONIBLES = new Set([...document.querySelectorAll('[data-grupo]')].map(b => b.dataset.grupo).filter(g => g !== 'no_leidos'));
         let vistaActiva = filtrosGuardados.find(f => FILTROS_DISPONIBLES.has(f)) || 'todos_humano';
         let canalActivo = filtrosGuardados.find(f => CANALES.has(f)) || '';
+        let sinLeerActivo = filtrosGuardados.includes('no_leidos');
         function guardarFiltros() {
-            try { localStorage.setItem('wabotFiltros', JSON.stringify(canalActivo ? [vistaActiva, canalActivo] : [vistaActiva])); } catch (e) {}
+            const f = [vistaActiva];
+            if (canalActivo) f.push(canalActivo);
+            if (sinLeerActivo) f.push('no_leidos');
+            try { localStorage.setItem('wabotFiltros', JSON.stringify(f)); } catch (e) {}
         }
         function cumpleCanal(it) {
             if (!canalActivo) return true;
@@ -4216,7 +4225,7 @@ function burbujaCita(t, chat) {
         const btnCopiarSinLeer = document.getElementById('convCopiarSinLeer');
         const sepCopiarEl = document.getElementById('convCopiarSep');
         btnCopiarSinLeer?.addEventListener('click', async () => {
-            const tels = itemsCache.filter(it => visibleEn(it, 'no_leidos') && cumpleCanal(it))
+            const tels = itemsCache.filter(entraEnGrupoActivo)
                 .sort((a, b) => Number(b.ultimo_cliente_ts || 0) - Number(a.ultimo_cliente_ts || 0)).map(it => it.tel);
             if (!tels.length) return;
             const previo = btnCopiarSinLeer.textContent;
@@ -4258,7 +4267,7 @@ function burbujaCita(t, chat) {
         const chipsMasTxtEl = document.getElementById('convChipsMasTxt');
         function pintarChips() {
             for (const b of navBtns) {
-                const on = b.dataset.grupo === vistaActiva;
+                const on = b.dataset.grupo === 'no_leidos' ? sinLeerActivo : b.dataset.grupo === vistaActiva;
                 b.classList.toggle('on', on);
                 b.setAttribute('aria-pressed', on ? 'true' : 'false');
             }
@@ -4285,6 +4294,13 @@ function burbujaCita(t, chat) {
             pintarChips();
             pintarLista(itemsCache);
         }
+        // Sin leer se prende y se apaga tocándolo; nunca cambia la vista (11-nov).
+        function alternarSinLeer() {
+            sinLeerActivo = !sinLeerActivo;
+            guardarFiltros();
+            pintarChips();
+            pintarLista(itemsCache);
+        }
         // El canal se prende y se apaga tocándolo; nunca cambia la vista.
         function alternarCanal(canal) {
             canalActivo = canalActivo === canal ? '' : canal;
@@ -4300,6 +4316,7 @@ function burbujaCita(t, chat) {
 
         for (const b of navBtns) {
             b.addEventListener('click', () => {
+                if (b.dataset.grupo === 'no_leidos') { alternarSinLeer(); return; }
                 elegirVista(b.dataset.grupo);
                 if (chipsPanelEl && chipsPanelEl.contains(b)) cerrarPanelMas();
             });
@@ -4441,7 +4458,10 @@ function burbujaCita(t, chat) {
             return cumpleFiltro(it, filtro);
         }
         function entraEnGrupoActivo(it) {
-            return visibleEn(it, vistaActiva) && cumpleCanal(it);
+            if (!cumpleCanal(it)) return false;
+            if (!sinLeerActivo) return visibleEn(it, vistaActiva);
+            // Con Todos, todos los sin leer (como la vieja vista Sin leer sola).
+            return visibleEn(it, 'no_leidos') && (vistaActiva === 'todos_humano' || visibleEn(it, vistaActiva));
         }
 
         function renderFechasChats() {
@@ -4520,7 +4540,7 @@ function burbujaCita(t, chat) {
             } catch (e) {}
             // Lo que falta de la lista (chats viejos) se pide una sola vez cuando hace falta.
             if (necesitaListaCompleta() && !listaCargandoTodo) refrescarLista({ todo: true });
-            const firma = listaVersion + '/' + items.length + '|' + vistaActiva + '/' + canalActivo + '|' + termino + '|'
+            const firma = listaVersion + '/' + items.length + '|' + vistaActiva + '/' + canalActivo + '/' + sinLeerActivo + '|' + termino + '|'
                 + [...fechasChatsSeleccionadas].sort().join(',') + '|' + firmaBorradores + '|' + (listaCompleta ? 'c' : listaTotal) + (listaCargandoTodo ? 'L' : '');
             if (firma === firmaLista) return;
             firmaLista = firma;
@@ -4647,7 +4667,7 @@ function burbujaCita(t, chat) {
                 renderizados.push({ it, el: a });
             }
 
-            const soloSinLeer = vistaActiva === 'no_leidos';
+            const soloSinLeer = sinLeerActivo;
             const soloConForm = vistaActiva === 'con_form';
             if (soloConForm && !buscandoGeneral) {
                 for (const sub of SUBGRUPOS_CON_FORM) {
@@ -4703,7 +4723,7 @@ function burbujaCita(t, chat) {
                 b.title = (b.title || '').replace(/ \(\d+ con mensajes sin leer\)$/, '') + (n > 0 ? ' (' + n + ' con mensajes sin leer)' : '');
             }
             if (btnCopiarSinLeer) {
-                btnCopiarSinLeer.hidden = !(vistaActiva === 'no_leidos' && sinLeer.some(it => visibleEn(it, 'no_leidos') && cumpleCanal(it)));
+                btnCopiarSinLeer.hidden = !(sinLeerActivo && sinLeer.some(entraEnGrupoActivo));
                 if (sepCopiarEl) sepCopiarEl.hidden = btnCopiarSinLeer.hidden;
             }
             if (!visibles) {

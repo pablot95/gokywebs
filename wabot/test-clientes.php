@@ -98,7 +98,11 @@ $panelMas = substr($admin, (int)strpos($admin, 'id="convChipsPanel"'), 6000);
 caso('los demás filtros siguen en «Más» y el canal se suma a la vista (4-nov)',
     strpos($panelMas, 'data-grupo="bot"') !== false && strpos($panelMas, 'data-grupo="archivado"') !== false
     && strpos($panelMas, 'data-canal="whatsapp"') !== false && strpos($panelMas, 'data-canal="instagram"') !== false
-    && strpos($admin, 'return visibleEn(it, vistaActiva) && cumpleCanal(it);') !== false);
+    && strpos($admin, 'if (!cumpleCanal(it)) return false;') !== false);
+// 11-nov: Sin leer se suma a la vista (Sin leer + Demos = demos sin leer), igual que el canal.
+caso('Sin leer se combina con la vista elegida (11-nov)',
+    strpos($admin, "if (b.dataset.grupo === 'no_leidos') { alternarSinLeer(); return; }") !== false
+    && strpos($admin, "return visibleEn(it, 'no_leidos') && (vistaActiva === 'todos_humano' || visibleEn(it, vistaActiva));") !== false);
 caso('el aviso de pagos de MP sin asignar ya no depende del filtro Clientes (4-nov)',
     strpos($admin, "avisoPagosEl.hidden = !filtrosActivos.has('clientes')") === false && strpos($admin, "'pagos_sin_asignar' => function_exists('wabot_pagos_sin_asignar')") !== false);
 caso('filtra por la marca cliente, sin el vencimiento de 24 h', strpos($admin, "if (filtro === 'clientes') return !!it.cliente;") !== false
