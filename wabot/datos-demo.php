@@ -729,6 +729,46 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     return [];
 }
 
+/** ¿El bot no tiene que escribirle a este cliente? (Pablo tomó la charla, bot apagado en el chat o apagado del todo) */
+function wabot_datos_demo_bot_callado($conv, $cfg) {
+    return !empty($conv['control_manual']) || !empty($conv['bot_off'])
+        || (is_array($cfg) && array_key_exists('activo', $cfg) && empty($cfg['activo']));
+}
+
+/**
+ * El pedido de los datos lo mandó Pablo desde el panel (o tomó la charla después de pedirlos):
+ * el bot queda apagado en ese chat y lo que el cliente contesta ya no pasa por el turno, así que
+ * nadie armaba la ficha (con el link del formulario se armaba sola). Acá se lee lo que mandó, sin
+ * contestarle nada: queda anotado con la misma espera, y cuando deja de escribir el cron arma la
+ * ficha en silencio (wabot_datos_demo_espera_atender). Se llama en cada mensaje entrante.
+ * Devuelve true si leyó datos.
+ */
+function wabot_datos_demo_en_silencio(&$conv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (!wabot_datos_por_chat($cfg) || !wabot_datos_demo_pendiente($conv)) return false;
+    if (empty($conv['control_manual']) && empty($conv['bot_off'])) return false;   // con el bot atendiendo lo hace el turno
+    if (!empty($conv['datos_demo_espera_wsp'])) return false;
+    // Nada nuevo desde la última lectura.
+    $firma = wabot_datos_demo_ultima_firma_cliente($conv);
+    if ($firma === '' || $firma === (string)($conv['datos_demo_silencio_firma'] ?? '')) return false;
+    $todo = wabot_datos_demo_texto_cliente($conv);
+    if ($todo === '' || mb_strlen(wabot_datos_demo_norm($todo)) < 8 || wabot_datos_demo_es_acuse_o_posterga($todo)) return false;
+    $conv['datos_demo_silencio_firma'] = $firma;
+    $d = wabot_datos_demo_extraer($todo, $conv, $cfg);
+    if ($d === null || empty($d['es_datos'])) return false;
+    $conv['datos_demo_parcial'] = $d;
+    $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
+    if (empty($conv['datos_demo_espera_ts'])) $conv['datos_demo_espera_ts'] = $ahora;
+    if (wabot_datos_demo_pide_tiempo(wabot_datos_demo_ultimo_texto_cliente($conv))) {
+        $conv['datos_demo_espera_hasta_ts'] = $ahora + WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN * 60;
+    } else {
+        unset($conv['datos_demo_espera_hasta_ts']);
+    }
+    wabot_datos_demo_espera_marcar($conv, $ahora);
+    wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'en_silencio']);
+    return true;
+}
+
 /**
  * Lo que hace el cron con una charla cuya espera venció: si escribió algo después de
  * la última lectura relee todo, resuelve (ficha / lo que falta / WhatsApp) y manda.
@@ -747,7 +787,16 @@ function wabot_datos_demo_espera_atender(&$cv, $cfg, $ahora) {
         }
     }
     $desde = (int)($cv['datos_demo_espera_ts'] ?? 0);
+    /* La charla la tomó Pablo (o el bot está apagado en ese chat): la ficha se arma igual, pero al
+     * cliente no se le escribe nada. Antes salía «Para arrancar me falta…» o «Perfecto, con eso
+     * armamos la demo» encima de lo que Pablo estaba contestando a mano (revisión del 10-nov). */
+    $callado = wabot_datos_demo_bot_callado($cv, $cfg);
     $msgs = wabot_datos_demo_resolver($d, $cv, $cfg, $ahora);
+    if ($callado) {
+        if ($msgs && empty($cv['lead_creado']) && empty($cv['control_manual'])) $cv['handoff_pendiente'] = true;
+        wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($cv), 'motivo' => 'callado', 'ficha' => !empty($cv['lead_creado']), 'sin_mandar' => count($msgs)]);
+        $msgs = [];
+    }
     foreach ($msgs as $m) {
         $m = trim((string)$m);
         if ($m === '') continue;

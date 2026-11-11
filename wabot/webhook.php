@@ -320,7 +320,7 @@ function wabot_procesar_entrante($ev, $cfg) {
             wabot_logo_sincronizar($conv);
             // Datos que llegan después de armada la ficha de la demo (10-nov): se suman a la ficha.
             if (function_exists('wabot_datos_demo_tardios')) {
-                try { wabot_datos_demo_tardios($conv, $cfg); }
+                try { wabot_datos_demo_tardios($conv, $cfg); if (function_exists('wabot_datos_demo_en_silencio')) wabot_datos_demo_en_silencio($conv, $cfg); }
                 catch (Throwable $err) { wabot_log('error', ['donde' => 'datos_demo_tarde', 'msg' => mb_substr($err->getMessage(), 0, 200)]); }
             }
             if ($primerContacto) $conv['lead_recibido_evento'] = true;
@@ -565,7 +565,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         $conv['ultimo_cliente_ts'] = time();
         wabot_logo_sincronizar($conv);
         if (function_exists('wabot_datos_demo_tardios')) {
-            try { wabot_datos_demo_tardios($conv, $cfg); }
+            try { wabot_datos_demo_tardios($conv, $cfg); if (function_exists('wabot_datos_demo_en_silencio')) wabot_datos_demo_en_silencio($conv, $cfg); }
             catch (Throwable $err) { wabot_log('error', ['donde' => 'datos_demo_tarde', 'msg' => mb_substr($err->getMessage(), 0, 200)]); }
         }
         if ($usables) wabot_oferta_diseno_reabrir($conv, implode("\n", $usables));

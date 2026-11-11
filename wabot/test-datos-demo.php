@@ -546,4 +546,40 @@ for ($iF = 1; $iF <= 6; $iF++) espera_pasa($c, 6 * $iF);
 unset($GLOBALS['WABOT_TEST_LEAD_FALLA']);
 caso('a la sexta falla deja de reintentar y lo ve Pablo', (int)($c['datos_demo_ficha_fallos'] ?? 0) === 6 && !wabot_datos_demo_espera_sigue($c) && !empty($c['handoff_pendiente']) && empty($c['lead_creado']));
 
+echo "\n— 18. La charla la lleva Pablo: la ficha se arma en silencio (revisión del 10-nov) —\n";
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Pelu Mari', 'resumen' => 'Cortes y color'])]);
+turno('Pelu Mari, cortes y color', $c, $cfg);
+wabot_conv_transcript($c, 'humano', 'Hola Mari, te leo yo por acá.');
+wabot_conv_tomar_control($c);
+$r = espera_pasa($c, 6);
+$confirmo = count(array_filter($c['transcript'], fn($f) => ($f['q'] ?? '') === 'bot' && str_starts_with((string)($f['t'] ?? ''), 'Perfecto, con eso')));
+caso('Pablo tomó la charla mientras mandaba los datos: la ficha se arma y el bot no le escribe', $r === [] && !empty($c['lead_creado']) && $confirmo === 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_con_pedido();
+oa([], [dd(['colores' => 'rojo'])]);
+turno('Mis colores son rojo y blanco', $c, $cfg);
+wabot_conv_tomar_control($c);
+$r = espera_pasa($c, 6);
+caso('si falta lo esencial tampoco le escribe: queda para Pablo', $r === [] && empty($c['lead_creado'])
+    && !count(array_filter($c['transcript'], fn($f) => ($f['q'] ?? '') === 'bot' && str_contains((string)($f['t'] ?? ''), 'Para arrancar me falta'))), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = cv_cotizada();
+wabot_conv_transcript($c, 'humano', wabot_datos_demo_texto($c, $cfg));   // Pablo pega el pedido desde el panel
+wabot_conv_tomar_control($c);
+caso('el pedido que manda Pablo deja los datos pendientes, con el bot apagado en ese chat', wabot_datos_demo_pendiente($c) && !empty($c['bot_off']));
+oa([], []);
+wabot_conv_transcript($c, 'cliente', 'Dale gracias');
+caso('un «dale gracias» no gasta lectura', wabot_datos_demo_en_silencio($c, $cfg) === false && count(pedidos_datos()) === 0);
+wabot_conv_transcript($c, 'cliente', 'Zapas Lanús, vendemos zapatillas, colores negro y dorado');
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas', 'colores' => 'negro y dorado'])]);
+caso('lo que contesta el cliente se lee sin mandarle nada', wabot_datos_demo_en_silencio($c, $cfg) === true && count(pedidos_datos()) === 1 && wabot_datos_demo_espera_sigue($c));
+caso('no se vuelve a leer si no escribió nada nuevo', wabot_datos_demo_en_silencio($c, $cfg) === false && count(pedidos_datos()) === 1);
+$r = espera_pasa($c, 6);
+caso('cuando deja de escribir se arma la ficha, en silencio', $r === [] && !empty($c['lead_creado']) && ($c['nombre_negocio'] ?? '') === 'Zapas Lanús' && ($c['colores'] ?? '') === 'negro y dorado',
+    json_encode([$r, $c['nombre_negocio'] ?? null], JSON_UNESCAPED_UNICODE));
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', 'Zapas Lanús, vendemos zapatillas, colores negro y dorado');
+oa([], [dd(['nombre_negocio' => 'no debería leerse acá'])]);
+caso('con el bot atendiendo no hace nada: lo lleva el turno', wabot_datos_demo_en_silencio($c, $cfg) === false && count(pedidos_datos()) === 0);
+
 todo_ok();
