@@ -436,6 +436,19 @@ function wabot_comercial_post_form_permitido($conv, $cfg) {
 }
 
 /**
+ * ¿Se está armando la demo? Se le pidieron los datos (o el formulario) y la demo
+ * todavía no se entregó, con el bot en el chat. Pablo, 11-nov: «mientras se esté
+ * armando el prospecto, esos chats no me aparezcan como sin leer, porque pienso que
+ * tengo que contestarles y no es así». Un «Haaa ok», un «mañana te paso todo» o una
+ * foto suelta ahí no le dejan nada pendiente; lo que sí es para él lo marca la
+ * acción «humano» (quiere pagar, pide una llamada…).
+ */
+function wabot_comercial_armando_demo($conv) {
+    return wabot_comercial_estado($conv) === 'formulario' && empty($conv['presentado_ts'])
+        && empty($conv['control_manual']) && empty($conv['bot_off']);
+}
+
+/**
  * ¿La charla está en manos del bot? (Pablo, 9-oct: "Conversaciones live" muestra
  * solo esas, "para poder yo vigilar bien que conteste bien"; "una vez que me pase
  * el chat a mí, sale de ahí"). Sí mientras el bot puede contestarle (sin control
@@ -3176,8 +3189,11 @@ function wabot_comercial_efectos_aplicar(&$conv, array $mensajes, array $resumen
         $conv['handoff_pendiente'] = false;
         wabot_evento_sesion($conv, 'comercial_rechazo');
     } elseif ($accion === 'esperar' && !$mensajes) {
-        // Un acuse no deja nada pendiente; otra cosa sin respuesta, sí.
-        $conv['handoff_pendiente'] = !(function_exists('wabot_es_acuse') && wabot_es_acuse($texto));
+        // Un acuse no deja nada pendiente; otra cosa sin respuesta, sí. Armando la demo, nada
+        // nuevo para Pablo (11-nov); lo que ya tuviera pendiente queda como estaba.
+        if (!wabot_comercial_armando_demo($conv)) {
+            $conv['handoff_pendiente'] = !(function_exists('wabot_es_acuse') && wabot_es_acuse($texto));
+        }
     } elseif ($mensajes) {
         $conv['handoff_pendiente'] = false;
     } else {
@@ -3303,7 +3319,8 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
      * foto, un archivo o un sticker sin texto es material para la demo (el logo
      * se suma solo a la ficha), no algo que Pablo tenga que contestar. */
     $fichaLista = $postForm && ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']));
-    if (trim($textoSolo) === '' && $fichaLista) {
+    // Con los datos pedidos y sin ficha, también (11-nov): la foto es parte de lo que está mandando.
+    if (trim($textoSolo) === '' && ($fichaLista || ($postForm && wabot_comercial_armando_demo($conv)))) {
         // Si antes quedó algo para Pablo, sigue quedando: la foto no lo resuelve.
         $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Mandó material sin texto con los datos de la demo ya recibidos',
                                      'ajustes' => ['prediseno_material'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
