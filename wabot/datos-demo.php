@@ -150,6 +150,26 @@ function wabot_datos_demo_texto_cliente($conv, $desdeFila = null) {
     return trim(implode("\n", $partes));
 }
 
+/**
+ * El celular de un texto que puede traer más de un número («Celular 1178938552 / Alt. 11 2541-6039»):
+ * primero el texto entero; si no cierra, cada tramo por separado, y el primero que sea celular.
+ * (11-nov, Mensajería EMES por Instagram: dio dos números y el bot le volvió a pedir el WhatsApp.)
+ */
+function wabot_datos_demo_celular($texto) {
+    if (!function_exists('wabot_extraer_celular')) return null;
+    $texto = (string)$texto;
+    $num = wabot_extraer_celular($texto);
+    if ($num !== null) return $num;
+    // Tramos de dígitos con los separadores de un teléfono (espacios, guiones, puntos, paréntesis, +).
+    if (preg_match_all('/\+?\d[\d \-\.\(\)]{6,}\d/u', $texto, $m)) {
+        foreach ($m[0] as $tramo) {
+            $num = wabot_extraer_celular($tramo);
+            if ($num !== null) return $num;
+        }
+    }
+    return null;
+}
+
 /** El esquema estricto con el que GPT devuelve los datos: uno por campo del formulario. */
 function wabot_datos_demo_esquema() {
     $s = function ($d) { return ['type' => 'string', 'description' => $d]; };
@@ -164,7 +184,7 @@ function wabot_datos_demo_esquema() {
             'colores'        => $s('Los colores de la marca como los dijo ("negro y dorado", "#2563EB y blanco"). Vacío si no los dijo o dijo que los elijamos nosotros.'),
             'referencia'     => $s('La web o el estilo que le gusta como referencia (link o nombre). Vacío si no dio ninguna o dijo que no tiene.'),
             'incluir'        => $s('Lo que quiere sí o sí en la web (galería, mapa, horarios, turnos…). Vacío si no pidió nada.'),
-            'whatsapp'       => $s('El número de WhatsApp que dio para que le mandemos la demo, con los dígitos tal cual. Vacío si no dio ninguno.'),
+            'whatsapp'       => $s('El número de WhatsApp o celular que dio para que le mandemos la demo (aunque lo llame "celular", "cel" o "tel"), con los dígitos tal cual. Si dio más de uno, solo el primero. Vacío si no dio ninguno.'),
         ],
     ]];
 }
@@ -349,7 +369,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     $conv['referencia_preguntada'] = true;   // ya se la pedimos en la lista: el chat no la vuelve a pedir
     if ($d['incluir'] !== '') $conv['incluir'] = $d['incluir'];
     if ($d['whatsapp'] !== '' && function_exists('wabot_extraer_celular')) {
-        $num = wabot_extraer_celular($d['whatsapp']);
+        $num = wabot_datos_demo_celular($d['whatsapp']);
         if ($num !== null) $conv['telefono_wsp'] = $num;
     }
     $conv['esProspecto'] = true;
@@ -614,7 +634,7 @@ function wabot_datos_demo_resolver(array $d, &$conv, $cfg, $ahora = null) {
 
     // Instagram sin WhatsApp: se le pide el número antes de cerrar (sin él la demo no tiene a dónde ir).
     if (wabot_canal($conv) === 'instagram' && empty($conv['telefono_wsp'])
-        && ($d['whatsapp'] === '' || !function_exists('wabot_extraer_celular') || wabot_extraer_celular($d['whatsapp']) === null)) {
+        && ($d['whatsapp'] === '' || !function_exists('wabot_extraer_celular') || wabot_datos_demo_celular($d['whatsapp']) === null)) {
         $conv['datos_demo_parcial'] = $d;
         $conv['datos_demo_espera_wsp'] = 1;
         wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por Instagram: falta el WhatsApp', 'datos_demo_pide_wsp');
@@ -641,7 +661,7 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
 
     // Instagram, con los datos ya tomados y a la espera del WhatsApp: solo el número.
     if (!empty($conv['datos_demo_espera_wsp'])) {
-        $num = function_exists('wabot_extraer_celular') ? wabot_extraer_celular($texto) : null;
+        $num = function_exists('wabot_extraer_celular') ? wabot_datos_demo_celular($texto) : null;
         if ($num !== null) {
             $conv['telefono_wsp'] = $num;
             $d = is_array($conv['datos_demo_parcial'] ?? null) ? $conv['datos_demo_parcial'] : wabot_datos_demo_normalizar([]);

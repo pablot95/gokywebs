@@ -320,6 +320,16 @@ turno('Velas Luz, velas artesanales, mi wsp 11 2506 8578', $c, $cfg);
 $r = espera_pasa($c, 6);
 caso('si el número viene con los datos, al vencer se completa sin pedir nada', !empty($c['lead_creado']) && !empty($c['telefono_wsp']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
 
+// 11-nov, Mensajería EMES: dio «Celular 1178938552 / Alt. 11 2541-6039» y el bot le volvió a pedir el WhatsApp.
+$c = cv('IGTEST779', ['canal' => 'instagram', 'channel_user_id' => 'IGTEST779']);
+wabot_conv_transcript($c, 'bot', wabot_datos_demo_texto($c, $cfg));
+oa([], [dd(['nombre_negocio' => 'Mensajería EMES', 'resumen' => 'Mensajería y logística en AMBA', 'colores' => 'negro, rojo y blanco', 'whatsapp' => '1178938552 / 11 2541-6039'])]);
+turno("Instagram Emes Mensajería\nColores negro ,rojo y blanco\nCelular 1178938552\nAlt. 11 2541-6039", $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('con dos números en los datos, toma el primero y no vuelve a pedir el WhatsApp', !empty($c['lead_creado']) && ($c['telefono_wsp'] ?? '') === '5491178938552' && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
+caso('wabot_datos_demo_celular: dos números → el primero', wabot_datos_demo_celular("Celular 1178938552\nAlt. 11 2541-6039") === '5491178938552');
+caso('wabot_datos_demo_celular: sin número → null', wabot_datos_demo_celular('mañana te paso') === null);
+
 echo "\n— 8. Sin OpenAI: reglas —\n";
 $c = cv_con_pedido();
 $key = $GLOBALS['WABOT_TEST_OPENAI_KEY'];
