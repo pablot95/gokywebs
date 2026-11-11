@@ -538,5 +538,24 @@ caso('en Planes se suma el anual190 ($130.000 al entregar) al lado del anual210;
 caso('lo de otras categorías no se toca', $despues[1] === $antes[1]);
 caso('una sola vez', is_file($marcaUno) && wabot_rr_un_plan_3nov($antes, $ruta) === $antes);
 if ($marcaUnoRespaldo === null) @unlink($marcaUno); else file_put_contents($marcaUno, $marcaUnoRespaldo);
+
+// 11-nov (Pablo): un link por tipo de web con el anual y el mensual juntos (gokywebs.com/sitioweb y /webpro).
+$marcaElegir = WABOT_DATA . '/migrated/respuestas-rapidas-elegir-plan-11nov';
+$marcaElegirRespaldo = is_file($marcaElegir) ? file_get_contents($marcaElegir) : null;
+@unlink($marcaElegir);
+$planes4 = ['https://gokywebs.com/pago/mensual20000', 'https://gokywebs.com/pago/mensual30000', 'https://gokywebs.com/pago/anual140', 'https://gokywebs.com/pago/anual190'];
+$antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => $planes4], ['ico' => '💬', 'titulo' => 'Respuestas', 'items' => ['Hola']]];
+$despues = wabot_rr_elegir_plan_11nov($antes, $ruta);
+caso('los dos links de elegir plan van primeros en Planes; lo demás queda', $despues[0]['items'] === array_merge(WABOT_RR_ELEGIR_PLAN_11NOV, $planes4) && $despues[1] === $antes[1], json_encode($despues[0], JSON_UNESCAPED_UNICODE));
+caso('con el comienzo de los links de pago, sitioweb y webpro', str_starts_with(WABOT_RR_ELEGIR_PLAN_11NOV[0], 'Te paso el enlace donde están todos los detalles del servicio y los datos para el pago')
+    && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[0], 'gokywebs.com/sitioweb') && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[1], 'gokywebs.com/webpro') && strpos(WABOT_RR_ELEGIR_PLAN_11NOV[1], "\n\n") !== false);
+caso('una sola vez: si los borra no vuelven', is_file($marcaElegir) && wabot_rr_elegir_plan_11nov($antes, $ruta) === $antes);
+@unlink($marcaElegir);
+$conUno = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['Mi texto: gokywebs.com/webpro', 'Otro: gokywebs.com/sitioweb/']]];
+caso('si ya mandó esos links con su texto, no se repiten', wabot_rr_elegir_plan_11nov($conUno, $ruta) === $conUno);
+@unlink($marcaElegir);
+$despues = wabot_rr_elegir_plan_11nov([['ico' => '💬', 'titulo' => 'Respuestas', 'items' => ['Hola']]], $ruta);
+caso('sin la categoría Planes, se crea con los dos', ($despues[0]['titulo'] ?? '') === 'Planes' && $despues[0]['items'] === WABOT_RR_ELEGIR_PLAN_11NOV);
+if ($marcaElegirRespaldo === null) @unlink($marcaElegir); else file_put_contents($marcaElegir, $marcaElegirRespaldo);
 if ($rutaRespaldo === null) @unlink($ruta); else file_put_contents($ruta, $rutaRespaldo);
 todo_ok();
