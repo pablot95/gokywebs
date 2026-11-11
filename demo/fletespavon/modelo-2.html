@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fletes Pavón — Fletes y mudanzas en Córdoba</title>
+    <meta
+      name="description"
+      content="Fletes y mudanzas en la provincia de Córdoba. Conocé Fletes Pavón, mirá fotos de nuestros vehículos y consultá tu traslado por WhatsApp.">
+    <meta name="theme-color" content="#F7F9FC">
+    <link
+      rel="canonical"
+      href="https://gokywebs.com/demo/fletespavon/modelo-2.html">
+    <meta property="og:type" content="website">
+    <meta
+      property="og:title"
+      content="Fletes Pavón — Fletes y mudanzas en Córdoba">
+    <meta
+      property="og:description"
+      content="De una dirección a la otra. Consultá tu flete o mudanza en la provincia de Córdoba por WhatsApp.">
+    <meta
+      property="og:url"
+      content="https://gokywebs.com/demo/fletespavon/modelo-2.html">
+    <meta
+      property="og:image"
+      content="https://gokywebs.com/demo/fletespavon/images/02_imagen.webp">
+    <meta property="og:locale" content="es_AR">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=Source+Sans+3:wght@400;600&amp;display=swap">
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles.css?v=20261111125904">
+    <noscript
+      ><style>
+        [data-animate] {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          clip-path: none !important;
+        }
+        [data-animate] img {
+          scale: none !important;
+        }
+        .main-nav {
+          visibility: visible !important;
+          transform: none !important;
+          position: static !important;
+        }
+        .menu-toggle {
+          display: none !important;
+        }
+      </style></noscript
+    >
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "MovingCompany",
+        "name": "Fletes Pavón",
+        "description": "Fletes y mudanzas en la provincia de Córdoba.",
+        "url": "https://gokywebs.com/demo/fletespavon/",
+        "telephone": "+54 9 351 531-3163",
+        "image": "https://gokywebs.com/demo/fletespavon/images/02-imagen.webp",
+        "areaServed": {
+          "@type": "AdministrativeArea",
+          "name": "Provincia de Córdoba, Argentina"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Qué datos necesitan para cotizar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Contanos qué querés trasladar, las localidades de origen y destino, la fecha estimada y si hay escaleras o ascensor. Las fotos y medidas de los objetos ayudan a evaluar la carga."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿En qué zona trabajan?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Realizamos fletes y mudanzas en la provincia de Córdoba. Consultanos por tu recorrido para confirmar disponibilidad."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿El servicio incluye carga, descarga o embalaje?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Consultá qué tareas necesitás al pedir el presupuesto. El alcance, la ayuda para cargar y las condiciones se confirman con el equipo antes del traslado."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo se confirma la fecha?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Escribinos por WhatsApp con el día que tenés en mente. La fecha y el horario quedan sujetos a confirmación; enviar una consulta no reserva el servicio."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body class="m2" id="top">
+    <nav class="gw-modelos" aria-label="Modelos de la web">
+      <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+      <a
+        class="gw-modelos__btn"
+        href="modelo-2.html"
+        data-modelo="2"
+        aria-current="page"
+        >Modelo 2</a
+      >
+    </nav>
+    <header class="site-header">
+      <div class="header-inner container">
+        <a href="#top" class="brand" aria-label="Fletes Pavón, inicio"
+          ><span class="logo-frame"
+            ><img
+              src="images/01-logo.webp"
+              alt="Fletes Pavón"
+              width="900"
+              height="1600"></span
+        ></a>
+        <span class="header-zone"
+          >FLETES Y MUDANZAS <span>Córdoba, Argentina</span></span
+        >
+        <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+          <button
+            type="button"
+            class="nav-close"
+            id="navClose"
+            aria-label="Cerrar menú"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+          <a href="#servicios">Servicios</a><a href="#trabajos">Trabajos</a
+          ><a href="#contacto">Contacto</a>
+          <a
+            class="nav-cta"
+            href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20consultar%20por%20un%20flete%20o%20mudanza%20en%20C%C3%B3rdoba."
+            target="_blank"
+            rel="noopener noreferrer"
+            >Pedir presupuesto <span aria-hidden="true">↗</span></a
+          >
+        </nav>
+        <button
+          type="button"
+          class="menu-toggle"
+          id="menuToggle"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-inner container">
+          <div class="hero-copy">
+            <p class="hero-eyebrow">
+              <span class="status-dot"></span> De una dirección a la otra
+            </p>
+            <h1 id="hero-title">Fletes y mudanzas en <span>Córdoba.</span></h1>
+            <p class="hero-lead">
+              Tenés algo que mover. Tenemos por dónde empezar: contanos qué
+              llevás y a dónde vas.
+            </p>
+            <div class="hero-ctas">
+              <a
+                class="btn btn-primary"
+                href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20consultar%20por%20un%20flete%20o%20mudanza%20en%20C%C3%B3rdoba."
+                target="_blank"
+                rel="noopener noreferrer"
+                >Pedir presupuesto <span aria-hidden="true">↗</span></a
+              ><a class="btn btn-text" href="#servicios"
+                >Conocé los servicios <span aria-hidden="true">↓</span></a
+              >
+            </div>
+            <p class="hero-note">Coordinación directa por WhatsApp.</p>
+          </div>
+          <div class="hero-visual">
+            <div class="hero-photo">
+              <img
+                data-hero-img
+                src="images/02_imagen.webp"
+                alt="Vehículo y cajas frente a una casa, imagen ilustrativa de una mudanza"
+                width="1600"
+                height="900"
+                fetchpriority="high">
+            </div>
+            <div class="hero-badge">
+              <span class="logo-frame"
+                ><img
+                  src="images/01-logo.webp"
+                  alt="Fletes Pavón"
+                  width="900"
+                  height="1600"></span
+              ><span>Fletes · Mudanzas</span>
+            </div>
+            <span class="photo-label">Imagen ilustrativa</span>
+          </div>
+        </div>
+        <div class="route-strip container">
+          <div data-animate="cortina" style="clip-path: inset(0 100% 0 0)">
+            <span class="route-point" aria-hidden="true"></span
+            ><strong>Provincia de Córdoba</strong
+            ><span class="route-line" aria-hidden="true"></span
+            ><span>Tu origen. Tu destino.</span
+            ><a href="#contacto" aria-label="Consultar cobertura en Córdoba"
+              >Consultá tu recorrido <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </div>
+      </section>
+      <section class="work section" id="trabajos" aria-labelledby="work-title">
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <p
+                class="eyebrow"
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                02 / FOTOS DEL NEGOCIO
+              </p>
+              <h2
+                id="work-title"
+                data-animate="cortina"
+                style="clip-path: inset(0 50% 0 50%)"
+              >
+                Así se ve el trabajo.
+              </h2>
+            </div>
+            <p
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              Vehículos y cargas de Fletes Pavón.<br>Fotos compartidas por el
+              equipo.
+            </p>
+          </div>
+          <div class="work-grid">
+            <figure data-animate="mascara" style="clip-path: inset(100% 0 0 0)">
+              <button
+                class="gallery-open"
+                type="button"
+                data-photo="images/02-imagen.webp"
+                data-caption="Vehículo de Fletes Pavón"
+                aria-label="Ampliar foto del vehículo de Fletes Pavón"
+              >
+                <img
+                  src="images/02-imagen.webp"
+                  alt="Camioneta blanca de Fletes Pavón estacionada frente a una vivienda"
+                  width="1200"
+                  height="1600"><span class="zoom-mark" aria-hidden="true">↗</span>
+              </button>
+              <figcaption><span>01</span> El vehículo</figcaption>
+            </figure>
+            <figure data-animate="mascara" style="clip-path: inset(100% 0 0 0)">
+              <button
+                class="gallery-open"
+                type="button"
+                data-photo="images/04-imagen.webp"
+                data-caption="Vehículos y cargas transportadas por Fletes Pavón"
+                aria-label="Ampliar foto de los vehículos y cargas"
+              >
+                <img
+                  src="images/04-imagen.webp"
+                  alt="Camionetas de Fletes Pavón junto a muebles y equipos transportados"
+                  width="1200"
+                  height="1600"><span class="zoom-mark" aria-hidden="true">↗</span>
+              </button>
+              <figcaption><span>02</span> Cada carga, un recorrido</figcaption>
+            </figure>
+            <figure data-animate="mascara" style="clip-path: inset(100% 0 0 0)">
+              <button
+                class="gallery-open"
+                type="button"
+                data-photo="images/05-imagen.webp"
+                data-caption="Muebles cargados para un traslado"
+                aria-label="Ampliar foto de los muebles cargados"
+              >
+                <img
+                  src="images/05-imagen.webp"
+                  alt="Mueble de madera y objetos cubiertos en la caja de una camioneta"
+                  width="900"
+                  height="1600"><span class="zoom-mark" aria-hidden="true">↗</span>
+              </button>
+              <figcaption><span>03</span> Listos para trasladar</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+      <section
+        class="services section"
+        id="servicios"
+        aria-labelledby="services-title"
+      >
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <p
+                class="eyebrow"
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                01 / LO QUE NECESITÁS MOVER
+              </p>
+              <h2
+                id="services-title"
+                data-animate="cortina"
+                style="clip-path: inset(0 50% 0 50%)"
+              >
+                Un mueble. Una casa.<br>Un nuevo destino.
+              </h2>
+            </div>
+            <p
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              Dos servicios, un contacto directo.<br>El recorrido empieza con
+              tu consulta.
+            </p>
+          </div>
+          <div class="service-grid">
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <div class="card-photo">
+                <img
+                  src="images/04_imagen.webp"
+                  alt="Muebles sujetos sobre un vehículo, imagen ilustrativa de fletes"
+                  width="1024"
+                  height="1024"><span class="photo-label">Imagen ilustrativa</span>
+              </div>
+              <div class="service-copy">
+                <span class="service-no">01</span>
+                <h3>Fletes</h3>
+                <p>
+                  Para mover muebles, electrodomésticos y otras cargas entre dos
+                  puntos de Córdoba.
+                </p>
+                <a
+                  class="text-link"
+                  href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20pedir%20presupuesto%20para%20un%20flete%20en%20C%C3%B3rdoba."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Consultar un flete <span aria-hidden="true">↗</span></a
+                >
+              </div>
+            </article>
+            <article
+              class="service-card"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <div class="card-photo">
+                <img
+                  src="images/03_imagen.webp"
+                  alt="Cajas listas junto a un mueble, imagen ilustrativa de mudanzas"
+                  width="1024"
+                  height="1024"><span class="photo-label">Imagen ilustrativa</span>
+              </div>
+              <div class="service-copy">
+                <span class="service-no">02</span>
+                <h3>Mudanzas</h3>
+                <p>
+                  Cuando cambiás de dirección, consultá el traslado de tus
+                  muebles, cajas y pertenencias.
+                </p>
+                <a
+                  class="text-link"
+                  href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20pedir%20presupuesto%20para%20una%20mudanza%20en%20C%C3%B3rdoba."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Consultar una mudanza <span aria-hidden="true">↗</span></a
+                >
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section
+        class="process section"
+        id="coordinacion"
+        aria-labelledby="process-title"
+      >
+        <div class="container process-layout">
+          <div class="process-visual">
+            <div
+              class="process-photo"
+              data-animate="mascara"
+              style="clip-path: inset(100% 0 0 0)"
+            >
+              <img
+                src="images/06_imagen.webp"
+                alt="Mantas y cintas de sujeción, imagen ilustrativa de preparación del traslado"
+                width="1024"
+                height="1024"><span class="photo-label">Imagen ilustrativa</span>
+            </div>
+            <div
+              class="process-tag"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              <span aria-hidden="true">↗</span> Cada traslado se coordina.
+            </div>
+          </div>
+          <div class="process-copy">
+            <p
+              class="eyebrow"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              03 / ANTES DE SALIR
+            </p>
+            <h2
+              id="process-title"
+              data-animate="cortina"
+              style="clip-path: inset(0 50% 0 50%)"
+            >
+              Una buena consulta<br>pone todo en marcha.
+            </h2>
+            <ol class="steps">
+              <li
+                data-animate="der"
+                style="opacity: 0; transform: translateX(32px)"
+              >
+                <span>01</span>
+                <div>
+                  <h3>Contanos qué llevás</h3>
+                  <p>
+                    Una lista, fotos y medidas aproximadas nos ayudan a conocer
+                    la carga.
+                  </p>
+                </div>
+              </li>
+              <li
+                data-animate="der"
+                style="opacity: 0; transform: translateX(32px)"
+              >
+                <span>02</span>
+                <div>
+                  <h3>Pasá origen y destino</h3>
+                  <p>
+                    Indicá las localidades y si hay pisos, escaleras o ascensor.
+                  </p>
+                </div>
+              </li>
+              <li
+                data-animate="der"
+                style="opacity: 0; transform: translateX(32px)"
+              >
+                <span>03</span>
+                <div>
+                  <h3>Consultá fecha y presupuesto</h3>
+                  <p>
+                    Confirmá disponibilidad, alcance y condiciones con el equipo
+                    antes del viaje.
+                  </p>
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+      <section
+        class="contact section"
+        id="contacto"
+        aria-labelledby="contact-title"
+      >
+        <div class="container">
+          <div class="section-head">
+            <div>
+              <p
+                class="eyebrow"
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                04 / HABLEMOS DE TU RECORRIDO
+              </p>
+              <h2
+                id="contact-title"
+                data-animate="cortina"
+                style="clip-path: inset(0 50% 0 50%)"
+              >
+                ¿De dónde a dónde?
+              </h2>
+            </div>
+            <p
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              Fletes y mudanzas en la provincia de Córdoba.<br>Consultá
+              disponibilidad para tu recorrido.
+            </p>
+          </div>
+          <div class="contact-grid">
+            <div class="contact-info">
+              <div
+                class="map-wrap"
+                data-animate="mascara"
+                style="clip-path: inset(100% 0 0 0)"
+              >
+                <section
+                  id="coverage-map"
+                  aria-label="Mapa de referencia de la provincia de Córdoba"
+                >
+                  <span class="map-fallback"
+                    >Provincia de Córdoba · Argentina</span
+                  >
+                </section>
+                <p>Mapa de referencia provincial. No indica una sede.</p>
+              </div>
+              <div
+                class="contact-details"
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                <span>WhatsApp</span
+                ><a
+                  href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20consultar%20por%20un%20flete%20o%20mudanza%20en%20C%C3%B3rdoba."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >+54 9 351 531-3163 <span aria-hidden="true">↗</span></a
+                >
+                <p>Encontranos en Instagram como Fletes Pavón.</p>
+              </div>
+            </div>
+            <div
+              class="form-panel"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <h3>Dejanos los datos del traslado</h3>
+              <p class="form-note" id="form-note">
+                Formulario de muestra. Para una consulta real, escribinos por
+                WhatsApp.
+              </p>
+              <form
+                id="contact-form"
+                method="post"
+                novalidate
+                aria-describedby="form-note"
+              >
+                <div class="form-row">
+                  <label
+                    >Tu nombre<input
+                      type="text"
+                      name="nombre"
+                      autocomplete="given-name"
+                      required
+                      maxlength="80"
+                      placeholder="¿Cómo te llamás?"></label
+                  ><label
+                    >Tu WhatsApp<input
+                      type="tel"
+                      name="telefono"
+                      inputmode="tel"
+                      autocomplete="tel"
+                      required
+                      placeholder="351 123 4567"
+                      maxlength="25"></label>
+                </div>
+                <div class="form-row">
+                  <label
+                    >Origen<input
+                      type="text"
+                      name="origen"
+                      required
+                      maxlength="100"
+                      placeholder="Localidad de salida"></label
+                  ><label
+                    >Destino<input
+                      type="text"
+                      name="destino"
+                      required
+                      maxlength="100"
+                      placeholder="Localidad de llegada"></label>
+                </div>
+                <label
+                  >¿Qué necesitás trasladar?<textarea
+                    name="detalle"
+                    rows="3"
+                    required
+                    minlength="8"
+                    maxlength="1000"
+                    placeholder="Muebles, cajas, fecha estimada y detalles del acceso..."
+                  ></textarea>
+                </label>
+                <p
+                  id="form-error"
+                  class="form-error"
+                  aria-live="polite"
+                  hidden
+                ></p>
+                <button type="submit" class="btn btn-primary" disabled>
+                  Consultar mi traslado <span aria-hidden="true">↗</span>
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="faq">
+            <h3
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(24px)"
+            >
+              Antes de coordinar
+            </h3>
+            <div class="faq-grid">
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                <summary>¿Qué datos necesitan para cotizar?</summary>
+                <p>
+                  Contanos qué querés trasladar, las localidades de origen y
+                  destino, la fecha estimada y si hay escaleras o ascensor. Las
+                  fotos y medidas de los objetos ayudan a evaluar la carga.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                <summary>¿En qué zona trabajan?</summary>
+                <p>
+                  Realizamos fletes y mudanzas en la provincia de Córdoba.
+                  Consultanos por tu recorrido para confirmar disponibilidad.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                <summary>
+                  ¿El servicio incluye carga, descarga o embalaje?
+                </summary>
+                <p>
+                  Consultá qué tareas necesitás al pedir el presupuesto. El
+                  alcance, la ayuda para cargar y las condiciones se confirman
+                  con el equipo antes del traslado.
+                </p>
+              </details>
+              <details
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(24px)"
+              >
+                <summary>¿Cómo se confirma la fecha?</summary>
+                <p>
+                  Escribinos por WhatsApp con el día que tenés en mente. La
+                  fecha y el horario quedan sujetos a confirmación; enviar una
+                  consulta no reserva el servicio.
+                </p>
+              </details>
+            </div>
+          </div>
+          <div
+            class="closing"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <div>
+              <p>El próximo recorrido empieza acá.</p>
+              <h3>Mové eso que tenés pendiente.</h3>
+            </div>
+            <a
+              class="btn btn-light"
+              href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20consultar%20por%20un%20flete%20o%20mudanza%20en%20C%C3%B3rdoba."
+              target="_blank"
+              rel="noopener noreferrer"
+              >Pedir presupuesto <span aria-hidden="true">↗</span></a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top">
+          <div
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(24px)"
+          >
+            <a
+              href="#top"
+              class="brand"
+              aria-label="Volver al inicio de Fletes Pavón"
+              ><span class="logo-frame"
+                ><img
+                  src="images/01-logo.webp"
+                  alt="Fletes Pavón"
+                  width="900"
+                  height="1600"></span
+            ></a>
+          </div>
+          <p
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(24px)"
+          >
+            Fletes y mudanzas.<br>Provincia de Córdoba, Argentina.
+          </p>
+          <a
+            class="text-link"
+            href="#top"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(24px)"
+            >Volver arriba <span aria-hidden="true">↑</span></a
+          >
+        </div>
+        <div
+          class="footer-bottom"
+          data-animate="subir"
+          style="opacity: 0; transform: translateY(24px)"
+        >
+          <span>© 2026 Fletes Pavón</span
+          ><a
+            href="https://gokywebs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Developed and designed by Gokywebs</a
+          >
+        </div>
+      </div>
+    </footer>
+    <dialog
+      class="photo-dialog"
+      id="photo-dialog"
+      aria-label="Fotos de Fletes Pavón"
+    >
+      <button type="button" class="photo-close" aria-label="Cerrar foto">
+        ×
+      </button>
+      <div class="dialog-image">
+        <img
+          src="images/02-imagen.webp"
+          alt="Vehículo de Fletes Pavón"
+          width="1200"
+          height="1600">
+      </div>
+      <p id="photo-caption">Vehículo de Fletes Pavón</p>
+    </dialog>
+    <a
+      class="wsp-float"
+      id="wsp-float"
+      href="https://wa.me/5493515313163?text=Hola%20Fletes%20Pav%C3%B3n%2C%20quiero%20consultar%20por%20un%20flete%20o%20mudanza%20en%20C%C3%B3rdoba."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Escribir por WhatsApp"
+    >
+      <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <path
+          d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"
+        />
+      </svg>
+    </a>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/imask@7.6.1/dist/imask.min.js"></script>
+    <script src="script.js?v=20261111125904"></script>
+    <script src="/demo/track.js" defer></script>
+  </body>
+</html>
