@@ -4700,7 +4700,8 @@ function burbujaCita(t, chat) {
             const sinLeer = items.filter(esNoLeido);
             /* Pablo, 6-oct: los sin leer en la pestaña del navegador, como
              * WhatsApp. Embebido, se lo pasa al admin; suelto, lo pone acá. */
-            const nSinLeer = sinLeer.filter(it => visibleEn(it, 'no_leidos')).length;
+            const sinLeerVisibles = sinLeer.filter(it => visibleEn(it, 'no_leidos'));
+            const nSinLeer = sinLeerVisibles.length;
             if (window.parent !== window) {
                 try { parent.postMessage({ wabotSinLeer: nSinLeer }, location.origin); } catch (e) {}
             } else {
@@ -4708,7 +4709,10 @@ function burbujaCita(t, chat) {
             }
             for (const b of navBtns) {
                 // Con el canal elegido, cada globito cuenta solo los de ese canal (4-nov).
-                const n = sinLeer.filter(it => visibleEn(it, b.dataset.grupo) && cumpleCanal(it)).length;
+                // 11-nov: el globito cuenta lo mismo que muestra «Sin leer» + ese filtro
+                // (antes Demos contaba los sin leer de hace más de 24 h, que Sin leer ya no lista: decía 4 y había 1).
+                const g = b.dataset.grupo;
+                const n = sinLeerVisibles.filter(it => cumpleCanal(it) && (g === 'no_leidos' || g === 'todos_humano' || visibleEn(it, g))).length;
                 let globo = b.querySelector('.conv-chip-n');
                 if (n > 0 && !globo) {
                     globo = document.createElement('span');
