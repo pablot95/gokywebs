@@ -901,7 +901,9 @@ caso('"Directamente si" a la pregunta de los turnos → se cotiza con reservas (
 // 19-oct, una masajista: "Ambas opciones son buenas" se llevó solo la informativa, y "Sería para turnos señado?" quedó para Pablo,
 // que le pasó el plan de la tienda ($30.000 / $190.000) con la seña por Mercado Pago incluida.
 foreach (['Ambas opciones son buenas' => true, 'Las dos' => true, 'ambas cosas' => true, 'Los 2 me sirven' => true,
-          'Solo WhatsApp' => false, 'Por WhatsApp' => false, 'Las dos, pero sin reservas' => false, 'Me da lo mismo' => false] as $m => $esperado) {
+          'Las dos cosas o solo por WhatsApp depende el costo quizás' => true, 'Ambas o solamente WhatsApp, según el precio' => true,
+          'Solo WhatsApp' => false, 'Por WhatsApp' => false, 'Las dos, pero sin reservas' => false, 'Me da lo mismo' => false,
+          'Las dos no, solo WhatsApp' => false] as $m => $esperado) {
     caso("¿elige las dos opciones? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_elige_las_dos($m) === $esperado);
 }
 function cv_masajista() {
@@ -915,6 +917,13 @@ oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perf
 $r = turno('Ambas opciones son buenas', $c, $cfg);
 caso('"Ambas opciones son buenas" a la pregunta de los turnos → los dos precios (sin y con reservas = el de la tienda), sin oferta todavía',
     count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
+    && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+// 11-nov 17:41, un coach ontológico: «Las dos cosas o solo por WhatsApp depende el costo quizás» se llevó solo el sitio de $140.000.
+$c = cv_masajista();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
+$r = turno('Las dos cosas o solo por WhatsApp depende el costo quizás', $c, $cfg);
+caso('«Las dos cosas o solo por WhatsApp depende el costo» → los dos precios (sin y con reservas), sin oferta todavía (11-nov)',
+    count($r) === 3 && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
     && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
 // 10-nov 17:51, una cabaña de Bariloche (Pablo, 11-nov: «ESTE PRECIO ESTA MAL»): a «Dame las 2 opciones» le llegó solo
 // el sitio de $140.000 / $20.000. Pablo: «Sí, siempre $190.000»: un alojamiento va con el plan con panel, sin los dos precios.

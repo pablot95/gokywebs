@@ -1686,7 +1686,11 @@ function wabot_comercial_ultimo_es_pregunta_turnos($conv) {
 /** ¿Elige las dos opciones ("ambas opciones son buenas", "las dos")? Pedir solo WhatsApp o "sin reservas" no. */
 function wabot_comercial_elige_las_dos($texto) {
     $t = wabot_normalizar_frase((string)$texto);
-    return (bool)preg_match('/\b(ambas|ambos|las dos|los dos|las 2|los 2)\b/u', $t) && !preg_match('/\b(sin reserv\w*|solo|solamente|nada mas)\b/u', $t);
+    /* «Las dos cosas o solo por WhatsApp depende el costo quizás» (11-nov 17:41, un coach
+     * ontológico): el «solo» de la otra alternativa («o solo…») lo descartaba y le llegó
+     * solo el precio sin reservas. Un «solo» después de «o» es la otra opción, no un recorte. */
+    return (bool)preg_match('/\b(ambas|ambos|las dos|los dos|las 2|los 2)\b/u', $t)
+        && !preg_match('/\bsin reserv\w*|(?<!\bo )\b(solo|solamente|nada mas)\b/u', $t);
 }
 
 /** ¿El cliente contesta (o despeja) esa pregunta? Ante la duda, sí: lo decide el modelo. */
