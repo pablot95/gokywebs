@@ -2098,8 +2098,9 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
     $re = '/\b' . $rastros[$clave] . '\w*/u';
     $limpio = function ($t) use ($clave) {
         // Sin los links: el dominio de una URL no es un rastro de nada. Ver
-        // wabot_texto_sin_urls().
-        $t = wabot_normalizar_frase(wabot_texto_sin_urls((string)$t));
+        // wabot_texto_sin_urls(). Y sin la descripción de la foto, que no la
+        // escribió el cliente: wabot_texto_sin_descripcion_media().
+        $t = wabot_normalizar_frase(wabot_texto_sin_urls(wabot_texto_sin_descripcion_media((string)$t)));
         return $clave === 'bilingue' ? wabot_texto_sin_idioma_del_rubro($t) : $t;
     };
     if (preg_match($re, $limpio($texto))) return true;
@@ -2112,6 +2113,20 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
         if (++$vistos >= 3) break;
     }
     return false;
+}
+
+/**
+ * Sin lo que escribió nuestro lector de imágenes y archivos. La descripción de
+ * una foto ("Mandó una captura de otra web o publicidad que le gustó…") llega
+ * al motor como si fuera el mensaje del cliente, y sus palabras no son un
+ * rastro de nada: el 10-nov 20:00 alguien mandó la foto de un adaptador como
+ * respuesta a "qué tipo de productos vendés?" y se llevó "Publicidad y redes no
+ * hacemos" por la palabra "publicidad" de la descripción. El texto con el que
+ * el cliente acompañó la foto queda: la descripción va después, entre
+ * paréntesis (webhook.php), y siempre empieza con "Mandó " (wabot_media_a_texto).
+ */
+function wabot_texto_sin_descripcion_media($t) {
+    return trim((string)preg_replace('/(^|\n)[ \t]*(\[(?:foto|archivo)\][ \t]*)?\(?Mandó [^\n]*/u', '$1', (string)$t));
 }
 
 /**

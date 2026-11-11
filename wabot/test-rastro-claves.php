@@ -97,4 +97,23 @@ caso('Jardín: estadisticas se descarta',
 caso('una pregunta real por publicidad sigue saliendo',
     wabot_ia_claves_con_rastro(['marketing'], 'hacen aparte publicidad?', $sinNada) === ['marketing']);
 
+echo "
+=== La descripción de una foto no es un rastro (10-nov 20:00) ===
+";
+$foto = 'Mandó una captura de otra web o publicidad que le gustó, mostrando un adaptador universal para dispositivos con los textos "One Adapter. Every Device.". Predominan tonos oscuros.';
+caso('foto sola: «publicidad» de la descripción no cuenta', $r('marketing', $foto) === false);
+caso('foto sola: tampoco para lo que elige OpenAI', wabot_ia_claves_con_rastro(['marketing'], $foto, $sinNada) === []);
+caso('la foto de un turno antes tampoco cuenta',
+    $r('marketing', 'esos vendo', ['transcript' => [['q' => 'cliente', 't' => '[foto] ' . $foto]]]) === false);
+caso('foto con texto del cliente: lo que escribió él sí cuenta',
+    $r('marketing', "ustedes hacen la publicidad?
+(Mandó el flyer de su local, con predominio de rojo.)") === true);
+caso('foto con texto del cliente sin el tema: la descripción no lo agrega',
+    $r('marketing', "este es mi producto
+(Mandó una pieza gráfica publicitaria o banner de su marca.)") === false);
+caso('un audio transcripto sigue contando entero',
+    $r('marketing', 'Hola, quería saber si ustedes también manejan la publicidad en redes') === true);
+caso('el logo en un PDF no dispara «no hacemos»',
+    $r('no_hacemos', 'Mandó la presentación institucional con el flyer y el banner de la marca.') === false);
+
 todo_ok();
