@@ -686,7 +686,8 @@ caso('el boceto lo lleva en `objetivos`, que el admin muestra como "Objetivos de
 caso('y no se repite en el bloque que se lee al diseñar: el admin le da su fila',
     mb_strpos((string)($camposObj['objetivo_web']['stringValue'] ?? ''), 'Generar más ventas') === false,
     (string)($camposObj['objetivo_web']['stringValue'] ?? ''));
-$cRObj = array_merge($convObj, ['ultimo_ts' => time() - 30 * 86400, 'presentado_ts' => 0]);
+// 10-nov: con la ficha armada hace menos de 30 días ya no se reinicia; acá el formulario es de hace dos meses.
+$cRObj = array_merge($convObj, ['ultimo_ts' => time() - 60 * 86400, 'form_completado_ts' => time() - 60 * 86400, 'presentado_ts' => 0]);
 wabot_conv_reset_si_vieja($cRObj, $cfg, time());
 caso('el reset de sesión lo limpia, igual que al estilo', empty($cRObj['objetivos']));
 @unlink(WABOT_DATA . '/conv/5493810009002.json');

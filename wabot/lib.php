@@ -2144,7 +2144,11 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     if (!empty($conv['presentado_ts']) || !empty($conv['control_manual'])
         || !empty($conv['postprecio_auto']) || !empty($conv['postprecio_derivacion'])
         // Ni al que ya pagó (1-nov): el bot le está pidiendo lo que falta para la web.
-        || !empty($conv['pago_confirmado_ts'])) return false;
+        || !empty($conv['pago_confirmado_ts'])
+        /* Ni al que tiene la ficha armada y la demo todavía sin entregar (10-nov): `ultimo_ts` solo lo
+         * mueve el bot, así que con el bot apagado después de la ficha «vencía» a los 7 días aunque el
+         * cliente hubiera escrito ayer, y su próximo mensaje le borraba la ficha y los datos. */
+        || (!empty($conv['lead_creado']) && (int)($conv['form_completado_ts'] ?? 0) > $ahora - 30 * 86400)) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
