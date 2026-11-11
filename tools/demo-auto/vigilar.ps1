@@ -213,7 +213,12 @@ if ($Modo -eq 'claude') { Bajar-Imagenes-Prospectos }
 # --- Fin de una demo hecha por una sesion de Desktop ---
 function Terminar([string]$ZipNombre, [string]$Resultado, [string]$Por = 'claude') {
     $e = Bajo-Candado { Leer-Estado }
-    $anotado = @($e.hechos | Where-Object { $_.zip -eq $ZipNombre }) | Select-Object -Last 1
+    # El mismo zip puede estar dos veces con otro tamanio (bajado de nuevo -> SIN ASIGNAR). Se cierra
+    # el que esta 'en proceso': si se cerraba el otro, el 'en proceso' quedaba para siempre y tomar
+    # lo "terminaba" sin fin (GREY INOVACION, 10-nov: 15 mil vueltas y 3 corridas colgadas).
+    $mismos = @($e.hechos | Where-Object { $_.zip -eq $ZipNombre })
+    $anotado = @($mismos | Where-Object { $_.resultado -eq 'en proceso' }) | Select-Object -Last 1
+    if (-not $anotado) { $anotado = $mismos | Select-Object -Last 1 }
     if (-not $anotado) { Anotar ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); return $false }
     $ruta = Join-Path $Descargas $ZipNombre
     # Nombre y tamanio como se reclamo (Marcar los usa de clave; el FileInfo ya movido no da Length).
@@ -339,8 +344,12 @@ if ($Modo -eq 'cortadas') { @(Reclamar-Cortada -SoloVer) | ConvertTo-Json -Compr
 
 if ($Modo -eq 'tomar') {
     try {
+        $cerradas = @{}
         while ($c = Reclamar-Cortada) {
             if ($c.reintentos -ge 1) {
+                # Freno: si la misma vuelve despues de cerrarla, no se pudo cerrar; cortar el bucle.
+                if ($cerradas.ContainsKey($c.zip)) { Anotar ('No se pudo cerrar la cortada ' + $c.zip + ' en estado.json, sigo sin ella'); break }
+                $cerradas[$c.zip] = $true
                 $por = if ($c.motor -eq 'gpt') { 'chatgpt' } else { 'claude' }
                 Terminar $c.zip ('DEMO ERROR se corto dos veces sin terminar (demo/' + $c.slug + '), hacela a mano') $por | Out-Null
                 continue
