@@ -513,6 +513,8 @@ function wabot_push_debe_avisar($cv) {
     if (!is_array($cv) || empty($cv['transcript'])) return false;
     if (wabot_conv_grupo($cv) === 'archivado') return false;
     if (wabot_conv_contestada($cv)) return false;
+    // Datos de la demo que atiende el bot (11-nov): no es algo para contestar.
+    if (function_exists('wabot_conv_bot_con_datos_demo') && wabot_conv_bot_con_datos_demo($cv)) return false;
     $lineas = (array)$cv['transcript'];
     $ult = end($lineas);
     return is_array($ult) && ($ult['q'] ?? '') === 'cliente';

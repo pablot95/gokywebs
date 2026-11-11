@@ -176,6 +176,7 @@ oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas deporti
 $r = turno("Zapas Lanús\nVendemos zapatillas deportivas y urbanas, online y en el local de Lanús\nIg @zapaslanus\nColores negro y dorado\nMe gusta nike.com\nQuiero un mapa con la ubicación", $c, $cfg);
 caso('en el turno no contesta: espera a que termine de mandar', $r === [] && empty($c['lead_creado']) && (int)($c['datos_demo_espera_ts'] ?? 0) > 0, implode(' | ', $r));
 caso('lo leído queda anotado y el panel ve que espera', ($c['datos_demo_parcial']['nombre_negocio'] ?? '') === 'Zapas Lanús' && ($c['comercial_ultimo']['accion'] ?? '') === 'esperar');
+caso('mientras espera, cada renglón de datos no le suena a Pablo (11-nov)', wabot_conv_bot_con_datos_demo($c) && (!function_exists('wabot_push_debe_avisar') || !wabot_push_debe_avisar($c)));
 caso('la charla queda anotada para el cron', array_key_exists(wabot_conversation_key($c), wabot_datos_demo_espera_indice()));
 caso('a los 4 minutos el cron todavía no la toca', espera_pasa($c, 4) === null && empty($c['lead_creado']));
 $r = espera_pasa($c, 6);
@@ -199,6 +200,10 @@ caso('la ficha se creó (lead_creado)', !empty($c['lead_creado']));
 caso('el bot sigue en el chat hasta la demo (11-nov): sin apagarse ni pasarle la charla a Pablo', empty($c['bot_off']) && empty($c['handoff_pendiente'])
     && ($c['fase'] ?? '') === 'prediseno' && ($c['cierre'] ?? '') === 'prediseno' && wabot_conv_grupo($c) === 'muestra');
 caso('el panel no lo cuenta como sin leer ni como pendiente de Pablo', wabot_conv_muestra_del_bot($c) && !wabot_conv_bot_inactivo($c));
+$cPush = $c; wabot_conv_transcript($cPush, 'cliente', '[foto] Mandó el logo.');
+caso('y una foto después no le suena a Pablo como notificación', function_exists('wabot_push_debe_avisar') && !wabot_push_debe_avisar($cPush));
+$cPush['handoff_pendiente'] = true;
+caso('salvo que el bot se la haya pasado', wabot_push_debe_avisar($cPush));
 caso('la confirmación de los 5 minutos ya no corresponde', !empty($c['form_recibido_confirmado']) && !wabot_form_confirmacion_corresponde($c, $cfg, time() + 600));
 $linea = linea_sistema($c, '[Datos de la demo por chat]');
 caso('línea de sistema con los datos', str_contains($linea, 'Negocio: Zapas Lanús') && str_contains($linea, 'Colores: negro y dorado') && str_contains($linea, 'Instagram: instagram.com/zapaslanus'), $linea);

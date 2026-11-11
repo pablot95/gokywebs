@@ -4293,6 +4293,18 @@ function wabot_conv_muestra_del_bot($cv) {
         && empty($cv['handoff_pendiente']) && empty($cv['control_manual']);
 }
 
+/**
+ * El bot está juntando los datos de la demo (espera de los minutos de silencio
+ * antes de armar la ficha) o ya los tiene y sigue hasta la demo: lo que el cliente
+ * manda ahí lo atiende el bot aunque no le conteste cada mensaje. No le suena a
+ * Pablo una notificación por cada foto o renglón de datos (11-nov).
+ */
+function wabot_conv_bot_con_datos_demo($cv) {
+    if (wabot_conv_bot_inactivo($cv) || !empty($cv['handoff_pendiente']) || !empty($cv['control_manual'])) return false;
+    if (wabot_conv_muestra_del_bot($cv)) return true;
+    return function_exists('wabot_datos_demo_pendiente') && wabot_datos_demo_pendiente($cv) && (int)($cv['datos_demo_espera_ts'] ?? 0) > 0;
+}
+
 function wabot_conv_es_sl($cv) {
     $grupo = wabot_conv_grupo($cv);
     if ($grupo === 'archivado') return false;
