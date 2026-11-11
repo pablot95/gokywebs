@@ -93,6 +93,13 @@ function Leer-Estado {
 
 function Guardar-Estado($e) { [IO.File]::WriteAllText($ArchivoEstado, [string]($e | ConvertTo-Json -Depth 5), $Utf8) }
 
+# Cobertura puntual hasta el miercoles 11 de noviembre a las 02:00 de Argentina.
+function Motor-De-Turno([string]$habitual, [datetimeoffset]$ahora = [datetimeoffset]::UtcNow) {
+    $corte = [datetimeoffset]'2026-11-11T02:00:00-03:00'
+    if ($ahora -lt $corte) { return 'gpt' }
+    return $habitual
+}
+
 # Anota (o actualiza) el resultado de un zip: la clave es nombre + tamanio.
 function Marcar($zip, [string]$resultado) {
     Bajo-Candado {
@@ -287,6 +294,10 @@ function Datos-Del-Log([string]$zipNombre) {
             if ($Matches[1]) { $d.motor = $Matches[1] }
             $d.pedido = $Matches[2]
         }
+        elseif ($d.pedido -and $l -match ('  Retomada \((\w+)\): ' + [regex]::Escape($d.slug) + ', .* \(pedido (.+)\)$')) {
+            $d.motor = $Matches[1]
+            $d.pedido = $Matches[2]
+        }
     }
     return $d
 }
@@ -357,11 +368,20 @@ if ($Modo -eq 'tomar') {
             $original = Join-Path $Repo $c.pedido
             $nuevo = ($original -replace '(-retomada)?\.md$', '') + '-retomada.md'
             $nota = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'retomar.md'), $Utf8).Replace('{SLUG}', $c.slug).Replace('{NOMBRE}', $c.nombre).Replace('{MINUTOS}', [string]$c.minutos)
-            [IO.File]::WriteAllText($nuevo, $nota + [IO.File]::ReadAllText($original, $Utf8), $Utf8)
+            $texto = [IO.File]::ReadAllText($original, $Utf8)
+            $motor = Motor-De-Turno $c.motor
+            if ($motor -ne $c.motor) {
+                # Los pedidos existentes pueden tener una version anterior del encabezado de Claude.
+                $separador = [regex]::Match($texto, '(?m)^-{70}\r?$\n?')
+                $encabezado = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'instrucciones-gpt.md'), $Utf8)
+                if ($separador.Success) { $texto = $texto.Substring($separador.Index + $separador.Length) }
+                $texto = $encabezado + $texto
+            }
+            [IO.File]::WriteAllText($nuevo, $nota + $texto, $Utf8)
             $relativo = $nuevo.Substring($Repo.Length + 1).Replace('\', '/')
-            Anotar ('Retomada (' + $c.motor + '): ' + $c.slug + ', cortada hace ' + $c.minutos + ' min (pedido ' + $relativo + ')')
+            Anotar ('Retomada (' + $motor + '): ' + $c.slug + ', cortada hace ' + $c.minutos + ' min (pedido ' + $relativo + ')')
             [Console]::OutputEncoding = $Utf8
-            [pscustomobject]@{ ok = $true; retomada = $true; motor = $c.motor; zip = $c.zip; id = $c.id; nombre = $c.nombre; slug = $c.slug; pedido = $relativo } | ConvertTo-Json -Compress
+            [pscustomobject]@{ ok = $true; retomada = $true; motor = $motor; zip = $c.zip; id = $c.id; nombre = $c.nombre; slug = $c.slug; pedido = $relativo } | ConvertTo-Json -Compress
             exit 0
         }
     } catch { Anotar ('No se pudieron revisar las demos cortadas: ' + $_.Exception.Message) }
@@ -431,6 +451,7 @@ try {
             $motor = Bajo-Candado {
                 $e = Leer-Estado
                 $m = if ($e.ultimoMotor -eq 'claude') { 'gpt' } else { 'claude' }
+                $m = Motor-De-Turno $m
                 $e | Add-Member -NotePropertyName ultimoMotor -NotePropertyValue $m -Force
                 Guardar-Estado $e
                 $m
