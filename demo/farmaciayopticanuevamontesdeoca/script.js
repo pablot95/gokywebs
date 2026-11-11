@@ -1136,6 +1136,7 @@ function initMap() {
     15,
   );
   map.attributionControl.setPosition("topright");
+  map.attributionControl.setPrefix(false);
   L.tileLayer(
     "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
