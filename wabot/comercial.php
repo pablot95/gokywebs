@@ -630,6 +630,10 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
             . '. Esos montos se mantienen. No vuelvas a cotizar salvo que pida el precio otra vez (ahí accion cotizar y el sistema repite los mismos planes).';
     } else {
         $c[] = '- Todavía no le pasamos el precio.';
+        // 11-nov (Pablo): un alojamiento va siempre con el plan con panel.
+        if (wabot_comercial_es_alojamiento($conv, $texto)) {
+            $c[] = '- Es un alojamiento (cabañas, hospedaje, alquiler temporario): el precio es siempre el del plan con panel, aunque coordine las reservas por WhatsApp (solucion informativa_panel; reservas si quiere que reserven desde la web). No le preguntes WhatsApp o reservas para darle el precio ni le pases dos precios.';
+        }
     }
     $dosWebs = is_array($conv['comercial_dos_webs'] ?? null) ? $conv['comercial_dos_webs'] : null;
     if ($dosWebs) {
@@ -1651,6 +1655,24 @@ function wabot_comercial_es_pregunta_turnos($texto) {
         && (bool)preg_match('/\b(whatsapp|wsp|wpp|consultas?|contact\w*|escrib\w*|mostrar)\b/u', $t);
 }
 
+/**
+ * ¿Es un alojamiento? (cabañas, hospedaje, hotel, hostel, alquiler temporario o turístico,
+ * Airbnb…) Por la ficha del modelo (necesidad hospedaje) o por lo que escribió el cliente.
+ * «Alojamiento» suelto no alcanza: también es el hosting de la web.
+ */
+function wabot_comercial_es_alojamiento($conv, $texto = '', $d = null) {
+    if ((string)($d['ficha']['necesidad'] ?? '') === 'hospedaje') return true;
+    if (function_exists('wabot_ficha') && (string)(wabot_ficha($conv)['necesidad'] ?? '') === 'hospedaje') return true;
+    $todo = (string)$texto;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') === 'cliente') $todo .= "\n" . (string)($fila['t'] ?? '');
+    }
+    $t = wabot_normalizar_frase($todo);
+    return (bool)preg_match('/\b(caba(n|ñ)as?|hospedajes?|hostel(es|s)?|hoteles|hotel|hosteria|posadas?|apart ?hotel(es)?|aparts?|bungalows?|glamping|airbnb|booking|'
+        . 'alojamientos? (turistic\w*|temporari\w*|para turistas)|alquiler(es)? (turistic\w*|temporari\w*|temporal(es)?|vacacional(es)?|por (dia|noche|temporada))|'
+        . 'complejo (turistico|de cabanas)|casas? de (veraneo|vacaciones))\b/u', $t);
+}
+
 /** ¿Lo último que le mandamos (sin contar al cliente) es la pregunta de los turnos? */
 function wabot_comercial_ultimo_es_pregunta_turnos($conv) {
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
@@ -1992,6 +2014,7 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
      * recuerda la pregunta, sin elegir por el cliente ni cotizar. Una sola vez:
      * si ya se la recordamos y sigue sin contestar, decide el modelo. */
     $turnosPendiente = (!$yaCotizado && in_array($d['accion'], ['responder', 'cotizar'], true)) ? wabot_comercial_turnos_pendiente($conv, $cfg) : 0;
+    $alojamiento = !$yaCotizado && wabot_comercial_es_alojamiento($conv, $texto, $d);
     $sinMontosTurnos = ['precio_sin_rubro', 'pago', 'pago_generico', 'pago_sin_precio', 'que_incluye', 'que_incluye_sitio', 'proceso', 'rangos'];
     if ($turnosPendiente > 0 && wabot_comercial_pregunta_costo($texto)) {
         /* Pregunta el precio sin contestar: los dos precios y que elija, como
@@ -2003,7 +2026,7 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         $d['mensajes'] = [];
         $d['info_claves'] = array_values(array_diff($d['info_claves'], $sinMontosTurnos));
         $ajustes[] = 'turnos_dos_planes';
-    } elseif ($turnosPendiente === 1 && $d['accion'] === 'cotizar' && in_array($sol, ['informativa', 'informativa_panel', 'reservas'], true)) {
+    } elseif ($turnosPendiente === 1 && !$alojamiento && $d['accion'] === 'cotizar' && in_array($sol, ['informativa', 'informativa_panel', 'reservas'], true)) {
         $d['accion'] = 'responder';
         $pregunta = trim((string)($cfg['comercial']['pregunta_turnos'] ?? ''));
         $d['mensajes'] = $pregunta !== '' ? [$pregunta] : [];
@@ -2034,6 +2057,19 @@ function wabot_comercial_validar($d, $texto, $conv, $cfg) {
         }
         $d['accion'] = 'cotizar';
         $ajustes[] = 'dos_planes_eligio';
+    }
+    /* Un alojamiento (cabañas, hospedaje, alquiler temporario) va siempre con el plan con
+     * panel, $190.000 / $30.000, aunque coordine las reservas por WhatsApp (Pablo, 11-nov:
+     * «Sí, siempre $190.000», por la cabaña de Bariloche que se llevó el sitio de $140.000).
+     * Sin los dos precios: con reservas desde la web es reservas; si no, la informativa con panel. */
+    if ($alojamiento && $d['accion'] === 'cotizar' && in_array($sol, ['informativa', 'informativa_panel', 'reservas'], true)) {
+        if ($sol === 'informativa') $d['solucion'] = $sol = 'informativa_panel';
+        if (!empty($d['dos_planes'])) {
+            $d['dos_planes'] = false;
+            // Los dos precios no salen: el «Perfecto, entonces» de siempre antes de los planes.
+            if (!$d['mensajes']) $d['mensajes'] = ['Perfecto, entonces'];
+        }
+        $ajustes[] = 'alojamiento_panel';
     }
     /* Quién carga los productos (Pablo, 9-oct): "Se pueden cargar todos
      * ustedes?" se contesta con carga_nosotros, nunca con "lo manejás vos". En

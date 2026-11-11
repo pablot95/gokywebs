@@ -917,15 +917,40 @@ caso('"Ambas opciones son buenas" a la pregunta de los turnos → los dos precio
     count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && $r[1] === 'Sin reservas t' . mb_substr(planes('informativa', '$140.000', '$20.000'), 1)
     && $r[2] === $conConReservas && !empty($c['comercial_dos_planes_ts']) && empty($c['comercial_oferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
 // 10-nov 17:51, una cabaña de Bariloche (Pablo, 11-nov: «ESTE PRECIO ESTA MAL»): a «Dame las 2 opciones» le llegó solo
-// el sitio de $140.000 / $20.000. La pregunta de alojamiento no habla de turnos (arreglado en ba31374).
-$cCab = cv('5491100009017TEST');
-wabot_conv_transcript($cCab, 'cliente', 'Tengo una cabaña, está publicada en Airbnb');
-wabot_conv_transcript($cCab, 'bot', "Perfecto, la tenés publicada en Airbnb\n\nPara tu web propia, preferís coordinar las reservas por WhatsApp o que puedan reservar directamente desde la página?");
+// el sitio de $140.000 / $20.000. Pablo: «Sí, siempre $190.000»: un alojamiento va con el plan con panel, sin los dos precios.
+function cv_cabana() {
+    $c = cv('5491100009017TEST');
+    wabot_conv_transcript($c, 'cliente', 'Tengo una cabaña, está publicada en Airbnb');
+    wabot_conv_transcript($c, 'bot', "Perfecto, la tenés publicada en Airbnb\n\nPara tu web propia, preferís coordinar las reservas por WhatsApp o que puedan reservar directamente desde la página?");
+    return $c;
+}
+$planesPanel = 'Perfecto, entonces t' . mb_substr(planes('panel', '$190.000', '$30.000'), 1);
+$cCab = cv_cabana();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu cabaña']])]);
 $r = turno('Dame las 2 opciones', $cCab, $cfg);
-caso('«Dame las 2 opciones» a la pregunta de reservas de un alojamiento → los dos precios (sin reservas y con reservas = el de la tienda)',
-    count($r) === 3 && $r[0] === 'Es otro plan si incluye reservas' && strpos($r[1], '$140.000') !== false && $r[2] === $conConReservas
-    && strpos($r[2], '$190.000') !== false && !empty($cCab['comercial_dos_planes_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('«Dame las 2 opciones» de un alojamiento → el plan con panel ($190.000 / $30.000) y la oferta, sin los dos precios (11-nov)',
+    count($r) === 2 && $r[0] === $planesPanel && $r[1] === OFERTA && ($cCab['comercial_cotizacion']['anual'] ?? '') === '$190.000'
+    && empty($cCab['comercial_dos_planes_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('el modelo sabe que es un alojamiento', strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'Es un alojamiento') !== false);
+$cCab = cv_cabana();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu cabaña']])]);
+$r = turno('Coordinar por WhatsApp conmigo', $cCab, $cfg);
+caso('«Coordinar por WhatsApp» en un alojamiento → igual $190.000 / $30.000 (Walter, 10-nov)', count($r) === 2 && $r[0] === $planesPanel
+    && ($cCab['comercial_solucion'] ?? '') === 'informativa_panel', json_encode($r, JSON_UNESCAPED_UNICODE));
+$cCab = cv_cabana();
+oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'ficha' => ['rubro' => 'tu cabaña']])]);
+$r = turno('Que reserven desde la página', $cCab, $cfg);
+caso('con reservas desde la web sigue siendo reservas ($190.000)', count($r) === 2 && $r[0] === $planesPanel && ($cCab['comercial_solucion'] ?? '') === 'reservas', json_encode($r, JSON_UNESCAPED_UNICODE));
+$cHos = cv('5491100009018TEST');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'informativa', 'mensajes' => ['Perfecto, te podemos armar una web para tu hospedaje'], 'ficha' => ['rubro' => 'tu hospedaje', 'necesidad' => 'hospedaje']])]);
+$r = turno('Tengo un hospedaje en Mendoza, cuánto sale?', $cHos, $cfg);
+caso('un hospedaje que pide el precio de entrada → el plan con panel', strpos(implode("\n", $r), '$190.000') !== false && strpos(implode("\n", $r), '$140.000') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+foreach (['Tengo cabañas en Villa Gesell' => true, 'Alquiler temporario de departamentos' => true, 'Es un hostel' => true, 'Lo tengo en Booking y Airbnb' => true,
+          'Un apart en Mar del Plata' => true, 'El alojamiento de la web está incluido?' => false, 'Soy psicóloga' => false, 'Vendo ropa, aparte hago envíos' => false,
+          'Alquiler de autos' => false, 'Tengo una inmobiliaria con alquileres' => false] as $m => $esperado) {
+    caso("¿alojamiento? «{$m}» → " . ($esperado ? 'sí' : 'no'), wabot_comercial_es_alojamiento(cv('5491100009019TEST'), $m) === $esperado);
+}
+// La masajista (abajo) no es un alojamiento: «Ambas opciones son buenas» sigue dando los dos precios.
 oa([dc(['accion' => 'cotizar', 'solucion' => 'reservas', 'mensajes' => ['Perfecto, entonces'], 'info_claves' => ['turnos_sena'], 'ficha' => ['rubro' => 'tu actividad como masajista']])]);
 $r = turno('Con reservas, sería para turnos señado?', $c, $cfg);
 caso('y si elige con reservas preguntando por la seña → la seña (incluida), el plan con panel congelado y la oferta, sin repetir los montos',
