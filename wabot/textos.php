@@ -392,6 +392,10 @@ function wabot_textos_default() {
      * y lo que llega después lo contesta Pablo. Arranca APAGADO: se prende desde
      * Ajustes del panel. Ver wabot_postdemo_bot_activo(). */
     'bot_postdemo_activo' => false,
+    /* Bot hasta la demo (Pablo, 11-nov): con los datos de la demo recibidos el
+     * bot sigue en el chat (acusa lo que manda y contesta lo simple) hasta que se
+     * entrega la demo. Ver wabot_bot_hasta_demo_activo(). */
+    'bot_hasta_demo' => true,
     /* Solo bienvenida (Pablo, 3-oct): en la charla el bot solo saluda al que
      * escribe por primera vez y el resto lo contesta Pablo. Formularios,
      * demos, plantillas y avisos automáticos siguen. Se apaga desde Ajustes

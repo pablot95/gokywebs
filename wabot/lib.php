@@ -203,6 +203,8 @@ function wabot_ajustes_claves() {
     return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo', 'solo_bienvenida', 'flujo_comercial',
             // Bot después de la demo (1-nov): ver wabot_postdemo_bot_activo().
             'bot_postdemo_activo',
+            // Bot hasta la demo (11-nov): ver wabot_bot_hasta_demo_activo().
+            'bot_hasta_demo',
             // Pagos de Mercado Pago cruzados solos y el onboarding por el chat (pagos.php, onboarding.php, 1-nov).
             'pagos_auto', 'onboarding_activo',
             'demora_segundos', 'demora_primer_mensaje', 'demora_bienvenida', 'demora_entre_mensajes',
@@ -4280,12 +4282,23 @@ function wabot_conv_ultimo_ts($cv) {
     return is_array($ult) ? (int)($ult['ts'] ?? 0) : 0;
 }
 
+/**
+ * Con los datos de la demo recibidos y la demo sin entregar, el bot sigue en el
+ * chat (wabot_bot_hasta_demo_activo, 11-nov): lo que el cliente manda ahí (logo,
+ * fotos, «gracias») no es algo que le toque contestar a Pablo, salvo que el bot
+ * se lo haya pasado (handoff) o él haya tomado la charla.
+ */
+function wabot_conv_muestra_del_bot($cv) {
+    return wabot_conv_grupo($cv) === 'muestra' && !wabot_conv_bot_inactivo($cv)
+        && empty($cv['handoff_pendiente']) && empty($cv['control_manual']);
+}
+
 function wabot_conv_es_sl($cv) {
     $grupo = wabot_conv_grupo($cv);
     if ($grupo === 'archivado') return false;
     if (wabot_conv_contestada($cv)) return false;
 
-    $leTocaAPablo = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
+    $leTocaAPablo = (in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true) && !wabot_conv_muestra_del_bot($cv))
         || wabot_conv_bot_inactivo($cv)
         || !empty($cv['handoff_pendiente']);
     if (!$leTocaAPablo) return false;
@@ -4317,7 +4330,7 @@ function wabot_conv_rta($cv) {
     // Marcada como atendida: sale de los dos chips, no pasa de SL a RTA.
     if (wabot_conv_contestada($cv)) return false;
 
-    $enSuTerreno = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
+    $enSuTerreno = (in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true) && !wabot_conv_muestra_del_bot($cv))
         || wabot_conv_bot_inactivo($cv)
         || !empty($cv['handoff_pendiente']);
     if (!$enSuTerreno) return false;
@@ -4384,6 +4397,73 @@ function wabot_postdemo_bot_activo($cfg = null) {
     /* Sin el flujo comercial en Automático no hay quién conteste después de la
      * demo: el motor viejo no conoce esta etapa (revisión del 1-nov). */
     return !empty($cfg['bot_postdemo_activo']) && (function_exists('wabot_flujo_comercial') ? wabot_flujo_comercial($cfg) : trim((string)($cfg['flujo_comercial'] ?? ''))) === 'auto';
+}
+
+/**
+ * Una foto, un video o un archivo sin texto que se pueda leer, con los datos de la
+ * demo ya recibidos y el bot siguiendo hasta la demo (11-nov): es material para la
+ * demo (el logo ya se sumó a la ficha), no algo para derivar. Sin esto, el webhook
+ * lo pasaba a Pablo con wabot_postprecio_derivar (toma el control) y el chat volvía
+ * a quedar sin leer. Devuelve true si el webhook no tiene que hacer nada más.
+ */
+function wabot_prediseno_material_sin_texto(&$conv, $cfg) {
+    if (!function_exists('wabot_comercial_post_form_permitido') || !function_exists('wabot_flujo_comercial') || wabot_flujo_comercial($cfg) !== 'auto') return false;
+    if ((int)($conv['form_completado_ts'] ?? 0) <= 0 && empty($conv['lead_creado'])) return false;
+    if (!wabot_comercial_post_form_permitido($conv, $cfg)) return false;
+    $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Mandó material sin texto con los datos de la demo ya recibidos',
+                                 'ajustes' => ['prediseno_material'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+    wabot_log('prediseno_material', ['tel' => $conv['tel'] ?? '']);
+    return true;
+}
+
+/**
+ * Datos de la demo recibidos (formulario completo o por el chat): deja la charla
+ * en prediseño. Con wabot_bot_hasta_demo_activo() y el bot atendiendo, sigue en
+ * manos del bot (sin handoff ni bot_off: el panel no la cuenta como sin leer);
+ * si no, como antes del 11-nov: pasa a Pablo y el bot se apaga en ese chat
+ * (salvo el postprecio automático, que nunca apagó). Devuelve true si el bot sigue.
+ */
+function wabot_prediseno_cerrar(&$conv, $cfg, $origen) {
+    $botSigue = empty($conv['control_manual']) && empty($conv['bot_off']) && wabot_bot_hasta_demo_activo($cfg);
+    $postprecio = !empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])
+        && wabot_postprecio_encendido($cfg);
+    if ($botSigue || $postprecio) {
+        $conv['fase'] = 'prediseno';
+        $conv['seguimiento_bloqueado'] = true;
+        if ($botSigue) {
+            $conv['cierre'] = 'prediseno';
+            $conv['espera_avisada'] = false;
+            $conv['handoff_pendiente'] = false;
+        }
+    } else {
+        wabot_handoff_marcar($conv, 'prediseno');
+    }
+    if ($botSigue) {
+        wabot_log($origen === 'chat' ? 'datos_chat_bot_sigue' : 'form_bot_sigue', ['tel' => $conv['tel'] ?? '']);
+    } else {
+        $conv['bot_off'] = true;
+        wabot_log($origen === 'chat' ? 'bot_off_datos_chat' : 'bot_off_form', ['tel' => $conv['tel'] ?? '']);
+    }
+    return $botSigue;
+}
+
+/**
+ * ¿El bot sigue en el chat después de recibir los datos de la demo, hasta
+ * entregarla? (Pablo, 11-nov: «quiero que el bot siga respondiendo hasta que la
+ * demo sea entregada»; con los datos por el chat, lo que la gente seguía
+ * mandando —logo, fotos, más info— le quedaba como chats sin leer.) Prendido
+ * (de fábrica): los datos/el formulario completo no apagan el bot ni pasan la
+ * charla a Pablo; el flujo comercial acusa lo que manda y contesta lo simple
+ * (wabot_comercial_post_form_permitido), y lo que no sabe se lo deriva. Al
+ * Presentar la demo toma el control Pablo, como siempre (salvo «Bot después de
+ * la demo»). Ajustes → `bot_hasta_demo`. Solo con el flujo comercial en Automático.
+ */
+function wabot_bot_hasta_demo_activo($cfg = null) {
+    if (isset($GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'])) return (bool)$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] || wabot_postdemo_bot_activo($cfg);
+    if (wabot_postdemo_bot_activo($cfg)) return true;
+    if ($cfg === null) $cfg = wabot_config_load();
+    if (array_key_exists('bot_hasta_demo', (array)$cfg) && empty($cfg['bot_hasta_demo'])) return false;
+    return (function_exists('wabot_flujo_comercial') ? wabot_flujo_comercial($cfg) : trim((string)($cfg['flujo_comercial'] ?? ''))) === 'auto';
 }
 
 /** Única forma de devolverle una conversación al bot: una acción manual. */
@@ -7872,26 +7952,12 @@ function wabot_form_lead_procesar($payload, $cfg) {
         // (una sola vez por charla: wabot_capi_evento lo recuerda).
         wabot_capi_evento($conv, 'LeadSubmitted', $cfg);
     }
-    if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])
-        && wabot_postprecio_encendido($cfg)) {
-        $conv['fase'] = 'prediseno';
-        $conv['seguimiento_bloqueado'] = true;
-    } else {
-        wabot_handoff_marcar($conv, 'prediseno');
-    }
-    /* Con el formulario completo el bot se apaga en ese chat (Pablo, 10-oct): de
-     * ahí en adelante contesta él. Es el mismo apagado del panel (bot_off): el
-     * handoff queda pendiente para que lo vea, y solo se lo devuelve al bot a
-     * mano (wabot_conv_encender_manual). Con «Bot después de la demo» prendido
-     * (1-nov) no se apaga: el flujo comercial contesta lo simple hasta la demo
-     * (wabot_comercial_post_form_permitido) y la confirmación de los 5 minutos
-     * sigue igual. */
-    if (!wabot_postdemo_bot_activo($cfg)) {
-        $conv['bot_off'] = true;
-        wabot_log('bot_off_form', ['tel' => $clave]);
-    } else {
-        wabot_log('form_bot_sigue', ['tel' => $clave]);
-    }
+    /* Con el formulario completo el bot se apagaba en ese chat (Pablo, 10-oct).
+     * Desde el 11-nov sigue hasta la demo (wabot_bot_hasta_demo_activo): el flujo
+     * comercial contesta lo simple (wabot_comercial_post_form_permitido) y la
+     * confirmación de los 5 minutos sigue igual. Apagado en Ajustes, como antes:
+     * bot_off + handoff, y solo se lo devuelve al bot a mano. */
+    wabot_prediseno_cerrar($conv, $cfg, 'form');
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);

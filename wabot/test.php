@@ -4800,7 +4800,10 @@ $slDerivado['handoff_pendiente'] = true;
 caso('una consulta derivada → SL', wabot_conv_es_sl($slDerivado) === true);
 
 // Prediseño cerrado, esperando que le armen la demo.
-caso('prediseño cerrado con el cliente escribiendo → SL', wabot_conv_es_sl($slBase) === true);
+caso('prediseño cerrado con el cliente escribiendo y el bot apagado → SL', wabot_conv_es_sl(array_merge($slBase, ['bot_off' => true])) === true);
+caso('prediseño cerrado que se lo pasó el bot (handoff) → SL', wabot_conv_es_sl(array_merge($slBase, ['handoff_pendiente' => true])) === true);
+// 11-nov: con los datos recibidos el bot sigue hasta la demo; lo que manda el cliente ahí no es de Pablo.
+caso('prediseño cerrado con el bot siguiendo hasta la demo → no es SL', wabot_conv_es_sl($slBase) === false && wabot_conv_muestra_del_bot($slBase));
 
 /* Pablo, 28-ago: "si yo abro esa conversación, no contesto y la saco, se
  * pierde. Deberían permanecer, incluso si yo contesto, que pase a otra

@@ -355,6 +355,11 @@ function wabot_procesar_entrante($ev, $cfg) {
 
             // Solo bienvenida (3-oct): un audio o una foto de entrada también se saluda; si no, lo ve Pablo.
             if (!$usables && wabot_solo_bienvenida($cfg)) $usables = [''];
+            // Material para la demo con los datos ya recibidos (11-nov): ni se deriva ni se acusa.
+            if (!$usables && wabot_prediseno_material_sin_texto($conv, $cfg)) {
+                wabot_conv_save($conv);
+                break;
+            }
             if (!$usables && !empty($cfg['postprecio_activo']) && !empty($conv['precio_dado'])) {
                 wabot_postprecio_derivar($conv, 'Archivo o audio sin contenido interpretable');
                 wabot_conv_save($conv);
@@ -580,6 +585,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         if ($usables) wabot_oferta_diseno_reabrir($conv, implode("\n", $usables));
         $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && empty($conv['control_manual']) && time() >= (int)$conv['pausado_hasta'];
         if ($activo && !$usables && wabot_solo_bienvenida($cfg)) $usables = [''];
+        if ($activo && !$usables && wabot_prediseno_material_sin_texto($conv, $cfg)) $activo = false;
         if ($activo && !$usables && !empty($cfg['postprecio_activo']) && !empty($conv['precio_dado'])) {
             wabot_postprecio_derivar($conv, 'Archivo o audio sin contenido interpretable');
         }

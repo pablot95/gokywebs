@@ -279,9 +279,39 @@ oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
 $r = turno('Ahí lo abrí, una pregunta más: cuánto tarda?', $cP, $cfg);
 caso('si Pablo ya escribió después del formulario, el bot no se mete', $r === [] && count(pedidos()) === 0);
 $cC = $c; $cC['form_completado_ts'] = time();
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = false;
 oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
 $r = turno('Ya lo completé, cuánto tarda?', $cC, $cfg);
-caso('con el formulario completo el bot sigue callado (10-oct)', $r === [] && count(pedidos()) === 0);
+caso('con «Seguir hasta la demo» apagado, con el formulario completo el bot sigue callado (10-oct)', $r === [] && count(pedidos()) === 0);
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = true;
+// 11-nov: con los datos recibidos el bot sigue hasta la demo.
+oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['plazos']])]);
+$cH = $cC;
+$r = turno('Ya lo completé, cuánto tarda?', $cH, $cfg);
+caso('con el formulario completo y «Seguir hasta la demo» prendido, contesta lo simple (11-nov)', $r === [$cfg['info']['plazos']] && count(pedidos()) === 1
+    && empty($cH['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('el modelo sabe que ya tenemos los datos y que el material se acusa', strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'Ya tenemos los datos de la demo') !== false
+    && strpos((string)(pedidos()[0]['input'][0]['content'] ?? ''), 'Lo sumamos a la demo') !== false);
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$cH = $cC; $cH['handoff_pendiente'] = false; wabot_conv_transcript($cH, 'bot', 'Te la mandamos hoy a la tarde');
+$r = turno('Muchas gracias!', $cH, $cfg);
+caso('un «gracias» esperando la demo no gasta el modelo ni queda para Pablo', $r === [] && count(pedidos()) === 0 && empty($cH['handoff_pendiente'])
+    && ($cH['comercial_ultimo']['accion'] ?? '') === 'esperar');
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$cH = $cC; $cH['handoff_pendiente'] = false; wabot_conv_transcript($cH, 'bot', 'Te la mandamos hoy a la tarde');
+$r = turno('', $cH, $cfg);
+caso('una foto sin texto esperando la demo no gasta el modelo ni queda para Pablo', $r === [] && count(pedidos()) === 0 && empty($cH['handoff_pendiente']));
+$cH = $cC; $cH['handoff_pendiente'] = true;
+$r = turno('', $cH, $cfg);
+caso('si ya había algo para Pablo, la foto no se lo saca', $r === [] && count(pedidos()) === 0 && !empty($cH['handoff_pendiente']));
+oa([dc(['accion' => 'humano', 'solucion' => 'tienda', 'motivo' => 'Pide una llamada'])]);
+$cH = $cC;
+$r = turno('Me podés llamar mañana?', $cH, $cfg);
+caso('lo que no sabe esperando la demo se lo pasa a Pablo en silencio', $r === [] && !empty($cH['handoff_pendiente']) && empty($cH['control_manual']));
+$cH = $cC; $cH['presentado_ts'] = time();
+oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
+$r = turno('Cuánto tarda?', $cH, $cfg);
+caso('con la demo entregada ya no contesta (sin «Bot después de la demo»)', $r === [] && count(pedidos()) === 0);
 $cfgOff = $cfg; $cfgOff['comercial']['post_formulario'] = false;
 oa([dc(['accion' => 'responder', 'mensajes' => ['no']])]);
 $r = turno('Cuánto tarda?', $c, $cfgOff);

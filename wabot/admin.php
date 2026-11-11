@@ -633,6 +633,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['postprecio_config_presente'])) $cfg['solo_bienvenida'] = !empty($_POST['solo_bienvenida']);
         // Bot después de la demo (1-nov): ver wabot_postdemo_bot_activo().
         if (isset($_POST['postprecio_config_presente'])) $cfg['bot_postdemo_activo'] = !empty($_POST['bot_postdemo_activo']);
+        // Bot hasta la demo (11-nov): ver wabot_bot_hasta_demo_activo().
+        if (isset($_POST['postprecio_config_presente'])) $cfg['bot_hasta_demo'] = !empty($_POST['bot_hasta_demo']);
         // Pagos cruzados solos y onboarding por el chat (1-nov): pagos.php y onboarding.php.
         if (isset($_POST['postprecio_config_presente'])) $cfg['pagos_auto'] = !empty($_POST['pagos_auto']);
         if (isset($_POST['postprecio_config_presente'])) $cfg['onboarding_activo'] = !empty($_POST['onboarding_activo']);
@@ -3303,6 +3305,8 @@ function burbujaCita(t, chat) {
                 'Saluda al que escribe por primera vez y no contesta más. Formularios, demos, plantillas y avisos siguen igual.', !empty($cfg['solo_bienvenida'])) ?>
             <?= $quePasa('postprecio_activo', 'Contestar las dudas de siempre después del precio y de la demo',
                 'Lo que no está aprobado (pagos, excepciones, temas nuevos) te lo deja a vos, sin mandarle nada al cliente.', !empty($cfg['postprecio_activo'])) ?>
+            <?= $quePasa('bot_hasta_demo', 'Seguir la charla hasta entregar la demo',
+                'Con los datos de la demo recibidos no se apaga: acusa lo que el cliente sigue mandando (fotos, logo, más info) y contesta lo simple, así esos chats no te quedan sin leer. Lo que no sabe te lo pasa. Al presentar la demo la tomás vos.', !array_key_exists('bot_hasta_demo', (array)$cfg) || !empty($cfg['bot_hasta_demo'])) ?>
             <?= $quePasa('bot_postdemo_activo', 'Seguir la charla después de la demo',
                 'Con el flujo comercial en Automático: pregunta qué modelo le gustó, manda el link de pago y anota los cambios. Si escribís vos, se pausa.', !empty($cfg['bot_postdemo_activo'])) ?>
             <?= $quePasa('pagos_auto', 'Reconocer solo los pagos de Mercado Pago',

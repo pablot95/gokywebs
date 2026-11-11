@@ -196,7 +196,9 @@ caso('instagram', ($c['instagram'] ?? '') === 'zapaslanus');
 caso('referencia e incluir', str_contains((string)($c['referencia'] ?? ''), 'nike.com') && ($c['incluir'] ?? '') === 'un mapa con la ubicación', (string)($c['referencia'] ?? ''));
 caso('form_completado_ts + origen chat', (int)($c['form_completado_ts'] ?? 0) > 0 && ($c['origen_prediseno'] ?? '') === 'chat');
 caso('la ficha se creó (lead_creado)', !empty($c['lead_creado']));
-caso('el bot se apaga en el chat, como con el formulario', !empty($c['bot_off']));
+caso('el bot sigue en el chat hasta la demo (11-nov): sin apagarse ni pasarle la charla a Pablo', empty($c['bot_off']) && empty($c['handoff_pendiente'])
+    && ($c['fase'] ?? '') === 'prediseno' && ($c['cierre'] ?? '') === 'prediseno' && wabot_conv_grupo($c) === 'muestra');
+caso('el panel no lo cuenta como sin leer ni como pendiente de Pablo', wabot_conv_muestra_del_bot($c) && !wabot_conv_bot_inactivo($c));
 caso('la confirmación de los 5 minutos ya no corresponde', !empty($c['form_recibido_confirmado']) && !wabot_form_confirmacion_corresponde($c, $cfg, time() + 600));
 $linea = linea_sistema($c, '[Datos de la demo por chat]');
 caso('línea de sistema con los datos', str_contains($linea, 'Negocio: Zapas Lanús') && str_contains($linea, 'Colores: negro y dorado') && str_contains($linea, 'Instagram: instagram.com/zapaslanus'), $linea);
@@ -209,8 +211,22 @@ caso('la ficha lleva nombre_negocio, colores, referencias, incluir_si_o_si e ins
     json_encode(array_intersect_key($campos, array_flip(['nombre_negocio', 'colores', 'referencias', 'incluir_si_o_si', 'instagram', 'createdAt'])), JSON_UNESCAPED_UNICODE));
 caso('esProspecto en la ficha', !empty($campos['esProspecto']['booleanValue']));
 oa([dc(['accion' => 'responder', 'mensajes' => ['no debería salir']])]);
-$r = turno('Gracias! Te mando fotos después', $c, $cfg);
-caso('después, el chat es de Pablo (bot apagado)', $r === [] && count(pedidos()) === 0, implode(' | ', $r));
+$cMat = $c;
+$r = turno('Gracias!', $cMat, $cfg);
+caso('después, un «gracias» no gasta el modelo ni queda para Pablo', $r === [] && count(pedidos()) === 0 && empty($cMat['handoff_pendiente']), implode(' | ', $r));
+$cMat = $c;
+caso('una foto sin texto: el webhook no la deriva', wabot_prediseno_material_sin_texto($cMat, $cfg) && empty($cMat['control_manual']) && empty($cMat['handoff_pendiente']));
+oa([dc(['accion' => 'responder', 'mensajes' => ['¡Recibido! Lo sumamos a la demo']])]);
+$cMat = $c;
+$r = turno('Te paso los horarios: lunes a sábado de 10 a 20', $cMat, $cfg);
+caso('más info para la demo → el acuse del modelo', $r === ['¡Recibido! Lo sumamos a la demo'] && count(pedidos()) === 1 && empty($cMat['handoff_pendiente']), implode(' | ', $r));
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = false;
+$cMat = $c; $cMat['bot_off'] = true;
+oa([dc(['accion' => 'responder', 'mensajes' => ['no debería salir']])]);
+$r = turno('Gracias! Te mando fotos después', $cMat, $cfg);
+caso('con «Seguir hasta la demo» apagado, después el chat es de Pablo (bot apagado)', $r === [] && count(pedidos()) === 0, implode(' | ', $r));
+caso('y una foto sin texto no se queda en el bot', !wabot_prediseno_material_sin_texto($cMat, $cfg));
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = true;
 
 echo "\n— 5. Lo que no son los datos sigue el camino de siempre —\n";
 $c = cv_con_pedido();
@@ -437,7 +453,7 @@ $patch = (array)($GLOBALS['WABOT_TEST_DATOS_TARDE_PATCH'] ?? []);
 caso('la ficha se completa: colores, rubro y objetivos', str_contains((string)($patch['colores']['stringValue'] ?? ''), 'Azul eléctrico')
     && str_contains((string)($patch['objetivos']['stringValue'] ?? ''), 'preguntas frecuentes') && str_contains((string)($patch['rubro']['stringValue'] ?? ''), 'APEX AIMS'));
 caso('solo campos que las reglas de Firestore dejan tocar sin login', $patch && !array_diff(array_keys($patch), ['nombre_negocio', 'rubro', 'negocio_rubro', 'colores', 'color_principal', 'color_secundario', 'color_fondos', 'instagram', 'objetivos', 'updatedAt']));
-caso('queda pendiente para Pablo y el bot sigue apagado', !empty($c['handoff_pendiente']) && !empty($c['bot_off']));
+caso('con el bot siguiendo hasta la demo no queda pendiente para Pablo (lo acusa el bot)', empty($c['handoff_pendiente']) && empty($c['bot_off']));
 caso('lo ya leído no se vuelve a leer', wabot_datos_demo_tardios($c, $cfg) === false && count(pedidos_datos()) === 1);
 wabot_conv_transcript($c, 'cliente', 'Fíjate si ese dominio o esa web ya la tiene otra persona por favor');
 oa([], [dd(['es_datos' => false])]);

@@ -417,20 +417,11 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     }
     if (function_exists('wabot_prospecto_sincronizar')) wabot_prospecto_sincronizar($conv);
 
-    if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])
-        && function_exists('wabot_postprecio_encendido') && wabot_postprecio_encendido($cfg)) {
-        $conv['fase'] = 'prediseno';
-        $conv['seguimiento_bloqueado'] = true;
-    } elseif (function_exists('wabot_handoff_marcar')) {
-        wabot_handoff_marcar($conv, 'prediseno');
-    }
-    /* Con los datos recibidos el bot se apaga en ese chat, como con el formulario
-     * completo (Pablo, 10-oct): de ahí en adelante contesta él. Con «Bot después
-     * de la demo» prendido sigue contestando lo simple hasta la demo. */
-    if (!function_exists('wabot_postdemo_bot_activo') || !wabot_postdemo_bot_activo($cfg)) {
-        $conv['bot_off'] = true;
-        wabot_log('bot_off_datos_chat', ['tel' => $conv['tel'] ?? '']);
-    }
+    /* Con los datos recibidos el bot sigue en el chat hasta la demo (Pablo,
+     * 11-nov): acusa lo que manda y contesta lo simple, y el chat no le queda a
+     * Pablo como sin leer. Con «Seguir hasta la demo» apagado, como el 10-oct:
+     * el bot se apaga y de ahí en adelante contesta él. */
+    wabot_prediseno_cerrar($conv, $cfg, 'chat');
     // La confirmación sale ahora: la del cron de los 5 minutos ya no corresponde.
     $conv['form_recibido_confirmado'] = true;
     $conv['form_confirmacion_auto_ts'] = $ahora;
@@ -980,7 +971,9 @@ function wabot_datos_demo_tardios(&$conv, $cfg, $ahora = null) {
         if (is_array($brief) && $brief) $conv['brief'] = $brief;
     }
     $ok = wabot_datos_demo_ficha_actualizar($conv, $cfg, $d);
-    if (empty($conv['control_manual'])) $conv['handoff_pendiente'] = true;
+    /* Con el bot siguiendo hasta la demo (11-nov) lo acusa el bot y la ficha ya quedó
+     * al día: no es algo que Pablo tenga que contestar. Con el bot apagado, lo ve él. */
+    if (empty($conv['control_manual']) && !empty($conv['bot_off'])) $conv['handoff_pendiente'] = true;
     wabot_log('datos_demo_tarde', ['clave' => wabot_conversation_key($conv), 'campos' => count($cambios), 'ficha' => $ok]);
     return true;
 }

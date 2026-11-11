@@ -414,10 +414,10 @@ function wabot_comercial_postdemo_elegible($conv, $cfg) {
 /**
  * ¿Puede contestar lo simple con el formulario ya mandado? (Pablo, 22-oct:
  * "¿tienen otros trabajos realizados?" quedaba sin respuesta.) Solo mientras
- * el link salió y no lo completó: completo, el bot se apaga en el chat (10-oct),
- * salvo con «Bot después de la demo» prendido (1-nov): ahí también contesta lo
- * simple entre el formulario completo y la demo (y la confirmación de los 5
- * minutos sigue igual). Ni con la charla en manos de Pablo, ni si él ya escribió
+ * el link salió y no lo completó: completo, el bot se apagaba en el chat (10-oct);
+ * desde el 11-nov (wabot_bot_hasta_demo_activo, o «Bot después de la demo») también
+ * contesta lo simple entre los datos recibidos y la demo (y la confirmación de
+ * los 5 minutos sigue igual). Ni con la charla en manos de Pablo, ni si él ya escribió
  * después del link, ni con la demo presentada, el pago avisado o un cliente.
  */
 function wabot_comercial_post_form_permitido($conv, $cfg) {
@@ -425,7 +425,7 @@ function wabot_comercial_post_form_permitido($conv, $cfg) {
     if (wabot_comercial_estado($conv) !== 'formulario' || (string)($conv['comercial_pausa'] ?? '') === 'humano') return false;
     if (!empty($conv['control_manual']) || !empty($conv['bot_off']) || !empty($conv['archivado'])) return false;
     if (!empty($conv['presentado_ts'])) return false;
-    if (((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado'])) && !wabot_postdemo_bot_activo($cfg)) return false;
+    if (((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado'])) && !wabot_bot_hasta_demo_activo($cfg)) return false;
     if (!empty($conv['pago_avisado_ts']) || !empty($conv['cliente_id']) || !empty($conv['contexto_consulta'])) return false;
     if (in_array((string)($conv['cierre'] ?? ''), ['baja', 'proveedor', 'rechazo'], true)) return false;
     $desde = (int)($conv['comercial_pausa_ts'] ?? 0) ?: (int)($conv['form_link_mandado_ts'] ?? 0);
@@ -645,6 +645,7 @@ function wabot_comercial_contexto($texto, $conv, $cfg) {
         $c[] = ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']))
             ? '- Ya tenemos los datos de la demo' . ($porChat ? ' (los mandó por el chat)' : ' (completó el formulario)') . ': la demo se la mandamos nosotros por acá, ' . (function_exists('wabot_form_entrega_frase') ? wabot_form_entrega_frase($conv) : 'en menos de 24 hs')
                 . '. Si pregunta cuándo llega, decile eso con tus palabras. No le pidas más datos ni le mandes nada más: lo simple se contesta como en DESPUÉS DE PEDIR LOS DATOS y lo demás es humano.'
+                . ' Si manda más material o info para la demo (fotos, logo, horarios, textos, links, cambios a lo que ya pasó), accion responder con un acuse corto de una frase (por ejemplo «¡Recibido! Lo sumamos a la demo»), sin repetir lo que mandó ni prometer nada nuevo.'
             : ($porChat
                 ? '- YA LE PEDIMOS LOS DATOS DE LA DEMO POR EL CHAT y todavía no los mandó: seguí lo de DESPUÉS DE PEDIR LOS DATOS. Si este mensaje trae los datos, el sistema ya los tomó antes de llegar a vos.'
                 : '- YA LE MANDAMOS EL FORMULARIO DE LA DEMO y todavía no lo completó: seguí lo de DESPUÉS DE PEDIR LOS DATOS.');
@@ -3174,6 +3175,7 @@ function wabot_comercial_etiqueta($efecto) {
  */
 function wabot_comercial_turno($texto, &$conv, $cfg) {
     wabot_turno_preparar($conv, $cfg, time());
+    $textoSolo = (string)$texto;
     $texto = wabot_comercial_tanda_pendiente((string)$texto, $conv);
     if (trim($texto) !== '') {
         wabot_ficha_actualizar($conv, $texto);
@@ -3261,14 +3263,25 @@ function wabot_comercial_turno($texto, &$conv, $cfg) {
             return [trim((string)$cfg['bienvenida'])];
         }
     }
+    /* Con los datos de la demo ya recibidos y la demo sin entregar (11-nov): una
+     * foto, un archivo o un sticker sin texto es material para la demo (el logo
+     * se suma solo a la ficha), no algo que Pablo tenga que contestar. */
+    $fichaLista = $postForm && ((int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['lead_creado']));
+    if (trim($textoSolo) === '' && $fichaLista) {
+        // Si antes quedó algo para Pablo, sigue quedando: la foto no lo resuelve.
+        $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Mandó material sin texto con los datos de la demo ya recibidos',
+                                     'ajustes' => ['prediseno_material'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+        return [];
+    }
     if (trim($texto) === '') { $conv['handoff_pendiente'] = true; return []; }
 
     /* Un "ok", un "gracias" o un pulgar después de la demo no gasta un turno
-     * del modelo: se espera, como hace Pablo (1-nov). */
-    if ($postdemo && wabot_comercial_postdemo_es_acuse($texto)) {
-        $conv['handoff_pendiente'] = false;
-        $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => 'Un acuse después de la demo',
-                                     'ajustes' => ['postdemo_acuse'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
+     * del modelo: se espera, como hace Pablo (1-nov). Lo mismo esperando la demo
+     * con los datos ya recibidos (11-nov). */
+    if (($postdemo || $fichaLista) && wabot_comercial_postdemo_es_acuse($texto)) {
+        if ($postdemo) $conv['handoff_pendiente'] = false;
+        $conv['comercial_ultimo'] = ['ts' => time(), 'accion' => 'esperar', 'motivo' => $postdemo ? 'Un acuse después de la demo' : 'Un acuse esperando la demo',
+                                     'ajustes' => [$postdemo ? 'postdemo_acuse' : 'prediseno_acuse'], 'revision' => ['estado' => 'sin_revisar', 'problemas' => [], 'falta' => [], 'pendientes' => []]];
         return [];
     }
 

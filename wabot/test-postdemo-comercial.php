@@ -166,6 +166,7 @@ caso('la seña del pago único es la de sus páginas (unico240 → $80.000, unic
 
 echo "— 2. Los tres candados —\n";
 // 1) El formulario completo: con la casilla apagada apaga el bot (10-oct); prendida, no.
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = false;   // «Seguir hasta la demo» (11-nov) se prueba en test-comercial y test-datos-demo
 foreach ([false => 'apagada', true => 'prendida'] as $prendida => $nombre) {
     $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = (bool)$prendida;
     $tel = $prendida ? '5491100009231' : '5491100009230';
@@ -173,9 +174,19 @@ foreach ([false => 'apagada', true => 'prendida'] as $prendida => $nombre) {
     $r = wabot_form_lead_procesar(['t' => $tel, 'nombre' => 'Marta', 'nombre_negocio' => 'Zapas Marta', 'resumen' => 'Vendo zapatillas', 'colores' => 'rojo'], $cfg);
     $cv = wabot_conv_load($tel);
     caso("formulario completo con la casilla {$nombre}: " . ($prendida ? 'el bot sigue' : 'el bot se apaga en el chat'), !empty($r['ok']) && (int)($cv['form_completado_ts'] ?? 0) > 0
-        && (bool)($cv['bot_off'] ?? false) === !$prendida && !empty($cv['handoff_pendiente']), json_encode([$r, $cv['bot_off'] ?? null], JSON_UNESCAPED_UNICODE));
+        && (bool)($cv['bot_off'] ?? false) === !$prendida && (bool)($cv['handoff_pendiente'] ?? false) === !$prendida, json_encode([$r, $cv['bot_off'] ?? null], JSON_UNESCAPED_UNICODE));
     @unlink(wabot_conv_path($tel));
 }
+$tel = '5491100009232';
+@unlink(wabot_conv_path($tel));
+$GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = false;
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = true;
+$r = wabot_form_lead_procesar(['t' => $tel, 'nombre' => 'Marta', 'nombre_negocio' => 'Zapas Marta', 'resumen' => 'Vendo zapatillas', 'colores' => 'rojo'], $cfg);
+$cv = wabot_conv_load($tel);
+caso('formulario completo con «Seguir hasta la demo» (11-nov): el bot sigue, sin handoff, en prediseño', !empty($r['ok']) && empty($cv['bot_off']) && empty($cv['handoff_pendiente'])
+    && ($cv['fase'] ?? '') === 'prediseno', json_encode([$cv['bot_off'] ?? null, $cv['handoff_pendiente'] ?? null, $cv['fase'] ?? null], JSON_UNESCAPED_UNICODE));
+@unlink(wabot_conv_path($tel));
+$GLOBALS['WABOT_TEST_BOT_HASTA_DEMO'] = false;
 $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = true;
 // 2) Presentar: con la casilla apagada toma el control; prendida, deja la charla como estaba.
 $GLOBALS['WABOT_TEST_BOT_POSTDEMO'] = false;
