@@ -1,0 +1,31 @@
+{
+  "ilustrativas_chatgpt": {
+    "origen": "zip de ChatGPT (Sanday_sillones_1RvwpD2Ka75MARgPe93J.zip), originales 01-09_imagen.jpg y 10_mockup_720x480.png",
+    "archivos": {
+      "sillon-individual.webp": "01_imagen.jpg (9:16)",
+      "sillon-individual-cuadro.webp": "recorte 1:1 de 01_imagen.jpg",
+      "esquinero-living.webp": "02_imagen.jpg (16:9), portada de los dos modelos",
+      "esquinero-cuadro.webp": "recorte 1:1 de 02_imagen.jpg",
+      "dos-cuerpos.webp": "03_imagen.jpg",
+      "tres-cuerpos.webp": "04_imagen.jpg",
+      "respaldo-capitone.webp": "05_imagen.jpg",
+      "puff.webp": "06_imagen.jpg",
+      "telas.webp": "07_imagen.jpg",
+      "costura.webp": "08_imagen.jpg (sin usar)",
+      "apoyabrazos.webp": "09_imagen.jpg (sin usar)",
+      "og.jpg": "02_imagen.jpg a 1200x630"
+    }
+  },
+  "reales_del_cliente": {
+    "origen": "fotos que mandó por WhatsApp (Descargas/imagenes-prospectos/sandaysillones), recortadas a 3:4",
+    "archivos": {
+      "trabajo-respaldo-abanico.webp": "12-imagen.jpg",
+      "trabajo-respaldo-arco.webp": "10-imagen.jpg",
+      "trabajo-esquinero-rojo.webp": "19-imagen.jpg",
+      "trabajo-sillon-individual.webp": "18-imagen.jpg",
+      "trabajo-respaldo-bastones.webp": "02-imagen.jpg",
+      "trabajo-esquinero-azul.webp": "17-imagen.jpg"
+    },
+    "logo.webp": "01-logo.jpg (captura de la foto de perfil de Instagram, círculo recortado con fondo transparente)"
+  }
+}
