@@ -121,7 +121,7 @@ function wabot_datos_demo_texto_cliente($conv, $desdeFila = null) {
     // Desde el renglón del pedido (por si varios mensajes comparten el segundo).
     $inicio = 0;
     if ($desdeFila !== null) {
-        $inicio = max(1, (int)$desdeFila);   // lo que mandó después de armada la ficha (wabot_datos_demo_tardios)
+        $inicio = max(0, (int)$desdeFila);   // lo que mandó después de armada la ficha (wabot_datos_demo_tardios); 0 = todo lo que hay desde el pedido
     } else {
         foreach ($t as $i => $fila) {
             if (in_array(($fila['q'] ?? ''), ['bot', 'humano'], true) && wabot_texto_pide_datos_demo((string)($fila['t'] ?? ''))) { $inicio = $i + 1; break; }
@@ -235,13 +235,42 @@ function wabot_datos_demo_pide_tiempo($texto) {
 
 /** Un «ok», «dale», «gracias», «después te paso»: no son los datos. */
 function wabot_datos_demo_es_acuse_o_posterga($texto) {
-    $t = wabot_datos_demo_norm($texto);
+    /* Se mira mensaje por mensaje (lo escrito desde el pedido llega junto, un renglón por
+     * mensaje): no hay datos si ninguno los trae. Antes se miraba todo junto, y un «te paso»
+     * o un «mañana» en cualquier parte escondía los datos de los otros renglones. */
+    $lineas = array_values(array_filter(array_map('trim', (array)preg_split('/\R/u', (string)$texto)), 'strlen'));
+    if (count($lineas) > 6) return false;   // tantos renglones ya es una lista: se lee
+    foreach ($lineas as $linea) {
+        if (!wabot_datos_demo_linea_sin_datos($linea)) return false;
+    }
+    return true;
+}
+
+/** Un renglón que seguro no trae datos: un acuse, un pedido de tiempo, una postergación o una pregunta corta. */
+function wabot_datos_demo_linea_sin_datos($linea) {
+    $t = wabot_datos_demo_norm($linea);
     if ($t === '') return true;
-    if (mb_strlen($t) <= 14 && preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya|ahi va|ahora|ahi te paso|ya te paso)( \p{L}+)?$/u', $t)) return true;
-    // Corto y sin signos de lista: «Pelu Mari, ahora te paso el logo» trae un dato y se lee.
-    if (mb_strlen($t) <= 40 && !preg_match('/[,:@\n]/u', (string)$texto) && wabot_datos_demo_pide_tiempo($t)) return true;
+    if (mb_strlen($t) <= 14 && preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya|ahi va|ahora|ahi te paso|ya te paso)( ' . wabot_datos_demo_acuse_cola() . ')?$/u', $t)) return true;
+    /* Con coma, dos puntos o arroba está pasando datos aunque diga «te paso» o «mañana»:
+     * «Te paso los datos: Pelu Mari, cortes y color», «Kiosco El Sol, abierto de mañana y
+     * tarde», «Pelu Mari, ahora te paso el logo» no se leían nunca (revisión del 10-nov).
+     * «Ok, mañana te mando todo»: la coma después del «ok» no cuenta. */
+    $sinAcuse = (string)preg_replace('/^\s*(ok|oka|okey|dale|si|sip|listo|genial|buen[ií]simo|perfecto|gracias|bueno|joya)\s*[,.!]+\s*/iu', '', trim((string)$linea));
+    if (preg_match('/[,:@]/u', $sinAcuse)) return false;
+    // Una pregunta corta la contesta el flujo: no gasta una lectura ni queda sin respuesta durante la espera.
+    if (mb_strlen($t) <= 80 && (mb_strpos((string)$linea, '?') !== false || mb_strpos((string)$linea, '¿') !== false)) return true;
+    if (mb_strlen($t) <= 40 && wabot_datos_demo_pide_tiempo($t)) return true;
     return preg_match('/\b(despues|mas tarde|manana|a la noche|a la tarde|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio|lo veo|lo hablo|lo consulto)\b/u', $t) === 1
         && mb_strlen($t) <= 90;
+}
+
+/**
+ * La palabra que puede acompañar a un «dale» o un «ok» sin que deje de ser un acuse
+ * («dale gracias», «ok perfecto», «listo amigo»). Antes valía cualquier palabra, y un
+ * negocio que se llama «Joya Mística» o «Dale Gas» se leía como un «ok».
+ */
+function wabot_datos_demo_acuse_cola() {
+    return '(gracias|genial|dale|listo|perfecto|si|ok|oka|okey|joya|bueno|claro|buenisimo|barbaro|entonces|igual|igualmente|ya|va|eso|todo|amigo|amiga|che|capo|crack|genio|pablo)';
 }
 
 /**
@@ -337,7 +366,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
 
     $conv['form_completado_ts'] = $ahora;
     $conv['datos_recibidos_ts'] = $ahora;
-    $conv['datos_demo_tarde_filas'] = wabot_datos_demo_cliente_filas($conv);   // lo que mande después: wabot_datos_demo_tardios
+    $conv['datos_demo_tarde_firma'] = wabot_datos_demo_ultima_firma_cliente($conv);   // lo que mande después: wabot_datos_demo_tardios
     $conv['origen_prediseno'] = ($conv['origen_prediseno'] ?? '') ?: 'chat';
 
     /* La ficha, igual que en wabot_form_lead_procesar(): si la charla dice tener
@@ -415,6 +444,8 @@ function wabot_datos_demo_anotar_turno(&$conv, $accion, $motivo, $ajuste) {
  * mismo turno, como del 9-nov.
  */
 const WABOT_DATOS_DEMO_ESPERA_MIN_DEFAULT = 5;
+/** Cuánto se espera al que pidió tiempo («aguantame», «ahora te paso») antes de armar con lo que haya. */
+const WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN = 30;
 
 /** Minutos de silencio del cliente antes de armar la ficha (Ajustes → IA); 0 = en el mismo turno. */
 function wabot_datos_demo_espera_min($cfg) {
@@ -493,7 +524,9 @@ function wabot_datos_demo_es_acuse($texto) {
     if ($t === '' || mb_strlen($t) > 40) return false;
     if (preg_match('/\b(despues|mas tarde|manana|en un rato|cuando pueda|cuando llegue|te paso|te mando|te envio)\b/u', $t)) return false;
     if (wabot_datos_demo_pide_tiempo($t)) return false;   // «Dale aguantame» no es un «listo»
-    if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( \p{L}+)?$/u', $t)) return true;
+    if (preg_match('/^(ok|oka|okey|dale|si|sip|listo|genial|buenisimo|perfecto|gracias|muchas gracias|joya|bueno|va|ya)( ' . wabot_datos_demo_acuse_cola() . ')?$/u', $t)) return true;
+    // «Todavía no está listo el logo» no es un «listo».
+    if (preg_match('/\b(no|todavia|aun|falta\w*)\b.{0,20}\blisto\b/u', $t)) return false;
     return preg_match('/\b(eso es todo|es todo|seria todo|ya esta|nada mas|con eso|listo)\b/u', $t) === 1;
 }
 
@@ -506,6 +539,8 @@ function wabot_datos_demo_espera_sigue($conv) {
 /** ¿Ya pasó el silencio que esperábamos? */
 function wabot_datos_demo_espera_vencida($conv, $cfg, $ahora) {
     if (!wabot_datos_demo_espera_sigue($conv)) return false;
+    // Pidió tiempo («aguantame», «ahora te paso»): hasta esa hora no se arma nada.
+    if ((int)($conv['datos_demo_espera_hasta_ts'] ?? 0) > $ahora) return false;
     $desde = max((int)$conv['datos_demo_espera_ts'], wabot_datos_demo_ultimo_cliente_ts($conv));
     return $ahora - $desde >= wabot_datos_demo_espera_min($cfg) * 60;
 }
@@ -516,7 +551,7 @@ function wabot_datos_demo_espera_vencida($conv, $cfg, $ahora) {
  * cliente; [] cuando lo ve Pablo en silencio.
  */
 function wabot_datos_demo_resolver(array $d, &$conv, $cfg, $ahora = null) {
-    unset($conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas']);
+    unset($conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas'], $conv['datos_demo_espera_hasta_ts']);
     wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
 
     $faltan = wabot_datos_demo_faltan($conv, $d);
@@ -600,13 +635,26 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
      * empezado a mandar: se anota la espera con los datos en blanco y, cuando deja de
      * escribir, se arma la ficha con lo que la charla ya sabe o se le pide lo esencial
      * que falta. En este turno no cambia nada: el flujo agradece el material como siempre. */
-    if (!$esperando && wabot_datos_demo_material_recibido($conv) > 0) {
+    /* Una vez por tanda de material: `datos_demo_material_n` recuerda cuántas fotos había al
+     * anotarla. Sin eso, cada mensaje posterior (una pregunta, un «ok») volvía a armar la
+     * espera y pagaba dos lecturas de GPT, la del turno y la del cron (revisión del 10-nov).
+     * Lo escrito hasta acá lo lee este turno: el cron solo relee si después llega algo más. */
+    $material = wabot_datos_demo_material_recibido($conv);
+    if (!$esperando && $material > (int)($conv['datos_demo_material_n'] ?? 0)) {
         $ahoraM = time();
+        $conv['datos_demo_material_n'] = $material;
         $conv['datos_demo_parcial'] = ['_material' => true] + wabot_datos_demo_normalizar(['es_datos' => true]);
-        $conv['datos_demo_leido_filas'] = 0;   // lo escrito hasta acá se relee al armar
+        $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
         $conv['datos_demo_espera_ts'] = $ahoraM;
         wabot_datos_demo_espera_marcar($conv, $ahoraM);
         wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'material']);
+    }
+    /* «Dale aguantame» con algo ya anotado: no alcanza con no armar la ficha en este turno,
+     * porque el cron la armaba igual a los 5 minutos de silencio (el brief de GREY llegó a
+     * los 15). Se le da WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN; si sigue mandando datos, vuelve a
+     * contar el silencio de siempre, y un «listo» la arma en el momento. */
+    if (wabot_datos_demo_espera_sigue($conv) && wabot_datos_demo_pide_tiempo(wabot_datos_demo_ultimo_texto_cliente($conv))) {
+        $conv['datos_demo_espera_hasta_ts'] = time() + WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN * 60;
     }
 
     // Solo fotos o un audio sin transcripción: no hay nada que leer (el flujo agradece el material).
@@ -636,6 +684,12 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
     $conv['datos_demo_parcial'] = $d;
     $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
     if (empty($conv['datos_demo_espera_ts'])) $conv['datos_demo_espera_ts'] = $ahora;
+    // «GREY INOVACION» + «Dale aguantame» en la misma tanda: más tiempo; si mandó más datos, el silencio de siempre.
+    if (wabot_datos_demo_pide_tiempo(wabot_datos_demo_ultimo_texto_cliente($conv))) {
+        $conv['datos_demo_espera_hasta_ts'] = $ahora + WABOT_DATOS_DEMO_PIDE_TIEMPO_MIN * 60;
+    } else {
+        unset($conv['datos_demo_espera_hasta_ts']);
+    }
     wabot_datos_demo_espera_marcar($conv, $ahora);
     wabot_datos_demo_anotar_turno($conv, 'esperar', 'Está mandando los datos de la demo: la ficha se arma a los ' . $min . ' min sin que escriba', 'datos_demo_espera');
     $conv['_comercial_salida'] = true;
@@ -732,24 +786,40 @@ function wabot_datos_demo_espera_correr($cfg = null, $ahora = null, &$convs = nu
  */
 const WABOT_DATOS_DEMO_TARDE_HORAS = 72;
 
+/**
+ * Qué renglón del cliente es: su id de WhatsApp/Instagram o, si no lo trae, la hora y el
+ * texto. No se cuentan renglones: el archivo de la charla guarda solo los últimos
+ * WABOT_TRANSCRIPT_VIVO y, al recortarse, un contador dejaba de ver los mensajes nuevos.
+ */
+function wabot_datos_demo_fila_firma($fila) {
+    $id = trim((string)($fila['id'] ?? ''));
+    return $id !== '' ? 'id:' . $id : 'h:' . md5((int)($fila['ts'] ?? 0) . '|' . (string)($fila['t'] ?? ''));
+}
+
+/** La firma de lo último que escribió el cliente ('' si no escribió nada). */
+function wabot_datos_demo_ultima_firma_cliente($conv) {
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') === 'cliente') return wabot_datos_demo_fila_firma($fila);
+    }
+    return '';
+}
+
 /** Fila del transcript desde la que hay que leer lo tardío: después de lo ya leído. */
 function wabot_datos_demo_tarde_desde($conv) {
-    $t = (array)($conv['transcript'] ?? []);
-    if (array_key_exists('datos_demo_tarde_filas', $conv)) {
-        $leidas = (int)$conv['datos_demo_tarde_filas'];
-        $n = 0;
-        foreach ($t as $i => $fila) {
-            if (($fila['q'] ?? '') !== 'cliente') continue;
-            if (++$n > $leidas) return $i;
+    $t = array_values((array)($conv['transcript'] ?? []));
+    $firma = (string)($conv['datos_demo_tarde_firma'] ?? '');
+    if ($firma !== '') {
+        for ($i = count($t) - 1; $i >= 0; $i--) {
+            if (($t[$i]['q'] ?? '') === 'cliente' && wabot_datos_demo_fila_firma($t[$i]) === $firma) return $i + 1;
         }
-        return count($t);
     }
-    // Fichas de antes de este arreglo: desde la línea que la anotó.
+    // Sin firma (fichas de antes) o con ese renglón ya fuera del archivo: desde la línea que anotó la ficha.
     $ultima = -1;
     foreach ($t as $i => $fila) {
         if (($fila['q'] ?? '') === 'sistema' && strpos((string)($fila['t'] ?? ''), '[Datos de la demo por chat') === 0) $ultima = $i;
     }
-    return $ultima >= 0 ? $ultima + 1 : count($t);
+    // Si tampoco está, todo lo que queda en el archivo es posterior.
+    return $ultima >= 0 ? $ultima + 1 : 0;
 }
 
 /**
@@ -763,13 +833,14 @@ function wabot_datos_demo_tardios(&$conv, $cfg, $ahora = null) {
     $recibido = (int)($conv['datos_recibidos_ts'] ?? 0);
     if ($recibido <= 0 || ($conv['origen_prediseno'] ?? '') !== 'chat' || empty($conv['lead_creado'])) return false;
     if ((int)($conv['presentado_ts'] ?? 0) > 0 || $ahora - $recibido > WABOT_DATOS_DEMO_TARDE_HORAS * 3600) return false;
-    $filas = wabot_datos_demo_cliente_filas($conv);
-    if (array_key_exists('datos_demo_tarde_filas', $conv) && $filas <= (int)$conv['datos_demo_tarde_filas']) return false;
+    // Nada nuevo desde la última lectura (se compara el último renglón del cliente, no una cuenta).
+    $firma = wabot_datos_demo_ultima_firma_cliente($conv);
+    if ($firma === '' || $firma === (string)($conv['datos_demo_tarde_firma'] ?? '')) return false;
 
     $nuevo = wabot_datos_demo_texto_cliente($conv, wabot_datos_demo_tarde_desde($conv));
     // Sin cuerpo no hay datos que leer: se sigue juntando hasta que lo haya.
     if (mb_strlen(wabot_datos_demo_norm($nuevo)) < 40 && substr_count($nuevo, "\n") < 2) return false;
-    $conv['datos_demo_tarde_filas'] = $filas;
+    $conv['datos_demo_tarde_firma'] = $firma;
     if (wabot_datos_demo_es_acuse_o_posterga($nuevo)) return false;
 
     $d = wabot_datos_demo_extraer($nuevo, $conv, $cfg);

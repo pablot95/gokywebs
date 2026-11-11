@@ -281,11 +281,13 @@ caso('el silencio se cuenta desde ese último mensaje', espera_pasa($c, 4) === n
 $c = cv_con_pedido();
 oa([], [dd(['nombre_negocio' => 'Zapas Lanús'])]);
 turno('Zapas Lanús', $c, $cfg);
-oa([dc(['accion' => 'responder', 'mensajes' => ['No, la demo no tiene costo.']])], [dd(['es_datos' => false]), dd(['nombre_negocio' => 'Zapas Lanús', 'incluir' => 'un mapa'])]);
+// 10-nov: la pregunta corta ya no gasta una lectura (antes dependía de que GPT dijera «no son datos»); la única lectura es la del cron.
+oa([dc(['accion' => 'responder', 'mensajes' => ['No, la demo no tiene costo.']])], [dd(['nombre_negocio' => 'Zapas Lanús', 'incluir' => 'un mapa'])]);
 $r = turno('La demo tiene costo?', $c, $cfg);
+caso('la pregunta no gasta lectura', count(pedidos_datos()) === 0);
 caso('una pregunta en el medio la contesta el flujo y la espera sigue', count($r) === 1 && str_starts_with((string)$r[0], 'No, la demo') && wabot_datos_demo_espera_sigue($c), implode(' | ', $r));
 $r = espera_pasa($c, 6);
-caso('al vencer relee todo (escribió después de la lectura) y arma', !empty($c['lead_creado']) && count(pedidos_datos()) === 2 && ($c['incluir'] ?? '') === 'un mapa', implode(' | ', (array)$r));
+caso('al vencer relee todo (escribió después de la lectura) y arma', !empty($c['lead_creado']) && count(pedidos_datos()) === 1 && ($c['incluir'] ?? '') === 'un mapa', implode(' | ', (array)$r));
 
 $c = cv('5491100009011TEST');
 wabot_conv_transcript($c, 'bot', $pedido);
@@ -458,5 +460,68 @@ $c['retomar_ts'] = time() + 86400;
 caso('si avisó que vuelve mañana, no se le insiste con la demo', wabot_comercial_reoferta_corresponde($dR, 'Y cómo se paga?', $c, $cfg, [['t' => 'Se paga por transferencia.']]) === false);
 caso('soy_bot no arranca con «No»', str_starts_with((string)$cfg['info']['soy_bot'], 'Soy el asistente automático'));
 caso('cobro_banco existe y el asistente la puede pedir', in_array('cobro_banco', wabot_comercial_info_claves($cfg), true) && str_contains((string)$cfg['info']['cobro_banco'], 'transferencia'));
+
+echo "\n— 15. Revisión del 10-nov: más tiempo al que lo pide, material una sola vez, charlas largas —\n";
+caso('«un toque de dorado», «La Espera Bar» y «Banca Digital» no piden tiempo', !wabot_datos_demo_pide_tiempo('Pelu Mari, negro con un toque de dorado')
+    && !wabot_datos_demo_pide_tiempo('La Espera Bar, cervezas artesanales') && !wabot_datos_demo_pide_tiempo('Banca Digital SRL'));
+caso('y esos mensajes se leen como datos', !wabot_datos_demo_es_acuse_o_posterga('Pelu Mari, negro con un toque de dorado') && !wabot_datos_demo_es_acuse_o_posterga('La Espera Bar, cervezas artesanales'));
+caso('«Pelu Mari, ahora te paso el logo» trae un dato: se lee', !wabot_datos_demo_es_acuse_o_posterga('Pelu Mari, ahora te paso el logo'));
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'GREY INOVACION'])]);
+turno('GREY INOVACION', $c, $cfg);
+oa([dc(['accion' => 'esperar'])]);
+turno('Dale aguantame', $c, $cfg);
+caso('pidió tiempo: a los 6 minutos el cron todavía no arma', espera_pasa($c, 6) === null && empty($c['lead_creado']) && wabot_datos_demo_espera_sigue($c));
+oa([], [dd(['nombre_negocio' => 'GREY INOVACION'])]);
+$r = espera_pasa($c, 31);
+caso('a los 31 minutos arma con lo que hay', is_array($r) && !empty($c['lead_creado']), implode(' | ', (array)$r));
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', 'GREY INOVACION');
+oa([], [dd(['nombre_negocio' => 'GREY INOVACION'])]);
+turno('Dale aguantame', $c, $cfg);
+caso('el nombre y «aguantame» en la misma tanda: también espera', wabot_datos_demo_espera_sigue($c) && espera_pasa($c, 6) === null && empty($c['lead_creado']));
+oa([], [dd(['nombre_negocio' => 'GREY INNOVACIÓN', 'resumen' => 'Afiliada de APEX AIMS', 'colores' => 'azul y plata'])]);
+turno('GREY INNOVACIÓN, afiliada de APEX AIMS, colores azul y plata', $c, $cfg);
+$r = espera_pasa($c, 6);
+caso('si después manda los datos, vuelve el silencio de 5 minutos', is_array($r) && !empty($c['lead_creado']) && str_contains((string)$c['descripcion'], 'APEX'), implode(' | ', (array)$r));
+
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó el flyer.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'flyer.jpg']);
+oa([dc(['accion' => 'responder', 'mensajes' => ['Sí, nos sirve, gracias!']])], [dd(['es_datos' => false])]);
+turno('Tengo un flayer puede ser', $c, $cfg);
+caso('el material lo lee el turno, una vez', count(pedidos_datos()) === 1 && wabot_datos_demo_espera_sigue($c));
+oa([], []);
+$r = espera_pasa($c, 6);
+caso('el cron no vuelve a pagar la misma lectura y pide el nombre', count(pedidos_datos()) === 0 && is_array($r) && count($r) === 1 && str_contains((string)$r[0], 'el nombre de tu negocio'), implode(' | ', (array)$r));
+oa([dc(['accion' => 'responder', 'mensajes' => ['Lo usamos para el título de tu web.']])], [dd(['es_datos' => false])]);
+turno('Para qué necesitan el nombre?', $c, $cfg);
+caso('otro mensaje sin fotos nuevas no vuelve a armar la espera', !wabot_datos_demo_espera_sigue($c) && empty($c['handoff_pendiente']));
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó otra foto.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'otra.jpg']);
+oa([dc(['accion' => 'responder', 'mensajes' => ['Gracias, la sumamos!']])], [dd(['es_datos' => false])]);
+turno('Ahí va otra foto del frente', $c, $cfg);
+caso('una foto nueva sí vuelve a anotarla', wabot_datos_demo_espera_sigue($c) && (int)($c['datos_demo_material_n'] ?? 0) === 2);
+
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús'])]);
+turno('Zapas Lanús', $c, $cfg);
+turno('Listo', $c, $cfg);
+caso('la ficha guarda la firma del último renglón leído', !empty($c['lead_creado']) && (string)($c['datos_demo_tarde_firma'] ?? '') !== '');
+$c['lead_doc'] = 'projects/prueba/databases/(default)/documents/propuestas/FICHATEST2';
+$c['transcript'] = array_slice($c['transcript'], -1);   // charla larga: el archivo guarda solo los últimos renglones
+wabot_conv_transcript($c, 'cliente', "Colores: negro y dorado, con el logo arriba a la izquierda.\nIncluir: mapa y horarios del local de Lanús.");
+oa([], [dd(['colores' => 'negro y dorado', 'incluir' => 'mapa y horarios del local'])]);
+caso('con el archivo recortado igual se lee lo que llega después', wabot_datos_demo_tardios($c, $cfg) === true && str_contains((string)$c['colores'], 'dorado'));
+caso('y no se relee', wabot_datos_demo_tardios($c, $cfg) === false && count(pedidos_datos()) === 1);
+
+echo "\n— 16. Datos que se leían como postergación o como un «ok» (revisión del 10-nov) —\n";
+caso('con coma o dos puntos son datos aunque diga «te paso» o «mañana»', !wabot_datos_demo_es_acuse_o_posterga('Te paso los datos: Pelu Mari, cortes y color')
+    && !wabot_datos_demo_es_acuse_o_posterga('Kiosco El Sol, abierto de mañana y tarde'));
+caso('un negocio que se llama «Joya Mística» o «Dale Gas» no es un «ok»', !wabot_datos_demo_es_acuse_o_posterga('Joya Mística') && !wabot_datos_demo_es_acuse_o_posterga('Dale Gas')
+    && !wabot_datos_demo_es_acuse('Joya Mística') && !wabot_datos_demo_es_acuse('Dale Gas'));
+caso('los acuses de siempre siguen siéndolo', wabot_datos_demo_es_acuse_o_posterga('Dale, gracias') && wabot_datos_demo_es_acuse_o_posterga('ok perfecto') && wabot_datos_demo_es_acuse_o_posterga('Listo')
+    && wabot_datos_demo_es_acuse('Dale gracias') && wabot_datos_demo_es_acuse('Listo, eso es todo') && wabot_datos_demo_es_acuse('ok'));
+caso('las postergaciones también', wabot_datos_demo_es_acuse_o_posterga('Ok, mañana te mando todo') && wabot_datos_demo_es_acuse_o_posterga('después te paso los datos')
+    && wabot_datos_demo_es_acuse_o_posterga('a la noche lo veo') && !wabot_datos_demo_es_acuse('Ok, mañana te mando todo'));
+caso('«todavía no está listo el logo» no es un «listo»', !wabot_datos_demo_es_acuse('todavía no está listo el logo') && wabot_datos_demo_es_acuse('ya está listo'));
 
 todo_ok();
