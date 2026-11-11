@@ -524,4 +524,26 @@ caso('las postergaciones también', wabot_datos_demo_es_acuse_o_posterga('Ok, ma
     && wabot_datos_demo_es_acuse_o_posterga('a la noche lo veo') && !wabot_datos_demo_es_acuse('Ok, mañana te mando todo'));
 caso('«todavía no está listo el logo» no es un «listo»', !wabot_datos_demo_es_acuse('todavía no está listo el logo') && wabot_datos_demo_es_acuse('ya está listo'));
 
+echo "\n— 17. La ficha que Firestore no creó no se confirma: se reintenta (revisión del 10-nov) —\n";
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas en Lanús'])]);
+turno('Zapas Lanús, zapatillas en Lanús', $c, $cfg);
+$GLOBALS['WABOT_TEST_LEAD_FALLA'] = true;
+$r = espera_pasa($c, 6);
+caso('Firestore falla: no se le confirma nada y la charla sigue pendiente', $r === [] && empty($c['lead_creado']) && empty($c['form_completado_ts'])
+    && wabot_datos_demo_pendiente($c) && empty($c['bot_off']) && linea_sistema($c, '[Datos de la demo por chat]') === '', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('queda anotada para el reintento y a la vista de Pablo', wabot_datos_demo_espera_sigue($c) && (int)($c['datos_demo_ficha_fallos'] ?? 0) === 1 && !empty($c['handoff_pendiente']));
+unset($GLOBALS['WABOT_TEST_LEAD_FALLA']);
+oa([], []);
+$r = espera_pasa($c, 12);
+caso('al reintento entra: ficha, confirmación y sin pagar otra lectura', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto') && count(pedidos_datos()) === 0
+    && linea_sistema($c, '[Datos de la demo por chat]') !== '' && !isset($c['datos_demo_ficha_fallos']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = cv_con_pedido();
+oa([], [dd(['nombre_negocio' => 'Zapas Lanús', 'resumen' => 'Zapatillas en Lanús'])]);
+turno('Zapas Lanús, zapatillas en Lanús', $c, $cfg);
+$GLOBALS['WABOT_TEST_LEAD_FALLA'] = true;
+for ($iF = 1; $iF <= 6; $iF++) espera_pasa($c, 6 * $iF);
+unset($GLOBALS['WABOT_TEST_LEAD_FALLA']);
+caso('a la sexta falla deja de reintentar y lo ve Pablo', (int)($c['datos_demo_ficha_fallos'] ?? 0) === 6 && !wabot_datos_demo_espera_sigue($c) && !empty($c['handoff_pendiente']) && empty($c['lead_creado']));
+
 todo_ok();

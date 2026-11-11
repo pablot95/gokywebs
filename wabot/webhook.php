@@ -416,6 +416,7 @@ function wabot_procesar_entrante($ev, $cfg) {
 
             $entrada    = implode("\n", $usables);
             $precioAntes = !empty($conv['precio_dado']);
+            $convAntes = $conv;   // la charla antes del turno: de acá se recupera lo que no llegue a salir (10-nov)
             $respuestas = wabot_salida_preparar(wabot_responder($entrada, $conv, $cfg), $conv, $cfg);
             // La cotización (precio, imagen y oferta del diseño) sale entera una vez empezada (28-sep).
             $cotizo = !$precioAntes && !empty($conv['precio_dado']);
@@ -431,6 +432,8 @@ function wabot_procesar_entrante($ev, $cfg) {
             // pensando, para no sumar espera sobre espera.
             $descartar = false;
             $enviados = [];
+            $salio = [];          // índice de la respuesta => true si se mandó
+            $envioFallo = false;  // algún envío fue rechazado (no es lo mismo que descartar el resto)
             foreach ($respuestas as $i => $mensaje) {
                 // Los textos fijos también pueden usar {nombre}. Así el modo de
                 // respaldo conserva la personalización sin obligar al motor a
@@ -455,7 +458,8 @@ function wabot_procesar_entrante($ev, $cfg) {
                     break;
                 }
 
-                if (wabot_respuesta_enviar($conv, $mensaje)) $enviados[] = $mensaje;
+                if (wabot_respuesta_enviar($conv, $mensaje)) { $enviados[] = $mensaje; $salio[$i] = true; }
+                else $envioFallo = true;
             }
 
             if ($descartar) {
@@ -467,6 +471,13 @@ function wabot_procesar_entrante($ev, $cfg) {
                 continue;
             }
 
+            /* Lo que no salió no se da por enviado (10-nov): precio, oferta de la demo o pedido de
+             * datos que Meta rechazó o que se descartaron porque el cliente siguió escribiendo. */
+            $faltaron = [];
+            foreach ($respuestas as $i => $mensaje) if (empty($salio[$i])) $faltaron[] = (string)$mensaje;
+            if ($faltaron && function_exists('wabot_comercial_deshacer_no_enviados')) {
+                wabot_comercial_deshacer_no_enviados($conv, $convAntes, $enviados, $faltaron, $cfg, $envioFallo ? 'fallo' : 'descartado');
+            }
             wabot_conv_save($conv);
             if ($sombra !== null) $sombras[] = [$sombra, $enviados];
             wabot_log('msg', ['tel' => $de, 'canal' => $canal, 'fase' => $conv['fase'], 'juntados' => count($tanda),
@@ -570,11 +581,18 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         // Mismo pipeline que el camino principal: este rescate de la cola aplicaba
         // un solo filtro de los cuatro, así que un mensaje rescatado salía sin la
         // aclaración de que la demo es gratis y sin anti-repetición.
+        $convAntes = $conv;
         $respuestas = wabot_salida_preparar(wabot_responder(implode("\n", $usables), $conv, $cfg), $conv, $cfg);
+        $enviadosR = [];
+        $faltaronR = [];
         foreach ($respuestas as $mensaje) {
+            $crudo = (string)$mensaje;
             $mensaje = wabot_personalizar($mensaje, $conv);
             wabot_escribiendo($conv, $id);
-            wabot_respuesta_enviar($conv, $mensaje);
+            if (wabot_respuesta_enviar($conv, $mensaje)) $enviadosR[] = $mensaje; else $faltaronR[] = $crudo;
+        }
+        if ($faltaronR && function_exists('wabot_comercial_deshacer_no_enviados')) {
+            wabot_comercial_deshacer_no_enviados($conv, $convAntes, $enviadosR, $faltaronR, $cfg, 'fallo');
         }
         wabot_conv_save($conv);
     } while (wabot_cola_tiene($clave));

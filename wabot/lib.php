@@ -4606,8 +4606,11 @@ function wabot_ig_post($payload, $donde) {
 
     if ($code < 200 || $code >= 300) {
         wabot_log('error', ['donde' => $donde, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+        // Solo los mensajes cuentan para el aviso: el «visto» y el «escribiendo» fallan igual, pero no son un envío.
+        if ($donde === 'ig_send') wabot_envio_resultado('instagram', false, $code, (string)$res);
         return false;
     }
+    if ($donde === 'ig_send') wabot_envio_resultado('instagram', true);
     $j = json_decode((string)$res, true);
     $mid = (string)($j['message_id'] ?? '');
     if ($mid !== '') wabot_salida_bot_marcar($mid);
@@ -4662,6 +4665,51 @@ function wabot_ig_media_bajar($url) {
     return ['bytes' => $bytes, 'mime' => trim(explode(';', (string)$mime)[0])];
 }
 
+/**
+ * Fallas de envío seguidas, por canal (auditoría del 10-nov). El token de Instagram estuvo
+ * vencido del 15 al 21-oct (72 envíos rechazados con 401) y nadie se enteró: a Pablo le llegaban
+ * los «te escribió» de siempre, no un aviso de que el bot no podía mandar. Ahora un rechazo del
+ * token avisa al primero, y cualquier otra falla a la tercera seguida; un aviso cada 3 horas por
+ * canal. Un envío que sale bien limpia la cuenta.
+ */
+function wabot_envio_resultado($canal, $ok, $http = 0, $res = '') {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && empty($GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO'])) return null;
+    $archivo = $GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO'] ?? (WABOT_DATA . '/envio-fallos.json');
+    $estado = json_decode((string)@file_get_contents($archivo), true);
+    if (!is_array($estado)) $estado = [];
+    $c = is_array($estado[$canal] ?? null) ? $estado[$canal] : [];
+    $c += ['n' => 0, 'desde' => 0, 'avisado_ts' => 0];
+    $ahora = time();
+    if ($ok) {
+        if ((int)$c['n'] === 0) return null;   // nada que limpiar: no se escribe en cada envío
+        $c['n'] = 0;
+        $c['desde'] = 0;
+        $estado[$canal] = $c;
+        @file_put_contents($archivo, json_encode($estado), LOCK_EX);
+        return null;
+    }
+    $c['n'] = (int)$c['n'] + 1;
+    if (empty($c['desde'])) $c['desde'] = $ahora;
+    $c['http'] = (int)$http;
+    $c['ultimo_ts'] = $ahora;
+    $token = (int)$http === 401 || (strpos((string)$res, 'OAuthException') !== false && preg_match('/"code":\s*190\b/', (string)$res));
+    $aviso = null;
+    if (($token || $c['n'] >= 3) && $ahora - (int)$c['avisado_ts'] >= 3 * 3600) {
+        $c['avisado_ts'] = $ahora;
+        $nombre = $canal === 'instagram' ? 'Instagram' : 'WhatsApp';
+        $aviso = $token
+            ? ['El bot no puede enviar por ' . $nombre, 'Meta rechazó el token (venció o se invalidó). Hasta renovarlo, los mensajes por ' . $nombre . ' no salen.']
+            : ['Fallan los envíos por ' . $nombre, 'Van ' . $c['n'] . ' envíos seguidos con error (HTTP ' . (int)$http . '). Hay charlas sin respuesta: miralas en el panel.'];
+        wabot_log('envio_alerta', ['canal' => $canal, 'http' => (int)$http, 'seguidas' => $c['n'], 'token' => $token ? 1 : 0]);
+        if (function_exists('wabot_push_enviar') && empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+            try { wabot_push_enviar($aviso[0], $aviso[1], ['tipo' => 'envio_alerta']); } catch (Throwable $err) { /* el aviso no puede tumbar el envío */ }
+        }
+    }
+    $estado[$canal] = $c;
+    @file_put_contents($archivo, json_encode($estado), LOCK_EX);
+    return $aviso;
+}
+
 function wabot_wa_send_text($tel, $texto) {
     $texto = wabot_links_https($texto);
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, $texto]; return true; }
@@ -4694,8 +4742,10 @@ function wabot_wa_send_text($tel, $texto) {
 
     if ($code < 200 || $code >= 300) {
         wabot_log('error', ['donde' => 'wa_send', 'http' => $code, 'res' => substr((string)$res, 0, 500)]);
+        wabot_envio_resultado('whatsapp', false, $code, (string)$res);
         return false;
     }
+    wabot_envio_resultado('whatsapp', true);
     wabot_salida_anotar(json_decode((string)$res, true)['messages'][0]['id'] ?? '');
     return true;
 }
@@ -7720,6 +7770,7 @@ function wabot_firestore_lead(&$conv, $cfg) {
 
     // Ni los tests ni el chat de prueba del panel crean leads reales.
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+        if (!empty($GLOBALS['WABOT_TEST_LEAD_FALLA'])) return false;   // las suites simulan Firestore caído
         wabot_log('lead_simulado', ['clave' => wabot_conversation_key($conv), 'tipo' => $conv['tipo'] ?? '']);
         return true;
     }

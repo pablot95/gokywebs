@@ -380,6 +380,37 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
             wabot_log('lead_recreado', ['clave' => wabot_conversation_key($conv), 'doc_anterior' => (string)($conv['lead_doc'] ?? '')]);
         }
         $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
+        /* Firestore no creó la ficha (cuota agotada del 4 al 7-nov, un 5xx, sin red). Antes igual
+         * se le confirmaba «con eso armamos la demo», el bot se apagaba y nadie reintentaba: la demo
+         * no arrancaba nunca. Ahora no se confirma nada: la charla sigue pendiente con lo leído y el
+         * cron de la espera lo vuelve a intentar; a la sexta lo ve Pablo. */
+        if (empty($conv['lead_creado'])) {
+            $fallos = (int)($conv['datos_demo_ficha_fallos'] ?? 0) + 1;
+            $conv['datos_demo_ficha_fallos'] = $fallos;
+            $conv['form_completado_ts'] = 0;
+            unset($conv['datos_recibidos_ts'], $conv['datos_demo_tarde_firma']);
+            // La línea «[Datos de la demo por chat]» se vuelve a anotar cuando la ficha entre.
+            $filas = (array)($conv['transcript'] ?? []);
+            $ultima = end($filas);
+            if (is_array($ultima) && ($ultima['q'] ?? '') === 'sistema' && strpos((string)($ultima['t'] ?? ''), '[Datos de la demo por chat]') === 0) {
+                array_pop($filas);
+                $conv['transcript'] = $filas;
+            }
+            $conv['handoff_pendiente'] = true;
+            if ($fallos < 6) {
+                $conv['datos_demo_parcial'] = $d;
+                $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
+                $conv['datos_demo_espera_ts'] = $ahora;
+                wabot_datos_demo_espera_marcar($conv, $ahora);
+            } else {
+                unset($conv['datos_demo_parcial'], $conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas']);
+                wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
+            }
+            wabot_datos_demo_anotar_turno($conv, 'humano', 'No se pudo crear la ficha de la demo (intento ' . $fallos . ')' . ($fallos < 6 ? ': se reintenta sola' : ': armala a mano'), 'datos_demo_ficha_fallo');
+            wabot_log('datos_demo_ficha_fallo', ['tel' => $conv['tel'] ?? '', 'intento' => $fallos]);
+            return '';
+        }
+        unset($conv['datos_demo_ficha_fallos']);
         if (function_exists('wabot_capi_evento')) wabot_capi_evento($conv, 'LeadSubmitted', $cfg);
     }
     if (function_exists('wabot_prospecto_sincronizar')) wabot_prospecto_sincronizar($conv);
@@ -590,7 +621,8 @@ function wabot_datos_demo_resolver(array $d, &$conv, $cfg, $ahora = null) {
 
     wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por el chat', 'datos_demo_completo');
     $conv['_comercial_salida'] = true;
-    return [wabot_datos_demo_completar($conv, $d, $cfg, $ahora)];
+    $confirmacion = wabot_datos_demo_completar($conv, $d, $cfg, $ahora);
+    return $confirmacion === '' ? [] : [$confirmacion];   // '' = la ficha no se pudo crear: no se confirma
 }
 
 /**
@@ -614,7 +646,8 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
             unset($conv['datos_demo_parcial']);
             wabot_datos_demo_anotar_turno($conv, 'responder', 'Datos de la demo recibidos por el chat (con el WhatsApp)', 'datos_demo_completo');
             $conv['_comercial_salida'] = true;
-            return [wabot_datos_demo_completar($conv, $d, $cfg)];
+            $confirmacion = wabot_datos_demo_completar($conv, $d, $cfg);
+            return $confirmacion === '' ? [] : [$confirmacion];
         }
         if (mb_strpos($texto, '?') !== false || wabot_datos_demo_es_acuse_o_posterga($texto)) return null;
         if ((int)($conv['datos_demo_espera_wsp'] ?? 0) >= 2) {

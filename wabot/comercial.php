@@ -1511,6 +1511,59 @@ function wabot_comercial_link_no_abre($texto, $conv = null) {
 }
 
 /** La repregunta de la demo (22-oct), también para volver a ofrecerla después de las dudas. */
+/**
+ * Lo que no salió no se da por enviado (auditoría del 10-nov). El turno aplica sus efectos
+ * antes de mandar: si el precio, la oferta de la demo o el pedido de los datos no llegan a salir
+ * (Meta rechaza el envío, o el cliente siguió escribiendo y el resto del turno se descartó), la
+ * charla quedaba diciendo «precio dado» o «datos pedidos» y nadie se lo volvía a mandar: 23
+ * charlas así entre el 10-oct y el 10-nov, 17 por el token de Instagram vencido.
+ *
+ * $antes es la charla como estaba antes del turno; de ahí se recuperan solo las marcas de lo que
+ * no salió. No se vuelve atrás la charla entera: un turno puede haber creado la ficha o confirmado
+ * un pago, y eso no se deshace. Cuando falló el envío queda pendiente para Pablo; cuando se
+ * descartó porque el cliente siguió escribiendo, lo retoma el turno que viene.
+ */
+function wabot_comercial_deshacer_no_enviados(&$conv, array $antes, array $enviados, array $faltaron, $cfg, $motivo = 'fallo') {
+    if (!$faltaron) return [];
+    $restaurar = function (array $claves) use (&$conv, $antes) {
+        foreach ($claves as $k) {
+            if (array_key_exists($k, $antes)) $conv[$k] = $antes[$k]; else unset($conv[$k]);
+        }
+    };
+    $salioPrecio = false;
+    foreach ($enviados as $m) if (strpos((string)$m, '$') !== false) { $salioPrecio = true; break; }
+    $deshecho = [];
+    foreach ($faltaron as $t) {
+        $t = (string)$t;
+        $pideDatos = function_exists('wabot_texto_pide_datos_demo') && wabot_texto_pide_datos_demo($t, $cfg);
+        if ($pideDatos || (function_exists('wabot_texto_tiene_link_form') && wabot_texto_tiene_link_form($t))) {
+            $restaurar(['link_form_enviado', 'form_link_mandado_ts', 'form_link_ts', 'datos_pedidos_ts', 'esProspecto', 'comercial_pausa', 'comercial_pausa_ts', 'precio_cta_pendiente']);
+            $deshecho['formulario'] = true;
+        } elseif (wabot_comercial_texto_es_oferta($t, $cfg)) {
+            $restaurar(['comercial_oferta_ts', 'comercial_reoferta_ts', 'oferta_diseno_ts', 'cta_muestra']);
+            $deshecho['oferta'] = true;
+        } elseif (strpos($t, '$') !== false && !$salioPrecio && empty($antes['precio_dado'])) {
+            $restaurar(['precio_dado', 'precio_cotizado', 'sena_cotizada', 'mensualidad_cotizada', 'precio_unico_cotizado', 'precio_modelo', 'precio_cotizado_ts',
+                        'precio_turnos_desde', 'precio_cta_pendiente', 'reconocimiento_hecho', 'comercial_cotizacion', 'comercial_dos_webs', 'comercial_dos_planes_ts',
+                        'inicial_cotizado', 'ab_grupo', 'ab_grupo_ts', 'comercial_oferta_ts', 'cta_muestra']);
+            $deshecho['precio'] = true;
+        }
+    }
+    if ($deshecho) {
+        // La etapa, según lo que de verdad le llegó.
+        if (isset($deshecho['precio'])) $restaurar(['fase']);
+        elseif (!empty($conv['precio_dado']) && empty($conv['comercial_oferta_ts']) && empty($conv['link_form_enviado'])) $conv['fase'] = 'precio';
+        elseif (isset($deshecho['formulario']) && array_key_exists('fase', $antes) && !empty($conv['comercial_oferta_ts'])) $conv['fase'] = 'prediseno';
+    }
+    if ($motivo === 'fallo') {
+        $conv['handoff_pendiente'] = true;
+        $conv['envio_fallido_ts'] = time();
+    }
+    wabot_log('envio_incompleto', ['tel' => $conv['tel'] ?? '', 'motivo' => (string)$motivo, 'salieron' => count($enviados),
+                                    'faltaron' => count($faltaron), 'deshecho' => implode(',', array_keys($deshecho))]);
+    return array_keys($deshecho);
+}
+
 function wabot_comercial_texto_confirmar_demo($cfg) {
     return trim((string)($cfg['comercial']['confirmar_demo'] ?? '')) ?: 'Te consulto, querés que te armemos la demo así ves cómo quedaría?';
 }

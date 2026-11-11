@@ -1713,4 +1713,47 @@ caso('«ya pagué el dominio» no es un cliente nuestro', wabot_contexto_consult
 caso('«ya pagué la renovación del hosting» sí', wabot_contexto_consulta('Hola, ya pagué la renovación del hosting', cv()) === 'cliente_existente'
     && wabot_contexto_consulta('ya te pagué, fijate', cv()) === 'cliente_existente');
 
+echo "\n— Revisión del 10-nov: lo que no salió no se da por enviado —\n";
+$c = cv();
+$antes = $c;
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Perfecto, te podemos armar una tienda online.'], 'ficha' => ['que_vende' => 'ropa']])]);
+$r = turno('Vendo ropa', $c, $cfg);
+caso('el turno cotizó (precio dado y oferta hecha)', !empty($c['precio_dado']) && !empty($c['comercial_oferta_ts']) && count($r) >= 3);
+$todo = $c;
+// En el webhook lo que no sale no se anota en la charla: acá se sacan los renglones que anotó turno().
+$c['transcript'] = array_values(array_filter($c['transcript'], fn($f) => ($f['q'] ?? '') !== 'bot'));
+$hecho = wabot_comercial_deshacer_no_enviados($c, $antes, [], $r, $cfg, 'fallo');
+caso('no salió nada: la charla no queda como «precio dado» y pasa a pendiente', empty($c['precio_dado']) && wabot_comercial_cotizacion($c, $cfg) === null
+    && empty($c['comercial_oferta_ts']) && !empty($c['handoff_pendiente']) && in_array('precio', $hecho, true),
+    json_encode([$hecho, $c['precio_dado'] ?? null, wabot_comercial_cotizacion($c, $cfg), $c['comercial_oferta_ts'] ?? null, $c['handoff_pendiente'] ?? null], JSON_UNESCAPED_UNICODE));
+$c = $todo;
+$hecho = wabot_comercial_deshacer_no_enviados($c, $antes, array_slice($r, 0, count($r) - 1), [end($r)], $cfg, 'descartado');
+caso('salió el precio y se descartó la oferta: el precio queda, la oferta no', !empty($c['precio_dado']) && wabot_comercial_cotizacion($c, $cfg) !== null
+    && empty($c['comercial_oferta_ts']) && ($c['fase'] ?? '') === 'precio' && $hecho === ['oferta'], json_encode([$hecho, $c['fase'] ?? null]));
+caso('descartar no deja la charla pendiente para Pablo', empty($c['handoff_pendiente']));
+$c = $todo;
+caso('si salió todo no se toca nada', wabot_comercial_deshacer_no_enviados($c, $antes, $r, [], $cfg, 'fallo') === [] && $c === $todo);
+$c = cv_cotizada();
+$antes = $c;
+oa([dc(['accion' => 'formulario', 'solucion' => 'tienda', 'intencion' => 'acepta'])]);
+$r = turno('Dale, armala', $c, $cfg);
+caso('el turno mandó el formulario', con_form($r) && !empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') === 'formulario');
+$hecho = wabot_comercial_deshacer_no_enviados($c, $antes, [], $r, $cfg, 'descartado');
+caso('el formulario que no salió no queda como mandado', empty($c['link_form_enviado']) && ($c['comercial_pausa'] ?? '') !== 'formulario' && empty($c['form_link_mandado_ts'])
+    && !empty($c['precio_dado']) && in_array('formulario', $hecho, true), json_encode($hecho));
+
+echo "\n— Revisión del 10-nov: aviso cuando Meta rechaza los envíos —\n";
+$GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO'] = sys_get_temp_dir() . '/wabot-test-envio-fallos-' . getmypid() . '.json';
+@unlink($GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO']);
+$a = wabot_envio_resultado('instagram', false, 401, '{"error":{"message":"Error validating access token","type":"OAuthException","code":190}}');
+caso('token rechazado: avisa al primer envío', is_array($a) && str_contains($a[0], 'Instagram') && str_contains($a[1], 'token'), json_encode($a, JSON_UNESCAPED_UNICODE));
+caso('y no vuelve a avisar enseguida', wabot_envio_resultado('instagram', false, 401, '') === null);
+caso('otro error: recién a la tercera falla seguida', wabot_envio_resultado('whatsapp', false, 500, '') === null && wabot_envio_resultado('whatsapp', false, 0, '') === null
+    && is_array($a = wabot_envio_resultado('whatsapp', false, 500, '')) && str_contains($a[0], 'WhatsApp'), json_encode($a, JSON_UNESCAPED_UNICODE));
+wabot_envio_resultado('whatsapp', true);
+$estadoEnvio = json_decode((string)file_get_contents($GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO']), true);
+caso('un envío que sale bien limpia la cuenta', (int)($estadoEnvio['whatsapp']['n'] ?? -1) === 0 && (int)($estadoEnvio['instagram']['n'] ?? 0) === 2);
+@unlink($GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO']);
+unset($GLOBALS['WABOT_TEST_ENVIO_FALLOS_ARCHIVO']);
+
 todo_ok();
