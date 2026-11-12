@@ -1,0 +1,8 @@
+{
+  "negocio": "Real Print 3D",
+  "imagenes": [
+    { "archivo": "Real_print_3d_7sY4Ts3DPfelxjn45GnK_01.jpg … _09.jpg", "origen": "Zip de imágenes ilustrativas generado para la demo (botón Copiar 10)", "uso": "h-florero, h-dragon y fotos p-* del catálogo" },
+    { "archivo": "Real_print_3d_7sY4Ts3DPfelxjn45GnK_10_mockup_720x480.png", "origen": "Mock up del zip", "uso": "Referencia de diseño del Modelo 1, no se muestra" },
+    { "archivo": "logo-realprint.webp, logo-realprint-h.webp, favicon.png, favicon-180.png", "origen": "Logo que mandó el cliente por WhatsApp el 11-nov-2026 (fondo blanco quitado; la versión horizontal junta el ícono y la palabra REALPRINT del mismo archivo)", "uso": "Header, sello del hero, pie y favicon" }
+  ]
+}
