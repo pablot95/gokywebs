@@ -119,6 +119,8 @@ if ($accion === 'proximo') {
         'condicionesVenta' => receptor_condiciones_venta(),
         'descripcionSugerida' => receptor_descripcion_por_defecto(),
         'ultimoReceptor' => $ultimoReceptor,
+        // Lo que el cron ya le facturó solo a este cliente (pagos-clientes.php): el modal avisa antes de emitir otra.
+        'automaticasRecientes' => $clienteId !== '' && isset($registro) ? pc_automaticas_recientes($registro, $clienteId) : [],
     ]);
 }
 

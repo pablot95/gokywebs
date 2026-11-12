@@ -7591,6 +7591,8 @@ let facturaRequestId = null;
 // «Pagó» en Pagan por afuera (10-nov): qué hacer después de emitir y el botón de pagado sin factura.
 let facturaAlEmitir = null;
 let facturaSinFacturar = null;
+// Facturas que el cron ya emitió solas a este cliente hace poco (pagos-clientes.php, 12-nov): se avisan antes de emitir otra.
+let facturaAutoRecientes = [];
 
 const SIN_IDENTIFICAR = 99;
 // Condicion frente al IVA que se propone segun el documento. Es solo el valor
@@ -7765,8 +7767,10 @@ async function abrirFacturaModal(cliente, opts = {}) {
     if (facturaEsAdhoc) campoFactura("Total").select();
 
     try {
+        facturaAutoRecientes = [];
         const datos = await llamarFacturacion("proximo", null, { clienteId: cliente.id });
         if (!clienteAFacturar || clienteAFacturar.id !== cliente.id) return;
+        facturaAutoRecientes = Array.isArray(datos.automaticasRecientes) ? datos.automaticasRecientes : [];
 
         campoFactura("Comprobante").textContent = numeroComprobante(datos.puntoVenta, datos.proximoNumero);
         campoFactura("EmitirBtn").disabled = false;
@@ -7838,6 +7842,10 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
     if (!(total > 0)) {
         mostrarErrorFactura("El importe tiene que ser mayor a cero.");
         return;
+    }
+    if (facturaAutoRecientes.length) {
+        const lista = facturaAutoRecientes.map(f => `• ${numeroComprobante(f.puntoVenta, f.numero)} del ${String(f.fecha).replace(/^(\d{4})(\d{2})(\d{2})$/, "$3/$2/$1")} por ${fmtMoney(f.total)} (${f.descripcion})`).join("\n");
+        if (!confirm(`Este cliente ya tiene ${facturaAutoRecientes.length === 1 ? "una factura que salió sola" : "facturas que salieron solas"} de lo que pagó:\n\n${lista}\n\nSi es de este mismo pago, no emitas otra. ¿Emitir igual?`)) return;
     }
 
     mostrarErrorFactura("");

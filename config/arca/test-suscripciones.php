@@ -15,6 +15,7 @@
  *  7. Si ARCA autoriza pero la respuesta no llega, la próxima vez se recupera sin emitir otra.
  *  8. Un registro ilegible frena todo; simular no escribe nada.
  *  9. Lo que muestra el admin de cada cobro.
+ * 10. Lo cobrado a clientes por afuera de las suscripciones (pagos-clientes.php).
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -133,6 +134,8 @@ function config_prueba()
         'condicionesIva' => "$dir/no-existe.json",
         'automatica' => "$dir/automatica.json",
         'automaticaEstado' => "$dir/estado.json",
+        // Sin clientes de Firestore salvo en la sección 10.
+        'clientes' => false,
         '_dir' => $dir,
     ];
 }
@@ -465,6 +468,92 @@ $parecidas = sus_facturas_parecidas([
 ], $cobro);
 caso('parecidas: del modal, mismo importe, cerca del cobro, sin otra suscripción',
     array_keys($parecidas) === ['a-mano', 'de-la-misma'], array_keys($parecidas));
+
+/* ── 10. Lo cobrado a clientes por afuera de las suscripciones ────────── */
+
+function fs_ts($ts) { return gmdate('Y-m-d\TH:i:s.000\Z', $ts); }
+
+$config = config_prueba();
+$pagos = [];
+$mp = mp_doble($pagos);
+$arca = new ArcaDoble();
+activar($config, gmdate('c', strtotime('-30 days')));
+$hace = function ($horas) { return time() - (int) round($horas * 3600); };
+$clientes = [
+    'CLI1' => ['nombre' => 'Panadería Sol', 'modalidad' => 'unico', 'cobros' => [['at' => fs_ts($hace(5)), 'monto' => 60000, 'tipo' => 'sena']]],
+];
+$fuente = function () use (&$clientes) { return $clientes; };
+$r = sus_correr($config, $arca, $mp, ['clientes' => $fuente]);
+$ajustes = sus_ajustes($config);
+caso('la primera corrida anota desde cuándo y no factura lo de antes', $ajustes['desdePagos'] !== '' && !$r['emitidas'] && $arca->pedidos === 0, [$ajustes, $r]);
+
+// Lo anotado después de la activación (el reloj de la prueba se adelanta 3 h: desde = hace 6 h).
+$desde = gmdate('Y-m-d\TH:i:s\Z', $hace(6));
+$clientes = [
+    'CLI1' => ['nombre' => 'Panadería Sol', 'modalidad' => 'unico', 'cobros' => [['at' => fs_ts($hace(10)), 'monto' => 60000, 'tipo' => 'sena']]],
+    'CLI2' => ['nombre' => 'Taller Ruta', 'modalidad' => 'unico', 'cobros' => [
+        ['at' => fs_ts($hace(5)), 'monto' => 60000, 'tipo' => 'sena'],
+        ['at' => fs_ts($hace(3)), 'monto' => 80000, 'tipo' => 'saldo'],
+        ['at' => fs_ts($hace(1)), 'monto' => 10000, 'tipo' => 'saldo'],   // anotado hace 1 h: todavía no
+    ]],
+    'CLI3' => ['proyecto' => 'Kiosco Luna', 'modalidad' => 'unico', 'renovaciones' => [['at' => fs_ts($hace(4)), 'monto' => 140000, 'vencia' => 'x']]],
+    'CLI4' => ['nombre' => 'Estudio Paz', 'modalidad' => 'propia', 'cobros' => [['at' => fs_ts($hace(4)), 'monto' => 100000, 'tipo' => 'sena']]],
+    'CLI5' => ['nombre' => 'Ana', 'modalidad' => 'unico', 'cobros' => [['at' => fs_ts($hace(4)), 'monto' => 140000, 'tipo' => 'sena']]],
+    'CLI6' => ['nombre' => 'Typo', 'modalidad' => 'unico', 'cobros' => [
+        ['at' => fs_ts($hace(5)), 'monto' => 600000, 'tipo' => 'sena'],
+        ['at' => fs_ts($hace(4.9)), 'monto' => -540000, 'tipo' => 'ajuste'],
+    ]],
+    'CLI7' => ['nombre' => 'Mensual', 'modalidad' => 'mensual'],
+    'CLI8' => ['nombre' => 'Doble', 'modalidad' => 'unico', 'cobros' => [
+        ['at' => fs_ts($hace(4.8)), 'monto' => 60000, 'tipo' => 'sena'],
+        ['at' => fs_ts($hace(5)), 'monto' => 60000, 'tipo' => 'sena'],
+    ]],
+];
+// CLI5 ya tiene una factura hecha a mano hace 10 días: su cobro no se factura de nuevo.
+$registro = registro_leer($config);
+$registro['a-mano-5'] = ['puntoVenta' => 10, 'numero' => 400, 'total' => 140000, 'clienteId' => 'CLI5', 'cae' => 'x', 'emitidaEl' => gmdate('c', strtotime('-10 days'))];
+// CLI3 tiene una factura de hace un año a su CUIT: sirve para saber a quién, no la frena.
+$registro['vieja-3'] = ['puntoVenta' => 10, 'numero' => 300, 'total' => 120000, 'clienteId' => 'CLI3', 'cae' => 'x', 'emitidaEl' => gmdate('c', strtotime('-360 days')),
+    'receptor' => ['tipoDocumento' => 80, 'numeroDocumento' => '20111111112', 'etiquetaDocumento' => 'CUIT', 'condicionIvaId' => 6, 'condicionIva' => 'Responsable Monotributo', 'nombre' => 'KIOSCO LUNA SRL']];
+registro_guardar($config, $registro);
+
+$r = sus_correr($config, $arca, $mp, ['clientes' => $fuente, 'desdePagos' => $desde]);
+$registro = registro_leer($config);
+$emitidos = array_values(array_filter(array_keys($registro), function ($k) { return strpos($k, 'cliente-') === 0; }));
+sort($emitidos);
+$esperados = ['cliente-CLI8-' . strtotime(fs_ts($hace(5))), 'cliente-CLI2-' . strtotime(fs_ts($hace(5))), 'cliente-CLI2-' . strtotime(fs_ts($hace(3))), 'cliente-CLI3-' . strtotime(fs_ts($hace(4))), 'cliente-CLI4-' . strtotime(fs_ts($hace(4)))];
+sort($esperados);
+caso('factura seña, saldo, renovación y pago único; no lo de antes, lo recién anotado, lo ya facturado ni lo corregido',
+    $emitidos === $esperados, [$emitidos, $esperados, $r]);
+caso('el cobro de un cliente ya facturado a mano queda como a mano',
+    in_array('cliente-CLI5-' . strtotime(fs_ts($hace(4))), array_column($r['aManoDetectadas'], 'cobro'), true), $r['aManoDetectadas']);
+$revisar = array_column($r['revisar'], 'motivo', 'nombre');
+ksort($revisar);
+caso('una seña corregida enseguida o anotada dos veces queda a revisar, sin factura',
+    $revisar === ['Doble' => 'anotado dos veces', 'Typo' => 'se corrigió lo cobrado'], $r['revisar']);
+$f = $registro['cliente-CLI2-' . strtotime(fs_ts($hace(5)))] ?? [];
+caso('seña del anual: descripción, cliente, origen, sin suscripción',
+    ($f['descripcion'] ?? '') === PC_DESCRIPCION_ANUAL && ($f['clienteId'] ?? '') === 'CLI2' && ($f['origen'] ?? '') === 'pago-cliente'
+    && ($f['preapprovalId'] ?? 'x') === '' && ($f['condicionVenta'] ?? '') === 'Transferencia' && ($f['cliente'] ?? '') === 'Taller Ruta'
+    && ($f['total'] ?? 0) == 60000, $f);
+$f = $registro['cliente-CLI3-' . strtotime(fs_ts($hace(4)))] ?? [];
+caso('renovación anual: al CUIT de su última factura', ($f['descripcion'] ?? '') === PC_DESCRIPCION_ANUAL && ($f['receptor']['numeroDocumento'] ?? '') === '20111111112' && ($f['cliente'] ?? '') === 'KIOSCO LUNA SRL', $f);
+caso('pago único: descripción de la web', ($registro['cliente-CLI4-' . strtotime(fs_ts($hace(4)))]['descripcion'] ?? '') === PC_DESCRIPCION_UNICO);
+caso('un cobro de cliente no se confunde con uno a mano para las suscripciones', !sus_facturas_parecidas($registro, ['aprobado' => gmdate('c'), 'monto' => 60000.0, 'suscripcion' => 'x']));
+
+$r = sus_correr($config, $arca, $mp, ['clientes' => $fuente, 'desdePagos' => $desde]);
+caso('correrlo de nuevo no factura otra vez', !$r['emitidas'] && $arca->pedidos === 5, $r);
+caso('el modal ve las facturas automáticas recientes del cliente',
+    count(pc_automaticas_recientes(registro_leer($config), 'CLI2')) === 2 && !pc_automaticas_recientes(registro_leer($config), 'CLI9'));
+
+$r = sus_correr($config, $arca, $mp, ['clientes' => function () { throw new RuntimeException('sin red'); }, 'desdePagos' => $desde]);
+caso('si Firestore falla, avisa y no frena', strpos($r['aviso'], 'sin red') !== false && empty($r['falla']), $r);
+
+activar($config, gmdate('c', strtotime('-30 days')), ['activa' => false]);
+$clientes['CLI9'] = ['nombre' => 'Nuevo', 'modalidad' => 'unico', 'cobros' => [['at' => fs_ts($hace(3)), 'monto' => 60000, 'tipo' => 'sena']]];
+$r = sus_correr($config, $arca, $mp, ['clientes' => $fuente, 'desdePagos' => $desde]);
+caso('pausada no factura cobros de clientes', !$r['emitidas'] && $arca->pedidos === 5, $r);
+limpiar($config);
 
 echo $fallas ? "\n$fallas de $casos casos fallaron.\n" : "OK: $casos casos.\n";
 exit($fallas ? 1 : 0);

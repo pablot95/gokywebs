@@ -218,6 +218,8 @@ function sus_ajustes(array $config)
         'desde' => is_string($datos['desde'] ?? null) ? $datos['desde'] : '',
         'receptores' => is_array($datos['receptores'] ?? null) ? $datos['receptores'] : [],
         'excluidas' => is_array($datos['excluidas'] ?? null) ? $datos['excluidas'] : [],
+        // Desde cuándo se facturan solos los pagos de clientes por afuera de las suscripciones (pagos-clientes.php).
+        'desdePagos' => is_string($datos['desdePagos'] ?? null) ? $datos['desdePagos'] : '',
         'actualizado' => (string) ($datos['actualizado'] ?? ''),
     ];
 }
@@ -264,6 +266,8 @@ function sus_json_leer($ruta, $que)
 
 function sus_clave($pagoId)
 {
+    // Los cobros anotados en un cliente (pagos-clientes.php) ya traen su clave.
+    if (strpos((string) $pagoId, 'cliente-') === 0) return (string) $pagoId;
     return 'mp-cobro-' . $pagoId;
 }
 
@@ -538,12 +542,13 @@ function sus_factura_del_cobro(array $emitida, array $cobro, array $receptor, ar
         'servicioHasta' => $emitida['servicioHasta'] ?? $servicioHasta,
         'vencimientoPago' => $emitida['vencimientoPago'] ?? $emitida['fecha'],
         'entorno' => $config['entorno'],
-        'cliente' => ($receptor['nombre'] ?? '') !== '' ? $receptor['nombre'] : ($cobro['nombre'] !== '' ? $cobro['nombre'] : 'Suscriptor de Mercado Pago'),
-        // La misma clave que usa el modal para una suscripción de Mantenimiento sin cliente.
-        'clienteId' => 'mantenimiento:' . $cobro['suscripcion'],
+        'cliente' => ($receptor['nombre'] ?? '') !== '' ? $receptor['nombre'] : ($cobro['nombre'] !== '' ? $cobro['nombre'] : ($cobro['suscripcion'] !== '' ? 'Suscriptor de Mercado Pago' : 'Cliente')),
+        // La misma clave que usa el modal para una suscripción de Mantenimiento sin cliente;
+        // un pago por afuera de las suscripciones (pagos-clientes.php) trae la del cliente.
+        'clienteId' => $cobro['suscripcion'] !== '' ? 'mantenimiento:' . $cobro['suscripcion'] : (string) ($cobro['clienteId'] ?? ''),
         'receptor' => $receptor,
-        'descripcion' => SUS_DESCRIPCION,
-        'condicionVenta' => SUS_CONDICION_VENTA,
+        'descripcion' => $cobro['descripcion'] ?? SUS_DESCRIPCION,
+        'condicionVenta' => $cobro['condicionVenta'] ?? SUS_CONDICION_VENTA,
         'emitidaEl' => gmdate('c'),
         'origen' => $origen,
         'preapprovalId' => $cobro['suscripcion'],
@@ -569,6 +574,7 @@ function sus_correr(array $config, $arca, callable $mp, array $opciones = [])
         'emitidas' => [],
         'errores' => [],
         'aManoDetectadas' => [],
+        'revisar' => [],
         'quedan' => 0,
         'aviso' => '',
     ];
@@ -605,6 +611,25 @@ function sus_correr(array $config, $arca, callable $mp, array $opciones = [])
         unset($cobro);
     }
 
+    /* Los clientes de Firestore, antes de bloquear el registro (es una llamada de
+     * red). Si no se pueden leer, las suscripciones se facturan igual. */
+    $clientes = null;
+    $desdePagos = (string) ($opciones['desdePagos'] ?? $ajustes['desdePagos']);
+    // De dónde salen los clientes: Firestore; los tests pasan una función o false (en las opciones o en $config).
+    $fuente = $opciones['clientes'] ?? ($config['clientes'] ?? 'firestore');
+    if ($fuente !== false) {
+        if ($desdePagos === '' && !$simular) {
+            // Primera corrida con esto: desde ahora. Lo de antes queda como está.
+            $desdePagos = gmdate('Y-m-d\TH:i:s\Z');
+            sus_ajustes_cambiar($config, function ($a) use ($desdePagos) { $a['desdePagos'] = $desdePagos; return $a; });
+        }
+        try {
+            $clientes = is_callable($fuente) ? $fuente() : pc_clientes_firestore();
+        } catch (Throwable $e) {
+            $resumen['aviso'] = 'No se pudieron leer los clientes (seña, saldo y renovaciones quedan para la próxima): ' . $e->getMessage();
+        }
+    }
+
     $lock = $simular ? null : registro_lock($config);
     try {
         $registro = registro_leer($config);
@@ -625,6 +650,23 @@ function sus_correr(array $config, $arca, callable $mp, array $opciones = [])
             }
             $pendientes[] = $cobro;
         }
+        // Lo cobrado a los clientes por afuera de las suscripciones (seña, saldo y renovación del anual): pagos-clientes.php.
+        if ($clientes !== null && $desdePagos !== '') {
+            [$deClientes, $aRevisar] = pc_cobros($clientes, $desdePagos);
+            foreach ($deClientes as $cobro) {
+                if (isset($registro[sus_clave($cobro['id'])])) continue;
+                $aMano = pc_factura_a_mano($registro, $cobro);
+                if ($aMano !== null) {
+                    $resumen['aManoDetectadas'][] = ['cobro' => $cobro['id'], 'factura' => $aMano];
+                    continue;
+                }
+                $pendientes[] = $cobro;
+            }
+            foreach ($aRevisar as $cobro) {
+                if (isset($registro[sus_clave($cobro['id'])]) || pc_factura_a_mano($registro, $cobro) !== null) continue;
+                $resumen['revisar'][] = ['cobro' => $cobro['id'], 'nombre' => $cobro['nombre'], 'monto' => $cobro['monto'], 'dia' => $cobro['dia'], 'motivo' => $cobro['motivo']];
+            }
+        }
         $resumen['quedan'] = max(0, count($pendientes) - SUS_MAX_POR_CORRIDA);
 
         foreach (array_slice($pendientes, 0, SUS_MAX_POR_CORRIDA) as $cobro) {
@@ -633,14 +675,16 @@ function sus_correr(array $config, $arca, callable $mp, array $opciones = [])
                 if ($cobro['devuelto'] > 0) {
                     throw new RuntimeException('El cobro tiene una devolución en Mercado Pago: si corresponde, facturarlo a mano.');
                 }
-                [$receptor] = sus_receptor($cobro['suscripcion'], $ajustes, $registro);
+                $receptor = $cobro['suscripcion'] !== ''
+                    ? sus_receptor($cobro['suscripcion'], $ajustes, $registro)[0]
+                    : pc_receptor($cobro, $registro);
                 $receptor = sus_receptor_revalidar($receptor, $condicionesIds);
 
                 if ($simular) {
                     $resumen['emitidas'][] = sus_resumen_cobro($cobro, $receptor, null);
                     continue;
                 }
-                $hecho = sus_facturar_cobro($arca, $config, $cobro, $receptor, $registro, $estado, 'automatica');
+                $hecho = sus_facturar_cobro($arca, $config, $cobro, $receptor, $registro, $estado, $cobro['suscripcion'] !== '' ? 'automatica' : 'pago-cliente');
                 if (isset($estado['errores'][$clave])) {
                     unset($estado['errores'][$clave]);
                     sus_estado_guardar($config, $estado);
@@ -699,6 +743,8 @@ function sus_anotar_corrida(array $config, array $resumen)
             'errores' => count($resumen['errores']),
             'aviso' => $resumen['aviso'],
             'falla' => $resumen['falla'] ?? '',
+            // Los cobros de clientes a revisar que ya se avisaron (facturar-cobros.php no los repite).
+            'revisar' => array_column($resumen['revisar'] ?? [], 'cobro'),
         ];
         sus_estado_guardar($config, $estado);
     } finally {
@@ -793,3 +839,5 @@ function sus_panorama(array $config, callable $mp)
         'cobros' => array_reverse($cobros),
     ];
 }
+
+require_once __DIR__ . '/pagos-clientes.php';

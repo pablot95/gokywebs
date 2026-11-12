@@ -56,7 +56,7 @@ try {
 } catch (Throwable $e) {
     $resumen = [
         'inicio' => gmdate('c'), 'simulada' => $simular, 'emitidas' => [], 'errores' => [],
-        'aManoDetectadas' => [], 'quedan' => 0, 'aviso' => '', 'falla' => $e->getMessage(),
+        'aManoDetectadas' => [], 'revisar' => [], 'quedan' => 0, 'aviso' => '', 'falla' => $e->getMessage(),
     ];
 }
 
@@ -74,7 +74,7 @@ try {
 } catch (Throwable $e) {
     echo 'No se pudo anotar la corrida: ' . $e->getMessage() . "\n";
 }
-facturar_cobros_avisar($resumen, $estadoAnterior['ultimaCorrida']['falla'] ?? '');
+facturar_cobros_avisar($resumen, $estadoAnterior['ultimaCorrida']['falla'] ?? '', $estadoAnterior['ultimaCorrida']['revisar'] ?? []);
 
 // El cron de Hostinger ya corre cada hora. Procesar prospectos después de la
 // facturación, sin dejar que un problema de correo afecte las facturas.
@@ -145,6 +145,9 @@ function facturar_cobros_texto(array $r)
     foreach ($r['aManoDetectadas'] as $m) {
         $lineas[] = 'Cobro ' . $m['cobro'] . ': ya estaba facturado a mano (' . $m['factura'] . ')';
     }
+    foreach ($r['revisar'] ?? [] as $v) {
+        $lineas[] = 'A revisar: ' . $v['nombre'] . ' ' . $pesos($v['monto']) . ' del ' . $v['dia'] . ' (' . $v['motivo'] . '): no se factura solo';
+    }
     foreach ($r['errores'] as $e) {
         $lineas[] = 'ERROR cobro ' . $e['cobro'] . ' (' . $pesos($e['monto']) . ', ' . ($e['nombre'] ?: $e['suscripcion']) . '): ' . $e['mensaje'];
     }
@@ -159,7 +162,7 @@ function facturar_cobros_texto(array $r)
  * si la corrida entera empieza a fallar. El aviso es lo de menos: si falla, las
  * facturas ya están.
  */
-function facturar_cobros_avisar(array $r, $fallaAnterior)
+function facturar_cobros_avisar(array $r, $fallaAnterior, array $revisarAntes = [])
 {
     $pesos = function ($monto) { return '$' . number_format((float) $monto, 0, ',', '.'); };
     $nombre = function ($e) { return $e['nombre'] !== '' ? $e['nombre'] : 'Suscripción'; };
@@ -179,6 +182,11 @@ function facturar_cobros_avisar(array $r, $fallaAnterior)
         if (!empty($e['nuevo'])) {
             $avisos[] = ['No se pudo facturar un cobro', $nombre($e) . ' · ' . $pesos($e['monto']) . ': ' . $e['mensaje'], 'facturas-error-' . $e['cobro']];
         }
+    }
+    // Un cobro de un cliente con el monto corregido enseguida: se avisa una vez para facturarlo a mano.
+    foreach ($r['revisar'] ?? [] as $v) {
+        if (in_array($v['cobro'], $revisarAntes, true)) continue;
+        $avisos[] = ['Cobro para facturar a mano', $v['nombre'] . ' · ' . $pesos($v['monto']) . ': ' . $v['motivo'] . ', no salió solo', 'facturas-revisar-' . $v['cobro']];
     }
     if (!empty($r['falla']) && $r['falla'] !== $fallaAnterior) {
         $avisos[] = ['La facturación automática falló', $r['falla'], 'facturas-falla'];
