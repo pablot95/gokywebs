@@ -1059,7 +1059,12 @@ function wabot_plantilla_valor($campo, $conv) {
             $n = wabot_nombre_confirmado_de($conv);
             return $n !== '' ? $n : 'Hola';
         case 'slug':   return trim((string)($conv['presentado_slug'] ?? ''));
-        case 'negocio': return trim((string)($conv['nombre_negocio'] ?? ''));
+        /* Sin el nombre del negocio, «tu negocio», como el mensaje de la demo (12-nov: el de
+         * macramé no dio nombre, la plantilla demo_lista salió con {{1}} vacío y Meta la
+         * rechazó con 131008, «Parameter of type text is missing text value»). */
+        case 'negocio':
+            $n = trim((string)($conv['nombre_negocio'] ?? ''));
+            return $n !== '' ? $n : 'tu negocio';
         default:       return trim((string)($conv[$campo] ?? ''));
     }
 }

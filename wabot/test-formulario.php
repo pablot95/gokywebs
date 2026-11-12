@@ -883,6 +883,12 @@ $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $envViejoOff = wabot_presentar_muestra(['tel' => '5493810008003', 'negocio' => 'Verdulería Ana', 'tipo' => 'landing'], $cfgPres);
 caso('...y con la plantilla apagada queda para mandar a mano, avisado', !empty($envViejoOff['fuera_ventana']) && empty($envViejoOff['enviado']) && $GLOBALS['WABOT_TEST_PLANTILLAS'] === []);
 @unlink(WABOT_DATA . '/conv/5493810008003.json');
+// 12-nov (el de macramé): sin nombre de negocio la plantilla salía con {{1}} vacío y Meta la rechazaba (131008).
+$sinNombre = conv_nueva('5493810008004');
+$sinNombre['nombre_negocio'] = '';
+$sinNombre['presentado_slug'] = 'tieneemprendimientomacrame';
+caso('sin nombre de negocio, la plantilla lleva «tu negocio» (nunca un parámetro vacío)', wabot_plantilla_valor('negocio', $sinNombre) === 'tu negocio'
+    && wabot_plantilla_valor('negocio', array_merge($sinNombre, ['nombre_negocio' => 'Macramé Lu'])) === 'Macramé Lu');
 
 echo "— 13. Fotos del formulario (2-nov): hasta 20, al mismo boceto —\n";
 
