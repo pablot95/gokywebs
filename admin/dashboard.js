@@ -1792,7 +1792,8 @@ function _cruceMercadoPago() {
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente" || _conSena(modalidadDe(c)) || mantenimientoDeCliente(c)) continue;
         const sus = suscripcionDe(c);
-        if (sus.estado !== "activa" || !sus.desde || !sus.mensual) continue;
+        // La cancelada en MP (bajaMp) sigue en el cruce: así sale en Cobros fallidos aunque la web no esté entregada.
+        if ((sus.estado !== "activa" && !sus.bajaMp) || !sus.desde || !sus.mensual) continue;
         candidatos.push({ ref: c, esCliente: true, pre: sus.preapprovalId, monto: sus.mensual, desde: sus.desde, dia: Number(c.diaCobro) || 0, nombre: c.proyecto || c.nombre || "Cliente", porFuera: c.pagaPorFuera === true,
             ..._negocioYPersona(c.proyecto, c.nombre), palabras: _palabrasNombre(c.nombre, c.proyecto, c.contactoNombre, c.nombreMp, String(c.email || "").split("@")[0]) });
     }
@@ -3901,7 +3902,14 @@ function suscripcionDe(c) {
         || mantToDate(mant?.createdAt);
     const desde = inicio ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()) : null;
     const mantActivo = !!mant && !aviso && (mant.estado || "activo") === "activo";
-    const estado = (c.estadoSuscripcion === "baja" || aviso?.tipoEvento === "baja") ? "baja"
+    /* 12-nov (Pablo: «Marilu Casandra Fridel canceló la suscripción pero no me figura en el admin»):
+       la suscripción vinculada por ID que se canceló en Mercado Pago es una baja, aunque la ficha diga
+       activa (seguía en Suscripción como Activo y sumando a lo que entra por mes). El que paga por afuera no. */
+    const preId = String(c.preapprovalId || mant?.preapprovalId || "").trim();
+    const subMp = preId && c.pagaPorFuera !== true && mant?.pagaPorFuera !== true
+        ? (ingresosMp?.suscripciones || []).find(s => String(s.id) === preId) : null;
+    const bajaMp = subMp?.estado === "cancelled" ? (mantToDate(subMp.baja) || new Date()) : null;
+    const estado = (c.estadoSuscripcion === "baja" || aviso?.tipoEvento === "baja" || bajaMp) ? "baja"
         : (mantActivo || c.estadoSuscripcion === "activa") ? "activa"
         : "pendiente";
     return {
@@ -3916,6 +3924,8 @@ function suscripcionDe(c) {
         mant,
         // Aviso de baja / pausa de Mercado Pago que dejó el webhook, o null.
         aviso,
+        // Fecha de la baja en Mercado Pago de la suscripción vinculada, o null.
+        bajaMp,
         porActivar: estado === "pendiente" && !!desde && desde <= new Date(),
         preapprovalId: String(c.preapprovalId || mant?.preapprovalId || "").trim(),
         // Lo abonado con el modelo anterior, para no perderlo de vista.
@@ -11108,7 +11118,7 @@ function _cobrosFallidos() {
         const s = suscripcionDe(c);
         agregar({ clave: s.preapprovalId ? "sub:" + s.preapprovalId : "cliente:" + c.id, tipo: clave === "baja" ? "baja" : "pausada",
             destino: "clientes:" + c.id, avisoId: s.aviso?.id || "", nombre: c.proyecto || c.nombre || "Cliente", persona: c.proyecto ? (c.nombre || "") : "",
-            nombreMp: c.nombreMp || "", monto: s.mensual, fecha: mantToDate(s.aviso?.fechaBaja) || mantToDate(s.aviso?.createdAt) || null,
+            nombreMp: c.nombreMp || "", monto: s.mensual, fecha: s.bajaMp || mantToDate(s.aviso?.fechaBaja) || mantToDate(s.aviso?.createdAt) || null,
             dia: Number(c.diaCobro) || s.desde?.getDate() || 0, ...detalleDe(s.preapprovalId ? ultimo.get(s.preapprovalId) : null) });
     }
     // 4. Los cobros de Mercado Pago cuyo último intento falló (últimos 45 días). No cuenta el de alguien que
