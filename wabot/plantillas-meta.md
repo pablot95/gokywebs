@@ -129,6 +129,29 @@ Hola {{1}}, te aviso que la web de {{2}} dejó de responder {{3}} y {{4}} ya est
 Ejemplos: `Ana`, `Gomería Lorenzo`, `hoy a las 3:00`, `hoy a las 3:30` (también
 `ayer a las 23:30` o `el 3/11 a las 23:30`).
 
+## Cobro rechazado de la suscripción (12-nov)
+
+El día siguiente al primer intento rechazado de la mensualidad en Mercado Pago,
+de 10 a 20 h, una sola vez por cobro (los reintentos de MP no mandan otra). Si
+MP ya lo cobró en un reintento, no sale. `wabot/cobros-rechazados.php`; el admin
+le pasa al bot qué cliente es cada suscripción (`cobros_rechazados_sync`). Si la
+suscripción no tiene cliente, está vinculada solo por la fecha o falta el
+teléfono, no se le manda nada al cliente y Pablo recibe el aviso.
+
+| Campo | Valor |
+|---|---|
+| **Clave en el bot** | `plantillas.cobro_rechazado` |
+| **Nombre en Meta** | `cobro_rechazado_plan_mensual` (creada por la API el 12-nov, id 2233773247182744) |
+| **Idioma** | `es_AR` |
+| **Categoría** | Utilidad |
+| **Variables** | {{1}} nombre, {{2}} negocio, {{3}} monto |
+
+```
+Hola {{1}}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {{2}} ({{3}}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Cualquier duda, escribinos por acá.
+```
+
+Ejemplos: `Juan`, `Panadería Sol`, `$20.000`.
+
 ## El texto en el chat del panel
 
 Meta no devuelve el cuerpo de la plantilla al mandarla: lo que queda escrito en

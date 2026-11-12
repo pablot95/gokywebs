@@ -7,6 +7,7 @@
  *   - seguimiento_interesado, a las 18 h tras 4 días sin mensajes;
  *   - la presentación automática de la demo: 18 h o 14 h del día siguiente (presentar.php, 18-oct);
  *   - el aviso de renovación del día del cobro a los que pagan por afuera (renovacion.php, 25-oct);
+ *   - el aviso al suscriptor de MP el día siguiente al primer cobro rechazado (cobros-rechazados.php, 12-nov);
  *   - el monitoreo de las webs en mantenimiento, el aviso de caída resuelta y el
  *     resumen mensual de cada web (webs.php, 29-oct);
  *   - el re-aviso a Pablo (push) de las charlas que le tocan y siguen sin respuesta.
@@ -28,6 +29,7 @@ require_once __DIR__ . '/engine.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/renovacion.php';
+require_once __DIR__ . '/cobros-rechazados.php';
 require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/pagos.php';
 require_once __DIR__ . '/onboarding.php';
@@ -69,6 +71,8 @@ $plantillas = $paso('plantillas', function () use ($cfg) { return wabot_plantill
 $presentarAuto = $paso('presentar_auto', function () use ($cfg) { return wabot_presentar_auto_correr($cfg); });
 // El día del cobro, la plantilla de renovación a los que pagan por afuera de Mercado Pago (25-oct).
 $renovacion = $paso('renovacion', function () use ($cfg) { return wabot_renovacion_correr($cfg); });
+// El día siguiente al primer cobro rechazado de una suscripción de Mercado Pago, un aviso al cliente (12-nov).
+$cobroRechazado = $paso('cobro_rechazado', function () use ($cfg) { return wabot_cobro_rech_correr($cfg); });
 // Las webs en mantenimiento: ¿responden? Avisa las caídas resueltas y, desde el día 1, el resumen del mes (29-oct).
 $webs = $paso('webs', function () use ($cfg) { return wabot_webs_correr($cfg); });
 // Los pagos que entraron en Mercado Pago: atados al chat y confirmados, o a la lista de sin asignar (pagos.php, 1-nov).
@@ -100,6 +104,7 @@ echo json_encode([
     'oferta_entrega' => $ofertaEntrega,
     'presentar_auto' => $presentarAuto,
     'renovacion' => $renovacion,
+    'cobro_rechazado' => $cobroRechazado,
     'webs' => $webs,
     'push_reaviso' => $reaviso,
     'aviso_resumen' => $resumen,

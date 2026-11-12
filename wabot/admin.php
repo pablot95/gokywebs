@@ -12,6 +12,7 @@ require_once __DIR__ . '/respuestas-rapidas.php';
 require_once __DIR__ . '/push.php';
 require_once __DIR__ . '/presentar.php';
 require_once __DIR__ . '/renovacion.php';
+require_once __DIR__ . '/cobros-rechazados.php';
 require_once __DIR__ . '/webs.php';
 require_once __DIR__ . '/revision.php';
 require_once __DIR__ . '/anuncios-stats.php';
@@ -693,7 +694,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'reporte_mensual_web', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'cobro_rechazado', 'reporte_mensual_web', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -1376,6 +1377,22 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'ok' => true,
             'cantidad' => count($estado['lista']),
             'plantilla_activa' => wabot_plantilla_config('renovacion_por_fuera', $cfg) !== null,
+            'enviados' => $estado['enviados'],
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    /* Los suscriptores de Mercado Pago con su cliente (12-nov), que manda
+     * admin/dashboard.js cada vez que cambia: con ella el cron avisa al cliente
+     * el día siguiente al primer cobro rechazado (cobros-rechazados.php). */
+    if ($a === 'cobros_rechazados_sync') {
+        header('Content-Type: application/json; charset=utf-8');
+        $lista = json_decode((string)($_POST['lista'] ?? ''), true);
+        if (!is_array($lista)) { echo json_encode(['ok' => false]); exit; }
+        $estado = wabot_cobro_rech_sync($lista);
+        echo json_encode([
+            'ok' => true,
+            'cantidad' => count($estado['lista']),
+            'plantilla_activa' => wabot_plantilla_config('cobro_rechazado', $cfg) !== null,
             'enviados' => $estado['enviados'],
         ], JSON_UNESCAPED_UNICODE);
         exit;
@@ -3535,6 +3552,7 @@ function burbujaCita(t, chat) {
                 'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
                 'saludo' => 'Saludo · Marketing (solo a mano desde el chat)',
                 'renovacion_por_fuera' => 'Renovación del plan mensual · Utilidad (pagan por afuera)',
+                'cobro_rechazado' => 'Cobro rechazado de la suscripción · Utilidad (suscriptores de Mercado Pago)',
                 'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
                 'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
                 'aviso_pablo' => 'Aviso a Pablo fuera de las 24 h · Utilidad (va a tu número, no a clientes)',
@@ -3542,6 +3560,7 @@ function burbujaCita(t, chat) {
             ];
             $plantillasVariables = [
                 'renovacion_por_fuera' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
+                'cobro_rechazado' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
                 'aviso_pablo' => '{{1}} el título del aviso (quién escribió, pago confirmado…), {{2}} el detalle en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
@@ -3549,6 +3568,7 @@ function burbujaCita(t, chat) {
             ];
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (desde las 10 h)',
+                'cobro_rechazado' => 'Automática el día siguiente al primer intento rechazado de Mercado Pago (de 10 a 20 h), una sola vez por cobro',
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',
                 'web_caida_resuelta' => 'Automática cuando la web vuelve tras una caída de 20 min o más (de 10 a 20 h, una por día)',
                 'aviso_pablo' => 'Automática con cada aviso (mensaje sin contestar, pago, revisión…), solo si pasaron más de 24 h desde tu último mensaje al bot (si no, va como texto)',

@@ -10555,6 +10555,63 @@ async function sincronizarRenovaciones(forzar = false) {
 // Los avisos que salieron hoy aparecen sin recargar; la lista va igual solo si cambió.
 setInterval(() => sincronizarRenovaciones(true), 30 * 60 * 1000);
 
+/* Aviso de cobro rechazado (Pablo, 12-nov: "cuando un pago de mercadopago de una suscripción está
+   atrasado, se le envíe por wabot al cliente... al día siguiente del primer pago rechazado, no más que
+   eso"). El bot ve los rechazos en Mercado Pago, pero no sabe de qué cliente es cada suscripción: se le
+   pasa el mismo cruce de Mantenimiento (_cruceMercadoPago) con el teléfono de cada uno
+   (wabot/admin.php cobros_rechazados_sync). `seguro` = vinculada por ID o por nombre; las elegidas
+   solo por la fecha no se le avisan al cliente (el bot le avisa a Pablo). */
+let cobrosRechazadosFirma = "";
+let cobrosRechazadosTimer = null;
+function _cobrosRechazadosFilas() {
+    if (!clientesCargados || !mantenimientoCargado || !ingresosMp) return null;
+    const clientePorMant = _clientePorSuscripcion();
+    return _cruceMercadoPago()
+        .filter(k => k.sub && !k.baja && !k.porFuera)
+        .map(k => {
+            const c = k.esCliente ? k.ref : clientePorMant.get(k.ref.id) || null;
+            const m = k.esCliente ? null : k.ref;
+            return {
+                id: `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`,
+                pre: k.sub.id,
+                tel: String(_telefonoMantenimiento(c, m) || ""),
+                persona: k.persona || String(c?.nombre || m?.nombre || ""),
+                negocio: k.negocio || "",
+                seguro: !!(k.porId || k.porNombre)
+            };
+        })
+        .sort((a, b) => a.id.localeCompare(b.id));
+}
+function programarSyncCobrosRechazados() {
+    clearTimeout(cobrosRechazadosTimer);
+    cobrosRechazadosTimer = setTimeout(sincronizarCobrosRechazados, 3500);
+}
+async function sincronizarCobrosRechazados(forzar = false) {
+    if (!currentUser || !clientesCargados || !mantenimientoCargado) return;
+    // Sin las suscripciones de MP no hay cruce: se piden una vez (sin abrir Mantenimiento el bot se quedaría sin lista).
+    if (!ingresosMp && !ingresosMpCargando && !ingresosMpError) await cargarIngresosMp();
+    const filas = _cobrosRechazadosFilas();
+    if (!filas) return;
+    const firma = JSON.stringify(filas);
+    if (!forzar && firma === cobrosRechazadosFirma) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "cobros_rechazados_sync", lista: firma }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (!data?.ok) throw new Error("respuesta sin ok");
+        cobrosRechazadosFirma = firma;
+    } catch (e) {
+        console.warn("No se pudo pasarle al bot la lista de suscriptores de Mercado Pago:", e);
+    }
+}
+// Cada media hora igual (renueva la fecha de la lista en el bot); las suscripciones nuevas de MP llegan al recargar.
+setInterval(() => sincronizarCobrosRechazados(true), 30 * 60 * 1000);
+
 /* ── Webs en mantenimiento → el bot (Pablo, 29-oct: "hacer visible lo invisible, lo vamos a mandar por
    wabot a través de plantilla así se automatiza") ──
    wabot/webs.php pide la portada de cada dominio cada media hora, avisa por plantilla cuando una web
@@ -11305,6 +11362,8 @@ function renderMantenimiento() {
     // y monitorea y reporta las webs de todos los que están en mantenimiento (29-oct).
     programarSyncRenovaciones();
     programarSyncWebs();
+    // Y el cruce de las suscripciones de MP, para el aviso de cobro rechazado (12-nov).
+    programarSyncCobrosRechazados();
     // El plan mensual muestra con qué pagó cada uno (los cobros de Intentos de cobro, 25-oct).
     if (activeTab === "mantenimiento" && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
 
