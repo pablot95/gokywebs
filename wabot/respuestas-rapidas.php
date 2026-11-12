@@ -1260,14 +1260,14 @@ function wabot_rr_precios_a2_4nov(array $categorias, $ruta) {
 }
 
 /* 11-nov (Pablo): «quiero un link … y otro gokywebs.com/sitioweb… así no tengo que estar preguntando a
-   cada uno cuál prefieren, y mando ese link y eligen». gokywebs.com/webpro es el de $190.000 / $30.000
+   cada uno cuál prefieren, y mando ese link y eligen». gokywebs.com/webcompleta (era /webpro hasta el 12-nov) es el de $190.000 / $30.000
    (no /ecommerce: «ese plan va para otras webs también»: tienda, cursos, inmobiliaria, todas las que
    llevan panel) y gokywebs.com/sitioweb el de $140.000 / $20.000. Las dos páginas tienen el
    plan anual y el mensual juntos; sus dos mensajes van al principio de "Planes", con el mismo comienzo
    que los otros links de pago. Una sola vez: si después los cambia o los borra, queda como lo dejó. */
 const WABOT_RR_ELEGIR_PLAN_11NOV = [
     "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago. Ahí elegís el plan que prefieras, anual o mensual\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/sitioweb",
-    "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago. Ahí elegís el plan que prefieras, anual o mensual\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/webpro",
+    "Te paso el enlace donde están todos los detalles del servicio y los datos para el pago. Ahí elegís el plan que prefieras, anual o mensual\n\nUna vez realizado el pago queda activo y avanzamos con las modificaciones y el desarrollo completo: https://gokywebs.com/webcompleta",
 ];
 
 function wabot_rr_elegir_plan_11nov(array $categorias, $ruta) {
@@ -1301,13 +1301,36 @@ function wabot_rr_elegir_plan_11nov(array $categorias, $ruta) {
     return $categorias;
 }
 
+/* 12-nov (Pablo): «webpro no me gusta, que sea webcompleta». Una sola vez: en las respuestas guardadas
+   gokywebs.com/webpro pasa a gokywebs.com/webcompleta (/webpro sigue redirigiendo por los links ya mandados). */
+function wabot_rr_webcompleta_12nov(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-webcompleta-12nov';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$item) {
+            $nuevo = preg_replace('#gokywebs\.com/webpro(?![\w-])#', 'gokywebs.com/webcompleta', (string)$item);
+            if ($nuevo !== null && $nuevo !== $item) { $item = $nuevo; $cambio = true; }
+        }
+        unset($item);
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "
+");
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_elegir_plan_11nov(wabot_rr_precios_a2_4nov(wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_webcompleta_12nov(wabot_rr_elegir_plan_11nov(wabot_rr_precios_a2_4nov(wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

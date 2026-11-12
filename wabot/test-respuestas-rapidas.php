@@ -548,14 +548,23 @@ $antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => $planes4], ['ico' =
 $despues = wabot_rr_elegir_plan_11nov($antes, $ruta);
 caso('los dos links de elegir plan van primeros en Planes; lo demás queda', $despues[0]['items'] === array_merge(WABOT_RR_ELEGIR_PLAN_11NOV, $planes4) && $despues[1] === $antes[1], json_encode($despues[0], JSON_UNESCAPED_UNICODE));
 caso('con el comienzo de los links de pago, sitioweb y webpro', str_starts_with(WABOT_RR_ELEGIR_PLAN_11NOV[0], 'Te paso el enlace donde están todos los detalles del servicio y los datos para el pago')
-    && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[0], 'gokywebs.com/sitioweb') && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[1], 'gokywebs.com/webpro') && strpos(WABOT_RR_ELEGIR_PLAN_11NOV[1], "\n\n") !== false);
+    && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[0], 'gokywebs.com/sitioweb') && str_ends_with(WABOT_RR_ELEGIR_PLAN_11NOV[1], 'gokywebs.com/webcompleta') && strpos(WABOT_RR_ELEGIR_PLAN_11NOV[1], "\n\n") !== false);
 caso('una sola vez: si los borra no vuelven', is_file($marcaElegir) && wabot_rr_elegir_plan_11nov($antes, $ruta) === $antes);
 @unlink($marcaElegir);
-$conUno = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['Mi texto: gokywebs.com/webpro', 'Otro: gokywebs.com/sitioweb/']]];
+$conUno = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['Mi texto: gokywebs.com/webcompleta', 'Otro: gokywebs.com/sitioweb/']]];
 caso('si ya mandó esos links con su texto, no se repiten', wabot_rr_elegir_plan_11nov($conUno, $ruta) === $conUno);
 @unlink($marcaElegir);
 $despues = wabot_rr_elegir_plan_11nov([['ico' => '💬', 'titulo' => 'Respuestas', 'items' => ['Hola']]], $ruta);
 caso('sin la categoría Planes, se crea con los dos', ($despues[0]['titulo'] ?? '') === 'Planes' && $despues[0]['items'] === WABOT_RR_ELEGIR_PLAN_11NOV);
 if ($marcaElegirRespaldo === null) @unlink($marcaElegir); else file_put_contents($marcaElegir, $marcaElegirRespaldo);
+// 12-nov (Pablo): /webpro pasa a /webcompleta en las respuestas guardadas, una sola vez.
+$marcaWc = WABOT_DATA . '/migrated/respuestas-rapidas-webcompleta-12nov';
+$marcaWcRespaldo = is_file($marcaWc) ? file_get_contents($marcaWc) : null;
+@unlink($marcaWc);
+$antes = [['ico' => '💳', 'titulo' => 'Planes', 'items' => ['Link: https://gokywebs.com/webpro', 'gokywebs.com/webpro#mensual', 'https://gokywebs.com/webprofesional', 'https://gokywebs.com/sitioweb']]];
+$despues = wabot_rr_webcompleta_12nov($antes, $ruta);
+caso('webpro → webcompleta (con #mensual también); lo demás queda', $despues[0]['items'] === ['Link: https://gokywebs.com/webcompleta', 'gokywebs.com/webcompleta#mensual', 'https://gokywebs.com/webprofesional', 'https://gokywebs.com/sitioweb'], json_encode($despues[0], JSON_UNESCAPED_UNICODE));
+caso('webcompleta: una sola vez', is_file($marcaWc) && wabot_rr_webcompleta_12nov($antes, $ruta) === $antes);
+if ($marcaWcRespaldo === null) @unlink($marcaWc); else file_put_contents($marcaWc, $marcaWcRespaldo);
 if ($rutaRespaldo === null) @unlink($ruta); else file_put_contents($ruta, $rutaRespaldo);
 todo_ok();
