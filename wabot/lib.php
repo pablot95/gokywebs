@@ -6763,6 +6763,10 @@ function wabot_fecha_prometida($texto, $ts = null) {
     if (preg_match('/\b(hoy|esta noche|a la noche|esta tarde|a la tarde|mas tarde|en un rato|al rato|al mediodia)\b/u', $t)) $c[] = $hoy;
     // "La semana que viene" = hasta el viernes de la semana que viene.
     if (preg_match('/\b(la semana que viene|la proxima semana|la otra semana|semana proxima)\b/u', $t)) $c[] = $hoy + (8 - $dow) + 4;
+    /* «En la semana te confirmo» (mago de Instagram, 11-nov): esta semana = hasta
+     * el viernes; dicho el sábado o el domingo, el viernes de la que viene. Antes
+     * no se entendía y le salió la última llamada al día siguiente. */
+    if (preg_match('/\b(en la semana|esta semana|en el transcurso de la semana|durante la semana|en el correr de la semana)\b/u', $t)) $c[] = $dow >= 6 ? $hoy + (8 - $dow) + 4 : $hoy + (5 - $dow);
     if (preg_match('/\b(fin de semana|finde)\b/u', $t)) { $delta = 7 - $dow; $c[] = $hoy + ($delta === 0 ? 7 : $delta); }
     // "En 3 días", "dentro de una semana", "en un par de semanas", "en un mes".
     $cant = ['un' => 1, 'una' => 1, 'dos' => 2, 'tres' => 3, 'cuatro' => 4, 'cinco' => 5, 'seis' => 6, 'siete' => 7, 'ocho' => 8,

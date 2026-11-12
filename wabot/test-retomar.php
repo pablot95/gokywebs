@@ -44,12 +44,18 @@ foreach ([
     'el martes'                                                  => '',
     'en 3 meses lo vemos'                                        => '',
     'me gusta el modelo 2'                                       => '',
+    // Revisión 12-nov (mago de Instagram): «en la semana» dicho un sábado = viernes de la que viene.
+    'en la semana te confirmo'                                   => '2026-10-16',
 ] as $texto => $esperado) {
     $dia = wabot_fecha_prometida($texto, $sab);
     caso("«{$texto}» → " . ($esperado ?: 'sin fecha'), $dia === $esperado, $dia ?: 'sin fecha');
 }
 caso('«te hablo el martes» un martes es el martes que viene',
     wabot_fecha_prometida('te hablo el martes', $ar('2026-10-13 10:00:00')) === '2026-10-20');
+caso('«en la semana te confirmo» un miércoles es el viernes de esa semana (mago, 11-nov)',
+    wabot_fecha_prometida('Bueno, muchas gracias, en la semana te confirmo por que lo tengo que hablar. Muy amable, saludos.....', $ar('2026-11-11 09:18:00')) === '2026-11-13');
+caso('«esta semana no puedo, te hablo el lunes» vale el lunes',
+    wabot_fecha_prometida('esta semana no puedo, te hablo el lunes', $ar('2026-11-11 09:18:00')) === '2026-11-16');
 caso('«mañana te aviso» a la 1:30 es el día que ya empezó (corte de las 3 AM)',
     wabot_fecha_prometida('mañana te aviso', $ar('2026-10-11 01:30:00')) === '2026-10-11');
 
