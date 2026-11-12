@@ -1852,6 +1852,16 @@ function wabot_comercial_cursos_funciones_de_mas($propuesta, $cliente, $modalida
 function wabot_comercial_validar($d, $texto, $conv, $cfg) {
     $ajustes = [];
     $t = wabot_normalizar_frase((string)$texto);
+    /* El pago único sin pedirlo (SERVICE PLUS, 11-nov 19:59): «No quiero pagar nada
+     * todavía, solo verla. El dominio queda a mi nombre?» salió marcado como pago
+     * único y le llegó «Con el pago único, el hosting y el dominio…», una modalidad
+     * que nadie le ofreció. Si en el mensaje no hay rastro de comprar la web, el
+     * código, otro proveedor o evitar la cuota, la marca se descarta. */
+    if ($d['pago_unico'] && empty($conv['quiere_web_propia'])
+        && !preg_match('/(pago unico|unico pago|un solo pago|una sola vez|de una vez|compr|codigo|propi|suscrip|abono|cuota|mensualidad|todos los meses|otro proveedor|otro hosting|llevarla|llevarmela)/u', $t)) {
+        $d['pago_unico'] = false;
+        $ajustes[] = 'pago_unico_sin_rastro';
+    }
     $sol = $d['solucion'];
     // Con una cotización ya dada, el negocio está claro aunque la ficha no lo tenga (una charla vieja o de Pablo).
     $negocio = wabot_comercial_negocio_conocido($conv, $d) || wabot_comercial_cotizacion($conv, $cfg) !== null;

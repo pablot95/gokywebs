@@ -1354,6 +1354,14 @@ $d = wabot_comercial_normalizar(dc(['accion' => 'responder', 'solucion' => 'tien
     'info_claves' => ['hosting', 'envios', 'medios_pago_tienda', 'plazos']]), $cfg);
 [$v] = wabot_comercial_validar($d, 'Y el hosting del pago único?', $c, $cfg);
 caso('hosting del pago único reemplaza la respuesta general sin perder las demás', $v['info_claves'] === ['hosting_pago_unico', 'envios', 'medios_pago_tienda', 'plazos']);
+// SERVICE PLUS, 11-nov 19:59: nadie habló de pago único y el modelo lo marcó igual.
+$cSp = cv_cotizada('informativa');
+$d = wabot_comercial_normalizar(dc(['accion' => 'formulario', 'solucion' => 'informativa', 'pago_unico' => true, 'info_claves' => ['dominio_a_nombre']]), $cfg);
+[$v] = wabot_comercial_validar($d, 'Dale quiero ver un demo gratis q m ofrecen. No quiero pagar nada todavía solo verla. Y una consulta el dominio queda a mi nombre?', $cSp, $cfg);
+caso('«el dominio queda a mi nombre?» sin pedir pago único → dominio_a_nombre, no hosting_pago_unico (SERVICE PLUS, 11-nov)',
+    empty($v['pago_unico']) && in_array('dominio_a_nombre', $v['info_claves'], true) && !in_array('hosting_pago_unico', $v['info_claves'], true), json_encode($v['info_claves']));
+[$v] = wabot_comercial_validar($d, 'Si la compro, el dominio queda a mi nombre?', $cSp, $cfg);
+caso('con «la compro» la marca de pago único sigue y va hosting_pago_unico', !empty($v['pago_unico']) && in_array('hosting_pago_unico', $v['info_claves'], true), json_encode($v['info_claves']));
 $cMuchos = $c;
 wabot_ficha_actualizar($cMuchos, 'Tengo 500 productos');
 $d = wabot_comercial_normalizar(dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['hosting', 'envios', 'medios_pago_tienda']]), $cfg);
