@@ -1,0 +1,30 @@
+{
+  "ilustrativas_chatgpt": {
+    "origen": "zip de ChatGPT (Serviplus_qjYy2GNj6Q65xmW96fiy), originales Serviplus_qjYy2GNj6Q65xmW96fiy_01-09.jpg y _10_mockup_720x480.png",
+    "archivos": {
+      "aire-split.webp": "_02.jpg (16:9), portada de los dos modelos",
+      "heladera-familiar.webp": "_01.jpg (9:16), tarjeta alta de heladeras",
+      "freezer.webp": "_03.jpg",
+      "exhibidora.webp": "_04.jpg",
+      "horno-electrico.webp": "_05.jpg",
+      "anafe-induccion.webp": "_07.jpg",
+      "caldera.webp": "_08.jpg",
+      "aire-exterior.webp": "_09.jpg (reducida a 900 px)",
+      "og.jpg": "_02.jpg a 1200x630",
+      "sin_usar": "_06.jpg (anafe vitrocerámico sin herramientas)"
+    }
+  },
+  "reales_del_cliente": {
+    "origen": "fotos que mandó por WhatsApp (Descargas/imagenes-prospectos/serviceplus)",
+    "archivos": {
+      "trabajo-heladera.webp": "05-imagen.jpg, recorte 3:4 de arriba",
+      "trabajo-freezer.webp": "06-imagen.jpg, recorte 3:4",
+      "trabajo-aire-exterior.webp": "08-imagen.jpg entera (802x464)",
+      "trabajo-caldera.webp": "09-imagen.jpg, recorte 3:4",
+      "trabajo-split.webp": "03-imagen.jpg, panel de arriba del collage (2:1)",
+      "trabajo-horno.webp": "07-imagen.jpg, recorte 3:4"
+    },
+    "sin_usar": "02-imagen.jpg (panel de caldera) y 04-imagen.jpg (caldera Peisa con calco de garantía)",
+    "logo": "01-logo.jpg: foto del cartel 3D sobre pared oscura; recortado con GrabCut y recoloreado plano (copo azul, llamas ámbar, casa y texto tinta) en logo.webp / logo-horizontal.webp; versión clara para fondo oscuro en logo-oscuro.webp / logo-horizontal-oscuro.webp; favicon.png y apple-touch-icon.png con el emblema"
+  }
+}
