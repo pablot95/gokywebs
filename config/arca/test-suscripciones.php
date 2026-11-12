@@ -478,7 +478,8 @@ $pagos = [];
 $mp = mp_doble($pagos);
 $arca = new ArcaDoble();
 activar($config, gmdate('c', strtotime('-30 days')));
-$hace = function ($horas) { return time() - (int) round($horas * 3600); };
+$base = time();
+$hace = function ($horas) use ($base) { return $base - (int) round($horas * 3600); };
 $clientes = [
     'CLI1' => ['nombre' => 'Panadería Sol', 'modalidad' => 'unico', 'cobros' => [['at' => fs_ts($hace(5)), 'monto' => 60000, 'tipo' => 'sena']]],
 ];
