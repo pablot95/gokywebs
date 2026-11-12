@@ -1,0 +1,10 @@
+{
+  "negocio": "Catan’s",
+  "imagenes": [
+    { "archivo": "Catans_m4Mj7GqyZM3a6uMoSQul_01.jpg … _09.jpg", "origen": "Zip de imágenes ilustrativas generado para la demo (botón Copiar 10)", "uso": "h-enterito, v-lunares, b-conejita y fotos p-* ilustrativas del catálogo (recorte 4:5; p-saquito y p-conejita completadas con mármol)" },
+    { "archivo": "Catans_m4Mj7GqyZM3a6uMoSQul_10_mockup_720x480.png", "origen": "Mock up del zip", "uso": "Referencia de diseño del Modelo 1, no se muestra" },
+    { "archivo": "r-mickey-minnie.webp, r-mike-tigger.webp, r-corazones.webp", "origen": "Fotos reales de sus productos que mandó la clienta por WhatsApp el 12-nov-2026", "uso": "Sección «Bodys con personaje»" },
+    { "archivo": "p-mike.webp, p-tigger.webp, p-mickey.webp, p-minnie.webp, p-conjunto-gris.webp, p-conjunto-fucsia.webp", "origen": "Recortes 4:5 de esas mismas fotos reales (la prenda vecina tapada con mármol de la misma foto)", "uso": "Fotos de producto marcadas «Foto real»" },
+    { "archivo": "logo-catans.webp, favicon.png, favicon-180.png, og-catans.jpg", "origen": "Logo que mandó la clienta por WhatsApp el 12-nov-2026 (fondo de mármol quitado; solo va sobre fondos claros)", "uso": "Header, sello del hero, pie, favicon y OG" }
+  ]
+}
