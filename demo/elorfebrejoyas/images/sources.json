@@ -1,0 +1,23 @@
+{
+  "business": "El Orfebre Joyas",
+  "provided_images": "Nueve imágenes ilustrativas y un mockup, recibidos en tools/demo-auto; no son fotografías verificadas del inventario real.",
+  "logo": {"source": "WhatsApp, 01-logo.jpg", "file": "logo.webp", "treatment": "Recorte rectangular del primer panel de la tarjeta original; sin redibujar ni eliminar el fondo."},
+  "slots": [
+    {"file": "anillo-luz.webp", "original_suffix": "01.jpg", "size": "900x1600", "use": "Hero de ambos modelos y ficha ilustrativa"},
+    {"file": "cadena-eslabones.webp", "original_suffix": "02.jpg", "size": "1600x900", "use": "Contacto y catálogo"},
+    {"file": "aros-circulo.webp", "original_suffix": "03.jpg", "size": "1024x1024", "use": "Producto"},
+    {"file": "pulsera-trama.webp", "original_suffix": "04.jpg", "size": "1024x1024", "use": "Producto"},
+    {"file": "alianza-espejo.webp", "original_suffix": "05.jpg", "size": "1024x1024", "use": "Producto"},
+    {"file": "medalla-botanica.webp", "original_suffix": "06.jpg", "size": "1024x1024", "use": "Producto"},
+    {"file": "aros-punto.webp", "original_suffix": "07.jpg", "size": "1024x1024", "use": "Producto"},
+    {"file": "brazalete-reflejo.webp", "original_suffix": "08.jpg", "size": "1024x1024", "use": "Servicios y catálogo"},
+    {"file": "cadena-plata.webp", "original_suffix": "09.jpg", "size": "1024x1024", "use": "Producto"}
+  ],
+  "limitations": "Se conservó la resolución original. El hero vertical no llega a 1200x1600, la panorámica a 1920x1080 y los productos a 1200x1200. No hay slots pendientes ni imágenes de bancos adicionales.",
+  "design_references": [
+    {"url": "https://www.tiffany.com/", "decision": "Clasificación por tipo de joya y separación de producto y servicio."},
+    {"url": "https://www.cartier.mx/servicios", "decision": "Compostura y fabricación como servicios claros, separados de la compra."},
+    {"url": "https://www.joyeriajeanpierre.com/", "decision": "Jerarquía tipográfica editorial y acceso directo a anillos, cadenas, aros y pulseras."},
+    {"url": "https://ricciardijoyas.com/", "decision": "Consulta específica por compra de oro y plata, sin cotizaciones inventadas."}
+  ]
+}
