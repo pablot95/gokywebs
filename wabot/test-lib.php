@@ -14,6 +14,8 @@
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
+// Las suites no van a Instagram ni a Facebook a buscar la foto de perfil (colores sacados, 12-nov).
+if (!isset($GLOBALS['WABOT_TEST_IMAGEN_PERFIL'])) $GLOBALS['WABOT_TEST_IMAGEN_PERFIL'] = function ($url) { return null; };
 $GLOBALS['WABOT_TEST_FALLAS'] = 0;
 $GLOBALS['WABOT_TEST_TOTAL']  = 0;
 // Las suites prueban la charla completa: el modo "solo bienvenida" (3-oct) se prueba en test-solo-bienvenida.php.

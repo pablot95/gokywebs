@@ -374,13 +374,21 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
         $desde = trim((string)($f['que_vende'] ?? '')) ?: trim((string)($f['rubro'] ?? ''));
         if ($desde !== '') $conv['descripcion'] = $desde;
     }
+    $ig = wabot_datos_demo_instagram_usuario($d['instagram']);
+    if ($ig !== '') $conv['instagram'] = $ig;
+    $sacados = null;
     if ($d['colores'] !== '') {
         $conv['colores'] = $d['colores'];
     } elseif (trim((string)($conv['colores'] ?? '')) === '') {
-        $conv['colores'] = 'A elección del diseñador';   // igual que el formulario sin colores (2-oct)
+        // No los dijo (Pablo, 12-nov): de su logo, su Instagram o su Facebook; si no hay de dónde, como el formulario sin colores (2-oct).
+        $sacados = wabot_datos_demo_colores_sacados($conv);
+        if ($sacados) {
+            $conv['colores'] = 'Sacados de su ' . $sacados['origen'] . ' (no los eligió): ' . $sacados['texto'];
+            $conv['colores_hex'] = $sacados['hex'];
+        } else {
+            $conv['colores'] = 'A elección del diseñador';
+        }
     }
-    $ig = wabot_datos_demo_instagram_usuario($d['instagram']);
-    if ($ig !== '') $conv['instagram'] = $ig;
     if ($d['referencia'] !== '' && (!function_exists('wabot_referencia_utilizable') || wabot_referencia_utilizable($d['referencia']))) {
         $conv['referencia'] = $d['referencia'];
     }
@@ -399,7 +407,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     // Lo que se anota en el transcript, como la línea «[Formulario web] …»: lo lee Pablo y el brief.
     $partes = ['Negocio: ' . (trim((string)($conv['nombre_negocio'] ?? '')) ?: '(no lo dijo)'),
                'Resumen: ' . (trim((string)($conv['descripcion'] ?? '')) ?: '(no lo dijo)'),
-               'Colores: ' . ($d['colores'] !== '' ? $d['colores'] : 'no eligió')];
+               'Colores: ' . ($d['colores'] !== '' ? $d['colores'] : ($sacados ? 'no eligió; de su ' . $sacados['origen'] . ': ' . $sacados['texto'] : 'no eligió'))];
     if ($ig !== '') $partes[] = 'Instagram: instagram.com/' . $ig;
     if (($conv['referencia'] ?? '') !== '' && $d['referencia'] !== '') $partes[] = 'Referencia: ' . $conv['referencia'];
     if ($d['incluir'] !== '') $partes[] = 'Incluir sí o sí: ' . $d['incluir'];
@@ -1105,6 +1113,160 @@ function wabot_datos_demo_ficha_actualizar(&$conv, $cfg, array $d) {
     if ($code >= 200 && $code < 300) return true;
     wabot_log('error', ['donde' => 'firestore_datos_tarde', 'clave' => $clave, 'doc' => $doc, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
     return false;
+}
+
+/* ──────────── Colores que no dijo (Pablo, 12-nov) ────────────
+ *
+ * «Si no pasa colores, que los saque del logo / instagram / facebook.» Antes quedaba
+ * «A elección del diseñador» y la ficha se llenaba con un azul y un verde agua que la
+ * IA inventaba a partir de ese texto (wabot_colores_a_hex): en 15 demos de octubre y
+ * noviembre la paleta se terminó sacando a mano del logo. Ahora, en este orden: el
+ * logo que mandó por el chat, la foto de perfil de su Instagram y la de su Facebook
+ * (las dos suelen ser el logo). La imagen la mira Gemini; si no es de la marca (una
+ * foto de la persona, un paisaje) se pasa a la siguiente, y si ninguna sirve queda
+ * como antes. El texto dice de dónde salieron, así nadie los toma por elegidos.
+ */
+const WABOT_COLORES_IMAGEN_MAX_BYTES = 4000000;
+
+/** Las imágenes que mandó y que son su logo (lo dijo él o la descripción lo ve), la última primero. */
+function wabot_datos_demo_logos($conv) {
+    $out = [];
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        $archivo = (string)($fila['media']['archivo'] ?? '');
+        $clase = (string)($fila['media']['clase'] ?? '');
+        if ($archivo === '' || !in_array($clase, ['imagen', 'documento'], true)) continue;
+        if (!preg_match('/\blogos?\b/iu', (string)($fila['t'] ?? ''))) continue;
+        $out[] = ['archivo' => $archivo, 'mime' => (string)($fila['media']['mime'] ?? '')];
+    }
+    return array_reverse($out);
+}
+
+/** El Facebook que pasó en la charla (facebook.com/… o fb.com/…), o ''. */
+function wabot_datos_demo_facebook($conv) {
+    $url = '';
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (preg_match('~(?:https?://)?(?:www\.|m\.|web\.)?(?:facebook|fb)\.com/[^\s"<>]+~i', (string)($fila['t'] ?? ''), $m)) $url = $m[0];
+    }
+    if ($url === '') return '';
+    $url = rtrim($url, '.,;)');
+    return preg_match('~^https?://~i', $url) ? $url : 'https://' . $url;
+}
+
+/**
+ * La imagen de perfil de una página pública (og:image de Instagram o Facebook): [bytes, mime] o null.
+ * A un navegador común Instagram le pide iniciar sesión; al lector de vistas previas de Meta le da
+ * la foto de perfil.
+ */
+function wabot_datos_demo_imagen_perfil($url) {
+    if (isset($GLOBALS['WABOT_TEST_IMAGEN_PERFIL'])) return call_user_func($GLOBALS['WABOT_TEST_IMAGEN_PERFIL'], $url);
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return null;
+    $get = function ($u) {
+        $ch = curl_init($u);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 4,
+            CURLOPT_CONNECTTIMEOUT => 6, CURLOPT_TIMEOUT => 12,
+            CURLOPT_USERAGENT => 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        ]);
+        $res = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $tipo = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+        return [$code, (string)$res, $tipo];
+    };
+    [$code, $html] = $get($url);
+    if ($code < 200 || $code >= 300 || !preg_match('~<meta[^>]+property="og:image"[^>]+content="([^"]+)"~i', $html, $m)) {
+        wabot_log('colores_perfil', ['url' => mb_substr($url, 0, 120), 'http' => $code, 'og' => false]);
+        return null;
+    }
+    [$code, $bytes, $tipo] = $get(html_entity_decode($m[1], ENT_QUOTES | ENT_HTML5));
+    $mime = trim(explode(';', $tipo)[0]);
+    if ($code < 200 || $code >= 300 || $bytes === '' || strlen($bytes) > WABOT_COLORES_IMAGEN_MAX_BYTES || strpos($mime, 'image/') !== 0) return null;
+    return [$bytes, $mime];
+}
+
+/**
+ * Los colores de la marca en una imagen (logo, foto de perfil), con Gemini:
+ * ['texto' => 'bordó y dorado sobre crema', 'hex' => [principal, secundario, fondos]] o null
+ * si no es una imagen de la marca o no se pudo.
+ */
+function wabot_colores_de_imagen($bytes, $mime, $origen) {
+    if (isset($GLOBALS['WABOT_TEST_COLORES_IMAGEN'])) {
+        $out = call_user_func($GLOBALS['WABOT_TEST_COLORES_IMAGEN'], $bytes, $mime, $origen);
+    } else {
+        $mime = trim(explode(';', (string)$mime)[0]);
+        if (!$bytes || $mime === '' || !wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+        $prompt = "Sos diseñador web. Esta imagen es " . ($origen === 'logo' ? 'el logo que mandó un cliente' : "la foto de perfil de su $origen")
+            . " y de acá salen los colores de su marca para armarle la web.\n"
+            . "Devolvé SOLO este JSON:\n"
+            . "{\"es_marca\":true,\"colores\":\"…\",\"principal\":\"#RRGGBB\",\"secundario\":\"#RRGGBB\",\"fondos\":\"#RRGGBB\"}\n"
+            . "- es_marca: true si es un logo, un isotipo o una pieza gráfica de la marca; false si es una foto de una persona, un paisaje, un producto suelto o algo sin identidad de marca.\n"
+            . "- colores: los colores de la marca en palabras, cortos (por ejemplo \"bordó y dorado sobre crema\"). No cuentes el fondo de la foto ni sombras.\n"
+            . "- principal: el color más característico de la marca. secundario: el que lo acompaña (si hay uno solo, uno que combine).\n"
+            . "- fondos: el fondo de la web, un neutro muy claro que combine; oscuro solo si la marca es claramente sobre negro.";
+        $body = json_encode([
+            'contents' => [['parts' => [['text' => $prompt], ['inlineData' => ['mimeType' => $mime, 'data' => base64_encode($bytes)]]]]],
+            'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 2000],
+        ], JSON_UNESCAPED_UNICODE);
+        [$code, $res] = wabot_gemini_post(wabot_gemini_modelo(), $body, 30);
+        if ($code < 200 || $code >= 300 || !$res) {
+            wabot_log('error', ['donde' => 'colores_imagen', 'origen' => $origen, 'http' => $code]);
+            wabot_ia_reportar_error('colores_imagen', $code);
+            return null;
+        }
+        wabot_ia_reportar_ok();
+        $j = json_decode((string)$res, true);
+        $txt = '';
+        foreach ((array)($j['candidates'][0]['content']['parts'] ?? []) as $parte) {
+            if (empty($parte['thought'])) $txt .= (string)($parte['text'] ?? '');
+        }
+        $out = json_decode(trim($txt), true);
+    }
+    if (!is_array($out) || empty($out['es_marca'])) return null;
+    $texto = trim((string)preg_replace('/\s+/u', ' ', (string)($out['colores'] ?? '')));
+    $hex = [];
+    foreach (['principal', 'secundario', 'fondos'] as $k) {
+        $v = strtoupper(trim((string)($out[$k] ?? '')));
+        if (!preg_match('/^#[0-9A-F]{6}$/', $v)) return null;
+        $hex[$k] = $v;
+    }
+    if ($texto === '') return null;
+    return ['texto' => mb_substr($texto, 0, 160), 'hex' => $hex];
+}
+
+/** Los bytes de una imagen que mandó el cliente (wabot/data/media/<clave>/<archivo>), o null. */
+function wabot_datos_demo_media_bytes($clave, $archivo) {
+    if (isset($GLOBALS['WABOT_TEST_MEDIA_BYTES'])) return call_user_func($GLOBALS['WABOT_TEST_MEDIA_BYTES'], $clave, $archivo);
+    $ruta = WABOT_DATA . '/media/' . preg_replace('/[^0-9A-Za-z]/', '', (string)$clave) . '/' . basename((string)$archivo);
+    if (!is_file($ruta) || filesize($ruta) > WABOT_COLORES_IMAGEN_MAX_BYTES) return null;
+    $b = @file_get_contents($ruta);
+    return $b === false || $b === '' ? null : $b;
+}
+
+/** Los colores que no dijo, del logo, su Instagram o su Facebook: ['origen', 'texto', 'hex'] o null. */
+function wabot_datos_demo_colores_sacados($conv) {
+    $clave = wabot_conversation_key($conv);
+    $mimes = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif', 'pdf' => 'application/pdf'];
+    foreach (array_slice(wabot_datos_demo_logos($conv), 0, 2) as $l) {
+        $ext = strtolower(pathinfo($l['archivo'], PATHINFO_EXTENSION));
+        $mime = $mimes[$ext] ?? '';
+        if ($mime === '') continue;
+        $bytes = wabot_datos_demo_media_bytes($clave, $l['archivo']);
+        $c = $bytes ? wabot_colores_de_imagen($bytes, $mime, 'logo') : null;
+        if ($c) { wabot_log('colores_sacados', ['clave' => $clave, 'origen' => 'logo', 'colores' => $c['texto']]); return ['origen' => 'logo'] + $c; }
+    }
+    $redes = [];
+    $ig = trim((string)($conv['instagram'] ?? ''));
+    if ($ig !== '') $redes['Instagram'] = 'https://www.instagram.com/' . rawurlencode($ig) . '/';
+    $fb = wabot_datos_demo_facebook($conv);
+    if ($fb !== '') $redes['Facebook'] = $fb;
+    foreach ($redes as $origen => $url) {
+        $img = wabot_datos_demo_imagen_perfil($url);
+        $c = $img ? wabot_colores_de_imagen($img[0], $img[1], $origen) : null;
+        if ($c) { wabot_log('colores_sacados', ['clave' => $clave, 'origen' => $origen, 'colores' => $c['texto']]); return ['origen' => $origen] + $c; }
+    }
+    return null;
 }
 
 /* ──────────── Fichas que quedaron sin armar (Pablo, 12-nov) ────────────

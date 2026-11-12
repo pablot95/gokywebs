@@ -784,4 +784,61 @@ $c = cv_con_pedido();
 $c['presentado_ts'] = time();
 caso('con la demo ya entregada no se toca', !wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493416422669'], $cfg) && empty($c['lead_creado']));
 
+echo "\n— 24. Colores que no dijo: del logo, su Instagram o su Facebook (Pablo, 12-nov) —\n";
+$vistas = [];
+$GLOBALS['WABOT_TEST_MEDIA_BYTES'] = function ($clave, $archivo) { return 'bytes-de-' . $archivo; };
+$GLOBALS['WABOT_TEST_COLORES_IMAGEN'] = function ($bytes, $mime, $origen) use (&$vistas) {
+    $vistas[] = $origen . ':' . $bytes;
+    if ($bytes === 'foto-de-persona') return ['es_marca' => false, 'colores' => '', 'principal' => '#000000', 'secundario' => '#000000', 'fondos' => '#FFFFFF'];
+    if ($origen === 'logo') return ['es_marca' => true, 'colores' => 'bordó y dorado', 'principal' => '#7a1f2b', 'secundario' => '#C9A227', 'fondos' => '#FAF6EF'];
+    return ['es_marca' => true, 'colores' => 'celeste y blanco', 'principal' => '#4FA3D9', 'secundario' => '#1D3557', 'fondos' => '#F7FAFC'];
+};
+$perfiles = [];
+$GLOBALS['WABOT_TEST_IMAGEN_PERFIL'] = function ($url) use (&$perfiles) {
+    $perfiles[] = $url;
+    if (str_contains($url, 'persona')) return ['foto-de-persona', 'image/jpeg'];
+    return ['perfil', 'image/jpeg'];
+};
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó una foto de sus productos, mesas de madera.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'a-mesa.jpg']);
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó el logo de su marca que dice "IAN" con dos martillos cruzados.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'b-logo.jpg']);
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Carpintería IAN', 'resumen' => 'Muebles a medida', 'instagram' => 'carpinteria.ian']), $cfg);
+caso('sin colores dichos, salen de su logo (y no de la foto de las mesas)', ($c['colores'] ?? '') === 'Sacados de su logo (no los eligió): bordó y dorado'
+    && $vistas === ['logo:bytes-de-b-logo.jpg'], json_encode([$c['colores'] ?? null, $vistas], JSON_UNESCAPED_UNICODE));
+caso('los hex van a la ficha, en mayúsculas', ($c['colores_hex'] ?? null) === ['principal' => '#7A1F2B', 'secundario' => '#C9A227', 'fondos' => '#FAF6EF']);
+caso('con el logo no hace falta ir a su Instagram', $perfiles === []);
+caso('la charla dice que no los eligió y de dónde salieron', str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'Colores: no eligió; de su logo: bordó y dorado'));
+
+$vistas = []; $perfiles = [];
+$c = cv_con_pedido();
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Real Print 3D', 'resumen' => 'Impresiones 3D', 'instagram' => 'real.print3d']), $cfg);
+caso('sin logo, de la foto de perfil de su Instagram', ($c['colores'] ?? '') === 'Sacados de su Instagram (no los eligió): celeste y blanco'
+    && $perfiles === ['https://www.instagram.com/real.print3d/'], json_encode([$c['colores'] ?? null, $perfiles], JSON_UNESCAPED_UNICODE));
+
+$vistas = []; $perfiles = [];
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', 'Mi face es facebook.com/serviplus.ok y el insta lo tengo con mi foto');
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Serviplus', 'resumen' => 'Reparación de heladeras', 'instagram' => 'una.persona']), $cfg);
+caso('si el perfil de Instagram es una foto suya, prueba con su Facebook', ($c['colores'] ?? '') === 'Sacados de su Facebook (no los eligió): celeste y blanco'
+    && $perfiles === ['https://www.instagram.com/una.persona/', 'https://facebook.com/serviplus.ok'], json_encode([$c['colores'] ?? null, $perfiles], JSON_UNESCAPED_UNICODE));
+
+$vistas = []; $perfiles = [];
+$c = cv_con_pedido();
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Sin Redes', 'resumen' => 'Plomería']), $cfg);
+caso('sin logo ni redes, como antes: a elección del diseñador', ($c['colores'] ?? '') === 'A elección del diseñador' && $vistas === [] && $perfiles === []);
+
+$vistas = []; $perfiles = [];
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó el logo de su marca.', ['clase' => 'imagen', 'mime' => 'image/jpeg', 'archivo' => 'c-logo.jpg']);
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Zapas', 'resumen' => 'Zapatillas', 'colores' => 'negro y dorado']), $cfg);
+caso('si dijo los colores, se usan los suyos y no se mira nada', ($c['colores'] ?? '') === 'negro y dorado' && $vistas === [] && $perfiles === []);
+
+$GLOBALS['WABOT_TEST_COLORES_IMAGEN'] = function () { return ['es_marca' => true, 'colores' => 'rojo', 'principal' => 'rojo', 'secundario' => '#FFFFFF', 'fondos' => '#FFFFFF']; };
+$c = cv_con_pedido();
+wabot_conv_transcript($c, 'cliente', '[foto] Mandó el logo.', ['clase' => 'imagen', 'mime' => 'image/png', 'archivo' => 'd-logo.png']);
+wabot_datos_demo_completar($c, dd(['nombre_negocio' => 'Roja', 'resumen' => 'Ropa']), $cfg);
+caso('un hex mal formado no entra a medias: queda a elección del diseñador', ($c['colores'] ?? '') === 'A elección del diseñador');
+unset($GLOBALS['WABOT_TEST_MEDIA_BYTES'], $GLOBALS['WABOT_TEST_COLORES_IMAGEN']);
+$GLOBALS['WABOT_TEST_IMAGEN_PERFIL'] = function ($url) { return null; };
+
 todo_ok();
