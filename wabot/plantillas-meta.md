@@ -141,13 +141,13 @@ teléfono, no se le manda nada al cliente y Pablo recibe el aviso.
 | Campo | Valor |
 |---|---|
 | **Clave en el bot** | `plantillas.cobro_rechazado` |
-| **Nombre en Meta** | `cobro_rechazado_plan_mensual` (creada por la API el 12-nov, id 2233773247182744) |
+| **Nombre en Meta** | `cobro_rechazado_cuota_mensual` (creada por la API el 12-nov, id 3880416228764993; la primera versión, `cobro_rechazado_plan_mensual`, sin la transferencia, quedó sin usar) |
 | **Idioma** | `es_AR` |
 | **Categoría** | Utilidad |
 | **Variables** | {{1}} nombre, {{2}} negocio, {{3}} monto |
 
 ```
-Hola {{1}}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {{2}} ({{3}}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Cualquier duda, escribinos por acá.
+Hola {{1}}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {{2}} ({{3}}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Si preferís, también podés pagar por transferencia al alias pablotravi y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.
 ```
 
 Ejemplos: `Juan`, `Panadería Sol`, `$20.000`.

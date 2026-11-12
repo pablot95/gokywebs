@@ -13,7 +13,8 @@ $cfg['plantillas']['cobro_rechazado'] = array_merge((array)$cfg['plantillas']['c
 
 echo "=== La plantilla ===\n";
 $p = (array)wabot_config_load()['plantillas']['cobro_rechazado'];
-caso('existe con el nombre de Meta', ($p['nombre'] ?? '') === 'cobro_rechazado_plan_mensual');
+caso('existe con el nombre de Meta', ($p['nombre'] ?? '') === 'cobro_rechazado_cuota_mensual');
+caso('ofrece pagar por transferencia al alias', strpos($p['texto'], 'transferencia al alias pablotravi') !== false);
 caso('tres variables: nombre, negocio, monto', ($p['params'] ?? []) === ['nombre', 'negocio', 'monto']);
 caso('el texto usa las tres', strpos($p['texto'], '{nombre}') !== false && strpos($p['texto'], '{negocio}') !== false && strpos($p['texto'], '{monto}') !== false);
 
@@ -166,7 +167,7 @@ $fila = wabot_cobro_rech_fila(['id' => 'clientes:TST', 'pre' => 'S1aaaaaa', 'tel
 $cobro = ['cobro' => '123456', 'monto' => 30000];
 $r1 = wabot_cobro_rech_enviar_fila($fila, $cobro, $cfg);
 $enviada = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? [];
-caso('sale la plantilla de Meta con los 3 valores', $r1 === 'ok' && ($enviada[1] ?? '') === 'cobro_rechazado_plan_mensual'
+caso('sale la plantilla de Meta con los 3 valores', $r1 === 'ok' && ($enviada[1] ?? '') === 'cobro_rechazado_cuota_mensual'
     && ($enviada[3] ?? []) === ['Test', 'QATEST Negocio', '$30.000'], json_encode($enviada, JSON_UNESCAPED_UNICODE));
 $conv = wabot_conv_load($clave);
 $ultimo = end($conv['transcript']);

@@ -679,15 +679,16 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         ],
         // Utilidad (12-nov): el día siguiente al primer cobro rechazado de la suscripción
         // de Mercado Pago, uno solo por cobro (cobros-rechazados.php). Creada por la API
-        // el 12-nov (id 2233773247182744).
+        // el 12-nov (id 3880416228764993), con la opción de pagar por transferencia
+        // (Pablo, 12-nov). La primera, cobro_rechazado_plan_mensual, quedó sin usar.
         'cobro_rechazado' => [
-            'nombre' => 'cobro_rechazado_plan_mensual',
+            'nombre' => 'cobro_rechazado_cuota_mensual',
             'idioma' => 'es_AR',
             'categoria' => 'UTILITY',
             'activa' => true,
             'automatico' => true,
             'params' => ['nombre', 'negocio', 'monto'],
-            'texto' => 'Hola {nombre}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {negocio} ({monto}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Cualquier duda, escribinos por acá.',
+            'texto' => 'Hola {nombre}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {negocio} ({monto}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Si preferís, también podés pagar por transferencia al alias pablotravi y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.',
         ],
         // Utilidad (29-oct, "hacer visible lo invisible"): desde el día 1, a cada
         // cliente con mantenimiento, el resumen del mes anterior de su web (webs.php).
