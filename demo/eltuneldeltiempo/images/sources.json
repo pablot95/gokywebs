@@ -1,0 +1,83 @@
+{
+  "origin": "Imágenes entregadas por Pablo en el ZIP de la sesión 20261111-210135-eltuneldeltiempo. Ilustrativas y alegóricas; no son fotografías documentales del programa.",
+  "processing": "Copias WebP, calidad 82; originales conservados. No se descargaron fotografías adicionales.",
+  "assets": [
+    {
+      "file": "01_imagen.webp",
+      "original": "01_imagen.jpg",
+      "slot": "Micrófono, presentación del programa",
+      "width": 900,
+      "height": 1600
+    },
+    {
+      "file": "02_imagen.webp",
+      "original": "02_imagen.jpg",
+      "slot": "Portada, radio antigua",
+      "width": 1600,
+      "height": 900
+    },
+    {
+      "file": "03_imagen.webp",
+      "original": "03_imagen.jpg",
+      "slot": "Efemérides, reloj",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "04_imagen.webp",
+      "original": "04_imagen.jpg",
+      "slot": "Lectura de muestra, mapas",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "05_imagen.webp",
+      "original": "05_imagen.jpg",
+      "slot": "Lectura de muestra, objetos",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "06_imagen.webp",
+      "original": "06_imagen.jpg",
+      "slot": "Lectura de muestra, radio",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "07_imagen.webp",
+      "original": "07_imagen.jpg",
+      "slot": "Galería, presente",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "08_imagen.webp",
+      "original": "08_imagen.jpg",
+      "slot": "Galería, futuro",
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "file": "09_imagen.webp",
+      "original": "09_imagen.jpg",
+      "slot": "Galería, memoria",
+      "width": 1024,
+      "height": 1024
+    }
+  ],
+  "efemerides": [
+    {
+      "date": "1920-08-27",
+      "source": "https://www.argentina.gob.ar/noticias/101-anos-de-la-primera-transmision-radial-argentina"
+    },
+    {
+      "date": "1834-11-10",
+      "source": "https://www.argentina.gob.ar/noticias/10-de-noviembre-dia-de-la-tradicion-2"
+    },
+    {
+      "date": "1945-11-16",
+      "source": "https://www.unesco.org/es/legal-affairs/constitution"
+    }
+  ]
+}
