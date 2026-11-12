@@ -127,6 +127,7 @@ const ERR_REPOS = [
     'redmundialdesaludmental.com.ar' => 'pablot95/redmundialdesaludmental',
     'pinturasgalfa.com.ar' => 'pablot95/pinturasgalfa',
     'chavaturismo.com.ar' => 'pablot95/chavaturismo',
+    'analuz.com.ar' => 'pablot95/analuz',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
