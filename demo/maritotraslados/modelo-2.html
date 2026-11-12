@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marito_traslados — Traslados desde el aeropuerto IGR</title>
+  <meta name="description" content="Taxi y remis en Puerto Iguazú: traslados desde el aeropuerto IGR a las Cataratas, Foz do Iguaçu, Ciudad del Este, Posadas y la región. Pedí tu viaje por WhatsApp.">
+  <link rel="canonical" href="https://gokywebs.com/demo/maritotraslados/">
+  <meta name="theme-color" content="#15221c">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:site_name" content="Marito_traslados">
+  <meta property="og:title" content="Marito_traslados — Traslados desde el aeropuerto IGR">
+  <meta property="og:description" content="Viajes y traslados desde el aeropuerto IGR a destinos de Argentina, Brasil y Paraguay: Cataratas, Foz do Iguaçu, Ciudad del Este, Posadas y más.">
+  <meta property="og:url" content="https://gokywebs.com/demo/maritotraslados/">
+  <meta property="og:image" content="https://gokywebs.com/demo/maritotraslados/images/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2323604a'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='Arial,sans-serif' font-weight='800' font-size='34' fill='%23fff'%3EM%3C/text%3E%3Crect x='16' y='50' width='9' height='4' rx='1' fill='%23e59a7e'/%3E%3Crect x='28' y='50' width='9' height='4' rx='1' fill='%23e59a7e'/%3E%3Crect x='40' y='50' width='9' height='4' rx='1' fill='%23e59a7e'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800&family=Overpass+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=202611122005">
+  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "LocalBusiness",
+        "@id": "https://gokywebs.com/demo/maritotraslados/#negocio",
+        "name": "Marito_traslados",
+        "description": "Taxi y remis en Puerto Iguazú: viajes y traslados desde el aeropuerto IGR a destinos de Argentina, Brasil y Paraguay.",
+        "url": "https://gokywebs.com/demo/maritotraslados/",
+        "image": "https://gokywebs.com/demo/maritotraslados/images/og.jpg",
+        "telephone": "+54 9 3757 51-6743",
+        "priceRange": "Consultar",
+        "address": { "@type": "PostalAddress", "addressLocality": "Puerto Iguazú", "addressRegion": "Misiones", "addressCountry": "AR" },
+        "areaServed": [
+          { "@type": "Country", "name": "Argentina" },
+          { "@type": "Country", "name": "Brasil" },
+          { "@type": "Country", "name": "Paraguay" }
+        ],
+        "makesOffer": [
+          { "@type": "Offer", "itemOffered": { "@type": "TaxiService", "name": "Traslados desde y hacia el aeropuerto IGR" } },
+          { "@type": "Offer", "itemOffered": { "@type": "TaxiService", "name": "Viajes a las Cataratas argentinas y brasileñas" } },
+          { "@type": "Offer", "itemOffered": { "@type": "TaxiService", "name": "Viajes de compras a Ciudad del Este" } },
+          { "@type": "Offer", "itemOffered": { "@type": "TaxiService", "name": "Viajes a Foz do Iguaçu, Itaipú, Posadas, San Ignacio, Wanda y Moconá" } }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "¿Me buscan en el aeropuerto IGR?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Coordinamos por WhatsApp con tu número de vuelo y la hora de llegada, y te esperamos para llevarte al hotel." } },
+          { "@type": "Question", "name": "¿Cruzan a Brasil y a Paraguay?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Viajamos a Foz do Iguaçu, a las Cataratas del lado brasileño, a Itaipú, al Templo Budista, al Marco das Três Fronteiras y a Ciudad del Este." } },
+          { "@type": "Question", "name": "¿Qué documento necesito para cruzar?", "acceptedAnswer": { "@type": "Answer", "text": "Cada pasajero viaja con su documento vigente (DNI o pasaporte, según su nacionalidad). En el puente se hace el control migratorio y la espera puede variar." } },
+          { "@type": "Question", "name": "¿Cuánto sale el viaje?", "acceptedAnswer": { "@type": "Answer", "text": "Depende del recorrido. Escribinos con el origen, el destino y el horario, y te pasamos el valor." } },
+          { "@type": "Question", "name": "¿Puedo llevar valijas y bolsas de compras?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Contanos cuántas llevan cuando coordines el viaje." } },
+          { "@type": "Question", "name": "¿Viajan al interior de Misiones?", "acceptedAnswer": { "@type": "Answer", "text": "Sí: Posadas, las Ruinas de San Ignacio, las Minas de Wanda y los Saltos del Moconá." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="m2" id="top">
+  <nav class="gw-modelos" aria-label="Modelos de la web">
+    <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+    <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
+  </nav>
+
+  <header class="site-header">
+    <div class="container header__in">
+      <a class="brand" href="modelo-2.html" aria-label="Marito_traslados, inicio">
+        <span class="wm"><span class="wm__a">Marito</span><span class="wm__guion" aria-hidden="true"></span><span class="wm__b">traslados</span></span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+        <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#servicios">Servicios</a>
+        <a href="#destinos">Destinos</a>
+        <a href="#como">Cómo se coordina</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="btn btn--cta header-cta" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Vi la web y quiero pedir un traslado." target="_blank" rel="noopener">
+        <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+        <span>Pedí tu traslado</span>
+      </a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero hero--foto" id="inicio">
+      <div class="hero__fondo"><img data-hero-img src="images/cataratas.webp" width="1600" height="900" alt="Saltos de las Cataratas del Iguazú entre la selva, con el río abajo" fetchpriority="high"></div>
+      <div class="container hero__grid">
+        <div class="hero__texto">
+          <p class="hero-eyebrow">Taxi y remis · Puerto Iguazú, Misiones</p>
+          <h1>Viajes y traslados desde el aeropuerto IGR</h1>
+          <p class="hero-lead">Te llevamos a las Cataratas, a Foz do Iguaçu, a Ciudad del Este, a Posadas y a toda la región.</p>
+          <ul class="paises" aria-label="Países a los que viajamos">
+            <li class="hero-badge"><span class="pais-cod">AR</span>Argentina</li>
+            <li class="hero-badge"><span class="pais-cod">BR</span>Brasil</li>
+            <li class="hero-badge"><span class="pais-cod">PY</span>Paraguay</li>
+          </ul>
+          <div class="hero-ctas">
+            <a class="btn btn--cta" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero pedir un traslado." target="_blank" rel="noopener">
+              <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              <span>Pedí tu traslado</span>
+            </a>
+            <a class="btn btn--ghost" href="#destinos">
+              <span>Ver destinos</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="hero__visual hero__visual--card">
+        <div class="hero__foto">
+          <img src="images/aeropuerto-igr.webp" width="900" height="1600" alt="Auto plateado con una valija al lado, estacionado frente a la terminal del aeropuerto, con la torre de control y palmeras atrás">
+        </div>
+        <div class="placa sello">
+          <span class="wm wm--claro"><span class="wm__a">Marito</span><span class="wm__guion" aria-hidden="true"></span><span class="wm__b">traslados</span></span>
+          <span class="placa__ruta"><span>IGR</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>AR · BR · PY</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="destinos" id="destinos" aria-labelledby="dest-titulo">
+      <div class="container">
+        <div class="sec-head sec-head--fila">
+          <div>
+            <div data-animate="subir" style="opacity:0;transform:translateY(32px)"><h2 id="dest-titulo">Doce destinos en tres países</h2></div>
+            <span class="ruta" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+            <p class="sec-bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Tocá un destino y miralo en el mapa.</p>
+          </div>
+          <div class="filtros" role="group" aria-label="Filtrar destinos por país" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <button type="button" class="filtro" data-pais="todos" aria-pressed="true">Todos</button>
+            <button type="button" class="filtro" data-pais="AR" aria-pressed="false">Argentina</button>
+            <button type="button" class="filtro" data-pais="BR" aria-pressed="false">Brasil</button>
+            <button type="button" class="filtro" data-pais="PY" aria-pressed="false">Paraguay</button>
+          </div>
+        </div>
+        <div class="dest-grid">
+          <div class="cartel" data-animate="cortina" style="clip-path:inset(0 100% 0 0)">
+            <p class="cartel__cab"><span>Desde el aeropuerto IGR</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></p>
+            <ul class="cartel__lista" id="destLista">
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="aeropuerto" aria-pressed="false"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Aeropuerto IGR</strong><small>Puerto Iguazú</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="cataratas-ar" aria-pressed="true"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Cataratas argentinas</strong><small>Parque Nacional Iguazú</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="wanda" aria-pressed="false"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Minas de Wanda</strong><small>Wanda, Misiones</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="san-ignacio" aria-pressed="false"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Ruinas de San Ignacio</strong><small>San Ignacio, Misiones</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="posadas" aria-pressed="false"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Posadas</strong><small>Capital de Misiones</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="AR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="mocona" aria-pressed="false"><span class="dest__cod">AR</span><span class="dest__txt"><strong>Saltos del Moconá</strong><small>El Soberbio, Misiones</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="BR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="cataratas-br" aria-pressed="false"><span class="dest__cod">BR</span><span class="dest__txt"><strong>Cataratas brasileñas</strong><small>Parque Nacional do Iguaçu</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="BR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="foz" aria-pressed="false"><span class="dest__cod">BR</span><span class="dest__txt"><strong>Foz do Iguaçu</strong><small>Paraná, Brasil</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="BR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="itaipu" aria-pressed="false"><span class="dest__cod">BR</span><span class="dest__txt"><strong>Represa de Itaipú</strong><small>Foz do Iguaçu</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="BR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="templo" aria-pressed="false"><span class="dest__cod">BR</span><span class="dest__txt"><strong>Templo Budista</strong><small>Foz do Iguaçu</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="BR" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="marco" aria-pressed="false"><span class="dest__cod">BR</span><span class="dest__txt"><strong>Marco das Três Fronteiras</strong><small>Foz do Iguaçu</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+              <li data-pais="PY" data-animate="der" style="opacity:0;transform:translateX(40px)"><button type="button" class="dest" data-dest="cde" aria-pressed="false"><span class="dest__cod">PY</span><span class="dest__txt"><strong>Ciudad del Este</strong><small>Compras en Paraguay</small></span><svg class="dest__flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button></li>
+            </ul>
+          </div>
+          <div class="mapa-wrap">
+            <div class="mapa" id="mapa" data-animate="mascara" style="clip-path:inset(100% 0 0 0)"></div>
+            <div class="ficha" id="ficha" aria-live="polite" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+              <p class="ficha__ruta"><span id="fichaDesde">IGR</span><span class="ficha__tramo" aria-hidden="true"></span><span id="fichaPais">AR</span></p>
+              <h3 id="fichaNombre">Cataratas argentinas</h3>
+              <p class="ficha__desc" id="fichaDesc">Las pasarelas y la Garganta del Diablo, del lado argentino.</p>
+              <a class="btn btn--cta btn--sm" id="fichaBtn" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero consultar un viaje a Cataratas argentinas." target="_blank" rel="noopener">Consultar este viaje</a>
+              <p class="ficha__nota">Ubicación aproximada en el mapa</p>
+            </div>
+          </div>
+        </div>
+        <ul class="postales" aria-label="Postales del camino">
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+            <button type="button" class="postal" data-dest="wanda">
+              <span class="postal__foto"><img src="images/ruta-selva.webp" width="1024" height="1024" alt="Ruta asfaltada que atraviesa la selva, con luz entre los árboles"></span>
+              <span class="postal__pie">Por la ruta 12, rumbo a Wanda y San Ignacio</span>
+            </button>
+          </li>
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+            <button type="button" class="postal" data-dest="foz">
+              <span class="postal__foto"><img src="images/rio-puente.webp" width="1024" height="1024" alt="Río ancho entre la selva, con un puente al fondo"></span>
+              <span class="postal__pie">Ríos y puentes entre los tres países</span>
+            </button>
+          </li>
+          <li data-animate="subir" style="opacity:0;transform:translateY(40px)">
+            <button type="button" class="postal" data-dest="posadas">
+              <span class="postal__foto"><img src="images/costanera-posadas.webp" width="1024" height="1024" alt="Costanera con palmeras, bancos y baranda frente a un río ancho"></span>
+              <span class="postal__pie">La costanera de Posadas, sobre el Paraná</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="servicios" id="servicios" aria-labelledby="serv-titulo">
+      <div class="container">
+        <div class="sec-head">
+          <div data-animate="subir" style="opacity:0;transform:translateY(32px)"><h2 class="serv-titulo" id="serv-titulo">Servicios de traslado</h2></div>
+          <span class="ruta" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Servicios" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <button type="button" class="tab" role="tab" id="tab-aeropuerto" aria-selected="true" aria-controls="panel-aeropuerto">Aeropuerto IGR</button>
+          <button type="button" class="tab" role="tab" id="tab-cataratas" aria-selected="false" aria-controls="panel-cataratas" tabindex="-1">Cataratas</button>
+          <button type="button" class="tab" role="tab" id="tab-compras" aria-selected="false" aria-controls="panel-compras" tabindex="-1">Compras en Paraguay</button>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-aeropuerto" aria-labelledby="tab-aeropuerto">
+            <article class="serv serv--cuadrada" data-animate="subir" style="--ar:1;opacity:0;transform:translateY(40px)">
+            <div class="serv__foto"><img src="images/baul-valijas.webp" width="1024" height="1024" alt="Baúl abierto de un auto plateado con dos valijas adentro"></div>
+            <div class="serv__txt">
+              <h3>Aeropuerto IGR</h3>
+              <p>Te buscamos cuando aterriza tu vuelo y te dejamos en tu hotel. A la vuelta, te llevamos al aeropuerto con tiempo.</p>
+              <a class="link-flecha" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero consultar un traslado desde el aeropuerto IGR." target="_blank" rel="noopener">Consultar traslado <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+            </div>
+          </article>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-cataratas" aria-labelledby="tab-cataratas" hidden>
+            <article class="serv serv--ancha" data-animate="subir" style="--ar:1.7778;opacity:0;transform:translateY(40px)">
+            <div class="serv__foto"><img src="images/cataratas.webp" width="1600" height="900" alt="Saltos de las Cataratas del Iguazú entre la selva, con el río abajo"></div>
+            <div class="serv__txt">
+              <h3>Cataratas argentinas y brasileñas</h3>
+              <p>Viajes al Parque Nacional Iguazú y al lado brasileño. Coordinamos la hora de ida y la de vuelta.</p>
+              <a class="link-flecha" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero consultar un viaje a las Cataratas." target="_blank" rel="noopener">Consultar viaje a Cataratas <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+            </div>
+          </article>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-compras" aria-labelledby="tab-compras" hidden>
+            <article class="serv serv--cuadrada" data-animate="subir" style="--ar:1;opacity:0;transform:translateY(40px)">
+            <div class="serv__foto"><img src="images/compras-paraguay.webp" width="1024" height="1024" alt="Valija y bolsas de compras sobre una vereda, listas para cargar en el auto"></div>
+            <div class="serv__txt">
+              <h3>Compras en Paraguay</h3>
+              <p>Viajes a Ciudad del Este para hacer compras, con lugar para las bolsas a la vuelta.</p>
+              <a class="link-flecha" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero consultar un viaje de compras a Ciudad del Este." target="_blank" rel="noopener">Consultar viaje de compras <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+            </div>
+          </article>
+        </div>
+        <div class="tambien" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+          <span class="tambien__linea" aria-hidden="true"></span>
+          <p>También viajamos a Foz do Iguaçu, Itaipú, Posadas, San Ignacio, Wanda y Moconá.</p>
+          <a class="link-flecha" href="#destinos">Ver los 12 destinos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          <span class="tambien__linea" aria-hidden="true"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="como" id="como" aria-labelledby="como-titulo">
+      <div class="container como__grid">
+        <figure class="como__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+          <img src="images/asiento-trasero.webp" width="1024" height="1024" alt="Asiento trasero de un auto, tapizado gris, limpio y amplio">
+        </figure>
+        <div class="como__txt">
+          <div class="sec-head">
+            <div data-animate="subir" style="opacity:0;transform:translateY(32px)"><h2 id="como-titulo">Así se coordina tu viaje</h2></div>
+            <span class="ruta" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+          </div>
+          <ol class="pasos">
+            <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+              <span class="paso__num">01</span>
+              <h3>Escribinos por WhatsApp</h3>
+              <p>Contanos desde dónde salís, adónde vas, qué día y a qué hora.</p>
+            </li>
+            <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+              <span class="paso__num">02</span>
+              <h3>Te pasamos el valor</h3>
+              <p>El precio depende del recorrido: te lo confirmamos antes de viajar.</p>
+            </li>
+            <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+              <span class="paso__num">03</span>
+              <h3>Te buscamos</h3>
+              <p>En el aeropuerto, en tu hotel o donde estés. Si llegás en avión, pasanos el número de vuelo.</p>
+            </li>
+            <li class="paso" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+              <span class="paso__num">04</span>
+              <h3>Llegás a destino</h3>
+              <p>Con las valijas o las bolsas de compras en el baúl.</p>
+            </li>
+          </ol>
+          <div class="como__cta" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <a class="btn btn--cta" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero coordinar un viaje." target="_blank" rel="noopener">
+              <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              <span>Coordinar mi viaje</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="preguntas" id="preguntas" aria-labelledby="faq-titulo">
+      <div class="container faq__grid">
+        <div class="faq__cab">
+          <div data-animate="subir" style="opacity:0;transform:translateY(32px)"><h2 id="faq-titulo">Preguntas antes de viajar</h2></div>
+          <span class="ruta" data-animate="linea" style="transform:scaleX(0)" aria-hidden="true"></span>
+          <p data-animate="subir" style="opacity:0;transform:translateY(24px)">¿Te quedó otra duda? Escribinos y te respondemos por WhatsApp.</p>
+          <div data-animate="subir" style="opacity:0;transform:translateY(24px)">
+            <a class="link-flecha link-flecha--grande" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Tengo una consulta sobre un viaje." target="_blank" rel="noopener">+54 9 3757 51-6743 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></a>
+          </div>
+        </div>
+        <div class="faq__lista">
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Me buscan en el aeropuerto IGR? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Sí. Coordinamos por WhatsApp con tu número de vuelo y la hora de llegada, y te esperamos para llevarte al hotel.</p>
+          </details>
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Cruzan a Brasil y a Paraguay? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Sí. Viajamos a Foz do Iguaçu, a las Cataratas del lado brasileño, a Itaipú, al Templo Budista, al Marco das Três Fronteiras y a Ciudad del Este.</p>
+          </details>
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Qué documento necesito para cruzar? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Cada pasajero viaja con su documento vigente (DNI o pasaporte, según su nacionalidad). En el puente se hace el control migratorio y la espera puede variar.</p>
+          </details>
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Cuánto sale el viaje? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Depende del recorrido. Escribinos con el origen, el destino y el horario, y te pasamos el valor.</p>
+          </details>
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Puedo llevar valijas y bolsas de compras? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Sí. Contanos cuántas llevan cuando coordines el viaje.</p>
+          </details>
+          <details class="faq__item" data-animate="subir" style="opacity:0;transform:translateY(32px)">
+            <summary>¿Viajan al interior de Misiones? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <p>Sí: Posadas, las Ruinas de San Ignacio, las Minas de Wanda y los Saltos del Moconá.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="contacto" id="contacto" aria-labelledby="contacto-titulo">
+      <div class="container contacto__grid">
+        <div class="pedido" data-animate="subir" style="opacity:0;transform:translateY(40px)">
+          <h2 id="contacto-titulo">Pedí tu traslado</h2>
+          <span class="ruta ruta--quieta" aria-hidden="true"></span>
+          <p class="pedido__bajada">Completá los datos y se abre WhatsApp con el mensaje listo para mandar.</p>
+          <form class="form" id="pedidoForm" novalidate>
+            <div class="campo">
+              <label for="fDesde">Desde</label>
+              <input id="fDesde" name="desde" type="text" autocomplete="off" placeholder="Aeropuerto IGR, tu hotel o una dirección" required>
+              <p class="campo__error" id="fDesdeErr" hidden>Contanos desde dónde salís.</p>
+            </div>
+            <div class="campo">
+              <label for="fHasta">Hasta</label>
+              <select id="fHasta" name="hasta" required>
+                <option value="">Elegí el destino</option>
+                <optgroup label="Argentina">
+                  <option>Aeropuerto IGR</option>
+                  <option>Cataratas argentinas</option>
+                  <option>Minas de Wanda</option>
+                  <option>Ruinas de San Ignacio</option>
+                  <option>Posadas</option>
+                  <option>Saltos del Moconá</option>
+                </optgroup>
+                <optgroup label="Brasil">
+                  <option>Cataratas brasileñas</option>
+                  <option>Foz do Iguaçu</option>
+                  <option>Represa de Itaipú</option>
+                  <option>Templo Budista</option>
+                  <option>Marco das Três Fronteiras</option>
+                </optgroup>
+                <optgroup label="Paraguay">
+                  <option>Ciudad del Este</option>
+                </optgroup>
+                <option value="Otro destino">Otro destino (lo aclaro en el chat)</option>
+              </select>
+              <p class="campo__error" id="fHastaErr" hidden>Elegí adónde vas.</p>
+            </div>
+            <div class="campo campo--mitad">
+              <label for="fFecha">Día</label>
+              <input id="fFecha" name="fecha" type="date" required>
+              <p class="campo__error" id="fFechaErr" hidden>Elegí el día del viaje.</p>
+            </div>
+            <div class="campo campo--mitad">
+              <label for="fHora">Hora</label>
+              <input id="fHora" name="hora" type="time">
+            </div>
+            <div class="campo campo--mitad">
+              <label for="fPasajeros">Pasajeros</label>
+              <select id="fPasajeros" name="pasajeros">
+                <option>1</option>
+                <option selected>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option value="más de 4">Más de 4</option>
+              </select>
+            </div>
+            <div class="campo campo--mitad">
+              <label for="fNombre">Tu nombre</label>
+              <input id="fNombre" name="nombre" type="text" autocomplete="given-name" placeholder="¿Cómo te llamás?" required>
+              <p class="campo__error" id="fNombreErr" hidden>Decinos tu nombre.</p>
+            </div>
+            <button type="submit" class="btn btn--cta btn--full">
+              <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              <span>Abrir WhatsApp con mi pedido</span>
+            </button>
+          </form>
+        </div>
+        <aside class="contacto__aside" aria-label="Datos de contacto">
+          <figure class="contacto__foto" data-animate="mascara" style="clip-path:inset(100% 0 0 0)">
+            <img src="images/auto-atardecer.webp" width="1024" height="1024" alt="Auto plateado estacionado entre palmeras al atardecer">
+          </figure>
+          <ul class="datos">
+            <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="datos__lbl">WhatsApp</span><a href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Vi la web y quiero consultar por un traslado." target="_blank" rel="noopener">+54 9 3757 51-6743</a></li>
+            <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="datos__lbl">Base</span><span>Puerto Iguazú, Misiones</span></li>
+            <li data-animate="subir" style="opacity:0;transform:translateY(24px)"><span class="datos__lbl">Viajamos a</span><span>Argentina · Brasil · Paraguay</span></li>
+          </ul>
+        </aside>
+      </div>
+      <div class="container">
+        <div class="cierre" data-animate="cortina" style="clip-path:inset(0 100% 0 0)">
+          <div class="cierre__txt">
+            <span class="wm wm--claro cierre__wm" aria-hidden="true"><span class="wm__a">Marito</span><span class="wm__guion"></span><span class="wm__b">traslados</span></span>
+            <h2>Del aeropuerto a tu destino, en Argentina, Brasil y Paraguay.</h2>
+          </div>
+          <div class="cierre__acc">
+            <a class="btn btn--claro" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero pedir un traslado." target="_blank" rel="noopener">
+              <svg class="ico-wsp" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              <span>Pedí tu traslado por WhatsApp</span>
+            </a>
+            <a class="cierre__num" href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Quiero pedir un traslado." target="_blank" rel="noopener">+54 9 3757 51-6743</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer__grid">
+      <div class="footer__marca" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)">
+        <a class="brand brand--footer" href="#top" aria-label="Marito_traslados, volver arriba">
+          <span class="wm wm--claro"><span class="wm__a">Marito</span><span class="wm__guion" aria-hidden="true"></span><span class="wm__b">traslados</span></span>
+        </a>
+        <p>Taxi y remis en Puerto Iguazú. Traslados a Argentina, Brasil y Paraguay.</p>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <h3>Servicios</h3>
+        <ul>
+          <li><a href="#servicios">Aeropuerto IGR</a></li>
+          <li><a href="#servicios">Cataratas argentinas y brasileñas</a></li>
+          <li><a href="#servicios">Compras en Paraguay</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <h3>Destinos</h3>
+        <ul>
+          <li>Foz do Iguaçu e Itaipú</li>
+          <li>Ciudad del Este</li>
+          <li>Posadas y San Ignacio</li>
+          <li>Wanda y Moconá</li>
+        </ul>
+      </div>
+      <div class="footer__col" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+        <h3>Contacto</h3>
+        <ul>
+          <li><a href="https://wa.me/5493757516743" data-wsp-msg="Hola Marito! Vi la web y quiero consultar por un traslado." target="_blank" rel="noopener">+54 9 3757 51-6743</a></li>
+          <li>Puerto Iguazú, Misiones</li>
+        </ul>
+      </div>
+    </div>
+    <div class="container footer__pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
+      <span>© 2026 Marito_traslados</span>
+      <span>Imágenes ilustrativas</span>
+      <span>Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a></span>
+    </div>
+  </footer>
+
+  <a class="wsp-float" id="wsp-float" href="https://wa.me/5493757516743?text=Hola%20Marito!%20Vi%20la%20web%20y%20quiero%20consultar%20por%20un%20traslado." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+
+  <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
+  <script src="script.js?v=202611122005"></script>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "ilustrativas_chatgpt": {
+    "origen": "zip de ChatGPT (Marito_traslados_kByV5bN3gnDlMU3zXNKN), originales Marito_traslados_kByV5bN3gnDlMU3zXNKN_01-09.jpg y _10_mockup_720x480.png",
+    "archivos": {
+      "aeropuerto-igr.webp": "_01.jpg (9:16, 900x1600): portada de M1 y tarjeta vertical de la portada de M2",
+      "cataratas.webp": "_02.jpg (16:9): tarjeta de Cataratas en los dos modelos y fondo de la portada de M2",
+      "asiento-trasero.webp": "_03.jpg: bloque «Así se coordina tu viaje»",
+      "baul-valijas.webp": "_04.jpg: servicio Aeropuerto IGR",
+      "ruta-selva.webp": "_05.jpg: postal «Por la ruta 12» (selecciona Minas de Wanda)",
+      "rio-puente.webp": "_06.jpg: postal «Ríos y puentes» (selecciona Foz do Iguaçu)",
+      "compras-paraguay.webp": "_07.jpg: servicio Compras en Paraguay",
+      "auto-atardecer.webp": "_08.jpg: foto del bloque de contacto",
+      "costanera-posadas.webp": "_09.jpg: postal de la costanera de Posadas",
+      "og.jpg": "_02.jpg recortada a 1200x630"
+    },
+    "mockup": "_10_mockup_720x480.png solo como referencia de diseño (M1)"
+  },
+  "del_cliente": {
+    "origen": "Descargas/imagenes-prospectos/maritotraslados/01-imagen.jpg (pieza gráfica TAXIS/REMISES con QR de WhatsApp)",
+    "uso": "solo como fuente de la lista de destinos; no se publica (no hay logo)"
+  },
+  "fotos_de_bancos": "ninguna"
+}
