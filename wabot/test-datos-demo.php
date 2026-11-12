@@ -765,4 +765,23 @@ $c = cv_con_pedido();
 $c['presentado_ts'] = time();
 caso('con la demo entregada ya no es «armando la demo»', !wabot_comercial_armando_demo($c));
 
+echo "
+— 23. Las fichas que quedaron sin armar se arman una vez desde el código (Pablo, 12-nov) —
+";
+$c = cv_con_pedido();
+$c['control_manual'] = true;
+$n = count(pedidos_datos());
+$ok = wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5491178242382'], $cfg);
+caso('la carpintería queda con ficha, con el nombre de su flyer', $ok && !empty($c['lead_creado']) && ($c['nombre_negocio'] ?? '') === 'Carpintería IAN' && !empty($c['datos_demo_rehecho_ts']));
+caso('sin gastar una lectura de la IA', count(pedidos_datos()) === $n);
+caso('la línea «[Datos de la demo por chat]» queda en la charla', str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'Negocio: Carpintería IAN'));
+caso('una segunda vuelta no la repite', !wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5491178242382'], $cfg));
+$c = cv_con_pedido();
+$ok = wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493416422669'], $cfg);
+caso('Mica: ficha con contenido de ejemplo', $ok && !empty($c['lead_creado']) && str_contains((string)($c['incluir'] ?? ''), 'Contenido de ejemplo')
+    && str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'contenido de ejemplo'));
+$c = cv_con_pedido();
+$c['presentado_ts'] = time();
+caso('con la demo ya entregada no se toca', !wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493416422669'], $cfg) && empty($c['lead_creado']));
+
 todo_ok();

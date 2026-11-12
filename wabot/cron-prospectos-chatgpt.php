@@ -195,6 +195,8 @@ if (realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
         try {
             require_once __DIR__ . '/engine.php';
             wabot_datos_demo_espera_correr();
+            // Las fichas que quedaron sin armar y se arman una vez desde el código (12-nov).
+            if (function_exists('wabot_datos_demo_rehacer_correr')) wabot_datos_demo_rehacer_correr();
             // Los mensajes que quedaron varados en la cola (10-nov): pasan a la charla y le avisan a Pablo.
             if (function_exists('wabot_cola_barrer')) wabot_cola_barrer();
         } catch (Throwable $e) {

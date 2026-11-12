@@ -1106,3 +1106,66 @@ function wabot_datos_demo_ficha_actualizar(&$conv, $cfg, array $d) {
     wabot_log('error', ['donde' => 'firestore_datos_tarde', 'clave' => $clave, 'doc' => $doc, 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
     return false;
 }
+
+/* ──────────── Fichas que quedaron sin armar (Pablo, 12-nov) ────────────
+ *
+ * Dos charlas dieron lo suyo antes de los arreglos del 11-nov y quedaron sin ficha:
+ * Carpintería IAN mandó fotos y un flyer con el nombre y los servicios, pero la
+ * descripción del flyer salió cortada y el nombre no se leyó; Mica pidió la demo con
+ * contenido de ejemplo y eso todavía no armaba ficha. Pablo: «quiero que armes vos
+ * esas fichas». Los datos los leí de la charla y del flyer (no son de la IA); el
+ * cron los pasa por wabot_datos_demo_completar() una sola vez, como cuando el bot
+ * arma una ficha, y al cliente no se le escribe nada. Ya armadas, la lista puede
+ * vaciarse: con la ficha creada o la marca `datos_demo_rehecho_ts` no se repite.
+ */
+const WABOT_DATOS_DEMO_REHACER = [
+    '5491178242382' => [
+        'nombre_negocio' => 'Carpintería IAN',
+        'resumen' => 'Carpintería que está por abrir: muebles a medida, muebles de pino, reparaciones, placares y estanterías, mesas y sillas, muebles para el hogar. Lema de su flyer: «Calidad, diseño y compromiso en cada trabajo» y «Hacemos realidad tus proyectos».',
+        'referencia' => '',
+        'incluir' => 'Datos de su flyer: WhatsApp 11 7824-2382, llamadas 11 2356-0595, dirección Av. Francia y Madame Curie 5034. Mandó 7 imágenes: el flyer con el logo (sello «Carpintería IAN» con dos martillos cruzados) y fotos de sus muebles; una es una captura de la cuenta de Instagram taller.baum (mesa con enfriador de bebidas), de referencia, no es suya. No tiene Instagram.',
+    ],
+    '5493416422669' => [
+        'pide_ejemplo' => true,
+        'resumen' => 'Emprendimiento de macramé: tienda online para mostrar y vender sus productos.',
+    ],
+];
+
+/** Arma la ficha de una charla con datos ya leídos, sin escribirle al cliente. true si quedó creada. */
+function wabot_datos_demo_rehacer(&$conv, array $datos, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (!empty($conv['lead_creado']) || !empty($conv['datos_demo_rehecho_ts']) || !empty($conv['presentado_ts'])) return false;
+    if ((int)($conv['datos_demo_ficha_fallos'] ?? 0) >= 6) return false;
+    $d = wabot_datos_demo_normalizar(['es_datos' => true] + $datos);
+    if ($d['pide_ejemplo']) $d['_ejemplo'] = true;
+    wabot_datos_demo_completar($conv, $d, $cfg, $ahora);   // la confirmación no se manda
+    if (empty($conv['lead_creado'])) {
+        // Firestore no la creó: la reintenta este mismo cron, no el de la espera (ese le escribiría).
+        unset($conv['datos_demo_parcial'], $conv['datos_demo_espera_ts'], $conv['datos_demo_leido_filas']);
+        wabot_datos_demo_espera_quitar(wabot_conversation_key($conv));
+        return false;
+    }
+    $conv['datos_demo_rehecho_ts'] = $ahora;
+    wabot_log('datos_demo_rehecha', ['clave' => wabot_conversation_key($conv), 'negocio' => (string)($conv['nombre_negocio'] ?? ''), 'doc' => (string)($conv['lead_doc'] ?? '')]);
+    return true;
+}
+
+function wabot_datos_demo_rehacer_correr($cfg = null, $ahora = null) {
+    $res = [];
+    foreach (WABOT_DATOS_DEMO_REHACER as $clave => $datos) {
+        $clave = (string)$clave;
+        $cv = wabot_conv_load($clave);
+        if (!empty($cv['lead_creado']) || !empty($cv['datos_demo_rehecho_ts']) || empty($cv['transcript'])) continue;
+        $cfg = $cfg ?? wabot_config_load();
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            $res[$clave] = wabot_datos_demo_rehacer($cv, $datos, $cfg, $ahora);
+            wabot_conv_save($cv);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
