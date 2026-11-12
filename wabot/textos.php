@@ -305,7 +305,8 @@ function wabot_textos_default() {
         'pixel' => 'Sí, se puede conectar el pixel de Meta y Google Analytics.',
         'confianza' => 'Te entiendo. En gokywebs.com/portfolio podés ver webs que entregamos a negocios reales, y la muestra la ves antes de pagar nada.',
         'rangos' => 'Con gusto te paso los valores. Te consulto, a qué te dedicás o qué vendés? Así te digo cuál te corresponde.',
-        'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
+        // 12-nov (Pablo): «no avisa que el primer pago tiene un valor extra de $15.000».
+        'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, el primer pago tiene un adicional de $15.000 y después una renovación adicional de $40.000 por año.',
         'que_incluye_sin_productos' => 'Con el mensual o el anual está todo incluido: la web a medida, hosting, dominio, mantenimiento, soporte, un cambio por mes y tu panel para editarla.',
         // La informativa de $20.000, sin panel (9-oct, noche).
         'que_incluye_sitio' => 'Con el mensual o el anual está todo incluido: la web a medida, adaptada a celular, preparada para Google, hosting, dominio, mantenimiento, soporte y un cambio por mes.',

@@ -1094,8 +1094,9 @@ caso('turnos online y usuarios: incluidos y sin costo aparte',
     mb_stripos($cfg['info']['turnos'], 'No se paga aparte') !== false && mb_stripos($cfg['info']['usuarios'], 'No se paga aparte') !== false);
 caso('idiomas: hasta 3, incluido, sin "lo confirma el desarrollador"',
     mb_stripos($cfg['info']['bilingue'], '3 idiomas') !== false && mb_stripos($cfg['info']['bilingue'], 'desarrollador') === false);
-caso('el .com: .com.ar incluido y $40.000 por año de renovación',
-    mb_stripos($cfg['info']['dominio_com'], '.com.ar') !== false && strpos($cfg['info']['dominio_com'], '$40.000') !== false);
+caso('el .com: .com.ar incluido, $15.000 extra en el primer pago y $40.000 por año de renovación (12-nov)',
+    mb_stripos($cfg['info']['dominio_com'], '.com.ar') !== false && strpos($cfg['info']['dominio_com'], '$40.000') !== false
+    && strpos($cfg['info']['dominio_com'], '$15.000') !== false && mb_stripos($cfg['info']['dominio_com'], 'primer pago') !== false && mb_strlen($cfg['info']['dominio_com']) <= 260);
 caso('el hosting nombra el .com.ar y no el .com', mb_stripos($cfg['info']['hosting'], '.com.ar') !== false && strpos($cfg['info']['hosting'], '$40.000') === false);
 $incluyeSitio = wabot_texto_info('que_incluye', $cfg, ['tipo' => 'landing']);
 // 26-sep a la noche: un cambio por mes con el mensual o el anual. Desde el 3-oct ya no nombra el pago único.
