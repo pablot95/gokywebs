@@ -126,6 +126,7 @@ const ERR_REPOS = [
     'sinchijoyasyaccesorios.com.ar' => 'pablot95/sinchi',
     'redmundialdesaludmental.com.ar' => 'pablot95/redmundialdesaludmental',
     'pinturasgalfa.com.ar' => 'pablot95/pinturasgalfa',
+    'chavaturismo.com.ar' => 'pablot95/chavaturismo',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
