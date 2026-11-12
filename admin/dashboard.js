@@ -3906,7 +3906,8 @@ function suscripcionDe(c) {
        la suscripción vinculada por ID que se canceló en Mercado Pago es una baja, aunque la ficha diga
        activa (seguía en Suscripción como Activo y sumando a lo que entra por mes). El que paga por afuera no. */
     const preId = String(c.preapprovalId || mant?.preapprovalId || "").trim();
-    const subMp = preId && c.pagaPorFuera !== true && mant?.pagaPorFuera !== true
+    // Solo la que la ficha todavía daba por activa: la baja ya cargada a mano sigue como estaba (Gianaria, oculta en Cobros fallidos).
+    const subMp = preId && c.estadoSuscripcion !== "baja" && c.pagaPorFuera !== true && mant?.pagaPorFuera !== true
         ? (ingresosMp?.suscripciones || []).find(s => String(s.id) === preId) : null;
     const bajaMp = subMp?.estado === "cancelled" ? (mantToDate(subMp.baja) || new Date()) : null;
     const estado = (c.estadoSuscripcion === "baja" || aviso?.tipoEvento === "baja" || bajaMp) ? "baja"
@@ -11111,7 +11112,6 @@ function _cobrosFallidos() {
             dia: Number(m?.diaCobro) || mantToDate(m?.createdAt)?.getDate() || 0, ...detalleDe(pre ? ultimo.get(pre) : null) });
     }
     // 3. Clientes cargados en Clientes con la suscripción en baja o pausada.
-    //    La fecha de la baja en MP solo si la ficha no estaba ya en baja: las ocultas antes quedaron con la clave sin fecha (Gianaria).
     for (const c of _clientesEnMantenimiento().mensual) {
         if (mantenimientoDeCliente(c) || c.pagaPorFuera === true) continue;
         const clave = _claveMantCliente(c);
@@ -11119,7 +11119,7 @@ function _cobrosFallidos() {
         const s = suscripcionDe(c);
         agregar({ clave: s.preapprovalId ? "sub:" + s.preapprovalId : "cliente:" + c.id, tipo: clave === "baja" ? "baja" : "pausada",
             destino: "clientes:" + c.id, avisoId: s.aviso?.id || "", nombre: c.proyecto || c.nombre || "Cliente", persona: c.proyecto ? (c.nombre || "") : "",
-            nombreMp: c.nombreMp || "", monto: s.mensual, fecha: (c.estadoSuscripcion !== "baja" && s.bajaMp) || mantToDate(s.aviso?.fechaBaja) || mantToDate(s.aviso?.createdAt) || null,
+            nombreMp: c.nombreMp || "", monto: s.mensual, fecha: s.bajaMp || mantToDate(s.aviso?.fechaBaja) || mantToDate(s.aviso?.createdAt) || null,
             dia: Number(c.diaCobro) || s.desde?.getDate() || 0, ...detalleDe(s.preapprovalId ? ultimo.get(s.preapprovalId) : null) });
     }
     // 4. Los cobros de Mercado Pago cuyo último intento falló (últimos 45 días). No cuenta el de alguien que
