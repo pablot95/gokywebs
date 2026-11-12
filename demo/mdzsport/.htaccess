@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "\.(sqlite|ndjson)$">
+  Require all denied
+</FilesMatch>
