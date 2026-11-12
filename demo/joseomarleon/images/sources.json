@@ -1,0 +1,27 @@
+{
+  "cliente_whatsapp": {
+    "origen": "Imágenes enviadas por José Omar León por WhatsApp (Descargas/imagenes-prospectos/joseomarleon)",
+    "archivos": {
+      "logo.webp": "01-logo.jpg recortado, fondo blanco pasado a transparente",
+      "afiche-union-es-evolucion.webp": "02-imagen.jpg (captura de celular) recortada al afiche, sin la notificación ni las franjas negras",
+      "jose-microfono.webp": "03-imagen.jpg recortada abajo para sacar la marca de agua de la app",
+      "jose-blanco.webp": "04-imagen.jpg recortada abajo para sacar la barra de navegación del celular",
+      "jose-sonrisa.webp": "07-imagen.jpg sin las franjas negras",
+      "jose-retrato.webp": "08-imagen.jpg"
+    },
+    "sin_usar": ["05-imagen.jpg y 06-imagen.jpg (casi iguales a 08)", "09-imagen.jpg (captura del mismo logo)"]
+  },
+  "zip_chatgpt_ilustrativas": {
+    "origen": "Zip de imágenes ilustrativas del pedido (Jose_Omar_Leon_BSapMKca8vZ0zkzxkLwq_*.jpg)",
+    "archivos": {
+      "escenario.webp": "_02 (16:9)",
+      "escenario-foco.webp": "_05",
+      "microfono-estudio.webp": "_06",
+      "camara-escenario.webp": "_09",
+      "cuaderno-auriculares.webp": "_03",
+      "og.jpg": "_02 recortada a 1200x630"
+    },
+    "sin_usar": ["_01 micrófono 9:16", "_04 consola", "_07 monitor", "_08 valija de micrófono", "_10 mockup (referencia de diseño)"]
+  },
+  "bancos_externos": []
+}
