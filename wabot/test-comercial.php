@@ -1592,6 +1592,16 @@ oa([dc(['accion' => 'responder', 'solucion' => 'cursos', 'mensajes' => ['Los sub
 $r = turno('Sí, contame', $c, $cfg);
 caso('si en el turno le preguntamos otra cosa, no se le vuelve a ofrecer la demo encima', count($r) === 1 && empty($c['comercial_reoferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
+// LUX CAR (12-nov): tres fotos justo después de la oferta; la descripción de Gemini traía «donde» y la demo salió dos veces en el mismo minuto.
+$c = cv_cotizada('tienda');
+$desc = 'Mandó una imagen promocional de la línea de shampoos para autos, donde se exhiben cinco variedades de productos junto con su número de contacto.';
+wabot_conv_transcript($c, 'cliente', 'Mandó una imagen de sus desengrasantes de motor.', ['clase' => 'imagen']);
+wabot_conv_transcript($c, 'cliente', $desc, ['clase' => 'imagen']);
+$dF = dc(['accion' => 'responder', 'solucion' => 'tienda', 'mensajes' => []]);
+caso('12-nov: si lo que mandó en el turno son solo fotos, no se le vuelve a ofrecer la demo', wabot_comercial_reoferta_corresponde($dF, $desc, $c, $cfg, [['t' => 'Gracias por las imágenes! Las usamos como referencia para el diseño']]) === false);
+wabot_conv_transcript($c, 'cliente', 'Y dónde se ve el carrito?');
+caso('12-nov: pero si además preguntó algo, sí', wabot_comercial_reoferta_corresponde($dF, 'Y dónde se ve el carrito?', $c, $cfg, [['t' => 'Abajo de cada producto.']]) === true);
+
 // Tomás también: el texto del pago único dos veces en tres minutos; Ceci: "no usamos Tiendanube" dos veces seguidas.
 $c = cv_cotizada('cursos');
 oa([dc(['accion' => 'responder', 'solucion' => 'cursos', 'info_claves' => ['hosting']])]);

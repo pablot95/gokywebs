@@ -1635,6 +1635,16 @@ function wabot_comercial_reoferta_corresponde($d, $texto, $conv, $cfg, array $ms
         if (function_exists('wabot_texto_sin_links')) $t = wabot_texto_sin_links($t);
         if (strpos($t, '?') !== false) return false;
     }
+    /* Lo que mandó en este turno son solo fotos o archivos: la descripción que arma Gemini
+     * («...donde se exhiben cinco variedades...») no es una pregunta, aunque traiga un «donde».
+     * 12-nov, LUX CAR: tres fotos justo después de la oferta y la demo salió dos veces en el mismo minuto. */
+    $turno = [];
+    foreach (array_reverse(array_values((array)($conv['transcript'] ?? []))) as $fila) {
+        $q = (string)($fila['q'] ?? '');
+        if ($q === 'cliente') { $turno[] = $fila; continue; }
+        if (in_array($q, ['bot', 'humano'], true)) break;
+    }
+    if ($turno && !array_filter($turno, function ($f) { return empty($f['media']) || strpos((string)($f['t'] ?? ''), '?') !== false; })) return false;
     // Cuántas veces escribió después de la oferta: por posición en la charla (la
     // oferta y lo que sigue pueden caer en el mismo segundo), o por hora si el texto no está.
     $t = array_values((array)($conv['transcript'] ?? []));
