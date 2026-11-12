@@ -186,6 +186,7 @@ const getProducto = id => {
 };
 const wspHref = msg => `https://wa.me/${WSP}?text=${encodeURIComponent(msg)}`;
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+const citar = n => (String(n).includes('«') ? n : `«${n}»`);
 const talleValido = (p, t) => ((p?.talles || []).includes(t) ? t : '');
 const claveDe = i => `${i.id}|${i.talle || ''}`;
 const talleTexto = i => (i.talle ? `Talle ${talleDe(i.talle)?.corto || i.talle}` : '');
@@ -458,7 +459,7 @@ function initDrawer() {
     if (!q) return;
     const p = getProducto(q.dataset.quitar.split('|')[0]);
     Cart.remove(q.dataset.quitar);
-    if (p) showToast(`Sacaste «${p.nombre}» del carrito`);
+    if (p) showToast(`Sacaste ${citar(p.nombre)} del carrito`);
     drawer.querySelector('.drawer__head button')?.focus();
   });
   drawer.querySelectorAll('[data-drawer-cerrar]').forEach(b => b.addEventListener('click', () => cerrarCapa(drawer)));
@@ -470,8 +471,8 @@ function initDrawer() {
 
 function avisoSumado(p, talle, n) {
   const t = talleDe(talle)?.corto || talle;
-  if (n) showToast(`Sumaste ${n > 1 ? `${n} × ` : ''}«${p.nombre}» talle ${t} al carrito`);
-  else showToast(`Ya tenés ${TOPE_LINEA} de «${p.nombre}» en talle ${t}`);
+  if (n) showToast(`Sumaste ${n > 1 ? `${n} × ` : ''}${citar(p.nombre)} talle ${t} al carrito`);
+  else showToast(`Ya tenés ${TOPE_LINEA} de ${citar(p.nombre)} en talle ${t}`);
 }
 function bump(el) {
   if (!el || reduceMotion) return;
@@ -586,7 +587,7 @@ function qvHTML(p, talle = '') {
     ${guiaHTML(p)}
     <p class="qv__desc">${esc(p.desc)}</p>
     <ul class="qv__incluye">${(p.ficha || []).map(t => `<li>${ICO.check}<span>${esc(t)}</span></li>`).join('')}</ul>
-    <a class="qv__wsp" href="${esc(wspHref(`Hola! Tengo una consulta sobre «${p.nombre}» de ${MARCA}.`))}" target="_blank" rel="noopener">${ICO.wsp}<span>¿Dudas con el talle? Preguntanos</span></a>
+    <a class="qv__wsp" href="${esc(wspHref(`Hola! Tengo una consulta sobre ${citar(p.nombre)} de ${MARCA}.`))}" target="_blank" rel="noopener">${ICO.wsp}<span>¿Dudas con el talle? Preguntanos</span></a>
   </div>
 </div>
 ${rel.length ? `<div class="qv__rel"><h3>También te puede gustar</h3><ul>${rel.map(r => `<li><button type="button" data-qv-rel="${esc(r.id)}"><img src="${esc(r.img)}" alt="" width="800" height="1000"><span>${esc(r.nombre)}</span><small>${formatearPrecio(precioFinal(r))}</small></button></li>`).join('')}</ul></div>` : ''}`;
