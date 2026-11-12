@@ -965,6 +965,7 @@ return [
         'Cada cuánto sube la cuota?',
         'Se mantiene el valor todo el año?',
         'La mensualidad tiene aumentos?',
+        'Entonces pago 190 al año, y después al otro año 190?',
     ],
     'instagram' => [
         'Tienen Instagram?',

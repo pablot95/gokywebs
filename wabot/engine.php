@@ -2082,7 +2082,7 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
          * Instagram» alcanza como rastro; que la pida o no lo decide el modelo). */
         'dominio_propio'        => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
         'dominio_propio_precio' => '(dominio|com ar|punto com|\.com|www|direccion de la web|nombre de la web)',
-        'actualizacion_precio'  => '(aument|actualiz|sube\b|suben\b|suba\b|subir el|subida|ajust|inflacion|increment|se mantiene|mantien|congel|precio fijo|valor fijo|mismo precio|mismo valor|cambia el precio|cambia el valor)',
+        'actualizacion_precio'  => '(aument|actualiz|sube\b|suben\b|suba\b|subir el|subida|ajust|inflacion|increment|se mantiene|mantien|congel|precio fijo|valor fijo|mismo precio|mismo valor|cambia el precio|cambia el valor|al otro ano|el ano que viene|el proximo ano|el siguiente ano|el segundo ano|despues del primer ano)',
         'instagram'             => '(instagram|insta|ig\b|redes)',
         'dejo_de_pagar'   => '(dej(o|e|ar|as|en) de pagar|no (puedo|pueda|llego|llegue) (a )?pagar|si no pago|un mes no|cancel|dar de baja|doy de baja|baja|corto el plan|dejo el plan|dejar el plan'
                            . '|indefinid|cuantos meses|cantidad de meses|para siempre|de por vida|titularidad|18 meses|mes de gracia|pierdo la (web|pagina))',
