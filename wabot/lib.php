@@ -927,7 +927,13 @@ function wabot_nombre_negocio_limpiar($valor) {
     $primera = mb_strtolower((string)($palabras[0] ?? ''));
     $genericas = ['un','una','el','la','mi','nuestro','nuestra','negocio','empresa','emprendimiento',
                   'tienda','local','comercio','marca','proyecto','equipo','servicio','pagina','web'];
-    if (in_array($primera, $genericas, true)) return '';
+    /* «El Orfebre Joyas», «El marquillano ferreteria», «La Esquina»: el artículo solo no
+     * hace genérico al nombre; sí «el negocio…», «una tienda…», «el de mi viejo» (12-nov, karina 17:25). */
+    $articulos = ['un','una','el','la','los','las'];
+    if (in_array($primera, $articulos, true) && count($palabras) > 1) {
+        $segunda = mb_strtolower((string)$palabras[1]);
+        if (in_array($segunda, array_merge($genericas, ['de','del','que','mio','mia']), true)) return '';
+    } elseif (in_array($primera, $genericas, true)) return '';
 
     // No se fuerza Title Case porque rompería marcas como eBooks, iFix o glowNails.
     if ($v === mb_strtolower($v)) $v = mb_strtoupper(mb_substr($v, 0, 1)) . mb_substr($v, 1);

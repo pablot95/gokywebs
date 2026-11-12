@@ -1634,6 +1634,9 @@ function wabot_comercial_reoferta_corresponde($d, $texto, $conv, $cfg, array $ms
         $t = (string)($m['t'] ?? '');
         if (function_exists('wabot_texto_sin_links')) $t = wabot_texto_sin_links($t);
         if (strpos($t, '?') !== false) return false;
+        // La respuesta ya le ofrece el primer diseño sin cargo (`ejemplos`): no se suma la repregunta encima (12-nov, Rafael Romero 15:47).
+        $tn = wabot_normalizar_frase($t);
+        if (strpos($tn, 'primer diseno') !== false || strpos($tn, 'demo gratis') !== false || wabot_comercial_texto_es_oferta($t, $cfg)) return false;
     }
     // Cuántas veces escribió después de la oferta: por posición en la charla (la
     // oferta y lo que sigue pueden caer en el mismo segundo), o por hora si el texto no está.

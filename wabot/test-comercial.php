@@ -1591,6 +1591,18 @@ turno('Y el hosting?', $c, $cfg);
 oa([dc(['accion' => 'responder', 'solucion' => 'cursos', 'mensajes' => ['Los subís desde el panel, uno por curso, y te consulto: los querés con acceso por alumno?']])]);
 $r = turno('Sí, contame', $c, $cfg);
 caso('si en el turno le preguntamos otra cosa, no se le vuelve a ofrecer la demo encima', count($r) === 1 && empty($c['comercial_reoferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+// 12-nov, Rafael Romero 15:47: «Me pasas referencias comerciales?» → el portfolio ya ofrece el primer diseño sin cargo; la repregunta salía igual encima.
+$c = cv_cotizada('informativa');
+oa([dc(['accion' => 'responder', 'solucion' => 'informativa', 'info_claves' => ['hosting']])]);
+turno('Y el hosting va incluido?', $c, $cfg);
+oa([dc(['accion' => 'responder', 'solucion' => 'informativa', 'info_claves' => ['ejemplos']])]);
+$r = turno('Me pasas referencias comerciales?', $c, $cfg);
+caso('si la respuesta ya ofrece el primer diseño sin cargo, no se suma «querés que te armemos la demo»', $r === [$cfg['info']['ejemplos']] && empty($c['comercial_reoferta_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+// 12-nov, karina 17:25 y Kari 15:50: «El marquillano ferreteria» / «El Orfebre Joyas» quedaban en «(no lo dijo)» por empezar con «El».
+foreach (['El marquillano ferreteria' => 'El marquillano ferreteria', 'El Orfebre Joyas' => 'El Orfebre Joyas', 'La Esquina' => 'La Esquina',
+          'el negocio de mi viejo' => '', 'una tienda de ropa' => '', 'el de mi viejo' => '', 'mi local' => '', "Catan's" => "Catan's"] as $n => $esp) {
+    caso("nombre «{$n}» → «{$esp}»", wabot_nombre_negocio_limpiar($n) === $esp, wabot_nombre_negocio_limpiar($n));
+}
 
 // Tomás también: el texto del pago único dos veces en tres minutos; Ceci: "no usamos Tiendanube" dos veces seguidas.
 $c = cv_cotizada('cursos');
