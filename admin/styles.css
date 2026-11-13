@@ -3595,3 +3595,19 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
     .mant-buscar { flex: 1 1 100%; }
     .mant-links-pop { right: auto; left: 0; width: min(320px, 86vw); }
 }
+
+/* Calendario (13-nov): de dónde sale cada mensualidad — Mercado Pago o por afuera — y su botón
+   («💵 Pagó» / «Paga por afuera»), en Próximos 7 días y en el detalle del día. */
+.cobro-origen { display: inline-block; font-size: 10.5px; font-weight: 650; line-height: 1.5; padding: 0 7px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; border: 1px solid transparent; }
+.cobro-origen--mp { color: var(--info-soft); background: rgba(96, 165, 250, 0.12); border-color: rgba(96, 165, 250, 0.35); }
+.cobro-origen--fuera { color: #FCD34D; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.4); }
+.cobro-origen--sinmp { color: var(--text-muted); background: transparent; border-color: var(--border-strong); border-style: dashed; }
+.cobro-vencido { color: var(--warning); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.cobro-accion-wrap { margin-top: 4px; }
+.cobro-accion--pago { border-color: rgba(245, 158, 11, 0.55); color: #FCD34D; }
+.cobro-accion--pago:hover { border-color: var(--warning); }
+.cal-cell-nombre--fuera { border-left-color: var(--warning); }
+.cal-cell-nombre--fuera:not(.cal-cell-nombre--falta) { color: #FDE68A; }
+.prox-lista li.prox-cobro { align-items: center; flex-wrap: wrap; }
+.prox-cobro-txt { flex: 1 1 auto; min-width: 0; }
+.prox-cobro .cobro-accion { margin-left: auto; }

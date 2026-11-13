@@ -1694,11 +1694,13 @@ function ingresosPorDia(hastaYmd) {
     };
     // De quién es cada suscripción de Mercado Pago: el mensual que le tocó en el cruce.
     const cruce = _cruceMercadoPago();
-    const quienDeSub = new Map(cruce.filter(k => k.sub).map(k => [k.sub.id, { negocio: k.negocio, persona: k.persona, aConfirmar: k.aConfirmar }]));
+    // `destino` ("coleccion:id"): el doc del mensual, para «Paga por afuera» / «Pagó» desde el Calendario (13-nov).
+    const destinoDe = k => `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`;
+    const quienDeSub = new Map(cruce.filter(k => k.sub).map(k => [k.sub.id, { negocio: k.negocio, persona: k.persona, aConfirmar: k.aConfirmar, destino: destinoDe(k) }]));
     // Los cobros llegan sin el nombre del que paga (19-oct, los 43): va el de su suscripción.
     const nombreDeSub = new Map((ingresosMp?.suscripciones || []).map(s => [String(s.id), s.nombre || ""]));
     const deMp = (idSub, nombreMp) => {
-        const q = quienDeSub.get(String(idSub || "")) || { negocio: "", persona: "" };
+        const q = quienDeSub.get(String(idSub || "")) || { negocio: "", persona: "", destino: "" };
         const mp = String(nombreMp || nombreDeSub.get(String(idSub || "")) || "").replace(/\s+/g, " ").trim();
         return { ...q, nombreMp: mp, nombre: q.negocio || q.persona || mp || "Suscriptor" };
     };
@@ -1706,7 +1708,7 @@ function ingresosPorDia(hastaYmd) {
     // Ya entró: suscripciones (cobros reales de Mercado Pago, netos de devoluciones).
     for (const c of (ingresosMp?.cobros || [])) {
         const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
-        if (neto > 0 && c.dia) agregar(c.dia, { monto: neto, clase: "subs", tipo: "Suscripción", cobrado: true, ...deMp(c.suscripcion, c.nombre) });
+        if (neto > 0 && c.dia) agregar(c.dia, { monto: neto, clase: "subs", tipo: "Suscripción", origen: "mp", cobrado: true, ...deMp(c.suscripcion, c.nombre) });
     }
     // Ya entró: otros pagos (señas, saldos, cobros anuales, ajustes).
     for (const k of cobrosAnualesYUnicos()) {
@@ -1720,7 +1722,7 @@ function ingresosPorDia(hastaYmd) {
         // El cobro rebotó y MP lo reintenta (semáforo amarillo o rojo; en MP, "Atrasado"): el próximo cobro ya
         // pasó al mes que viene, así que el de este mes no figuraba en ningún lado (Yanzón y Gianaria, 24-oct).
         if (s.semaforo === "yellow" || s.semaforo === "red") {
-            agregar(hoy, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción atrasada", cobrado: false, atrasada: true, ...deMp(s.id, s.nombre) });
+            agregar(hoy, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción atrasada", origen: "mp", cobrado: false, atrasada: true, ...deMp(s.id, s.nombre) });
         }
         const prox = new Date(s.proximoCobro);
         if (Number.isNaN(prox.getTime())) continue;
@@ -1732,7 +1734,7 @@ function ingresosPorDia(hastaYmd) {
                 if (i > 0) continue;
                 ymd = hoy;
             }
-            agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", cobrado: false, ...deMp(s.id, s.nombre) });
+            agregar(ymd, { monto: Number(s.monto), clase: "subs", tipo: "Suscripción", origen: "mp", cobrado: false, ...deMp(s.id, s.nombre) });
         }
     }
     // Los mensuales que no cobra Mercado Pago (no están arriba), el día del mes del alta (o el que se cargó
@@ -1741,19 +1743,26 @@ function ingresosPorDia(hastaYmd) {
     //   ya pasó cuenta como entrado y lo que viene, como falta cobrar.
     // - Sin suscripción encontrada y sin la marca: no se sabe si pagó. El cobro de este mes que ya pasó va
     //   hoy, como falta cobrar (antes desaparecía del mes: Electro lift, 16-oct); los meses anteriores no cuentan.
+    // - Desde el 13-nov el que paga por afuera cuenta como entrado solo si está marcado («💵 Pagó»,
+    //   `pagadoHasta`), si es el cobro del alta o si es de antes de PF_PAGADOS_HASTA (lo mismo que
+    //   Mantenimiento → Pagan por afuera). El que ya pasó sin marcar va hoy, como falta cobrar.
     const [hy, hm] = hoy.split("-").map(Number);
     const mesesDesdeHoy = ymd => { const [y, m] = ymd.split("-").map(Number); return (y - hy) * 12 + (m - hm); };
     for (const k of cruce) {
         if (k.porId || k.sub) continue;
         const inicio = _diaDe(k.desde);
+        const pagado = String(k.ref.pagadoHasta || "");
         const primero = k.porFuera ? Math.max(mesesDesdeHoy(inicio), mesesDesdeHoy(INGRESOS_DESDE)) : Math.max(0, mesesDesdeHoy(inicio));
         for (let i = primero; i < primero + 60; i++) {
             let ymd = _ymdDelMes(hy, hm - 1 + i, k.dia || k.desde.getDate());
             if (ymd > hastaYmd) break;
             if (ymd < inicio) continue;
-            const yaPaso = ymd < hoy;
-            if (yaPaso && !k.porFuera) ymd = hoy;
-            agregar(ymd, { monto: k.monto, clase: "subs", tipo: k.porFuera ? "Paga por afuera" : "Mensualidad sin Mercado Pago", nombre: k.negocio || k.persona || k.nombre, negocio: k.negocio, persona: k.persona, nombreMp: "", cobrado: k.porFuera && yaPaso });
+            const cobroDe = ymd;
+            const pagadoYa = k.porFuera && (ymd <= pagado || ymd <= PF_PAGADOS_HASTA || ymd === inicio);
+            if (ymd < hoy && !pagadoYa) ymd = hoy;
+            agregar(ymd, { monto: k.monto, clase: "subs", tipo: k.porFuera ? (ymd !== cobroDe ? "Paga por afuera, vencido" : "Paga por afuera") : "Mensualidad sin Mercado Pago",
+                origen: k.porFuera ? "fuera" : "sinmp", destino: destinoDe(k), cobroDe, vencido: ymd !== cobroDe,
+                nombre: k.negocio || k.persona || k.nombre, negocio: k.negocio, persona: k.persona, nombreMp: "", cobrado: pagadoYa });
         }
     }
     return dias;
@@ -2021,6 +2030,32 @@ function _quienCobroCelda(it) {
 
 const CAL_NOMBRES_MAX = 4;
 
+/* Calendario (Pablo, 13-nov: "que se pueda diferenciar cuál es por suscripción y cuál paga por afuera. En
+   los que pagan por afuera, marcar como pagado, y en los de suscripción, marcar que paga por afuera").
+   La etiqueta de cada mensualidad y su botón: «💵 Pagó» (el mismo de Mantenimiento → Pagan por afuera, con
+   este cobro) o «Paga por afuera» (la misma marca de Mantenimiento). */
+const COBRO_ORIGEN = {
+    mp:    { texto: "Suscripción MP", clase: "mp",    titulo: "La cobra Mercado Pago (suscripción)" },
+    fuera: { texto: "Paga por afuera", clase: "fuera", titulo: "Paga por su cuenta, sin Mercado Pago: se marca con «Pagó»" },
+    sinmp: { texto: "Sin MP", clase: "sinmp", titulo: "Mensual sin suscripción encontrada en Mercado Pago y sin la marca de que paga por afuera" }
+};
+function _cobroOrigenChip(it) {
+    const o = COBRO_ORIGEN[it.origen];
+    return o ? `<span class="cobro-origen cobro-origen--${o.clase}" title="${escapeHtml(o.titulo)}">${o.texto}</span>` : "";
+}
+function _cobroVencioTexto(it) {
+    return it.vencido ? `venció el ${escapeHtml(String(it.cobroDe).slice(8, 10))}/${escapeHtml(String(it.cobroDe).slice(5, 7))}` : "";
+}
+function _cobroAccionHTML(it) {
+    if (it.clase !== "subs" || !it.destino || it.cobrado) return "";
+    const d = escapeHtml(it.destino);
+    if (it.origen === "fuera") {
+        const [, m, dd] = String(it.cobroDe || "").split("-");
+        return `<button type="button" class="mp-vinculo-btn cobro-accion cobro-accion--pago" data-pf-pago="${d}" data-pf-cobro="${escapeHtml(it.cobroDe || "")}" title="Marca como pagado el cobro${dd ? ` del ${dd}/${m}` : ""} y abre la factura">💵 Pagó</button>`;
+    }
+    return `<button type="button" class="mp-vinculo-btn cobro-accion" data-por-fuera="${d}" data-por-fuera-valor="1" title="No paga por Mercado Pago: pasa a «Pagan por afuera» y sus cobros se marcan con «Pagó»">Paga por afuera</button>`;
+}
+
 /* Los renglones de plata de la celda de un día (montos cortos, uno por tipo) y, debajo, quién paga
    cada suscripción ese día (19-oct): el negocio, o la persona / el nombre de Mercado Pago si no hay. */
 function _cobrosCeldaHTML(items) {
@@ -2033,7 +2068,7 @@ function _cobrosCeldaHTML(items) {
         .sort((a, b) => (a.cobrado === b.cobrado ? b.monto - a.monto : a.cobrado ? -1 : 1));
     const visibles = subs.length > CAL_NOMBRES_MAX ? subs.slice(0, CAL_NOMBRES_MAX - 1) : subs;
     const nombres = subs.length ? `<ul class="cal-cell-nombres">${visibles.map(it => `
-            <li class="cal-cell-nombre${it.cobrado ? "" : " cal-cell-nombre--falta"}" title="${escapeHtml(`${_quienCobroTexto(it)} · ${fmtMoney(it.monto)} · ${it.cobrado ? "ya entró" : "falta cobrar"}`)}">${escapeHtml(it.negocio || it.persona || it.nombre)}</li>`).join("")}
+            <li class="cal-cell-nombre${it.cobrado ? "" : " cal-cell-nombre--falta"}${it.origen === "fuera" ? " cal-cell-nombre--fuera" : ""}" title="${escapeHtml(`${_quienCobroTexto(it)} · ${COBRO_ORIGEN[it.origen]?.texto || it.tipo} · ${fmtMoney(it.monto)} · ${it.cobrado ? "ya entró" : "falta cobrar"}`)}">${escapeHtml(it.negocio || it.persona || it.nombre)}</li>`).join("")}
             ${subs.length > visibles.length ? `<li class="cal-cell-nombre cal-cell-nombre--mas">+${subs.length - visibles.length} más</li>` : ""}
         </ul>` : "";
     return `<div class="cal-cell-cobros">
@@ -2057,8 +2092,8 @@ function _cobrosDetalleHTML(items) {
             <div class="table-wrapper"><table class="clients-table ing-detalle-tabla"><tbody>${orden.map(it => `
                 <tr>
                     <td><span class="ingcal-punto ingcal-punto--${it.clase === "otros" ? "otros" : it.cobrado ? "subs" : "falta"}"></span>${it.clase === "subs" ? _quienCobroCelda(it) : escapeHtml(it.nombre)}</td>
-                    <td>${escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
-                    <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}</td>
+                    <td>${it.origen ? `${_cobroOrigenChip(it)}${it.atrasada ? ` <span class="muted">atrasada</span>` : ""}${it.vencido ? ` <span class="cobro-vencido">${_cobroVencioTexto(it)}</span>` : ""}` : escapeHtml(it.tipo)}${it.aprox ? ` <span class="muted" title="Cobrado antes de que se registrara la fecha: se ubica en el día de entrega">(fecha aprox.)</span>` : ""}</td>
+                    <td>${it.cobrado ? "Ya entró" : `<span class="muted">Falta cobrar</span>`}${_cobroAccionHTML(it) ? `<div class="cobro-accion-wrap">${_cobroAccionHTML(it)}</div>` : ""}</td>
                     <td class="num">${fmtMoney(it.monto)}</td>
                 </tr>`).join("")}</tbody></table></div>
         </div>`;
@@ -4263,6 +4298,8 @@ function initRealtime() {
         renderMantenimiento();
         // Clientes cruza la suscripción con Mantenimiento (estado, ID de Mercado Pago, bajas).
         if (clientesCargados) render();
+        // El Calendario cruza a los suscriptores con Mercado Pago: «Paga por afuera» / «Pagó» desde ahí (13-nov).
+        if (activeTab === "calendario") renderCal();
     }, (err) => {
         console.error("Mantenimiento error:", err);
     });
@@ -9122,8 +9159,7 @@ function renderCalProximos() {
             <ul class="prox-lista">
                 ${t.map(x => `<li><span class="prox-ico ${x.importancia == 2 ? "badge-imp2" : "badge-imp1"}"></span><span>${x.hora ? `<b>${escapeHtml(x.hora)}</b> ` : ""}${escapeHtml(x.texto)}</span></li>`).join("")}
                 ${h.map(x => `<li><span class="prox-ico badge-hablar"></span><span>Hablarle a ${escapeHtml(x.nombre || x.proyecto || "—")}${x.proyecto && x.nombre ? ` <small>${escapeHtml(x.proyecto)}</small>` : ""}</span></li>`).join("")}
-                ${c.slice(0, 3).map(it => `<li><span class="prox-ico prox-ico--plata"></span><span>${escapeHtml(it.negocio || it.persona || it.nombre || it.tipo)} <small>${fmtMoney(it.monto)}${it.atrasada ? " · atrasada" : ""}</small></span></li>`).join("")}
-                ${c.length > 3 ? `<li class="prox-mas">y ${c.length - 3} cobro${c.length - 3 === 1 ? "" : "s"} más</li>` : ""}
+                ${c.map(it => `<li class="prox-cobro"><span class="prox-ico prox-ico--plata"></span><span class="prox-cobro-txt">${escapeHtml(it.negocio || it.persona || it.nombre || it.tipo)} <small>${fmtMoney(it.monto)}${it.atrasada ? " · atrasada" : ""}${it.vencido ? ` · ${_cobroVencioTexto(it)}` : ""}</small> ${_cobroOrigenChip(it)}</span>${_cobroAccionHTML(it)}</li>`).join("")}
             </ul>
         </div>`;
     }).join("");
@@ -9200,6 +9236,7 @@ function openDayModal(dateStr) {
         .sort((a, b) => (a.hora || "99:99").localeCompare(b.hora || "99:99"));
     const [y, m, d] = dateStr.split("-");
     dayModalTitle.textContent = `${parseInt(d)} de ${MONTHS_ES[parseInt(m) - 1]} ${y}`;
+    dayModal.dataset.fecha = dateStr;
 
     // ── Sección tareas personales ──
     const tareasHtml = `
@@ -10461,11 +10498,17 @@ document.addEventListener("click", async (e) => {
     const marcar = b.dataset.porFueraValor === "1";
     const ref = (coleccion === "clientes" ? clients : mantenimiento).find(x => x.id === id);
     const nombre = ref?.proyecto || ref?.nombre || "este cliente";
+    // Si la suscripción que le tocó sigue activa en MP, MP la sigue cobrando: queda como «sin cliente asignado» (13-nov).
+    const subActiva = marcar && ref ? _cruceMercadoPago().find(k => k.ref === ref)?.sub : null;
+    const avisoSub = subActiva && subActiva.estado === "authorized"
+        ? `\n\nOjo: su suscripción de Mercado Pago (${subActiva.nombre || "sin nombre"}, ${fmtMoney(subActiva.monto)}) sigue activa. Hasta que se dé de baja en Mercado Pago, figura como suscripción sin cliente asignado.` : "";
     if (!confirm(marcar
-        ? `¿"${nombre}" paga por afuera, sin suscripción de Mercado Pago?\n\nEl Calendario y Finanzas van a contar su mensualidad como cobrada cada mes, el día del alta.`
+        ? `¿"${nombre}" paga por afuera, sin suscripción de Mercado Pago?\n\nPasa a Mantenimiento → Pagan por afuera, y en el Calendario cada cobro se marca con «💵 Pagó».${avisoSub}`
         : `¿Sacarle a "${nombre}" la marca de que paga por afuera?\n\nSe vuelve a buscar su suscripción en Mercado Pago.`)) return;
     try {
         await updateDoc(doc(db, coleccion, id), { pagaPorFuera: marcar, updatedAt: serverTimestamp() });
+        // Desde el detalle de un día (13-nov): se vuelve a abrir con el cambio.
+        if (!dayModal.hidden && b.closest("#dayModal") && dayModal.dataset.fecha) openDayModal(dayModal.dataset.fecha);
     } catch (err) {
         console.error(err);
         alert("Error al guardar: " + err.message);
@@ -10805,7 +10848,9 @@ document.addEventListener("click", (e) => {
     const [coleccion, id] = b.dataset.pfPago.split(":");
     const f = _mantPorFueraLista().find(x => x.coleccion === coleccion && x.ref.id === id);
     if (!f) return;
-    const cobro = f.pendiente || f.proximo || _diaDe(new Date());
+    // Desde el Calendario (13-nov) llega el cobro de ese día; desde Mantenimiento, el pendiente o el próximo.
+    const cobro = b.dataset.pfCobro || f.pendiente || f.proximo || _diaDe(new Date());
+    if (!dayModal.hidden) dayModal.hidden = true;
     const [y, m, d] = cobro.split("-").map(Number);
     const hasta = _diaDe(new Date(_fechaMp(_ymdDelMes(y, m, f.dia || f.desde?.getDate() || d)).getTime() - 86400000));
     const ref = f.ref;
