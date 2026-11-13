@@ -258,7 +258,7 @@ foreach ($charlas as $n => $ch) {
             break;
         case 2:
             caso('«El 1» → tomamos el modelo 1 y la pregunta de la modalidad', tiene($turno('El 1'), 'tomamos el modelo 1') && tiene($turno('El 1'), 'preferís'), json_encode($turno('El 1'), JSON_UNESCAPED_UNICODE));
-            caso('con «no quiero MP» dio el alias pablotravi y el CVU', tiene($todo, 'pablotravi') && tiene($todo, '0000003100053462800156'));
+            caso('con «no quiero MP» dio el alias gokywebs y el CBU', tiene($todo, 'Alias: gokywebs') && tiene($todo, '0720071788000003618268'));
             caso('«ya te transferí» → acuse y pago avisado', tiene($todo, 'revisamos el pago') && !empty($c['pago_avisado_ts']));
             caso('el pago confirmado arrancó el onboarding', !empty($c['pago_confirmado_ts']) && !empty($c['onboarding']));
             caso('tomó factura, dominio, email y fotos; terminó o quedó en el último paso', in_array((string)($c['onboarding']['paso'] ?? ''), ['', 'completo', 'horarios', 'cambios'], true) || !empty($c['onboarding']['completo_ts']), json_encode($c['onboarding']['paso'] ?? null));

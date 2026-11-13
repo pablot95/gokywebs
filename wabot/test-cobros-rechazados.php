@@ -14,7 +14,7 @@ $cfg['plantillas']['cobro_rechazado'] = array_merge((array)$cfg['plantillas']['c
 echo "=== La plantilla ===\n";
 $p = (array)wabot_config_load()['plantillas']['cobro_rechazado'];
 caso('existe con el nombre de Meta', ($p['nombre'] ?? '') === 'cobro_rechazado_cuota_mensual');
-caso('ofrece pagar por transferencia al alias', strpos($p['texto'], 'transferencia al alias pablotravi') !== false);
+caso('ofrece pagar por transferencia al alias', strpos($p['texto'], 'transferencia al alias gokywebs') !== false);
 caso('tres variables: nombre, negocio, monto', ($p['params'] ?? []) === ['nombre', 'negocio', 'monto']);
 caso('el texto usa las tres', strpos($p['texto'], '{nombre}') !== false && strpos($p['texto'], '{negocio}') !== false && strpos($p['texto'], '{monto}') !== false);
 

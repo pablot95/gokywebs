@@ -173,7 +173,7 @@ bot calla como siempre. Que el bot retome después de un silencio NO es un error
 Con la casilla prendida el bot sigue después del formulario completo y de la demo: pregunta cuál de
 los dos modelos le gustó y lo toma; con «me gustó» / «quiero avanzar» manda el link de pago de la
 modalidad elegida (mensual, anual con seña, único con seña, pago inicial en el grupo B), validado
-contra las páginas de `pago/`; si rechaza Mercado Pago, alias `pablotravi` + CVU; anota los cambios
+contra las páginas de `pago/`; si rechaza Mercado Pago, alias `gokywebs` + CBU; anota los cambios
 que pide y contesta `cambios_demo`; «ya pagué» o comprobante → «Perfecto, revisamos el pago y te
 confirmamos por acá» + aviso a Pablo; «lo veo y te aviso» → corto, sin link. Respuestas oficiales de
 esta etapa: `google_difusion`, `dominio_com_ar`, `dejo_de_pagar`, `cambios_demo`, `comisiones_mp`,

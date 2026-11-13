@@ -14,7 +14,7 @@
     var estado = document.getElementById('plan-estado');
     var reducido = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-    /* ── Copiar alias y CVU ──
+    /* ── Copiar alias y CBU ──
      * Delegado en el documento: el contenido se reemplaza al cambiar de pestaña.
      * Clipboard API y, si no está (http o navegador viejo), el textarea de siempre. */
     function copiarViejo(valor) {
