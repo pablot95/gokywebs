@@ -129,6 +129,7 @@ const ERR_REPOS = [
     'chavaturismo.com.ar' => 'pablot95/chavaturismo',
     'analuz.com.ar' => 'pablot95/analuz',
     'emesmensajeria.com.ar' => 'pablot95/mensajeriaemes',
+    'joseomarleon.com.ar' => 'pablot95/joseomarleon',
     'jorgemartinezcoaching.com.ar' => 'pablot95/jorgemartinezcoaching',
 ];
 
