@@ -1502,6 +1502,20 @@ function wabot_comercial_elige_plan_lista($texto, $conv) {
 function wabot_comercial_link_no_abre($texto, $conv = null) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '' || mb_strlen($t) > 220) return false;
+    /* Gabriel (13-nov 06:10): «no funciona esa página que le pasaste» hablaba del
+     * portfolio y se le mandó el link del formulario, que nunca había recibido.
+     * Si el último link nuestro de gokywebs.com no es el del formulario (y no
+     * nombra el formulario), el que falla es otro: no es este caso. */
+    if (is_array($conv)) {
+        $filasL = (array)($conv['transcript'] ?? []);
+        for ($i = count($filasL) - 1; $i >= 0; $i--) {
+            if (!in_array((string)($filasL[$i]['q'] ?? ''), ['bot', 'humano'], true)) continue;
+            $tx = (string)($filasL[$i]['t'] ?? '');
+            if (stripos($tx, 'gokywebs.com/') === false) continue;
+            if (stripos($tx, 'gokywebs.com/form') === false && !preg_match('/\b(formulario|form)\b/u', $t)) return false;
+            break;
+        }
+    }
     $cosa = '(link|linck|enlace|formulario|form|pagina)';
     $falla = '(abre|abrio|abrir|abrirlo|abrirla|carga|cargo|cargar|anda|funciona|funciono|entra|entrar|ingresar|deja|dejo|llega|llego|aparece|sirve|puedo|pude|pudimos|logro|logre|consigo)';
     if (preg_match('/\b(no|nunca|tampoco|sigue sin|sin poder)\b.{0,25}\b' . $falla . '\b.{0,35}\b' . $cosa . '\b/u', $t)
@@ -1772,6 +1786,9 @@ function wabot_comercial_pegar_confirmacion($confirmacion, $texto) {
 /** ¿Pregunta si los productos los cargamos NOSOTROS? ("se pueden cargar todos ustedes?", "los ponés vos?") */
 function wabot_comercial_pide_que_carguemos($texto) {
     $t = wabot_normalizar_frase((string)$texto);
+    /* Elizabeth (13-nov 08:00): «uds sacan fotos y las suben?» pregunta si hacemos
+     * las fotos, no si cargamos el contenido. */
+    if (preg_match('/\b(sacan|sacas|saca|sacar|sacarian|toman|tomar|tomarian)\b( \w+){0,2} fotos?\b|\bfotografos?\b|\bsesion(es)? de fotos\b/u', $t)) return false;
     // "cargo" queda afuera: "lo cargo yo?" es la otra pregunta y "sin cargo" no es cargar.
     $cargar = 'carg(a|an|ar|as|ues|uen|uemos|arian|arias|arlos|arlas|ando|ados?|adas?)';
     if (preg_match('/\b(ustedes|uds|vos)\b.{0,30}\b' . $cargar . '\b|\b' . $cargar . '\b.{0,30}\b(ustedes|uds|vos)\b'

@@ -1689,6 +1689,15 @@ foreach (['No puedo ahora, lo hago más tarde', 'no puedo', 'no entiendo', 'Si']
 }
 $cOtra = ['transcript' => [['q' => 'bot', 't' => 'Si te interesa, te preparamos una demo gratis', 'id' => 'wamid.O'], ['q' => 'cliente', 't' => 'x']]];
 caso('«No puedo ingresar» después de otro mensaje que no es el link, no', !wabot_comercial_link_no_abre('No puedo ingresar', $cOtra));
+// Gabriel (13-nov 06:10): el que no le funcionaba era el portfolio; se le mandó el formulario.
+$cPort = ['transcript' => [['q' => 'bot', 't' => 'Claro, en gokywebs.com/portfolio tenés webs que ya entregamos', 'id' => 'wamid.P'],
+                           ['q' => 'bot', 't' => 'Para armar la demo necesito los siguientes datos', 'id' => 'wamid.D'], ['q' => 'cliente', 't' => 'x']]];
+caso('«no funciona esa página que le pasaste» después del portfolio no es el link del formulario', !wabot_comercial_link_no_abre('Ok pero no funciona esa página que le pasaste', $cPort));
+caso('«el formulario no abre» después del portfolio sí', wabot_comercial_link_no_abre('el formulario no me abre', $cPort));
+caso('«no me abre el link» después del link del formulario sigue siendo el caso', wabot_comercial_link_no_abre('no me abre el link', $cLink));
+// Elizabeth (13-nov 08:00): preguntar si sacamos las fotos no es pedir que carguemos el contenido.
+caso('«uds sacan fotos y las suben?» no es pedir que carguemos', !wabot_comercial_pide_que_carguemos('El consultorio es muy lindo me gustaria que eso se publique uds sacan fotos y las suben?'));
+caso('«ustedes suben las fotos de los productos?» sigue siendo pedir que carguemos', wabot_comercial_pide_que_carguemos('ustedes suben las fotos de los productos?'));
 // El saludo duplicado: 8 de las 13 correcciones del revisor del 26-oct eran "Muy bien, gracias. Bien, gracias!" o volver a saludar.
 $c = cv();
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => ['Todo bien, gracias! Podemos armarte una tienda online para tus perfumes'], 'ficha' => ['que_vende' => 'perfumes']])]);
