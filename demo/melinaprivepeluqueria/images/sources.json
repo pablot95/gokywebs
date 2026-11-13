@@ -1,0 +1,110 @@
+{
+ "nota": "Imágenes ilustrativas del zip de ChatGPT para la demo; la clienta todavía no mandó fotos de sus trabajos. El logo lo mandó ella por WhatsApp (01-logo.jpg); 02-imagen.webp es un sticker y no se usa. hidratacion-lavado.webp queda sin usar en esta versión.",
+ "logo": {
+  "archivo": "logo-melina-prive.webp",
+  "origen": "01-logo.jpg (WhatsApp de la clienta, 13-nov-2026)",
+  "tratamiento": "fondo negro quitado (des-multiplicado sobre el negro), recortado al círculo, 640x640",
+  "copia_original": "logo-melina-prive-original.jpg"
+ },
+ "imagenes": [
+  {
+   "archivo": "ondas-largas-vertical.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_01.jpg",
+   "descripcion": "Melena larga con ondas suaves, de espaldas en el sillón",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    900,
+    1600
+   ]
+  },
+  {
+   "archivo": "mesa-herramientas.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_02.jpg",
+   "descripcion": "Tocador con secador, tijeras, cepillos y peines",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1600,
+    900
+   ]
+  },
+  {
+   "archivo": "corte-bob.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_03.jpg",
+   "descripcion": "Corte bob recto en pelo castaño",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "tintura-pincel.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_04.jpg",
+   "descripcion": "Aplicación de tintura con pincel",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "recogido.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_05.jpg",
+   "descripcion": "Recogido bajo con hebilla",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "trenza.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_06.jpg",
+   "descripcion": "Trenza francesa en pelo castaño",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "hidratacion-lavado.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_07.jpg",
+   "descripcion": "Tratamiento de hidratación en el lavatorio",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "nutricion-ampollas.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_08.jpg",
+   "descripcion": "Ampollas de nutrición capilar y bowl con crema",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "alisado-lacio.webp",
+   "origen": "Melina_Prive_Peluqueria_MepEm7fbrWEnaK40cHx0_09.jpg",
+   "descripcion": "Pelo lacio y brillante después de un alisado",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto MepEm7fbrWEnaK40cHx0",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  }
+ ]
+}
