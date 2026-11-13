@@ -133,6 +133,8 @@ const ERR_REPOS = [
     'jorgemartinezcoaching.com.ar' => 'pablot95/jorgemartinezcoaching',
     'giselariffelcoach.com.ar' => 'pablot95/giselariffel',
     'megabazar369.com.ar' => 'pablot95/megabazardistribuciones',
+    'centrodecajaslanus.com.ar' => 'pablot95/centrodecajaslanus',
+    'gestion.vadecogroup.com' => 'pablot95/vadecogroup',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
