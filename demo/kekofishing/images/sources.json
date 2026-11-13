@@ -1,0 +1,216 @@
+{
+ "cliente": "Fotos y logo que mandó Kekofishing por WhatsApp (Descargas/imagenes-prospectos/kekofishing): reels rotativos Marine (Intruder 12000 DS, Brisa y uno gris plata) sobre sus cajas, cañas Sumax Sahara FSH-701C y con mango de corcho, caña de viaje verde militar, fundas Sahara; logo recortado por su borde blanco del 01-logo.jpg",
+ "zip": "Imágenes de producto del zip de ChatGPT (ilustrativas): cañas, reels frontales y fundas sobre fondo gris claro; mock up como referencia del diseño",
+ "archivos": {
+  "logo-keko.webp": {
+   "px": [
+    697,
+    640
+   ],
+   "bytes": 116734
+  },
+  "logo-keko-chico.webp": {
+   "px": [
+    327,
+    300
+   ],
+   "bytes": 40900
+  },
+  "favicon-180.png": {
+   "px": [
+    180,
+    180
+   ],
+   "bytes": 63508
+  },
+  "favicon.png": {
+   "px": [
+    64,
+    64
+   ],
+   "bytes": 10416
+  },
+  "p-marine-intruder.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 93980
+  },
+  "p-marine-brisa.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 67914
+  },
+  "p-marine-plata.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 38320
+  },
+  "p-sumax-sahara.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 28558
+  },
+  "p-sumax-sahara-corcho.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 28960
+  },
+  "p-cana-viaje-verde.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 135790
+  },
+  "p-funda-sumax.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 19806
+  },
+  "p-reel-frontal-grafito.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 55242
+  },
+  "p-reel-frontal-dorado.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 63034
+  },
+  "p-reel-frontal-plata.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 53948
+  },
+  "p-funda-negra.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 23502
+  },
+  "p-funda-oliva.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 20704
+  },
+  "p-cana-spinning-roja.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 13832
+  },
+  "p-cana-corcho.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 9412
+  },
+  "p-cana-oliva.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 9356
+  },
+  "p-cana-dos-tramos.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 7636
+  },
+  "b-cana-ancha.webp": {
+   "px": [
+    1600,
+    900
+   ],
+   "bytes": 16232
+  },
+  "v-cana-vertical.webp": {
+   "px": [
+    900,
+    1600
+   ],
+   "bytes": 8736
+  },
+  "h-reel.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 59024
+  },
+  "g-intruder.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 75036
+  },
+  "g-brisa.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 50736
+  },
+  "g-sahara.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 23370
+  },
+  "g-sahara-corcho.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 25298
+  },
+  "g-plata.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 32378
+  },
+  "g-verde.webp": {
+   "px": [
+    880,
+    1100
+   ],
+   "bytes": 124464
+  },
+  "og-keko.jpg": {
+   "px": [
+    1200,
+    630
+   ],
+   "bytes": 111626
+  }
+ }
+}
