@@ -3611,3 +3611,57 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 .prox-lista li.prox-cobro { align-items: center; flex-wrap: wrap; }
 .prox-cobro-txt { flex: 1 1 auto; min-width: 0; }
 .prox-cobro .cobro-accion { margin-left: auto; }
+
+/* Seguimientos en el celular (13-nov, Pablo: «se ve re mal»): la tabla de 8 columnas
+   se aplastaba (el plan salía letra por letra en vertical). Cada fila pasa a ser una
+   ficha: nombre arriba, proyecto, teléfono con Ver chat/Ver demo, plan, y estado +
+   fecha lado a lado; notas y acciones abajo. Sin scroll horizontal. */
+@media (max-width: 760px) {
+    #tabSeguimientos .table-wrapper { overflow: visible; border: 0; background: transparent; }
+    #tabSeguimientos .clients-table { min-width: 0; display: block; border: 0; background: transparent; }
+    #tabSeguimientos .clients-table thead { display: none; }
+    #tabSeguimientos .clients-table tbody { display: flex; flex-direction: column; gap: 10px; }
+    #tabSeguimientos .clients-table tr.client-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 10px;
+        padding: 12px 13px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card);
+    }
+    #tabSeguimientos .clients-table tr.client-row:hover { background: var(--bg-card); }
+    #tabSeguimientos .clients-table tr.client-row > td {
+        display: block; padding: 0; border: 0; max-width: none; width: auto; min-width: 0;
+        text-align: left; white-space: normal; overflow: visible;
+    }
+    /* Nombre + proyecto: el título de la ficha. */
+    #tabSeguimientos tr.client-row > td:nth-child(1) { grid-column: 1 / -1; font-size: 15.5px; font-weight: 650; }
+    #tabSeguimientos tr.client-row > td:nth-child(2) { grid-column: 1 / -1; margin-top: -6px; color: var(--text-muted); font-size: 13.5px; text-overflow: clip; }
+    /* Teléfono y los botones Ver chat / Ver demo en una fila. */
+    #tabSeguimientos tr.client-row > td:nth-child(3) { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+    #tabSeguimientos tr.client-row > td:nth-child(3) > * { margin: 0 !important; }
+    #tabSeguimientos tr.client-row > td:nth-child(3) .phone-copy { margin-right: 4px !important; font-variant-numeric: tabular-nums; }
+    #tabSeguimientos tr.client-row > td:nth-child(4) { grid-column: 1 / -1; font-size: 13.5px; }
+    #tabSeguimientos tr.client-row > td:nth-child(4) .seg-plan-precio { display: inline; margin-left: 6px; }
+    #tabSeguimientos tr.client-row > td:nth-child(5) .inline-status-select { width: 100%; min-height: 38px; }
+    #tabSeguimientos tr.client-row > td:nth-child(6) .date-cell { justify-content: flex-start; min-height: 38px; display: flex; align-items: center; }
+    #tabSeguimientos tr.client-row > td:nth-child(7) { grid-column: 1 / -1; }
+    #tabSeguimientos tr.client-row > td:nth-child(8) {
+        grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px;
+        padding-top: 9px; border-top: 1px solid var(--border);
+    }
+    #tabSeguimientos tr.client-row > td:nth-child(8) .icon-btn { margin: 0; min-width: 38px; min-height: 36px; }
+    /* Rótulos chicos para lo que perdió el encabezado de la tabla. */
+    #tabSeguimientos tr.client-row > td:nth-child(5)::before { content: "Estado"; }
+    #tabSeguimientos tr.client-row > td:nth-child(6)::before { content: "Hablarle el día"; }
+    #tabSeguimientos tr.client-row > td:nth-child(7)::before { content: "Notas"; }
+    #tabSeguimientos tr.client-row > td:nth-child(5)::before,
+    #tabSeguimientos tr.client-row > td:nth-child(6)::before,
+    #tabSeguimientos tr.client-row > td:nth-child(7)::before {
+        display: block; margin-bottom: 3px; color: var(--text-muted);
+        font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    }
+    #tabSeguimientos .clients-table tr.empty-row { display: block; }
+    #tabSeguimientos .clients-table tr.empty-row td { display: block; border: 0; }
+    /* Los dos botones de envío masivo, uno al lado del otro y sin cortarse. */
+    #segEnviarTodos, #segEnviarLista { margin: 0 6px 6px 0; }
+    #tabSeguimientos .seg-views { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    #tabSeguimientos .seg-views::-webkit-scrollbar { display: none; }
+    #tabSeguimientos .seg-chip { white-space: nowrap; flex: 0 0 auto; }
+}

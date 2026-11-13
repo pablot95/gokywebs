@@ -2328,6 +2328,28 @@ details.plegable > summary:focus-visible, details.estado-tecnico > summary:focus
     #respEstado { margin-top: 4px; font-size: 11px; }
     .grabando { margin-top: 7px; padding: 7px 10px; gap: 8px; }
     .grabando button { min-height: 36px; padding: 6px 11px; font-size: 12.5px; }
+
+    /* 13-nov (Pablo: «el chat está horrible en el celular»): el chat a lo ancho de
+       la pantalla. Las listas y el chat dejan de ser tarjetas con borde y aire
+       (comían ~30 px de ancho), y con un chat abierto se esconde la fila de
+       pestañas del panel: «← Todas las conversaciones» vuelve y ahí reaparece. */
+    body.conv-full .wrap { padding-left: 4px; padding-right: 4px; }
+    body.conv-full .conv-main, body.conv-full .conv-list { border: 0; border-radius: 0; }
+    body.conv-full .conv-main { padding: 6px 8px 4px; }
+    body.conv-full:has(.conv-split.has-sel) .tabs-nav { display: none; }
+    .conv-volver { margin-bottom: 4px; }
+    .conv-head { margin-bottom: 6px; }
+    .burb { max-width: 86%; }
+    /* El cuadro de escribir quedaba de 146 px: los tres botones se llevaban el resto.
+       Botones angostos, sin la manija de arrastrar (en el celular crece solo) y
+       un placeholder que entra en un renglón. */
+    .resp-resize { display: none; }
+    #responder { margin-top: 6px; }
+    #responder .fila { gap: 5px; align-items: flex-end; }
+    #respTexto { min-height: 44px; padding: 10px 11px; border-radius: 20px; }
+    #respTexto::placeholder { font-size: 15px; }
+    #respAdjuntar, #respGrabar { width: 40px; min-width: 40px; padding: 0; min-height: 44px; border-radius: 50%; }
+    #respEnviar { min-height: 44px; padding: 0 14px; border-radius: 22px; }
 }
 /* Embebido en el admin: sin aire de más arriba. */
 body.embed .wrap { padding-top: 10px; }
@@ -5200,6 +5222,8 @@ function burbujaCita(t, chat) {
         }
         const chat = document.getElementById('chat');
         const txt  = document.getElementById('respTexto');
+        // En el celular el atajo «/» no se usa (está la 🔍): placeholder de un renglón.
+        if (txt && window.matchMedia('(max-width: 720px)').matches) txt.placeholder = 'Escribí tu respuesta…';
         const resizeGrip = document.getElementById('respResize');
         const btn  = document.getElementById('respEnviar');
         const est  = document.getElementById('respEstado');
@@ -5266,6 +5290,11 @@ function burbujaCita(t, chat) {
                 let alto;
                 if (altoManual > 0) {
                     alto = Math.min(maximo, Math.max(minimo, altoManual));
+                } else if (txt.value === '') {
+                    // Vacío manda el mínimo: Chrome cuenta el placeholder en el
+                    // scrollHeight y en el celular (cuadro angosto) lo estiraba a
+                    // 4-5 renglones sin nada escrito (13-nov).
+                    alto = minimo;
                 } else {
                     txt.style.height = 'auto';
                     alto = Math.min(maximo, Math.max(minimo, txt.scrollHeight));
