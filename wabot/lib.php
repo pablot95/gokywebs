@@ -7033,11 +7033,25 @@ function wabot_form_confirmacion_texto(&$cv, $cfg, $ahora) {
  */
 function wabot_form_entrega_frase($cv, $ahora = null) {
     $ahora = $ahora ?? time();
-    $h = wabot_hora_local($ahora);
-    $entrega = ($h >= 3 && $h < 15) ? 'hoy a la tarde' : 'mañana';
     // Eligió la hora en el formulario (29-oct): se le confirma esa.
-    if ((int)($cv['demo_hora_ts'] ?? 0) > $ahora) $entrega = wabot_demo_hora_frase((int)$cv['demo_hora_ts'], $ahora);
-    return $entrega;
+    if ((int)($cv['demo_hora_ts'] ?? 0) > $ahora) return wabot_demo_hora_frase((int)$cv['demo_hora_ts'], $ahora);
+    /* Lo que ya le prometimos manda (13-nov, María José «De la cabeza a los pies»):
+     * a las 12 h le dijimos «hoy a la tarde» y a las 17:22, cuando preguntó por la
+     * entrega, la frase se recalculaba con la hora de ese momento y le salió
+     * «mañana» (la demo llegó a las 18 h). Con la confirmación ya mandada, se
+     * cuenta desde ella: el día prometido es ese mismo si fue antes de las 15 h
+     * (o de madrugada) y el siguiente si fue después. */
+    $prometido = (int)($cv['form_confirmacion_auto_ts'] ?? 0);
+    if ($prometido > 0 && $prometido < $ahora && $prometido >= (int)($cv['form_completado_ts'] ?? 0)) {
+        $local = function ($ts) { return gmdate('Y-m-d', (int)$ts - 3 * 3600); };
+        $hp = wabot_hora_local($prometido);
+        $dia = $hp >= 15 ? $local($prometido + 86400) : $local($prometido);
+        $hoy = $local($ahora);
+        if ($hoy === $dia) return 'hoy a la tarde';
+        if ($hoy < $dia) return 'mañana';
+    }
+    $h = wabot_hora_local($ahora);
+    return ($h >= 3 && $h < 15) ? 'hoy a la tarde' : 'mañana';
 }
 
 function wabot_form_confirmacion_correr($cfg, $ahora = null) {

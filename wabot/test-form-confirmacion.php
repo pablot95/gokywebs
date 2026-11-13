@@ -103,4 +103,18 @@ foreach ([['07:00', 'Hola, buen día', 'hoy a la tarde'], ['14:05', 'Hola, buena
     caso("a las $hora: \"$cuando\"", $texto === "$saludo, ya recibimos tu formulario. Con esos datos preparamos la demo. Estará lista para $cuando.", $texto);
 }
 
+echo "Lo que ya prometimos (13-nov, María José: a las 12 «hoy a la tarde», a las 17:22 le salía «mañana»)
+";
+$p = function ($hora, $dia = 0) use ($hoy) { return strtotime($hoy . " " . $hora . ":00 UTC") + 3 * 3600 + $dia * 86400; };
+$c = fc_conv(6); $c["form_completado_ts"] = $p("11:59"); $c["form_confirmacion_auto_ts"] = $p("12:00");
+caso("prometido a las 12, pregunta a las 17:22: hoy a la tarde", wabot_form_entrega_frase($c, $p("17:22")) === "hoy a la tarde", wabot_form_entrega_frase($c, $p("17:22")));
+caso("prometido a las 12, pregunta a las 13: hoy a la tarde", wabot_form_entrega_frase($c, $p("13:00")) === "hoy a la tarde");
+$c["form_completado_ts"] = $p("16:59"); $c["form_confirmacion_auto_ts"] = $p("17:00");
+caso("prometido a las 17, pregunta a las 20: mañana", wabot_form_entrega_frase($c, $p("20:00")) === "mañana");
+caso("prometido a las 17, pregunta al otro día a las 10: hoy a la tarde", wabot_form_entrega_frase($c, $p("10:00", 1)) === "hoy a la tarde");
+$c["form_completado_ts"] = $p("09:00", 1);
+caso("formulario nuevo después de la confirmación: cuenta la hora actual", wabot_form_entrega_frase($c, $p("16:00", 1)) === "mañana");
+$c = fc_conv(6); $c["form_completado_ts"] = $p("11:59"); $c["form_confirmacion_auto_ts"] = $p("12:00"); $c["demo_hora_ts"] = $p("19:00");
+caso("la hora elegida en el formulario sigue mandando", wabot_form_entrega_frase($c, $p("17:22")) !== "mañana", wabot_form_entrega_frase($c, $p("17:22")));
+
 todo_ok();
