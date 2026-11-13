@@ -1,0 +1,95 @@
+{
+ "nota": "Imágenes ilustrativas generadas para la demo; el cliente todavía no mandó fotos del consultorio. Los dos volantes que mandó por WhatsApp son de otro consultorio (referencia de colores y servicios) y no se usan como imagen.",
+ "imagenes": [
+  {
+   "archivo": "consultorio-sillon-vertical.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_01.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    900,
+    1600
+   ]
+  },
+  {
+   "archivo": "consultorio-ambiente.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_02.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1600,
+    900
+   ]
+  },
+  {
+   "archivo": "instrumental-espejo.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_03.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "ortodoncia-brackets.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_04.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "implante-modelo.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_05.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "guia-color-carillas.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_06.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "blanqueamiento-cubeta.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_07.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "instrumental-periodoncia.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_08.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  },
+  {
+   "archivo": "material-esterilizado.webp",
+   "origen": "Consultorio_Odontologico_7dlOv5tZOD9VldJnRWXx_09.jpg",
+   "fuente": "Zip de imágenes de ChatGPT (Copiar 10) del prospecto 7dlOv5tZOD9VldJnRWXx",
+   "tipo": "ilustrativa",
+   "tamano": [
+    1024,
+    1024
+   ]
+  }
+ ]
+}
