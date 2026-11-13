@@ -902,4 +902,23 @@ caso('la librería del 12-nov se arma desde el código con su Instagram y sin no
 $c = cv_con_pedido();
 caso('juri también', wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493885907688'], $cfg) && !empty($c['lead_creado']));
 
+// El nombre es el enlace de la demo (13-nov): sin colas que lo alarguen.
+foreach ([
+    'este Iglesia Evangélica Visión Celestial' => 'Iglesia Evangélica Visión Celestial',
+    'Primadonna Estética by Cintia Gómez' => 'Primadonna Estética',
+    'Nelly. Tarot / NH Consultorio Holístico' => 'Nelly. Tarot',
+    'Chaco Porá...Agropecuaria y Forestal' => 'Chaco Porá',
+    'RM DESARROLLOS INMOBILIARIOS S.A' => 'RM DESARROLLOS INMOBILIARIOS',
+    'LAFE 3D PERSONALIZADAS (marca: J3D)' => 'J3D',
+    'Chef Tincho - catering y eventos' => 'Chef Tincho',
+    'iFix S.R.L.' => 'iFix',
+    'Tiene un consultorio odontológico en Almagro' => '',
+    'Coco & Mía' => 'Coco & Mía',
+    'GP' => 'GP',
+] as $entra => $sale) {
+    caso('nombre para el enlace: «' . $entra . '» → «' . $sale . '»', wabot_nombre_negocio_limpiar($entra) === $sale);
+}
+caso('las instrucciones le dicen al extractor que el nombre es el enlace', str_contains(wabot_datos_demo_instrucciones(), 'enlace de su demo')
+    && str_contains(json_encode(wabot_datos_demo_esquema(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), 'gokywebs.com/demo/'));
+
 todo_ok();

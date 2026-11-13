@@ -908,6 +908,26 @@ function wabot_channel_user_id($conv) {
 }
 
 /**
+ * El nombre del negocio es también el enlace de su demo (gokywebs.com/demo/<nombre>/,
+ * wabot_slug_demo), así que se le sacan las colas que lo alargan sin ser la marca
+ * (13-nov, Pablo: «a veces pone cosas muy largas»): «este Iglesia…» → «Iglesia…»,
+ * «LAFE 3D (marca: J3D)» → «J3D», «Primadonna Estética by Cintia Gómez» → «Primadonna
+ * Estética», «Nelly. Tarot / NH Consultorio» → «Nelly. Tarot», «RM Desarrollos S.A» →
+ * «RM Desarrollos». Solo recorta: si lo que queda es muy corto, deja el original.
+ */
+function wabot_nombre_negocio_corto($valor) {
+    $orig = trim((string)$valor);
+    $v = $orig;
+    if (preg_match('/\(\s*marca\s*:?\s*([^()]{2,40})\)/iu', $v, $m)) $v = $m[1];
+    $v = preg_replace('/^(?:este|esta|ese|esa|se\s+llama|somos|soy)\s+/iu', '', $v);
+    $v = preg_replace('/\s+(?:by|de\s+la\s+(?:lic|dra|dr)\.?)\s+.*$/iu', '', $v);
+    $v = preg_replace('/[\s,]+(?:s\.?\s?a\.?\s?s?\.?|s\.?\s?r\.?\s?l\.?)\s*$/iu', '', $v);
+    $v = preg_replace('/\s*(?:\s\/\s|\s\|\s|\s[-–—]\s|\.{2,}|…|,\s).*$/u', '', $v);
+    $v = trim((string)$v, " \t\n\r\0\x0B\"'“”‘’.,;:!?-–—");
+    return mb_strlen($v) >= 2 ? $v : $orig;
+}
+
+/**
  * Limpia un nombre comercial encontrado en la charla sin convertir el rubro
  * en una marca. Solo se acepta texto corto y explícito: ante la duda queda
  * vacío, porque "Panadería - Juan" es peor que mostrar solamente "Juan" si el
@@ -920,13 +940,16 @@ function wabot_nombre_negocio_limpiar($valor) {
 
     $v = preg_replace('/\s+(?:y\s+(?:quiero|necesito|busco|quisiera|me\s+gustaria)|pero|porque|para\s+(?:hacer|crear|armar)|que\s+(?:vende|hace|ofrece|se\s+dedica))\b.*$/iu', '', $v);
     $v = trim((string)$v, " \t\n\r\0\x0B\"'“”‘’.,;:!?-–—");
+    $v = wabot_nombre_negocio_corto($v);
     if ($v === '' || mb_strlen($v) < 2 || mb_strlen($v) > 60) return '';
 
     $palabras = preg_split('/\s+/u', $v) ?: [];
     if (count($palabras) > 6) return '';
     $primera = mb_strtolower((string)($palabras[0] ?? ''));
     $genericas = ['un','una','el','la','mi','nuestro','nuestra','negocio','empresa','emprendimiento',
-                  'tienda','local','comercio','marca','proyecto','equipo','servicio','pagina','web'];
+                  'tienda','local','comercio','marca','proyecto','equipo','servicio','pagina','web',
+                  // Una descripción no es un nombre: «Tiene un consultorio odontológico en Almagro» (13-nov).
+                  'tiene','tengo','tenemos','vendo','vendemos','hago','hacemos','dedica','dedico','dedicamos'];
     if (in_array($primera, $genericas, true)) return '';
 
     // No se fuerza Title Case porque rompería marcas como eBooks, iFix o glowNails.
