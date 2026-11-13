@@ -209,7 +209,8 @@ function wabot_datos_demo_instrucciones() {
         . "- resumen: lo que ofrece con sus palabras; podés juntar varios mensajes en un párrafo. Sin colores, Instagram, referencia ni pedidos de funciones: esos van en su campo.\n"
         . "- Si dice que los colores los elijamos nosotros o que no tiene, colores vacío. Si dice que no tiene Instagram o referencia, vacío.\n"
         . "- LO QUE SE VE EN SUS FOTOS lo describimos nosotros: tomá de ahí el nombre del negocio solo si se lee en SU logo, flyer o cartel, y qué ofrece si está escrito en una imagen suya con sus servicios o productos. Una captura de otra web o de otra cuenta es una referencia, no su nombre. Si su logo o flyer trae el nombre o los servicios, es_datos es true.\n"
-        . "- pide_ejemplo: true si pide que la demo se arme con contenido de ejemplo o inventado en vez de sus datos.";
+        . "- pide_ejemplo: true si pide que la demo se arme con contenido de ejemplo o inventado en vez de sus datos.\n"
+        . "- Si nos deja elegir a nosotros (\"elijan ustedes\", \"como quieran\") o nos manda a su Instagram o su web (\"en el ig está todo\"), es_datos es true; si el Instagram ya lo pasó en la charla, va en instagram.";
 }
 
 /** Lo que ya sabemos, para que el extractor no lo pida de nuevo ni lo invente. */
@@ -220,6 +221,8 @@ function wabot_datos_demo_contexto_conocido($conv) {
     if ($negocio !== '') $lineas[] = 'Nombre del negocio que ya dijo: ' . $negocio;
     $rubro = trim((string)($f['que_vende'] ?? '')) ?: trim((string)($f['rubro'] ?? ''));
     if ($rubro !== '') $lineas[] = 'A qué se dedica, según la charla: ' . $rubro;
+    $ig = wabot_datos_demo_instagram_charla($conv);
+    if ($ig !== '') $lineas[] = 'Instagram que ya pasó en la charla: ' . $ig;
     $canal = wabot_canal($conv) === 'instagram' ? 'Instagram (hace falta su WhatsApp)' : 'WhatsApp (el número ya lo tenemos)';
     $lineas[] = 'Canal: ' . $canal;
     return implode("\n", $lineas);
@@ -244,7 +247,7 @@ function wabot_datos_demo_extraer($textoCliente, &$conv, $cfg) {
     }
     // Las fotos que entraron en esta lectura: el cron no vuelve a pagarla por las mismas (wabot_datos_demo_espera_atender).
     $conv['datos_demo_fotos_leidas'] = $fotos !== '' ? md5($fotos) : '';
-    return wabot_datos_demo_normalizar($r['datos']);
+    return wabot_datos_demo_aplicar_delega(wabot_datos_demo_normalizar($r['datos']), $textoCliente, $conv);
 }
 
 /** El JSON con todos los campos, como strings recortados. */
@@ -285,6 +288,66 @@ function wabot_datos_demo_es_acuse_o_posterga($texto) {
     return true;
 }
 
+/**
+ * «Elijan ustedes», «como quieran», «en el ig encontrarán todo»: no manda los datos porque nos
+ * deja elegir a nosotros o nos manda a su Instagram. El 12-nov dos charlas quedaron sin ficha
+ * así (juri, ventanas: «¿Pueden elegir ustedes?» + «Bien entonces así»; una librería: «en el ig
+ * encontraran todo», con el Instagram pasado antes del pedido): GPT las leía como «no son datos»,
+ * el flujo les decía que sí y nadie armaba nada. Devuelve el renglón que lo dice, o ''.
+ */
+function wabot_datos_demo_delega($texto) {
+    foreach ((array)preg_split('/\R/u', (string)$texto) as $linea) {
+        $t = wabot_datos_demo_norm($linea);
+        if ($t === '' || mb_strlen($t) > 160) continue;
+        // Nos deja elegir: «elijan ustedes», «pueden elegir ustedes», «como quieran», «a criterio de ustedes».
+        if (preg_match('/\b(elij\w*|eleg\w*|decid\w*)\b.{0,25}\b(ustedes|uds|vos)\b/u', $t)
+            || preg_match('/\b(pong\w*|hag\w*|arm\w*)\b.{0,25}\b(ustedes|uds)\b/u', $t)
+            || preg_match('/\b(ustedes|uds|vos)\b.{0,12}\b(elij\w*|eleg\w*|decid\w*)\b/u', $t)
+            || preg_match('/\bcomo (ustedes )?(quieran|quieras|les parezca|te parezca|vean|veas|gusten|prefieran)\b/u', $t)
+            || preg_match('/\b(lo que|a) (ustedes )?(quieran|les parezca|te parezca)\b/u', $t)
+            || preg_match('/\ba (su |tu )?(criterio|eleccion|gusto)( de ustedes| del disenador| tuyo| suyo)?$/u', $t)
+            || preg_match('/\b(criterio|eleccion|gusto) (de ustedes|del disenador|tuyo|suyo)\b/u', $t)) {
+            return trim((string)$linea);
+        }
+        // Nos manda a su Instagram / Facebook / web: «en el ig encontrarán todo», «sacalo de mi insta».
+        $red = '(ig|insta|instagram|face|facebook|fb|perfil|pagina|web|redes|tiktok)';
+        if (preg_match('/\b(en|del|de) (el |la |mi |mis |las )?' . $red . '\b.{0,40}\b(todo|esta\w*|encontr\w*|tiene\w*|hay|fij\w*|mir\w*|vean|ver|sac\w*|tom\w*|us\w*|info\w*)\b/u', $t)
+            || preg_match('/\b(todo|toda la info\w*|la info\w*|los datos)\b.{0,25}\b(en|del|de) (el |la |mi |mis |las )?' . $red . '\b/u', $t)
+            || preg_match('/\b(sac\w*|saq\w*|tom\w*|us\w*|fij\w*|mir\w*)\b.{0,20}\b(de|del|en) (el |la |mi |mis |las )?' . $red . '\b/u', $t)) {
+            return trim((string)$linea);
+        }
+    }
+    return '';
+}
+
+/** El Instagram que pasó en cualquier parte de la charla (antes o después del pedido), o ''. */
+function wabot_datos_demo_instagram_charla($conv) {
+    $ig = wabot_datos_demo_instagram_usuario((string)($conv['instagram'] ?? ''));
+    if ($ig !== '') return $ig;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (preg_match('~instagram\.com/([A-Za-z0-9._]{2,30})~i', (string)($fila['t'] ?? ''), $m)) {
+            $ig = wabot_datos_demo_instagram_usuario($m[1]);
+            if ($ig !== '') return $ig;
+        }
+    }
+    return '';
+}
+
+/**
+ * Lo leído (por GPT o por reglas) + «elijan ustedes» / «está todo en mi ig»: cuenta como los
+ * datos (la espera y la ficha siguen su camino) aunque no haya escrito ninguno, y sin el
+ * nombre se arma igual (wabot_datos_demo_faltan). El Instagram que pasó antes del pedido entra.
+ */
+function wabot_datos_demo_aplicar_delega(array $d, $textoCliente, $conv) {
+    $linea = wabot_datos_demo_delega($textoCliente);
+    if ($linea === '') return $d;
+    $d['es_datos'] = true;
+    $d['_delega'] = mb_substr($linea, 0, 200);
+    if ($d['instagram'] === '') $d['instagram'] = wabot_datos_demo_instagram_charla($conv);
+    return $d;
+}
+
 /** Un renglón que seguro no trae datos: un acuse, un pedido de tiempo, una postergación o una pregunta corta. */
 function wabot_datos_demo_linea_sin_datos($linea) {
     $t = wabot_datos_demo_norm($linea);
@@ -320,15 +383,15 @@ function wabot_datos_demo_acuse_cola() {
 function wabot_datos_demo_extraer_reglas($textoCliente, $conv) {
     $texto = trim((string)$textoCliente);
     $vacio = wabot_datos_demo_normalizar(['es_datos' => false]);
-    if ($texto === '' || mb_strpos($texto, '?') !== false || mb_strpos($texto, '¿') !== false) return $vacio;
-    if (wabot_datos_demo_es_acuse_o_posterga($texto)) return $vacio;
-    if (mb_strlen(wabot_datos_demo_norm($texto)) < 25 && substr_count($texto, "\n") < 1) return $vacio;
+    if ($texto === '' || mb_strpos($texto, '?') !== false || mb_strpos($texto, '¿') !== false) return wabot_datos_demo_aplicar_delega($vacio, $texto, $conv);
+    if (wabot_datos_demo_es_acuse_o_posterga($texto)) return wabot_datos_demo_aplicar_delega($vacio, $texto, $conv);
+    if (mb_strlen(wabot_datos_demo_norm($texto)) < 25 && substr_count($texto, "\n") < 1) return wabot_datos_demo_aplicar_delega($vacio, $texto, $conv);
     $d = $vacio;
     $d['es_datos'] = true;
     $d['resumen'] = $texto;
     if (preg_match('~(?:instagram\.com/|@)([A-Za-z0-9._]{2,30})~u', $texto, $m)) $d['instagram'] = $m[1];
     $d['_reglas'] = true;
-    return $d;
+    return wabot_datos_demo_aplicar_delega($d, $texto, $conv);
 }
 
 /** El usuario de Instagram de lo que haya escrito: «@pelumari», «instagram.com/pelumari», «pelumari». */
@@ -347,8 +410,9 @@ function wabot_datos_demo_faltan($conv, array $d) {
     $faltan = [];
     $nombre = $d['nombre_negocio'] !== '' ? $d['nombre_negocio'] : trim((string)($conv['nombre_negocio'] ?? ''));
     if ($nombre === '' && !empty($conv['brief']['marca'])) $nombre = trim((string)$conv['brief']['marca']);
-    // Pidió la demo con contenido de ejemplo (11-nov, Mica: «podrías prepararla con otros datos»): sin su nombre se arma igual.
-    if ($nombre === '' && empty($d['_ejemplo'])) $faltan[] = 'el nombre de tu negocio o marca';
+    // Pidió la demo con contenido de ejemplo (11-nov, Mica: «podrías prepararla con otros datos»)
+    // o nos dejó elegir / nos mandó a su Instagram (12-nov): sin su nombre se arma igual.
+    if ($nombre === '' && empty($d['_ejemplo']) && empty($d['_delega'])) $faltan[] = 'el nombre de tu negocio o marca';
     $f = function_exists('wabot_ficha') ? wabot_ficha($conv) : [];
     $descripcion = trim((string)($conv['descripcion'] ?? ''));
     $sabeRubro = $d['resumen'] !== ''
@@ -397,6 +461,9 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     if (!empty($d['_ejemplo']) && trim((string)($conv['incluir'] ?? '')) === '') {
         $conv['incluir'] = 'Contenido de ejemplo: pidió ver la demo sin pasar sus datos';
     }
+    if (!empty($d['_delega']) && trim((string)($conv['incluir'] ?? '')) === '') {
+        $conv['incluir'] = 'Lo elegimos nosotros: dijo «' . $d['_delega'] . '»' . ($ig !== '' ? ' (su Instagram: instagram.com/' . $ig . ')' : '');
+    }
     if ($d['whatsapp'] !== '' && function_exists('wabot_extraer_celular')) {
         $num = wabot_extraer_celular($d['whatsapp']);
         if ($num !== null) $conv['telefono_wsp'] = $num;
@@ -414,6 +481,7 @@ function wabot_datos_demo_completar(&$conv, array $d, $cfg, $ahora = null) {
     if (!empty($conv['telefono_wsp']) && $d['whatsapp'] !== '') $partes[] = 'WhatsApp: ' . $conv['telefono_wsp'];
     if (!empty($d['_reglas'])) $partes[] = '(leído sin IA: el texto entero quedó como resumen)';
     if (!empty($d['_ejemplo'])) $partes[] = '(pidió la demo con contenido de ejemplo)';
+    if (!empty($d['_delega'])) $partes[] = '(dejó que elijamos nosotros: «' . $d['_delega'] . '»)';
     wabot_conv_transcript($conv, 'sistema', '[Datos de la demo por chat] ' . implode(' · ', $partes));
 
     $conv['form_completado_ts'] = $ahora;
@@ -761,7 +829,21 @@ function wabot_datos_demo_turno($texto, &$conv, $cfg) {
         return wabot_datos_demo_resolver($conv['datos_demo_parcial'], $conv, $cfg);
     }
     // Lo obvio sin gastar una llamada: una pregunta corta o un «dale» no son los datos.
-    if (wabot_datos_demo_es_acuse_o_posterga($esperando ? $ultimo : $todo)) return null;
+    if (wabot_datos_demo_es_acuse_o_posterga($esperando ? $ultimo : $todo)) {
+        /* «¿Pueden elegir ustedes?» (12-nov, juri): la pregunta la contesta el flujo, pero ya nos
+         * dejó elegir: se anota la espera sin gastar una lectura, y si no escribe más la ficha se
+         * arma igual. Antes el flujo le decía que sí, ella contestaba «Bien entonces así» y nadie
+         * armaba nada. */
+        if (!$esperando && wabot_datos_demo_delega($todo) !== '') {
+            $ahoraD = time();
+            $conv['datos_demo_parcial'] = wabot_datos_demo_aplicar_delega(wabot_datos_demo_normalizar(['es_datos' => true]), $todo, $conv);
+            $conv['datos_demo_leido_filas'] = wabot_datos_demo_cliente_filas($conv);
+            $conv['datos_demo_espera_ts'] = $ahoraD;
+            wabot_datos_demo_espera_marcar($conv, $ahoraD);
+            wabot_log('datos_demo_espera', ['clave' => wabot_conversation_key($conv), 'motivo' => 'delega']);
+        }
+        return null;
+    }
 
     $d = wabot_datos_demo_extraer($todo, $conv, $cfg);
     if ($d === null) $d = wabot_datos_demo_extraer_reglas($todo, $conv);
@@ -1291,6 +1373,17 @@ const WABOT_DATOS_DEMO_REHACER = [
         'pide_ejemplo' => true,
         'resumen' => 'Emprendimiento de macramé: tienda online para mostrar y vender sus productos.',
     ],
+    /* 12-nov, las dos que nos dejaron elegir (wabot_datos_demo_delega): juri, ventanas, y la
+     * librería que mandó a su Instagram. Pablo: «Sí, armalas». */
+    '5493885907688' => [
+        'resumen' => 'Emprendimiento de ventanas: tienda online para mostrar las ventanas con fotos, modelos y precios.',
+        '_delega' => 'Pueden elegir a lazsr ustedes? / Bien entonces asi',
+    ],
+    '5493874597107' => [
+        'resumen' => 'Venta de libros: quiere una tienda online para empezar a extenderse más allá de Instagram.',
+        'instagram' => 'fueradecontexto.26',
+        '_delega' => 'pero en el ig encontraran todo',
+    ],
 ];
 
 /** Arma la ficha de una charla con datos ya leídos, sin escribirle al cliente. true si quedó creada. */
@@ -1300,6 +1393,7 @@ function wabot_datos_demo_rehacer(&$conv, array $datos, $cfg, $ahora = null) {
     if ((int)($conv['datos_demo_ficha_fallos'] ?? 0) >= 6) return false;
     $d = wabot_datos_demo_normalizar(['es_datos' => true] + $datos);
     if ($d['pide_ejemplo']) $d['_ejemplo'] = true;
+    if (!empty($datos['_delega'])) $d['_delega'] = (string)$datos['_delega'];
     wabot_datos_demo_completar($conv, $d, $cfg, $ahora);   // la confirmación no se manda
     if (empty($conv['lead_creado'])) {
         // Firestore no la creó: la reintenta este mismo cron, no el de la espera (ese le escribiría).

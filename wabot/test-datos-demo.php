@@ -841,4 +841,65 @@ caso('un hex mal formado no entra a medias: queda a elección del diseñador', (
 unset($GLOBALS['WABOT_TEST_MEDIA_BYTES'], $GLOBALS['WABOT_TEST_COLORES_IMAGEN']);
 $GLOBALS['WABOT_TEST_IMAGEN_PERFIL'] = function ($url) { return null; };
 
+echo "\n— 25. «Elijan ustedes» o «en el ig está todo» también arman la ficha (12-nov, juri y la librería) —\n";
+caso('las formas de dejarnos elegir se reconocen', wabot_datos_demo_delega('Pueden elegir a lazsr ustedes?') !== ''
+    && wabot_datos_demo_delega('pero en el ig encontraran todo') !== '' && wabot_datos_demo_delega('Como quieran!') !== ''
+    && wabot_datos_demo_delega('Sáquenlo de mi Instagram') !== '' && wabot_datos_demo_delega('a criterio de ustedes') !== ''
+    && wabot_datos_demo_delega('Todo está en mi face') !== '');
+caso('lo que no es dejarnos elegir no', wabot_datos_demo_delega('Mañana te paso todo') === '' && wabot_datos_demo_delega('Bien entonces asi') === ''
+    && wabot_datos_demo_delega('Pelu Mari, cortes y color') === '' && wabot_datos_demo_delega('Hola, cómo estás vos?') === ''
+    && wabot_datos_demo_delega('Te hago una consulta a vos') === '');
+
+// juri: pregunta si elegimos nosotros, el flujo le dice que sí, y después «Bien entonces así».
+$c = cv_con_pedido();
+oa([dc(['mensajes' => ['Sí, podemos elegir nosotros los colores, las imágenes y el estilo']])]);
+$r = turno('Pueden elegir a lazsr ustedes?', $c, $cfg);
+caso('la pregunta la contesta el flujo y ya queda esperando para armar, sin gastar una lectura', ($r[0] ?? '') !== '' && empty($c['lead_creado'])
+    && wabot_datos_demo_espera_sigue($c) && count(pedidos_datos()) === 0, implode(' | ', $r));
+oa([], [dd(['es_datos' => false, 'pide_ejemplo' => false])]);
+turno('Bien entonces asi', $c, $cfg);
+caso('«Bien entonces así» después de dejarnos elegir queda esperando para armar', wabot_datos_demo_espera_sigue($c) && empty($c['lead_creado']));
+$r = espera_pasa($c, 6);
+caso('pasada la espera arma la ficha sin pedirle el nombre', !empty($c['lead_creado']) && str_starts_with((string)($r[0] ?? ''), 'Perfecto'), implode(' | ', (array)$r));
+caso('la ficha dice que elegimos nosotros', str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'dejó que elijamos nosotros')
+    && str_contains((string)($c['incluir'] ?? ''), 'Lo elegimos nosotros'));
+
+// Lo mismo con un «dale» en vez de «bien entonces así»: el filtro de acuses no la tira.
+$c = cv_con_pedido();
+oa([dc(['mensajes' => ['Sí, elegimos nosotros']])]);
+turno('Pueden elegir ustedes?', $c, $cfg);
+caso('si no escribe más, la ficha se arma igual', espera_pasa($c, 6) !== null && !empty($c['lead_creado']));
+$c = cv_con_pedido();
+oa([dc(['mensajes' => ['Sí, elegimos nosotros']])]);
+turno('Pueden elegir ustedes?', $c, $cfg);
+oa([]);
+turno('Dale', $c, $cfg);
+caso('con un «dale» después (espera corta) la arma', !empty($c['lead_creado']));
+
+// La librería: el Instagram lo pasó antes del pedido y después «en el ig encontrarán todo».
+$c = cv_cotizada();
+wabot_conv_transcript($c, 'cliente', 'https://www.instagram.com/fueradecontexto.26?rpxt=MTZrM2x4djFycXF4Yg==');
+oa([dc(['accion' => 'formulario', 'intencion' => 'acepta'])]);
+turno('Perfecto', $c, $cfg);
+oa([], [dd(['es_datos' => false])]);
+turno("Ahora estoy algo ocupada\npero en el ig encontraran todo", $c, $cfg);
+caso('«en el ig encontrarán todo» queda esperando para armar', wabot_datos_demo_espera_sigue($c));
+caso('el lector recibe el Instagram que pasó antes del pedido', str_contains(json_encode(pedidos_datos()[0] ?? [], JSON_UNESCAPED_UNICODE), 'fueradecontexto.26'));
+$r = espera_pasa($c, 6);
+caso('arma la ficha con su Instagram', !empty($c['lead_creado']) && ($c['instagram'] ?? '') === 'fueradecontexto.26'
+    && str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'instagram.com/fueradecontexto.26'), json_encode([$c['instagram'] ?? null, $r], JSON_UNESCAPED_UNICODE));
+
+// Sin OpenAI, las reglas lo reconocen igual.
+$c = cv_con_pedido();
+oa([], ['falla']);
+turno('Elijan ustedes, como quieran', $c, $cfg);
+caso('sin la IA también queda esperando para armar', wabot_datos_demo_espera_sigue($c));
+$c = cv_con_pedido();
+$c['control_manual'] = true;
+$ok = wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493874597107'], $cfg);
+caso('la librería del 12-nov se arma desde el código con su Instagram y sin nombre', $ok && !empty($c['lead_creado']) && ($c['instagram'] ?? '') === 'fueradecontexto.26'
+    && str_contains(linea_sistema($c, '[Datos de la demo por chat]'), 'dejó que elijamos nosotros'));
+$c = cv_con_pedido();
+caso('juri también', wabot_datos_demo_rehacer($c, WABOT_DATOS_DEMO_REHACER['5493885907688'], $cfg) && !empty($c['lead_creado']));
+
 todo_ok();
