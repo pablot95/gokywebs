@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Facuu.coach — Panel de prueba</title>
+    <meta
+      name="description"
+      content="Coaching ontológico personal y ejecutivo, mindfulness y ebooks con Facundo Lesur. Un espacio para reflexionar, conversar y dar tu próximo paso.">
+    <meta name="theme-color" content="#f5f8f5">
+    <link
+      rel="canonical"
+      href="https://gokywebs.com/demo/facuucoach/admin.html">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:site_name" content="Facuu.coach">
+    <meta property="og:title" content="Facuu.coach — Panel de prueba">
+    <meta
+      property="og:description"
+      content="Sesiones 1 a 1 y lecturas para acompañar tu proceso, con Facundo Lesur.">
+    <meta
+      property="og:url"
+      content="https://gokywebs.com/demo/facuucoach/admin.html">
+    <meta
+      property="og:image"
+      content="https://gokywebs.com/demo/facuucoach/images/ebook-laptop.webp">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="images/logo.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;1,500&amp;family=Public+Sans:wght@400;600&amp;display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=20261113122022">
+    <noscript>
+      <style>
+        [data-animate] {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          clip-path: none !important;
+        }
+        [data-animate] img {
+          scale: none !important;
+        }
+      </style>
+    </noscript>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "Facuu.coach",
+        "url": "https://gokywebs.com/demo/facuucoach/",
+        "telephone": "+5492914976233",
+        "sameAs": ["https://www.instagram.com/facuu.coach/"],
+        "image": "https://gokywebs.com/demo/facuucoach/images/tarjeta.webp",
+        "description": "Coaching ontológico personal y ejecutivo. Instructor de mindfulness."
+      }
+    </script>
+  </head>
+  <body class="admin-page" data-pagina="admin">
+    <header class="admin-header">
+      <a href="./">
+        <img
+          src="images/logo.webp"
+          alt="Lesur Facundo"
+          width="543"
+          height="177">
+      </a>
+      <a class="btn btn-outline" href="./">
+        Volver a la tienda
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14m-6-6 6 6-6 6" />
+        </svg>
+      </a>
+    </header>
+    <main class="admin-main">
+      <p class="eyebrow">FACUU.COACH / PANEL DE PRUEBA</p>
+      <h1>Tu biblioteca, en un lugar.</h1>
+      <p>
+        Explorá tus ebooks y probá cambiar un precio. Los cambios de esta vista
+        duran mientras la página está abierta y no modifican la tienda pública.
+      </p>
+      <div class="admin-notice">
+        Demo sin pagos ni pedidos reales. La administración privada se habilita
+        al publicar la tienda definitiva.
+      </div>
+      <form id="adminSearchForm" class="admin-search" role="search">
+        <label for="adminSearch">Buscar en la biblioteca</label>
+        <div class="search-field">
+          <input
+            id="adminSearch"
+            type="search"
+            name="q"
+            maxlength="80"
+            placeholder="Nombre o palabra clave">
+          <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+      </form>
+      <p class="admin-count" id="adminCount" role="status">
+        Cargando biblioteca…
+      </p>
+      <div id="adminProducts" aria-busy="true"></div>
+      <div class="admin-pagination">
+        <button class="btn btn-outline" type="button" id="adminReset">
+          Volver al inicio
+        </button>
+        <button class="btn btn-primary" type="button" id="adminMore" hidden>
+          Ver más
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
+        </button>
+      </div>
+      <p class="demo-note">
+        Se consulta una página por vez, con un máximo de 100 productos. La
+        búsqueda se realiza en el servidor; no descarga toda la biblioteca.
+      </p>
+    </main>
+    <footer class="admin-footer">
+      <a href="https://gokywebs.com">Developed and designed by Gokywebs</a>
+    </footer>
+    <script src="script.js?v=20261113122022"></script>
+    <script src="/demo/track.js" defer></script>
+  </body>
+</html>
