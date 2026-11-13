@@ -1,0 +1,21 @@
+<!doctype html><html lang="es-AR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Panel de muestra · Ariifloral</title>
+<style>*{box-sizing:border-box}body{margin:auto;max-width:980px;padding:32px 20px 80px;font:16px/1.5 system-ui;color:#17233a;background:#faf9f7}h1{font:clamp(36px,7vw,62px) Georgia;margin:34px 0 6px}a{color:#254c76}input,button{padding:10px;border:1px solid #adb4b5;border-radius:5px;font:inherit}button{cursor:pointer;background:#17233a;color:white}#rows{padding:0}li{display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;border-bottom:1px solid #d5d6d7;padding:12px 0}img{width:56px;height:66px;object-fit:cover}small{display:block}li input{width:110px}#more{margin-top:14px}@media(max-width:480px){li{grid-template-columns:46px 1fr}li label{grid-column:2}img{width:44px;height:54px}}</style>
+<main><a href="./">← Volver a la tienda</a><h1>Panel de arreglos</h1><p>Probá un cambio de precio y mirá cómo queda en la tienda. Los cambios de esta demo se guardan en tu navegador.</p>
+<label>Buscar un arreglo <input id="q" type="search" autocomplete="off"></label>
+<p id="status" role="status"></p><ul id="rows"></ul><button id="more" hidden>Ver más</button></main>
+<script>
+const rows=document.querySelector('#rows'), info=document.querySelector('#status'), more=document.querySelector('#more'), search=document.querySelector('#q');
+let cursor=null, revision=0;
+function prices(){try{return JSON.parse(localStorage.getItem('ariifloral_precios_demo'))||{}}catch{return {}}}
+async function load(reset){
+ const seq=++revision;more.disabled=true;if(reset){cursor=null;rows.replaceChildren()}
+ const params=new URLSearchParams({scope:'admin',limit:10,q:search.value,order:'nombre'});if(cursor)params.set('cursor',cursor);
+ try{const response=await fetch('catalogo.php?'+params);if(!response.ok)throw Error();const page=await response.json();if(seq!==revision)return;
+ for(const p of page.items){const li=document.createElement('li'),img=document.createElement('img'),name=document.createElement('strong'),label=document.createElement('label'),price=document.createElement('input');
+ img.src=p.img;img.alt='';name.textContent=p.nombre;price.type='number';price.min=1;price.step=1;price.max=99999999;price.value=prices()[p.id]??p.precio;label.append('Precio ($) ',price);
+ price.onchange=()=>{if(!price.reportValidity()||!price.value)return;const edits=prices();edits[p.id]=Number(price.value);localStorage.setItem('ariifloral_precios_demo',JSON.stringify(edits));info.textContent='Precio de muestra guardado.'};
+ li.append(img,name,label);rows.append(li)}
+ cursor=page.cursor;more.hidden=!cursor;info.textContent=rows.children.length+' de '+page.total+' arreglos.';
+ }catch{if(seq===revision)info.textContent='No se pudo cargar el catálogo.'}finally{if(seq===revision)more.disabled=false}}
+let timer;search.oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>load(true),180)};more.onclick=()=>load(false);load(true);
+</script></html>

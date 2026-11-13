@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "[.]sqlite$">
+  Require all denied
+</FilesMatch>
