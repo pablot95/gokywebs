@@ -135,6 +135,7 @@ const ERR_REPOS = [
     'megabazar369.com.ar' => 'pablot95/megabazardistribuciones',
     'centrodecajaslanus.com.ar' => 'pablot95/centrodecajaslanus',
     'gestion.vadecogroup.com' => 'pablot95/vadecogroup',
+    'fletespavon.com.ar' => 'pablot95/fletespavon',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
