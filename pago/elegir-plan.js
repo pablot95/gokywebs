@@ -1,11 +1,12 @@
 /* gokywebs.com/webcompleta (antes /webpro) y /sitioweb (11-nov-2026): el plan se elige con dos
- * radios (elegir-plan.css, anda sin JavaScript). Acá: /webcompleta#mensual o
- * #anual abre ese plan ya elegido, y al tocar uno en el celular la vista baja
+ * radios (elegir-plan.css, anda sin JavaScript). Acá: /webcompleta#mensual,
+ * #anual o #unico (14-nov) abre ese plan ya elegido, y al tocar uno en el celular la vista baja
  * al detalle, que queda debajo de las dos tarjetas. */
 (function () {
     'use strict';
-    var radios = { anual: document.getElementById('elegir-anual'), mensual: document.getElementById('elegir-mensual') };
+    var radios = { unico: document.getElementById('elegir-unico'), anual: document.getElementById('elegir-anual'), mensual: document.getElementById('elegir-mensual') };
     if (!radios.anual || !radios.mensual) return;
+    if (!radios.unico) delete radios.unico;
     var reducido = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
     function desdeLaDireccion() {

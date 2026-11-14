@@ -1483,8 +1483,9 @@ function wabot_comercial_elige_plan_lista($texto, $conv) {
     $t = wabot_normalizar_frase($crudo);
     if ($t === '' || preg_match('/\b(no|ni|tampoco|nunca|cuanto|cuanta|saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?|diferencia|incluye|incluyen|incluido)\b/u', $t)) return null;
     if (function_exists('wabot_modalidad_elegida_en')) {
-        $orden = function_exists('wabot_modalidades_unico_primero') && wabot_modalidades_unico_primero($conv) ? 'unico'
-            : (function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv));
+        $uPrimero = function_exists('wabot_modalidades_unico_primero') ? wabot_modalidades_unico_primero($conv) : false;
+        $orden = $uPrimero === 'suscripcion' ? 'suscripcion' : ($uPrimero ? 'unico'
+            : (function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv)));
         $e = wabot_modalidad_elegida_en($crudo, true, $orden);
         if ($e !== null) return $e;
     }

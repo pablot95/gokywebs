@@ -1324,13 +1324,47 @@ function wabot_rr_webcompleta_12nov(array $categorias, $ruta) {
     return $categorias;
 }
 
+/* 14-nov (Pablo): vuelve el pago único, junto con la suscripción mensual o anual, en el bot, las
+   respuestas rápidas y las páginas de pago. Una sola vez:
+   - los bloques de precio del A2 («1. Plan anual / 2. Plan mensual», wabot_rr_bloque_precio_grupo) pasan
+     al texto de Pablo, tal cual (el del sitio profesional es el mismo sin el panel), con sus marcadores;
+   - los mensajes de /sitioweb y /webcompleta dicen que ahí se elige entre el pago único y la suscripción.
+   Lo que Pablo cambie después desde la pestaña Respuestas queda. */
+const WABOT_RR_INFORMATIVA_14NOV = "Tenemos dos modalidades para que elijas la que mejor se adapte a vos\n\n1. Pago único de {landing_unico}\n\nIncluye desarrollo completo y el primer año de hosting y dominio\nLuego se renuevan el hosting y el dominio. El mantenimiento con nosotros es opcional.\n\n2. Suscripción de {landing_mensual} por mes o {landing_anual} por año\n\nIncluye desarrollo completo, hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes en la web.\nCon cualquiera de las dos modalidades, la web queda adaptada para celulares y preparada para Google.";
+const WABOT_RR_PANEL_14NOV = "Tenemos dos modalidades para que elijas la que mejor se adapte a vos\n\n1. Pago único de {ecommerce_unico}\n\nIncluye desarrollo completo, panel para autogestionar contenido y el primer año de hosting y dominio\nLuego se renuevan el hosting y el dominio. El mantenimiento con nosotros es opcional.\n\n2. Suscripción de {ecommerce_mensual} por mes o {ecommerce_anual} por año\n\nIncluye desarrollo completo, panel para autogestionar contenido, hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes en la web.\nCon cualquiera de las dos modalidades, la web queda adaptada para celulares y preparada para Google.";
+const WABOT_RR_ELEGIR_ANTES_14NOV = 'Ahí elegís el plan que prefieras, anual o mensual';
+const WABOT_RR_ELEGIR_14NOV = 'Ahí elegís la modalidad que prefieras: pago único o suscripción, mensual o anual';
+
+function wabot_rr_pago_unico_14nov(array $categorias, $ruta) {
+    $marca = WABOT_DATA . '/migrated/respuestas-rapidas-pago-unico-14nov';
+    if (is_file($marca)) return $categorias;
+    $cambio = false;
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$texto) {
+            $g = wabot_rr_bloque_precio_grupo($texto);
+            $nuevo = $g === 'landing' ? WABOT_RR_INFORMATIVA_14NOV : ($g === 'ecommerce' ? WABOT_RR_PANEL_14NOV : (string)$texto);
+            if (preg_match('#gokywebs\.com/(sitioweb|webcompleta)(?![\w-])#', $nuevo)) $nuevo = str_replace(WABOT_RR_ELEGIR_ANTES_14NOV, WABOT_RR_ELEGIR_14NOV, $nuevo);
+            if ($nuevo !== $texto) { $texto = $nuevo; $cambio = true; }
+        }
+        unset($texto);
+        $categoria['items'] = array_values(array_unique($categoria['items']));
+    }
+    unset($categoria);
+    if ($cambio) {
+        $json = json_encode($categorias, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        if (!is_string($json) || !wabot_json_guardar_atomico($ruta, $json)) return $categorias;
+    }
+    @file_put_contents($marca, date('c') . "\n");
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     $marcaNueva = WABOT_DATA . '/migrated/respuestas-rapidas-03oct';
     $crudo = is_file($ruta) ? (string)@file_get_contents($ruta) : '';
     $actual = $crudo !== '' ? wabot_respuestas_rapidas_normalizar(json_decode($crudo, true)) : null;
-    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_webcompleta_12nov(wabot_rr_elegir_plan_11nov(wabot_rr_precios_a2_4nov(wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
+    if (is_file($marcaNueva) && $actual !== null) return wabot_rr_pago_unico_14nov(wabot_rr_webcompleta_12nov(wabot_rr_elegir_plan_11nov(wabot_rr_precios_a2_4nov(wabot_rr_un_plan_3nov(wabot_rr_inicial_3nov(wabot_rr_enlace_pago_2nov(wabot_rr_dos_opciones_26oct(wabot_rr_pago_unico_26oct(wabot_rr_anual_24oct(wabot_rr_planes_17oct(wabot_rr_solo_las_que_usa_16oct(wabot_rr_precios_sin_repetir_04oct($actual, $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta), $ruta);
     $nuevas = wabot_rr_03oct_catalogo($actual ?? []);
     $jsonNuevo = json_encode($nuevas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     if ($crudo !== '') {

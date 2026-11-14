@@ -158,9 +158,9 @@ foreach ($paginasTipo as $t => $slugs) {
         $marcadas = array_values(array_column(array_filter($m, fn($x) => !empty($x[2])), 1));
         // 26-oct: las tres páginas tienen las tres pestañas, en el orden de los precios: pago único, anual, mensual.
         // 3-nov (Pablo: anual y mensual, nada más): el mensual y el anual ya no muestran la del pago único.
-        $esUnico = $slug === $slugs[2];
-        $pestanas = $esUnico ? [$slugs[2], $slugs[1], $slugs[0]] : [$slugs[1], $slugs[0]];
-        $nombres = $esUnico ? ['Pago único', 'Anual', 'Mensual'] : ['Anual', 'Mensual'];
+        // 14-nov (Pablo: vuelve el pago único junto con la suscripción): las tres pestañas otra vez en las tres.
+        $pestanas = [$slugs[2], $slugs[1], $slugs[0]];
+        $nombres = ['Pago único', 'Anual', 'Mensual'];
         // Del 31-oct al 2-nov (prueba de precios, grupo A) las otras dos no mostraban el anual; volvió con el grupo A2.
         caso("pago/$slug: arriba tiene las pestañas " . implode(', ', $nombres) . " del mismo tipo de web, con la suya marcada",
             array_column($m, 1) === $pestanas && array_column($m, 3) === $nombres && $marcadas === [$slug],

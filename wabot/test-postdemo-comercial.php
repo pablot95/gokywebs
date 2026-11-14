@@ -515,7 +515,7 @@ echo "— 12. Sin la forma de pago del formulario (2-nov): el bot la pregunta an
 // Con la prueba de precios prendida, para que cada grupo use su pregunta.
 $GLOBALS['WABOT_TEST_SIN_AB'] = false;
 $cotA2 = ['origen' => 'bot', 'plan' => 'panel', 'anual' => '$210.000', 'mensual' => '$30.000', 'unico' => '$330.000', 'modelo' => 'a2', 'ts' => time() - 7200];
-const PREGUNTA_MODALIDAD_A2 = 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?';
+const PREGUNTA_MODALIDAD_A2 = 'Para pasarte el link de pago, preferís el pago único o la suscripción, mensual o anual?';   // 14-nov
 $c = cv_demo('ecommerce', ['modalidad_elegida' => '', 'ab_grupo' => 'a2', 'comercial_cotizacion' => $cotA2]);
 oa([dc(['modelo_elegido' => '2', 'quiere_avanzar' => true, 'mensajes' => ['Me alegra que te haya gustado']])]);
 $r = turno('Me encantó el modelo 2', $c, $cfg);

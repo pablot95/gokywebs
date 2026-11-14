@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <!-- Página generada con los planes de pago/anual140 y pago/mensual20000 (11-nov-2026):
+    <!-- Página generada con los planes de pago/unico240, pago/anual140 y pago/mensual20000 (11-nov-2026):
          si cambia un monto o una condición, cambiarlo también acá. -->
-    <title>Sitio profesional: plan anual o mensual | GokyWebs</title>
-    <meta name="description" content="Tu sitio profesional a medida, con hosting, dominio, mantenimiento y un cambio por mes: plan anual de $140.000 o plan mensual de $20.000.">
+    <title>Sitio profesional: pago único o suscripción | GokyWebs</title>
+    <meta name="description" content="Tu sitio profesional a medida: pago único de $240.000 o suscripción de $20.000 por mes o $140.000 por año.">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <meta property="og:title" content="Sitio profesional: elegí tu plan | GokyWebs">
-    <meta property="og:description" content="Tu sitio profesional a medida, con hosting, dominio, mantenimiento y un cambio por mes: plan anual de $140.000 o plan mensual de $20.000.">
+    <meta property="og:title" content="Sitio profesional: elegí cómo pagar | GokyWebs">
+    <meta property="og:description" content="Tu sitio profesional a medida: pago único de $240.000 o suscripción de $20.000 por mes o $140.000 por año.">
     <meta property="og:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://www.gokywebs.com/og-gokywebs.jpg">
@@ -19,9 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../pago/plan-card.css?v=20261031-no-incluye">
-    <link rel="stylesheet" href="../pago/elegir-plan.css?v=20261111">
+    <link rel="stylesheet" href="../pago/elegir-plan.css?v=20261114">
     <script src="../pago/planes.js?v=20260929" defer></script>
-    <script src="../pago/elegir-plan.js?v=20261111" defer></script>
+    <script src="../pago/elegir-plan.js?v=20261114" defer></script>
     <script src="https://gokywebs.com/err/err.js" defer></script>
 </head>
 <body>
@@ -39,26 +39,107 @@
             <div class="plan-wrap elegir">
                 <div class="elegir-intro">
                     <h1 class="plan-title">Sitio profesional</h1>
-                    <p class="plan-text">Elegí el plan que prefieras. Los dos incluyen la web completa, hosting, dominio, mantenimiento y un cambio por mes.</p>
+                    <p class="plan-text">Elegí la modalidad que prefieras: pago único o suscripción, mensual o anual. La suscripción incluye hosting, dominio, mantenimiento y un cambio por mes.</p>
                 </div>
 
+                <input class="sr-only" type="radio" name="plan-elegido" id="elegir-unico">
                 <input class="sr-only" type="radio" name="plan-elegido" id="elegir-anual">
                 <input class="sr-only" type="radio" name="plan-elegido" id="elegir-mensual">
-                <div class="elegir-opciones" role="group" aria-label="Planes">
+                <div class="elegir-opciones" role="group" aria-label="Modalidades">
+                    <label for="elegir-unico" class="elegir-opcion elegir-opcion-unico">
+                        <span class="elegir-nombre">Pago único</span>
+                        <strong class="elegir-precio">$240.000</strong>
+                        <span class="elegir-periodo">una sola vez</span>
+                        <small>Incluye el primer año de hosting y dominio. Arrancás con una seña de $80.000</small>
+                    </label>
+                    <p class="elegir-grupo">Suscripción</p>
                     <label for="elegir-anual" class="elegir-opcion">
-                        <span class="elegir-nombre">Plan anual</span>
+                        <span class="elegir-nombre">Anual</span>
                         <strong class="elegir-precio">$140.000</strong>
                         <span class="elegir-periodo">por año</span>
                         <small>Arrancás con una seña de $60.000</small>
                     </label>
                     <label for="elegir-mensual" class="elegir-opcion">
-                        <span class="elegir-nombre">Plan mensual</span>
+                        <span class="elegir-nombre">Mensual</span>
                         <strong class="elegir-precio">$20.000</strong>
                         <span class="elegir-periodo">por mes</span>
                         <small>Arrancás con el primer mes, $20.000</small>
                     </label>
                 </div>
-                <p class="elegir-ayuda">Tocá un plan para ver qué incluye y cómo pagarlo.</p>
+                <p class="elegir-ayuda">Tocá una opción para ver qué incluye y cómo pagarla.</p>
+
+                <div class="plan-card elegir-panel elegir-panel-unico" id="plan-unico">
+                    <span class="plan-eyebrow">Pago único</span>
+
+                    <div class="plan-price-row">
+                        <strong class="plan-price">$240.000</strong>
+                        <span class="plan-period">una sola vez</span>
+                    </div>
+
+                    <section class="plan-section">
+                        <h2>Cómo se paga</h2>
+                        <div class="pay-steps">
+                            <div class="pay-step">
+                                <span>Para arrancar<small>Seña por transferencia</small></span>
+                                <strong>$80.000</strong>
+                            </div>
+                            <div class="pay-step">
+                                <span>Al terminar la web<small>El resto, antes de publicarla</small></span>
+                                <strong>$160.000</strong>
+                            </div>
+                        </div>
+                        <p class="pay-plazo">La web se termina en <strong>no más de 7 días</strong> desde que se acredita la seña. Se puede pagar <strong>en cuotas con intereses</strong>.</p>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Datos para la transferencia</h2>
+                        <dl class="transfer-box">
+                            <div class="transfer-row">
+                                <div><dt>Alias</dt><dd>gokywebs</dd></div>
+                                <button type="button" class="copy-btn" data-copiar="gokywebs" aria-label="Copiar el alias">Copiar</button>
+                            </div>
+                            <div class="transfer-row">
+                                <div><dt>CVU</dt><dd>0000003100053462800156</dd></div>
+                                <button type="button" class="copy-btn" data-copiar="0000003100053462800156" aria-label="Copiar el CVU">Copiar</button>
+                            </div>
+                            <div class="transfer-row">
+                                <div><dt>Nombre</dt><dd>Pablo Travi</dd></div>
+                            </div>
+                        </dl>
+                        <p class="transfer-note">Cuando hagas la transferencia, <a href="https://wa.me/5491140688675?text=Hola%20GokyWebs%2C%20te%20mando%20el%20comprobante%20de%20la%20se%C3%B1a%20del%20pago%20%C3%BAnico%20del%20sitio%20profesional." target="_blank" rel="noopener noreferrer">mandanos el comprobante por WhatsApp</a> y arrancamos. Si preferís pagar con tarjeta o en cuotas con intereses, avisanos y te pasamos el link de Mercado Pago.</p>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Tu web incluye</h2>
+                        <ul class="plan-check-list">
+                            <li>Desarrollo completo de la web, a medida</li>
+                            <li>Panel para editar vos mismo los textos y las imágenes</li>
+                            <li>Adaptada a celular, tablet y computadora</li>
+                            <li>Preparada para que Google la encuentre</li>
+                            <li>Certificado de seguridad (SSL)</li>
+                            <li>Hosting y dominio .com.ar incluidos el primer año</li>
+                            <li>La web queda 100% tuya</li>
+                        </ul>
+                    </section>
+
+                    <section class="plan-section plan-condiciones">
+                        <h2>Condiciones del pago único</h2>
+                        <ul class="plan-check-list">
+                            <li>Se paga una sola vez: arrancás con una seña de $80.000 y el resto, $160.000, se abona al terminar la web, que no demora más de 7 días</li>
+                            <li>La seña y el resto se pagan por transferencia o con tarjeta, y se pueden pagar en cuotas con intereses</li>
+                            <li>La seña reserva el trabajo y no se devuelve: por eso antes te mostramos un primer diseño sin cargo</li>
+                            <li>Si el diseño inicial no te convence, lo rehacemos hasta dos veces; después hay tres rondas para ajustar el resto de la web</li>
+                            <li>El código de la web pasa a ser tuyo cuando abonás el total</li>
+                            <li>El primer año la web va en nuestro hosting, con el dominio incluido; si la querés en tu propio hosting desde el arranque, lo contratás vos</li>
+                            <li>Después del primer año, el hosting y el dominio requieren la renovación</li>
+                            <li>Los cambios que pidas después de entregada la web se cotizan aparte</li>
+                            <li>El contenido que nos pasás (textos, fotos, logo) es tuyo desde el primer día</li>
+                        </ul>
+                    </section>
+
+                    <p class="plan-note"><strong>Adicionales:</strong> un rediseño completo de la web se cotiza aparte. Todas las condiciones están en los <a href="../terminos/">términos y condiciones</a>.</p>
+                    <p class="plan-note plan-no-incluye"><strong>No incluye:</strong> publicidad, manejo de redes, fotos y videos profesionales, diseño de logo, traducción a otros idiomas, comisiones de Mercado Pago, costos de envío ni apps o servicios pagos de terceros.</p>
+                </div>
 
                 <div class="plan-card elegir-panel elegir-panel-anual" id="plan-anual">
                     <span class="plan-eyebrow">Plan anual</span>

@@ -2640,6 +2640,8 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false, $anualPrimero
     if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([123])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
         // 26-oct: "1) Pago único, 2) Plan anual, 3) Plan mensual" ($anualPrimero === 'unico', wabot_modalidades_unico_primero).
         if ($anualPrimero === 'unico') return ['1' => 'propia', '2' => 'unico', '3' => 'mensual'][$m[2]];
+        // 14-nov: "1. Pago único, 2. Suscripción de $X por mes o $Y por año": la 2 no dice cuál de las dos.
+        if ($anualPrimero === 'suscripcion') return $m[2] === '1' ? 'propia' : null;
         return ($anualPrimero ? ['1' => 'unico', '2' => 'mensual', '3' => 'propia'] : ['1' => 'mensual', '2' => 'unico', '3' => 'propia'])[$m[2]];
     }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
@@ -2650,6 +2652,12 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false, $anualPrimero
     // "El plan mensual" es como lo nombra el propio bot desde el 19-sep: sin
     // esto, "me quedo con el plan mensual" no elegía nada y el bot se callaba.
     $mensual = '(el plan mensual|plan mensual|el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mes a mes|mensualmente)\b';
+    /* 14-nov: con el bloque de la suscripción (mensual o anual), «la suscripción» sola no elige
+     * ninguna de las dos: el bot pregunta cuál. */
+    if ($anualPrimero === 'suscripcion') {
+        $tt = wabot_normalizar_frase($crudo);
+        if (preg_match('/\bsuscripcion\b/u', $tt) && !preg_match('/\b(mensual|por mes|mes a mes|mensualmente|anual|por ano)\b/u', $tt)) return null;
+    }
     $elegida = null;
     foreach (preg_split('/(?<=[?.!;,\n])/u', $crudo) as $frase) {
         if (trim($frase) === '' || mb_strpos($frase, '?') !== false || mb_strpos($frase, '¿') !== false) continue;
@@ -6284,6 +6292,8 @@ function wabot_modalidades_unico_primero($conv) {
         if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
         $t = (string)($fila['t'] ?? '');
         if (strpos($t, '[Imagen: modalidades de pago') === 0) return false;
+        // 14-nov: "1. Pago único de … 2. Suscripción de … por mes o … por año" → 'suscripcion' (la 2 no elige).
+        if (preg_match('/(^|\n)1[.)] Pago [uú]nico\b/u', $t) && preg_match('/(^|\n)2[.)] Suscripci[oó]n\b/u', $t)) return 'suscripcion';
         if (preg_match('/(^|\n)1[.)] Pago [uú]nico\b/u', $t)) return true;
         if (preg_match('/(^|\n)1[.)] (?:Plan anual|Anual|Plan mensual|Mensual)\b/u', $t)) return false;
     }

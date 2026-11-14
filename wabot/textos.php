@@ -878,12 +878,29 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
         'modelos' => [
             'a2' => [
                 'comercial' => [
-                    // 3-nov (Pablo): «precios se dan:» con estos textos, tal cual; «Tenemos dos modalidades», no «distintas» (el "$" va para que se lea el monto).
-                    'planes_informativa' => "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada para celular\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
-                    'planes_panel' => "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}\n\nLos dos planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Panel para autogestionar contenido\n✓ Preparada para Google\n✓ Un cambio por mes en la web\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones\n✓ Soporte técnico",
-                    'con_reservas' => "Con reservas quedaría en:\n\n1. Plan anual: {anual}\n2. Plan mensual: {mensual}",
-                    'postdemo' => ['pregunta_modalidad' => 'Para pasarte el link de pago, preferís el plan anual o el plan mensual?'],
+                    /* 14-nov (Pablo): vuelve el pago único, ofrecido junto con la suscripción (mensual o anual), con su
+                     * texto tal cual (el de panel; el informativo es el mismo sin el panel). Los montos no cambian:
+                     * pago único $330.000 / $240.000, suscripción $30.000 / $20.000 por mes o $190.000 / $140.000 por año.
+                     * «La 1» es el pago único; «la 2» no alcanza (mensual o anual): ver wabot_modalidades_suscripcion_14nov().
+                     * Hasta el 14-nov (3-nov): «1. Plan anual / 2. Plan mensual», sin el pago único salvo que lo pidiera. */
+                    'planes_informativa' => "Tenemos dos modalidades para que elijas la que mejor se adapte a vos\n\n1. Pago único de {unico}\n\nIncluye desarrollo completo y el primer año de hosting y dominio\nLuego se renuevan el hosting y el dominio. El mantenimiento con nosotros es opcional.\n\n2. Suscripción de {mensual} por mes o {anual} por año\n\nIncluye desarrollo completo, hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes en la web.\nCon cualquiera de las dos modalidades, la web queda adaptada para celulares y preparada para Google.",
+                    'planes_panel' => "Tenemos dos modalidades para que elijas la que mejor se adapte a vos\n\n1. Pago único de {unico}\n\nIncluye desarrollo completo, panel para autogestionar contenido y el primer año de hosting y dominio\nLuego se renuevan el hosting y el dominio. El mantenimiento con nosotros es opcional.\n\n2. Suscripción de {mensual} por mes o {anual} por año\n\nIncluye desarrollo completo, panel para autogestionar contenido, hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes en la web.\nCon cualquiera de las dos modalidades, la web queda adaptada para celulares y preparada para Google.",
+                    'con_reservas' => "Con reservas quedaría en:\n\n1. Pago único de {unico}\n2. Suscripción de {mensual} por mes o {anual} por año",
+                    'postdemo' => ['pregunta_modalidad' => 'Para pasarte el link de pago, preferís el pago único o la suscripción, mensual o anual?'],
+                    'modalidades_gpt' => 'Las modalidades son dos: 1) pago único (seña y el resto al entregar; incluye el desarrollo completo y el primer año de hosting y dominio; después se renuevan el hosting y el dominio y el mantenimiento con nosotros es opcional y aparte) y 2) suscripción, mensual (por Mercado Pago, sin permanencia, no son cuotas de la web) o anual (seña y el resto al entregar, renovación al cumplir el año); la suscripción incluye hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes. Son alternativas, no se suman. Si elige la suscripción sin decir mensual o anual, preguntale cuál de las dos.',
                 ],
+                'info' => [
+                    'pago' => 'Hay 2 modalidades: pago único de {precio_unico}, que arranca con una seña y el resto va al entregar, o suscripción de {mensualidad} por mes, por Mercado Pago y sin permanencia, o de {precio} por año.',
+                    'pago_generico' => 'Hay 2 modalidades: pago único o suscripción, mensual o anual. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
+                    'pago_sin_precio' => 'Hay 2 modalidades: pago único, con el primer año de hosting y dominio incluido, o suscripción mensual o anual, que incluye hosting, dominio, mantenimiento y soporte.',
+                    'mantenimiento' => 'El mantenimiento es lo que mantiene la web funcionando: actualizaciones, seguridad, arreglos, soporte y un cambio por mes. Va incluido en la suscripción, mensual o anual; con el pago único es opcional, por {mantenimiento_mes}.',
+                    'plan_es_servicio' => 'Entonces te conviene el pago único{precio_web_propia}: pagás la web una sola vez. Incluye el primer año de hosting y dominio; el mantenimiento es aparte y opcional.',
+                    'un_solo_pago' => 'Sí: con el pago único{precio_web_propia}, pagás la web una sola vez. Incluye el primer año de hosting y dominio; después se renuevan, y el mantenimiento es aparte y opcional.',
+                    'recomendar_plan' => 'Si querés arrancar con poca inversión, la suscripción mensual; si preferís pagar una vez por año, la anual, que sale menos que doce meses; y si querés pagar la web una sola vez, el pago único.',
+                    'medios_pago' => 'El pago único y el anual los podés pagar por transferencia, con tarjeta o por Mercado Pago. El mensual es una suscripción de Mercado Pago, con cualquier tarjeta, o por transferencia.',
+                ],
+                'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, elegís el pago único o la suscripción y arrancamos.',
+                'respuesta_plan_obligatorio' => 'No: la suscripción es una de las 2 modalidades para contratar la web. Si preferís no pagar todos los meses, está el pago único, que pagás una sola vez, o la suscripción anual.',
             ],
             'a' => [
                 'comercial' => [

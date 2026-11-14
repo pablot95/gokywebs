@@ -2670,7 +2670,7 @@ function renderAutores() {
    grupo lo deja el bot en el boceto (grupoPrecios) y, si falta, se busca la charla
    por teléfono. Lo que decide cuál gana es la plata por charla, no los formularios. */
 // A2 (2-nov) reemplazó al A para los teléfonos pares; el A queda con las charlas que ya lo recibieron.
-const AB_GRUPOS = { a2: "A2 · anual o mensual", b: "B · pago inicial + mensualidad", a: "A · pago único o mensual (cerrado)" };
+const AB_GRUPOS = { a2: "A2 · anual o mensual (+ pago único desde el 14-nov)", b: "B · pago inicial + mensualidad", a: "A · pago único o mensual (cerrado)" };
 const AB_PLANES = { sitio: "Sitio profesional", con_panel: "Tienda y con panel" };
 let abDatos = null;
 let abCargando = false;

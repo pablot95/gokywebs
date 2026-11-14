@@ -8241,8 +8241,9 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
     // "1" es lo primero que vio: el pago único desde el 26-oct, el anual en el texto del 9-oct, el mensual en las imágenes.
-    $orden = function_exists('wabot_modalidades_unico_primero') && wabot_modalidades_unico_primero($conv) ? 'unico'
-        : (function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv));
+    $uPrimero = function_exists('wabot_modalidades_unico_primero') ? wabot_modalidades_unico_primero($conv) : false;
+    $orden = $uPrimero === 'suscripcion' ? 'suscripcion' : ($uPrimero ? 'unico'
+        : (function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv)));
     $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']), $orden);
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;

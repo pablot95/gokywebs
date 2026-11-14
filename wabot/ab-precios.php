@@ -26,7 +26,7 @@
 
 /** Los grupos que pueden quedar congelados en una charla, con cómo se los nombra en el panel y el reporte. */
 function wabot_ab_grupos() {
-    return ['a2' => 'anual o mensual', 'b' => 'pago inicial + mensual', 'a' => 'pago único o mensual'];
+    return ['a2' => 'pago único o suscripción', 'b' => 'pago inicial + mensual', 'a' => 'pago único o mensual'];
 }
 
 /** "Grupo A2 · anual o mensual". */

@@ -158,49 +158,52 @@ turno('la 1', $a3, $cfg);
 caso('"la 1" en A es el pago único', ($a3['modalidad_elegida'] ?? '') === 'propia');
 caso('"voy con el anual" en A no elige nada (no existe)', wabot_comercial_elige_plan('voy con el anual', $a) === null);
 
-echo "— 4b. Modelo A2 (desde el 2-nov): anual o mensual, como antes del 26-oct —\n";
+echo "— 4b. Modelo A2 (desde el 14-nov): pago único o suscripción, mensual o anual —\n";
 $n = charla('5491100009004');
 $r = cotizar_charla($n, 'tienda');
 $t = junto($r);
-caso('A2: el texto de Pablo del 3-nov, con el anual y el mensual', strpos($t, "Tenemos dos modalidades de pago para que elijas la que mejor se adapte a vos\n\n1. Plan anual: \$190.000\n2. Plan mensual: \$30.000\n\nLos dos planes incluyen todo:") !== false, $t);
-caso('A2: sin pago único ni pago inicial', mb_stripos($t, 'pago único') === false && mb_stripos($t, 'inicial') === false, $t);
+caso('A2: el texto de Pablo del 14-nov, con el pago único y la suscripción', strpos($t, "Tenemos dos modalidades para que elijas la que mejor se adapte a vos\n\n1. Pago único de \$330.000\n\nIncluye desarrollo completo, panel para autogestionar contenido y el primer año de hosting y dominio\nLuego se renuevan el hosting y el dominio. El mantenimiento con nosotros es opcional.\n\n2. Suscripción de \$30.000 por mes o \$190.000 por año\n\nIncluye desarrollo completo, panel para autogestionar contenido, hosting, dominio, mantenimiento, actualizaciones, soporte y un cambio por mes en la web.\nCon cualquiera de las dos modalidades, la web queda adaptada para celulares y preparada para Google.") !== false, $t);
+caso('A2: sin pago inicial', mb_stripos($t, 'inicial') === false, $t);
 $cot = $n['comercial_cotizacion'] ?? [];
 caso('A2: congela anual, mensual y el pago único de lista (por si lo pide)', ($cot['modelo'] ?? '') === 'a2' && ($cot['anual'] ?? '') === '$190.000' && ($cot['mensual'] ?? '') === '$30.000'
     && ($cot['unico'] ?? '') === '$330.000' && empty($cot['inicial']) && ($n['ab_grupo'] ?? '') === 'a2', json_encode($cot));
 caso('A2: la charla queda como antes (precio anual, seña de siempre, modelo anual)', ($n['precio_cotizado'] ?? '') === '$190.000' && ($n['sena_cotizada'] ?? '') === '$60.000'
     && ($n['precio_modelo'] ?? '') === 'anual' && !empty($n['ab_grupo_ts']), json_encode([$n['precio_cotizado'] ?? null, $n['sena_cotizada'] ?? null, $n['precio_modelo'] ?? null]));
 $p = prompt_ultimo();
-caso('A2: GPT lee las dos modalidades de siempre (anual y mensual; el pago único, solo si lo pide)', strpos($p, 'Las dos modalidades de cada plan son anual') !== false
+caso('A2: GPT lee el pago único y la suscripción, mensual o anual', strpos($p, '1) pago único') !== false && strpos($p, '2) suscripción, mensual') !== false
     && strpos($p, 'YA NO EXISTE') === false && strpos($p, 'UNA sola modalidad') === false);
 caso('A2: el link del formulario va sin m= (anual o mensual)', strpos(wabot_form_link($n, $cfg), 'm=') === false, wabot_form_link($n, $cfg));
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda', 'info_claves' => ['pago']])]);
 $r = turno('Cómo se paga?', $n, $cfg);
-caso('A2: la respuesta de pago es la de siempre (mensual o anual)', strpos(junto($r), 'anual de $190.000') !== false && strpos(junto($r), 'mensual de $30.000') !== false, junto($r));
+caso('A2: la respuesta de pago nombra el pago único y la suscripción', strpos(junto($r), 'pago único de $330.000') !== false && strpos(junto($r), '$30.000 por mes') !== false && strpos(junto($r), '$190.000 por año') !== false, junto($r));
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda'])]);
 $r = turno('Me pasás el precio de nuevo?', $n, $cfg);
-caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1. Plan anual: $190.000') !== false && mb_stripos(junto($r), 'pago único') === false, junto($r));
+caso('A2: si pide el precio otra vez, el mismo bloque', strpos(junto($r), '1. Pago único de $330.000') !== false && strpos(junto($r), '2. Suscripción de $30.000 por mes o $190.000 por año') !== false, junto($r));
 $n1 = $n;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 turno('la 1', $n1, $cfg);
-caso('A2: "la 1" es el plan anual', ($n1['modalidad_elegida'] ?? '') === 'unico', (string)($n1['modalidad_elegida'] ?? ''));
+caso('A2: "la 1" es el pago único', ($n1['modalidad_elegida'] ?? '') === 'propia', (string)($n1['modalidad_elegida'] ?? ''));
 $n2 = $n;
 oa([dc(['accion' => 'responder', 'solucion' => 'tienda'])]);
 turno('la 2', $n2, $cfg);
-caso('A2: "la 2" es el plan mensual', ($n2['modalidad_elegida'] ?? '') === 'mensual', (string)($n2['modalidad_elegida'] ?? ''));
+caso('A2: "la 2" no elige (la suscripción puede ser mensual o anual)', ($n2['modalidad_elegida'] ?? '') === '', (string)($n2['modalidad_elegida'] ?? ''));
 caso('A2: "voy con el anual" elige el anual', wabot_comercial_elige_plan('voy con el anual', $n) === 'unico');
+caso('A2: "la suscripción mensual" elige el mensual', wabot_comercial_elige_plan('me quedo con la suscripción mensual', $n) === 'mensual');
+caso('A2: "quiero la suscripción" sola no elige', wabot_comercial_elige_plan('quiero la suscripción', $n) === null);
+caso('A2: "voy con el pago único" elige el pago único', wabot_comercial_elige_plan('voy con el pago único', $n) === 'propia');
 $ns = charla('5491100009006');
 $r = cotizar_charla($ns, 'informativa', 'Soy contadora');
-caso('A2: sitio profesional con $140.000 y $20.000', strpos(junto($r), "1. Plan anual: \$140.000\n2. Plan mensual: \$20.000") !== false && ($ns['ab_grupo'] ?? '') === 'a2', junto($r));
+caso('A2: sitio profesional con $240.000, $20.000 y $140.000, sin el panel', strpos(junto($r), "1. Pago único de \$240.000\n\nIncluye desarrollo completo y el primer año de hosting y dominio") !== false
+    && strpos(junto($r), "2. Suscripción de \$20.000 por mes o \$140.000 por año") !== false && mb_stripos(junto($r), 'panel') === false && ($ns['ab_grupo'] ?? '') === 'a2', junto($r));
 $np = charla('5491100009008');
 oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'pago_unico' => true, 'mensajes' => ['Perfecto, te podemos armar una tienda online.'],
         'ficha' => ['rubro' => 'zapatillas', 'que_vende' => 'zapatillas']])]);
 $r = turno('Cuánto sale? Quiero que la web sea mía', $np, $cfg);
-caso('A2: si pide comprar la web, el pago único va debajo de los dos planes (como antes)', strpos(junto($r), '2. Plan mensual: $30.000') !== false
-    && strpos(junto($r), 'está el pago único: $330.000') !== false, junto($r));
+caso('A2: si pide comprar la web, el mismo bloque, sin el pago único dos veces', substr_count(junto($r), '$330.000') === 1 && strpos(junto($r), '1. Pago único de $330.000') !== false, junto($r));
 $rr = wabot_ab_rr_categoria($n, $cfg);
-caso('A2: en el panel, arriba el precio del grupo con el anual', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1. Plan anual: $190.000') !== false,
+caso('A2: en el panel, arriba el precio del grupo con el pago único y la suscripción', is_array($rr) && strpos($rr['titulo'], 'grupo A2') !== false && strpos(implode("\n", $rr['items']), '1. Pago único de $330.000') !== false,
     json_encode($rr, JSON_UNESCAPED_UNICODE));
-caso('A2: el chip dice el grupo', wabot_ab_grupo_nombre('a2') === 'Grupo A2 · anual o mensual');
+caso('A2: el chip dice el grupo', wabot_ab_grupo_nombre('a2') === 'Grupo A2 · pago único o suscripción');
 
 echo "— 5. Charla cotizada antes de la prueba —\n";
 $v = charla('5491100009005');
