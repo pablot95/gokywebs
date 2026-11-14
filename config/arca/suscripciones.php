@@ -737,7 +737,7 @@ function sus_resumen_cobro(array $cobro, array $receptor, $factura)
  * horaria gastaba la cuota diaria de Firestore. Un cobro anotado espera además
  * PC_ESPERA_HORAS, así que facturarlo unas horas después no cambia nada.
  */
-const SUS_CLIENTES_CACHE_HORAS = 4;
+const SUS_CLIENTES_CACHE_HORAS = 24;   // una vez por día (Pablo, 13-nov)
 function sus_clientes_cacheados(array $config, $simular = false)
 {
     $archivo = dirname($config['automaticaEstado']) . '/facturacion-automatica-clientes.json';
