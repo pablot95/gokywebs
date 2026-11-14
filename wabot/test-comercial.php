@@ -1745,6 +1745,13 @@ $c = cv_cotizada('tienda');
 oa([dc(['accion' => 'esperar', 'solucion' => 'tienda', 'mensajes' => []])]);
 $r = turno('Gracias, lo veo', $c, $cfg);
 caso('un acuse con el precio ya dado no repite los planes', !str_contains(implode(' ', $r), '$'), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('«en cuanto pueda» no es pedir el precio; «cuánto sale» sí (Clau, 13-nov)', !wabot_comercial_pide_precio_otra_vez('Ok. En cuanto pueda te paso la info.Gracias')
+    && !wabot_comercial_pide_precio_otra_vez('En cuanto tenga las fotos te las mando') && wabot_comercial_pide_precio_otra_vez('y cuanto sale?')
+    && wabot_comercial_pide_precio_otra_vez('Cuánto?'));
+$c = cv_cotizada('tienda');
+oa([dc(['accion' => 'cotizar', 'solucion' => 'tienda', 'mensajes' => []])]);
+$r = turno('Ok. En cuanto pueda te paso la info.Gracias', $c, $cfg);
+caso('«Ok. En cuanto pueda te paso la info» con el precio ya dado no repite los planes (Clau, 13-nov 20:11)', !str_contains(implode(' ', $r), '$'), json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = cv();
 wabot_conv_transcript($c, 'bot', 'Hola! Hacemos páginas web a medida. Te consulto, a qué te dedicás o qué vendés?');
 $c['rubro_preguntado'] = true;

@@ -2646,7 +2646,9 @@ function wabot_comercial_dos_webs_texto($solA, $solB, array $montos, $cfg) {
 /** ¿Vuelve a pedir el precio o los planes? ("cuánto era?", "pasame los precios de nuevo") */
 function wabot_comercial_pide_precio_otra_vez($texto) {
     $t = wabot_normalizar_frase((string)$texto);
-    if (preg_match('/\bcuanto\b/u', $t)) return true;
+    /* «En cuanto pueda te paso la info» (Clau, 13-nov 20:11) no pregunta el precio:
+     * repetía la lista de planes. «En cuanto a…» tampoco; «cuánto» solo, sí. */
+    if (preg_match('/(?<!\ben )\bcuanto\b/u', $t)) return true;
     if (preg_match('/\b(pasame|pasar|decime|repetime|me pasas|me decis|mandame|cual es|cual era|cuales son|cuales eran)\b.{0,25}\b(precios?|valor\w*|planes|montos?|costo)\b/u', $t)) return true;
     /* «Pero quería tener una idea de lo que sale una página» (3-nov): no entraba por largo
      * y, con el precio ya dado, no salía nada. */
