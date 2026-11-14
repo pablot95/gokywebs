@@ -261,9 +261,9 @@ function wabot_pagos_links_en($texto) {
     if (preg_match_all('~gokywebs\.com/pago/?\?(?:[^\s]*?&)?monto=(\d{4,7})~i', $t, $mm)) {
         foreach ($mm[1] as $n) $out[] = ['monto' => (int)$n, 'modalidad' => (int)$n === 60000 ? 'anual' : '', 'via' => 'link'];
     }
-    // Alias y CBU de hoy (13-nov: gokywebs + CBU) y los viejos (pablotravi + CVU de MP).
+    // Alias de hoy (13-nov: gokywebs) y el viejo (pablotravi), los dos con el mismo CVU de MP.
     if (preg_match('/\bpablotravis?\b/i', $t) || preg_match('/\balias\W{0,3}gokywebs\b(?!\.)/i', $t)
-        || strpos($t, '0720071788000003618268') !== false || strpos($t, '0000003100053462800156') !== false) {
+        || strpos($t, '0000003100053462800156') !== false) {
         $out[] = ['monto' => 0, 'modalidad' => '', 'via' => 'alias'];
     }
     // Sin repetir el mismo monto y modalidad dos veces.

@@ -870,7 +870,7 @@ const WABOT_RR_16OCT = [
     'Genial, recibido. Ahora te escribo desde otro numero ( 1125068578 ) , desde ahora seguimos el desarrollo por ese número',
     'Buenas, todos nuestros trabajos terminados y funcionando están en gokywebs.com/portfolio',
     'Que bueno que te haya gustado, cual de los dos modelos te gustó más?',
-    "Te paso los datos para la seña, en cuanto se acredite arrancamos: \nAlias: gokywebs\nCBU: 0720071788000003618268\nNombre: Pablo Travi",
+    "Te paso los datos para la seña, en cuanto se acredite arrancamos: \nAlias: gokywebs\nCVU: 0000003100053462800156\nNombre: Pablo Travi",
 ];
 
 function wabot_rr_solo_las_que_usa_16oct(array $categorias, $ruta) {

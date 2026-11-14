@@ -76,9 +76,9 @@ $l = wabot_pagos_links_en("Te paso los datos:\nAlias: pablotravi\nCVU: 000000310
 caso('el alias cuenta como "le pasó cómo pagar", sin monto', $l === [['monto' => 0, 'modalidad' => '', 'via' => 'alias']], json_encode($l));
 $l = wabot_pagos_links_en("Te paso los datos para la transferencia:
 Alias: gokywebs
-CBU: 0720071788000003618268
+CVU: 0000003100053462800156
 Nombre: Pablo Travi");
-caso('el alias nuevo (gokywebs + CBU) también cuenta', $l === [['monto' => 0, 'modalidad' => '', 'via' => 'alias']], json_encode($l));
+caso('el alias nuevo (gokywebs) también cuenta', $l === [['monto' => 0, 'modalidad' => '', 'via' => 'alias']], json_encode($l));
 $l = wabot_pagos_links_en('Acá: gokywebs.com/pago/?monto=60000');
 caso('la página general con ?monto= (la seña con tarjeta)', $l[0]['monto'] === 60000 && $l[0]['modalidad'] === 'anual');
 caso('un mensaje sin nada de pago no trae nada', wabot_pagos_links_en('Hola, cómo estás? Te mando la demo: gokywebs.com/demo/kiosco/') === []);

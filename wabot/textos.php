@@ -520,7 +520,7 @@ function wabot_textos_default() {
             // Si no quiere Mercado Pago o pide el alias / CBU: los mismos datos que figuran en las páginas de pago/.
             'transferencia_cbu' => "Te paso los datos para la transferencia:
 Alias: gokywebs
-CBU: 0720071788000003618268
+CVU: 0000003100053462800156
 Nombre: Pablo Travi
 
 Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos con las modificaciones",

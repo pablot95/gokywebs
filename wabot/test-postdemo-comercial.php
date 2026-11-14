@@ -161,7 +161,7 @@ foreach (wabot_comercial_info_claves_postdemo() as $k) caso("la respuesta oficia
 caso('los textos fijos del post-demo están, con sus marcadores', strpos((string)$cfg['comercial']['postdemo']['link_mensual'], '{link}') !== false
     && strpos((string)$cfg['comercial']['postdemo']['link_anual'], '{sena}') !== false && strpos((string)$cfg['comercial']['postdemo']['link_anual'], '{saldo}') !== false
     && strpos((string)$cfg['comercial']['postdemo']['modelo_elegido'], '{modelo}') !== false
-    && strpos((string)$cfg['comercial']['postdemo']['transferencia_cbu'], 'Alias: gokywebs') !== false && strpos((string)$cfg['comercial']['postdemo']['transferencia_cbu'], 'CBU: 0720071788000003618268') !== false);
+    && strpos((string)$cfg['comercial']['postdemo']['transferencia_cbu'], 'Alias: gokywebs') !== false && strpos((string)$cfg['comercial']['postdemo']['transferencia_cbu'], 'CVU: 0000003100053462800156') !== false);
 caso('la seña del pago único es la de sus páginas (unico240 → $80.000, unico330 → $100.000)', ($cfg['tipos']['landing']['sena_unico'] ?? '') === '$80.000' && ($cfg['tipos']['ecommerce']['sena_unico'] ?? '') === '$100.000');
 
 echo "— 2. Los tres candados —\n";
@@ -307,7 +307,7 @@ caso('«cómo te pago? pasame el link» aunque el modelo lo derive (antes de la 
 $c = cv_demo('ecommerce', ['modelo_elegido' => '1']);
 oa([dc(['pide_transferencia' => true, 'mensajes' => ['Sí, no hay problema']])]);
 $r = turno('No tengo Mercado Pago, puedo hacer transferencia?', $c, $cfg);
-caso('no quiere Mercado Pago → los datos de transferencia tal cual Pablo (alias gokywebs, CBU)', $r === ['Sí, no hay problema', (string)$cfg['comercial']['postdemo']['transferencia_cbu']] && (int)($c['postdemo_transferencia_ts'] ?? 0) > 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('no quiere Mercado Pago → los datos de transferencia tal cual Pablo (alias gokywebs, CVU)', $r === ['Sí, no hay problema', (string)$cfg['comercial']['postdemo']['transferencia_cbu']] && (int)($c['postdemo_transferencia_ts'] ?? 0) > 0, json_encode($r, JSON_UNESCAPED_UNICODE));
 oa([dc(['mensajes' => ['Sí, es ese']])]);
 $r = turno('El alias es gokywebs?', $c, $cfg);
 caso('los datos no se repiten si ya se los pasamos', $r === ['Sí, es ese'], json_encode($r, JSON_UNESCAPED_UNICODE));
