@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../pago/plan-card.css?v=20261031-no-incluye">
-    <link rel="stylesheet" href="../pago/elegir-plan.css?v=20261114">
+    <link rel="stylesheet" href="../pago/elegir-plan.css?v=20261114b">
     <script src="../pago/planes.js?v=20260929" defer></script>
     <script src="../pago/elegir-plan.js?v=20261114" defer></script>
     <script src="https://gokywebs.com/err/err.js" defer></script>
@@ -39,31 +39,31 @@
             <div class="plan-wrap elegir">
                 <div class="elegir-intro">
                     <h1 class="plan-title">Web con panel</h1>
-                    <p class="plan-text">Elegí la modalidad que prefieras: pago único o suscripción, mensual o anual. La suscripción incluye hosting, dominio, mantenimiento y un cambio por mes.</p>
+                    <p class="plan-text">Elegí la modalidad que prefieras: suscripción mensual o anual, o pago único. La suscripción incluye hosting, dominio, mantenimiento y un cambio por mes.</p>
                 </div>
 
                 <input class="sr-only" type="radio" name="plan-elegido" id="elegir-unico">
                 <input class="sr-only" type="radio" name="plan-elegido" id="elegir-anual">
                 <input class="sr-only" type="radio" name="plan-elegido" id="elegir-mensual">
                 <div class="elegir-opciones" role="group" aria-label="Modalidades">
-                    <label for="elegir-unico" class="elegir-opcion elegir-opcion-unico">
-                        <span class="elegir-nombre">Pago único</span>
-                        <strong class="elegir-precio">$330.000</strong>
-                        <span class="elegir-periodo">una sola vez</span>
-                        <small>Incluye el primer año de hosting y dominio. Arrancás con una seña de $100.000</small>
-                    </label>
                     <p class="elegir-grupo">Suscripción</p>
+                    <label for="elegir-mensual" class="elegir-opcion">
+                        <span class="elegir-nombre">Mensual</span>
+                        <strong class="elegir-precio">$30.000</strong>
+                        <span class="elegir-periodo">por mes</span>
+                        <small>Arrancás con el primer mes, $30.000</small>
+                    </label>
                     <label for="elegir-anual" class="elegir-opcion">
                         <span class="elegir-nombre">Anual</span>
                         <strong class="elegir-precio">$190.000</strong>
                         <span class="elegir-periodo">por año</span>
                         <small>Arrancás con una seña de $60.000</small>
                     </label>
-                    <label for="elegir-mensual" class="elegir-opcion">
-                        <span class="elegir-nombre">Mensual</span>
-                        <strong class="elegir-precio">$30.000</strong>
-                        <span class="elegir-periodo">por mes</span>
-                        <small>Arrancás con el primer mes, $30.000</small>
+                    <label for="elegir-unico" class="elegir-opcion elegir-opcion-unico">
+                        <span class="elegir-nombre">Pago único</span>
+                        <strong class="elegir-precio">$330.000</strong>
+                        <span class="elegir-periodo">una sola vez</span>
+                        <small>Incluye el primer año de hosting y dominio. Arrancás con una seña de $100.000</small>
                     </label>
                 </div>
                 <p class="elegir-ayuda">Tocá una opción para ver qué incluye y cómo pagarla.</p>
