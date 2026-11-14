@@ -1,0 +1,18 @@
+{
+  "business": "Castillo - Rivas & Asociados",
+  "source": "Imágenes de contenido y mockup provistos en el pedido; fotografía de tarjeta provista por el cliente vía WhatsApp.",
+  "images": [
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_01.webp", "slot": "hero", "dimensions": [900,1600], "note": "Imagen ilustrativa entregada. M1 preserva el retrato en escritorio; M2 la usa como fondo de portada. Original menor al piso de ancho del prompt; no se amplió el archivo."},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_02.webp", "slot": "Open Graph", "dimensions": [1600,900], "note": "Escena ilustrativa, no retrato de los integrantes del estudio."},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_03.webp", "slot": "Impuestos", "dimensions": [1024,1024]},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_04.webp", "slot": "Contabilidad", "dimensions": [1024,1024]},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_05.webp", "slot": "Sueldos", "dimensions": [1024,1024]},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_06.webp", "slot": "Finanzas y previsión", "dimensions": [1024,1024]},
+    {"file": "Castillo_o12GVkvkR2H9MeA5uuUc_09.webp", "slot": "Estudio", "dimensions": [1024,1024], "note": "Escena ilustrativa de trabajo; no representa a una persona identificada."},
+    {"file": "logo.webp", "slot": "Marca en header y footer", "source": "tarjeta-original.jpg", "crop": [235,120,610,350]},
+    {"file": "emblema.webp", "slot": "Hero y favicon", "source": "tarjeta-original.jpg", "crop": [340,126,494,260]}
+  ],
+  "unused": ["07: escena con personas sin identidad confirmada", "08: retrato ilustrativo que no debe presentarse como Laura Castillo", "10: mockup utilizado como referencia visual"],
+  "external_downloads": [],
+  "originals": "Conservados íntegros en la carpeta local. Sólo se publican las versiones optimizadas utilizadas."
+}
