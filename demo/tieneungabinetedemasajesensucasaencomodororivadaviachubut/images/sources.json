@@ -1,0 +1,28 @@
+{
+  "provided_set": {
+    "source": "ZIP aportado para la demo, 9 fotografías ilustrativas y mockup",
+    "files": [
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_01.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_02.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_03.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_04.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_05.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_06.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_07.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_08.webp",
+      "El_Calden_Masajes_Keg6ItfvwSaurQOy1tlk_09.webp"
+    ],
+    "note": "No representan al profesional ni el gabinete real."
+  },
+  "client_assets": [
+    {
+      "file": "logo-original.webp",
+      "source": "01-logo.jpg enviado por WhatsApp"
+    },
+    {
+      "file": "sesion-real-original.webp",
+      "source": "11-whatsapp-image-2026-10-29-at-15-31-04.jpg enviado por WhatsApp"
+    }
+  ],
+  "stock_downloads": []
+}

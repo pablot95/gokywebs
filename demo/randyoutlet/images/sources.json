@@ -1,0 +1,202 @@
+{
+ "cliente": "Logo que mandó Randy Outlet por WhatsApp (Descargas/imagenes-prospectos/randyoutlet/01-logo.jpg), recortado por su círculo a alfa",
+ "zip": "Imágenes de producto del zip de ChatGPT (ilustrativas): vestido floral, sábanas, camisa, conjunto de niño, traje de baño, camisola de encaje, cartera, oso de peluche y cortinas sobre fondo gris claro; mock up como referencia del diseño. Las variantes de color (vestido azul, camisas oliva y bordó, conjuntos coral y verde agua, mallas bordó y coral, camisola rosa, cartera bordó, oso rosa, cortinas salvia) son recoloreos de esas mismas fotos",
+ "archivos": {
+  "logo-randy.webp": {
+   "px": [
+    640,
+    640
+   ],
+   "bytes": 77348
+  },
+  "logo-randy-chico.webp": {
+   "px": [
+    300,
+    300
+   ],
+   "bytes": 27848
+  },
+  "favicon-180.png": {
+   "px": [
+    180,
+    180
+   ],
+   "bytes": 54687
+  },
+  "favicon.png": {
+   "px": [
+    64,
+    64
+   ],
+   "bytes": 9737
+  },
+  "p-vestido-floral.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 76742
+  },
+  "p-vestido-floral-azul.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 76410
+  },
+  "p-camisa-marino.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 30628
+  },
+  "p-camisa-oliva.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 37648
+  },
+  "p-camisa-bordo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 33636
+  },
+  "p-conjunto-amarillo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 60524
+  },
+  "p-conjunto-coral.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 61942
+  },
+  "p-conjunto-verde.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 56476
+  },
+  "p-malla-petroleo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 33058
+  },
+  "p-malla-bordo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 27704
+  },
+  "p-malla-coral.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 37908
+  },
+  "p-camisola-crema.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 64870
+  },
+  "p-camisola-rosa.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 71886
+  },
+  "p-cartera-suela.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 39168
+  },
+  "p-cartera-bordo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 31526
+  },
+  "p-oso-marron.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 61506
+  },
+  "p-oso-rosa.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 64348
+  },
+  "p-cortinas-crema.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 44568
+  },
+  "p-cortinas-salvia.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 39300
+  },
+  "p-sabanas.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 20628
+  },
+  "h-vestido.webp": {
+   "px": [
+    900,
+    1600
+   ],
+   "bytes": 148954
+  },
+  "b-sabanas.webp": {
+   "px": [
+    1600,
+    900
+   ],
+   "bytes": 28580
+  },
+  "b-sabanas-ancha.webp": {
+   "px": [
+    2000,
+    818
+   ],
+   "bytes": 22888
+  },
+  "og-randy.jpg": {
+   "px": [
+    1200,
+    630
+   ],
+   "bytes": 86959
+  }
+ }
+}
