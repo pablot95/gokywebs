@@ -1,0 +1,195 @@
+{
+ "cliente": "Logo que mandó Aromas por WhatsApp (Descargas/imagenes-prospectos/aromas/01-logo.jpg, captura de la foto de perfil), recortado por su círculo a alfa",
+ "zip": "Imágenes del zip de ChatGPT (ilustrativas): jabones con flores de caléndula, margaritas aromáticas en tul, avena y miel, café y canela, carbón activado, arcilla verde, arroz y miel, masajeador de manzanilla y masajeador de cúrcuma; mock up como referencia del diseño. Chía, esponja natural, miel y caña, menta y romero, íntimo y seis masajeadores (avena con miel, colágeno hidrolizado, sábila con miel, arroz con miel, canela y miel, café con canela) son recoloreos de esas mismas fotos",
+ "archivos": {
+  "logo-aromas.webp": {
+   "px": [
+    640,
+    640
+   ],
+   "bytes": 90792
+  },
+  "logo-aromas-chico.webp": {
+   "px": [
+    300,
+    300
+   ],
+   "bytes": 33908
+  },
+  "favicon-180.png": {
+   "px": [
+    180,
+    180
+   ],
+   "bytes": 68746
+  },
+  "favicon.png": {
+   "px": [
+    64,
+    64
+   ],
+   "bytes": 10931
+  },
+  "p-aromatico-flores.webp": {
+   "px": [
+    900,
+    900
+   ],
+   "bytes": 70054
+  },
+  "p-margaritas.webp": {
+   "px": [
+    900,
+    900
+   ],
+   "bytes": 65318
+  },
+  "p-avena-miel.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 69456
+  },
+  "p-cafe-canela.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 103284
+  },
+  "p-chia.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 70066
+  },
+  "p-esponja.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 62304
+  },
+  "p-carbon.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 44576
+  },
+  "p-arcilla.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 53754
+  },
+  "p-arroz.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 56558
+  },
+  "p-miel-cana.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 67938
+  },
+  "p-menta-romero.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 56024
+  },
+  "p-intimo.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 53536
+  },
+  "p-mas-manzanilla.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 52060
+  },
+  "p-mas-curcuma.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 51356
+  },
+  "p-mas-avena-miel.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 49554
+  },
+  "p-mas-colageno.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 48254
+  },
+  "p-mas-sabila.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 46122
+  },
+  "p-mas-arroz-miel.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 46792
+  },
+  "p-mas-canela-miel.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 40884
+  },
+  "p-mas-cafe-canela.webp": {
+   "px": [
+    1000,
+    1000
+   ],
+   "bytes": 32136
+  },
+  "h-calendula.webp": {
+   "px": [
+    900,
+    1600
+   ],
+   "bytes": 88510
+  },
+  "b-margaritas.webp": {
+   "px": [
+    1600,
+    900
+   ],
+   "bytes": 105252
+  },
+  "og-aromas.jpg": {
+   "px": [
+    1200,
+    630
+   ],
+   "bytes": 108051
+  }
+ }
+}
