@@ -1,0 +1,68 @@
+{
+  "provided": [
+    {
+      "file": "burger-hero.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_01.jpg",
+      "slot": "hero"
+    },
+    {
+      "file": "pizza-hero.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_02.jpg",
+      "slot": "hero"
+    },
+    {
+      "file": "doble-cheddar.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_03.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "bacon.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_04.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "cebolla.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_05.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "napolitana.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_06.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "hongos.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_07.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "pepperoni.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_08.jpg",
+      "slot": "producto"
+    },
+    {
+      "file": "jamon.webp",
+      "source": "Imagen ilustrativa del ZIP entregado por el usuario",
+      "original": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_09.jpg",
+      "slot": "producto"
+    }
+  ],
+  "client": [
+    {
+      "file": "flyer.webp",
+      "original": "flyer-original.jpg",
+      "source": "WhatsApp del cliente, próxima apertura en Villa Ballester",
+      "use": "Logo real mostrado mediante ventana CSS; flyer íntegro en modal"
+    }
+  ],
+  "reference": "Brasa_Pizza_Burgers_nDEgmCDY7UYF8rnKYGwf_10_mockup_720x480.png",
+  "note": "Sin imágenes externas. Hero 1600x900 y vertical900x1600 por debajo del piso recomendado; se limitan a su resolución disponible. Fotos de producto1024x1024."
+}
