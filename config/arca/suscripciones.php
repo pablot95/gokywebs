@@ -624,7 +624,7 @@ function sus_correr(array $config, $arca, callable $mp, array $opciones = [])
             sus_ajustes_cambiar($config, function ($a) use ($desdePagos) { $a['desdePagos'] = $desdePagos; return $a; });
         }
         try {
-            $clientes = is_callable($fuente) ? $fuente() : pc_clientes_firestore();
+            $clientes = is_callable($fuente) ? $fuente() : sus_clientes_cacheados($config, $simular);
         } catch (Throwable $e) {
             $resumen['aviso'] = 'No se pudieron leer los clientes (seña, saldo y renovaciones quedan para la próxima): ' . $e->getMessage();
         }
@@ -731,6 +731,25 @@ function sus_resumen_cobro(array $cobro, array $receptor, $factura)
 }
 
 // La última corrida queda en el estado para que el admin la muestre. Con el lock del registro, como toda escritura del estado.
+/**
+ * Los clientes de Firestore para los cobros por afuera, leídos como mucho cada
+ * SUS_CLIENTES_CACHE_HORAS (13-nov): leer la colección entera en cada corrida
+ * horaria gastaba la cuota diaria de Firestore. Un cobro anotado espera además
+ * PC_ESPERA_HORAS, así que facturarlo unas horas después no cambia nada.
+ */
+const SUS_CLIENTES_CACHE_HORAS = 4;
+function sus_clientes_cacheados(array $config, $simular = false)
+{
+    $archivo = dirname($config['automaticaEstado']) . '/facturacion-automatica-clientes.json';
+    $cache = json_decode((string) @file_get_contents($archivo), true);
+    if (is_array($cache) && (int) ($cache['ts'] ?? 0) > time() - SUS_CLIENTES_CACHE_HORAS * 3600 && is_array($cache['clientes'] ?? null)) {
+        return $cache['clientes'];
+    }
+    $clientes = pc_clientes_firestore();
+    if (!$simular) json_guardar_atomico($archivo, ['ts' => time(), 'clientes' => $clientes], 'los clientes de la facturación automática');
+    return $clientes;
+}
+
 function sus_anotar_corrida(array $config, array $resumen)
 {
     $lock = registro_lock($config);

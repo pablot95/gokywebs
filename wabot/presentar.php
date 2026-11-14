@@ -364,7 +364,8 @@ function wabot_presentar_auto_correr($cfg, $ahora = null, $propuestas = null, $p
     $demoTs = $demoTs ?? 'wabot_presentar_demo_ts';
     $local = wabot_presentar_auto_local_leer();
     $avisar = $avisar ?? function ($t, $c) { return wabot_push_enviar($t, $c, ['link' => 'https://www.gokywebs.com/admin/dashboard.html']); };
-    $desde = max(strtotime(WABOT_PRESENTAR_AUTO_DESDE), $ahora - 7 * 86400);
+    // 4 días y no 7 (13-nov): esta lectura corre cada media hora y gastaba la cuota de Firestore.
+    $desde = max(strtotime(WABOT_PRESENTAR_AUTO_DESDE), $ahora - 4 * 86400);
     try {
         $propuestas = $propuestas ?? wabot_presentar_fs_propuestas($desde);
     } catch (Throwable $e) {

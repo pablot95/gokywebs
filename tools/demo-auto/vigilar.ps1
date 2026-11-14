@@ -423,6 +423,20 @@ try {
         $ErrorActionPreference = 'Stop'
         $r = ($salida | Out-String) | ConvertFrom-Json
         if (-not $r.ok) {
+        if (-not $r.ok -and [string]$r.error -like 'Firestore:*') {
+            # Firestore caido o sin cuota (429, 13-nov: Mis memorias y Castillo terminaron sin
+            # asignar): no es que falte la ficha. El zip queda en Descargas y se suelta el
+            # 'en proceso' para que la corrida siguiente lo vuelva a tomar.
+            Anotar ('Firestore no responde, ' + $zip.Name + ' se reintenta en la proxima corrida: ' + $r.error)
+            $soltar = $zip
+            Bajo-Candado {
+                $e = Leer-Estado
+                $e.hechos = @($e.hechos | Where-Object { -not ($_.zip -eq $soltar.Name -and $_.tam -eq $soltar.Length -and $_.resultado -eq 'en proceso') })
+                Guardar-Estado $e
+            }
+            $zip = $null
+            break
+        }
             Anotar ('SIN ASIGNAR ' + $zip.Name + ': ' + $r.error)
             Mover-Zip $zip 'sin-asignar'
             Marcar $zip ('sin asignar: ' + $r.error)

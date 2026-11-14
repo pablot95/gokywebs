@@ -80,7 +80,9 @@ $pagos = $paso('pagos', function () use ($cfg) { return wabot_pagos_correr($cfg)
 // Al que pagó y se cortó en el medio de los datos para la web, el recordatorio a las 24 h (onboarding.php).
 $onboarding = $paso('onboarding', function () use ($cfg) { return wabot_onboarding_recordatorio_correr($cfg); });
 // Los clientes del admin cruzados con sus chats (clientes.php): la vista Clientes de Conversaciones los lee de esta caché.
-try { wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
+// Cada 3 h y no en cada corrida (13-nov): leer clientes + mantenimiento cada media hora gastaba la
+// cuota de Firestore. Abrir la vista Clientes la sigue refrescando a los 10 min.
+try { if (@filemtime(wabot_clientes_cache_archivo()) < time() - 3 * 3600) wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
 // No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
 $reaviso = $paso('push_reaviso', function () { return wabot_push_reaviso_correr(); });
 // El resumen de los sin leer a su WhatsApp: los que entraron mientras se esperaban los 10 minutos (3-nov).

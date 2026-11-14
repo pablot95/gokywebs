@@ -91,6 +91,48 @@ function demo_auto_candidatos(): array {
     return $docs;
 }
 
+/**
+ * La ficha del id: propuestas/<id> (una lectura) o, si ya pasó a Clientes, el
+ * cliente con ese propuestaId. [] si no está en ninguna (sigue el barrido).
+ */
+function demo_auto_por_id(string $id): array {
+    $sa = wabot_push_cuenta();
+    $base = 'https://firestore.googleapis.com/v1/projects/' . rawurlencode($sa['project_id']) . '/databases/(default)/documents';
+    $auth = ['Authorization: Bearer ' . prospecto_chatgpt_access_token(), 'Content-Type: application/json'];
+    $ch = curl_init($base . '/propuestas/' . rawurlencode($id));
+    curl_setopt_array($ch, [CURLOPT_HTTPHEADER => $auth, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30]);
+    $res = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($http === 200 && is_array($doc = json_decode((string)$res, true)) && !empty($doc['fields'])) {
+        return [$id => array_map('prospecto_chatgpt_firestore_valor', $doc['fields'])];
+    }
+    if ($http !== 404) throw new RuntimeException('No se pudo leer la propuesta ' . $id . ' (HTTP ' . $http . ').');
+    $ch = curl_init($base . ':runQuery');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode(['structuredQuery' => [
+            'from' => [['collectionId' => 'clientes']],
+            'where' => ['fieldFilter' => ['field' => ['fieldPath' => 'propuestaId'], 'op' => 'EQUAL', 'value' => ['stringValue' => $id]]],
+            'limit' => 1,
+        ]]),
+        CURLOPT_HTTPHEADER => $auth, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30,
+    ]);
+    $res = curl_exec($ch);
+    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($http !== 200 || !is_array($filas = json_decode((string)$res, true))) {
+        throw new RuntimeException('No se pudo consultar clientes (HTTP ' . $http . ').');
+    }
+    foreach ($filas as $fila) {
+        if (empty($fila['document']['name'])) continue;
+        $c = array_map('prospecto_chatgpt_firestore_valor', $fila['document']['fields'] ?? []);
+        $snap = is_array($c['propuestaSnapshot'] ?? null) ? $c['propuestaSnapshot'] : [];
+        if ($snap) return [$id => $snap + ['createdAt' => $c['createdAt'] ?? '']];
+    }
+    return [];
+}
+
 function demo_auto_salir(array $r): void {
     echo json_encode($r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), "\n";
     exit(!empty($r['ok']) ? 0 : 1);
@@ -100,7 +142,10 @@ if (realpath((string)($_SERVER['SCRIPT_FILENAME'] ?? '')) === __FILE__) {
     $zip = (string)($argv[1] ?? '');
     if ($zip === '' || !is_file($zip)) demo_auto_salir(['ok' => false, 'error' => 'No existe el zip: ' . $zip]);
     try {
-        $docs = demo_auto_candidatos();
+        // Con el id en el nombre (los de ChatGPT) se lee solo esa ficha: el barrido de
+        // 3 semanas de propuestas y clientes por zip gastaba la cuota de Firestore (13-nov).
+        $docs = preg_match('/_([A-Za-z0-9]{20})(?: \(\d+\))?\.zip$/', basename($zip), $mId) ? demo_auto_por_id($mId[1]) : [];
+        if (!$docs) $docs = demo_auto_candidatos();
     } catch (Throwable $e) {
         demo_auto_salir(['ok' => false, 'error' => 'Firestore: ' . $e->getMessage()]);
     }
