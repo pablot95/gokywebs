@@ -138,6 +138,7 @@ const ERR_REPOS = [
     'fletespavon.com.ar' => 'pablot95/fletespavon',
     'delacabezalospies.com.ar' => 'pablot95/delacabezaalospies',
     'serviceplusreparaciones.com.ar' => 'pablot95/serviceplus',
+    'artesaniasmiuniverso.com.ar' => 'pablot95/artesaniasmiuniverso',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
