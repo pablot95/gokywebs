@@ -1,0 +1,24 @@
+{
+  "demo": "mismemorias",
+  "nota": "Imágenes ilustrativas del zip de ChatGPT (prospecto lTeOfj74fNXc4Xv36ASY). Ninguna es una foto real de Juan José Soto Vargas. Originales JPG conservados sin tocar; los WebP son conversiones a calidad 70-80.",
+  "imagenes": [
+    { "archivo": "escritorio-ventana.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_01.jpg", "ratio": "9:16", "tamano": "900x1600", "uso": "M1 portada (arco) · M2 capítulo 01" },
+    { "archivo": "estepa-patagonica.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_02.jpg", "ratio": "16:9", "tamano": "1600x900", "uso": "M1 franja Patagonia · M2 portada panorámica" },
+    { "archivo": "conversacion.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_03.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "M1 mini foto Patagonia · M2 contacto del diálogo" },
+    { "archivo": "rampa-jardin.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_04.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "M1 evidencia · M2 capítulo 02" },
+    { "archivo": "mesa-de-lectura.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_05.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "M1 preguntas · M2 evidencia" },
+    { "archivo": "manos-escribiendo.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_06.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "M1 memorias · M2 capítulo 04" },
+    { "archivo": "ronda-al-aire-libre.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_07.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "M1 mini foto Patagonia · M2 capítulo 03" },
+    { "archivo": "lectura-braille.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_08.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "evidencia (los dos modelos)" },
+    { "archivo": "lectora-sillon.webp", "original": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_09.jpg", "ratio": "1:1", "tamano": "1024x1024", "uso": "bloque «Con calma y en primera persona» (los dos modelos)" }
+  ],
+  "referencia": "Mis_memorias_lTeOfj74fNXc4Xv36ASY_10_mockup_720x480.png (mock up, solo referencia de diseño)",
+  "generadas": [
+    { "archivo": "og.jpg", "detalle": "1200x630 compuesta con escritorio-ventana + Literata/Atkinson Hyperlegible" },
+    { "archivo": "favicon.png", "detalle": "64x64, inicial M en Literata sobre azul #2D509E" },
+    { "archivo": "apple-touch-icon.png", "detalle": "180x180, misma pieza que el favicon" }
+  ],
+  "no_usadas": [
+    { "archivo": "Downloads/imagenes-prospectos/mismemorias/01-imagen.jpg", "motivo": "captura de un noticiero de TV con logos de terceros; no se publica en la demo" }
+  ]
+}
