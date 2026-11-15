@@ -159,6 +159,19 @@ caso('…sin repetir el aviso', count($avisos) === 1);
 $r = wabot_cobro_rech_correr($cfg, $dia1, ['lista' => [], 'sync_ts' => 0, 'enviados' => [], 'aviso_vieja_ts' => 0], function () { throw new RuntimeException('no debería llamar'); }, $enviar, $avisar);
 caso('sin lista del admin no llama a MP', !empty($r['sin_lista']));
 
+echo "\n=== Una consulta a Mercado Pago cada 2 h (revisión 15-nov, 429) ===\n";
+$llamadas = 0;
+$mpCuenta = function ($ruta) use (&$llamadas, $mpDatos) { $llamadas++; return $mpDatos()($ruta); };
+$mandados = [];
+$r = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpCuenta, $enviar, $avisar);
+$hechas = $llamadas;
+caso('la primera vuelta consulta y anota la hora', $hechas > 0 && ($r['estado']['consulta_ts'] ?? 0) === $dia1);
+caso('…y el aviso sale igual', count($mandados) === 1);
+$r2 = wabot_cobro_rech_correr($cfg, $dia1 + 1800, $r['estado'], $mpCuenta, $enviar, $avisar);
+caso('a la media hora no vuelve a pegarle a MP', $llamadas === $hechas && !empty($r2['espera']));
+$r3 = wabot_cobro_rech_correr($cfg, $dia1 + 2 * 3600, $r2['estado'], $mpCuenta, $enviar, $avisar);
+caso('a las 2 h consulta de nuevo', $llamadas > $hechas && empty($r3['espera']));
+
 echo "\n=== Envío real (WhatsApp simulado) ===\n";
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $clave = '549' . '1199990001';

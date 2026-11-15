@@ -35,6 +35,11 @@ const WABOT_COBRO_RECH_HORA_HASTA = 20;
 // Una lista que el admin no actualiza hace más de esto puede tener bajas o cambios que el bot no sabe.
 const WABOT_COBRO_RECH_LISTA_VIEJA = 35 * 86400;
 const WABOT_COBRO_RECH_ENVIADOS_DIAS = 62;
+// Revisión del bot 15-nov: el cron corre cada media hora y cada vuelta pegaba un
+// /preapproval/search más un /authorized_payments/search por suscripción atrasada,
+// y Mercado Pago respondía 429 casi todas las vueltas (13 en el día). El aviso sale
+// una vez por cobro, el día siguiente de 10 a 20 h: consultando cada 2 h quedan 5 chances.
+const WABOT_COBRO_RECH_CADA = 2 * 3600;
 
 function wabot_cobro_rech_estado() {
     $j = json_decode((string)@file_get_contents(WABOT_COBRO_RECH_ARCHIVO), true);
@@ -44,6 +49,7 @@ function wabot_cobro_rech_estado() {
         'sync_ts'  => (int)($j['sync_ts'] ?? 0),
         'enviados' => (array)($j['enviados'] ?? []),
         'aviso_vieja_ts' => (int)($j['aviso_vieja_ts'] ?? 0),
+        'consulta_ts' => (int)($j['consulta_ts'] ?? 0),
     ];
 }
 
@@ -190,6 +196,13 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         }
         return $res + ['lista_vieja' => true] + ($enDisco ? [] : ['estado' => $estado]);
     }
+
+    // Una consulta a MP cada WABOT_COBRO_RECH_CADA, salga bien o con 429: así no se insiste contra el límite.
+    if ($ahora - (int)($estado['consulta_ts'] ?? 0) < WABOT_COBRO_RECH_CADA) {
+        return $res + ['espera' => true] + ($enDisco ? [] : ['estado' => $estado]);
+    }
+    $estado['consulta_ts'] = $ahora;
+    if ($enDisco) wabot_cobro_rech_guardar($estado);
 
     $hoy = gmdate('Y-m-d', $ahora - 3 * 3600);
     $ayer = gmdate('Y-m-d', $ahora - 3 * 3600 - 86400);
