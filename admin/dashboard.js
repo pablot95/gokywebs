@@ -11269,7 +11269,7 @@ function _renderMantFallidos(term) {
               </select>`;
         const telDig = String(r.telefono || "").replace(/\D/g, "");
         const tel = r.telefono
-            ? `<div style="font-size:12px">📱 ${telDig.length >= 10 ? `<a href="https://wa.me/${escapeHtml(telDig.startsWith("54") ? telDig : "549" + telDig)}" target="_blank" rel="noopener">${escapeHtml(r.telefono)}</a>` : escapeHtml(r.telefono)}</div>`
+            ? `<div style="font-size:12px">📱 ${telDig.length >= 10 ? `<a href="https://wa.me/${escapeHtml(telDig.startsWith("54") ? telDig : "549" + telDig)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline" title="Abrir en WhatsApp">${escapeHtml(r.telefono)}</a>` : escapeHtml(r.telefono)}</div>`
             : (r.destino ? `<div class="muted" style="font-size:12px">📱 sin teléfono en la ficha</div>` : "");
         const fl = d => { const x = new Date(d); return Number.isNaN(x.getTime()) ? "" : fechaCortaJs(x); };
         const vencido = r.vence && r.vence.getTime() < Date.now();
