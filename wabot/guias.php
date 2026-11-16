@@ -89,9 +89,12 @@ if ($modo === 'listar') {
 /* El QR como imagen (Pablo, 16-nov: «todos me piden el qr ... que se envíe ahora que la gente contestó y
  * hay ventana abierta»). Texto libre: solo a los que ya recibieron la guía y escribieron en las últimas
  * 24 h, por WhatsApp. php guias.php qr probar|enviar. El PNG es /guias/qr-<lo mismo que el PDF>.png. */
+const WABOT_GUIAS_PDF_TEXTO = 'Te reenvío la guía: en algunos celulares el texto no se veía. Esta versión ya se ve bien.';
 const WABOT_GUIAS_QR_TEXTO = 'Te paso también el código QR de tu web, en alta calidad para imprimir: tarjetas, el local, el vehículo, bolsas o flyers. Dejale siempre el margen blanco alrededor para que se lea bien.';
 if ($modo === 'qr') {
     $enviar = ($argv[2] ?? '') === 'enviar';
+    $negocios = [];
+    foreach ((array)json_decode((string)@file_get_contents(WABOT_DATA . '/guias-envio.json'), true) as $it) $negocios[$it['id'] ?? ''] = $it['negocio'] ?? '';
     $enviadas = wabot_guias_enviadas();
     $cuenta = [];
     foreach ($enviadas as $id => $e) {
@@ -111,9 +114,20 @@ if ($modo === 'qr') {
             if (!$lock) $r = 'ocupado';
             else try {
                 $conv = wabot_conv_load($clave);
+                // Primero la guía de nuevo (16-nov: la primera salió con fuentes Type3 que los visores de
+                // Android no dibujan, se veía en blanco); después el QR.
+                $pdf = WABOT_GUIAS_DIR . '/' . basename((string)$e['pdf']);
+                $nombrePdf = 'Guía ' . ($negocios[$id] ?? basename($pdf, '.pdf'));
+                $pdfBytes = (string)@file_get_contents($pdf);
+                $pdfId = $pdfBytes !== '' ? wabot_wa_media_subir($pdfBytes, 'application/pdf', basename($pdf)) : null;
+                if ($pdfId && wabot_wa_send_document(wabot_channel_user_id($conv), $pdfId, $nombrePdf, WABOT_GUIAS_PDF_TEXTO)) {
+                    wabot_conv_transcript($conv, 'bot', '[documento] ' . wabot_documento_nombre($nombrePdf) . "
+" . WABOT_GUIAS_PDF_TEXTO);
+                    $enviadas[$id]['pdf2_ok'] = true;
+                }
                 $bytes = (string)file_get_contents($png);
                 $mediaId = wabot_wa_media_subir($bytes, 'image/png', basename($png));
-                if (!$mediaId || !wabot_wa_send_image(wabot_channel_user_id($conv), $mediaId, WABOT_GUIAS_QR_TEXTO)) $r = 'error';
+                if (!$mediaId || !wabot_wa_send_image(wabot_channel_user_id($conv), $mediaId, WABOT_GUIAS_QR_TEXTO)) { $r = 'error'; wabot_conv_save($conv); }
                 else {
                     $guardado = wabot_media_guardar(wabot_conversation_key($conv), $bytes, 'image/png', 'imagen');
                     wabot_conv_transcript($conv, 'bot', WABOT_GUIAS_QR_TEXTO, $guardado);
