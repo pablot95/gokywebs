@@ -302,7 +302,10 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && empty($GLOBALS['WABOT_TEST_AVISO_PABLO'])) return false;
     if ($cfg === null && isset($GLOBALS['WABOT_TEST_AVISO_ACTIVO'])) $cfg = ['aviso_whatsapp_activo' => (bool)$GLOBALS['WABOT_TEST_AVISO_ACTIVO']] + wabot_config_load();
     $cfg = $cfg ?? wabot_config_load();
-    if (!wabot_aviso_whatsapp_activo($cfg)) return false;
+    // Los avisos de cobros (16-nov) salen aunque el interruptor de avisos por WhatsApp esté
+    // apagado: ese interruptor es el de los mensajes de clientes; alcanza con el número.
+    if (empty($datos['cobros']) && !wabot_aviso_whatsapp_activo($cfg)) return false;
+    if (wabot_aviso_tel($cfg) === '') return false;
     $tel    = wabot_aviso_tel($cfg);
     $titulo = trim((string)$titulo);
     $cuerpo = trim((string)$cuerpo);
@@ -384,7 +387,7 @@ function wabot_aviso_cobro_pablo($titulo, array $lineas, $clave = '') {
     $link = $clave !== '' && wabot_conv_existe($clave)
         ? 'https://www.gokywebs.com/wabot/admin.php?tab=conversaciones&ver=' . rawurlencode($clave)
         : 'https://www.gokywebs.com/admin/dashboard.html';
-    return wabot_aviso_whatsapp_enviar($titulo, implode("\n", $lineas), ['link' => $link, 'tel' => $clave !== '' ? $clave : '-']);
+    return wabot_aviso_whatsapp_enviar($titulo, implode("\n", $lineas), ['link' => $link, 'tel' => $clave !== '' ? $clave : '-', 'cobros' => true]);
 }
 
 /**
