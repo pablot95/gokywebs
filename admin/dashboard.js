@@ -11294,16 +11294,42 @@ function _renderMantFallidos(term) {
                 <button type="button" class="btn-ghost btn-sm" data-fallido-ocultar="${escapeHtml(r.oculto)}" title="Lo saca de esta lista. Si vuelve a fallar otro día, aparece de nuevo.">Ocultar</button></div>
         </article>`;
     };
-    // Tres columnas (Pablo, 16-nov): suscriptores con el cobro fallado o en reintento, los que pasaron a pagar
-    // por afuera y los que cancelaron la suscripción.
+    // Pagan por afuera (Pablo, 16-nov: "figura Bernal, que el próximo pago es el 18, y no figura AF masajes, que
+    // paga por afuera y todavía no pagó"): no salen de los fallos de Mercado Pago sino de Mantenimiento → Pagan
+    // por afuera: los que tienen un cobro ya vencido (hoy incluido) sin marcar con «💵 Pagó».
+    const hoyMp = _fechaMp(_diaDe(new Date()));
+    const fueraPend = _mantPorFueraLista().filter(f => f.pendiente && (!term || f.texto.toLowerCase().includes(term)));
+    const tarjetaFuera = f => {
+        const destino = `${f.coleccion}:${f.ref.id}`;
+        const telefono = _fallidoTelefono(destino);
+        const telDig = telefono.replace(/\D/g, "");
+        const [y, m, d] = f.pendiente.split("-");
+        const dias = Math.round((hoyMp - _fechaMp(f.pendiente)) / 86400000);
+        const pagado = String(f.ref.pagadoHasta || "");
+        return `<article class="fallido-card">
+            <div class="fallido-card__top"><div class="fallido-card__nombre">${escapeHtml(f.nombre)}</div><span class="fallido-card__monto">${fmtMoney(f.monto)}/mes</span></div>
+            ${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}
+            ${telefono ? `<div style="font-size:12px">📱 ${telDig.length >= 10 ? `<a href="https://wa.me/${escapeHtml(telDig.startsWith("54") ? telDig : "549" + telDig)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline" title="Abrir en WhatsApp">${escapeHtml(telefono)}</a>` : escapeHtml(telefono)}</div>` : `<div class="muted" style="font-size:12px">📱 sin teléfono en la ficha</div>`}
+            <div class="fallido-card__estado"><span class="mant-vinc-estado mant-vinc-estado--mal">${dias === 0 ? "Hoy le toca pagar" : "✕ Sin pagar"}</span></div>
+            <div class="intento-detalle fallido-card__detalle">
+                <div><strong>${dias === 0 ? "Vence hoy" : `Venció el ${d}/${m}/${y} · hace ${dias} ${dias === 1 ? "día" : "días"}`}</strong></div>
+                ${pagado && pagado > PF_PAGADOS_HASTA ? `<div>Último pago marcado: cobro del ${pagado.split("-").reverse().join("/")}</div>` : ""}
+                ${f.dia ? `<div>Día de cobro: ${f.dia}</div>` : ""}
+                ${f.desde ? `<div>Cliente desde: ${escapeHtml(fechaCortaJs(f.desde))}</div>` : ""}
+            </div>
+            <div class="fallido-card__acciones"><button type="button" class="btn-primary btn-sm" data-pf-pago="${escapeHtml(destino)}" title="Marca este cobro como pagado y abre la factura">💵 Pagó</button></div>
+        </article>`;
+    };
+    // Tres columnas (Pablo, 16-nov): suscriptores con el cobro fallado o en reintento, los que pagan por afuera
+    // y deben el cobro, y los que cancelaron la suscripción.
     const columnas = [
         { titulo: "Suscriptores", ayuda: "Siguen suscriptos: el cobro falló, se reintenta o está pausado", filas: lista.filter(r => !r.porFuera && r.tipo !== "baja"), vacio: "Ninguno con el cobro fallado." },
-        { titulo: "💵 Pagan por afuera", ayuda: "Su suscripción de MP falló o se cortó, pero te pagan por transferencia", filas: lista.filter(r => r.porFuera), vacio: "Ninguno." },
+        { titulo: "💵 Pagan por afuera", ayuda: "Te pagan por transferencia y ya les tocaba pagar: «💵 Pagó» cuando te transfieran", filas: fueraPend, render: tarjetaFuera, vacio: "Todos al día." },
         { titulo: "Cancelaron la suscripción", ayuda: "Se dieron de baja en Mercado Pago", filas: lista.filter(r => !r.porFuera && r.tipo === "baja"), vacio: "Nadie canceló." },
     ];
     tb.innerHTML = columnas.map(c => `<section class="fallidos-col">
         <header class="fallidos-col__head"><h4>${c.titulo} <span class="seg-chip-count">${c.filas.length}</span></h4><p class="muted">${c.ayuda}</p></header>
-        ${c.filas.length ? c.filas.map(tarjeta).join("") : `<p class="muted fallidos-col__vacio">${term ? "Nada con esa búsqueda." : c.vacio}</p>`}
+        ${c.filas.length ? c.filas.map(c.render || tarjeta).join("") : `<p class="muted fallidos-col__vacio">${term ? "Nada con esa búsqueda." : c.vacio}</p>`}
     </section>`).join("");
     return todos.length;
 }
