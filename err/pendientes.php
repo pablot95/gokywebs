@@ -140,6 +140,7 @@ const ERR_REPOS = [
     'primadonnaestetica.com.ar' => 'pablot95/primadonnaestetica',
     'serviceplusreparaciones.com.ar' => 'pablot95/serviceplus',
     'artesaniasmiuniverso.com.ar' => 'pablot95/artesaniasmiuniverso',
+    'molinagames.com.ar' => 'pablot95/molinagames',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
