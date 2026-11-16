@@ -223,6 +223,15 @@ function wabot_cobro_rech_fila_respaldo($pre, $nombreMp, array $estado, $listas 
             $j = json_decode((string)@file_get_contents($arch), true);
             foreach ((array)($j['lista'] ?? []) as $f) if (is_array($f) && !empty($f['id'])) $listas[] = $f;
         }
+        // La caché de clientes del bot (clientes.php): trae también a los que el admin ya sacó de esas listas.
+        $j = json_decode((string)@file_get_contents(WABOT_DATA . '/clientes-cache.json'), true);
+        foreach (['mantenimiento', 'nuevos'] as $grupo) {
+            foreach ((array)($j[$grupo] ?? []) as $x) {
+                if (!is_array($x) || empty($x['id'])) continue;
+                $listas[] = ['id' => ($x['origen'] ?? 'clientes') . ':' . $x['id'], 'tel' => (string)($x['clave'] ?? '') ?: (string)($x['telefono'] ?? ''),
+                             'persona' => (string)($x['nombre'] ?? ''), 'negocio' => (string)($x['negocio'] ?? '')];
+            }
+        }
     }
     $arma = function ($f, $via) use ($pre) {
         return ['id' => (string)$f['id'], 'pre' => $pre, 'tel' => preg_replace('/\D+/', '', (string)($f['tel'] ?? '')),
@@ -239,7 +248,10 @@ function wabot_cobro_rech_fila_respaldo($pre, $nombreMp, array $estado, $listas 
     if ($nombre === '') return null;
     $hallados = [];
     foreach ($listas as $f) {
-        if (wabot_cobro_rech_normal($f['persona'] ?? '') === $nombre) $hallados[(string)$f['id']] = $f;
+        if (wabot_cobro_rech_normal($f['persona'] ?? '') !== $nombre) continue;
+        // El mismo cliente puede estar en dos listas con ids distintos: se junta por teléfono.
+        $tel = substr(preg_replace('/\D+/', '', (string)($f['tel'] ?? '')), -8);
+        $hallados[$tel !== '' ? $tel : (string)$f['id']] = $f;
     }
     return count($hallados) === 1 ? $arma(reset($hallados), 'nombre') : null;
 }
