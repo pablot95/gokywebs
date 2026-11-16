@@ -118,7 +118,7 @@ if ($modo === 'qr') {
                 // Android no dibujan, se veía en blanco); después el QR.
                 $pdf = WABOT_GUIAS_DIR . '/' . basename((string)$e['pdf']);
                 $nombrePdf = 'Guía ' . ($negocios[$id] ?? basename($pdf, '.pdf'));
-                $pdfBytes = (string)@file_get_contents($pdf);
+                $pdfBytes = empty($e['pdf2_ok']) ? (string)@file_get_contents($pdf) : '';
                 $pdfId = $pdfBytes !== '' ? wabot_wa_media_subir($pdfBytes, 'application/pdf', basename($pdf)) : null;
                 if ($pdfId && wabot_wa_send_document(wabot_channel_user_id($conv), $pdfId, $nombrePdf, WABOT_GUIAS_PDF_TEXTO)) {
                     wabot_conv_transcript($conv, 'bot', '[documento] ' . wabot_documento_nombre($nombrePdf) . "
