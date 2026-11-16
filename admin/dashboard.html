@@ -361,6 +361,7 @@
                      arriba (#mantKpis); acá quedan solo Facturación y Contraseñas. -->
                 <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Más">
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="bajas" aria-pressed="false" title="Las webs que se pasaron a la página de mantenimiento">Bajas <span class="seg-chip-count" id="mantCountBajas">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
                 </div>
                 <input type="search" id="searchMant" class="mant-buscar" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" aria-label="Buscar en Mantenimiento">
@@ -413,6 +414,29 @@
                     <summary>Todos los cobros de Mercado Pago <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></summary>
                     <div id="calVistaIntentos"></div>
                 </details>
+            </div>
+            <!-- Bajas (16-nov-2026, Pablo: «una lista de las webs que vamos dando de baja»): las webs que se pasaron
+                 a la página de mantenimiento. Vive en el bot (wabot/data/webs-bajas.json); la carga Claude. -->
+            <div id="mantBajas" hidden>
+                <h3 class="mant-sec-titulo">Webs dadas de baja <span class="seg-chip-count" id="mantCountBajas2">0</span></h3>
+                <p class="muted mant-pf-nota">Cada web que se pasa a la página de «Web en mantenimiento» queda acá, con la fecha y el motivo. Mientras está de baja, el bot no la monitorea.</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Web</th>
+                                <th>Cliente</th>
+                                <th>Pagaba</th>
+                                <th>Baja</th>
+                                <th>Motivo</th>
+                                <th>Cómo se dio de baja</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantBajasTbody">
+                            <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <!-- Pagan por afuera (19-oct-2026): el día del mes en que se le cobra a cada uno. -->
             <div id="mantPorFuera" hidden>
@@ -1485,6 +1509,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261116-fallidos-fuera"></script>
+    <script type="module" src="dashboard.js?v=20261116-bajas"></script>
 </body>
 </html>

@@ -11544,7 +11544,10 @@ function renderMantenimiento() {
     ver("mantFallidos", "fallidos");
     ver("mantFacturacion", "facturacion");
     ver("mantContrasenas", "contrasenas");
+    ver("mantBajas", "bajas");
     if (mantPlan === "fallidos") renderIntentosCobro();
+    if (mantPlan === "bajas" && !websBajas && !websBajasCargando) cargarWebsBajas();
+    renderWebsBajas(term);
     renderCredenciales();
     const altaBtn = document.getElementById("openMantModalBtn");
     if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
@@ -11576,6 +11579,59 @@ function renderMantenimiento() {
         renderFactAuto();
         renderFactArchivo();
     }
+}
+
+/* ── Mantenimiento → Bajas (16-nov-2026) ──
+   Pablo: «necesito llevar una lista de las webs que vamos dando de baja… la marcás vos cada vez que pasamos
+   una web a "Web en mantenimiento"». La lista vive en el bot (wabot/data/webs-bajas.json) y la carga Claude
+   por SSH con wabot/webs-bajas.php; acá solo se lee. */
+let websBajas = null;
+let websBajasCargando = false;
+let websBajasError = "";
+async function cargarWebsBajas() {
+    websBajasCargando = true;
+    try {
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "webs_bajas" }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (!data?.ok) throw new Error("respuesta sin ok");
+        websBajas = Array.isArray(data.bajas) ? data.bajas : [];
+        websBajasError = "";
+    } catch (e) {
+        console.warn("No se pudo leer la lista de bajas:", e);
+        websBajasError = "No se pudo leer la lista (¿sesión del bot vencida? Abrí WhatsApp y volvé).";
+    } finally {
+        websBajasCargando = false;
+        renderWebsBajas((searchMantInput?.value || "").trim().toLowerCase());
+    }
+}
+function renderWebsBajas(term) {
+    const tb = document.getElementById("mantBajasTbody");
+    if (!tb) return;
+    const todas = websBajas || [];
+    const activas = todas.filter(b => !b.reactivada);
+    ["mantCountBajas", "mantCountBajas2"].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = websBajas ? activas.length : "…"; });
+    if (!websBajas) {
+        tb.innerHTML = `<tr class="empty-row"><td colspan="6">${websBajasError ? escapeHtml(websBajasError) : "Cargando…"}</td></tr>`;
+        return;
+    }
+    const lista = term ? todas.filter(b => [b.web, b.dominio, b.cliente, b.telefono, b.motivo].join(" ").toLowerCase().includes(term)) : todas;
+    const fecha = ymd => { const [y, m, d] = String(ymd || "").split("-"); return d ? `${d}/${m}/${y}` : ""; };
+    tb.innerHTML = lista.length ? lista.map(b => {
+        const tel = String(b.telefono || "").replace(/\D/g, "");
+        return `<tr${b.reactivada ? ` style="opacity:.6"` : ""}>
+            <td><strong>${escapeHtml(b.web || b.dominio)}</strong>${b.dominio ? `<div style="font-size:12px"><a href="https://${escapeHtml(b.dominio)}" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline">${escapeHtml(b.dominio)}</a></div>` : ""}${b.reactivada ? `<div class="muted" style="font-size:12px">✓ Reactivada el ${escapeHtml(fecha(b.reactivada))}</div>` : ""}</td>
+            <td>${escapeHtml(b.cliente || "—")}${b.telefono ? `<div style="font-size:12px">📱 ${tel.length >= 10 ? `<a href="https://wa.me/${escapeHtml(tel.startsWith("54") ? tel : "549" + tel)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">${escapeHtml(b.telefono)}</a>` : escapeHtml(b.telefono)}</div>` : ""}</td>
+            <td>${b.monto ? `${fmtMoney(b.monto)}/mes` : `<span class="muted">—</span>`}</td>
+            <td>${escapeHtml(fecha(b.fecha))}</td>
+            <td>${escapeHtml(b.motivo || "—")}</td>
+            <td class="muted" style="font-size:12px">${escapeHtml(b.como || "")}${b.repo ? `<div>Repo: ${escapeHtml(b.repo)}</div>` : ""}</td>
+        </tr>`;
+    }).join("") : `<tr class="empty-row"><td colspan="6">${term ? "Ninguna baja con esa búsqueda." : "Ninguna web dada de baja."}</td></tr>`;
 }
 
 /* ── Mantenimiento → Contraseñas (21-oct-2026) ──

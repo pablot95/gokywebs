@@ -1401,6 +1401,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
      * vez que cambia (29-oct): con ella webs.php monitorea cada dominio, avisa
      * las caídas resueltas y manda el resumen mensual. Devuelve cómo está cada
      * web y qué reporte salió, para mostrarlo debajo del dominio. */
+    /* Mantenimiento → Bajas (16-nov): las webs que se pasaron a la página de mantenimiento
+     * (wabot/data/webs-bajas.json, la carga Claude con webs-bajas.php por SSH). */
+    if ($a === 'webs_bajas') {
+        header('Content-Type: application/json; charset=utf-8');
+        require_once __DIR__ . '/webs-bajas.php';
+        echo json_encode(['ok' => true, 'bajas' => wabot_bajas_leer()], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     if ($a === 'webs_sync') {
         header('Content-Type: application/json; charset=utf-8');
         $lista = json_decode((string)($_POST['lista'] ?? ''), true);

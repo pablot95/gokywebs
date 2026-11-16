@@ -37,6 +37,7 @@
 
 require_once __DIR__ . '/lib.php';
 require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/webs-bajas.php';    // las webs dadas de baja no se monitorean (16-nov)
 require_once __DIR__ . '/renovacion.php';   // wabot_renovacion_clave / _nombre: el chat para un teléfono del admin
 
 const WABOT_WEBS_ARCHIVO = WABOT_DATA . '/webs.json';
@@ -693,6 +694,10 @@ function wabot_webs_correr($cfg, $ahora = null, array $deps = []) {
     $monitor = $deps['monitor'] ?? wabot_webs_monitor();
     $avisar  = $deps['avisar'] ?? null;
     if (!$estado['lista']) return ['sin_lista' => true];
+    // Las webs dadas de baja (webs-bajas.php, 16-nov) muestran la página de mantenimiento: no se monitorean
+    // ni se reportan (si no, cuentan como caídas y al volver el cliente recibiría «tu web volvió a funcionar»).
+    $bajas = $deps['bajas'] ?? wabot_bajas_dominios_activos();
+    if ($bajas) $estado['lista'] = array_values(array_filter($estado['lista'], function ($f) use ($bajas) { return empty($bajas[$f['dominio'] ?? '']); }));
 
     $res = [];
     if ($ahora - (int)$estado['sync_ts'] > WABOT_WEBS_LISTA_VIEJA && !$estado['aviso_vieja_ts']) {
