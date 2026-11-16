@@ -801,6 +801,7 @@ oa([dc(['accion' => 'responder', 'solucion' => 'informativa', 'info_claves' => [
 $r = turno('Consulta aparte la pag la manejarian ustedes', $c, $cfg);
 caso('"la manejarían ustedes?" en la informativa → los cambios los hacemos nosotros, con el límite de uno por mes',
     count($r) === 1 && mb_stripos($r[0], 'los hacemos nosotros') !== false && mb_stripos($r[0], 'uno por mes') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('16-nov: quien dice que ya le mandamos una propuesta o demo por otro canal va a Pablo', mb_stripos(wabot_comercial_instrucciones($cfg), 'Dice que ya le mandamos una propuesta, una demo o un presupuesto') !== false);
 caso('las instrucciones dicen el límite de los cambios de la informativa', mb_stripos(wabot_comercial_instrucciones($cfg), 'los cambios los hacemos nosotros, uno por mes incluido') !== false);
 
 // La pregunta de los turnos queda pendiente: no se elige por el cliente ni se cotiza.
