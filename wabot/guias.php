@@ -8,6 +8,7 @@
  *   php guias.php listar                 clientes activos de Mantenimiento (data/webs.json) y si ya la recibieron
  *   php guias.php probar <envio.json>    lo que mandaría, sin mandar nada
  *   php guias.php enviar <envio.json>    manda, de a uno, y anota en data/guias-enviadas.json
+ *   php guias.php qr probar|enviar       el QR como imagen a los que ya la recibieron y tienen la ventana de 24 h abierta
  *
  * envio.json: [{"id": "clientes:abc", "pdf": "instructivos-x.pdf", "negocio": "X"}]
  *   id      la fila de data/webs.json (la que manda el admin: activos, sin bajas ni pausados)
@@ -82,6 +83,52 @@ if ($modo === 'listar') {
         echo implode(' | ', [$f['id'], $f['negocio'], $f['persona'], $f['dominio'], $f['tel'],
             !empty($enviadas[$f['id']]['ok']) ? 'YA' : '-', isset($cobro[$f['id']]) ? 'COBRO_RECHAZADO' : '-']), "\n";
     }
+    exit(0);
+}
+
+/* El QR como imagen (Pablo, 16-nov: «todos me piden el qr ... que se envíe ahora que la gente contestó y
+ * hay ventana abierta»). Texto libre: solo a los que ya recibieron la guía y escribieron en las últimas
+ * 24 h, por WhatsApp. php guias.php qr probar|enviar. El PNG es /guias/qr-<lo mismo que el PDF>.png. */
+const WABOT_GUIAS_QR_TEXTO = 'Te paso también el código QR de tu web, en alta calidad para imprimir: tarjetas, el local, el vehículo, bolsas o flyers. Dejale siempre el margen blanco alrededor para que se lea bien.';
+if ($modo === 'qr') {
+    $enviar = ($argv[2] ?? '') === 'enviar';
+    $enviadas = wabot_guias_enviadas();
+    $cuenta = [];
+    foreach ($enviadas as $id => $e) {
+        if (empty($e['ok']) || !empty($e['qr_ok'])) continue;
+        $png = WABOT_GUIAS_DIR . '/' . preg_replace('/^instructivos-(.*)\.pdf$/', 'qr-$1.png', (string)$e['pdf']);
+        $clave = wabot_renovacion_clave((string)$e['tel'], $motivo);
+        $r = 'ok';
+        if (!is_file($png)) $r = 'sin_png';
+        elseif ($clave === null || !wabot_conv_existe($clave)) $r = 'sin_chat';
+        else {
+            $conv = wabot_conv_load($clave);
+            if (wabot_canal($conv) === 'instagram') $r = 'instagram';
+            elseif (wabot_ventana_restante($conv) <= 0) $r = 'ventana_cerrada';
+        }
+        if ($r === 'ok' && $enviar) {
+            $lock = wabot_lock_tomar($clave);
+            if (!$lock) $r = 'ocupado';
+            else try {
+                $conv = wabot_conv_load($clave);
+                $bytes = (string)file_get_contents($png);
+                $mediaId = wabot_wa_media_subir($bytes, 'image/png', basename($png));
+                if (!$mediaId || !wabot_wa_send_image(wabot_channel_user_id($conv), $mediaId, WABOT_GUIAS_QR_TEXTO)) $r = 'error';
+                else {
+                    $guardado = wabot_media_guardar(wabot_conversation_key($conv), $bytes, 'image/png', 'imagen');
+                    wabot_conv_transcript($conv, 'bot', WABOT_GUIAS_QR_TEXTO, $guardado);
+                    wabot_conv_save($conv);
+                    wabot_log('guia_qr_enviado', ['tel' => $conv['tel'] ?? '', 'png' => basename($png)]);
+                    $enviadas[$id]['qr_ok'] = true; $enviadas[$id]['qr_ts'] = time();
+                    file_put_contents(WABOT_GUIAS_ENVIADAS, json_encode($enviadas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                }
+            } finally { wabot_lock_soltar($lock); }
+            sleep(1);
+        }
+        $cuenta[$r] = ($cuenta[$r] ?? 0) + 1;
+        echo strtoupper($r) . ": $id | {$e['tel']} | " . basename($png) . "\n";
+    }
+    echo json_encode($cuenta), "\n";
     exit(0);
 }
 
