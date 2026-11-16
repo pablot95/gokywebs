@@ -407,22 +407,8 @@
                  con «Pagó por afuera» y «Ocultar». Debajo, plegado, el historial completo de cobros. -->
             <div id="mantFallidos" hidden>
                 <div class="mant-vinc-barra" id="mantFallidosBarra"></div>
-                <div class="table-wrapper">
-                    <table class="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Monto</th>
-                                <th>Qué pasó</th>
-                                <th>Detalle</th>
-                                <th class="actions-col">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mantFallidosTbody">
-                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <!-- 16-nov (Pablo): en tres columnas: Suscriptores · Pagan por afuera · Cancelaron la suscripción. -->
+                <div class="fallidos-cols" id="mantFallidosCols"><p class="muted">Cargando…</p></div>
                 <details class="mant-plegado" id="mantIntentos">
                     <summary>Todos los cobros de Mercado Pago <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></summary>
                     <div id="calVistaIntentos"></div>

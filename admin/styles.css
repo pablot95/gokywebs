@@ -2392,6 +2392,21 @@ body.modal-open { overflow: hidden; }
 .mant-vinc-estado--ok { color: var(--ok); }
 .mant-vinc-estado--duda { color: var(--text-muted); }
 .mant-vinc-estado--mal { color: var(--warning); }
+/* Cobros fallidos en tres columnas (16-nov) */
+.fallidos-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.fallidos-col { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg-elev); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fallidos-col__head h4 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.fallidos-col__head p { margin: 4px 0 0; font-size: 12px; }
+.fallidos-col__vacio { margin: 0; font-size: 13px; }
+.fallido-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.fallido-card__top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.fallido-card__nombre { font-weight: 600; }
+.fallido-card__monto { font-size: 13px; white-space: nowrap; }
+.fallido-card__estado { margin-top: 2px; }
+.fallido-card__detalle { font-size: 12px; }
+.fallido-card__acciones { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.fallido-card__acciones .mant-fallido-select { max-width: 100%; }
+@media (max-width: 1100px) { .fallidos-cols { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .mant-vinc-todas { margin-left: 0; } }
 /* Calendario → Intentos de cobro (24-oct) */
 #calVistas { margin-bottom: 14px; }

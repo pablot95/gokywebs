@@ -11131,15 +11131,18 @@ function _cobrosFallidos() {
     const agregar = r => {
         if (vistos.has(r.clave)) return;
         vistos.add(r.clave);
-        r.oculto = `${r.clave}|${r.fecha && !Number.isNaN(new Date(r.fecha).getTime()) ? _diaDe(new Date(r.fecha)) : ""}`;
+        // 16-nov: los que pagan por afuera tienen su propia columna; su «Ocultar» es aparte (el «Pagó por afuera»
+        // guarda la clave sin prefijo, así que el que se pasa a Por afuera sale de una columna y entra en la otra).
+        r.porFuera = !!r.porFuera;
+        r.oculto = `${r.porFuera ? "fuera|" : ""}${r.clave}|${r.fecha && !Number.isNaN(new Date(r.fecha).getTime()) ? _diaDe(new Date(r.fecha)) : ""}`;
         out.push(r);
     };
 
     // 1. Mensuales activos acá cuya suscripción de Mercado Pago se dio de baja, se pausó o tiene el cobro atrasado.
     for (const k of cruce) {
-        if (k.porFuera || !k.sub || !(k.baja || k.pausada || k.atrasada)) continue;
+        if (!k.sub || !(k.baja || k.pausada || k.atrasada)) continue;
         const c = ultimo.get(k.sub.id);
-        agregar({ clave: "sub:" + k.sub.id, tipo: k.baja ? "baja" : k.pausada ? "pausada" : "reintentando", destino: destinoDe(k),
+        agregar({ clave: "sub:" + k.sub.id, tipo: k.baja ? "baja" : k.pausada ? "pausada" : "reintentando", destino: destinoDe(k), porFuera: k.porFuera,
             nombre: k.negocio || k.nombre, persona: k.persona, nombreMp: k.sub.nombre, monto: k.sub.monto || k.monto,
             fecha: k.baja ? k.sub.baja : k.pausada ? null : c ? new Date(c.fecha) : null, dia: _mantVincDiaCobro(k), ...detalleDe(c) });
     }
@@ -11148,9 +11151,9 @@ function _cobrosFallidos() {
     for (const f of _mantFilas()) {
         if (f.clave === "activo") continue;
         const m = f.m, cli = m ? clientePorMant.get(m.id) : null;
-        if (m?.pagaPorFuera === true || cli?.pagaPorFuera === true) continue;
+        const pf = m?.pagaPorFuera === true || cli?.pagaPorFuera === true;
         const pre = String(m?.preapprovalId || f.aviso?.preapprovalId || "").trim();
-        agregar({ clave: pre ? "sub:" + pre : "aviso:" + (f.aviso?.id || m?.id), tipo: f.clave === "baja" ? "baja" : "pausada",
+        agregar({ clave: pre ? "sub:" + pre : "aviso:" + (f.aviso?.id || m?.id), tipo: f.clave === "baja" ? "baja" : "pausada", porFuera: pf,
             destino: m ? "mantenimiento:" + m.id : "", avisoId: f.aviso?.id || "",
             nombre: cli?.proyecto || m?.nombre || f.aviso?.email || "Suscriptor", persona: cli?.proyecto ? (cli.nombre || m?.nombre || "") : "",
             nombreMp: "", monto: Number(m?.monto ?? f.aviso?.monto ?? MANT_PLAN_MONTO[m?.plan || f.aviso?.plan] ?? 0),
@@ -11159,11 +11162,11 @@ function _cobrosFallidos() {
     }
     // 3. Clientes cargados en Clientes con la suscripción en baja o pausada.
     for (const c of _clientesEnMantenimiento().mensual) {
-        if (mantenimientoDeCliente(c) || c.pagaPorFuera === true) continue;
+        if (mantenimientoDeCliente(c)) continue;
         const clave = _claveMantCliente(c);
         if (clave !== "baja" && clave !== "pausado") continue;
         const s = suscripcionDe(c);
-        agregar({ clave: s.preapprovalId ? "sub:" + s.preapprovalId : "cliente:" + c.id, tipo: clave === "baja" ? "baja" : "pausada",
+        agregar({ clave: s.preapprovalId ? "sub:" + s.preapprovalId : "cliente:" + c.id, tipo: clave === "baja" ? "baja" : "pausada", porFuera: c.pagaPorFuera === true,
             destino: "clientes:" + c.id, avisoId: s.aviso?.id || "", nombre: c.proyecto || c.nombre || "Cliente", persona: c.proyecto ? (c.nombre || "") : "",
             nombreMp: c.nombreMp || "", monto: s.mensual, fecha: s.bajaMp || mantToDate(s.aviso?.fechaBaja) || mantToDate(s.aviso?.createdAt) || null,
             dia: Number(c.diaCobro) || s.desde?.getDate() || 0, ...detalleDe(s.preapprovalId ? ultimo.get(s.preapprovalId) : null) });
@@ -11183,17 +11186,16 @@ function _cobrosFallidos() {
         if (e.clase !== "reintentando" && e.clase !== "rechazado") continue;
         if (new Date(c.fecha).getTime() < limite) continue;
         if (String(aprobadoDe.get(claveN(c.nombre)) || "") > String(c.fecha)) continue;
-        // A nombre de alguien que ya paga por afuera (su nombre de MP quedó en la ficha).
-        if (claveN(c.nombre) && nombresPorFuera.has(claveN(c.nombre))) continue;
         const primerPago = nro.get(c) === 1;
         const rebote = primerPago ? reboteDe.get(claveN(c.nombre) || c.suscripcion) : null;
         if (rebote?.seSuscribio) continue;
         const propio = kDeSub.get(sub) || null;
         // El cliente del rebote solo cuenta si salió por el nombre o por el chat; por monto y fecha es una adivinanza.
         const seguro = rebote?.k && (rebote.porNombre || rebote.porChat) ? rebote.k : null;
-        if ((propio || seguro)?.porFuera) continue;
-        const k = propio || (rebote?.k && !rebote.k.porFuera ? rebote.k : null);
-        agregar({ clave: "sub:" + sub, tipo: e.clase === "reintentando" ? "reintentando" : c.estadoSuscripcion === "cancelled" ? "baja" : "fallo", primerPago,
+        // A nombre de alguien que ya paga por afuera (su nombre de MP quedó en la ficha): va a la columna Por afuera.
+        const pf = !!(claveN(c.nombre) && nombresPorFuera.has(claveN(c.nombre))) || !!(propio || seguro)?.porFuera;
+        const k = propio || (rebote?.k && (!rebote.k.porFuera || pf) ? rebote.k : null);
+        agregar({ clave: "sub:" + sub, tipo: e.clase === "reintentando" ? "reintentando" : c.estadoSuscripcion === "cancelled" ? "baja" : "fallo", primerPago, porFuera: pf,
             destino: destinoDe(k), nombre: k ? (k.negocio || k.nombre) : (c.nombre || "Sin nombre"), persona: k ? k.persona : "",
             nombreMp: c.nombre || "", monto: Number(c.monto) || 0, fecha: new Date(c.fecha),
             dia: k ? _mantVincDiaCobro(k) : new Date(c.fecha).getDate(), aConfirmar: !!k && !propio && !rebote?.porNombre, ...detalleDe(c) });
@@ -11235,16 +11237,18 @@ function _fallidoTelefono(destino) {
 }
 
 function _renderMantFallidos(term) {
-    const tb = document.getElementById("mantFallidosTbody");
+    const tb = document.getElementById("mantFallidosCols");
     if (!tb) return null;
     const barra = document.getElementById("mantFallidosBarra");
     if (!mantCruce || !intentosCobro) {
         const error = ingresosMpError || intentosCobroError;
-        tb.innerHTML = `<tr class="empty-row"><td colspan="5">${error ? "No se pudo leer Mercado Pago: " + escapeHtml(error) : "Trayendo de Mercado Pago los cobros… (tarda unos segundos)"}</td></tr>`;
+        tb.innerHTML = `<p class="muted">${error ? "No se pudo leer Mercado Pago: " + escapeHtml(error) : "Trayendo de Mercado Pago los cobros… (tarda unos segundos)"}</p>`;
         if (barra) barra.innerHTML = "";
         return null;
     }
-    const todos = _cobrosFallidos();
+    const conFuera = _cobrosFallidos();
+    // El recuadro de arriba y el resumen cuentan solo los que todavía no se resolvieron (no los de Por afuera).
+    const todos = conFuera.filter(r => !r.porFuera);
     const cuenta = t => todos.filter(r => r.tipo === t).length;
     const partes = [[cuenta("reintentando"), "reintentando", "reintentando"], [cuenta("fallo"), "falló", "fallaron"],
         [cuenta("baja"), "se dio de baja", "se dieron de baja"], [cuenta("pausada"), "pausada", "pausadas"]]
@@ -11252,16 +11256,16 @@ function _renderMantFallidos(term) {
     const nOcultos = (mantOcultos?.claves || []).length;
     if (barra) barra.innerHTML = `<span class="muted mant-vinc-resumen">${partes.join(" · ") || "Ningún cobro fallido"}. «Pagó por afuera» lo pasa a Por afuera; «Ocultar» lo saca de esta lista.</span>
         ${nOcultos ? `<button type="button" class="btn-ghost btn-sm" data-fallido-mostrar title="Vuelve a mostrar los que ocultaste">Mostrar ocultos (${nOcultos})</button>` : ""}`;
-    const lista = term ? todos.filter(r => [r.nombre, r.persona, r.nombreMp].join(" ").toLowerCase().includes(term)) : todos;
+    const lista = term ? conFuera.filter(r => [r.nombre, r.persona, r.nombreMp].join(" ").toLowerCase().includes(term)) : conFuera;
     // Todos los mensuales activos, también los que ya pagan por afuera (Librería JD, 6-nov: ya estaba marcada y su
     // suscripción vieja de MP, a nombre de Natalia Zelaya, seguía reintentando sin dueño).
     const candidatos = [...mantCruce.values()]
         .map(k => ({ destino: `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`, nombre: k.negocio || k.nombre, persona: k.persona, monto: k.monto, dia: _mantVincDiaCobro(k), porFuera: k.porFuera }))
         .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     const fh = d => { if (!d) return ""; const x = new Date(d); return Number.isNaN(x.getTime()) ? "" : fechaCortaJs(x).slice(0, 5); };
-    tb.innerHTML = lista.length ? lista.map(r => {
+    const tarjeta = r => {
         const t = FALLIDO_TIPO[r.tipo];
-        const fuera = r.destino
+        const fuera = r.porFuera ? "" : r.destino
             ? `<button type="button" class="btn-ghost btn-sm" data-fallido-fuera="${escapeHtml(r.destino)}" data-dia="${r.dia || 0}" data-aviso="${escapeHtml(r.avisoId || "")}" data-oculto="${escapeHtml(r.oculto)}" title="Te transfiere: sale de acá y pasa a Por afuera${r.dia ? `, con día de cobro el ${r.dia}` : ""}">💵 Pagó por afuera</button>`
             : `<select class="mant-vinc-select mant-fallido-select" data-fallido-asignar data-oculto="${escapeHtml(r.oculto)}" data-nombre-mp="${escapeHtml(r.nombreMp || "")}" aria-label="De qué cliente es">
                 <option value="">💵 Pagó por afuera… ¿quién es?</option>
@@ -11273,11 +11277,11 @@ function _renderMantFallidos(term) {
             : (r.destino ? `<div class="muted" style="font-size:12px">📱 sin teléfono en la ficha</div>` : "");
         const fl = d => { const x = new Date(d); return Number.isNaN(x.getTime()) ? "" : fechaCortaJs(x); };
         const vencido = r.vence && r.vence.getTime() < Date.now();
-        return `<tr>
-            <td><div>${escapeHtml(r.nombre)}</div>${r.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(r.persona)}</div>` : ""}${tel}${r.nombreMp && r.nombreMp !== r.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(r.nombreMp)}${r.aConfirmar ? " · a confirmar" : ""}</div>` : ""}</td>
-            <td>${fmtMoney(r.monto)}/mes</td>
-            <td><span class="mant-vinc-estado mant-vinc-estado--${t.clase}">${t.texto}</span>${r.primerPago ? `<div class="muted" style="font-size:12px">el primer pago</div>` : ""}</td>
-            <td class="intento-detalle">${[
+        return `<article class="fallido-card">
+            <div class="fallido-card__top"><div class="fallido-card__nombre">${escapeHtml(r.nombre)}</div><span class="fallido-card__monto">${fmtMoney(r.monto)}/mes</span></div>
+            ${r.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(r.persona)}</div>` : ""}${tel}${r.nombreMp && r.nombreMp !== r.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(r.nombreMp)}${r.aConfirmar ? " · a confirmar" : ""}</div>` : ""}
+            <div class="fallido-card__estado"><span class="mant-vinc-estado mant-vinc-estado--${t.clase}">${r.porFuera ? `${t.texto} en MP` : t.texto}</span>${r.primerPago ? ` <span class="muted" style="font-size:12px">· el primer pago</span>` : ""}</div>
+            <div class="intento-detalle fallido-card__detalle">${[
                 r.fecha ? `${r.tipo === "baja" ? "Baja" : r.tipo === "pausada" ? "Pausada" : "Último intento"} el ${escapeHtml(fh(r.fecha))}` : "",
                 r.intento ? escapeHtml(r.intento.charAt(0).toUpperCase() + r.intento.slice(1)) : "",
                 r.motivo ? `Motivo: ${escapeHtml(r.motivo)}` : "",
@@ -11285,11 +11289,22 @@ function _renderMantFallidos(term) {
                 r.vence ? `<strong>${vencido ? "Venció" : "Pagado hasta"} el ${escapeHtml(fl(r.vence))}</strong>` : `<strong>Sin pagos aprobados en MP</strong>`,
                 r.ultimoPago ? `Último pago: ${escapeHtml(fl(r.ultimoPago))}` : "",
                 r.dia ? `Día de cobro: ${r.dia}` : "",
-            ].filter(Boolean).map(x => `<div>${x}</div>`).join("") || `<span class="muted">—</span>`}</td>
-            <td class="actions-cell">${fuera}
-                <button type="button" class="btn-ghost btn-sm" data-fallido-ocultar="${escapeHtml(r.oculto)}" title="Lo saca de esta lista. Si vuelve a fallar otro día, aparece de nuevo.">Ocultar</button></td>
-        </tr>`;
-    }).join("") : `<tr class="empty-row"><td colspan="5">${term ? "Nada con esa búsqueda." : "Ningún cobro fallido: todos los de suscripción están al día."}</td></tr>`;
+            ].filter(Boolean).map(x => `<div>${x}</div>`).join("") || `<span class="muted">—</span>`}</div>
+            <div class="fallido-card__acciones">${fuera}
+                <button type="button" class="btn-ghost btn-sm" data-fallido-ocultar="${escapeHtml(r.oculto)}" title="Lo saca de esta lista. Si vuelve a fallar otro día, aparece de nuevo.">Ocultar</button></div>
+        </article>`;
+    };
+    // Tres columnas (Pablo, 16-nov): suscriptores con el cobro fallado o en reintento, los que pasaron a pagar
+    // por afuera y los que cancelaron la suscripción.
+    const columnas = [
+        { titulo: "Suscriptores", ayuda: "Siguen suscriptos: el cobro falló, se reintenta o está pausado", filas: lista.filter(r => !r.porFuera && r.tipo !== "baja"), vacio: "Ninguno con el cobro fallado." },
+        { titulo: "💵 Pagan por afuera", ayuda: "Su suscripción de MP falló o se cortó, pero te pagan por transferencia", filas: lista.filter(r => r.porFuera), vacio: "Ninguno." },
+        { titulo: "Cancelaron la suscripción", ayuda: "Se dieron de baja en Mercado Pago", filas: lista.filter(r => !r.porFuera && r.tipo === "baja"), vacio: "Nadie canceló." },
+    ];
+    tb.innerHTML = columnas.map(c => `<section class="fallidos-col">
+        <header class="fallidos-col__head"><h4>${c.titulo} <span class="seg-chip-count">${c.filas.length}</span></h4><p class="muted">${c.ayuda}</p></header>
+        ${c.filas.length ? c.filas.map(tarjeta).join("") : `<p class="muted fallidos-col__vacio">${term ? "Nada con esa búsqueda." : c.vacio}</p>`}
+    </section>`).join("");
     return todos.length;
 }
 
@@ -11324,7 +11339,7 @@ async function _mantFallidoAPorFuera(destino, dia, avisoId, oculto, nombreMp = "
 document.addEventListener("click", async (e) => {
     const fuera = e.target.closest("[data-fallido-fuera]");
     if (fuera) {
-        const nombre = fuera.closest("tr")?.querySelector("td div")?.textContent.trim() || "este cliente";
+        const nombre = fuera.closest(".fallido-card")?.querySelector(".fallido-card__nombre")?.textContent.trim() || "este cliente";
         const dia = Number(fuera.dataset.dia) || 0;
         if (!confirm(`¿${nombre} pagó por afuera (transferencia)?\n\nSale de Cobros fallidos y pasa a Por afuera${dia ? `, con día de cobro el ${dia}` : ""}.`)) return;
         fuera.disabled = true;
