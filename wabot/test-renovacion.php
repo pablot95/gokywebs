@@ -49,55 +49,53 @@ $estadoBase = function ($ahora) {
         'sync_ts' => $ahora - 3600, 'enviados' => [], 'aviso_vieja_ts' => 0,
     ];
 };
-$mandados = [];
-$enviar = function ($clave, $f, $valores) use (&$mandados) { $mandados[] = [$clave, $f['id'], $valores]; return true; };
+// 16-nov (Pablo): ya no sale la plantilla al cliente; el aviso con los datos le llega a él.
 $avisos = [];
-$avisar = function ($t, $c) use (&$avisos) { $avisos[] = $t; };
+$okAvisar = true;
+$avisar = function ($t, $l, $c) use (&$avisos, &$okAvisar) { $avisos[] = [$t, implode("\n", $l), $c]; return $okAvisar; };
+$ids = function () use (&$avisos) { return array_map(function ($a) { return $a[1]; }, $avisos); };
 
 $hoy = $ar('2026-10-25 11:00:00');
 caso('la fila sin id válido no entra', count($estadoBase($hoy)['lista']) === 3);
 caso('sin día, cuenta el del alta', $estadoBase($hoy)['lista'][1]['dia'] === 26);
 
-$r = wabot_renovacion_correr($cfg, $hoy, $estadoBase($hoy), $enviar, $avisar);
-caso('el 25 a las 11 sale solo el del día 25', $r['enviados'] === 1 && count($mandados) === 1 && $mandados[0][1] === 'clientes:AAA', json_encode($r));
-caso('a un número sin chat le arma el 549', ($mandados[0][0] ?? '') === '5491144445555', $mandados[0][0] ?? '');
-caso('nombre, negocio y monto en la plantilla', ($mandados[0][2] ?? []) === ['nombre' => 'Juan', 'negocio' => 'Panadería Sol', 'monto' => '$20.000 por mes'], json_encode($mandados[0][2] ?? []));
-caso('el que se dio de alta hoy no recibe aviso', !in_array('clientes:CCC', array_column($mandados, 1), true));
-// 2-nov (Pablo): solo avisos que piden algo de él; el que salió bien no se avisa.
-caso('si salió bien, a Pablo no le llega nada', $avisos === [], json_encode($avisos, JSON_UNESCAPED_UNICODE));
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$r = wabot_renovacion_correr($cfg, $hoy, $estadoBase($hoy), null, $avisar);
+caso('el 25 a las 11 le avisa a Pablo solo el del día 25', $r['enviados'] === 1 && count($avisos) === 1 && strpos($avisos[0][1], 'Panadería Sol') !== false, json_encode($r));
+caso('el aviso trae cliente, WhatsApp, monto y día', strpos($avisos[0][0], 'Pago por afuera') !== false
+    && strpos($avisos[0][1], 'Cliente: Juan Pérez — Panadería Sol') !== false && strpos($avisos[0][1], 'WhatsApp: +5491144445555') !== false
+    && strpos($avisos[0][1], '$20.000 por mes') !== false && strpos($avisos[0][1], 'el 25 de cada mes') !== false && strpos($avisos[0][1], '25/09/2026') !== false,
+    $avisos[0][1] ?? '');
+caso('al cliente no le sale ninguna plantilla', empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
+caso('el que se dio de alta hoy no recibe aviso', strpos(implode(' ', $ids()), 'Gomería') === false);
 
-$mandados = [];
-$otra = wabot_renovacion_correr($cfg, $ar('2026-10-25 15:00:00'), $r['estado'], $enviar, $avisar);
-caso('una segunda pasada el mismo día no lo repite', $otra['enviados'] === 0 && !$mandados);
+$avisos = [];
+$otra = wabot_renovacion_correr($cfg, $ar('2026-10-25 15:00:00'), $r['estado'], null, $avisar);
+caso('una segunda pasada el mismo día no lo repite', $otra['enviados'] === 0 && !$avisos);
 
-$mandados = [];
-wabot_renovacion_correr($cfg, $ar('2026-10-25 09:30:00'), $estadoBase($hoy), $enviar, $avisar);
-caso('antes de las 10 no sale', !$mandados);
+$avisos = [];
+wabot_renovacion_correr($cfg, $ar('2026-10-25 09:30:00'), $estadoBase($hoy), null, $avisar);
+caso('antes de las 10 no sale', !$avisos);
 
-$mandados = [];
-wabot_renovacion_correr($cfg, $ar('2026-10-26 10:05:00'), $estadoBase($hoy), $enviar, $avisar);
-caso('al otro día sale el del alta del 26 (sin día de cobro)', array_column($mandados, 1) === ['mantenimiento:BBB'], json_encode(array_column($mandados, 1)));
-caso('sin negocio dice «tu web»', ($mandados[0][2]['negocio'] ?? '') === 'tu web');
+$avisos = [];
+wabot_renovacion_correr($cfg, $ar('2026-10-26 10:05:00'), $estadoBase($hoy), null, $avisar);
+caso('al otro día sale el del alta del 26 (sin día de cobro)', count($avisos) === 1 && strpos($avisos[0][1], 'Cliente: Ana') !== false, json_encode($ids(), JSON_UNESCAPED_UNICODE));
 
-$mandados = [];
-wabot_renovacion_correr($cfg, $ar('2026-11-30 12:00:00'), $estadoBase($ar('2026-11-30 12:00:00')), $enviar, $avisar);
-caso('el día 31 en noviembre es el 30', array_column($mandados, 1) === ['clientes:CCC'], json_encode(array_column($mandados, 1)));
+$avisos = [];
+wabot_renovacion_correr($cfg, $ar('2026-11-30 12:00:00'), $estadoBase($ar('2026-11-30 12:00:00')), null, $avisar);
+caso('el día 31 en noviembre es el 30', count($avisos) === 1 && strpos($avisos[0][1], 'Gomería') !== false, json_encode($ids(), JSON_UNESCAPED_UNICODE));
 
-$mandados = []; $avisos = [];
+$avisos = [];
 $vieja = $estadoBase($hoy); $vieja['sync_ts'] = $hoy - 40 * 86400;
-$rv = wabot_renovacion_correr($cfg, $hoy, $vieja, $enviar, $avisar);
-caso('con la lista de hace 40 días no manda y avisa', !$mandados && !empty($rv['lista_vieja']) && $avisos === ['Avisos de renovación frenados']);
+$rv = wabot_renovacion_correr($cfg, $hoy, $vieja, null, $avisar);
+caso('con la lista de hace 40 días no avisa cobros y pide abrir el admin', !empty($rv['lista_vieja']) && count($avisos) === 1 && $avisos[0][0] === 'Avisos de pago por afuera frenados');
 
-$mandados = [];
-$apagada = $cfg; $apagada['plantillas']['renovacion_por_fuera']['activa'] = false;
-$ra = wabot_renovacion_correr($apagada, $hoy, $estadoBase($hoy), $enviar, $avisar);
-caso('con la plantilla apagada no hace nada', !$mandados && !empty($ra['apagado']));
-
-$mandados = []; $avisos = [];
-$sinTel = $estadoBase($hoy); $sinTel['lista'][0]['tel'] = '123';
-$rt = wabot_renovacion_correr($cfg, $hoy, $sinTel, $enviar, $avisar);
-caso('con un teléfono raro no manda y le avisa a Pablo', !$mandados && $rt['fallidos'] === 1 && $avisos === ['Aviso de renovación sin enviar']);
-caso('y no lo reintenta en la pasada siguiente', ($rt['estado']['enviados']['clientes:AAA']['mes'] ?? '') === '2026-10');
+$avisos = []; $okAvisar = false;
+$rf = wabot_renovacion_correr($cfg, $hoy, $estadoBase($hoy), null, $avisar);
+caso('si el WhatsApp a Pablo no sale, no lo anota', $rf['fallidos'] === 1 && empty($rf['estado']['enviados']['clientes:AAA']));
+$okAvisar = true; $avisos = [];
+$rf2 = wabot_renovacion_correr($cfg, $hoy + 1800, $rf['estado'], null, $avisar);
+caso('y la pasada siguiente lo reintenta', $rf2['enviados'] === 1 && count($avisos) === 1);
 
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $cv = conv_nueva();

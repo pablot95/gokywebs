@@ -355,7 +355,36 @@ function wabot_aviso_whatsapp_enviar($titulo, $cuerpo, $datos = [], $cfg = null)
  * únicamente el resumen de los chats sin leer (wabot_aviso_resumen_correr).
  */
 function wabot_push_enviar($titulo, $cuerpo, $datos = []) {
+    // Pablo, 16-nov: «por ahora el bot solo me mandaría esto» (los avisos de cobros, más abajo).
+    // Nada de push: ni mensajes nuevos, ni sin responder, ni errores, ni webs caídas.
+    if (!WABOT_PUSH_ACTIVO) return 0;
     return (int)wabot_push_fcm_enviar($titulo, $cuerpo, $datos);
+}
+
+/* ── Lo único que le llega a Pablo (16-nov) ───────────────────────────────
+ *
+ * «No quiero que se envíen más las plantillas por cobros atrasados o para
+ * avisar de un pago. Quiero que me envíe a mi WhatsApp, con la info del
+ * cliente, si es pago por afuera o cobro atrasado, o suscripción cancelada
+ * y toda la info. Que deje de enviarme cuando alguien me escribe o los
+ * chats sin responder, y los errores, y cuando la web dejó de funcionar.»
+ *
+ * Los push, el «Tenés un mensaje de X» y el resumen de las 20 h quedan
+ * apagados con estas constantes; a su WhatsApp solo van los avisos de
+ * renovacion.php (pago por afuera) y cobros-rechazados.php (cobro atrasado,
+ * suscripción cancelada o pausada), por wabot_aviso_cobro_pablo().
+ */
+const WABOT_PUSH_ACTIVO = false;
+const WABOT_AVISO_MENSAJES_ACTIVO = false;
+
+/** Un aviso de cobros a su WhatsApp: título + renglones; $clave = el chat del cliente si se conoce. */
+function wabot_aviso_cobro_pablo($titulo, array $lineas, $clave = '') {
+    $clave = preg_replace('/[^0-9A-Za-z_-]/', '', (string)$clave);
+    $lineas = array_values(array_filter(array_map('trim', $lineas), 'strlen'));
+    $link = $clave !== '' && wabot_conv_existe($clave)
+        ? 'https://www.gokywebs.com/wabot/admin.php?tab=conversaciones&ver=' . rawurlencode($clave)
+        : 'https://www.gokywebs.com/admin/dashboard.html';
+    return wabot_aviso_whatsapp_enviar($titulo, implode("\n", $lineas), ['link' => $link, 'tel' => $clave !== '' ? $clave : '-']);
 }
 
 /**
@@ -465,6 +494,7 @@ function wabot_aviso_demo_texto($it) {
 function wabot_aviso_resumen_correr($ahora = null, $items = null, $enviar = null) {
     $ahora = $ahora ?? time();
     if ($enviar === null) {
+        if (!WABOT_AVISO_MENSAJES_ACTIVO) return ['enviado' => false, 'motivo' => 'apagado_16nov'];
         if (!wabot_aviso_whatsapp_activo()) return ['enviado' => false, 'motivo' => 'apagado'];
         $enviar = function ($texto) {
             return wabot_aviso_whatsapp_enviar('Mensaje de demo', $texto, ['solo_texto' => true, 'tel' => '-']);
@@ -829,6 +859,7 @@ function wabot_aviso_pendientes_correr($ahora = null, $convs = null, $enviar = n
     $cfg = $cfg ?? wabot_config_load();
     $res = ['enviado' => false];
     if ($enviar === null && !wabot_aviso_pendientes_activo($cfg)) return $res + ['motivo' => 'apagado'];
+    if ($enviar === null && !WABOT_AVISO_MENSAJES_ACTIVO) return $res + ['motivo' => 'apagado_16nov'];
     if (wabot_hora_local($ahora) !== wabot_aviso_pendientes_hora($cfg)) return $res + ['motivo' => 'no_es_la_hora'];
     $dia = gmdate('Y-m-d', $ahora - 3 * 3600);
     $archivo = wabot_aviso_pendientes_archivo();

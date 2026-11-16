@@ -14,7 +14,9 @@
  *   sync_ts:  cuándo la mandó el admin
  *   enviados: {id: {mes: "YYYY-MM", ts, ok}}   un aviso por mes y por cliente
  *
- * El cron (seguimiento.php) manda la plantilla `renovacion_por_fuera` el día
+ * Desde el 16-nov NO sale la plantilla al cliente: el día del cobro le llega
+ * a Pablo por WhatsApp el aviso con los datos (wabot_renovacion_correr).
+ * Antes: el cron (seguimiento.php) mandaba la plantilla `renovacion_por_fuera` el día
  * del cobro, desde las 10 h, una sola vez. Si ese día no salió (cron caído, sin
  * chat), no se manda tarde: el texto dice "hoy", y Pablo recibe el push.
  */
@@ -163,27 +165,45 @@ function wabot_renovacion_enviar_fila(array $f, $cfg, $enviar = null) {
     }
 }
 
+/** "2026-03-14" → "14/03/2026"; '' si no viene. */
+function wabot_renovacion_fecha_texto($ymd) {
+    return preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', (string)$ymd, $m) ? "$m[3]/$m[2]/$m[1]" : '';
+}
+
+/** El aviso a Pablo (16-nov) para una fila: [titulo, renglones, clave del chat o '']. */
+function wabot_renovacion_aviso_texto(array $f) {
+    $clave = $f['tel'] !== '' ? (wabot_renovacion_clave($f['tel'], $motivo) ?? '') : '';
+    $cliente = trim($f['persona'] . ($f['persona'] !== '' && $f['negocio'] !== '' ? ' — ' : '') . $f['negocio']);
+    $desde = wabot_renovacion_fecha_texto($f['desde']);
+    return ['💵 Pago por afuera: hoy le toca pagar', [
+        'Cliente: ' . ($cliente !== '' ? $cliente : 'sin nombre en la ficha'),
+        'WhatsApp: ' . ($clave !== '' ? '+' . $clave : ($f['tel'] !== '' ? $f['tel'] . ' (no parece un número de WhatsApp)' : 'sin teléfono cargado')),
+        'Monto: ' . ($f['monto'] > 0 ? wabot_moneda($f['monto']) . ' por mes' : 'sin monto en la ficha'),
+        'Día de cobro: el ' . $f['dia'] . ' de cada mes',
+        $desde !== '' ? 'Cliente desde: ' . $desde : '',
+        'Pagan por afuera (transferencia), no por Mercado Pago.',
+    ], $clave];
+}
+
 /**
- * La corrida del cron. Para los tests: $estado (sin disco), $enviar y $avisar
- * (push a Pablo). Devuelve qué hizo.
+ * La corrida del cron. Desde el 16-nov ya no le manda la plantilla al cliente:
+ * el día del cobro le avisa a Pablo por WhatsApp con los datos del cliente.
+ * Para los tests: $estado (sin disco) y $avisar(titulo, renglones, clave).
  */
 function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = null, $avisar = null) {
     $ahora = $ahora ?? time();
     $res = ['revisados' => 0, 'enviados' => 0, 'fallidos' => 0, 'detalle' => []];
-    $p = wabot_plantilla_config('renovacion_por_fuera', $cfg);
-    if ($p === null) return $res + ['apagado' => true];
-    if (array_key_exists('automatico', $p) && empty($p['automatico'])) return $res + ['apagado' => true];
     if (wabot_hora_local($ahora) < WABOT_RENOVACION_HORA || wabot_hora_local($ahora) >= 20) return $res;
 
     $enDisco = $estado === null;
     $estado = $estado ?? wabot_renovacion_estado();
-    $avisar = $avisar ?? function ($t, $c) { return wabot_push_enviar($t, $c, ['link' => 'https://www.gokywebs.com/admin/dashboard.html']); };
+    $avisar = $avisar ?? 'wabot_aviso_cobro_pablo';
 
     if (!$estado['lista']) return $res;
     if ($ahora - (int)$estado['sync_ts'] > WABOT_RENOVACION_LISTA_VIEJA) {
         // Sin abrir el admin hace más de un mes: puede haber bajas que el bot no sabe.
         if (!$estado['aviso_vieja_ts']) {
-            $avisar('Avisos de renovación frenados', 'La lista de los que pagan por afuera tiene más de 35 días. Abrí el admin para actualizarla.');
+            $avisar('Avisos de pago por afuera frenados', ['La lista de los que pagan por afuera tiene más de 35 días. Abrí el admin (Mantenimiento) para actualizarla.'], '');
             $estado['aviso_vieja_ts'] = $ahora;
             if ($enDisco) wabot_renovacion_guardar($estado);
         }
@@ -199,28 +219,14 @@ function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = 
         if ($f['desde'] !== '' && $f['desde'] >= $hoy) continue;
         if ((string)($estado['enviados'][$f['id']]['mes'] ?? '') === $mes) continue;
 
-        $r = wabot_renovacion_enviar_fila($f, $cfg, $enviar);
-        if ($r === 'ocupado') continue;   // otro proceso tiene el chat: la próxima pasada
-        if ($r === 'ya') {   // ya lo tenía en el chat: se anota y no se avisa nada
-            $estado['enviados'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => true, 'resultado' => 'ya'];
-            if ($enDisco) wabot_renovacion_guardar($estado);
-            continue;
-        }
-        $estado['enviados'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => $r === 'ok', 'resultado' => $r];
-        // Guardado enseguida: si la corrida se corta, la siguiente no le manda otro.
+        [$titulo, $lineas, $clave] = wabot_renovacion_aviso_texto($f);
+        $ok = (bool)$avisar($titulo, $lineas, $clave);
+        if (!$ok) { $res['fallidos']++; continue; }   // no salió: la próxima pasada lo reintenta (hasta las 20 h)
+        $estado['enviados'][$f['id']] = ['mes' => $mes, 'ts' => $ahora, 'ok' => true, 'resultado' => 'pablo'];
         if ($enDisco) wabot_renovacion_guardar($estado);
-        $quien = $f['negocio'] !== '' ? $f['negocio'] : ($f['persona'] !== '' ? $f['persona'] : $f['tel']);
-        if ($r === 'ok') {
-            // Salió bien: no se avisa (Pablo, 2-nov: solo lo que pide algo de él).
-            $res['enviados']++;
-        } else {
-            $res['fallidos']++;
-            $motivos = ['sin_chat' => 'no tiene teléfono cargado', 'telefono' => 'el teléfono no parece de WhatsApp',
-                        'ambiguo' => 'hay dos chats con ese número', 'error' => 'WhatsApp no lo aceptó'];
-            $avisar('Aviso de renovación sin enviar', 'Hoy le tocaba pagar a ' . $quien . ' y no le pude mandar el aviso: ' . ($motivos[$r] ?? $r) . '. Escribile a mano.');
-        }
-        $res['detalle'][] = ['id' => $f['id'], 'resultado' => $r];
-        wabot_log('renovacion_aviso', ['id' => $f['id'], 'tel' => $f['tel'], 'resultado' => $r]);
+        $res['enviados']++;
+        $res['detalle'][] = ['id' => $f['id'], 'resultado' => 'pablo'];
+        wabot_log('renovacion_aviso', ['id' => $f['id'], 'tel' => $f['tel'], 'resultado' => 'pablo']);
     }
     return $res + ($enDisco ? [] : ['estado' => $estado]);
 }

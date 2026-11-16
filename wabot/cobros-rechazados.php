@@ -22,6 +22,10 @@
  * amarillo o rojo (el último cobro rebotó) y, de esas, el cobro del mes
  * (/authorized_payments/search): `debit_date` es el día del primer intento,
  * `payment.status` rejected mientras no se cobra.
+ *
+ * 16-nov (Pablo): ya no sale la plantilla al cliente. El aviso, con los datos
+ * del cliente, le llega a Pablo por WhatsApp (wabot_aviso_cobro_pablo), y
+ * también cuando una suscripción se cancela o se pausa.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -35,6 +39,8 @@ const WABOT_COBRO_RECH_HORA_HASTA = 20;
 // Una lista que el admin no actualiza hace más de esto puede tener bajas o cambios que el bot no sabe.
 const WABOT_COBRO_RECH_LISTA_VIEJA = 35 * 86400;
 const WABOT_COBRO_RECH_ENVIADOS_DIAS = 62;
+// Una cancelación más vieja que esto ya no se avisa (la primera corrida no larga todo el historial).
+const WABOT_COBRO_RECH_CANCELADA_DIAS = 3;
 
 function wabot_cobro_rech_estado() {
     $j = json_decode((string)@file_get_contents(WABOT_COBRO_RECH_ARCHIVO), true);
@@ -44,6 +50,10 @@ function wabot_cobro_rech_estado() {
         'sync_ts'  => (int)($j['sync_ts'] ?? 0),
         'enviados' => (array)($j['enviados'] ?? []),
         'aviso_vieja_ts' => (int)($j['aviso_vieja_ts'] ?? 0),
+        // Toda suscripción que el admin mandó alguna vez (16-nov): al cancelarse sale de la
+        // lista del admin, y sin esto el aviso no sabría de quién era.
+        'conocidos' => (array)($j['conocidos'] ?? []),
+        'canceladas' => (array)($j['canceladas'] ?? []),
     ];
 }
 
@@ -75,6 +85,7 @@ function wabot_cobro_rech_sync(array $lista, $ahora = null) {
     $estado['lista'] = array_values(array_filter(array_map('wabot_cobro_rech_fila', $lista)));
     $estado['sync_ts'] = $ahora ?? time();
     $estado['aviso_vieja_ts'] = 0;
+    foreach ($estado['lista'] as $f) $estado['conocidos'][$f['pre']] = $f + ['visto_ts' => $estado['sync_ts']];
     $limite = $estado['sync_ts'] - WABOT_COBRO_RECH_ENVIADOS_DIAS * 86400;
     $estado['enviados'] = array_filter($estado['enviados'], function ($e) use ($limite) {
         return is_array($e) && (int)($e['ts'] ?? 0) >= $limite;
@@ -94,13 +105,27 @@ function wabot_cobro_rech_dia_local($iso) {
  * cobrarse: [{cobro, pre, nombre_mp, monto, primer_intento (Y-m-d), intento}].
  * $mp(ruta) es la API (los tests le pasan datos fijos).
  */
-function wabot_cobro_rech_detectar(callable $mp) {
+function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null) {
     $yo = wabot_pagos_mp_yo($mp);
     $atrasadas = [];
+    $canceladas = [];
     for ($offset = 0; $offset < 1000; $offset += 100) {
         $pagina = $mp('/preapproval/search?limit=100&offset=' . $offset);
         foreach ((array)($pagina['results'] ?? []) as $s) {
             if ((string)($s['collector_id'] ?? '') !== $yo) continue;
+            // Canceladas o pausadas (16-nov): Pablo quiere el aviso con los datos del cliente.
+            if (in_array((string)($s['status'] ?? ''), ['cancelled', 'paused'], true)) {
+                $canceladas[] = [
+                    'pre' => (string)($s['id'] ?? ''),
+                    'estado' => (string)$s['status'],
+                    'ts' => (int)strtotime((string)($s['last_modified'] ?? $s['date_created'] ?? '')),
+                    'nombre_mp' => trim(($s['payer_first_name'] ?? '') . ' ' . ($s['payer_last_name'] ?? '')),
+                    'monto' => (float)($s['auto_recurring']['transaction_amount'] ?? 0),
+                    'plan' => trim((string)($s['reason'] ?? '')),
+                    'alta' => wabot_cobro_rech_dia_local($s['date_created'] ?? ''),
+                ];
+                continue;
+            }
             if ((string)($s['status'] ?? '') !== 'authorized') continue;
             // Verde = al día. Amarillo/rojo = el último cobro rebotó y MP lo está reintentando.
             if (!in_array((string)($s['summarized']['semaphore'] ?? ''), ['yellow', 'red'], true)) continue;
@@ -122,6 +147,7 @@ function wabot_cobro_rech_detectar(callable $mp) {
                 'cobro' => (string)$c['id'],
                 'pre' => $pre,
                 'nombre_mp' => trim(($s['payer_first_name'] ?? '') . ' ' . ($s['payer_last_name'] ?? '')),
+                'plan' => trim((string)($s['reason'] ?? '')),
                 'monto' => (float)($c['transaction_amount'] ?? $s['auto_recurring']['transaction_amount'] ?? 0),
                 'primer_intento' => $dia,
                 'intento' => (int)($c['retry_attempt'] ?? 0),
@@ -132,111 +158,132 @@ function wabot_cobro_rech_detectar(callable $mp) {
     return $rechazados;
 }
 
-/**
- * Manda la plantilla a una fila. $enviar(clave, fila, valores) reemplaza la red en
- * los tests. Devuelve 'ok', 'ya', 'sin_chat', 'telefono', 'ambiguo', 'ocupado' o 'error'.
- */
-function wabot_cobro_rech_enviar_fila(array $f, array $cobro, $cfg, $enviar = null) {
-    $negocio = $f['negocio'] !== '' ? $f['negocio'] : $f['persona'];
-    $nombre = wabot_renovacion_nombre($f['persona'], $f['negocio']) ?: ($negocio !== '' ? $negocio : 'cómo estás');
-    $valores = ['nombre' => $nombre, 'negocio' => $negocio, 'monto' => wabot_moneda($cobro['monto'])];
+/** "2026-11-10" → "10/11"; '' si no viene. */
+function wabot_cobro_rech_fecha_corta($ymd) {
+    return preg_match('/^\d{4}-(\d{2})-(\d{2})$/', (string)$ymd, $m) ? "$m[2]/$m[1]" : '';
+}
 
-    if ($f['tel'] === '') return 'sin_chat';
-    $clave = wabot_renovacion_clave($f['tel'], $motivo);
-    if ($clave === null) return $motivo === 'ambiguo' ? 'ambiguo' : 'telefono';
-    if ($enviar) return $enviar($clave, $f, $valores) ? 'ok' : 'error';
+/** Los motivos de rechazo de MP que más aparecen, en castellano. */
+function wabot_cobro_rech_motivo_texto($m) {
+    $t = [
+        'insufficient_amount' => 'fondos insuficientes', 'cc_rejected_insufficient_amount' => 'fondos insuficientes',
+        'cc_rejected_call_for_authorize' => 'la tarjeta pide autorizar el pago', 'cc_rejected_card_disabled' => 'tarjeta deshabilitada',
+        'cc_rejected_bad_filled_date' => 'tarjeta vencida', 'expired_card' => 'tarjeta vencida',
+        'cc_rejected_high_risk' => 'rechazado por seguridad de MP', 'cc_rejected_other_reason' => 'el banco lo rechazó',
+        'cc_rejected_max_attempts' => 'demasiados intentos', 'cc_rejected_blacklist' => 'rechazado por MP',
+    ];
+    $m = trim((string)$m);
+    return $m === '' ? '' : ($t[$m] ?? $m);
+}
 
-    $lock = wabot_lock_tomar($clave);
-    if (!$lock) return 'ocupado';
-    try {
-        $conv = wabot_conv_load($clave);
-        // Segundo candado: si el registro se perdiera, el chat sabe que ya le avisamos de este cobro.
-        if ((string)($conv['cobro_rechazado_id'] ?? '') === $cobro['cobro']) return 'ya';
-        if (trim((string)($conv['nombre_negocio'] ?? '')) === '' && $f['negocio'] !== '') $conv['nombre_negocio'] = $f['negocio'];
-        if (!wabot_enviar_plantilla($conv, 'cobro_rechazado', $cfg, $valores)) return 'error';
-        $conv['cobro_rechazado_id'] = $cobro['cobro'];
-        $conv['cobro_rechazado_ts'] = time();
-        wabot_conv_save($conv);
-        return 'ok';
-    } finally {
-        wabot_lock_soltar($lock);
+/** Renglones de cliente/WhatsApp y la clave del chat de una fila del admin (o lo que diga MP si no hay fila). */
+function wabot_cobro_rech_cliente($f, $nombreMp) {
+    if (!is_array($f)) {
+        return [['Cliente: no está vinculado en el admin' . ($nombreMp !== '' ? ' (en MP figura «' . $nombreMp . '»)' : ''),
+                 'Vinculalo en Mantenimiento → Vincular con MP.'], ''];
     }
+    $persona = (string)($f['persona'] ?? '');
+    $negocio = (string)($f['negocio'] ?? '');
+    $tel = (string)($f['tel'] ?? '');
+    $cliente = trim($persona . ($persona !== '' && $negocio !== '' ? ' — ' : '') . $negocio);
+    $clave = $tel !== '' ? (wabot_renovacion_clave($tel, $motivo) ?? '') : '';
+    $l = [
+        'Cliente: ' . ($cliente !== '' ? $cliente : 'sin nombre en la ficha'),
+        'WhatsApp: ' . ($clave !== '' ? '+' . $clave : ($tel !== '' ? $tel . ' (no parece un número de WhatsApp)' : 'sin teléfono cargado')),
+    ];
+    if ($nombreMp !== '' && mb_strtolower($nombreMp) !== mb_strtolower($persona)) $l[] = 'Titular en MP: ' . $nombreMp;
+    if (empty($f['seguro'])) $l[] = '(vinculada solo por la fecha: confirmala en Mantenimiento → Vincular con MP)';
+    return [$l, $clave];
+}
+
+/** El aviso de un cobro rechazado: [titulo, renglones, clave]. */
+function wabot_cobro_rech_aviso_atrasado($f, array $cobro) {
+    [$l, $clave] = wabot_cobro_rech_cliente($f, (string)$cobro['nombre_mp']);
+    $plan = (string)($cobro['plan'] ?? '');
+    $l[] = 'Monto: ' . wabot_moneda($cobro['monto']) . ($plan !== '' ? ' (' . $plan . ')' : '');
+    $l[] = 'Primer intento rechazado: ' . wabot_cobro_rech_fecha_corta($cobro['primer_intento'])
+         . ((int)$cobro['intento'] > 0 ? ' · reintento ' . (int)$cobro['intento'] . ' de 4' : '');
+    $motivo = wabot_cobro_rech_motivo_texto($cobro['motivo'] ?? '');
+    if ($motivo !== '') $l[] = 'Motivo: ' . $motivo;
+    $l[] = 'MP lo reintenta unos 10 días; si no entra, cancela la suscripción.';
+    $l[] = 'Suscripción MP: ' . $cobro['pre'];
+    return ['⚠️ Cobro atrasado (suscripción de Mercado Pago)', $l, $clave];
+}
+
+/** El aviso de una suscripción cancelada o pausada: [titulo, renglones, clave]. */
+function wabot_cobro_rech_aviso_cancelada($f, array $c) {
+    [$l, $clave] = wabot_cobro_rech_cliente($f, (string)$c['nombre_mp']);
+    if ($c['monto'] > 0) $l[] = 'Monto: ' . wabot_moneda($c['monto']) . ' por mes' . ($c['plan'] !== '' ? ' (' . $c['plan'] . ')' : '');
+    if ($c['alta'] !== '') $l[] = 'Suscripta desde: ' . wabot_renovacion_fecha_texto($c['alta']);
+    $l[] = ($c['estado'] === 'paused' ? 'Pausada' : 'Cancelada') . ' el ' . gmdate('d/m H:i', $c['ts'] - 3 * 3600);
+    $l[] = 'Suscripción MP: ' . $c['pre'];
+    return [($c['estado'] === 'paused' ? '⏸️ Suscripción pausada' : '❌ Suscripción cancelada') . ' (Mercado Pago)', $l, $clave];
 }
 
 /**
- * La corrida del cron. Para los tests: $estado (sin disco), $mp (la API), $enviar
- * y $avisar (push a Pablo). Devuelve qué hizo.
+ * La corrida del cron. Desde el 16-nov NO le escribe al cliente: a Pablo, por
+ * WhatsApp, cada cobro rechazado (una vez por cobro, el día que se detecta) y
+ * cada suscripción que se cancela o se pausa (una vez, si pasó en los últimos
+ * WABOT_COBRO_RECH_CANCELADA_DIAS días). Para los tests: $estado (sin disco),
+ * $mp (la API) y $avisar(titulo, renglones, clave). $enviar ya no se usa.
  */
 function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null, $enviar = null, $avisar = null) {
     $ahora = $ahora ?? time();
-    $res = ['rechazados' => 0, 'enviados' => 0, 'fallidos' => 0, 'detalle' => []];
-    $p = wabot_plantilla_config('cobro_rechazado', $cfg);
-    if ($p === null) return $res + ['apagado' => true];
-    if (array_key_exists('automatico', $p) && empty($p['automatico'])) return $res + ['apagado' => true];
+    $res = ['rechazados' => 0, 'enviados' => 0, 'fallidos' => 0, 'canceladas' => 0, 'detalle' => []];
     $hora = wabot_hora_local($ahora);
     if ($hora < WABOT_COBRO_RECH_HORA_DESDE || $hora >= WABOT_COBRO_RECH_HORA_HASTA) return $res;
 
     $enDisco = $estado === null;
     $estado = $estado ?? wabot_cobro_rech_estado();
+    $estado += ['conocidos' => [], 'canceladas' => [], 'enviados' => [], 'aviso_vieja_ts' => 0, 'sync_ts' => 0, 'lista' => []];
     $mp = $mp ?? 'wabot_pagos_mp';
-    $avisar = $avisar ?? function ($t, $c) { return wabot_push_enviar($t, $c, ['link' => 'https://www.gokywebs.com/admin/dashboard.html']); };
+    $avisar = $avisar ?? 'wabot_aviso_cobro_pablo';
 
-    if (!$estado['lista']) return $res + ['sin_lista' => true];
-    if ($ahora - (int)$estado['sync_ts'] > WABOT_COBRO_RECH_LISTA_VIEJA) {
-        if (!$estado['aviso_vieja_ts']) {
-            $avisar('Avisos de cobro rechazado frenados', 'La lista de suscriptores que el admin le pasa al bot tiene más de 35 días. Abrí el admin para actualizarla.');
-            $estado['aviso_vieja_ts'] = $ahora;
-            if ($enDisco) wabot_cobro_rech_guardar($estado);
-        }
-        return $res + ['lista_vieja' => true] + ($enDisco ? [] : ['estado' => $estado]);
+    if (!$estado['lista'] && !$estado['conocidos']) return $res + ['sin_lista' => true];
+    if ($ahora - (int)$estado['sync_ts'] > WABOT_COBRO_RECH_LISTA_VIEJA && !$estado['aviso_vieja_ts']) {
+        // Igual avisa con lo que sepa de MP, pero le pide una vez abrir el admin.
+        $avisar('Lista de suscriptores vieja', ['La lista de suscriptores que el admin le pasa al bot tiene más de 35 días: algún aviso puede salir sin el cliente. Abrí el admin (Mantenimiento) para actualizarla.'], '');
+        $estado['aviso_vieja_ts'] = $ahora;
+        if ($enDisco) wabot_cobro_rech_guardar($estado);
     }
 
     $hoy = gmdate('Y-m-d', $ahora - 3 * 3600);
-    $ayer = gmdate('Y-m-d', $ahora - 3 * 3600 - 86400);
-    $porPre = [];
+    $porPre = $estado['conocidos'];
     foreach ($estado['lista'] as $f) $porPre[$f['pre']] = $f;
 
-    foreach (wabot_cobro_rech_detectar($mp) as $cobro) {
+    $canceladas = [];
+    foreach (wabot_cobro_rech_detectar($mp, $canceladas) as $cobro) {
         $res['rechazados']++;
-        // Solo el día siguiente al primer intento rechazado: ni antes, ni con cada reintento.
-        if ($cobro['primer_intento'] !== $ayer) continue;
+        // Uno por cobro: los reintentos de MP del mismo cobro no vuelven a avisar.
         if (isset($estado['enviados'][$cobro['cobro']])) continue;
-
         $f = $porPre[$cobro['pre']] ?? null;
-        $quien = $f ? ($f['negocio'] !== '' ? $f['negocio'] : ($f['persona'] !== '' ? $f['persona'] : $f['tel']))
-                    : ($cobro['nombre_mp'] !== '' ? $cobro['nombre_mp'] : 'una suscripción');
-        $monto = wabot_moneda($cobro['monto']);
-        if (!$f) {
-            $r = 'sin_cliente';
-        } elseif (!$f['seguro']) {
-            $r = 'sin_confirmar';
-        } else {
-            $r = wabot_cobro_rech_enviar_fila($f, $cobro, $cfg, $enviar);
-            if ($r === 'ocupado') continue;   // otro proceso tiene el chat: la próxima pasada
-        }
+        [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_atrasado($f, $cobro);
+        if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }   // la próxima pasada lo reintenta
         $estado['enviados'][$cobro['cobro']] = ['ts' => $ahora, 'id' => $f['id'] ?? '', 'pre' => $cobro['pre'],
-            'dia' => $hoy, 'resultado' => $r, 'ok' => in_array($r, ['ok', 'ya'], true)];
-        // Guardado enseguida: si la corrida se corta, la siguiente no le manda otro.
+            'dia' => $hoy, 'resultado' => 'pablo', 'ok' => true];
         if ($enDisco) wabot_cobro_rech_guardar($estado);
-
-        if ($r === 'ok') {
-            $res['enviados']++;   // salió bien: no se avisa (Pablo, 2-nov: solo lo que pide algo de él)
-        } elseif ($r !== 'ya') {
-            $res['fallidos']++;
-            $motivos = [
-                'sin_cliente' => 'no sé de qué cliente es esa suscripción (vinculala en Mantenimiento → Vincular con MP)',
-                'sin_confirmar' => 'la suscripción está vinculada solo por la fecha (confirmala en Mantenimiento → Vincular con MP)',
-                'sin_chat' => 'no tiene teléfono cargado',
-                'telefono' => 'el teléfono no parece de WhatsApp',
-                'ambiguo' => 'hay dos chats con ese número',
-                'error' => 'WhatsApp no lo aceptó',
-            ];
-            $avisar('Cobro rechazado sin avisar', 'Mercado Pago no pudo cobrarle ' . $monto . ' a ' . $quien . ' y no le pude mandar el aviso: '
-                . ($motivos[$r] ?? $r) . '. Escribile a mano.');
-        }
-        $res['detalle'][] = ['cobro' => $cobro['cobro'], 'id' => $f['id'] ?? '', 'resultado' => $r];
+        $res['enviados']++;
+        $res['detalle'][] = ['cobro' => $cobro['cobro'], 'id' => $f['id'] ?? '', 'resultado' => 'pablo'];
         wabot_log('cobro_rechazado_aviso', ['cobro' => $cobro['cobro'], 'pre' => $cobro['pre'], 'id' => $f['id'] ?? '',
-            'tel' => $f['tel'] ?? '', 'resultado' => $r, 'motivo' => $cobro['motivo']]);
+            'tel' => $f['tel'] ?? '', 'resultado' => 'pablo', 'motivo' => $cobro['motivo']]);
     }
+
+    foreach ($canceladas as $c) {
+        if ($c['pre'] === '' || $c['ts'] <= 0) continue;
+        if ($ahora - $c['ts'] > WABOT_COBRO_RECH_CANCELADA_DIAS * 86400) continue;
+        $marca = $c['pre'] . ':' . $c['estado'];
+        if (isset($estado['canceladas'][$marca])) continue;
+        $f = $porPre[$c['pre']] ?? null;
+        [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_cancelada($f, $c);
+        if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }
+        $estado['canceladas'][$marca] = $ahora;
+        if ($enDisco) wabot_cobro_rech_guardar($estado);
+        $res['canceladas']++;
+        $res['detalle'][] = ['pre' => $c['pre'], 'id' => $f['id'] ?? '', 'resultado' => $c['estado']];
+        wabot_log('suscripcion_cancelada_aviso', ['pre' => $c['pre'], 'estado' => $c['estado'], 'id' => $f['id'] ?? '']);
+    }
+    // Las marcas de canceladas de hace más de 2 meses ya no frenan nada.
+    $estado['canceladas'] = array_filter($estado['canceladas'], function ($ts) use ($ahora) { return (int)$ts >= $ahora - 62 * 86400; });
+    if ($enDisco) wabot_cobro_rech_guardar($estado);
     return $res + ($enDisco ? [] : ['estado' => $estado]);
 }

@@ -69,9 +69,9 @@ $ultima = $paso('ultima_llamada', function () use ($cfg) { return wabot_ultima_l
 $plantillas = $paso('plantillas', function () use ($cfg) { return wabot_plantillas_auto_correr($cfg); });
 // La demo de los bocetos de antes de las 15 h sale a las 18 h; la de los de después, al otro día a las 14 h (18-oct).
 $presentarAuto = $paso('presentar_auto', function () use ($cfg) { return wabot_presentar_auto_correr($cfg); });
-// El día del cobro, la plantilla de renovación a los que pagan por afuera de Mercado Pago (25-oct).
+// El día del cobro de los que pagan por afuera, el aviso a Pablo por WhatsApp con los datos (16-nov; antes, plantilla al cliente).
 $renovacion = $paso('renovacion', function () use ($cfg) { return wabot_renovacion_correr($cfg); });
-// El día siguiente al primer cobro rechazado de una suscripción de Mercado Pago, un aviso al cliente (12-nov).
+// Cobro rechazado o suscripción cancelada/pausada en Mercado Pago: aviso a Pablo por WhatsApp (16-nov; antes, plantilla al cliente).
 $cobroRechazado = $paso('cobro_rechazado', function () use ($cfg) { return wabot_cobro_rech_correr($cfg); });
 // Las webs en mantenimiento: ¿responden? Avisa las caídas resueltas y, desde el día 1, el resumen del mes (29-oct).
 $webs = $paso('webs', function () use ($cfg) { return wabot_webs_correr($cfg); });
@@ -83,9 +83,9 @@ $onboarding = $paso('onboarding', function () use ($cfg) { return wabot_onboardi
 // Cada 3 h y no en cada corrida (13-nov): leer clientes + mantenimiento cada media hora gastaba la
 // cuota de Firestore. Abrir la vista Clientes la sigue refrescando a los 10 min.
 try { if (@filemtime(wabot_clientes_cache_archivo()) < time() - 3 * 3600) wabot_clientes_datos(); } catch (\Throwable $e) { wabot_log('error', ['donde' => 'clientes_cron', 'msg' => mb_substr($e->getMessage(), 0, 200)]); }
-// No le escribe a nadie: le vuelve a avisar a Pablo lo que sigue esperando (16-oct).
+// Re-aviso de lo que sigue esperando: va por push, apagado desde el 16-nov (WABOT_PUSH_ACTIVO en push.php).
 $reaviso = $paso('push_reaviso', function () { return wabot_push_reaviso_correr(); });
-// El resumen de los sin leer a su WhatsApp: los que entraron mientras se esperaban los 10 minutos (3-nov).
+// «Tenés un mensaje de X» y el resumen de las 20 h: apagados desde el 16-nov (WABOT_AVISO_MENSAJES_ACTIVO).
 try { $resumen = wabot_aviso_resumen_correr(); } catch (\Throwable $e) { $resumen = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
 // El resumen diario de los chats sin responder a su WhatsApp, a la hora elegida en Estado (9-nov).
 try { $pendientes = wabot_aviso_pendientes_correr(); } catch (\Throwable $e) { $pendientes = ['error' => mb_substr($e->getMessage(), 0, 200)]; }
