@@ -35,7 +35,8 @@
 # 1 y 1"): tomar alterna el motor (estado.json -> ultimoMotor) y lo devuelve en el JSON.
 # -Simular: hace todo menos lanzar Claude. -Descargas / -Datos: otras carpetas (para probar).
 param([ValidateSet('claude', 'tomar', 'terminar', 'gpt', 'imagenes', 'cortadas')][string]$Modo = 'claude', [string]$ZipNombre = '', [string]$Resultado = '', [string]$Pedido = '',
-      [switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'))
+      [switch]$Simular, [string]$Descargas = (Join-Path $env:USERPROFILE 'Downloads'), [string]$Datos = (Join-Path $PSScriptRoot 'data'),
+      [ValidateSet('claude', 'chatgpt')][string]$Por = 'claude')
 
 $ErrorActionPreference = 'Stop'
 $Repo       = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
@@ -93,9 +94,9 @@ function Leer-Estado {
 
 function Guardar-Estado($e) { [IO.File]::WriteAllText($ArchivoEstado, [string]($e | ConvertTo-Json -Depth 5), $Utf8) }
 
-# Cobertura puntual hasta el miercoles 11 de noviembre a las 02:00 de Argentina.
+# Cobertura puntual hasta el jueves 12 de noviembre a las 18:00 de Argentina.
 function Motor-De-Turno([string]$habitual, [datetimeoffset]$ahora = [datetimeoffset]::UtcNow) {
-    $corte = [datetimeoffset]'2026-11-11T02:00:00-03:00'
+    $corte = [datetimeoffset]'2026-11-12T18:00:00-03:00'
     if ($ahora -lt $corte) { return 'gpt' }
     return $habitual
 }
@@ -246,7 +247,7 @@ function Terminar([string]$ZipNombre, [string]$Resultado, [string]$Por = 'claude
     return $true
 }
 if ($Modo -eq 'terminar') {
-    if (-not @(Terminar $ZipNombre $Resultado)[-1]) { Write-Output ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); exit 1 }
+    if (-not @(Terminar $ZipNombre $Resultado $Por)[-1]) { Write-Output ('No hay ningun zip ' + $ZipNombre + ' en estado.json'); exit 1 }
     Write-Output 'ok'
     exit 0
 }
@@ -310,6 +311,10 @@ function Ultima-Actividad([string]$slug, [string]$pedido) {
         $base = Join-Path $Repo ($pedido -replace '\.md$', '')
         $fechas += @(Get-ChildItem -Path ($base + '*') -File -ErrorAction SilentlyContinue | ForEach-Object { $_.LastWriteTime })
     }
+    # Las imagenes del zip de ChatGPT traen la hora UTC como si fuera local (+3 h en el futuro):
+    # Randy Outlet, 13-nov, quedo "con actividad" hasta la madrugada y no se relanzaba. Se ignoran.
+    $ahora = (Get-Date).AddMinutes(5)
+    $fechas = @($fechas | Where-Object { $_ -le $ahora })
     if (-not $fechas.Count) { return [datetime]::MinValue }
     return ($fechas | Sort-Object -Descending | Select-Object -First 1)
 }
@@ -422,7 +427,6 @@ try {
         $salida = & php (Join-Path $PSScriptRoot 'preparar.php') $zip.FullName 2>$null
         $ErrorActionPreference = 'Stop'
         $r = ($salida | Out-String) | ConvertFrom-Json
-        if (-not $r.ok) {
         if (-not $r.ok -and [string]$r.error -like 'Firestore:*') {
             # Firestore caido o sin cuota (429, 13-nov: Mis memorias y Castillo terminaron sin
             # asignar): no es que falte la ficha. El zip queda en Descargas y se suelta el
@@ -437,6 +441,7 @@ try {
             $zip = $null
             break
         }
+        if (-not $r.ok) {
             Anotar ('SIN ASIGNAR ' + $zip.Name + ': ' + $r.error)
             Mover-Zip $zip 'sin-asignar'
             Marcar $zip ('sin asignar: ' + $r.error)
