@@ -171,3 +171,27 @@ invisible.
   texto libre. El bot sigue apagado hasta que Pablo lo encienda en ese chat.
 - No mandar la misma plantilla dos veces al mismo cliente: Meta mide quejas y
   bloqueos y puede limitar el número.
+
+## Guía de la web en PDF (16-nov)
+
+La guía de cada web (Perfil de Negocio de Google, Google Ads, QR) con el PDF como
+encabezado. No sale sola: `wabot/guias.php` por consola (ssh), con una lista que
+aprueba Pablo; no se manda a bajas/pausados (no están en `data/webs.json`) ni a
+quien tenga un cobro de MP rechazado en los últimos 40 días. Los PDF están en
+`/guias/` del sitio (https://gokywebs.com/guias/<archivo>.pdf); lo enviado queda
+en `data/guias-enviadas.json`.
+
+| Campo | Valor |
+|---|---|
+| **Clave en el bot** | `guia_web` (fija en `guias.php`, no está en Ajustes) |
+| **Nombre en Meta** | `guias_web` (creada por la API) |
+| **Idioma** | `es_AR` |
+| **Categoría** | Utilidad |
+| **Encabezado** | Documento (el PDF de la guía) |
+| **Variables** | {{1}} nombre, {{2}} negocio |
+
+**Cuerpo:**
+
+```
+Hola {{1}}, te paso la guía de la web de {{2}}: cómo aparecer en Google Maps con el Perfil de Negocio, cómo hacer publicidad en Google y el código QR de tu web para imprimir. Cualquier duda, escribime por acá.
+```

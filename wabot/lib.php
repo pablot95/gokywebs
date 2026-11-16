@@ -1109,8 +1109,10 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
         if ($campo === 'slug' && $v === '') return false;
     }
 
+    // El PDF del encabezado (plantillas con documento) viene en $fijos['_documento'].
+    $documento = is_array($fijos['_documento'] ?? null) ? $fijos['_documento'] : null;
     $ok = wabot_wa_send_template(wabot_channel_user_id($conv), $p['nombre'], $p['idioma'] ?? 'es_AR',
-                                 array_values($valores), array_values($valoresBoton));
+                                 array_values($valores), array_values($valoresBoton), $documento);
     if (!$ok) return false;
 
     // Toda plantilla abre una conversación que continúa Pablo. Hacerlo acá
@@ -1132,6 +1134,8 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
     // único que ve Pablo de lo que le llegó al cliente, y un mensaje pago que
     // no aparece ahí parece que nunca salió (Pablo, 26-sep).
     if ($texto === '') $texto = '[Plantilla de WhatsApp: ' . $p['nombre'] . ']';
+    if ($documento) $texto = '[documento] ' . wabot_documento_nombre($documento['filename'] ?? 'documento') . "
+" . $texto;
     wabot_conv_transcript($conv, 'bot', $texto, null, ['plantilla' => $clave]);
     wabot_log('plantilla_enviada', ['tel' => $conv['tel'] ?? '', 'plantilla' => $clave, 'nombre' => $p['nombre']]);
     return true;
@@ -5062,11 +5066,17 @@ function wabot_wa_send_text($tel, $texto) {
     return true;
 }
 
-function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBoton = []) {
+/**
+ * $documento (16-nov, guías en PDF): ['link' => URL pública https, 'filename' => nombre que ve el
+ * cliente] para las plantillas aprobadas con encabezado de tipo DOCUMENTO. Meta baja el archivo
+ * de esa URL en el momento del envío.
+ */
+function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBoton = [], $documento = null) {
     $nombre = trim((string)$nombre);
     if ($nombre === '') return false;
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
-        $GLOBALS['WABOT_TEST_PLANTILLAS'][] = [$tel, $nombre, $idioma, $params, $paramsBoton];
+        $GLOBALS['WABOT_TEST_PLANTILLAS'][] = $documento ? [$tel, $nombre, $idioma, $params, $paramsBoton, $documento]
+                                                         : [$tel, $nombre, $idioma, $params, $paramsBoton];
         return true;
     }
     if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') {
@@ -5076,6 +5086,10 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
 
     $comoTexto = function ($v) { return ['type' => 'text', 'text' => (string)$v]; };
     $componentes = [];
+    if ($documento && !empty($documento['link'])) {
+        $componentes[] = ['type' => 'header', 'parameters' => [['type' => 'document', 'document' => [
+            'link' => (string)$documento['link'], 'filename' => wabot_documento_nombre($documento['filename'] ?? 'documento')]]]];
+    }
     // Las variables del cuerpo pueden llevar un link; las del botón no (son el final de una URL fija).
     $params = array_map('wabot_links_https', (array)$params);
     if ($params) {

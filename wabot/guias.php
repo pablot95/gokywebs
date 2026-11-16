@@ -1,0 +1,117 @@
+<?php
+/**
+ * wabot/guias.php — la guía de cada web (Perfil de Negocio de Google, Google Ads, QR) en PDF,
+ * mandada por la plantilla de Utilidad `guias_web`, con el PDF como encabezado (Pablo, 16-nov:
+ * «se podrían mandar por plantilla, en wabot?» → «PDF adjunto»).
+ *
+ * Solo por consola (ssh), nunca sola: la lista la arma Claude y la aprueba Pablo.
+ *   php guias.php listar                 clientes activos de Mantenimiento (data/webs.json) y si ya la recibieron
+ *   php guias.php probar <envio.json>    lo que mandaría, sin mandar nada
+ *   php guias.php enviar <envio.json>    manda, de a uno, y anota en data/guias-enviadas.json
+ *
+ * envio.json: [{"id": "clientes:abc", "pdf": "instructivos-x.pdf", "negocio": "X"}]
+ *   id      la fila de data/webs.json (la que manda el admin: activos, sin bajas ni pausados)
+ *   pdf     el archivo en /guias/ del sitio (https://gokywebs.com/guias/<pdf>)
+ *   negocio cómo se nombra en el mensaje y en el nombre del archivo
+ *
+ * No se manda (Pablo, 16-nov: «no enviarle a los que tengan pago atrasado o hayan cancelado»):
+ *   - si la fila ya no está en webs.json (baja o pausa en el admin),
+ *   - si tiene un cobro de Mercado Pago rechazado en los últimos 40 días (data/cobros-rechazados.json),
+ *   - si ya la recibió, o si el PDF no está publicado.
+ * Los que pagan por afuera y están atrasados no los sabe el bot: esos se sacan de la lista antes.
+ */
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+
+require_once __DIR__ . '/webs.php';
+require_once __DIR__ . '/cobros-rechazados.php';
+
+const WABOT_GUIAS_URL = 'https://gokywebs.com/guias/';
+const WABOT_GUIAS_DIR = __DIR__ . '/../guias';
+const WABOT_GUIAS_ENVIADAS = WABOT_DATA . '/guias-enviadas.json';
+const WABOT_GUIAS_COBRO_DIAS = 40;
+const WABOT_GUIAS_PLANTILLA = [
+    'nombre' => 'guias_web', 'idioma' => 'es_AR', 'activa' => true,
+    'params' => ['nombre', 'negocio'],
+    'texto'  => 'Hola {nombre}, te paso la guía de la web de {negocio}: cómo aparecer en Google Maps con el Perfil de Negocio, cómo hacer publicidad en Google y el código QR de tu web para imprimir. Cualquier duda, escribime por acá.',
+];
+
+function wabot_guias_enviadas() {
+    $j = is_file(WABOT_GUIAS_ENVIADAS) ? json_decode((string)file_get_contents(WABOT_GUIAS_ENVIADAS), true) : null;
+    return is_array($j) ? $j : [];
+}
+
+/** Ids con un cobro rechazado reciente. */
+function wabot_guias_con_cobro_rechazado($ahora) {
+    $ids = [];
+    foreach ((array)(wabot_cobro_rech_estado()['enviados'] ?? []) as $e) {
+        if (!empty($e['id']) && (int)($e['ts'] ?? 0) > $ahora - WABOT_GUIAS_COBRO_DIAS * 86400) $ids[$e['id']] = true;
+    }
+    return $ids;
+}
+
+/** Qué pasaría con cada fila de envio.json: [fila, item, motivo] con motivo '' si sale. */
+function wabot_guias_plan(array $envio, $ahora) {
+    $porId = [];
+    foreach (wabot_webs_estado()['lista'] as $f) $porId[$f['id']] = $f;
+    $enviadas = wabot_guias_enviadas();
+    $cobro = wabot_guias_con_cobro_rechazado($ahora);
+    $plan = [];
+    foreach ($envio as $it) {
+        $id = (string)($it['id'] ?? '');
+        $pdf = basename((string)($it['pdf'] ?? ''));
+        $f = $porId[$id] ?? null;
+        $motivo = '';
+        if (!$f) $motivo = 'no_activo';
+        elseif (!empty($enviadas[$id]['ok'])) $motivo = 'ya_enviada';
+        elseif (isset($cobro[$id])) $motivo = 'cobro_rechazado';
+        elseif ($f['tel'] === '') $motivo = 'sin_tel';
+        elseif ($pdf === '' || !preg_match('/\.pdf$/i', $pdf) || !is_file(WABOT_GUIAS_DIR . '/' . $pdf)) $motivo = 'sin_pdf';
+        $plan[] = [$f, $it + ['pdf' => $pdf], $motivo];
+    }
+    return $plan;
+}
+
+$modo = $argv[1] ?? '';
+$ahora = time();
+
+if ($modo === 'listar') {
+    $enviadas = wabot_guias_enviadas();
+    $cobro = wabot_guias_con_cobro_rechazado($ahora);
+    foreach (wabot_webs_estado()['lista'] as $f) {
+        echo implode(' | ', [$f['id'], $f['negocio'], $f['persona'], $f['dominio'], $f['tel'],
+            !empty($enviadas[$f['id']]['ok']) ? 'YA' : '-', isset($cobro[$f['id']]) ? 'COBRO_RECHAZADO' : '-']), "\n";
+    }
+    exit(0);
+}
+
+if ($modo !== 'probar' && $modo !== 'enviar') {
+    fwrite(STDERR, "uso: php guias.php listar | probar <envio.json> | enviar <envio.json>\n");
+    exit(2);
+}
+$envio = json_decode((string)@file_get_contents($argv[2] ?? ''), true);
+if (!is_array($envio)) { fwrite(STDERR, "envio.json ilegible\n"); exit(2); }
+
+$cfg = wabot_config_load();
+$cfg['plantillas']['guia_web'] = WABOT_GUIAS_PLANTILLA;
+$enviadas = wabot_guias_enviadas();
+$cuenta = ['ok' => 0, 'salteado' => 0, 'error' => 0];
+
+foreach (wabot_guias_plan($envio, $ahora) as [$f, $it, $motivo]) {
+    $negocio = trim((string)($it['negocio'] ?? '')) ?: ($f['negocio'] ?? '');
+    $linea = ($it['id'] ?? '?') . ' | ' . $negocio . ' | ' . ($f['tel'] ?? '') . ' | ' . $it['pdf'];
+    if ($motivo !== '') { echo "SALTEADO ($motivo): $linea\n"; $cuenta['salteado']++; continue; }
+    $valores = [
+        'nombre'  => wabot_webs_nombre($f),
+        'negocio' => $negocio,
+        '_documento' => ['link' => WABOT_GUIAS_URL . rawurlencode($it['pdf']), 'filename' => 'Guía ' . $negocio],
+    ];
+    if ($modo === 'probar') { echo "SALDRÍA: $linea | Hola {$valores['nombre']}\n"; continue; }
+
+    $r = wabot_webs_enviar($f, 'guia_web', $valores, $cfg);
+    $enviadas[$f['id']] = ['ts' => time(), 'ok' => $r === 'ok', 'resultado' => $r, 'pdf' => $it['pdf'], 'tel' => $f['tel']];
+    file_put_contents(WABOT_GUIAS_ENVIADAS, json_encode($enviadas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+    echo strtoupper($r) . ": $linea\n";
+    $cuenta[$r === 'ok' ? 'ok' : 'error']++;
+    sleep(2);
+}
+echo json_encode($cuenta), "\n";
