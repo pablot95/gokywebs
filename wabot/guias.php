@@ -146,6 +146,61 @@ if ($modo === 'qr') {
     exit(0);
 }
 
+/* QR por plantilla a los que tienen la ventana cerrada (Pablo, 16-nov: «Sí, armala»): `guia_qr_web` (QR de
+ * encabezado, botón «Ver la guía» a /guias/<pdf>, que ya es la versión que se ve en Android).
+ * php guias.php qrplantilla probar|enviar. Saltea Instagram y a los que ya tienen el QR. */
+const WABOT_GUIAS_QR_PLANTILLA = [
+    'nombre' => 'guia_qr_web', 'idioma' => 'es_AR', 'activa' => true,
+    'params' => ['nombre', 'negocio'], 'boton' => ['guia_pdf'],
+    'texto'  => 'Hola {nombre}, te paso el código QR de la web de {negocio} en alta calidad para imprimir (tarjetas, el local, el vehículo o flyers). También te reenvío la guía, porque en algunos celulares el texto no se veía: la abrís con el botón de abajo.',
+];
+if ($modo === 'qrplantilla') {
+    $enviar = ($argv[2] ?? '') === 'enviar';
+    $cfg = wabot_config_load();
+    $cfg['plantillas']['guia_qr'] = WABOT_GUIAS_QR_PLANTILLA;
+    $envio = [];
+    foreach ((array)json_decode((string)@file_get_contents(WABOT_DATA . '/guias-envio.json'), true) as $it) $envio[$it['id'] ?? ''] = $it;
+    $porId = [];
+    foreach (wabot_webs_estado()['lista'] as $f) $porId[$f['id']] = $f;
+    $enviadas = wabot_guias_enviadas();
+    $cuenta = [];
+    foreach ($enviadas as $id => $e) {
+        if (empty($e['ok']) || !empty($e['qr_ok'])) continue;
+        $png = WABOT_GUIAS_DIR . '/' . preg_replace('/^instructivos-(.*)\.pdf$/', 'qr-$1.png', (string)$e['pdf']);
+        $f = $porId[$id] ?? null;
+        $clave = wabot_renovacion_clave((string)$e['tel'], $motivo);
+        $r = 'ok';
+        if (!$f) $r = 'no_activo';
+        elseif (!is_file($png)) $r = 'sin_png';
+        elseif ($clave === null || !wabot_conv_existe($clave)) $r = 'sin_chat';
+        elseif (wabot_canal(wabot_conv_load($clave)) === 'instagram') $r = 'instagram';
+        if ($r === 'ok' && $enviar) {
+            $imgId = wabot_wa_media_subir((string)file_get_contents($png), 'image/png', basename($png));
+            $it = $envio[$id] ?? [];
+            $lock = $imgId ? wabot_lock_tomar($clave) : null;
+            if (!$imgId) $r = 'error_subida';
+            elseif (!$lock) $r = 'ocupado';
+            else try {
+                $conv = wabot_conv_load($clave);
+                $conv['guia_pdf'] = basename((string)$e['pdf']);   // el {{1}} del botón
+                $valores = ['negocio' => $it['negocio'] ?? $f['negocio'], '_documento' => ['imagen_id' => $imgId]];
+                if (!empty($it['saludo'])) $valores['nombre'] = $it['saludo'];
+                if (!wabot_enviar_plantilla($conv, 'guia_qr', $cfg, $valores)) $r = 'error';
+                else {
+                    wabot_conv_save($conv);
+                    $enviadas[$id]['qr_ok'] = true; $enviadas[$id]['qr_ts'] = time(); $enviadas[$id]['qr_plantilla'] = true;
+                    file_put_contents(WABOT_GUIAS_ENVIADAS, json_encode($enviadas, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                }
+            } finally { wabot_lock_soltar($lock); }
+            sleep(2);
+        }
+        $cuenta[$r] = ($cuenta[$r] ?? 0) + 1;
+        echo strtoupper($r) . ": $id | {$e['tel']} | " . basename($png) . "\n";
+    }
+    echo json_encode($cuenta), "\n";
+    exit(0);
+}
+
 if ($modo !== 'probar' && $modo !== 'enviar') {
     fwrite(STDERR, "uso: php guias.php listar | probar <envio.json> | enviar <envio.json>\n");
     exit(2);

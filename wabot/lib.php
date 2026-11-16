@@ -1134,7 +1134,7 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg, $fijos = []) {
     // único que ve Pablo de lo que le llegó al cliente, y un mensaje pago que
     // no aparece ahí parece que nunca salió (Pablo, 26-sep).
     if ($texto === '') $texto = '[Plantilla de WhatsApp: ' . $p['nombre'] . ']';
-    if ($documento) $texto = '[documento] ' . wabot_documento_nombre($documento['filename'] ?? 'documento') . "
+    if ($documento) $texto = (!empty($documento['imagen_id']) ? '[imagen]' : '[documento] ' . wabot_documento_nombre($documento['filename'] ?? 'documento')) . "
 " . $texto;
     wabot_conv_transcript($conv, 'bot', $texto, null, ['plantilla' => $clave]);
     wabot_log('plantilla_enviada', ['tel' => $conv['tel'] ?? '', 'plantilla' => $clave, 'nombre' => $p['nombre']]);
@@ -5086,7 +5086,10 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
 
     $comoTexto = function ($v) { return ['type' => 'text', 'text' => (string)$v]; };
     $componentes = [];
-    if ($documento && !empty($documento['link'])) {
+    if ($documento && !empty($documento['imagen_id'])) {
+        // Encabezado de imagen (16-nov, QR de la web): el id de wabot_wa_media_subir.
+        $componentes[] = ['type' => 'header', 'parameters' => [['type' => 'image', 'image' => ['id' => (string)$documento['imagen_id']]]]];
+    } elseif ($documento && !empty($documento['link'])) {
         $componentes[] = ['type' => 'header', 'parameters' => [['type' => 'document', 'document' => [
             'link' => (string)$documento['link'], 'filename' => wabot_documento_nombre($documento['filename'] ?? 'documento')]]]];
     }
