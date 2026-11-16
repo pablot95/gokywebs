@@ -13,6 +13,7 @@
  *   id      la fila de data/webs.json (la que manda el admin: activos, sin bajas ni pausados)
  *   pdf     el archivo en /guias/ del sitio (https://gokywebs.com/guias/<pdf>)
  *   negocio cómo se nombra en el mensaje y en el nombre del archivo
+ *   saludo  (opcional) el {{1}} del «Hola …»; si no está, el nombre de la ficha
  *
  * No se manda (Pablo, 16-nov: «no enviarle a los que tengan pago atrasado o hayan cancelado»):
  *   - si la fila ya no está en webs.json (baja o pausa en el admin),
@@ -101,7 +102,8 @@ foreach (wabot_guias_plan($envio, $ahora) as [$f, $it, $motivo]) {
     $linea = ($it['id'] ?? '?') . ' | ' . $negocio . ' | ' . ($f['tel'] ?? '') . ' | ' . $it['pdf'];
     if ($motivo !== '') { echo "SALTEADO ($motivo): $linea\n"; $cuenta['salteado']++; continue; }
     $valores = [
-        'nombre'  => wabot_webs_nombre($f),
+        // «saludo» en envio.json pisa el nombre de la ficha (emojis, apodos, el negocio en lugar de la persona).
+        'nombre'  => array_key_exists('saludo', $it) && trim((string)$it['saludo']) !== '' ? trim((string)$it['saludo']) : wabot_webs_nombre($f),
         'negocio' => $negocio,
         '_documento' => ['link' => WABOT_GUIAS_URL . rawurlencode($it['pdf']), 'filename' => 'Guía ' . $negocio],
     ];
