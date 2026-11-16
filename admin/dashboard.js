@@ -10629,7 +10629,8 @@ function _cobrosRechazadosFilas() {
     if (!clientesCargados || !mantenimientoCargado || !ingresosMp) return null;
     const clientePorMant = _clientePorSuscripcion();
     return _cruceMercadoPago()
-        .filter(k => k.sub && !k.baja && !k.porFuera)
+        // Las dadas de baja también (16-nov): el bot avisa la cancelación y necesita saber de quién era.
+        .filter(k => k.sub && !k.porFuera)
         .map(k => {
             const c = k.esCliente ? k.ref : clientePorMant.get(k.ref.id) || null;
             const m = k.esCliente ? null : k.ref;
@@ -11197,8 +11198,40 @@ function _cobrosFallidos() {
             nombreMp: c.nombre || "", monto: Number(c.monto) || 0, fecha: new Date(c.fecha),
             dia: k ? _mantVincDiaCobro(k) : new Date(c.fecha).getDate(), aConfirmar: !!k && !propio && !rebote?.porNombre, ...detalleDe(c) });
     }
+    // Teléfono y hasta cuándo está pago (Pablo, 16-nov: "MR Construcciones no puedo saber cuándo se le vence,
+    // ni el número de teléfono, faltan datos"). Pagado hasta = el último cobro aprobado de esa suscripción
+    // (o, sin él, el último a nombre del titular de MP) + 1 mes.
+    const aprobadoSub = new Map();
+    for (const c of (intentosCobro || [])) {
+        if (c.pagoEstado !== "approved") continue;
+        const sub = String(c.suscripcion);
+        if (String(c.fecha) > String(aprobadoSub.get(sub) || "")) aprobadoSub.set(sub, String(c.fecha));
+    }
+    for (const r of out) {
+        const pre = r.clave.startsWith("sub:") ? r.clave.slice(4) : "";
+        const ult = (pre && aprobadoSub.get(pre)) || (r.nombreMp && aprobadoDe.get(claveN(r.nombreMp))) || "";
+        const d = ult ? new Date(ult) : null;
+        r.ultimoPago = d && !Number.isNaN(d.getTime()) ? d : null;
+        if (r.ultimoPago) { const v = new Date(r.ultimoPago); v.setMonth(v.getMonth() + 1); r.vence = v; } else r.vence = null;
+        r.telefono = _fallidoTelefono(r.destino);
+    }
     const ocultos = new Set(mantOcultos?.claves || []);
     return out.filter(r => !ocultos.has(r.oculto)).sort((a, b) => (b.fecha ? new Date(b.fecha) : 0) - (a.fecha ? new Date(a.fecha) : 0));
+}
+
+/* El teléfono de la ficha de un destino "clientes:id" / "mantenimiento:id"; "" si no hay. */
+function _fallidoTelefono(destino) {
+    const [col, id] = String(destino || "").split(":");
+    if (!id) return "";
+    let c = null, m = null;
+    if (col === "clientes") {
+        c = (clients || []).find(x => x.id === id) || null;
+        m = c && typeof mantenimientoDeCliente === "function" ? mantenimientoDeCliente(c) || null : null;
+    } else {
+        m = (mantenimiento || []).find(x => x.id === id) || null;
+        c = m ? _clientePorSuscripcion().get(m.id) || null : null;
+    }
+    return String(_telefonoMantenimiento(c, m) || "").trim();
 }
 
 function _renderMantFallidos(term) {
@@ -11234,8 +11267,14 @@ function _renderMantFallidos(term) {
                 <option value="">💵 Pagó por afuera… ¿quién es?</option>
                 ${candidatos.map(k => `<option value="${escapeHtml(k.destino)}" data-dia="${k.dia || 0}">${escapeHtml([k.nombre, k.persona, fmtMoney(k.monto), k.porFuera ? "ya paga por afuera" : ""].filter(Boolean).join(" · "))}</option>`).join("")}
               </select>`;
+        const telDig = String(r.telefono || "").replace(/\D/g, "");
+        const tel = r.telefono
+            ? `<div style="font-size:12px">📱 ${telDig.length >= 10 ? `<a href="https://wa.me/${escapeHtml(telDig.startsWith("54") ? telDig : "549" + telDig)}" target="_blank" rel="noopener">${escapeHtml(r.telefono)}</a>` : escapeHtml(r.telefono)}</div>`
+            : (r.destino ? `<div class="muted" style="font-size:12px">📱 sin teléfono en la ficha</div>` : "");
+        const fl = d => { const x = new Date(d); return Number.isNaN(x.getTime()) ? "" : fechaCortaJs(x); };
+        const vencido = r.vence && r.vence.getTime() < Date.now();
         return `<tr>
-            <td><div>${escapeHtml(r.nombre)}</div>${r.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(r.persona)}</div>` : ""}${r.nombreMp && r.nombreMp !== r.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(r.nombreMp)}${r.aConfirmar ? " · a confirmar" : ""}</div>` : ""}</td>
+            <td><div>${escapeHtml(r.nombre)}</div>${r.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(r.persona)}</div>` : ""}${tel}${r.nombreMp && r.nombreMp !== r.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(r.nombreMp)}${r.aConfirmar ? " · a confirmar" : ""}</div>` : ""}</td>
             <td>${fmtMoney(r.monto)}/mes</td>
             <td><span class="mant-vinc-estado mant-vinc-estado--${t.clase}">${t.texto}</span>${r.primerPago ? `<div class="muted" style="font-size:12px">el primer pago</div>` : ""}</td>
             <td class="intento-detalle">${[
@@ -11243,6 +11282,9 @@ function _renderMantFallidos(term) {
                 r.intento ? escapeHtml(r.intento.charAt(0).toUpperCase() + r.intento.slice(1)) : "",
                 r.motivo ? `Motivo: ${escapeHtml(r.motivo)}` : "",
                 r.proximo ? `Próximo reintento: ${escapeHtml(fh(r.proximo))}` : "",
+                r.vence ? `<strong>${vencido ? "Venció" : "Pagado hasta"} el ${escapeHtml(fl(r.vence))}</strong>` : `<strong>Sin pagos aprobados en MP</strong>`,
+                r.ultimoPago ? `Último pago: ${escapeHtml(fl(r.ultimoPago))}` : "",
+                r.dia ? `Día de cobro: ${r.dia}` : "",
             ].filter(Boolean).map(x => `<div>${x}</div>`).join("") || `<span class="muted">—</span>`}</td>
             <td class="actions-cell">${fuera}
                 <button type="button" class="btn-ghost btn-sm" data-fallido-ocultar="${escapeHtml(r.oculto)}" title="Lo saca de esta lista. Si vuelve a fallar otro día, aparece de nuevo.">Ocultar</button></td>
