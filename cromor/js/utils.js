@@ -59,3 +59,8 @@ export function toast(msg, type = 'info') {
         setTimeout(() => t.remove(), 300);
     }, 3000);
 }
+
+// Tasks de "decp" o "triage" (en el nombre o el comentario) llevan el check "pv hub".
+export function needsPvHub(...texts) {
+    return texts.some(t => /decp|triage/i.test(t || ''));
+}

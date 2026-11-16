@@ -5,7 +5,7 @@ import {
     doc, setDoc, updateDoc, deleteDoc, deleteField, addDoc, collection,
     onSnapshot, query, orderBy, serverTimestamp, writeBatch,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { formatTime, escHtml, getDateKey, getDisplayDateLabel, toast, roundSecondsToQuarterHour } from './utils.js';
+import { formatTime, escHtml, getDateKey, getDisplayDateLabel, toast, roundSecondsToQuarterHour, needsPvHub } from './utils.js';
 import { initCalendar, refreshCalendar, setCalendarTaskTypes, setCalendarProjects } from './calendar.js';
 
 const $ = id => document.getElementById(id);
@@ -60,6 +60,7 @@ const currentCategoryId = hasDayCategory ? (pState.categoryId || null) : (p.cate
 const cat = categories.find(c => c.id === currentCategoryId);
 const currentTipo = pState?.tipo || p.tipo || null;
 const currentComment = pState?.comment || p.comment || null;
+const currentPvHub = !!(pState && Object.prototype.hasOwnProperty.call(pState, 'pvHub') ? pState.pvHub : p.pvHub);
 
 projectsSnapshot[p.id] = {
     seconds,
@@ -72,6 +73,7 @@ projectsSnapshot[p.id] = {
     completedAt: null,
     ...(currentTipo ? { tipo: currentTipo } : {}),
     ...(currentComment ? { comment: currentComment } : {}),
+    ...(currentPvHub ? { pvHub: true } : {}),
 };
     });
 
@@ -999,6 +1001,8 @@ const tipoOptions = renderTaskTypeSelect(tipo);
 const hasDayComment = pState && Object.prototype.hasOwnProperty.call(pState, 'comment');
 const taskComment = (hasDayComment ? pState.comment : p.comment) || '';
 const hasComment = !!taskComment.trim();
+const showPvHub = needsPvHub(pState?.name || p.name);
+const pvHub = !!(pState && Object.prototype.hasOwnProperty.call(pState, 'pvHub') ? pState.pvHub : p.pvHub);
 
         return `
     <div class="task-card ${running ? 'is-running' : ''}">
@@ -1022,6 +1026,8 @@ const hasComment = !!taskComment.trim();
                 ${tipoOptions}
             </select>
         </div>
+
+        ${showPvHub ? `<label class="task-pvhub${pvHub ? ' is-checked' : ''}"><input type="checkbox" data-pvhub-project="${p.id}" ${pvHub ? 'checked' : ''}> pv hub</label>` : ''}
 
         <div class="task-actions">
             <button class="btn-complete-task" data-complete-project="${p.id}" type="button">Tarea completada</button>
@@ -1125,6 +1131,13 @@ const hasComment = !!taskComment.trim();
 
     list.querySelectorAll('[data-comment-project]').forEach(btn => {
         btn.addEventListener('click', () => openCommentModal(uid, btn.dataset.commentProject));
+    });
+
+    list.querySelectorAll('[data-pvhub-project]').forEach(chk => {
+        chk.addEventListener('change', () => {
+            chk.closest('.task-pvhub').classList.toggle('is-checked', chk.checked);
+            setProjectPvHub(uid, chk.dataset.pvhubProject, chk.checked);
+        });
     });
 
     list.querySelectorAll('[data-tipo-project]').forEach(select => {
@@ -1332,6 +1345,19 @@ async function setProjectTipo(uid, projId, tipo) {
         });
     }
 
+    await batch.commit();
+}
+
+// Check "pv hub" de las tasks de decp/triage: va en la task y en el día (se ve en el calendario).
+async function setProjectPvHub(uid, projId, checked) {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'users', uid, 'projects', projId), { pvHub: checked });
+    if (dayData?.projects?.[projId]) {
+        batch.update(doc(db, 'users', uid, 'days', currentDateKey), {
+            [`projects.${projId}.pvHub`]: checked,
+            finalized: false,
+        });
+    }
     await batch.commit();
 }
 
@@ -1687,6 +1713,7 @@ async function toggleProject(uid, projId) {
             startedAt: now,
             ...(project?.tipo && !pState.tipo ? { tipo: project.tipo } : {}),
             ...(project?.comment && !pState.comment ? { comment: project.comment } : {}),
+            ...(project?.pvHub && !Object.prototype.hasOwnProperty.call(pState, 'pvHub') ? { pvHub: true } : {}),
         };
     }
 
@@ -1731,6 +1758,7 @@ const currentCategoryId = hasDayCategory ? (pState.categoryId || null) : (projec
 const cat = categories.find(c => c.id === currentCategoryId);
 const currentTipo = pState?.tipo || project.tipo || null;
 const currentComment = pState?.comment || project.comment || null;
+const currentPvHub = !!(Object.prototype.hasOwnProperty.call(pState, 'pvHub') ? pState.pvHub : project.pvHub);
 
 // El redondeo a cuarto de hora se acredita al reloj general apenas se completa
 // (no solo al mostrar la task) — así el total del día ya refleja el tiempo
@@ -1754,6 +1782,7 @@ categoryId: currentCategoryId,
 categoryName: cat ? cat.name : null,
 ...(currentTipo ? { tipo: currentTipo } : {}),
 ...(currentComment ? { comment: currentComment } : {}),
+...(currentPvHub ? { pvHub: true } : {}),
         },
         generalSeconds: (dayData.generalSeconds || 0) + ajusteRedondeo,
         finalized: false,

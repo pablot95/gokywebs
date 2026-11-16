@@ -3,7 +3,7 @@ import { db } from '../firebase-config.js';
 import {
     collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteField, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { formatTime, escHtml, getDateKey, toast, roundSecondsToQuarterHour } from './utils.js';
+import { formatTime, escHtml, getDateKey, toast, roundSecondsToQuarterHour, needsPvHub } from './utils.js';
 
 function fmtFrac(secs) {
     const hours = Math.round((secs / 3600) * 100) / 100;
@@ -388,6 +388,7 @@ function renderDayModal() {
                                <label class="modal-task-completed"><input type="checkbox" data-edit-task-completed="${escAttr(id)}" ${p.completed ? 'checked' : ''}> Completada</label>`
                             : `<span class="cat-label">${escHtml(p.categoryName || 'Sin proyecto')}</span>
                                ${p.completed ? '<span class="completed-label">completada</span>' : ''}`}
+                        ${needsPvHub(p.name) ? `<label class="modal-task-pvhub${p.pvHub ? ' is-checked' : ''}"><input type="checkbox" data-pvhub-task="${escAttr(id)}" ${p.pvHub ? 'checked' : ''}> pv hub</label>` : ''}
                     </div>
                     <div class="modal-task-tipo">
                         <select class="modal-task-tipo-select" data-edit-task-tipo="${escAttr(id)}" aria-label="Categoría de la task" ${editing ? '' : 'disabled'}>
@@ -413,6 +414,11 @@ function renderDayModal() {
                 const inp = $('dayModalProjects').querySelector('[data-edit-task-name]');
                 if (inp) { inp.focus(); inp.select(); }
             });
+        });
+
+        // Check "pv hub" (tasks de decp/triage) → se guarda al toque en el día
+        projectsEl.querySelectorAll('[data-pvhub-task]').forEach(chk => {
+            chk.addEventListener('change', () => setDayTaskPvHub(chk.dataset.pvhubTask, chk.checked, chk));
         });
 
         // Tilde → guarda los cambios de la task
@@ -589,6 +595,23 @@ async function saveDayTaskEdits(projId) {
     }
 
     renderDayModal();
+}
+
+async function setDayTaskPvHub(projId, checked, chk) {
+    const proj = currentModalData?.projects?.[projId];
+    if (!proj || !currentModalDateKey) return;
+    chk.closest('.modal-task-pvhub')?.classList.toggle('is-checked', checked);
+    try {
+        await updateDoc(doc(db, 'users', uid, 'days', currentModalDateKey), {
+            [`projects.${projId}.pvHub`]: checked,
+        });
+        proj.pvHub = checked;
+    } catch (e) {
+        console.error(e);
+        chk.checked = !checked;
+        chk.closest('.modal-task-pvhub')?.classList.toggle('is-checked', !checked);
+        toast('No se pudo guardar pv hub', 'error');
+    }
 }
 
 // ── Tiempo general del día editable (total y SA) ──
