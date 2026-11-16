@@ -8,6 +8,8 @@ require_once __DIR__ . '/test-lib.php';
 require_once __DIR__ . '/cobros-rechazados.php';
 
 $ar = function ($s) { return (int)strtotime($s . ' -03:00'); };
+// Las listas de respaldo (webs.json, renovaciones.json) no se leen del disco en las pruebas.
+$GLOBALS['WABOT_TEST_COBRO_LISTAS'] = [];
 $cfg = wabot_config_load();
 $cfg['plantillas']['cobro_rechazado'] = array_merge((array)$cfg['plantillas']['cobro_rechazado'], ['activa' => true, 'automatico' => true]);
 
@@ -162,5 +164,26 @@ caso('…sin repetirlo', !$avisos);
 
 $r = wabot_cobro_rech_correr($cfg, $dia1, ['lista' => [], 'sync_ts' => 0, 'enviados' => [], 'aviso_vieja_ts' => 0], function () { throw new RuntimeException('no debería llamar'); }, null, $avisar);
 caso('sin lista del admin no llama a MP', !empty($r['sin_lista']));
+
+echo "\n=== Cancelada que ya no está en la lista del admin ===\n";
+$listas = [
+    ['id' => 'clientes:EEE', 'tel' => '3514445555', 'persona' => 'Marta Gil', 'negocio' => 'Vivero'],
+    ['id' => 'clientes:FFF', 'tel' => '2614445555', 'persona' => 'Silvana Navarro', 'negocio' => 'Estética'],
+];
+$sinConocer = ['lista' => [['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan', 'negocio' => 'X', 'seguro' => true]],
+               'sync_ts' => $dia1 - 3600, 'aviso_vieja_ts' => 0,
+               'enviados' => ['7000' => ['ts' => $dia1 - 86400, 'id' => 'clientes:EEE', 'pre' => 'S5eeeeee', 'resultado' => 'ok']]];
+$fr = wabot_cobro_rech_fila_respaldo('S5eeeeee', 'Otra Persona', $sinConocer, $listas);
+caso('por el id que quedó en un aviso anterior', ($fr['negocio'] ?? '') === 'Vivero' && !empty($fr['seguro']), json_encode($fr, JSON_UNESCAPED_UNICODE));
+$fr = wabot_cobro_rech_fila_respaldo('S7gggggg', 'Silvana  Navarro', $sinConocer, $listas);
+caso('por el nombre del titular de MP (con espacios de más)', ($fr['negocio'] ?? '') === 'Estética' && ($fr['via'] ?? '') === 'nombre');
+caso('sin nada que coincida: null', wabot_cobro_rech_fila_respaldo('S8hhhhhh', 'Nadie', $sinConocer, $listas) === null);
+$GLOBALS['WABOT_TEST_COBRO_LISTAS'] = $listas;
+$avisos = [];
+wabot_cobro_rech_correr($cfg, $dia1, $sinConocer, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
+caso('el aviso de la cancelada sale con el cliente', strpos($textos(), 'Marta Gil — Vivero') !== false && strpos($textos(), 'no está vinculado') === false, $textos());
+caso('el «(20000)» de MP como nombre del plan no se muestra; «Plan mensual» sí', strpos($textos(), '(Plan mensual)') !== false
+    && wabot_cobro_rech_plan_texto('30000') === '' && wabot_cobro_rech_plan_texto('Plan tienda') === 'Plan tienda');
+$GLOBALS['WABOT_TEST_COBRO_LISTAS'] = [];
 
 todo_ok();

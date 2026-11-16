@@ -178,6 +178,7 @@ function wabot_cobro_rech_motivo_texto($m) {
 
 /** Renglones de cliente/WhatsApp y la clave del chat de una fila del admin (o lo que diga MP si no hay fila). */
 function wabot_cobro_rech_cliente($f, $nombreMp) {
+    $nombreMp = trim(preg_replace('/\s+/u', ' ', (string)$nombreMp));
     if (!is_array($f)) {
         return [['Cliente: no está vinculado en el admin' . ($nombreMp !== '' ? ' (en MP figura «' . $nombreMp . '»)' : ''),
                  'Vinculalo en Mantenimiento → Vincular con MP.'], ''];
@@ -192,14 +193,61 @@ function wabot_cobro_rech_cliente($f, $nombreMp) {
         'WhatsApp: ' . ($clave !== '' ? '+' . $clave : ($tel !== '' ? $tel . ' (no parece un número de WhatsApp)' : 'sin teléfono cargado')),
     ];
     if ($nombreMp !== '' && mb_strtolower($nombreMp) !== mb_strtolower($persona)) $l[] = 'Titular en MP: ' . $nombreMp;
-    if (empty($f['seguro'])) $l[] = '(vinculada solo por la fecha: confirmala en Mantenimiento → Vincular con MP)';
+    if (($f['via'] ?? '') === 'nombre') $l[] = '(encontrado por el nombre que figura en MP: confirmalo)';
+    elseif (empty($f['seguro'])) $l[] = '(vinculada solo por la fecha: confirmala en Mantenimiento → Vincular con MP)';
     return [$l, $clave];
+}
+
+/** "Plan mensual web" queda; lo que MP pone como nombre cuando no hay ("30000") no. */
+function wabot_cobro_rech_plan_texto($plan) {
+    $plan = trim((string)$plan);
+    return preg_match('/^[\d.,\s$]*$/', $plan) ? '' : $plan;
+}
+
+function wabot_cobro_rech_normal($s) {
+    $s = mb_strtolower(trim(preg_replace('/\s+/u', ' ', (string)$s)), 'UTF-8');
+    return strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+}
+
+/**
+ * Si la suscripción no está en la lista del admin (al cancelarse sale de ahí):
+ * el id de cliente que quedó anotado en un aviso anterior de esa suscripción, con
+ * los datos de la lista de webs en mantenimiento o la de pagan por afuera; si no,
+ * el nombre del titular de MP igual al de una ficha. null si no aparece.
+ * $listas solo la pasan los tests.
+ */
+function wabot_cobro_rech_fila_respaldo($pre, $nombreMp, array $estado, $listas = null) {
+    if ($listas === null) {
+        $listas = [];
+        foreach ([WABOT_DATA . '/webs.json', WABOT_DATA . '/renovaciones.json'] as $arch) {
+            $j = json_decode((string)@file_get_contents($arch), true);
+            foreach ((array)($j['lista'] ?? []) as $f) if (is_array($f) && !empty($f['id'])) $listas[] = $f;
+        }
+    }
+    $arma = function ($f, $via) use ($pre) {
+        return ['id' => (string)$f['id'], 'pre' => $pre, 'tel' => preg_replace('/\D+/', '', (string)($f['tel'] ?? '')),
+                'persona' => (string)($f['persona'] ?? ''), 'negocio' => (string)($f['negocio'] ?? ''), 'seguro' => $via === 'id', 'via' => $via];
+    };
+    $id = '';
+    foreach ((array)$estado['enviados'] as $e) {
+        if (is_array($e) && ($e['pre'] ?? '') === $pre && !empty($e['id'])) { $id = (string)$e['id']; break; }
+    }
+    if ($id !== '') {
+        foreach ($listas as $f) if ((string)$f['id'] === $id) return $arma($f, 'id');
+    }
+    $nombre = wabot_cobro_rech_normal($nombreMp);
+    if ($nombre === '') return null;
+    $hallados = [];
+    foreach ($listas as $f) {
+        if (wabot_cobro_rech_normal($f['persona'] ?? '') === $nombre) $hallados[(string)$f['id']] = $f;
+    }
+    return count($hallados) === 1 ? $arma(reset($hallados), 'nombre') : null;
 }
 
 /** El aviso de un cobro rechazado: [titulo, renglones, clave]. */
 function wabot_cobro_rech_aviso_atrasado($f, array $cobro) {
     [$l, $clave] = wabot_cobro_rech_cliente($f, (string)$cobro['nombre_mp']);
-    $plan = (string)($cobro['plan'] ?? '');
+    $plan = wabot_cobro_rech_plan_texto($cobro['plan'] ?? '');
     $l[] = 'Monto: ' . wabot_moneda($cobro['monto']) . ($plan !== '' ? ' (' . $plan . ')' : '');
     $l[] = 'Primer intento rechazado: ' . wabot_cobro_rech_fecha_corta($cobro['primer_intento'])
          . ((int)$cobro['intento'] > 0 ? ' · reintento ' . (int)$cobro['intento'] . ' de 4' : '');
@@ -213,7 +261,8 @@ function wabot_cobro_rech_aviso_atrasado($f, array $cobro) {
 /** El aviso de una suscripción cancelada o pausada: [titulo, renglones, clave]. */
 function wabot_cobro_rech_aviso_cancelada($f, array $c) {
     [$l, $clave] = wabot_cobro_rech_cliente($f, (string)$c['nombre_mp']);
-    if ($c['monto'] > 0) $l[] = 'Monto: ' . wabot_moneda($c['monto']) . ' por mes' . ($c['plan'] !== '' ? ' (' . $c['plan'] . ')' : '');
+    $plan = wabot_cobro_rech_plan_texto($c['plan'] ?? '');
+    if ($c['monto'] > 0) $l[] = 'Monto: ' . wabot_moneda($c['monto']) . ' por mes' . ($plan !== '' ? ' (' . $plan . ')' : '');
     if ($c['alta'] !== '') $l[] = 'Suscripta desde: ' . wabot_renovacion_fecha_texto($c['alta']);
     $l[] = ($c['estado'] === 'paused' ? 'Pausada' : 'Cancelada') . ' el ' . gmdate('d/m H:i', $c['ts'] - 3 * 3600);
     $l[] = 'Suscripción MP: ' . $c['pre'];
@@ -256,7 +305,7 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         $res['rechazados']++;
         // Uno por cobro: los reintentos de MP del mismo cobro no vuelven a avisar.
         if (isset($estado['enviados'][$cobro['cobro']])) continue;
-        $f = $porPre[$cobro['pre']] ?? null;
+        $f = $porPre[$cobro['pre']] ?? wabot_cobro_rech_fila_respaldo($cobro['pre'], $cobro['nombre_mp'], $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
         [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_atrasado($f, $cobro);
         if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }   // la próxima pasada lo reintenta
         $estado['enviados'][$cobro['cobro']] = ['ts' => $ahora, 'id' => $f['id'] ?? '', 'pre' => $cobro['pre'],
@@ -273,7 +322,7 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         if ($ahora - $c['ts'] > WABOT_COBRO_RECH_CANCELADA_DIAS * 86400) continue;
         $marca = $c['pre'] . ':' . $c['estado'];
         if (isset($estado['canceladas'][$marca])) continue;
-        $f = $porPre[$c['pre']] ?? null;
+        $f = $porPre[$c['pre']] ?? wabot_cobro_rech_fila_respaldo($c['pre'], $c['nombre_mp'], $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
         [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_cancelada($f, $c);
         if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }
         $estado['canceladas'][$marca] = $ahora;
