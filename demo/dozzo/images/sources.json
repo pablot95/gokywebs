@@ -1,0 +1,167 @@
+{
+ "nota": "Fotos de la clienta (WhatsApp, Descargas/imagenes-prospectos/dozzo) y del zip de ChatGPT (ilustrativas). Los originales quedan sin tocar.",
+ "archivos": {
+  "logo-dozzo.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/10-imagen.jpg (logo real que mando la clienta), fondo quitado",
+   "tamano": "1200x268"
+  },
+  "logo-dozzo-blanco.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/10-imagen.jpg (logo real que mando la clienta), fondo quitado",
+   "tamano": "1200x268"
+  },
+  "favicon.png": {
+   "origen": "letra D del logo real",
+   "tamano": "64x64"
+  },
+  "favicon-180.png": {
+   "origen": "letra D del logo real",
+   "tamano": "180x180"
+  },
+  "h-gimnasio.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/03-imagen.jpg",
+   "tamano": "960x1707",
+   "nota": "recorte vertical; queda afuera la marca CapCut AI"
+  },
+  "h-calle.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/02-imagen.jpg",
+   "tamano": "789x1402"
+  },
+  "h-estudio.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/09-imagen.jpg",
+   "tamano": "530x943"
+  },
+  "b-gimnasio.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/03-imagen.jpg",
+   "tamano": "1920x1368",
+   "nota": "sin los 96 px de arriba (marca CapCut AI)"
+  },
+  "l-deportiva.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/07-imagen.jpg",
+   "tamano": "870x1088"
+  },
+  "l-urbana.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/04-imagen.jpg",
+   "tamano": "922x1152"
+  },
+  "k-calle.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/02-imagen.jpg",
+   "tamano": "1000x1250"
+  },
+  "k-estudio.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/09-imagen.jpg",
+   "tamano": "650x812"
+  },
+  "k-gimnasio.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/08-imagen.jpg",
+   "tamano": "714x892"
+  },
+  "p-top-turquesa.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/03-imagen.jpg",
+   "tamano": "986x1233"
+  },
+  "p-top-azul.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/08-imagen.jpg",
+   "tamano": "714x892"
+  },
+  "p-top-negro.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/20-imagen.jpg",
+   "tamano": "896x1120",
+   "nota": "mitad izquierda (frente)"
+  },
+  "p-top-negro-espalda.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/20-imagen.jpg",
+   "tamano": "896x1120",
+   "nota": "mitad derecha (espalda)"
+  },
+  "p-top-marino.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/21-imagen.jpg",
+   "tamano": "960x1200",
+   "nota": "mitad izquierda (frente)"
+  },
+  "p-top-marino-espalda.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/21-imagen.jpg",
+   "tamano": "960x1200",
+   "nota": "mitad derecha (espalda)"
+  },
+  "p-top-blanco.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/09-imagen.jpg",
+   "tamano": "560x700"
+  },
+  "p-top-nadadora-negro.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/07-imagen.jpg",
+   "tamano": "900x1125"
+  },
+  "p-oxford.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/02-imagen.jpg",
+   "tamano": "640x800"
+  },
+  "p-biker.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/05-imagen.jpg",
+   "tamano": "1000x1250"
+  },
+  "p-short-colores.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/22-imagen.jpg",
+   "tamano": "1000x1250"
+  },
+  "p-short-negro.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/06-imagen.png",
+   "tamano": "720x900"
+  },
+  "p-remera-curva.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/16-imagen.jpg",
+   "tamano": "869x1086"
+  },
+  "p-remera-basica.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/11-imagen.png",
+   "tamano": "720x900"
+  },
+  "p-remera-chocolate.webp": {
+   "origen": "Descargas/imagenes-prospectos/dozzo/04-imagen.jpg",
+   "tamano": "944x1180"
+  },
+  "p-calza-negra.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_01.jpg (ilustrativa)",
+   "tamano": "900x1125"
+  },
+  "p-buzo-gris.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_02.jpg (ilustrativa)",
+   "tamano": "720x900"
+  },
+  "p-top-liso.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_03.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-jogger.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_04.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-short-holgado.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_05.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-musculosa.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_06.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-remera-oversize.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_07.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-rompevientos.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_08.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "p-campera-vivos.webp": {
+   "origen": "zip de ChatGPT, Dozzo_CedEnHQXdmuMKPjFOuQU_09.jpg (ilustrativa)",
+   "tamano": "819x1024"
+  },
+  "og-dozzo.jpg": {
+   "origen": "logo real + 03-imagen.jpg",
+   "tamano": "1200x630"
+  },
+  "Dozzo_CedEnHQXdmuMKPjFOuQU_10_mockup_720x480.png": {
+   "origen": "mock up de ChatGPT",
+   "nota": "solo referencia de colores, tono y estilo; no se usa en la web"
+  }
+ }
+}
