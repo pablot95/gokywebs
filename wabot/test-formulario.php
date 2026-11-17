@@ -925,4 +925,50 @@ $formJs = (string)@file_get_contents(__DIR__ . '/../form/script.js');
 caso('el formulario sube las fotos recién después de que el envío se aceptó, con tope de 20',
     strpos($formJs, 'const FOTOS_MAX = 20;') !== false && strpos($formJs, 'await subirFotos(json.subida') !== false);
 
+echo "— 19. Clienta que pide otra web (17-nov, Naty de Vitamov → Dozzo) —\n";
+/* Ya era clienta (form del 23-oct, ficha pasada a Clientes y borrada). Pablo le
+ * mandó el link de nuevo para una segunda web y los dos envíos quedaron «sin
+ * código — NO aplicado»: nunca apareció en Prospectos. */
+@unlink(WABOT_DATA . '/conv/5493810009101.json');
+$naty = wabot_conv_load('5493810009101');
+$naty['nombre_negocio'] = 'Vitamov'; $naty['descripcion'] = 'Entrenamiento personalizado'; $naty['tipo'] = 'elearning';
+$naty['referencia'] = 'vitamov'; $naty['colores'] = 'naranja'; $naty['incluir'] = 'Clases grabadas';
+$naty['form_completado_ts'] = time() - 86400 * 25; $naty['lead_creado'] = true; $naty['cliente_id'] = 'CLI1';
+$naty['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/FICHAVITAMOV';
+$naty['brief'] = ['marca' => 'Vitamov', 'negocio' => 'Entrenamiento', 'ofrece' => 'Clases', 'objetivo' => '', 'referencia' => ''];
+$naty['transcript'] = [['q' => 'cliente', 't' => 'Hola, quiero otra web para mi tienda de ropa', 'ts' => time() - 3000]];
+$naty['ultimo_cliente_ts'] = time() - 3000;
+wabot_conv_save($naty);
+$payloadDozzo = ['t' => '381 000-9101', 'nombre_negocio' => 'Dozzo', 'resumen' => 'Indumentaria deportiva y urbana',
+    'colores' => 'Color principal: #000000', 'instagram' => 'dozzo34', 'incluir' => 'Carrito con Mercado Pago'];
+
+// Sin link nuevo: sigue como antes (cualquiera con el número no pisa la charla).
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = false;
+$b = wabot_form_lead_validar($payloadDozzo, $m0);
+formlead_extras_guardar($b, formlead_extras($payloadDozzo));
+$r0 = wabot_form_lead_procesar($payloadDozzo, $cfg);
+$n0 = wabot_conv_load('5493810009101');
+caso('sin un link mandado después del form anterior, no se aplica', ($r0['aplicado'] ?? null) === false && $n0['nombre_negocio'] === 'Vitamov' && $n0['incluir'] === 'Clases grabadas');
+
+// Pablo le manda el link de nuevo → el form es un pedido nuevo.
+wabot_conv_transcript($n0, 'humano', 'Dale! el precio quedaría en lo mismo. Te paso el enlace al form: gokywebs.com/form');
+
+wabot_conv_save($n0);
+caso('el link mandado a mano queda como el último', wabot_form_nuevo_autorizado($n0) === true);
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = false;   // aun con la ficha anterior viva, la web nueva lleva la suya
+$b = wabot_form_lead_validar($payloadDozzo, $m0);
+formlead_extras_guardar($b, formlead_extras($payloadDozzo));
+$r1 = wabot_form_lead_procesar($payloadDozzo, $cfg);
+$n1 = wabot_conv_load('5493810009101');
+caso('el form nuevo se aplica', ($r1['ok'] ?? false) === true && !isset($r1['aplicado']) && $n1['nombre_negocio'] === 'Dozzo'
+    && $n1['descripcion'] === 'Indumentaria deportiva y urbana', json_encode($r1));
+caso('con ficha nueva', (int)($n1['lead_recreado_ts'] ?? 0) > 0);
+caso('el paso 2 queda (incluir e instagram de Dozzo)', $n1['incluir'] === 'Carrito con Mercado Pago' && $n1['instagram'] === 'dozzo34', json_encode([$n1['incluir'], $n1['instagram']]));
+caso('no arrastra lo de Vitamov (referencia, tipo)', empty($n1['referencia']) || $n1['referencia'] !== 'vitamov');
+caso('ni el tipo de la web anterior', ($n1['tipo'] ?? '') !== 'elearning');
+caso('sigue siendo la misma clienta', $n1['cliente_id'] === 'CLI1');
+caso('ya no es pedido nuevo: un reintento no crea otra ficha', wabot_form_nuevo_autorizado($n1) === false);
+@unlink(WABOT_DATA . '/conv/5493810009101.json');
+unset($GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO']);
+
 todo_ok();

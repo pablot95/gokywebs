@@ -2595,6 +2595,10 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
         if (empty($conv['form_link_mandado_ts']) && (wabot_texto_tiene_link_form($texto) || $pideDatos)) {
             $conv['form_link_mandado_ts'] = $fila['ts'];
         }
+        /* La última vez que se le mandó el link (17-nov): form_link_mandado_ts queda
+         * con la primera. Un form que llega después de un link mandado DESPUÉS del
+         * form anterior es un pedido nuevo (wabot_form_nuevo_autorizado). */
+        if (wabot_texto_tiene_link_form($texto)) $conv['form_link_ultimo_ts'] = $fila['ts'];
         if ($pideDatos && empty($conv['datos_pedidos_ts'])) $conv['datos_pedidos_ts'] = $fila['ts'];
     }
     // "Te hablo el martes" (del cliente, o de Pablo desde el panel): ningún aviso
@@ -7907,6 +7911,35 @@ function wabot_form_rate_ok($ip, $max = 10, $ventana = 600, $ahora = null) {
     return true;
 }
 
+/**
+ * ¿Este form es un pedido nuevo de una charla que ya había completado uno?
+ * (17-nov, Naty de Vitamov: ya clienta, Pablo le mandó el link de nuevo para una
+ * segunda web —Dozzo— y los dos envíos quedaron «sin código — NO aplicado»: nunca
+ * apareció en Prospectos.) Vale si a la charla se le mandó el link del formulario
+ * DESPUÉS del form anterior: lo pidió el chat, no es alguien que conoce el número.
+ */
+function wabot_form_nuevo_autorizado($conv) {
+    $form = (int)($conv['form_completado_ts'] ?? 0);
+    return $form > 0 && (int)($conv['form_link_ultimo_ts'] ?? 0) > $form;
+}
+
+/**
+ * Deja la charla lista para el pedido nuevo: lo que era del negocio anterior
+ * (referencia, brief, colores, lo que pidió incluir…) no tiene que pasar a la
+ * ficha nueva. Una sola vez por link: lo llama el paso 2, que llega primero.
+ */
+function wabot_form_nuevo_reiniciar(&$conv) {
+    $link = (int)($conv['form_link_ultimo_ts'] ?? 0);
+    if ((int)($conv['form_nuevo_reiniciado_link_ts'] ?? 0) === $link) return;
+    foreach (['referencia', 'brief', 'colores', 'colores_hex', 'incluir', 'estilo', 'objetivos',
+              'instagram', 'modelos_elegidos', 'demo_hora_ts', 'modalidad_elegida', 'descripcion',
+              'ficha', 'tipo', 'productos_cantidad'] as $campo) {
+        $conv[$campo] = null;
+    }
+    $conv['form_nuevo_reiniciado_link_ts'] = $link;
+    wabot_log('form_pedido_nuevo', ['tel' => wabot_conversation_key($conv), 'form_anterior' => (int)($conv['form_completado_ts'] ?? 0)]);
+}
+
 function wabot_form_lead_procesar($payload, $cfg) {
     $motivo = null;
     $datos = wabot_form_lead_validar($payload, $motivo);
@@ -7949,6 +7982,12 @@ function wabot_form_lead_procesar($payload, $cfg) {
      * bot había sacado del chat. A una charla que nunca recibió el link sigue
      * sin poder pisarle nada. */
     if (!$conCodigo && $huboChatReal && empty($conv['form_completado_ts']) && wabot_conv_form_recibido($conv)) {
+        $conCodigo = true;
+    }
+    // Pedido nuevo de una charla que ya tenía form (17-nov): se aplica como con código.
+    $pedidoNuevo = !$conCodigo && $huboChatReal && wabot_form_nuevo_autorizado($conv);
+    if ($pedidoNuevo) {
+        wabot_form_nuevo_reiniciar($conv);
         $conCodigo = true;
     }
 
@@ -8015,7 +8054,8 @@ function wabot_form_lead_procesar($payload, $cfg) {
      * nuevo, y el brief, que era del envío anterior, se rearma. Solo acá: los
      * sincronizadores sueltos (logo, forma de pago…) siguen sin resucitar una
      * ficha que Pablo ya procesó. */
-    $fichaPerdida = !empty($conv['lead_creado']) && !wabot_lead_doc_existe($conv);
+    // Un pedido nuevo (otra web) lleva ficha propia aunque la anterior siga en Prospectos.
+    $fichaPerdida = !empty($conv['lead_creado']) && ($pedidoNuevo || !wabot_lead_doc_existe($conv));
     if ($fichaPerdida) $conv['brief'] = null;
 
     if (!$huboChatReal && empty($conv['brief'])) {

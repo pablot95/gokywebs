@@ -227,6 +227,12 @@ function formlead_extras_guardar($base, $extras) {
     $conv = wabot_conv_load($clave);
     $conCodigo = !empty($base['conCodigo']);
     $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
+    // Pedido nuevo de una charla que ya tenía form (17-nov): como con código.
+    $pedidoNuevo = !$conCodigo && $huboChatReal && wabot_form_nuevo_autorizado($conv);
+    if ($pedidoNuevo) {
+        wabot_form_nuevo_reiniciar($conv);
+        $conCodigo = true;
+    }
     $aplicar = $conCodigo || !$huboChatReal || empty($conv['form_completado_ts']);
     $soloCompletar = !$conCodigo && $huboChatReal;
 
@@ -264,9 +270,10 @@ function formlead_extras_guardar($base, $extras) {
         if (!$yaAnotada) wabot_conv_transcript($conv, 'sistema', $linea);
     }
 
-    if ($aplicar && !empty($extras['modalidad_elegida'])) wabot_modalidad_sincronizar($conv);
-    if ($aplicar && !empty($extras['modelos_elegidos'])) wabot_modelos_sincronizar($conv);
-    if ($aplicar && !empty($conv['esProspecto'])) wabot_prospecto_sincronizar($conv);
+    // Pedido nuevo: la ficha la crea procesar enseguida; no se toca la del pedido anterior.
+    if ($aplicar && !$pedidoNuevo && !empty($extras['modalidad_elegida'])) wabot_modalidad_sincronizar($conv);
+    if ($aplicar && !$pedidoNuevo && !empty($extras['modelos_elegidos'])) wabot_modelos_sincronizar($conv);
+    if ($aplicar && !$pedidoNuevo && !empty($conv['esProspecto'])) wabot_prospecto_sincronizar($conv);
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);
