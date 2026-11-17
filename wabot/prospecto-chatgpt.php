@@ -137,6 +137,7 @@ function prospecto_chatgpt_datos(array $p): string {
 
 function prospecto_chatgpt_prompt(array $p): string {
     return "Crea 9 imágenes y crea un mock up de la web 720 x 480 usando estas imágenes.\n\n"
+        . "El mock up tiene que estar pensado para este negocio y su rubro, no una plantilla: no repitas el esquema de siempre (fondo blanco, título a la izquierda con la foto a la derecha, fila de tarjetas abajo y franja de contacto al pie). Elegí una composición, un fondo y una tipografía que vayan con lo que vende y con su público.\n\n"
         . "Las 9 imágenes, todas juntas y sin textos: 1 tamaño 9:16 y otra tamaño 16:9. 7 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos. Que parezcan fotos reales, tomadas de la realidad: nada de ilustraciones, dibujos ni renders.\n\n"
         . "La web es para:\n" . prospecto_chatgpt_datos($p);
 }
@@ -159,7 +160,7 @@ function prospecto_demo_pedido(array $p): string {
         'Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.',
         "La carpeta del proyecto está en Gokywebsweb/demo/{$slug}/, con su subcarpeta images/.",
         'Ya hay imágenes cargadas en esa carpeta images/: usalas para armar la demo.',
-        'Entre las imágenes de images/ hay un mock up con una idea de cómo podría ser la web: tomalo como referencia del diseño.',
+        'Entre las imágenes de images/ hay un mock up que armó ChatGPT: usalo solo como referencia de colores, tono de las fotos y estilo de la marca, no de la estructura. Ninguno de los dos modelos copia su layout (portada partida con la foto al costado, fila de tarjetas, franja de contacto al pie): la estructura, el hero y el formato los decidís según el rubro y este cliente, y distintos de las últimas demos del registro de ADN.',
     ];
     if (preg_match('/e-?commerce|tienda|cat[aá]logo|shop|carrito/iu', prospecto_chatgpt_tipo($p))) {
         $prefijo[] = 'Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.';

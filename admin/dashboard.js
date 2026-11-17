@@ -7404,7 +7404,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
             `Tenés que crear la carpeta del proyecto en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
             "Las imágenes de la demo están en un zip en la carpeta Descargas (puede ser que estén dentro de otro zip): buscá el zip, descomprimilo y copiá las imágenes a esa carpeta images/ para armar la demo. Una vez copiadas las imágenes, eliminá el zip (y cualquier zip interno que hayas descomprimido) de Descargas.",
-            "Entre las imágenes hay un mock up con una idea de cómo podría ser la web: tomalo como referencia del diseño.",
+            "Entre las imágenes hay un mock up que armó ChatGPT: usalo solo como referencia de colores, tono de las fotos y estilo de la marca, no de la estructura. Ninguno de los dos modelos copia su layout (portada partida con la foto al costado, fila de tarjetas, franja de contacto al pie): la estructura, el hero y el formato los decidís según el rubro y este cliente, y distintos de las últimas demos del registro de ADN.",
             ...(esEcommerce ? [
                 "Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.",
                 "Implementá paginación con cursor: el botón «Ver más» debe pedir la siguiente página de hasta 100 productos y la búsqueda debe traer páginas adicionales solo cuando necesita encontrar coincidencias.",
@@ -7508,7 +7508,10 @@ async function copyPropuesta(id, btn) {
 // 1 en 16:9 y 4 en 1:1, con la info del boceto al final.
 // 13-oct: arranca con "crea un mock up de la web 720 x 480 usando estas imágenes" (Pablo).
 // 16-oct: "Copiar 10" = 9 de contenido + el mock up; las 3 nuevas van en 1:1 (Pablo).
+// 17-nov: el mock up salía siempre con la misma plantilla y las demos lo copiaban: se pide pensado para el rubro.
 const PROPUESTA_IMAGE_PROMPT = `Crea 9 imágenes y crea un mock up de la web 720 x 480 usando estas imágenes.
+
+El mock up tiene que estar pensado para este negocio y su rubro, no una plantilla: no repitas el esquema de siempre (fondo blanco, título a la izquierda con la foto a la derecha, fila de tarjetas abajo y franja de contacto al pie). Elegí una composición, un fondo y una tipografía que vayan con lo que vende y con su público.
 
 Las 9 imágenes, todas juntas y sin textos: 1 tamaño 9:16 y otra tamaño 16:9. 7 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos. Que parezcan fotos reales, tomadas de la realidad: nada de ilustraciones, dibujos ni renders.
 
