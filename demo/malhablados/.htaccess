@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "\.(sqlite|sqlite-journal|sqlite-wal|sqlite-shm)$">
+Require all denied
+</FilesMatch>

@@ -1,0 +1,11 @@
+{
+  "provided_images": "9 imágenes de contenido y mockup entregados en sesión automática. Originales conservados.",
+  "logo": "Logo real recibido por WhatsApp: Downloads/imagenes-prospectos/malhablados/05-imagen.png",
+  "slots": {
+    "hero": "prenda-02.webp",
+    "identidad": "prenda-09.webp",
+    "productos": "prenda-01.webp a prenda-09.webp"
+  },
+  "pending": "Fotos complementarias frente/espalda de cada SKU; fotografías reales de cada modelo. Las imágenes de muestra no acreditan diseños, materiales ni medidas finales.",
+  "dimensions": "Hero 1600×900, vertical 900×1600, cuadrados 1024×1024; por debajo del piso de la guía, usados sin ampliar en sus slots."
+}
