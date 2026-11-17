@@ -140,6 +140,7 @@ const ERR_REPOS = [
     'primadonnaestetica.com.ar' => 'pablot95/primadonnaestetica',
     'yogantralove.com.ar' => 'pablot95/yogantralove',
     'metalurgicafamiliafriesen.com.ar' => 'pablot95/metalurgicafamiliafriesen',
+    'velvetcart.com.ar' => 'pablot95/velvetcart',
     'serviceplusreparaciones.com.ar' => 'pablot95/serviceplus',
     'artesaniasmiuniverso.com.ar' => 'pablot95/artesaniasmiuniverso',
     'molinagames.com.ar' => 'pablot95/molinagames',
