@@ -7938,7 +7938,7 @@ function wabot_form_nuevo_reiniciar(&$conv) {
     if ((int)($conv['form_nuevo_reiniciado_desde'] ?? 0) === $anterior) return;
     foreach (['referencia', 'brief', 'colores', 'colores_hex', 'incluir', 'estilo', 'objetivos',
               'instagram', 'modelos_elegidos', 'demo_hora_ts', 'modalidad_elegida', 'descripcion',
-              'ficha', 'tipo', 'productos_cantidad'] as $campo) {
+              'ficha', 'tipo', 'productos_cantidad', 'comercial_solucion', 'comercial_dos_webs', 'combo_cursos', 'catalogo'] as $campo) {
         $conv[$campo] = null;
     }
     $conv['form_nuevo_reiniciado_desde'] = $anterior;
