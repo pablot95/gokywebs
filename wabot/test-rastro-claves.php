@@ -38,6 +38,9 @@ foreach ([
     'vi el anuncio en instagram'                                          => true,   // nombra Instagram: el freno no alcanza a esto
     'Ya tengo web y quiero conseguir más clientes'                        => false,
     'hacen anuncios?'                                                     => true,
+    'Te quería preguntar para promocionar mi estetica?'                    => false,  // Ana Verón, 17-nov
+    'hacen promoción de la página?'                                       => true,
+    'cómo promocionamos nosotros la página nuestra?'                      => true,
 ] as $texto => $esperado) {
     caso("«{$texto}» → " . ($esperado ? 'con rastro' : 'sin rastro'), $r('marketing', $texto) === $esperado);
 }

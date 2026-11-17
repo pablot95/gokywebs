@@ -2061,9 +2061,12 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
          * más almas" se llevó "Publicidad y redes no hacemos" del modelo, y
          * Jaqueline lo mismo por buscar más clientes. Sale si nombra la
          * publicidad, las redes o cómo mover la web. "Vi tu anuncio" (el primer
-         * mensaje de casi todos) no cuenta: "hacen anuncios?" o "los anuncios" sí. */
+         * mensaje de casi todos) no cuenta: "hacen anuncios?" o "los anuncios" sí.
+         * Ana Verón (17-nov): "te quería preguntar para promocionar mi estética?"
+         * pedía la web y se llevó el mismo texto: "para promocionar" no cuenta,
+         * "hacen promoción?" o "cómo promocionamos la página" sí. */
         'marketing'     => '(publicidad|propaganda|marketing|pauta|(?<!tu )(?<!su )(?<!tus )(?<!sus )(?<!el )(?<!un )(?<!este )anuncio|ads|redes|red social|instagram|facebook|tik ?tok'
-                         . '|community|seguidores|posteo|campana|promocion|promocionar|promocionamos|promocionen|mueven|muevan|moverla|moverlo)',
+                         . '|community|seguidores|posteo|campana|(?<!para )promocion|mueven|muevan|moverla|moverlo)',
         /* Lo que no hacemos y no es la web (9-nov): flyers, videos, fotos tomadas
          * por alguien, banners, Spotify, recuperar una cuenta, imprimir. «Tengo
          * fotos» no cuenta: eso es material para la web. */
