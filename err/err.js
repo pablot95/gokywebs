@@ -40,6 +40,8 @@
       if (src && !/^https?:/i.test(src)) return true;
       // Variables que inyectan navegadores de algunos celulares y llegan sin archivo de origen.
       if (/\bxbrowser is not defined|variable: xbrowser\b/i.test(msg)) return true;
+      // Firefox de iPhone (window.__firefox__) y billeteras cripto (window.ethereum).
+      if (/__firefox__|\bethereum\b/.test(msg)) return true;
       if (/^(Load failed|Failed to fetch|NetworkError|Network request failed)/i.test(msg)) return true;
       return false;
     }

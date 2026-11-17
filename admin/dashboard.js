@@ -598,7 +598,10 @@ const ERRORES_FIRESTORE = /missing or insufficient permissions|quota exceeded|re
 // Scripts que el navegador interno de una app mete en la página (28-oct: Instagram/Facebook
 // en iPhone, "window._META.IABInnerFrame" en micoloridomundo). El archivo figura como la
 // propia web, pero el código no es nuestro.
-const ERRORES_INYECTADOS = /_META\b|IABInnerFrame|__gCrWeb|webkit\.messageHandlers/;
+// 17-nov: Firefox en iPhone ("window.__firefox__.reader", "Can't find variable: __firefox__") y las
+// billeteras cripto / navegadores con billetera ("window.ethereum.selectedAddress = undefined").
+const ERRORES_INYECTADOS = /_META\b|IABInnerFrame|__gCrWeb|webkit\.messageHandlers|__firefox__|\bethereum\b/;
+const ERRORES_INYECTADOS_EXTENSION = /__firefox__|\bethereum\b/;
 
 // El hosting que no atiende un momento (31-oct: Hostinger dio 429 a tienda.js en Hizterik y
 // Tienda de Botines, y 503 a integraciones.php en Reina Momo; al rato todo daba 200): 429 es que
@@ -652,6 +655,7 @@ function erroresPorQueMenor(d) {
         return /^No cargó img/.test(d.msg || "") ? "imagen que no cargó en ese momento" : "no cargó en ese momento (conexión o bloqueador)";
     }
     if (d.tipo === "fetch") return "falló un servicio externo";
+    if (ERRORES_INYECTADOS_EXTENSION.test(String(d.msg || "") + " " + String(d.stack || ""))) return "lo mete el navegador del visitante (Firefox de iPhone o billetera cripto)";
     if (ERRORES_INYECTADOS.test(String(d.msg || "") + " " + String(d.stack || ""))) return "lo mete el navegador de Instagram/Facebook";
     return "no viene del código de la web";
 }
