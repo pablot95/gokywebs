@@ -968,6 +968,18 @@ caso('no arrastra lo de Vitamov (referencia, tipo)', empty($n1['referencia']) ||
 caso('ni el tipo de la web anterior', ($n1['tipo'] ?? '') !== 'elearning');
 caso('sigue siendo la misma clienta', $n1['cliente_id'] === 'CLI1');
 caso('ya no es pedido nuevo: un reintento no crea otra ficha', wabot_form_nuevo_autorizado($n1) === false);
+
+// Link mandado desde el teléfono (no queda en la charla) y ficha ya pasada a Clientes: igual es pedido nuevo.
+@unlink(WABOT_DATA . '/conv/5493810009101.json');
+$naty['form_link_ultimo_ts'] = 0; wabot_conv_save($naty);
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = true;
+$b = wabot_form_lead_validar($payloadDozzo, $m0);
+formlead_extras_guardar($b, formlead_extras($payloadDozzo));
+$r2 = wabot_form_lead_procesar($payloadDozzo, $cfg);
+$n2 = wabot_conv_load('5493810009101');
+caso('sin link en la charla pero con la ficha anterior borrada: se aplica con ficha nueva',
+    ($r2['ok'] ?? false) === true && !isset($r2['aplicado']) && $n2['nombre_negocio'] === 'Dozzo' && (int)($n2['lead_recreado_ts'] ?? 0) > 0
+    && $n2['incluir'] === 'Carrito con Mercado Pago' && ($n2['tipo'] ?? '') !== 'elearning', json_encode($r2));
 @unlink(WABOT_DATA . '/conv/5493810009101.json');
 unset($GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO']);
 

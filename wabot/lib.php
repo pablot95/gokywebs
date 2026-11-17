@@ -7913,31 +7913,36 @@ function wabot_form_rate_ok($ip, $max = 10, $ventana = 600, $ahora = null) {
 
 /**
  * ¿Este form es un pedido nuevo de una charla que ya había completado uno?
- * (17-nov, Naty de Vitamov: ya clienta, Pablo le mandó el link de nuevo para una
- * segunda web —Dozzo— y los dos envíos quedaron «sin código — NO aplicado»: nunca
- * apareció en Prospectos.) Vale si a la charla se le mandó el link del formulario
- * DESPUÉS del form anterior: lo pidió el chat, no es alguien que conoce el número.
+ * (17-nov, Naty de Vitamov: ya clienta, Pablo le mandó el link de nuevo desde el
+ * teléfono para una segunda web —Dozzo— y los dos envíos quedaron «sin código —
+ * NO aplicado»: nunca apareció en Prospectos.) Vale si:
+ *  - a la charla se le mandó el link del formulario DESPUÉS del form anterior
+ *    (desde el panel o por el bot), o
+ *  - la ficha del form anterior ya no existe (Pablo la pasó a Clientes o la
+ *    borró): no queda ningún boceto en curso que proteger de un envío ajeno.
  */
 function wabot_form_nuevo_autorizado($conv) {
     $form = (int)($conv['form_completado_ts'] ?? 0);
-    return $form > 0 && (int)($conv['form_link_ultimo_ts'] ?? 0) > $form;
+    if ($form <= 0) return false;
+    if ((int)($conv['form_link_ultimo_ts'] ?? 0) > $form) return true;
+    return !empty($conv['lead_creado']) && trim((string)($conv['lead_doc'] ?? '')) !== '' && !wabot_lead_doc_existe($conv);
 }
 
 /**
  * Deja la charla lista para el pedido nuevo: lo que era del negocio anterior
  * (referencia, brief, colores, lo que pidió incluir…) no tiene que pasar a la
- * ficha nueva. Una sola vez por link: lo llama el paso 2, que llega primero.
+ * ficha nueva. Una sola vez por form anterior: lo llama el paso 2, que llega primero.
  */
 function wabot_form_nuevo_reiniciar(&$conv) {
-    $link = (int)($conv['form_link_ultimo_ts'] ?? 0);
-    if ((int)($conv['form_nuevo_reiniciado_link_ts'] ?? 0) === $link) return;
+    $anterior = (int)($conv['form_completado_ts'] ?? 0);
+    if ((int)($conv['form_nuevo_reiniciado_desde'] ?? 0) === $anterior) return;
     foreach (['referencia', 'brief', 'colores', 'colores_hex', 'incluir', 'estilo', 'objetivos',
               'instagram', 'modelos_elegidos', 'demo_hora_ts', 'modalidad_elegida', 'descripcion',
               'ficha', 'tipo', 'productos_cantidad'] as $campo) {
         $conv[$campo] = null;
     }
-    $conv['form_nuevo_reiniciado_link_ts'] = $link;
-    wabot_log('form_pedido_nuevo', ['tel' => wabot_conversation_key($conv), 'form_anterior' => (int)($conv['form_completado_ts'] ?? 0)]);
+    $conv['form_nuevo_reiniciado_desde'] = $anterior;
+    wabot_log('form_pedido_nuevo', ['tel' => wabot_conversation_key($conv), 'form_anterior' => $anterior]);
 }
 
 function wabot_form_lead_procesar($payload, $cfg) {
