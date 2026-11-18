@@ -343,6 +343,7 @@ body.no-scroll .float-btn { pointer-events: none; }
   body:not(.m2) .hero-photo { bottom: 24%; height: auto; aspect-ratio: auto; }
   .hero-photo img { object-position: 50% 38%; }
   .hero::after { background: linear-gradient(0deg,#f8f3eafc 0%,#f8f3eaf2 28%,#f8f3eacc 52%,#f8f3ea00 85%); }
+  body:not(.m2) .hero::after { background: linear-gradient(0deg,#f8f3eafc 0%,#f8f3eaf2 30%,#f8f3eabb 42%,#f8f3ea00 60%); }
   .hero-inner { align-items: end; padding-block: 34px 78px; }
   .hero-copy { width: 100%; max-width: 430px; }
   .hero-copy h1 { font-size: clamp(42px,11vw,64px); max-width: 8.5em; }
