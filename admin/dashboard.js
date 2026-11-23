@@ -7824,7 +7824,7 @@ async function abrirFacturaModal(cliente, opts = {}) {
     campoFactura("Documento").value = "";
     campoFactura("Nombre").value = "";
     llenarSelect(campoFactura("TipoDoc"), [{ valor: 80, texto: "CUIT" }]);
-    llenarSelect(campoFactura("CondicionVenta"), [{ valor: "Contado", texto: "Contado" }]);
+    llenarSelect(campoFactura("CondicionVenta"), [{ valor: "Mercado Pago", texto: "Mercado Pago" }]);
     llenarSelect(campoFactura("CondicionIva"), []);
     elegirModoFactura("final");
     sincronizarCamposPeriodo();
@@ -7853,8 +7853,8 @@ async function abrirFacturaModal(cliente, opts = {}) {
         );
         llenarSelect(
             campoFactura("CondicionVenta"),
-            (datos.condicionesVenta || ["Contado"]).map(c => ({ valor: c, texto: c })),
-            "Contado"
+            (datos.condicionesVenta || ["Mercado Pago"]).map(c => ({ valor: c, texto: c })),
+            "Mercado Pago"
         );
         llenarSelect(
             campoFactura("CondicionIva"),
