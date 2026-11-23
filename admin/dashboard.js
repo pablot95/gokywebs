@@ -1579,7 +1579,12 @@ function cobrosDeCliente(c) {
         const entrega = mantToDate(c.entregadoAt) || mantToDate(c.completadoAt);
         if (resto > 0) {
             const senaPlan = planDe(c, propuestaDeCliente(c)).sena || 60000;
-            if (sena && entrega) {
+            // Con la seña ya anotada en `cobros`, lo que falta es saldo de la entrega
+            // (saldos cargados solo en abono, sin cobro con fecha: 23-nov).
+            const senaAnotada = out.some(r => r.tipo === "sena");
+            if (senaAnotada && entrega) {
+                out.push({ fecha: entrega, monto: resto, tipo: "saldo", aprox: true });
+            } else if (sena && entrega) {
                 const s = Math.min(resto, senaPlan);
                 out.push({ fecha: sena, monto: s, tipo: "sena", aprox: false });
                 resto -= s;
