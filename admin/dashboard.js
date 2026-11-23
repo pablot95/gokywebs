@@ -1666,6 +1666,17 @@ function _diaDe(fecha) {
     return argYmd(Math.floor(fecha.getTime() / 1000));
 }
 
+/* "YYYY-MM-DD" del alta de una suscripción (23-nov). `suscripcionDe(c).desde` es la medianoche LOCAL de ese
+   día: con _diaDe, en una compu con otra zona horaria (Pablo en Europe/Paris) la medianoche de París es
+   las 20 h del día anterior en Argentina, el alta caía un día antes y en Cobros fallidos → Pagan por afuera
+   salían como «Sin pagar» todos los que habían pagado el alta ese mismo mes. Una medianoche local se lee
+   con la fecha local; un instante cualquiera (createdAt del suscriptor), en hora argentina. */
+function _diaAlta(fecha) {
+    if (!fecha) return "";
+    return fecha.getHours() === 0 && fecha.getMinutes() === 0 && fecha.getSeconds() === 0 && fecha.getMilliseconds() === 0
+        ? ymdLocal(fecha) : _diaDe(fecha);
+}
+
 /* "YYYY-MM-DD" del día `dia` del mes `m0` (0-11, puede pasarse de 11): un 31 en un mes de 30 cae el 30. */
 function _ymdDelMes(y, m0, dia) {
     const d = new Date(y, m0, 1);
@@ -1754,7 +1765,7 @@ function ingresosPorDia(hastaYmd) {
     const mesesDesdeHoy = ymd => { const [y, m] = ymd.split("-").map(Number); return (y - hy) * 12 + (m - hm); };
     for (const k of cruce) {
         if (k.porId || k.sub) continue;
-        const inicio = _diaDe(k.desde);
+        const inicio = _diaAlta(k.desde);
         const pagado = String(k.ref.pagadoHasta || "");
         const primero = k.porFuera ? Math.max(mesesDesdeHoy(inicio), mesesDesdeHoy(INGRESOS_DESDE)) : Math.max(0, mesesDesdeHoy(inicio));
         for (let i = primero; i < primero + 60; i++) {
@@ -1833,7 +1844,7 @@ function _cruceMercadoPago() {
             for (const s of subs) {
                 const dif = Math.abs(s.alta - k.desde);
                 if (!s.usada && usable(s) && s.monto === k.monto && dif <= 3 * 86400000) {
-                    const dias = Math.abs(Math.round((_fechaMp(_diaDe(s.alta)) - _fechaMp(_diaDe(k.desde))) / 86400000));
+                    const dias = Math.abs(Math.round((_fechaMp(_diaDe(s.alta)) - _fechaMp(_diaAlta(k.desde))) / 86400000));
                     pares.push({ k, s, dif, dias, enComun: _nombresEnComun(k.palabras, s.nombre) });
                 }
             }
@@ -3939,7 +3950,9 @@ function suscripcionDe(c) {
     const inicio = mantToDate(c.suscripcionDesde)
         || (primerPagoAt ? _sumarDias(primerPagoAt, diasHastaElPlan(c)) : null)
         || mantToDate(mant?.createdAt);
-    const desde = inicio ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()) : null;
+    // La medianoche local del día ARGENTINO del inicio (23-nov): con el día local, las 21 h de Argentina ya eran mañana en París.
+    const diaInicio = inicio ? _diaDe(inicio).split("-").map(Number) : null;
+    const desde = diaInicio ? new Date(diaInicio[0], diaInicio[1] - 1, diaInicio[2]) : null;
     const mantActivo = !!mant && !aviso && (mant.estado || "activo") === "activo";
     /* 12-nov (Pablo: «Marilu Casandra Fridel canceló la suscripción pero no me figura en el admin»):
        la suscripción vinculada por ID que se canceló en Mercado Pago es una baja, aunque la ficha diga
@@ -10556,7 +10569,7 @@ function _mantPorFueraLista() {
         f.pendiente = "";
         const dia = f.dia || f.desde?.getDate() || 0;
         if (!dia) { f.proximo = ""; continue; }
-        const alta = f.desde ? _diaDe(f.desde) : "";
+        const alta = _diaAlta(f.desde);
         const pagado = String(f.ref.pagadoHasta || "");
         let ultimo = _ymdDelMes(hy, hm - 1, dia);
         if (ultimo > hoy) ultimo = _ymdDelMes(hy, hm - 2, dia);
@@ -10590,7 +10603,7 @@ function _renovacionesFilas() {
             negocio: f.persona ? f.nombre : "",
             monto: f.monto || 0,
             dia: f.dia || 0,
-            desde: f.desde ? _diaDe(f.desde) : ""
+            desde: _diaAlta(f.desde)
         };
     });
 }
@@ -10708,7 +10721,7 @@ function _websFilas() {
             negocio: String(c?.proyecto || "").trim(),
             dominio: _dominioMantenimiento(c, m) || _dominioDeErrores(c, m) || "",
             plan,
-            desde: desde ? _diaDe(desde) : ""
+            desde: _diaAlta(desde)
         });
     };
     _mantFilas().filter(f => f.m && f.clave === "activo")
