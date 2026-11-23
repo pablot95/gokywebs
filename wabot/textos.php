@@ -691,6 +691,42 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'params' => ['nombre', 'negocio', 'monto'],
             'texto' => 'Hola {nombre}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {negocio} ({monto}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Si preferís, también podés pagar por transferencia al alias gokywebs y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.',
         ],
+        // Utilidad (23-nov, Pablo: «quiero que el wabot vuelva a mandar plantilla de pagos»):
+        // el último intento de cobro de MP (el 4.º) de una renovación (cobros-rechazados.php).
+        // Creada por la API el 23-nov (id 1627496608485527). La primera versión,
+        // cobro_rechazado_ultimo_intento, decía «hizo hoy» y quedó sin usar.
+        'cobro_rechazado_ultimo' => [
+            'nombre' => 'cobro_rechazado_ultimo_aviso',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => true,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio', 'monto'],
+            'texto' => 'Hola {nombre}, Mercado Pago hizo el último intento de cobrar la cuota mensual de la web de {negocio} ({monto}) y no pudo. Si no se regulariza, la suscripción se da de baja. Podés actualizar el medio de pago en la app de Mercado Pago, en Suscripciones, o pagar por transferencia al alias gokywebs y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.',
+        ],
+        // Utilidad (23-nov): el cliente dio de baja la suscripción de MP: ¿seguir por otro medio
+        // o dar de baja el servicio?, con hasta cuándo está activo (cobros-rechazados.php). Id 1604971081317123:
+        // Meta la aprobó como Marketing, no como Utilidad.
+        'suscripcion_cancelada' => [
+            'nombre' => 'suscripcion_baja_consulta',
+            'idioma' => 'es_AR',
+            'categoria' => 'MARKETING',
+            'activa' => true,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio', 'fecha'],
+            'texto' => 'Hola {nombre}, vimos que se dio de baja la suscripción de Mercado Pago de la web de {negocio}. El servicio sigue activo hasta el {fecha}. ¿Querés seguir con el servicio pagándolo por otro medio, como transferencia, o preferís darlo de baja? Contanos por este chat y lo dejamos resuelto.',
+        ],
+        // Utilidad (23-nov): se recibió el pago del mes, por suscripción (MP cobró la renovación,
+        // cobros-rechazados.php) o por afuera (Pablo marcó «💵 Pagó», renovacion.php). Id 1193109920131896.
+        'pago_recibido' => [
+            'nombre' => 'pago_recibido_plan_mensual',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => true,
+            'automatico' => true,
+            'params' => ['nombre', 'monto', 'negocio', 'fecha'],
+            'texto' => 'Hola {nombre}, recibimos tu pago de {monto} del plan mensual de la web de {negocio}. El servicio queda al día hasta el {fecha}. ¡Gracias! Cualquier cosa que necesites, escribinos por acá.',
+        ],
         // Utilidad (29-oct, "hacer visible lo invisible"): desde el día 1, a cada
         // cliente con mantenimiento, el resumen del mes anterior de su web (webs.php).
         // Apagada hasta que Meta la apruebe.

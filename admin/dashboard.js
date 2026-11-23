@@ -10603,7 +10603,9 @@ function _renovacionesFilas() {
             negocio: f.persona ? f.nombre : "",
             monto: f.monto || 0,
             dia: f.dia || 0,
-            desde: _diaAlta(f.desde)
+            desde: _diaAlta(f.desde),
+            // El último cobro marcado «💵 Pagó» (23-nov): el bot manda el «recibimos tu pago» y no le recuerda el cobro al que pagó por adelantado.
+            pagado: String(f.ref.pagadoHasta || "")
         };
     });
 }

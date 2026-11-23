@@ -11,7 +11,13 @@ $ar = function ($s) { return (int)strtotime($s . ' -03:00'); };
 // Las listas de respaldo (webs.json, renovaciones.json) no se leen del disco en las pruebas.
 $GLOBALS['WABOT_TEST_COBRO_LISTAS'] = [];
 $cfg = wabot_config_load();
-$cfg['plantillas']['cobro_rechazado'] = array_merge((array)$cfg['plantillas']['cobro_rechazado'], ['activa' => true, 'automatico' => true]);
+foreach (['cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 'pago_recibido'] as $k) {
+    $cfg['plantillas'][$k] = array_merge((array)$cfg['plantillas'][$k], ['activa' => true, 'automatico' => true]);
+}
+// Los avisos a Pablo se prueban con las plantillas al cliente apagadas (23-nov: las del cliente, más abajo).
+$cfgSin = $cfg;
+foreach (['cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 'pago_recibido'] as $k) $cfgSin['plantillas'][$k]['activa'] = false;
+$GLOBALS['WABOT_TEST_POR_FUERA'] = [];
 
 echo "=== La plantilla ===\n";
 $p = (array)wabot_config_load()['plantillas']['cobro_rechazado'];
@@ -28,6 +34,7 @@ caso('el texto usa las tres', strpos($p['texto'], '{nombre}') !== false && strpo
 $mpDatos = function ($pagoS1 = 'rejected', $estadoS1 = 'scheduled') {
     return function ($ruta) use ($pagoS1, $estadoS1) {
         if ($ruta === '/users/me') return ['id' => 999];
+        if (strpos($ruta, '/v1/payments/search') === 0) return ['results' => []];
         if (strpos($ruta, '/preapproval/search') === 0) {
             return ['paging' => ['total' => 4], 'results' => [
                 ['id' => 'S1aaaaaa', 'collector_id' => 999, 'status' => 'authorized', 'payer_first_name' => 'Juan', 'payer_last_name' => 'Pérez',
@@ -83,9 +90,9 @@ $dia1 = $ar('2026-11-11 10:30:00');
 caso('la fila sin id o preapproval válido no entra', count($estadoBase($dia1)['lista']) === 2);
 
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
-$r = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpDatos(), null, $avisar);
+$r = wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1), $mpDatos(), null, $avisar);
 caso('un aviso por cada cobro rechazado (los dos)', $r['enviados'] === 2 && count($avisos) === 2, json_encode($r));
-caso('al cliente no le sale ninguna plantilla', empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
+caso('con las plantillas al cliente apagadas, al cliente no le sale nada', empty($GLOBALS['WABOT_TEST_PLANTILLAS']));
 $a1 = $avisos[0] ?? ['', '', ''];
 caso('título de cobro atrasado', strpos($a1[0], 'Cobro atrasado') !== false, $a1[0]);
 caso('cliente, WhatsApp, monto, fecha y motivo', strpos($a1[1], 'Cliente: Juan Pérez — Panadería Sol') !== false
@@ -95,43 +102,47 @@ caso('con la clave del chat para el botón', $a1[2] === '5491144445555', $a1[2])
 caso('queda anotado por cobro', ($r['estado']['enviados']['7033861876']['resultado'] ?? '') === 'pablo');
 
 $avisos = [];
-$otra = wabot_cobro_rech_correr($cfg, $ar('2026-11-12 16:00:00'), $r['estado'], $mpDatos(), null, $avisar);
+$otra = wabot_cobro_rech_correr($cfgSin, $ar('2026-11-12 16:00:00'), $r['estado'], $mpDatos(), null, $avisar);
 caso('los reintentos del mismo cobro no vuelven a avisar', !$avisos && $otra['enviados'] === 0);
 
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $ar('2026-11-11 09:30:00'), $estadoBase($dia1), $mpDatos(), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $ar('2026-11-11 09:30:00'), $estadoBase($dia1), $mpDatos(), null, $avisar);
 caso('antes de las 10 no sale', !$avisos);
-wabot_cobro_rech_correr($cfg, $ar('2026-11-11 20:10:00'), $estadoBase($dia1), $mpDatos(), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $ar('2026-11-11 20:10:00'), $estadoBase($dia1), $mpDatos(), null, $avisar);
 caso('después de las 20 no sale', !$avisos);
 
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1, [['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'seguro' => true]]), $mpDatos('approved', 'processed'), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1, [['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'seguro' => true]]), $mpDatos('approved', 'processed'), null, $avisar);
 caso('si MP ya lo cobró en el reintento, no sale el de S1', strpos($textos(), 'Panadería Sol') === false, $textos());
 
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1, [
+wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1, [
     ['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'seguro' => false],
 ]), $mpDatos(), null, $avisar);
 caso('vinculada solo por fecha: avisa igual y lo aclara', strpos($textos(), 'solo por la fecha') !== false && strpos($textos(), 'Panadería Sol') !== false, $textos());
 caso('sin cliente en la lista: avisa con lo que sabe MP', strpos($textos(), 'no está vinculado') !== false && strpos($textos(), 'Vincular con MP') !== false, $textos());
 
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1, [
+wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1, [
     ['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '', 'persona' => 'Juan', 'negocio' => 'Panadería Sol', 'seguro' => true],
 ]), $mpDatos(), null, $avisar);
 caso('sin teléfono: lo dice', strpos($textos(), 'sin teléfono cargado') !== false);
 
 $avisos = []; $okAvisar = false;
-$rf = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpDatos(), null, $avisar);
+$rf = wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1), $mpDatos(), null, $avisar);
 caso('si el WhatsApp a Pablo no sale, no lo anota', $rf['fallidos'] === 2 && empty($rf['estado']['enviados']));
 $okAvisar = true; $avisos = [];
-$rf2 = wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rf['estado'], $mpDatos(), null, $avisar);
+$rf2 = wabot_cobro_rech_correr($cfgSin, $dia1 + 1800, $rf['estado'], $mpDatos(), null, $avisar);
 caso('y la pasada siguiente lo reintenta', $rf2['enviados'] === 2);
 
 echo "\n=== Suscripción cancelada o pausada ===\n";
 $mpCancel = function ($estadoSub, $cuando) {
     return function ($ruta) use ($estadoSub, $cuando) {
         if ($ruta === '/users/me') return ['id' => 999];
+        if (strpos($ruta, '/v1/payments/search') === 0) return ['results' => []];
+        if (strpos($ruta, '/authorized_payments/search') === 0) return ['results' => [
+            ['id' => 6000, 'status' => 'processed', 'debit_date' => '2026-11-03T10:00:00.000-04:00', 'payment' => ['status' => 'approved']],
+            ['id' => 5000, 'status' => 'processed', 'debit_date' => '2026-10-03T10:00:00.000-04:00', 'payment' => ['status' => 'approved']]]];
         if (strpos($ruta, '/preapproval/search') === 0) return ['paging' => ['total' => 1], 'results' => [
             ['id' => 'S5eeeeee', 'collector_id' => 999, 'status' => $estadoSub, 'last_modified' => $cuando, 'date_created' => '2026-07-03T10:00:00.000-04:00',
              'payer_first_name' => 'Marta', 'payer_last_name' => 'Gil', 'reason' => 'Plan mensual', 'auto_recurring' => ['transaction_amount' => 20000]],
@@ -142,27 +153,27 @@ $mpCancel = function ($estadoSub, $cuando) {
 $base = ['lista' => [], 'sync_ts' => $dia1 - 3600, 'enviados' => [], 'aviso_vieja_ts' => 0,
          'conocidos' => ['S5eeeeee' => wabot_cobro_rech_fila(['id' => 'clientes:EEE', 'pre' => 'S5eeeeee', 'tel' => '3514445555', 'persona' => 'Marta Gil', 'negocio' => 'Vivero', 'seguro' => true])]];
 $avisos = [];
-$rc = wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
+$rc = wabot_cobro_rech_correr($cfgSin, $dia1, $base, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
 caso('cancelada ayer: avisa con el cliente que el admin mandó antes', $rc['canceladas'] === 1 && strpos($avisos[0][0] ?? '', 'cancelada') !== false
     && strpos($avisos[0][1] ?? '', 'Marta Gil — Vivero') !== false && strpos($avisos[0][1] ?? '', '03/07/2026') !== false && strpos($avisos[0][1] ?? '', '10/11 20:00') !== false, $textos());
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rc['estado'], $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1 + 1800, $rc['estado'], $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
 caso('una sola vez', !$avisos);
-wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('cancelled', '2026-10-01T19:00:00.000-04:00'), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1, $base, $mpCancel('cancelled', '2026-10-01T19:00:00.000-04:00'), null, $avisar);
 caso('una cancelación vieja no se avisa', !$avisos);
-wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('paused', '2026-11-11T09:00:00.000-04:00'), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1, $base, $mpCancel('paused', '2026-11-11T09:00:00.000-04:00'), null, $avisar);
 caso('pausada: también avisa', count($avisos) === 1 && strpos($avisos[0][0], 'pausada') !== false);
 
 echo "\n=== Candados ===\n";
 $avisos = [];
 $vieja = $estadoBase($dia1); $vieja['sync_ts'] = $dia1 - 40 * 86400;
-$r = wabot_cobro_rech_correr($cfg, $dia1, $vieja, $mpDatos(), null, $avisar);
+$r = wabot_cobro_rech_correr($cfgSin, $dia1, $vieja, $mpDatos(), null, $avisar);
 caso('lista de hace más de 35 días: lo dice una vez y avisa igual', count(array_filter($avisos, function ($a) { return $a[0] === 'Lista de suscriptores vieja'; })) === 1 && $r['enviados'] === 2);
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1 + 1800, $r['estado'], $mpDatos(), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1 + 1800, $r['estado'], $mpDatos(), null, $avisar);
 caso('…sin repetirlo', !$avisos);
 
-$r = wabot_cobro_rech_correr($cfg, $dia1, ['lista' => [], 'sync_ts' => 0, 'enviados' => [], 'aviso_vieja_ts' => 0], function () { throw new RuntimeException('no debería llamar'); }, null, $avisar);
+$r = wabot_cobro_rech_correr($cfgSin, $dia1, ['lista' => [], 'sync_ts' => 0, 'enviados' => [], 'aviso_vieja_ts' => 0], function () { throw new RuntimeException('no debería llamar'); }, null, $avisar);
 caso('sin lista del admin no llama a MP', !empty($r['sin_lista']));
 
 echo "\n=== Cancelada que ya no está en la lista del admin ===\n";
@@ -180,10 +191,120 @@ caso('por el nombre del titular de MP (con espacios de más)', ($fr['negocio'] ?
 caso('sin nada que coincida: null', wabot_cobro_rech_fila_respaldo('S8hhhhhh', 'Nadie', $sinConocer, $listas) === null);
 $GLOBALS['WABOT_TEST_COBRO_LISTAS'] = $listas;
 $avisos = [];
-wabot_cobro_rech_correr($cfg, $dia1, $sinConocer, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
+wabot_cobro_rech_correr($cfgSin, $dia1, $sinConocer, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), null, $avisar);
 caso('el aviso de la cancelada sale con el cliente', strpos($textos(), 'Marta Gil — Vivero') !== false && strpos($textos(), 'no está vinculado') === false, $textos());
 caso('el «(20000)» de MP como nombre del plan no se muestra; «Plan mensual» sí', strpos($textos(), '(Plan mensual)') !== false
     && wabot_cobro_rech_plan_texto('30000') === '' && wabot_cobro_rech_plan_texto('Plan tienda') === 'Plan tienda');
 $GLOBALS['WABOT_TEST_COBRO_LISTAS'] = [];
+
+echo "\n=== 23-nov: plantillas al cliente ===\n";
+$envios = [];
+$enviar = function ($clave, $f, $valores, $plantilla) use (&$envios) { $envios[] = [$plantilla, $clave, $valores]; return true; };
+$deEnvio = function ($p) use (&$envios) { return array_values(array_filter($envios, function ($e) use ($p) { return $e[0] === $p; })); };
+$avisar = function ($t, $l, $c) use (&$avisos) { $avisos[] = [$t, implode("\n", $l), $c]; return true; };
+
+/* MP para las plantillas: S1 (Juan) renovación rechazada (intento y último reintento a elección),
+ * S2 (Ana) primer pago rebotado (no es renovación), pagos aprobados a elección. */
+$mpCli = function ($intento = 1, $primer = '2026-11-10T16:09:50.000-04:00', $ultimo = '2026-11-10T16:09:50.000-04:00', $pagos = []) {
+    return function ($ruta) use ($intento, $primer, $ultimo, $pagos) {
+        if ($ruta === '/users/me') return ['id' => 999];
+        if (strpos($ruta, '/v1/payments/search') === 0) return ['results' => $pagos];
+        if (strpos($ruta, '/preapproval/search') === 0) return ['paging' => ['total' => 3], 'results' => [
+            ['id' => 'S1aaaaaa', 'collector_id' => 999, 'status' => 'authorized', 'date_created' => '2026-09-10T16:00:00.000-04:00',
+             'summarized' => ['semaphore' => 'red'], 'auto_recurring' => ['transaction_amount' => 30000]],
+            ['id' => 'S2bbbbbb', 'collector_id' => 999, 'status' => 'authorized', 'date_created' => '2026-11-08T18:00:00.000-04:00',
+             'summarized' => ['semaphore' => 'yellow'], 'auto_recurring' => ['transaction_amount' => 20000]],
+            ['id' => 'S6ffffff', 'collector_id' => 999, 'status' => 'authorized', 'date_created' => '2026-11-05T10:00:00.000-04:00',
+             'summarized' => ['semaphore' => 'green'], 'auto_recurring' => ['transaction_amount' => 20000]],
+        ]];
+        if (strpos($ruta, 'preapproval_id=S1aaaaaa') !== false) return ['results' => [
+            ['id' => 7033861876, 'status' => 'scheduled', 'debit_date' => $primer, 'last_retry_date' => $ultimo, 'transaction_amount' => 30000,
+             'retry_attempt' => $intento, 'rejection_code' => 'insufficient_amount', 'payment' => ['status' => 'rejected']],
+            ['id' => 7032750000, 'status' => 'processed', 'debit_date' => '2026-10-10T16:00:00.000-04:00', 'payment' => ['status' => 'approved']],
+        ]];
+        if (strpos($ruta, 'preapproval_id=S2bbbbbb') !== false) return ['results' => [
+            ['id' => 7033783651, 'status' => 'scheduled', 'debit_date' => '2026-11-10T18:09:59.000-04:00', 'retry_attempt' => 1, 'payment' => ['status' => 'rejected']],
+        ]];
+        throw new RuntimeException('ruta no esperada ' . $ruta);
+    };
+};
+
+$envios = []; $avisos = [];
+$r = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpCli(), $enviar, $avisar);
+$pr = $deEnvio('cobro_rechazado');
+caso('primer intento de una renovación: plantilla al cliente', count($pr) === 1 && $pr[0][1] === '5491144445555'
+    && $pr[0][2] === ['nombre' => 'Juan', 'negocio' => 'Panadería Sol', 'monto' => '$30.000'], json_encode($envios, JSON_UNESCAPED_UNICODE));
+caso('el primer pago rebotado de una suscripción nueva no (no es renovación)', count($envios) === 1);
+caso('el aviso a Pablo dice que al cliente le salió', strpos($textos(), 'Plantilla al cliente: enviada') !== false, $textos());
+$envios = [];
+$r2 = wabot_cobro_rech_correr($cfg, $ar('2026-11-11 15:00:00'), $r['estado'], $mpCli(2), $enviar, $avisar);
+caso('el reintento siguiente no lo repite', !$envios);
+
+$envios = [];
+wabot_cobro_rech_correr($cfg, $ar('2026-11-15 11:00:00'), $estadoBase($dia1), $mpCli(2), $enviar, $avisar);
+caso('detectado 5 días después del primer intento: no se manda tarde', !$deEnvio('cobro_rechazado'));
+
+$envios = [];
+$ru = wabot_cobro_rech_correr($cfg, $ar('2026-11-15 11:00:00'), $r2['estado'], $mpCli(4, '2026-11-10T16:09:50.000-04:00', '2026-11-14T20:10:00.000-04:00'), $enviar, $avisar);
+$ul = $deEnvio('cobro_rechazado_ultimo');
+caso('último reintento (4.º) de ayer: la del último intento', count($ul) === 1 && $ul[0][2]['monto'] === '$30.000', json_encode($envios, JSON_UNESCAPED_UNICODE));
+caso('y no vuelve a mandar la del primer intento', !$deEnvio('cobro_rechazado'));
+$envios = [];
+wabot_cobro_rech_correr($cfg, $ar('2026-11-15 16:00:00'), $ru['estado'], $mpCli(4, '2026-11-10T16:09:50.000-04:00', '2026-11-14T20:10:00.000-04:00'), $enviar, $avisar);
+caso('una sola vez', !$envios);
+$envios = [];
+wabot_cobro_rech_correr($cfg, $ar('2026-11-20 11:00:00'), $estadoBase($dia1), $mpCli(4, '2026-11-10T16:09:50.000-04:00', '2026-11-14T20:10:00.000-04:00'), $enviar, $avisar);
+caso('último reintento de hace 6 días: no se manda tarde', !$envios);
+
+$envios = [];
+$GLOBALS['WABOT_TEST_POR_FUERA'] = ['clientes:AAA' => true];
+wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpCli(), $enviar, $avisar);
+caso('al que ahora paga por afuera no le llega nada de MP', !$envios);
+$GLOBALS['WABOT_TEST_POR_FUERA'] = [];
+$envios = [];
+wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1, [['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'seguro' => false]]), $mpCli(), $enviar, $avisar);
+caso('vinculada solo por la fecha: al cliente no (podría ser otro)', !$envios);
+$envios = [];
+$cfgApagada = $cfg; $cfgApagada['plantillas']['cobro_rechazado']['activa'] = false; $avisos = [];
+wabot_cobro_rech_correr($cfgApagada, $dia1, $estadoBase($dia1), $mpCli(), $enviar, $avisar);
+caso('con la plantilla apagada no sale y a Pablo se lo dice', !$envios && strpos($textos(), 'la plantilla está apagada') !== false, $textos());
+
+echo "\n--- Baja ---\n";
+$envios = []; $avisos = [];
+$rb = wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), $enviar, $avisar);
+$bj = $deEnvio('suscripcion_cancelada');
+caso('cancelada: ¿seguir por otro medio?, activo hasta el último cobro + 1 mes', count($bj) === 1 && $bj[0][1] === '5493514445555'
+    && $bj[0][2] === ['nombre' => 'Marta', 'negocio' => 'Vivero', 'fecha' => '03/12/2026'], json_encode($envios, JSON_UNESCAPED_UNICODE));
+$envios = [];
+wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rb['estado'], $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), $enviar, $avisar);
+caso('la baja, una sola vez', !$envios);
+wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('paused', '2026-11-11T09:00:00.000-04:00'), $enviar, $avisar);
+caso('pausada: al cliente no', !$envios);
+$conUltimo = $base + ['clientes' => ['ultimo:9999' => ['ts' => $dia1 - 2 * 86400, 'res' => 'ok', 'pre' => 'S5eeeeee']]];
+wabot_cobro_rech_correr($cfg, $dia1, $conUltimo, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), $enviar, $avisar);
+caso('cancelada por MP después del último intento: no se manda la de la baja', !$envios);
+wabot_cobro_rech_correr($cfg, $ar('2026-12-05 11:00:00'), array_merge($base, ['sync_ts' => $ar('2026-12-05 10:00:00')]), $mpCancel('cancelled', '2026-12-04T19:00:00.000-04:00'), $enviar, $avisar);
+caso('si ya no le queda servicio pago (venció el 03/12), no se le ofrece', !$envios);
+
+echo "\n--- Pago recibido ---\n";
+$pago = function ($id, $pre, $cuando) { return ['id' => $id, 'status' => 'approved', 'transaction_amount' => 30000, 'date_approved' => $cuando, 'metadata' => ['preapproval_id' => $pre]]; };
+$envios = [];
+$rp = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1, [
+    ['id' => 'clientes:AAA', 'pre' => 'S1aaaaaa', 'tel' => '1144445555', 'persona' => 'Juan Pérez', 'negocio' => 'Panadería Sol', 'seguro' => true],
+    ['id' => 'clientes:GGG', 'pre' => 'S6ffffff', 'tel' => '1177778888', 'persona' => 'Leo', 'negocio' => 'Gomería', 'seguro' => true],
+]), $mpCli(1, '2026-11-10T16:09:50.000-04:00', '2026-11-10T16:09:50.000-04:00', [
+    $pago(111, 'S1aaaaaa', '2026-11-11T08:00:00.000-04:00'), $pago(222, 'S6ffffff', '2026-11-11T08:30:00.000-04:00'),
+]), $enviar, $avisar);
+$pg = $deEnvio('pago_recibido');
+caso('MP cobró la renovación: «recibimos tu pago», al día hasta dentro de un mes', count($pg) === 1 && $pg[0][1] === '5491144445555'
+    && $pg[0][2] === ['nombre' => 'Juan', 'negocio' => 'Panadería Sol', 'monto' => '$30.000', 'fecha' => '11/12/2026'], json_encode($envios, JSON_UNESCAPED_UNICODE));
+caso('el cobro de una suscripción de hace 6 días (el primer pago) no', count($pg) === 1);
+$envios = [];
+wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rp['estado'], $mpCli(1, '2026-11-10T16:09:50.000-04:00', '2026-11-10T16:09:50.000-04:00', [$pago(111, 'S1aaaaaa', '2026-11-11T08:00:00.000-04:00')]), $enviar, $avisar);
+caso('el mismo pago no se repite', !$deEnvio('pago_recibido'));
+caso('pagos de hace más de 30 h no se piden', wabot_cobro_rech_pagos_aprobados(function () { return ['results' => [
+    ['id' => 1, 'status' => 'approved', 'date_approved' => '2026-11-09T08:00:00.000-04:00', 'metadata' => ['preapproval_id' => 'S1']]]]; }, $dia1) === []);
+caso('el id de la suscripción también puede venir en subscription_id', (wabot_cobro_rech_pagos_aprobados(function () { return ['results' => [
+    ['id' => 2, 'status' => 'approved', 'date_approved' => '2026-11-11T08:00:00.000-04:00', 'point_of_interaction' => ['transaction_data' => ['subscription_id' => 'S9']]]]]; }, $dia1)[0]['pre'] ?? '') === 'S9');
 
 todo_ok();
