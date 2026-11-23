@@ -414,4 +414,45 @@ $cvManual = conv_nueva('AUDITORIAPAGOTEST', ['control_manual' => true, 'bot_off'
 $rManual = wabot_pago_confirmar($cvManual, $pago, 'mensual', array_merge($cfg, ['onboarding_activo' => true]), $deps);
 caso('con control manual no inicia onboarding ni confirma otra vez al cliente', $rManual['ok'] && $rManual['mensajes'] === [] && empty($cvManual['onboarding']) && !empty($cvManual['control_manual']) && !empty($cvManual['bot_off']));
 
+/* 23-nov: Mercado Pago corta con HTTP 429 los primeros segundos de cada hora en punto y de cada y
+ * media (cuando corre el cron). El cliente espera y vuelve a pedir, con un tope por proceso. */
+echo "\n=== Mercado Pago responde 429: esperar y volver a pedir ===\n";
+$mpSerie = function (array $respuestas) {
+    $i = 0;
+    return function () use (&$i, $respuestas) { return $respuestas[min($i++, count($respuestas) - 1)]; };
+};
+$dormidas = [];
+$dormir = function ($s) use (&$dormidas) { $dormidas[] = $s; };
+$ok200 = [200, ['results' => [1]], 0, ''];
+$r429 = [429, ['message' => 'Too many requests'], 0, ''];
+$error = function (callable $f) { try { $f(); return ''; } catch (\Throwable $e) { return $e->getMessage(); } };
+
+$GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+caso('si responde bien de entrada no espera nada', wabot_pagos_mp_reintentar($mpSerie([$ok200]), '/preapproval/search?limit=100', $dormir, 60) === ['results' => [1]] && $dormidas === []);
+$dormidas = [];
+caso('dos 429 y después bien: esperó 2 y 4 s y devolvió los datos', wabot_pagos_mp_reintentar($mpSerie([$r429, $r429, $ok200]), '/preapproval/search?limit=100', $dormir, 60) === ['results' => [1]]
+    && $dormidas === [2, 4], json_encode($dormidas));
+caso('lo esperado se lleva por proceso', (float)$GLOBALS['WABOT_PAGOS_MP_ESPERADO'] === 6.0);
+$dormidas = []; $GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+wabot_pagos_mp_reintentar($mpSerie([[429, null, 7, ''], [429, null, 120, ''], $ok200]), '/x', $dormir, 60);
+caso('si Mercado Pago dice cuánto esperar (Retry-After), se le hace caso, hasta 30 s', $dormidas === [7, 30], json_encode($dormidas));
+$dormidas = []; $GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+$msg = $error(function () use ($mpSerie, $r429, $dormir) { wabot_pagos_mp_reintentar($mpSerie([$r429]), '/authorized_payments/search?preapproval_id=abc', $dormir, 60); });
+caso('si no afloja, se rinde al quinto reintento con el error de siempre', $dormidas === [2, 4, 8, 12, 20]
+    && strpos($msg, 'Mercado Pago respondió HTTP 429 a /authorized_payments/search') === 0 && strpos($msg, 'tras 5 reintentos, 46 s de espera') !== false, $msg);
+$dormidas = []; $GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+$msg = $error(function () use ($mpSerie, $r429, $dormir) { wabot_pagos_mp_reintentar($mpSerie([$r429]), '/x', $dormir, 6); });
+caso('con el tope del panel (6 s) reintenta dos veces y no deja esperando a nadie', $dormidas === [2, 4] && strpos($msg, 'tras 2 reintentos, 6 s de espera') !== false, $msg);
+$dormidas = [];
+$msg = $error(function () use ($mpSerie, $r429, $dormir) { wabot_pagos_mp_reintentar($mpSerie([$r429]), '/x', $dormir, 6); });
+caso('gastado el tope del proceso, el pedido siguiente ya no espera', $dormidas === [] && $msg === 'Mercado Pago respondió HTTP 429 a /x', $msg);
+$dormidas = []; $GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+$msg = $error(function () use ($mpSerie, $dormir) { wabot_pagos_mp_reintentar($mpSerie([[500, null, 0, ''], [200, ['ok' => 1], 0, '']]), '/v1/payments/search?x=1', $dormir, 60); });
+caso('otro error (un 500) no se reintenta y el mensaje es el de antes', $dormidas === [] && $msg === 'Mercado Pago respondió HTTP 500 a /v1/payments/search', $msg);
+$msg = $error(function () use ($mpSerie, $dormir) { wabot_pagos_mp_reintentar($mpSerie([[0, null, 0, 'Operation timed out']]), '/users/me', $dormir, 60); });
+caso('si no hay red, el error de curl va en el mensaje', $msg === 'Mercado Pago respondió HTTP 0 (Operation timed out) a /users/me', $msg);
+$msg = $error(function () use ($mpSerie, $dormir) { wabot_pagos_mp_reintentar($mpSerie([[200, null, 0, '']]), '/users/me', $dormir, 60); });
+caso('un 200 que no es JSON sigue siendo un error', strpos($msg, 'Mercado Pago respondió HTTP 200 a /users/me') === 0, $msg);
+$GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = 0;
+
 todo_ok();

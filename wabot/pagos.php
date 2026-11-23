@@ -95,25 +95,76 @@ function wabot_pagos_mp_token() {
     return defined('MP_ACCESS_TOKEN') ? trim((string)MP_ACCESS_TOKEN) : '';
 }
 
+/* Mercado Pago corta con HTTP 429 los primeros segundos de cada hora en punto y de cada y media, que
+ * es cuando corre el cron: del 12 al 23-nov la pasada de cobros se cortó casi todas las veces (19 de
+ * 20 por día), aunque hace 8 pedidos y los mismos 8, a las y 25, pasan todos. Medido el 23-nov a las
+ * 16:30: es un corte de ráfaga ({"status":429,"message":"local_rate_limited"}, sin Retry-After) que
+ * dura uno o dos segundos; el pedido siguiente, 2 s después, ya entra.
+ * Ante un 429 se espera y se vuelve a pedir. Estas son las esperas entre un intento y el siguiente, y
+ * el tope de lo que se espera en total por proceso: en el cron un minuto; en un pedido del panel,
+ * pocos segundos (nadie se queda mirando una pantalla en blanco). */
+const WABOT_PAGOS_MP_ESPERAS = [2, 4, 8, 12, 20];
+const WABOT_PAGOS_MP_TOPE_CRON = 60;
+const WABOT_PAGOS_MP_TOPE_WEB = 6;
+
 /** GET a la API de MP. Las funciones que lo usan lo reciben como callable: los tests le pasan datos fijos. */
 function wabot_pagos_mp($ruta) {
     $token = wabot_pagos_mp_token();
     if ($token === '') throw new RuntimeException('Falta config/mp-config.php (el token de Mercado Pago).');
+    return wabot_pagos_mp_reintentar(function () use ($ruta, $token) { return wabot_pagos_mp_pedir($ruta, $token); }, $ruta);
+}
+
+/** Un pedido a la API: [código HTTP, datos (o null), segundos del Retry-After (0 si no vino), error de curl]. */
+function wabot_pagos_mp_pedir($ruta, $token) {
+    $retryAfter = 0;
     $ch = curl_init('https://api.mercadopago.com' . $ruta);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token],
         CURLOPT_TIMEOUT => 25,
+        CURLOPT_HEADERFUNCTION => function ($ch, $linea) use (&$retryAfter) {
+            if (stripos($linea, 'retry-after:') === 0) $retryAfter = max(0, (int)trim(substr($linea, 12)));
+            return strlen($linea);
+        },
     ]);
     $res = curl_exec($ch);
-    $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);
     curl_close($ch);
-    $datos = is_string($res) ? json_decode($res, true) : null;
-    if ($http !== 200 || !is_array($datos)) {
-        throw new RuntimeException('Mercado Pago respondió HTTP ' . $http . ($err !== '' ? " ($err)" : '') . ' a ' . strtok($ruta, '?'));
+    return [$http, is_string($res) ? json_decode($res, true) : null, $retryAfter, $err];
+}
+
+/**
+ * Pide con $pedir() → [http, datos, retry_after, error] y, si Mercado Pago responde 429, espera y
+ * vuelve a pedir (WABOT_PAGOS_MP_ESPERAS; si vino Retry-After, eso, hasta 30 s) mientras lo esperado
+ * en este proceso no pase el tope. Devuelve los datos o tira la excepción de siempre.
+ * $dormir(segundos) y $tope son para los tests; lo esperado se lleva en $GLOBALS['WABOT_PAGOS_MP_ESPERADO'].
+ */
+function wabot_pagos_mp_reintentar(callable $pedir, $ruta, $dormir = null, $tope = null) {
+    $dormir = $dormir ?? function ($s) { usleep((int)round($s * 1000000)); };
+    $tope = $tope ?? (PHP_SAPI === 'cli' ? WABOT_PAGOS_MP_TOPE_CRON : WABOT_PAGOS_MP_TOPE_WEB);
+    $esperado = (float)($GLOBALS['WABOT_PAGOS_MP_ESPERADO'] ?? 0);
+    $reintentos = 0;
+    $esperadoAca = 0;
+    while (true) {
+        [$http, $datos, $retryAfter, $err] = $pedir();
+        if ($http === 200 && is_array($datos)) {
+            // Queda anotado cuando hizo falta esperar: así se ve en el log cuánto corta Mercado Pago.
+            if ($reintentos > 0) wabot_log('mp_429', ['ruta' => strtok($ruta, '?'), 'reintentos' => $reintentos, 'esperado' => $esperadoAca]);
+            return $datos;
+        }
+        $espera = WABOT_PAGOS_MP_ESPERAS[$reintentos] ?? null;
+        if ($http !== 429 || $espera === null) break;
+        if ((int)$retryAfter > 0) $espera = min(30, (int)$retryAfter);
+        if ($esperado + $espera > $tope) break;
+        $dormir($espera);
+        $esperado += $espera;
+        $esperadoAca += $espera;
+        $GLOBALS['WABOT_PAGOS_MP_ESPERADO'] = $esperado;
+        $reintentos++;
     }
-    return $datos;
+    throw new RuntimeException('Mercado Pago respondió HTTP ' . $http . ($err !== '' ? " ($err)" : '') . ' a ' . strtok($ruta, '?')
+        . ($reintentos > 0 ? ' (tras ' . $reintentos . ($reintentos === 1 ? ' reintento' : ' reintentos') . ', ' . $esperadoAca . ' s de espera)' : ''));
 }
 
 /** El id de la cuenta de Mercado Pago del token: la que cobra. */

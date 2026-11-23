@@ -365,6 +365,34 @@ caso('sin cruce (ninguna charla lo contradice) todo sale como siempre', count($d
 unset($GLOBALS['WABOT_TEST_AUDVINC']);
 $GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
 
+/* 23-nov: Mercado Pago corta con 429. Lo que no deja mirar en una pasada queda para la siguiente,
+ * sin llevarse puesto lo demás. */
+echo "\n=== Mercado Pago no deja mirar una parte ===\n";
+$mpCorta = function (callable $base, $patron) {
+    return function ($ruta) use ($base, $patron) {
+        if (strpos($ruta, $patron) !== false) throw new RuntimeException('Mercado Pago respondió HTTP 429 a ' . strtok($ruta, '?'));
+        return $base($ruta);
+    };
+};
+$sinMirar = null; $c0 = null; $a0 = null; $e0 = null;
+$det = wabot_cobro_rech_detectar($mpCorta($mpDatos(), 'preapproval_id=S1aaaaaa'), $c0, $a0, $e0, $sinMirar);
+caso('la suscripción que no se pudo mirar queda anotada y las demás se detectan igual', array_column($det, 'pre') === ['S2bbbbbb'] && array_keys($sinMirar) === ['S1aaaaaa']
+    && strpos($sinMirar['S1aaaaaa'], 'HTTP 429') !== false, json_encode([$det, $sinMirar]));
+$avisos = []; $envios = [];
+$rk = wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1), $mpCorta($mpDatos(), 'preapproval_id=S1aaaaaa'), null, $avisar);
+caso('la pasada sigue: avisa el cobro que sí pudo mirar y dice qué quedó pendiente', $rk['enviados'] === 1 && ($rk['mp_fallos'] ?? []) === ['suscripcion'] && strpos($textos(), 'Ana') !== false, json_encode($rk['mp_fallos'] ?? null));
+$avisos = [];
+$rk2 = wabot_cobro_rech_correr($cfgSin, $dia1 + 1800, $rk['estado'], $mpDatos(), null, $avisar);
+caso('y en la pasada siguiente sale el que faltaba, sin repetir el otro', $rk2['enviados'] === 1 && count($avisos) === 1 && strpos($textos(), 'Juan Pérez') !== false && empty($rk2['mp_fallos']), $textos());
+$avisos = [];
+$rk3 = wabot_cobro_rech_correr($cfgSin, $dia1, $estadoBase($dia1), $mpCorta($mpDatos(), '/v1/payments/search'), null, $avisar);
+caso('si falla la búsqueda de pagos aprobados, los avisos de cobros rechazados salen igual', $rk3['enviados'] === 2 && ($rk3['mp_fallos'] ?? []) === ['pagos']);
+$avisos = []; $envios = [];
+$rk4 = wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCorta($mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), '/authorized_payments/search'), $enviar, $avisar);
+caso('cancelada y no se puede saber hasta cuándo pagó: ni plantilla ni aviso todavía', !$envios && !$avisos && ($rk4['mp_fallos'] ?? []) === ['baja'] && empty($rk4['estado']['canceladas']), json_encode($rk4['mp_fallos'] ?? null));
+$rk5 = wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rk4['estado'], $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), $enviar, $avisar);
+caso('…y salen los dos en la pasada siguiente', count($deEnvio('suscripcion_cancelada')) === 1 && count($avisos) === 1 && $rk5['canceladas'] === 1);
+
 caso('una fila sin id o sin suscripción no se da por cruzada', wabot_cobro_rech_cruzado($conPlazo, ['id' => '', 'pre' => 'S5eeeeee'], null, $dia1) === null
     && wabot_cobro_rech_cruzado($conPlazo, null, null, $dia1) === null && wabot_cobro_rech_cruzado_lineas($conPlazo, ['id' => 'clientes:EEE', 'pre' => 'S5eeeeee'], null, $dia1) === []);
 caso('el estado guarda la auditoría entre pasadas', array_key_exists('cruzados', wabot_cobro_rech_estado()));

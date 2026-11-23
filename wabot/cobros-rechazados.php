@@ -126,13 +126,16 @@ function wabot_cobro_rech_dia_local($iso) {
  * Los cobros de suscripción que Mercado Pago intentó y rechazó y siguen sin
  * cobrarse: [{cobro, pre, nombre_mp, monto, primer_intento (Y-m-d), intento}].
  * $mp(ruta) es la API (los tests le pasan datos fijos).
+ * Si Mercado Pago no deja mirar los cobros de una suscripción (HTTP 429 aun después de reintentar),
+ * esa queda para la pasada siguiente y las demás siguen: $sinMirar trae [pre => mensaje].
  */
-function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null, &$altas = null, &$estadosSub = null) {
+function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null, &$altas = null, &$estadosSub = null, &$sinMirar = null) {
     $yo = wabot_pagos_mp_yo($mp);
     $atrasadas = [];
     $canceladas = [];
     $altas = [];
     $estadosSub = [];
+    $sinMirar = [];
     for ($offset = 0; $offset < 1000; $offset += 100) {
         $pagina = $mp('/preapproval/search?limit=100&offset=' . $offset);
         foreach ((array)($pagina['results'] ?? []) as $s) {
@@ -162,7 +165,12 @@ function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null, &$altas = 
 
     $rechazados = [];
     foreach ($atrasadas as $pre => $s) {
-        $cobros = $mp('/authorized_payments/search?preapproval_id=' . rawurlencode($pre) . '&limit=12');
+        try {
+            $cobros = $mp('/authorized_payments/search?preapproval_id=' . rawurlencode($pre) . '&limit=12');
+        } catch (\Throwable $e) {
+            $sinMirar[$pre] = mb_substr($e->getMessage(), 0, 200);
+            continue;
+        }
         // Renovación = la suscripción ya tuvo un cobro aprobado antes (23-nov): el primer pago que rebota no es una renovación.
         $cobrados = array_filter((array)($cobros['results'] ?? []), function ($c) {
             return (string)($c['status'] ?? '') === 'processed' && (string)($c['payment']['status'] ?? '') === 'approved';
@@ -596,7 +604,15 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
     $dias = function ($desde, $hasta) { return ($desde === '' || $hasta === '') ? 999 : (int)round((strtotime($hasta . ' 12:00 UTC') - strtotime($desde . ' 12:00 UTC')) / 86400); };
     $ultimosAvisados = [];
     $estadosSub = [];
-    foreach (wabot_cobro_rech_detectar($mp, $canceladas, $altas, $estadosSub) as $cobro) {
+    $sinMirar = [];
+    $rechazados = wabot_cobro_rech_detectar($mp, $canceladas, $altas, $estadosSub, $sinMirar);
+    // Lo que Mercado Pago no dejó mirar en esta pasada (queda para la siguiente) se anota, sin cortar el resto.
+    $mpFallo = function ($parte, $msg) use (&$res) {
+        $res['mp_fallos'][] = $parte;
+        wabot_log('error', ['donde' => 'cobro_rechazado_' . $parte, 'msg' => mb_substr((string)$msg, 0, 200)]);
+    };
+    foreach ($sinMirar as $pre => $msg) $mpFallo('suscripcion', $pre . ': ' . $msg);
+    foreach ($rechazados as $cobro) {
         $res['rechazados']++;
         $f = $porPre[$cobro['pre']] ?? wabot_cobro_rech_fila_respaldo($cobro['pre'], $cobro['nombre_mp'], $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
 
@@ -649,7 +665,13 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         $yaBaja = is_array($estado['clientes'][$bajaMarca] ?? null) && wabot_pagos_resultado_final((string)($estado['clientes'][$bajaMarca]['res'] ?? ''));
         if ($c['estado'] === 'cancelled' && !$yaBaja && !isset($ultimosAvisados[$c['pre']]) && !wabot_cobro_rech_ultimo_reciente($estado, $c['pre'], $ahora)
             && is_array($f) && !empty($f['seguro']) && !isset($porFuera[(string)($f['id'] ?? '')])) {
-            $hasta = wabot_cobro_rech_pagado_hasta($mp, $c['pre']);
+            try {
+                $hasta = wabot_cobro_rech_pagado_hasta($mp, $c['pre']);
+            } catch (\Throwable $e) {
+                // Sin ese dato no se le escribe ni se avisa todavía: la pasada siguiente lo vuelve a intentar.
+                $mpFallo('baja', $c['pre'] . ': ' . $e->getMessage());
+                continue;
+            }
             if ($hasta !== '' && $hasta >= $hoy) {
                 $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'suscripcion_cancelada', ['fecha' => wabot_renovacion_fecha_texto($hasta)],
                     $bajaMarca, $cfg, $enviar, $ahora, $porFuera, ['id' => (string)($f['id'] ?? ''), 'hasta' => $hasta, 'monto' => (float)$c['monto']], $mp);
@@ -671,7 +693,13 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
     }
     // «Recibimos tu pago» cuando MP cobra la renovación (23-nov). El primer cobro de una suscripción
     // nueva (a menos de 20 días del alta) no: ese día arranca la web y lo atiende Pablo.
-    foreach (wabot_cobro_rech_pagos_aprobados($mp, $ahora) as $p) {
+    try {
+        $aprobados = wabot_cobro_rech_pagos_aprobados($mp, $ahora);
+    } catch (\Throwable $e) {
+        $aprobados = [];
+        $mpFallo('pagos', $e->getMessage());
+    }
+    foreach ($aprobados as $p) {
         $alta = (string)($altas[$p['pre']] ?? '');
         if ($alta === '' || $dias($alta, $p['dia']) < 20) continue;
         $f = $porPre[$p['pre']] ?? wabot_cobro_rech_fila_respaldo($p['pre'], '', $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
@@ -684,7 +712,11 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         }
     }
 
-    wabot_cobro_rech_plazos($estado, $porPre, $estadosSub, $cfg, $mp, $enviar, $avisar, $ahora, $hoy, $porFuera, $res);
+    try {
+        wabot_cobro_rech_plazos($estado, $porPre, $estadosSub, $cfg, $mp, $enviar, $avisar, $ahora, $hoy, $porFuera, $res);
+    } catch (\Throwable $e) {
+        $mpFallo('plazos', $e->getMessage());
+    }
     if ($enDisco) wabot_cobro_rech_guardar($estado);
 
     // Las marcas de canceladas de hace más de 2 meses ya no frenan nada.
