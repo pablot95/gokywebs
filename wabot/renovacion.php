@@ -33,6 +33,8 @@ require_once __DIR__ . '/push.php';
 const WABOT_RENOVACION_ARCHIVO = WABOT_DATA . '/renovaciones.json';
 // Desde esta hora de Argentina sale el aviso del día.
 const WABOT_RENOVACION_HORA = 10;
+// Desde este día (Argentina) salen las plantillas de pagos al cliente (23-nov: los de ese día ya los había atendido Pablo).
+const WABOT_PAGOS_CLIENTE_DESDE = '2026-11-24';
 // Una lista que el admin no actualiza hace más de esto puede tener bajas que el bot no sabe.
 const WABOT_RENOVACION_LISTA_VIEJA = 35 * 86400;
 // Cuánto se guarda cada aviso enviado (el del mes no se repite; los viejos se podan).
@@ -141,6 +143,9 @@ function wabot_renovacion_mas_un_mes($ymd) {
  * valores, plantilla) reemplaza la red en los tests.
  */
 function wabot_pagos_plantilla_cliente(array $f, $plantilla, array $valores, $cfg, $marca, $enviar = null) {
+    /* Pablo (23-nov): «Esto que se haga a partir de mañana! Porque a los de hoy ya les mandé».
+     * Lo de antes de esa fecha queda anotado como hecho ('antes') y no se manda nunca. */
+    if (!$enviar && gmdate('Y-m-d', time() - 3 * 3600) < WABOT_PAGOS_CLIENTE_DESDE) return 'antes';
     if (wabot_plantilla_config($plantilla, $cfg) === null) return 'inactiva';
     $tel = (string)($f['tel'] ?? '');
     if ($tel === '') return 'sin_chat';
@@ -182,7 +187,7 @@ function wabot_pagos_resultado_final($r) {
 
 /** El renglón para el aviso a Pablo con lo que pasó con la plantilla al cliente. */
 function wabot_pagos_resultado_texto($r) {
-    $t = ['ok' => 'enviada', 'ya' => 'ya la tenía', 'inactiva' => 'NO salió: la plantilla está apagada (Ajustes → Plantillas)',
+    $t = ['ok' => 'enviada', 'antes' => 'no se manda (es de antes del 24-nov, lo atendiste vos)', 'ya' => 'ya la tenía', 'inactiva' => 'NO salió: la plantilla está apagada (Ajustes → Plantillas)',
           'sin_chat' => 'NO salió: sin teléfono en la ficha', 'telefono' => 'NO salió: el teléfono no parece de WhatsApp',
           'ambiguo' => 'NO salió: el número coincide con dos chats', 'ocupado' => 'se reintenta en la próxima pasada',
           'error' => 'falló el envío, se reintenta en la próxima pasada'];
