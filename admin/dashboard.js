@@ -5756,7 +5756,9 @@ async function avisarCompraAMeta(d) {
    varias, se elige el número. Devuelve { nombreMp, preapprovalId, porFuera } (vacíos si no hay ninguna).
    El nombre queda en el doc: el cruce lo usa para adivinar mientras no haya ID.
    Cancelar (o escribir "cancelar") = paga por afuera (Pablo, 6-nov): vuelve con porFuera y el que llama
-   lo marca, con el día de hoy como día de cobro. */
+   lo marca, con el día de hoy como día de cobro.
+   23-nov: si la charla del bot señala con claridad cuál es su suscripción (_suscripcionSegunCharla), se
+   propone esa antes que las que coinciden por el nombre. */
 async function _preguntarSuscripcionMp(c, monto) {
     const respuesta = prompt(
         `¿A nombre de quién está la suscripción en Mercado Pago?\n\n` +
@@ -5776,13 +5778,19 @@ async function _preguntarSuscripcionMp(c, monto) {
         return { nombreMp, preapprovalId: "" };
     }
     const tomadas = new Set([...(clients || []), ...(mantenimiento || [])].map(x => String(x.preapprovalId || "").trim()).filter(Boolean));
+    const etiqueta = ({ s }) => `${s.nombre || "Sin nombre"} · ${fmtMoney(Number(s.monto) || 0)}/mes · alta ${fechaCortaJs(new Date(s.alta)).slice(0, 5)}${s.estado === "paused" ? " · pausada" : ""}`;
+    /* Primero lo que dice su charla del bot (23-nov: tres del mismo monto, elegidas a ojo por el nombre y la
+       fecha, quedaron cruzadas): el link mensual de ese monto antes del alta y el comprobante al toque. */
+    const deCharla = await _suscripcionSegunCharla(c, tomadas);
+    if (deCharla && confirm(`Por la charla de WhatsApp, la suscripción de "${c.nombre || c.proyecto || "este cliente"}" es esta:\n\n${etiqueta(deCharla)}\n\nEn su charla: ${deCharla.ev.texto}.\n\n¿La vinculo?`)) {
+        return { nombreMp, preapprovalId: String(deCharla.s.id) };
+    }
     const palabras = _palabrasNombre(nombreMp);
     const candidatas = (ingresosMp.suscripciones || [])
-        .filter(s => (s.estado === "authorized" || s.estado === "paused") && !tomadas.has(String(s.id)))
+        .filter(s => (s.estado === "authorized" || s.estado === "paused") && !tomadas.has(String(s.id)) && s !== deCharla?.s)
         .map(s => ({ s, enComun: _nombresEnComun(palabras, s.nombre), mismoMonto: Number(s.monto) === Number(monto) }))
         .filter(x => x.enComun > 0)
         .sort((a, b) => b.enComun - a.enComun || b.mismoMonto - a.mismoMonto || new Date(b.s.alta) - new Date(a.s.alta));
-    const etiqueta = ({ s }) => `${s.nombre || "Sin nombre"} · ${fmtMoney(Number(s.monto) || 0)}/mes · alta ${fechaCortaJs(new Date(s.alta)).slice(0, 5)}${s.estado === "paused" ? " · pausada" : ""}`;
     if (!candidatas.length) {
         alert(`No encontré en Mercado Pago una suscripción sin cliente a nombre de "${nombreMp}". Queda guardado el nombre: si se suscribe después, vinculala en Mantenimiento → Suscripción → Vincular con Mercado Pago.`);
         return { nombreMp, preapprovalId: "" };
@@ -10690,6 +10698,8 @@ async function sincronizarCobrosRechazados(forzar = false) {
         const data = await res.json();
         if (!data?.ok) throw new Error("respuesta sin ok");
         cobrosRechazadosFirma = firma;
+        // El bot ya tiene esta lista: que la revise contra las charlas (si se está mirando Vincular con MP).
+        vincAuditoriaAlDia();
     } catch (e) {
         console.warn("No se pudo pasarle al bot la lista de suscriptores de Mercado Pago:", e);
     }
@@ -10946,10 +10956,109 @@ document.addEventListener("change", async (e) => {
 const MANT_VINC_FUERA = "__fuera";
 let mantVincFiltro = "revisar";
 
+/* Los vínculos contra las charlas del bot (Pablo, 23-nov: «cómo hacemos para reverificarlas todas»; tres
+   clientes del mismo monto estaban vinculados en ciclo y el aviso de cobro atrasado salía a nombre de otro).
+   wabot/auditar-vinculos.php mira, por cada suscripción, a qué charla se le mandó el link mensual de ese
+   monto antes del alta y quién mandó el comprobante en los minutos siguientes. Acá se marca cada fila cuyo
+   vínculo contradice eso, con el cliente que la charla señala. Audita la lista que este admin le pasa al
+   bot (cobros_rechazados_sync), así que se pide después de cada sincronización. Solo lee: el vínculo lo
+   corrige Pablo con el selector. */
+let vincAuditoria = null;        // { resumen, vinculos, subs, porId: Map("coleccion:id" → vínculo) } | null
+let vincAuditoriaFirma = null;   // la lista (la firma del sync) que se auditó o se está auditando
+
+async function pedirVincAuditoria() {
+    try {
+        try { await wabotAuthHandshake(); } catch (e) { /* el fetch de abajo falla con 401/403 */ }
+        const res = await fetch("../wabot/admin.php?accion=auditar_vinculos_json", { credentials: "same-origin" });
+        const data = res.ok ? await res.json() : null;
+        return data?.ok ? { ...data, porId: new Map((data.vinculos || []).map(v => [v.id, v])) } : null;
+    } catch (err) {
+        console.warn("No se pudo traer la auditoría de los vínculos con Mercado Pago:", err);
+        return null;
+    }
+}
+
+/* Con la vista abierta y la lista ya pasada al bot: una auditoría por cada lista distinta. */
+function vincAuditoriaAlDia() {
+    if (activeTab !== "mantenimiento" || mantPlan !== "mensual") return;
+    if (!cobrosRechazadosFirma || vincAuditoriaFirma === cobrosRechazadosFirma) return;
+    const firma = vincAuditoriaFirma = cobrosRechazadosFirma;
+    pedirVincAuditoria().then(data => {
+        if (firma !== vincAuditoriaFirma || !data) return;   // la lista cambió mientras tanto (ya se pidió otra) o falló
+        vincAuditoria = data;
+        if (activeTab === "mantenimiento") renderMantenimiento();
+    });
+}
+
+const _vincDestino = k => `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}`;
+
+/* Lo que dice la auditoría del vínculo de esta fila, si es de la suscripción que tiene ahora (recién
+   corregido, lo viejo no se muestra: la auditoría nueva llega con la próxima sincronización). */
+function _vincAuditoriaDe(k) {
+    if (!vincAuditoria || !k.sub || k.porFuera) return null;
+    const v = vincAuditoria.porId.get(_vincDestino(k));
+    return v && v.pre === k.sub.id ? v : null;
+}
+
+/* Las suscripciones que la charla de este cliente señala como suyas (evidencia clara). */
+function _vincSuyas(k) {
+    const out = new Set();
+    const destino = _vincDestino(k);
+    for (const [pre, ev] of Object.entries(vincAuditoria?.subs || {})) {
+        if ((ev.fichas || []).includes(destino)) out.add(pre);
+    }
+    return out;
+}
+
+function _vincAvisoCruzadaHTML(aud) {
+    const suya = (aud.suya || []).map(s => s.texto).join("; ");
+    return `<div class="mant-vinc-aviso" role="note">${escapeHtml(aud.texto)} ${suya
+        ? `<strong>La de este cliente, según su charla: ${escapeHtml(suya)}.</strong>`
+        : "Ninguna charla señala con claridad cuál es la de este cliente."}</div>`;
+}
+
+/* Característica + número (10 dígitos), como wabot_audvinc_tel del bot: para comparar teléfonos. */
+function _tel10(raw) {
+    let d = String(raw ?? "").replace(/\D/g, "").replace(/^0+/, "");
+    if (d.startsWith("54") && d.length >= 12) d = d.slice(2).replace(/^0+/, "");
+    if (d.length === 11 && d.startsWith("9")) d = d.slice(1);
+    if (d.length === 12) {
+        for (const area of [2, 3, 4]) {
+            if (d.substr(area, 2) === "15") { d = d.slice(0, area) + d.slice(area + 2); break; }
+        }
+    }
+    return d.length >= 10 ? d.slice(-10) : "";
+}
+
+/* Al pasar a Cliente con el plan mensual: la suscripción sin dueño que la charla de este cliente señala
+   (por la ficha atada al chat, por el chat de su demo o por el teléfono). Se pide de nuevo: recién pagó.
+   → { s (la suscripción de ingresosMp), ev (la evidencia) } | null */
+async function _suscripcionSegunCharla(c, tomadas) {
+    const aud = await pedirVincAuditoria();
+    if (!aud?.subs) return null;
+    const chat = c.id ? presentadoDeCliente(c) : null;
+    // En Instagram la clave del chat no es un teléfono.
+    const tels = (chat?.canal === "instagram" ? [c.telefono] : [c.telefono, chat?.tel, chat?.clave]).map(_tel10).filter(Boolean);
+    for (const s of (ingresosMp?.suscripciones || [])) {
+        const ev = aud.subs[String(s.id)];
+        if (!ev || tomadas.has(String(s.id)) || (s.estado !== "authorized" && s.estado !== "paused")) continue;
+        const suya = (c.id && (ev.cliente_id === c.id || (ev.fichas || []).includes(`clientes:${c.id}`)))
+            || (chat?.clave && chat.clave === ev.clave)
+            || tels.some(t => (ev.tels || []).includes(t));
+        if (suya) return { s, ev };
+    }
+    return null;
+}
+
 function _mantVincEstado(k) {
     if (k.porFuera) return { clase: "ok", texto: "💵 Paga por afuera", revisar: false };
     if (!k.sub) return { clase: "mal", texto: k.porId ? "⚠ La vinculada no está en Mercado Pago" : "⚠ No aparece en Mercado Pago", revisar: true };
     const avisos = _mpAvisosTexto(k);
+    // La charla dice que esta suscripción es de otro (23-nov): a revisar, esté vinculada por ID o sugerida.
+    const aud = _vincAuditoriaDe(k);
+    if (aud?.estado === "mal") {
+        return { clase: "mal", texto: [`⚠ Cruzada: la charla dice que es de ${aud.sugerido?.quien || "otro cliente"}`, ...avisos].join(" · "), revisar: true, cruzada: aud };
+    }
     // Otro monto en MP es un dato, no un error (Julieta Ledesma, 24-oct: paga $35.000, todavía no se le aumentó).
     const grave = k.baja || k.pausada || k.atrasada;
     if (k.porId) return grave ? { clase: "mal", texto: "⚠ " + avisos.join(" · "), revisar: true }
@@ -10988,7 +11097,9 @@ function _renderMantVincular(term) {
     };
     const opciones = k => {
         const valor = k.porFuera ? MANT_VINC_FUERA : k.sub?.id || "";
-        const op = s => `<option value="${escapeHtml(s.id)}"${s.id === valor ? " selected" : ""}>${escapeHtml(etiqueta(s, k))}</option>`;
+        // La que su charla señala (auditoría del bot, 23-nov) va marcada: es la que hay que elegir si está cruzado.
+        const suyas = _vincSuyas(k);
+        const op = s => `<option value="${escapeHtml(s.id)}"${s.id === valor ? " selected" : ""}>${escapeHtml(etiqueta(s, k) + (suyas.has(s.id) ? " · ★ la de su charla" : ""))}</option>`;
         const mismo = subs.filter(s => s.monto === k.monto), otras = subs.filter(s => s.monto !== k.monto);
         return `<option value=""${valor === "" ? " selected" : ""}>— Ninguna (se adivina por monto y fecha) —</option>
             <option value="${MANT_VINC_FUERA}"${valor === MANT_VINC_FUERA ? " selected" : ""}>💵 Paga por afuera</option>
@@ -11001,11 +11112,19 @@ function _renderMantVincular(term) {
     if (countEl) countEl.textContent = revisar.length;
     const porNombre = filas.filter(f => f.e.sugerida && f.k.porNombre && f.e.clase !== "mal");
     const cuenta = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+    // Los que contradicen la charla (auditoría del bot, 23-nov): arriba de la tabla y al lado del título, que está plegado.
+    const cruzadas = filas.filter(f => f.e.cruzada).length;
+    const cruzadasTxt = cruzadas ? `⚠ ${cuenta(cruzadas, "vínculo contradice", "vínculos contradicen")} la charla del cliente` : "";
+    const cruzadasEl = document.getElementById("mantVincularCruzados");
+    if (cruzadasEl) { cruzadasEl.textContent = cruzadasTxt; cruzadasEl.hidden = !cruzadas; }
+    const aud = vincAuditoria?.resumen;
     if (barra) barra.innerHTML = `
         <button type="button" class="seg-chip${mantVincFiltro === "revisar" ? " active" : ""}" data-vinc-filtro="revisar">Para revisar <span class="seg-chip-count">${revisar.length}</span></button>
         <button type="button" class="seg-chip${mantVincFiltro === "todos" ? " active" : ""}" data-vinc-filtro="todos">Todos <span class="seg-chip-count">${filas.length}</span></button>
         <span class="muted mant-vinc-resumen">${cuenta(filas.filter(f => f.k.porId).length, "vinculado", "vinculados")} · ${cuenta(filas.filter(f => f.e.sugerida).length, "sugerido", "sugeridos")} · ${cuenta(filas.filter(f => !f.k.sub && !f.k.porFuera).length, "sin Mercado Pago", "sin Mercado Pago")} · ${cuenta(filas.filter(f => f.k.porFuera).length, "paga por afuera", "pagan por afuera")}</span>
-        ${porNombre.length ? `<button type="button" class="btn-primary mant-vinc-todas" data-vinc-confirmar-nombre>Confirmar las ${porNombre.length} sugeridas por nombre</button>` : ""}`;
+        ${porNombre.length ? `<button type="button" class="btn-primary mant-vinc-todas" data-vinc-confirmar-nombre>Confirmar las ${porNombre.length} sugeridas por nombre</button>` : ""}
+        ${cruzadas ? `<p class="mant-vinc-cruzadas">${cruzadasTxt}: la suscripción que tiene vinculada es de otro. Elegile la marcada con ★ y guardá.</p>` : ""}
+        ${aud ? `<p class="muted mant-vinc-auditoria">Revisado contra las charlas del bot: ${cuenta(aud.ok_charla, "vínculo confirmado", "vínculos confirmados")} por la charla, ${aud.ok_nombre + aud.ok_webhook} por el nombre del titular o la ficha, ${aud.sin_prueba} sin prueba y ${cuenta(aud.mal, "cruzado", "cruzados")}.</p>` : ""}`;
 
     let lista = mantVincFiltro === "revisar" ? revisar : filas;
     if (term) lista = lista.filter(({ k }) => [k.negocio, k.persona, k.nombre, k.sub?.nombre].join(" ").toLowerCase().includes(term));
@@ -11015,9 +11134,9 @@ function _renderMantVincular(term) {
         return `<tr>
             <td><div>${escapeHtml(k.negocio || k.nombre)}</div>${k.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(k.persona)}</div>` : ""}</td>
             <td>${fmtMoney(k.monto)}/mes<div class="muted" style="font-size:12px">alta ${escapeHtml(dm(k.desde))}</div></td>
-            <td><select class="mant-vinc-select" data-vinc-select="${destino}" data-vinc-actual="${escapeHtml(actual)}" aria-label="Suscripción de Mercado Pago de ${escapeHtml(k.negocio || k.nombre)}">${opciones(k)}</select></td>
+            <td><select class="mant-vinc-select" data-vinc-select="${destino}" data-vinc-actual="${escapeHtml(actual)}" aria-label="Suscripción de Mercado Pago de ${escapeHtml(k.negocio || k.nombre)}">${opciones(k)}</select>${e.cruzada ? _vincAvisoCruzadaHTML(e.cruzada) : ""}</td>
             <td><span class="mant-vinc-estado mant-vinc-estado--${e.clase}">${escapeHtml(e.texto)}</span></td>
-            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button>
+            <td class="actions-cell"><button type="button" class="btn-ghost btn-sm" data-vinc-guardar="${destino}"${e.sugerida || (!k.porId && !k.porFuera && actual && !e.cruzada) ? "" : " hidden"}>${e.sugerida ? "Confirmar" : "Guardar"}</button>
                 ${(k.atrasada || k.baja || k.pausada) && !k.porFuera
                     ? `<button type="button" class="btn-ghost btn-sm" data-vinc-fuera="${destino}" data-vinc-dia="${_mantVincDiaCobro(k)}" title="La suscripción se cortó y te transfiere: pasa a «Pagan por afuera», con su día de cobro">💵 Paga por afuera</button>` : ""}</td>
         </tr>`;
@@ -11533,6 +11652,8 @@ function renderMantenimiento() {
     programarSyncWebs();
     // Y el cruce de las suscripciones de MP, para el aviso de cobro rechazado (12-nov).
     programarSyncCobrosRechazados();
+    // Con esa lista ya en el bot, la auditoría de los vínculos contra las charlas (23-nov).
+    vincAuditoriaAlDia();
     // El plan mensual muestra con qué pagó cada uno (los cobros de Intentos de cobro, 25-oct).
     if (activeTab === "mantenimiento" && !intentosCobro && !intentosCobroCargando && !intentosCobroError) cargarIntentosCobro();
 

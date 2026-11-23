@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261116-fallidos-3col">
+    <link rel="stylesheet" href="styles.css?v=20261123-vinculos">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -466,7 +466,7 @@
                  preapprovalId. Sin vínculo, el admin la adivina por monto, fecha de alta y nombre. -->
             <!-- 6-nov: plegado debajo de Suscripción. -->
             <details class="mant-plegado" id="mantVincular" hidden>
-                <summary>Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span></summary>
+                <summary>Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span><span class="mant-vinc-cruzados" id="mantVincularCruzados" hidden></span></summary>
                 <p class="muted mant-pf-nota">Elegí la suscripción de Mercado Pago de cada cliente y guardala: queda fija y el Calendario, Finanzas y las bajas usan esa. Las que no están vinculadas se adivinan por monto, fecha de alta y nombre (“sugerida”).</p>
                 <div class="mant-vinc-barra" id="mantVincularBarra"></div>
                 <div class="table-wrapper">
@@ -1509,6 +1509,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261123-mp"></script>
+    <script type="module" src="dashboard.js?v=20261123-vinculos"></script>
 </body>
 </html>

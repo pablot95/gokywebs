@@ -2392,6 +2392,14 @@ body.modal-open { overflow: hidden; }
 .mant-vinc-estado--ok { color: var(--ok); }
 .mant-vinc-estado--duda { color: var(--text-muted); }
 .mant-vinc-estado--mal { color: var(--warning); }
+/* El vínculo contradice la charla del cliente (auditoría del bot, 23-nov) */
+.mant-vinc-aviso { margin-top: 6px; max-width: 360px; padding: 6px 8px; border-left: 3px solid var(--warning); border-radius: 0 6px 6px 0; background: rgba(245, 158, 11, .08); font-size: 12px; line-height: 1.45; white-space: normal; }
+.mant-vinc-aviso strong { display: block; margin-top: 4px; color: var(--warning); }
+.mant-vinc-cruzadas, .mant-vinc-auditoria { flex-basis: 100%; margin: 0; font-size: 13px; }
+.mant-vinc-cruzadas { color: var(--warning); font-weight: 600; }
+.mant-vinc-cruzados { margin-left: 8px; color: var(--warning); font-size: 12px; font-weight: 600; }
+/* «Guardar» aparece recién al cambiar el selector: el display de #tabMantenimiento .btn-ghost le ganaba al atributo hidden y se veía siempre. */
+#tabMantenimiento [data-vinc-guardar][hidden] { display: none; }
 /* Cobros fallidos en tres columnas (16-nov) */
 .fallidos-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .fallidos-col { border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: var(--bg-elev); display: flex; flex-direction: column; gap: 10px; min-width: 0; }

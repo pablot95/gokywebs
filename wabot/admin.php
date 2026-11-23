@@ -19,6 +19,7 @@ require_once __DIR__ . '/anuncios-stats.php';
 require_once __DIR__ . '/meta-gasto.php';
 require_once __DIR__ . '/pagos.php';
 require_once __DIR__ . '/clientes.php';
+require_once __DIR__ . '/auditar-vinculos.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -217,6 +218,26 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($salida, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
+ * ¿Cada cliente mensual está vinculado con SU suscripción de Mercado Pago?
+ * (auditar-vinculos.php, 23-nov: tres del mismo monto estaban cruzados). La
+ * evidencia sale de las charlas: el link mensual de ese monto antes del alta y
+ * el comprobante en los minutos siguientes. El admin principal marca en
+ * Mantenimiento → Vincular con MP cada fila que contradice la charla y, al
+ * pasar a Cliente, propone la suscripción que la charla señala. Solo lee.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'auditar_vinculos_json') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: private, max-age=0, no-store');
+    try {
+        echo json_encode(wabot_audvinc_para_admin(wabot_audvinc_auditar()), JSON_UNESCAPED_UNICODE);
+    } catch (\Throwable $err) {
+        wabot_log('error', ['donde' => 'auditar_vinculos_json', 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+        echo json_encode(['ok' => false, 'error' => mb_substr($err->getMessage(), 0, 200)], JSON_UNESCAPED_UNICODE);
+    }
     exit;
 }
 
