@@ -567,6 +567,16 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
     $res += ['clientes' => []];
     $mp = $mp ?? 'wabot_pagos_mp';
     $avisar = $avisar ?? 'wabot_aviso_cobro_pablo';
+    /* La cuenta y la lista de suscripciones se le piden a Mercado Pago una sola vez por pasada: la
+     * auditoría de vínculos cruzados usa las mismas que la detección, sin pedidos de más (MP ya
+     * corta esta pasada con HTTP 429 cuando se le pide seguido). */
+    $mpDirecto = $mp;
+    $mpVisto = [];
+    $mp = function ($ruta) use ($mpDirecto, &$mpVisto) {
+        if ($ruta !== '/users/me' && strpos((string)$ruta, '/preapproval/search') !== 0) return $mpDirecto($ruta);
+        if (!isset($mpVisto[$ruta])) $mpVisto[$ruta] = $mpDirecto($ruta);
+        return $mpVisto[$ruta];
+    };
 
     if (!$estado['lista'] && !$estado['conocidos']) return $res + ['sin_lista' => true];
     if ($ahora - (int)$estado['sync_ts'] > WABOT_COBRO_RECH_LISTA_VIEJA && !$estado['aviso_vieja_ts']) {

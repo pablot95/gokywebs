@@ -351,6 +351,20 @@ wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rp1['estado'], $mpCancel('authorize
 caso('…una sola vez', !$avisos);
 $GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
 
+// La auditoría de verdad (con charlas fijas) dentro de la pasada: usa las suscripciones que la detección ya trajo.
+unset($GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS']);
+$GLOBALS['WABOT_TEST_AUDVINC'] = ['convs' => [], 'cache' => []];
+$pedidosMp = [];
+$mpContado = function ($ruta) use (&$pedidosMp, $mpCli) { $pedidosMp[] = strtok($ruta, '?'); $f = $mpCli(); return $f($ruta); };
+$envios = []; $avisos = [];
+$ra = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpContado, $enviar, $avisar);
+$veces = array_count_values($pedidosMp);
+caso('la auditoría corre dentro de la pasada sin pedirle de nuevo a MP la cuenta ni las suscripciones', ($veces['/users/me'] ?? 0) === 1 && ($veces['/preapproval/search'] ?? 0) === 1
+    && isset($ra['estado']['cruzados']['firma']) && $ra['estado']['cruzados']['mapa'] === [], json_encode($veces));
+caso('sin cruce (ninguna charla lo contradice) todo sale como siempre', count($deEnvio('cobro_rechazado')) === 1 && $ra['enviados'] === 2);
+unset($GLOBALS['WABOT_TEST_AUDVINC']);
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
+
 caso('una fila sin id o sin suscripción no se da por cruzada', wabot_cobro_rech_cruzado($conPlazo, ['id' => '', 'pre' => 'S5eeeeee'], null, $dia1) === null
     && wabot_cobro_rech_cruzado($conPlazo, null, null, $dia1) === null && wabot_cobro_rech_cruzado_lineas($conPlazo, ['id' => 'clientes:EEE', 'pre' => 'S5eeeeee'], null, $dia1) === []);
 caso('el estado guarda la auditoría entre pasadas', array_key_exists('cruzados', wabot_cobro_rech_estado()));
