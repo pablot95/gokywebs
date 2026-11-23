@@ -283,6 +283,38 @@ caso('sin --detalle no lista los OK; con --detalle sí', strpos($informe, 'Ferre
 caso('avisa la vigente sin vincular', strpos($informe, 'sin vincular en el admin, con charla clara (1)') !== false && strpos($informe, 'es de Rey Motos (Marcos)') !== false);
 caso('termina diciendo que no cambió nada', strpos($informe, 'No se cambió nada.') !== false);
 
+/* El bot no le escribe al cliente de un vínculo cruzado (cobros-rechazados.php): la lista de cruzados
+ * sale de esta auditoría, se guarda en el estado y se rehace si cambia la lista o pasan 6 h. */
+echo "\n=== El freno del bot: los cruzados para las plantillas de pago ===\n";
+$GLOBALS['WABOT_TEST_AUDVINC'] = ['convs' => $convs, 'cache' => $cache];
+$pedidos = 0;
+$mpContado = function ($ruta) use ($mp, &$pedidos) { $pedidos++; return $mp($ruta); };
+$t0 = $ar('2026-11-23 11:00:00');
+$est = ['lista' => $lista, 'conocidos' => []];
+$cz = wabot_cobro_rech_cruzados($est, $mpContado, $t0);
+$clavesCz = array_keys($cz);
+sort($clavesCz);
+caso('los tres del ciclo, cada uno con de quién es', $clavesCz === ['clientes:CLARA|SUBVITAL', 'clientes:LULA|SUBCLARA', 'clientes:VITAL|SUBLULA1']
+    && $cz['clientes:VITAL|SUBLULA1']['quien'] === 'Tienda Lula' && $cz['clientes:CLARA|SUBVITAL']['quien'] === 'Centro Vital (Tay)', json_encode($cz, JSON_UNESCAPED_UNICODE));
+caso('por fila: el cruzado sí, el bien vinculado no', (wabot_cobro_rech_cruzado($est, $lista[0], $mpContado, $t0)['quien'] ?? '') === 'Tienda Lula'
+    && wabot_cobro_rech_cruzado($est, $lista[3], $mpContado, $t0) === null);
+$antes = $pedidos;
+wabot_cobro_rech_cruzados($est, $mpContado, $t0 + 3600);
+caso('queda guardada: una hora después no vuelve a pedirle nada a Mercado Pago', $pedidos === $antes && ($est['cruzados']['ts'] ?? 0) === $t0 && count($est['cruzados']['mapa']) === 3);
+wabot_cobro_rech_cruzados($est, $mpContado, $t0 + 7 * 3600);
+caso('a las 7 h se rehace', $pedidos > $antes && $est['cruzados']['ts'] === $t0 + 7 * 3600);
+$antes = $pedidos;
+$est['lista'] = $bien;
+caso('Pablo corrige los vínculos (cambia la lista): se rehace y ya no hay cruzados', wabot_cobro_rech_cruzados($est, $mpContado, $t0 + 8 * 3600) === [] && $pedidos > $antes);
+// Lo que el admin mandó alguna vez y ya no está en la lista (una cancelada) también se mira.
+$est2 = ['lista' => [], 'conocidos' => ['SUBLULA1' => $lista[0] + ['visto_ts' => $t0]]];
+caso('los «conocidos» fuera de la lista también se auditan', array_keys(wabot_cobro_rech_cruzados($est2, $mpContado, $t0)) === ['clientes:VITAL|SUBLULA1']);
+$est3 = ['lista' => $lista, 'conocidos' => [], 'cruzados' => ['firma' => 'otra', 'ts' => $t0, 'mapa' => ['clientes:VITAL|SUBLULA1' => ['quien' => 'Tienda Lula']]]];
+$czFalla = wabot_cobro_rech_cruzados($est3, function () { throw new RuntimeException('MP caído'); }, $t0 + 60);
+caso('si la auditoría falla vale lo último que se supo', array_keys($czFalla) === ['clientes:VITAL|SUBLULA1'] && $est3['cruzados']['firma'] === 'otra');
+unset($GLOBALS['WABOT_TEST_AUDVINC']);
+caso('en las otras suites (sin red ni disco) no corre', wabot_cobro_rech_cruzados($est, function () { throw new RuntimeException('no debería llamar'); }, $t0 + 9 * 3600) === []);
+
 echo "\n=== Solo lectura ===\n";
 // El código sin los comentarios (que nombran lo que NO se usa).
 $fuente = '';

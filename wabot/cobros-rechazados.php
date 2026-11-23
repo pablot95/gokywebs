@@ -35,6 +35,14 @@
  *   - pago_recibido:          MP cobró la renovación
  * Solo a los vinculados seguro (por ID o por nombre) y que no pagan por afuera.
  * Registro en `clientes` del estado: {marca: {ts, res}}.
+ *
+ * 23-nov, vínculos cruzados (tres clientes del mismo monto tenían la suscripción
+ * de otro): antes de escribirle al cliente se mira la auditoría contra las
+ * charlas (auditar-vinculos.php). Si dice que esa suscripción es de otro, al
+ * cliente no le sale nada (res 'cruzado', que no es final: corregido el vínculo
+ * en el admin, sale), el aviso a Pablo lo dice y los plazos de 48 h no corren.
+ * La auditoría se guarda en `cruzados` {firma, ts, mapa} y se rehace si cambia
+ * la lista o pasan WABOT_COBRO_RECH_CRUZADOS_HORAS.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -50,6 +58,8 @@ const WABOT_COBRO_RECH_LISTA_VIEJA = 35 * 86400;
 const WABOT_COBRO_RECH_ENVIADOS_DIAS = 62;
 // Una cancelación más vieja que esto ya no se avisa (la primera corrida no larga todo el historial).
 const WABOT_COBRO_RECH_CANCELADA_DIAS = 3;
+// Cada cuánto se rehace la auditoría de vínculos cruzados aunque la lista no haya cambiado.
+const WABOT_COBRO_RECH_CRUZADOS_HORAS = 6;
 
 function wabot_cobro_rech_estado() {
     $j = json_decode((string)@file_get_contents(WABOT_COBRO_RECH_ARCHIVO), true);
@@ -64,6 +74,8 @@ function wabot_cobro_rech_estado() {
         'conocidos' => (array)($j['conocidos'] ?? []),
         'canceladas' => (array)($j['canceladas'] ?? []),
         'clientes' => (array)($j['clientes'] ?? []),
+        // La última auditoría de vínculos cruzados (23-nov): {firma, ts, mapa}.
+        'cruzados' => (array)($j['cruzados'] ?? []),
     ];
 }
 
@@ -229,13 +241,83 @@ function wabot_cobro_rech_ids_por_fuera() {
 }
 
 /**
+ * Los vínculos que la auditoría contra las charlas da por cruzados (23-nov,
+ * auditar-vinculos.php): ["id|pre" => ['quien' => de quién dice la charla que
+ * es la suscripción]]. Audita todo lo que el admin mandó alguna vez (la lista
+ * y los `conocidos`). Tarda ~1,5 s y pide las suscripciones a MP, así que se
+ * hace solo cuando hace falta (hay algo para escribirle a un cliente o un
+ * aviso nuevo para Pablo) y queda en $estado['cruzados'] hasta que cambie la
+ * lista o pasen WABOT_COBRO_RECH_CRUZADOS_HORAS. Si la auditoría falla, vale
+ * lo último que se supo. Los tests la reemplazan con WABOT_TEST_VINCULOS_CRUZADOS.
+ */
+function wabot_cobro_rech_cruzados(array &$estado, $mp, $ahora) {
+    if (isset($GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'])) return (array)$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'];
+    // En las suites (sin red ni disco) la auditoría corre solo si la prueba le pasa las charlas (WABOT_TEST_AUDVINC).
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && !isset($GLOBALS['WABOT_TEST_AUDVINC'])) return [];
+    static $fallo = false;
+    $porPre = array_filter((array)($estado['conocidos'] ?? []), 'is_array');
+    foreach ((array)($estado['lista'] ?? []) as $f) {
+        if (is_array($f)) $porPre[(string)($f['pre'] ?? '')] = $f;
+    }
+    $filas = array_values($porPre);
+    if (!$filas) return [];
+    $pares = array_map(function ($f) { return ($f['id'] ?? '') . '|' . ($f['pre'] ?? ''); }, $filas);
+    sort($pares);
+    $firma = md5(implode("\n", $pares));
+    $c = (array)($estado['cruzados'] ?? []);
+    $mapa = (array)($c['mapa'] ?? []);
+    $ts = (int)($c['ts'] ?? 0);
+    if (($c['firma'] ?? '') === $firma && $ts <= (int)$ahora && $ts > (int)$ahora - WABOT_COBRO_RECH_CRUZADOS_HORAS * 3600) return $mapa;
+    if ($fallo) return $mapa;
+    try {
+        require_once __DIR__ . '/auditar-vinculos.php';
+        $r = wabot_audvinc_auditar((array)($GLOBALS['WABOT_TEST_AUDVINC'] ?? []) + ['mp' => $mp ?? 'wabot_pagos_mp', 'lista' => $filas, 'ahora' => (int)$ahora]);
+    } catch (\Throwable $e) {
+        $fallo = true;   // en esta pasada no se vuelve a intentar
+        wabot_log('error', ['donde' => 'vinculos_cruzados', 'msg' => mb_substr($e->getMessage(), 0, 200)]);
+        return $mapa;
+    }
+    $mapa = [];
+    foreach ($r['vinculos'] as $v) {
+        if ($v['estado'] === 'mal') $mapa[$v['id'] . '|' . $v['pre']] = ['quien' => wabot_audvinc_quien($v['sugerido'])];
+    }
+    if ($mapa !== (array)($c['mapa'] ?? [])) wabot_log('vinculos_cruzados', ['cruzados' => array_keys($mapa)]);
+    $estado['cruzados'] = ['firma' => $firma, 'ts' => (int)$ahora, 'mapa' => $mapa];
+    return $mapa;
+}
+
+/** ¿El vínculo de esta fila (su `id` con su `pre`) está cruzado? ['quien' => …] o null. */
+function wabot_cobro_rech_cruzado(array &$estado, $f, $mp, $ahora) {
+    if (!is_array($f) || (string)($f['id'] ?? '') === '' || (string)($f['pre'] ?? '') === '') return null;
+    $x = wabot_cobro_rech_cruzados($estado, $mp, $ahora)[$f['id'] . '|' . $f['pre']] ?? null;
+    if (!$x) return null;
+    return ['quien' => trim((string)(is_array($x) ? ($x['quien'] ?? '') : ''))];
+}
+
+/** Los renglones que avisan el cruce en el mensaje a Pablo ([] si el vínculo está bien). */
+function wabot_cobro_rech_cruzado_lineas(array &$estado, $f, $mp, $ahora) {
+    $x = wabot_cobro_rech_cruzado($estado, $f, $mp, $ahora);
+    if (!$x) return [];
+    return ['⚠ OJO, vínculo cruzado: según la charla, esta suscripción es de ' . ($x['quien'] !== '' ? $x['quien'] : 'otro cliente') . ', no de este cliente.',
+            'Al cliente no se le escribe. Corregilo en Mantenimiento → Vincular con MP.'];
+}
+
+/**
  * Una plantilla al cliente de una suscripción (23-nov), una sola vez por $marca.
  * Devuelve el resultado o null si no corresponde (sin cliente seguro, paga por afuera, ya enviada).
+ * 'cruzado' = no salió porque la charla dice que la suscripción es de otro (se reintenta: no es final).
  */
-function wabot_cobro_rech_cliente_enviar(array &$estado, $f, $plantilla, array $valores, $marca, $cfg, $enviar, $ahora, array $porFuera, array $extra = []) {
+function wabot_cobro_rech_cliente_enviar(array &$estado, $f, $plantilla, array $valores, $marca, $cfg, $enviar, $ahora, array $porFuera, array $extra = [], $mp = null) {
     if (!is_array($f) || empty($f['seguro']) || isset($porFuera[(string)($f['id'] ?? '')])) return null;
     $prev = $estado['clientes'][$marca] ?? null;
     if (is_array($prev) && wabot_pagos_resultado_final((string)($prev['res'] ?? ''))) return null;
+    if (wabot_cobro_rech_cruzado($estado, $f, $mp, $ahora)) {
+        if (!is_array($prev) || ($prev['res'] ?? '') !== 'cruzado') {
+            wabot_log('pago_plantilla_cliente', ['plantilla' => $plantilla, 'marca' => $marca, 'id' => $f['id'] ?? '', 'tel' => $f['tel'] ?? '', 'resultado' => 'cruzado']);
+        }
+        $estado['clientes'][$marca] = ['ts' => $ahora, 'res' => 'cruzado', 'pre' => (string)($f['pre'] ?? '')] + $extra;
+        return 'cruzado';
+    }
     $r = wabot_pagos_plantilla_cliente($f, $plantilla, wabot_pagos_nombre_negocio($f) + $valores, $cfg, $marca, $enviar);
     $estado['clientes'][$marca] = ['ts' => $ahora, 'res' => $r, 'pre' => (string)($f['pre'] ?? '')] + $extra;
     wabot_log('pago_plantilla_cliente', ['plantilla' => $plantilla, 'marca' => $marca, 'id' => $f['id'] ?? '', 'tel' => $f['tel'] ?? '', 'resultado' => $r]);
@@ -289,6 +371,19 @@ function wabot_cobro_rech_plazos(array &$estado, array $porPre, array $estadosSu
         if (!is_array($f)) continue;
         $f = $f + ['id' => (string)($e['id'] ?? '')];
         $monto = (float)($e['monto'] ?? 0);
+        /* Vínculo cruzado (23-nov): la plantilla le había salido al cliente de otra suscripción.
+         * El plazo no corre (ni el aviso de 48 h ni «dar de baja»); a Pablo se le dice una vez. */
+        if (wabot_cobro_rech_cruzado($estado, $f, $mp, $ahora)) {
+            if (empty($e['cruzado_ts'])) {
+                [$l, $c] = wabot_cobro_rech_cliente($f, '');
+                $l = array_merge($l, wabot_cobro_rech_cruzado_lineas($estado, $f, $mp, $ahora),
+                    ['Ya le había salido una plantilla de pago por esta suscripción. El plazo de 48 h quedó frenado.', 'Suscripción MP: ' . $pre]);
+                if (!$avisar('⚠️ Vínculo cruzado: plazo de pago frenado', $l, $c)) continue;
+                $estado['clientes'][$marca]['cruzado_ts'] = $ahora;
+                wabot_log('plazo_frenado_cruzado', ['marca' => $marca, 'id' => $f['id'], 'pre' => $pre]);
+            }
+            continue;
+        }
 
         if ($tipo === 'ultimo') {
             if ($ahora < (int)$e['ts'] + 48 * 3600) continue;
@@ -502,11 +597,11 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
             if ((int)$cobro['intento'] >= 4) {
                 if ($dias($cobro['ultimo_dia'] ?? '', $hoy) <= 2) {
                     $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'cobro_rechazado_ultimo', $valores, 'ultimo:' . $cobro['cobro'], $cfg, $enviar, $ahora, $porFuera,
-                        ['id' => (string)($f['id'] ?? ''), 'desde' => $cobro['primer_intento'], 'monto' => (float)$cobro['monto']]);
+                        ['id' => (string)($f['id'] ?? ''), 'desde' => $cobro['primer_intento'], 'monto' => (float)$cobro['monto']], $mp);
                 }
                 $ultimosAvisados[$cobro['pre']] = true;
             } elseif ($dias($cobro['primer_intento'], $hoy) <= 2) {
-                $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'cobro_rechazado', $valores, 'primero:' . $cobro['cobro'], $cfg, $enviar, $ahora, $porFuera);
+                $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'cobro_rechazado', $valores, 'primero:' . $cobro['cobro'], $cfg, $enviar, $ahora, $porFuera, [], $mp);
             }
             if ($clienteRes !== null) {
                 $res['clientes'][] = ['cobro' => $cobro['cobro'], 'intento' => (int)$cobro['intento'], 'resultado' => $clienteRes];
@@ -517,7 +612,9 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         // Uno por cobro: los reintentos de MP del mismo cobro no vuelven a avisar a Pablo.
         if (isset($estado['enviados'][$cobro['cobro']])) continue;
         [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_atrasado($f, $cobro);
-        if ($clienteRes !== null) $lineas[] = wabot_pagos_resultado_texto($clienteRes);
+        // Si la charla dice que la suscripción es de otro, el aviso lo dice: el cliente de arriba puede no ser.
+        $lineas = array_merge($lineas, wabot_cobro_rech_cruzado_lineas($estado, $f, $mp, $ahora));
+        if ($clienteRes !== null && $clienteRes !== 'cruzado') $lineas[] = wabot_pagos_resultado_texto($clienteRes);
         if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }   // la próxima pasada lo reintenta
         $estado['enviados'][$cobro['cobro']] = ['ts' => $ahora, 'id' => $f['id'] ?? '', 'pre' => $cobro['pre'],
             'dia' => $hoy, 'resultado' => 'pablo', 'ok' => true];
@@ -545,7 +642,7 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
             $hasta = wabot_cobro_rech_pagado_hasta($mp, $c['pre']);
             if ($hasta !== '' && $hasta >= $hoy) {
                 $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'suscripcion_cancelada', ['fecha' => wabot_renovacion_fecha_texto($hasta)],
-                    $bajaMarca, $cfg, $enviar, $ahora, $porFuera, ['id' => (string)($f['id'] ?? ''), 'hasta' => $hasta, 'monto' => (float)$c['monto']]);
+                    $bajaMarca, $cfg, $enviar, $ahora, $porFuera, ['id' => (string)($f['id'] ?? ''), 'hasta' => $hasta, 'monto' => (float)$c['monto']], $mp);
                 $res['clientes'][] = ['pre' => $c['pre'], 'baja' => true, 'resultado' => $clienteRes];
                 if ($enDisco) wabot_cobro_rech_guardar($estado);
             }
@@ -553,7 +650,8 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
 
         if (isset($estado['canceladas'][$marca])) continue;
         [$titulo, $lineas, $clave] = wabot_cobro_rech_aviso_cancelada($f, $c);
-        if ($clienteRes !== null) $lineas[] = wabot_pagos_resultado_texto($clienteRes);
+        $lineas = array_merge($lineas, wabot_cobro_rech_cruzado_lineas($estado, $f, $mp, $ahora));
+        if ($clienteRes !== null && $clienteRes !== 'cruzado') $lineas[] = wabot_pagos_resultado_texto($clienteRes);
         if (!$avisar($titulo, $lineas, $clave)) { $res['fallidos']++; continue; }
         $estado['canceladas'][$marca] = $ahora;
         if ($enDisco) wabot_cobro_rech_guardar($estado);
@@ -569,7 +667,7 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
         $f = $porPre[$p['pre']] ?? wabot_cobro_rech_fila_respaldo($p['pre'], '', $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
         $r = wabot_cobro_rech_cliente_enviar($estado, $f, 'pago_recibido',
             ['monto' => wabot_moneda($p['monto']), 'fecha' => wabot_renovacion_fecha_texto(wabot_renovacion_mas_un_mes($p['dia']))],
-            'pago:' . $p['pago'], $cfg, $enviar, $ahora, $porFuera);
+            'pago:' . $p['pago'], $cfg, $enviar, $ahora, $porFuera, [], $mp);
         if ($r !== null) {
             $res['clientes'][] = ['pago' => $p['pago'], 'pre' => $p['pre'], 'resultado' => $r];
             if ($enDisco) wabot_cobro_rech_guardar($estado);

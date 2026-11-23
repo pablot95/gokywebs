@@ -18,6 +18,8 @@ foreach (['cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 
 $cfgSin = $cfg;
 foreach (['cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 'pago_recibido'] as $k) $cfgSin['plantillas'][$k]['activa'] = false;
 $GLOBALS['WABOT_TEST_POR_FUERA'] = [];
+// La auditoría de vínculos cruzados (23-nov) no corre en estas pruebas: se dice a mano cuáles lo están.
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
 
 echo "=== La plantilla ===\n";
 $p = (array)wabot_config_load()['plantillas']['cobro_rechazado'];
@@ -306,5 +308,51 @@ caso('pagos de hace más de 30 h no se piden', wabot_cobro_rech_pagos_aprobados(
     ['id' => 1, 'status' => 'approved', 'date_approved' => '2026-11-09T08:00:00.000-04:00', 'metadata' => ['preapproval_id' => 'S1']]]]; }, $dia1) === []);
 caso('el id de la suscripción también puede venir en subscription_id', (wabot_cobro_rech_pagos_aprobados(function () { return ['results' => [
     ['id' => 2, 'status' => 'approved', 'date_approved' => '2026-11-11T08:00:00.000-04:00', 'point_of_interaction' => ['transaction_data' => ['subscription_id' => 'S9']]]]]; }, $dia1)[0]['pre'] ?? '') === 'S9');
+
+echo "\n=== 23-nov: vínculo cruzado (la charla dice que la suscripción es de otro) ===\n";
+$cruzadoAAA = ['clientes:AAA|S1aaaaaa' => ['quien' => 'Kiosco Beto (Beto)']];
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = $cruzadoAAA;
+$envios = []; $avisos = [];
+$rx = wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpCli(), $enviar, $avisar);
+caso('al cliente de un vínculo cruzado no le sale la plantilla del cobro rechazado', !$envios, json_encode($envios, JSON_UNESCAPED_UNICODE));
+caso('queda anotado como cruzado, que no es un resultado final', ($rx['estado']['clientes']['primero:7033861876']['res'] ?? '') === 'cruzado'
+    && !wabot_pagos_resultado_final('cruzado') && wabot_pagos_resultado_final('ok'));
+caso('el aviso a Pablo dice de quién es según la charla y que al cliente no se le escribe', strpos($textos(), 'vínculo cruzado: según la charla, esta suscripción es de Kiosco Beto (Beto)') !== false
+    && strpos($textos(), 'Al cliente no se le escribe. Corregilo en Mantenimiento → Vincular con MP.') !== false && strpos($textos(), 'Plantilla al cliente') === false, $textos());
+caso('el otro cobro rechazado (vínculo sano) se avisa como siempre', $rx['enviados'] === 2 && substr_count($textos(), 'vínculo cruzado') === 1);
+$envios = []; $avisos = [];
+$rx2 = wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rx['estado'], $mpCli(), $enviar, $avisar);
+caso('mientras siga cruzado no sale, ni se repite el aviso a Pablo', !$envios && !$avisos);
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
+$rx3 = wabot_cobro_rech_correr($cfg, $dia1 + 3600, $rx2['estado'], $mpCli(), $enviar, $avisar);
+caso('corregido el vínculo, la plantilla sale en la pasada siguiente', count($deEnvio('cobro_rechazado')) === 1 && ($rx3['estado']['clientes']['primero:7033861876']['res'] ?? '') === 'ok', json_encode($envios, JSON_UNESCAPED_UNICODE));
+
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = $cruzadoAAA;
+$envios = [];
+wabot_cobro_rech_correr($cfg, $ar('2026-11-15 11:00:00'), $estadoBase($dia1), $mpCli(4, '2026-11-10T16:09:50.000-04:00', '2026-11-14T20:10:00.000-04:00'), $enviar, $avisar);
+caso('tampoco la del último intento', !$envios);
+$envios = [];
+wabot_cobro_rech_correr($cfg, $dia1, $estadoBase($dia1), $mpCli(1, '2026-11-10T16:09:50.000-04:00', '2026-11-10T16:09:50.000-04:00', [$pago(111, 'S1aaaaaa', '2026-11-11T08:00:00.000-04:00')]), $enviar, $avisar);
+caso('ni el «recibimos tu pago»', !$deEnvio('pago_recibido'));
+
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = ['clientes:EEE|S5eeeeee' => ['quien' => 'Florería Luz']];
+$envios = []; $avisos = [];
+wabot_cobro_rech_correr($cfg, $dia1, $base, $mpCancel('cancelled', '2026-11-10T19:00:00.000-04:00'), $enviar, $avisar);
+caso('cancelada con el vínculo cruzado: al cliente no, y el aviso a Pablo lo dice', !$envios && count($avisos) === 1 && strpos($textos(), 'esta suscripción es de Florería Luz') !== false, $textos());
+
+// Ya le había salido el «último intento» (el vínculo se supo cruzado después): el plazo de 48 h no corre.
+$conPlazo = $base + ['clientes' => ['ultimo:9999' => ['ts' => $dia1 - 3 * 86400, 'res' => 'ok', 'pre' => 'S5eeeeee', 'id' => 'clientes:EEE', 'desde' => '2026-11-03', 'monto' => 20000]]];
+$envios = []; $avisos = [];
+$rp1 = wabot_cobro_rech_correr($cfg, $dia1, $conPlazo, $mpCancel('authorized', '2026-11-03T10:00:00.000-04:00'), $enviar, $avisar);
+caso('plazo vencido de un vínculo cruzado: no pide dar de baja, avisa que quedó frenado', count($avisos) === 1 && strpos($avisos[0][0], 'plazo de pago frenado') !== false
+    && strpos($textos(), 'Florería Luz') !== false && empty($rp1['estado']['clientes']['ultimo:9999']['vencido_ts']), $textos());
+$avisos = [];
+wabot_cobro_rech_correr($cfg, $dia1 + 1800, $rp1['estado'], $mpCancel('authorized', '2026-11-03T10:00:00.000-04:00'), $enviar, $avisar);
+caso('…una sola vez', !$avisos);
+$GLOBALS['WABOT_TEST_VINCULOS_CRUZADOS'] = [];
+
+caso('una fila sin id o sin suscripción no se da por cruzada', wabot_cobro_rech_cruzado($conPlazo, ['id' => '', 'pre' => 'S5eeeeee'], null, $dia1) === null
+    && wabot_cobro_rech_cruzado($conPlazo, null, null, $dia1) === null && wabot_cobro_rech_cruzado_lineas($conPlazo, ['id' => 'clientes:EEE', 'pre' => 'S5eeeeee'], null, $dia1) === []);
+caso('el estado guarda la auditoría entre pasadas', array_key_exists('cruzados', wabot_cobro_rech_estado()));
 
 todo_ok();

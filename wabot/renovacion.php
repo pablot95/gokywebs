@@ -250,9 +250,9 @@ function wabot_pagos_nombre_negocio(array $f) {
     return ['nombre' => $nombre, 'negocio' => $negocio !== '' ? $negocio : 'tu web'];
 }
 
-/** Un resultado final (no se reintenta) de una plantilla al cliente. */
+/** Un resultado final (no se reintenta) de una plantilla al cliente. 'cruzado' (el vínculo con MP contradice la charla, 23-nov) no lo es: corregido el vínculo, sale. */
 function wabot_pagos_resultado_final($r) {
-    return !in_array($r, ['error', 'ocupado'], true);
+    return !in_array($r, ['error', 'ocupado', 'cruzado'], true);
 }
 
 /** El renglón para el aviso a Pablo con lo que pasó con la plantilla al cliente. */
@@ -260,7 +260,8 @@ function wabot_pagos_resultado_texto($r) {
     $t = ['ok' => 'enviada', 'antes' => 'no se manda (es de antes del 24-nov, lo atendiste vos)', 'baja' => 'no se manda: la web está en Bajas', 'ya' => 'ya la tenía', 'inactiva' => 'NO salió: la plantilla está apagada (Ajustes → Plantillas)',
           'sin_chat' => 'NO salió: sin teléfono en la ficha', 'telefono' => 'NO salió: el teléfono no parece de WhatsApp',
           'ambiguo' => 'NO salió: el número coincide con dos chats', 'ocupado' => 'se reintenta en la próxima pasada',
-          'error' => 'falló el envío, se reintenta en la próxima pasada'];
+          'error' => 'falló el envío, se reintenta en la próxima pasada',
+          'cruzado' => 'NO se manda: el vínculo con Mercado Pago está cruzado (sale sola cuando lo corrijas)'];
     return 'Plantilla al cliente: ' . ($t[$r] ?? $r);
 }
 

@@ -49,6 +49,8 @@
  *
  * El admin lo pide por wabot/admin.php?accion=auditar_vinculos_json y marca en
  * la pestaña cada fila que contradice la charla (admin/dashboard.js).
+ * El cron de cobros (cobros-rechazados.php, wabot_cobro_rech_cruzados) la usa
+ * para no escribirle al cliente de un vínculo que salió MAL.
  */
 
 require_once __DIR__ . '/lib.php';
