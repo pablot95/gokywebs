@@ -115,16 +115,18 @@ function wabot_cobro_rech_dia_local($iso) {
  * cobrarse: [{cobro, pre, nombre_mp, monto, primer_intento (Y-m-d), intento}].
  * $mp(ruta) es la API (los tests le pasan datos fijos).
  */
-function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null, &$altas = null) {
+function wabot_cobro_rech_detectar(callable $mp, &$canceladas = null, &$altas = null, &$estadosSub = null) {
     $yo = wabot_pagos_mp_yo($mp);
     $atrasadas = [];
     $canceladas = [];
     $altas = [];
+    $estadosSub = [];
     for ($offset = 0; $offset < 1000; $offset += 100) {
         $pagina = $mp('/preapproval/search?limit=100&offset=' . $offset);
         foreach ((array)($pagina['results'] ?? []) as $s) {
             if ((string)($s['collector_id'] ?? '') !== $yo) continue;
             $altas[(string)($s['id'] ?? '')] = wabot_cobro_rech_dia_local($s['date_created'] ?? '');
+            $estadosSub[(string)($s['id'] ?? '')] = (string)($s['status'] ?? '');
             // Canceladas o pausadas (16-nov): Pablo quiere el aviso con los datos del cliente.
             if (in_array((string)($s['status'] ?? ''), ['cancelled', 'paused'], true)) {
                 $canceladas[] = [
@@ -230,14 +232,102 @@ function wabot_cobro_rech_ids_por_fuera() {
  * Una plantilla al cliente de una suscripción (23-nov), una sola vez por $marca.
  * Devuelve el resultado o null si no corresponde (sin cliente seguro, paga por afuera, ya enviada).
  */
-function wabot_cobro_rech_cliente_enviar(array &$estado, $f, $plantilla, array $valores, $marca, $cfg, $enviar, $ahora, array $porFuera) {
+function wabot_cobro_rech_cliente_enviar(array &$estado, $f, $plantilla, array $valores, $marca, $cfg, $enviar, $ahora, array $porFuera, array $extra = []) {
     if (!is_array($f) || empty($f['seguro']) || isset($porFuera[(string)($f['id'] ?? '')])) return null;
     $prev = $estado['clientes'][$marca] ?? null;
     if (is_array($prev) && wabot_pagos_resultado_final((string)($prev['res'] ?? ''))) return null;
     $r = wabot_pagos_plantilla_cliente($f, $plantilla, wabot_pagos_nombre_negocio($f) + $valores, $cfg, $marca, $enviar);
-    $estado['clientes'][$marca] = ['ts' => $ahora, 'res' => $r, 'pre' => (string)($f['pre'] ?? '')];
+    $estado['clientes'][$marca] = ['ts' => $ahora, 'res' => $r, 'pre' => (string)($f['pre'] ?? '')] + $extra;
     wabot_log('pago_plantilla_cliente', ['plantilla' => $plantilla, 'marca' => $marca, 'id' => $f['id'] ?? '', 'tel' => $f['tel'] ?? '', 'resultado' => $r]);
     return $r;
+}
+
+/** El último cobro marcado «Pagó» de ese cliente si ahora paga por afuera ('' si no). */
+function wabot_cobro_rech_pf_pagado($id) {
+    if (isset($GLOBALS['WABOT_TEST_PF_PAGADO'])) return (string)($GLOBALS['WABOT_TEST_PF_PAGADO'][$id] ?? '');
+    foreach ((array)(wabot_renovacion_estado()['lista'] ?? []) as $f) {
+        if ((string)($f['id'] ?? '') === (string)$id) return (string)($f['pagado'] ?? '');
+    }
+    return '';
+}
+
+/**
+ * ¿Pagó desde $desde (Y-m-d)? MP cobró esa suscripción, se volvió a suscribir (otra suscripción
+ * activa del mismo cliente en la lista del admin) o pasó a pagar por afuera y Pablo le marcó el pago.
+ */
+function wabot_cobro_rech_pago_desde(array $estado, array $e, $desde, array $estadosSub, callable $mp) {
+    $id = (string)($e['id'] ?? '');
+    if ($id !== '' && wabot_cobro_rech_pf_pagado($id) >= $desde && wabot_cobro_rech_pf_pagado($id) !== '') return true;
+    foreach ((array)$estado['lista'] as $f) {
+        if ($id !== '' && (string)$f['id'] === $id && (string)$f['pre'] !== (string)($e['pre'] ?? '') && ($estadosSub[$f['pre']] ?? '') === 'authorized') return true;
+    }
+    $pre = (string)($e['pre'] ?? '');
+    if ($pre === '' || ($estadosSub[$pre] ?? '') !== 'authorized') return false;
+    $cobros = $mp('/authorized_payments/search?preapproval_id=' . rawurlencode($pre) . '&limit=12');
+    foreach ((array)($cobros['results'] ?? []) as $c) {
+        if ((string)($c['status'] ?? '') === 'processed' && (string)($c['payment']['status'] ?? '') === 'approved'
+            && wabot_cobro_rech_dia_local($c['debit_date'] ?? '') >= $desde) return true;
+    }
+    return false;
+}
+
+/**
+ * Los plazos de 48 h de las suscripciones (Pablo, 23-nov): «si vencen todos los intentos, dar
+ * opción de pagar con transferencia; si en 48 hs no paga, se da de baja el servicio. Si canceló,
+ * y llegó la fecha de renovación, y todavía no paga, se da aviso de 48 hs».
+ *  - ultimo:{cobro}: el aviso del último intento ya ofrece la transferencia y las 48 h; a las 48 h sin pago, vencido.
+ *  - baja:{pre}: el día que se termina lo pago (`hasta`) sin pago, el aviso de 48 h; a las 48 h, vencido.
+ * Vencido = «dar de baja» a Pablo + pagos-vencidos.json (el aviso de baja al cliente sale al anotarla en Bajas).
+ */
+function wabot_cobro_rech_plazos(array &$estado, array $porPre, array $estadosSub, $cfg, callable $mp, $enviar, callable $avisar, $ahora, $hoy, array $porFuera, array &$res) {
+    foreach ((array)$estado['clientes'] as $marca => $e) {
+        if (!is_array($e) || ($e['res'] ?? '') !== 'ok' || !empty($e['vencido_ts']) || !empty($e['cerrado'])) continue;
+        $tipo = strtok((string)$marca, ':');
+        if ($tipo !== 'ultimo' && $tipo !== 'baja') continue;
+        $pre = (string)($e['pre'] ?? '');
+        $f = $porPre[$pre] ?? ($estado['conocidos'][$pre] ?? null);
+        if (!is_array($f)) continue;
+        $f = $f + ['id' => (string)($e['id'] ?? '')];
+        $monto = (float)($e['monto'] ?? 0);
+
+        if ($tipo === 'ultimo') {
+            if ($ahora < (int)$e['ts'] + 48 * 3600) continue;
+            $desde = (string)($e['desde'] ?? '');
+            $motivo = 'Mercado Pago no pudo cobrar la cuota' . ($desde !== '' ? ' del ' . wabot_renovacion_fecha_texto($desde) : '') . ' y no pagó por transferencia';
+        } else {
+            $desde = (string)($e['hasta'] ?? '');
+            if ($desde === '' || $hoy < $desde) continue;
+            $motivo = 'canceló la suscripción y no pagó la renovación del ' . wabot_renovacion_fecha_texto($desde);
+        }
+        if (wabot_cobro_rech_pago_desde($estado, $e, $desde, $estadosSub, $mp)) {
+            $estado['clientes'][$marca]['cerrado'] = $ahora;
+            $res['clientes'][] = ['marca' => $marca, 'pago' => true];
+            continue;
+        }
+
+        if ($tipo === 'baja' && empty($e['a48_ts'])) {
+            // Ahora paga por afuera: el plazo lo lleva la lista de renovaciones.
+            if (isset($porFuera[(string)$f['id']])) { $estado['clientes'][$marca]['cerrado'] = $ahora; continue; }
+            $r = wabot_pagos_plantilla_cliente($f, 'aviso_pago_48h', wabot_pagos_nombre_negocio($f) + ['monto' => wabot_moneda($monto)],
+                $cfg, 'a48:' . $pre, $enviar);
+            if (!wabot_pagos_resultado_final($r)) continue;
+            $estado['clientes'][$marca]['a48_ts'] = $ahora;
+            $estado['clientes'][$marca]['a48_res'] = $r;
+            [$t, $l, $c] = wabot_pagos_aviso_48h($f, $motivo, $r);
+            $avisar($t, $l, $c);
+            $res['clientes'][] = ['marca' => $marca, 'aviso_48h' => $r];
+            wabot_log('aviso_48h_cliente', ['id' => $f['id'], 'pre' => $pre, 'resultado' => $r, 'via' => 'baja_suscripcion']);
+            continue;
+        }
+        if ($tipo === 'baja' && (($e['a48_res'] ?? '') !== 'ok' || $ahora < (int)$e['a48_ts'] + 48 * 3600)) continue;
+
+        [$t, $l, $c] = wabot_pagos_aviso_vencido($f, $motivo);
+        if (!$avisar($t, $l, $c)) continue;
+        wabot_pagos_vencido_anotar($f, $motivo, $ahora);
+        $estado['clientes'][$marca]['vencido_ts'] = $ahora;
+        $res['clientes'][] = ['marca' => $marca, 'vencido' => true];
+        wabot_log('pago_vencido', ['id' => $f['id'], 'pre' => $pre, 'via' => $tipo]);
+    }
 }
 
 /** "2026-11-10" → "10/11"; '' si no viene. */
@@ -400,7 +490,8 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
     $porFuera = wabot_cobro_rech_ids_por_fuera();
     $dias = function ($desde, $hasta) { return ($desde === '' || $hasta === '') ? 999 : (int)round((strtotime($hasta . ' 12:00 UTC') - strtotime($desde . ' 12:00 UTC')) / 86400); };
     $ultimosAvisados = [];
-    foreach (wabot_cobro_rech_detectar($mp, $canceladas, $altas) as $cobro) {
+    $estadosSub = [];
+    foreach (wabot_cobro_rech_detectar($mp, $canceladas, $altas, $estadosSub) as $cobro) {
         $res['rechazados']++;
         $f = $porPre[$cobro['pre']] ?? wabot_cobro_rech_fila_respaldo($cobro['pre'], $cobro['nombre_mp'], $estado, $GLOBALS['WABOT_TEST_COBRO_LISTAS'] ?? null);
 
@@ -410,7 +501,8 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
             $valores = ['monto' => wabot_moneda($cobro['monto'])];
             if ((int)$cobro['intento'] >= 4) {
                 if ($dias($cobro['ultimo_dia'] ?? '', $hoy) <= 2) {
-                    $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'cobro_rechazado_ultimo', $valores, 'ultimo:' . $cobro['cobro'], $cfg, $enviar, $ahora, $porFuera);
+                    $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'cobro_rechazado_ultimo', $valores, 'ultimo:' . $cobro['cobro'], $cfg, $enviar, $ahora, $porFuera,
+                        ['id' => (string)($f['id'] ?? ''), 'desde' => $cobro['primer_intento'], 'monto' => (float)$cobro['monto']]);
                 }
                 $ultimosAvisados[$cobro['pre']] = true;
             } elseif ($dias($cobro['primer_intento'], $hoy) <= 2) {
@@ -453,7 +545,7 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
             $hasta = wabot_cobro_rech_pagado_hasta($mp, $c['pre']);
             if ($hasta !== '' && $hasta >= $hoy) {
                 $clienteRes = wabot_cobro_rech_cliente_enviar($estado, $f, 'suscripcion_cancelada', ['fecha' => wabot_renovacion_fecha_texto($hasta)],
-                    $bajaMarca, $cfg, $enviar, $ahora, $porFuera);
+                    $bajaMarca, $cfg, $enviar, $ahora, $porFuera, ['id' => (string)($f['id'] ?? ''), 'hasta' => $hasta, 'monto' => (float)$c['monto']]);
                 $res['clientes'][] = ['pre' => $c['pre'], 'baja' => true, 'resultado' => $clienteRes];
                 if ($enDisco) wabot_cobro_rech_guardar($estado);
             }
@@ -483,6 +575,9 @@ function wabot_cobro_rech_correr($cfg, $ahora = null, $estado = null, $mp = null
             if ($enDisco) wabot_cobro_rech_guardar($estado);
         }
     }
+
+    wabot_cobro_rech_plazos($estado, $porPre, $estadosSub, $cfg, $mp, $enviar, $avisar, $ahora, $hoy, $porFuera, $res);
+    if ($enDisco) wabot_cobro_rech_guardar($estado);
 
     // Las marcas de canceladas de hace más de 2 meses ya no frenan nada.
     $estado['canceladas'] = array_filter($estado['canceladas'], function ($ts) use ($ahora) { return (int)$ts >= $ahora - 62 * 86400; });

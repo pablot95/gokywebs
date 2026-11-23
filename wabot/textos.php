@@ -691,18 +691,42 @@ Una vez realizada la transferencia, mandame el comprobante por acá y arrancamos
             'params' => ['nombre', 'negocio', 'monto'],
             'texto' => 'Hola {nombre}, te aviso que Mercado Pago no pudo cobrar la cuota mensual de la web de {negocio} ({monto}). Revisá que la tarjeta tenga fondos o esté vigente: Mercado Pago lo vuelve a intentar en los próximos días. Si querés cambiar el medio de pago, lo hacés desde la app de Mercado Pago, en Suscripciones. Si preferís, también podés pagar por transferencia al alias gokywebs y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.',
         ],
-        // Utilidad (23-nov, Pablo: «quiero que el wabot vuelva a mandar plantilla de pagos»):
-        // el último intento de cobro de MP (el 4.º) de una renovación (cobros-rechazados.php).
-        // Creada por la API el 23-nov (id 1627496608485527). La primera versión,
-        // cobro_rechazado_ultimo_intento, decía «hizo hoy» y quedó sin usar.
+        // Utilidad (23-nov, Pablo: «si vencen todos los intentos, dar opción de pagar con
+        // transferencia; si en 48 hs no paga, se da de baja el servicio»): el último intento de
+        // cobro de MP (el 4.º) de una renovación (cobros-rechazados.php). Creada por la API el
+        // 23-nov (id 1122244223773229). Quedaron sin usar cobro_rechazado_ultimo_intento («hizo
+        // hoy») y cobro_rechazado_ultimo_aviso (sin el plazo de 48 h).
         'cobro_rechazado_ultimo' => [
-            'nombre' => 'cobro_rechazado_ultimo_aviso',
+            'nombre' => 'cobro_rechazado_final_48h',
             'idioma' => 'es_AR',
             'categoria' => 'UTILITY',
             'activa' => true,
             'automatico' => true,
             'params' => ['nombre', 'negocio', 'monto'],
-            'texto' => 'Hola {nombre}, Mercado Pago hizo el último intento de cobrar la cuota mensual de la web de {negocio} ({monto}) y no pudo. Si no se regulariza, la suscripción se da de baja. Podés actualizar el medio de pago en la app de Mercado Pago, en Suscripciones, o pagar por transferencia al alias gokywebs y mandarnos el comprobante por este chat. Cualquier duda, escribinos por acá.',
+            'texto' => 'Hola {nombre}, Mercado Pago hizo el último intento de cobrar la cuota mensual de la web de {negocio} ({monto}) y no pudo. Para seguir con el servicio, podés pagar por transferencia al alias gokywebs y mandarnos el comprobante por este chat en las próximas 48 hs; si no, se da de baja el servicio. Cualquier duda, escribinos por acá.',
+        ],
+        // Utilidad (23-nov): el aviso de 48 h para pagar. Pagan por afuera: 7 días después del
+        // recordatorio sin pago (renovacion.php). Cancelaron la suscripción: el día que se termina
+        // lo pago (cobros-rechazados.php). Id 1858750275437889.
+        'aviso_pago_48h' => [
+            'nombre' => 'aviso_pago_48h',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => true,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio', 'monto'],
+            'texto' => 'Hola {nombre}, todavía no registramos el pago del plan mensual de la web de {negocio} ({monto}). Tenés 48 hs para pagarlo por transferencia al alias gokywebs y mandarnos el comprobante por este chat; si no, se da de baja el servicio. Si ya pagaste, avisanos por acá.',
+        ],
+        // Utilidad (23-nov): el servicio quedó dado de baja por falta de pago. Sale al anotar la
+        // web en Bajas (webs-bajas.php agregar) si el cliente venció el plazo de 48 h. Id 1682628993246595.
+        'servicio_dado_de_baja' => [
+            'nombre' => 'servicio_dado_de_baja',
+            'idioma' => 'es_AR',
+            'categoria' => 'UTILITY',
+            'activa' => true,
+            'automatico' => true,
+            'params' => ['nombre', 'negocio'],
+            'texto' => 'Hola {nombre}, como no registramos el pago del plan mensual, el servicio de la web de {negocio} quedó dado de baja. Si querés reactivarlo, escribinos por este chat y lo vemos.',
         ],
         // Utilidad (23-nov): el cliente dio de baja la suscripción de MP: ¿seguir por otro medio
         // o dar de baja el servicio?, con hasta cuándo está activo (cobros-rechazados.php). Id 1604971081317123:

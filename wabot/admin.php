@@ -694,7 +694,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 'pago_recibido', 'reporte_mensual_web', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado', 'saludo', 'renovacion_por_fuera', 'cobro_rechazado', 'cobro_rechazado_ultimo', 'suscripcion_cancelada', 'pago_recibido', 'aviso_pago_48h', 'servicio_dado_de_baja', 'reporte_mensual_web', 'web_caida_resuelta', 'presentar_demo'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -3583,9 +3583,11 @@ function burbujaCita(t, chat) {
                 'saludo' => 'Saludo · Marketing (solo a mano desde el chat)',
                 'renovacion_por_fuera' => 'Renovación del plan mensual · Utilidad (pagan por afuera)',
                 'cobro_rechazado' => 'Cobro rechazado de la suscripción · Utilidad (suscriptores de Mercado Pago)',
-                'cobro_rechazado_ultimo' => 'Último intento de cobro de la suscripción · Utilidad (suscriptores de Mercado Pago)',
+                'cobro_rechazado_ultimo' => 'Último intento de cobro: transferencia en 48 h · Utilidad (suscriptores de Mercado Pago)',
                 'suscripcion_cancelada' => 'Baja de la suscripción: ¿seguir por otro medio? · Utilidad (suscriptores de Mercado Pago)',
                 'pago_recibido' => 'Pago recibido · Utilidad (suscripción o por afuera)',
+                'aviso_pago_48h' => 'Aviso de 48 h para pagar · Utilidad (por afuera o suscripción cancelada)',
+                'servicio_dado_de_baja' => 'Servicio dado de baja por falta de pago · Utilidad',
                 'reporte_mensual_web' => 'Resumen mensual de la web · Utilidad (todos los de mantenimiento)',
                 'web_caida_resuelta' => 'Web caída y resuelta · Utilidad (todos los de mantenimiento)',
                 'aviso_pablo' => 'Aviso a Pablo fuera de las 24 h · Utilidad (va a tu número, no a clientes)',
@@ -3597,6 +3599,8 @@ function burbujaCita(t, chat) {
                 'cobro_rechazado_ultimo' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
                 'suscripcion_cancelada' => '{{1}} nombre, {{2}} negocio, {{3}} activo hasta (dd/mm/aaaa)',
                 'pago_recibido' => '{{1}} nombre, {{2}} monto, {{3}} negocio, {{4}} al día hasta (dd/mm/aaaa)',
+                'aviso_pago_48h' => '{{1}} nombre, {{2}} negocio, {{3}} monto',
+                'servicio_dado_de_baja' => '{{1}} nombre, {{2}} negocio',
                 'reporte_mensual_web' => '{{1}} nombre, {{2}} mes, {{3}} negocio, {{4}} disponibilidad, {{5}} visitas, {{6}} errores',
                 'web_caida_resuelta' => '{{1}} nombre, {{2}} negocio, {{3}} desde ("hoy a las 15:00"), {{4}} hasta ("a las 15:30")',
                 'aviso_pablo' => '{{1}} el título del aviso (quién escribió, pago confirmado…), {{2}} el detalle en un renglón; botón de URL con la clave del chat al final (admin.php?tab=conversaciones&ver={{1}})',
@@ -3605,7 +3609,9 @@ function burbujaCita(t, chat) {
             $plantillasCuando = [
                 'renovacion_por_fuera' => 'Automática el día del cobro (de 10 a 20 h), del segundo pago en adelante y si no lo marcaste pagado antes',
                 'cobro_rechazado' => 'Automática con el primer intento rechazado de Mercado Pago de una renovación (de 10 a 20 h), una sola vez por cobro',
-                'cobro_rechazado_ultimo' => 'Automática con el último reintento rechazado de Mercado Pago (el 4.º) de una renovación (de 10 a 20 h)',
+                'cobro_rechazado_ultimo' => 'Automática con el último reintento rechazado de Mercado Pago (el 4.º) de una renovación (de 10 a 20 h). A las 48 h sin pago, te avisa para darla de baja',
+                'aviso_pago_48h' => 'Automática: a los 7 días del recordatorio sin pago (por afuera), o el día que vence lo pago de una suscripción cancelada. A las 48 h sin pago, te avisa para darla de baja',
+                'servicio_dado_de_baja' => 'Automática al anotar la web en Bajas, si al cliente se le venció el plazo de 48 h',
                 'suscripcion_cancelada' => 'Automática cuando el cliente cancela la suscripción de Mercado Pago y todavía tiene el servicio pago (de 10 a 20 h)',
                 'pago_recibido' => 'Automática cuando Mercado Pago cobra una renovación o cuando marcás «💵 Pagó» a uno que paga por afuera (de 10 a 20 h)',
                 'reporte_mensual_web' => 'Automática desde el día 1 de cada mes (de 10 a 20 h), con el mes anterior',

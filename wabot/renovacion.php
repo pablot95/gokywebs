@@ -51,6 +51,8 @@ function wabot_renovacion_estado() {
         'pagos_visto' => (array)($j['pagos_visto'] ?? []),
         'pagos_cola' => (array)($j['pagos_cola'] ?? []),
         'pagos_init' => !empty($j['pagos_init']),
+        // {id: {cobro, aviso_ts, a48_ts, a48_res, vencido_ts}}: el plazo de los 7 días + 48 h (23-nov).
+        'plazos' => (array)($j['plazos'] ?? []),
     ];
 }
 
@@ -149,6 +151,8 @@ function wabot_pagos_plantilla_cliente(array $f, $plantilla, array $valores, $cf
     if (wabot_plantilla_config($plantilla, $cfg) === null) return 'inactiva';
     $tel = (string)($f['tel'] ?? '');
     if ($tel === '') return 'sin_chat';
+    // Ya dada de baja (Mantenimiento → Bajas): no le llega nada de pagos, salvo el aviso de la baja misma.
+    if ($plantilla !== 'servicio_dado_de_baja' && wabot_pagos_en_baja($tel)) return 'baja';
     $clave = wabot_renovacion_clave($tel, $motivo);
     if ($clave === null) return $motivo === 'ambiguo' ? 'ambiguo' : 'telefono';
     if ($enviar) return $enviar($clave, $f, $valores, $plantilla) ? 'ok' : 'error';
@@ -172,6 +176,72 @@ function wabot_pagos_plantilla_cliente(array $f, $plantilla, array $valores, $cf
     }
 }
 
+/** Los últimos 8 dígitos de un teléfono (para comparar números escritos de distinta forma). */
+function wabot_pagos_tel8($tel) {
+    return substr(preg_replace('/\D+/', '', (string)$tel), -8);
+}
+
+/** ¿Ese teléfono es de una web dada de baja (webs-bajas.json, sin reactivar)? */
+function wabot_pagos_en_baja($tel) {
+    $t8 = wabot_pagos_tel8($tel);
+    if (strlen($t8) < 8) return false;
+    if (isset($GLOBALS['WABOT_TEST_BAJAS'])) $bajas = (array)$GLOBALS['WABOT_TEST_BAJAS'];
+    else {
+        $j = json_decode((string)@file_get_contents(WABOT_DATA . '/webs-bajas.json'), true);
+        $bajas = (array)($j['bajas'] ?? []);
+    }
+    foreach ($bajas as $b) {
+        if (is_array($b) && empty($b['reactivada']) && wabot_pagos_tel8($b['telefono'] ?? '') === $t8) return true;
+    }
+    return false;
+}
+
+/* Vencidos (23-nov, Pablo: «si no paga [en 48 h], se da de baja»): el cliente al que se le
+ * cumplieron las 48 h sin pagar queda en data/pagos-vencidos.json y a Pablo le llega «dar de baja».
+ * La baja la hace él (pasar la web a mantenimiento); al anotarla en webs-bajas.php, si el cliente
+ * está acá, le llega la plantilla servicio_dado_de_baja. */
+const WABOT_PAGOS_VENCIDOS_ARCHIVO = WABOT_DATA . '/pagos-vencidos.json';
+
+function wabot_pagos_vencidos_leer() {
+    if (isset($GLOBALS['WABOT_TEST_VENCIDOS'])) return (array)$GLOBALS['WABOT_TEST_VENCIDOS'];
+    $j = json_decode((string)@file_get_contents(WABOT_PAGOS_VENCIDOS_ARCHIVO), true);
+    return (array)($j['vencidos'] ?? []);
+}
+
+function wabot_pagos_vencidos_guardar(array $v) {
+    if (isset($GLOBALS['WABOT_TEST_VENCIDOS'])) { $GLOBALS['WABOT_TEST_VENCIDOS'] = $v; return true; }
+    return wabot_json_guardar_atomico(WABOT_PAGOS_VENCIDOS_ARCHIVO, ['vencidos' => $v]);
+}
+
+/** Anota un vencido (id "coleccion:docId") con lo necesario para el aviso de la baja. */
+function wabot_pagos_vencido_anotar(array $f, $motivo, $ahora) {
+    $v = wabot_pagos_vencidos_leer();
+    // Los de hace más de 4 meses ya no esperan baja.
+    $v = array_filter($v, function ($x) use ($ahora) { return is_array($x) && (int)($x['ts'] ?? 0) >= (int)$ahora - 120 * 86400; });
+    $v[(string)$f['id']] = ['id' => (string)$f['id'], 'tel' => (string)($f['tel'] ?? ''), 'persona' => (string)($f['persona'] ?? ''),
+        'negocio' => (string)($f['negocio'] ?? ''), 'motivo' => (string)$motivo, 'ts' => (int)$ahora, 'avisado_baja' => 0];
+    wabot_pagos_vencidos_guardar($v);
+}
+
+/** El aviso a Pablo de un plazo de 48 h vencido: [titulo, renglones, clave]. */
+function wabot_pagos_aviso_vencido(array $f, $motivo) {
+    $clave = (string)($f['tel'] ?? '') !== '' ? (wabot_renovacion_clave($f['tel'], $m) ?? '') : '';
+    $cliente = trim(($f['persona'] ?? '') . (($f['persona'] ?? '') !== '' && ($f['negocio'] ?? '') !== '' ? ' — ' : '') . ($f['negocio'] ?? ''));
+    return ['⛔ Venció el plazo de 48 h: dar de baja', [
+        'Cliente: ' . ($cliente !== '' ? $cliente : 'sin nombre en la ficha'),
+        'WhatsApp: ' . ($clave !== '' ? '+' . $clave : 'sin teléfono de WhatsApp'),
+        'Motivo: ' . $motivo,
+        'Cuando la pases a mantenimiento y quede anotada en Bajas, al cliente le llega el aviso de baja.',
+    ], $clave];
+}
+
+/** El aviso a Pablo de que salió (o no) el aviso de 48 h: [titulo, renglones, clave]. */
+function wabot_pagos_aviso_48h(array $f, $motivo, $r) {
+    [, $l, $clave] = wabot_pagos_aviso_vencido($f, $motivo);
+    return ['⏳ Aviso de 48 h para pagar', [$l[0], $l[1], 'Motivo: ' . $motivo, wabot_pagos_resultado_texto($r),
+        $r === 'ok' ? 'Si en 48 h no paga, te aviso para darla de baja.' : 'Como no le llegó, no corre el plazo: resolvelo vos.'], $clave];
+}
+
 /** El saludo y el negocio de una fila: ['nombre' => 'Juan', 'negocio' => 'Panadería Sol']. */
 function wabot_pagos_nombre_negocio(array $f) {
     $negocio = (string)($f['negocio'] ?? '');
@@ -187,7 +257,7 @@ function wabot_pagos_resultado_final($r) {
 
 /** El renglón para el aviso a Pablo con lo que pasó con la plantilla al cliente. */
 function wabot_pagos_resultado_texto($r) {
-    $t = ['ok' => 'enviada', 'antes' => 'no se manda (es de antes del 24-nov, lo atendiste vos)', 'ya' => 'ya la tenía', 'inactiva' => 'NO salió: la plantilla está apagada (Ajustes → Plantillas)',
+    $t = ['ok' => 'enviada', 'antes' => 'no se manda (es de antes del 24-nov, lo atendiste vos)', 'baja' => 'no se manda: la web está en Bajas', 'ya' => 'ya la tenía', 'inactiva' => 'NO salió: la plantilla está apagada (Ajustes → Plantillas)',
           'sin_chat' => 'NO salió: sin teléfono en la ficha', 'telefono' => 'NO salió: el teléfono no parece de WhatsApp',
           'ambiguo' => 'NO salió: el número coincide con dos chats', 'ocupado' => 'se reintenta en la próxima pasada',
           'error' => 'falló el envío, se reintenta en la próxima pasada'];
@@ -337,7 +407,11 @@ function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = 
             if (wabot_pagos_resultado_final($cliente)) {
                 $env['cliente_mes'] = $mes;
                 $env['cliente'] = $cliente;
-                if ($cliente === 'ok') $res['clientes']++;
+                if ($cliente === 'ok') {
+                    $res['clientes']++;
+                    // Desde el recordatorio corren los 7 días para el aviso de 48 h (23-nov).
+                    $estado['plazos'][$f['id']] = ['cobro' => $hoy, 'aviso_ts' => $ahora];
+                }
                 wabot_log('renovacion_cliente', ['id' => $f['id'], 'tel' => $f['tel'], 'resultado' => $cliente]);
                 $estado['enviados'][$f['id']] = $env + ['ts' => $ahora];
                 if ($enDisco) wabot_renovacion_guardar($estado);
@@ -356,9 +430,48 @@ function wabot_renovacion_correr($cfg, $ahora = null, $estado = null, $enviar = 
         wabot_log('renovacion_aviso', ['id' => $f['id'], 'tel' => $f['tel'], 'resultado' => 'pablo']);
     }
 
-    // «Recibimos tu pago» de los que Pablo marcó con «💵 Pagó» en el admin (23-nov).
     $porId = [];
     foreach ($estado['lista'] as $f) $porId[$f['id']] = $f;
+
+    /* El plazo (Pablo, 23-nov: «si pagan por afuera, y a los 7 días de darle el aviso de que
+     * tiene que pagar, se le da un aviso de 48 hs; si no paga, se da de baja»). Corre solo
+     * desde un recordatorio que le llegó; marcar «Pagó» ese cobro lo corta. */
+    $estado += ['plazos' => []];
+    foreach ((array)$estado['plazos'] as $id => $p) {
+        $f = $porId[$id] ?? null;
+        $cobro = (string)($p['cobro'] ?? '');
+        // Ya no paga por afuera, pagó ese cobro, o es de hace más de 2 meses: el plazo se cierra.
+        if (!$f || $cobro === '' || (string)($f['pagado'] ?? '') >= $cobro || $ahora - (int)($p['aviso_ts'] ?? 0) > 62 * 86400) {
+            unset($estado['plazos'][$id]);
+            continue;
+        }
+        if (!empty($p['vencido_ts'])) continue;
+        $motivo = 'no pagó el cobro del ' . wabot_renovacion_fecha_texto($cobro) . ' (paga por afuera)';
+        if (empty($p['a48_ts'])) {
+            if ($ahora < (int)$p['aviso_ts'] + 7 * 86400) continue;
+            $r = wabot_pagos_plantilla_cliente($f, 'aviso_pago_48h', wabot_pagos_nombre_negocio($f) + ['monto' => wabot_moneda($f['monto'])],
+                $cfg, 'a48:' . $id . ':' . $cobro, $enviar);
+            if (!wabot_pagos_resultado_final($r)) continue;
+            $estado['plazos'][$id]['a48_ts'] = $ahora;
+            $estado['plazos'][$id]['a48_res'] = $r;
+            [$t, $l, $c] = wabot_pagos_aviso_48h($f, $motivo, $r);
+            $avisar($t, $l, $c);
+            $res['detalle'][] = ['id' => $id, 'aviso_48h' => $r];
+            wabot_log('aviso_48h_cliente', ['id' => $id, 'tel' => $f['tel'], 'cobro' => $cobro, 'resultado' => $r, 'via' => 'por_fuera']);
+            if ($enDisco) wabot_renovacion_guardar($estado);
+            continue;
+        }
+        if (($p['a48_res'] ?? '') !== 'ok' || $ahora < (int)$p['a48_ts'] + 48 * 3600) continue;
+        [$t, $l, $c] = wabot_pagos_aviso_vencido($f, $motivo);
+        if (!$avisar($t, $l, $c)) continue;
+        wabot_pagos_vencido_anotar($f, $motivo, $ahora);
+        $estado['plazos'][$id]['vencido_ts'] = $ahora;
+        $res['detalle'][] = ['id' => $id, 'vencido' => true];
+        wabot_log('pago_vencido', ['id' => $id, 'tel' => $f['tel'], 'cobro' => $cobro, 'via' => 'por_fuera']);
+        if ($enDisco) wabot_renovacion_guardar($estado);
+    }
+
+    // «Recibimos tu pago» de los que Pablo marcó con «💵 Pagó» en el admin (23-nov).
     foreach ((array)$estado['pagos_cola'] as $id => $p) {
         $f = $porId[$id] ?? null;
         // Ya no está en la lista (baja, dejó de pagar por afuera) o la marca tiene más de 3 días: no se manda tarde.

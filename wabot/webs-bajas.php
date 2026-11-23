@@ -12,6 +12,9 @@
  *   php wabot/webs-bajas.php quitar dominio=xbrake.ar       (si se cargó por error)
  *   php wabot/webs-bajas.php listar
  *
+ * 23-nov: al agregar, si el cliente se había quedado sin pagar después del aviso de 48 h
+ * (pagos-vencidos.json), le llega la plantilla servicio_dado_de_baja. avisar=no la evita.
+ *
  * El admin la muestra en Mantenimiento → Bajas (wabot/admin.php accion=webs_bajas). webs.php no
  * monitorea los dominios dados de baja (si no, la página de mantenimiento cuenta como caída y al
  * reactivarla el cliente recibiría «tu web volvió a funcionar»).
@@ -85,7 +88,41 @@ function wabot_bajas_agregar(array $d) {
     ];
     if ($i !== null) $lista[$i] = $fila; else $lista[] = $fila;
     wabot_bajas_guardar($lista);
+    if (strtolower(trim((string)($d['avisar'] ?? ''))) !== 'no') $fila['aviso_cliente'] = wabot_bajas_avisar_cliente($fila);
     return $fila;
+}
+
+/**
+ * El aviso de baja al cliente (23-nov, Pablo: «sí, un aviso de baja»): solo si el cliente está en
+ * pagos-vencidos.json (se le venció el plazo de 48 h para pagar) y todavía no lo recibió. Se lo
+ * busca por teléfono o por el dominio de la lista de webs. Devuelve el resultado o '' si no corresponde.
+ */
+function wabot_bajas_avisar_cliente(array $fila, $enviar = null) {
+    require_once __DIR__ . '/renovacion.php';
+    $vencidos = wabot_pagos_vencidos_leer();
+    if (!$vencidos) return '';
+    $idsDominio = [];
+    if (($fila['dominio'] ?? '') !== '') {
+        $webs = $GLOBALS['WABOT_TEST_WEBS'] ?? (array)(json_decode((string)@file_get_contents(WABOT_DATA . '/webs.json'), true)['lista'] ?? []);
+        foreach ($webs as $w) {
+            if (is_array($w) && wabot_bajas_dominio($w['dominio'] ?? '') === $fila['dominio']) $idsDominio[(string)($w['id'] ?? '')] = true;
+        }
+    }
+    $t8 = wabot_pagos_tel8($fila['telefono'] ?? '');
+    foreach ($vencidos as $id => $v) {
+        if (!is_array($v) || !empty($v['avisado_baja'])) continue;
+        $porTel = strlen($t8) === 8 && wabot_pagos_tel8($v['tel'] ?? '') === $t8;
+        if (!$porTel && !isset($idsDominio[(string)$id])) continue;
+        $r = wabot_pagos_plantilla_cliente($v, 'servicio_dado_de_baja', wabot_pagos_nombre_negocio($v), wabot_config_load(), 'servicio_baja:' . $id, $enviar);
+        if (wabot_pagos_resultado_final($r)) {
+            $vencidos[$id]['avisado_baja'] = time();
+            $vencidos[$id]['avisado_res'] = $r;
+            wabot_pagos_vencidos_guardar($vencidos);
+        }
+        wabot_log('servicio_baja_cliente', ['id' => $id, 'tel' => $v['tel'] ?? '', 'dominio' => $fila['dominio'] ?? '', 'resultado' => $r]);
+        return $r;
+    }
+    return '';
 }
 
 /** Marca reactivada (queda en la lista como historia) o la quita. Devuelve si la encontró. */
