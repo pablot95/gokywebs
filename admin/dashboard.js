@@ -295,6 +295,21 @@ async function abrirWabot() {
 function argYmd(ts) {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(ts * 1000));
 }
+/* Hora de Argentina (24-nov): Pablo está en España y sus clientes en Argentina,
+   así que las horas del admin (entregas de demos, Bocetos, logs) van en hora
+   argentina. aAR(d) devuelve un Date cuyos getHours()/getDate()/… LOCALES son los
+   de Argentina; sirve solo para leer y comparar contra aAR(new Date()), nunca para
+   guardar ni para comparar con Date.now(). */
+const _AR_PARTES = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires', hourCycle: 'h23',
+    year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric',
+});
+function aAR(d) {
+    if (!(d instanceof Date) || isNaN(d)) return d;
+    const p = {};
+    for (const x of _AR_PARTES.formatToParts(d)) p[x.type] = Number(x.value);
+    return new Date(p.year, p.month - 1, p.day, p.hour % 24, p.minute, p.second, d.getMilliseconds());
+}
 /* AAAA-MM-DD de la fecha LOCAL (4-nov): toISOString() da la de UTC y después
    de las 21 h de Argentina «hoy» salía como mañana (tareas, facturas, seguimientos). */
 function ymdLocal(d = new Date()) {
@@ -389,7 +404,7 @@ function gastoMetaEstadoHtml() {
     if (gastoMetaError) return `<p class="muted inv-meta-estado">No se pudo leer el gasto de Meta: ${escapeHtml(gastoMetaError)}.</p>`;
     if (!gastoMeta) return "";
     if (!gastoMeta.configurado) return `<p class="muted inv-meta-estado">El gasto de cada semana se puede llenar solo desde Meta: cargá un token con <strong>ads_read</strong> en el panel del bot → Ajustes → Gasto en publicidad. Mientras tanto, cargalo a mano.</p>`;
-    const leido = gastoMeta.actualizado ? new Date(gastoMeta.actualizado * 1000).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+    const leido = gastoMeta.actualizado ? new Date(gastoMeta.actualizado * 1000).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }) : "";
     if (gastoMeta.error) return `<p class="muted inv-meta-estado inv-meta-estado--error">⚠ Meta: ${escapeHtml(gastoMeta.error)}${leido ? ` Se muestra lo último que se leyó (${escapeHtml(leido)}).` : ""}</p>`;
     return `<p class="muted inv-meta-estado">El gasto de las semanas sin número a mano viene de Meta${leido ? ` (leído el ${escapeHtml(leido)})` : ""}. Si escribís uno, gana el tuyo; si lo borrás, vuelve el de Meta.</p>`;
 }
@@ -851,7 +866,7 @@ function erroresMensajeCliente(w) {
 }
 
 function erroresHtmlWeb(w) {
-    const fechaHora = (d) => d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const fechaHora = (d) => d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }) + " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" });
     const sinSenal = !w.senal;   // ni un ping ni un error: el script todavía no llegó a esta web
     const estado = w.criticosPend > 0 ? "alerta" : (sinSenal ? "sinsenal" : "ok");
     const titulo = w.criticosPend > 0
@@ -5185,7 +5200,7 @@ function _sketchTimeSlot(hour) {
 }
 
 function _clientSketchSlotLabel(c) {
-    const date = _clientSketchDate(c);
+    const date = aAR(_clientSketchDate(c));
     if (!date) return "";
     return `${WEEKDAY_NAMES[date.getDay()]} · ${_sketchTimeSlot(date.getHours())}h`;
 }
@@ -5266,6 +5281,7 @@ function _renderSketchStats(containerId, list) {
     const dayCounts = SKETCH_DAY_STATS_ORDER.map(() => 0);
     const slotCounts = Object.fromEntries(SKETCH_SLOT_STATS_ORDER.map(slot => [slot, 0]));
     dates.forEach(date => {
+        date = aAR(date);
         dayCounts[SKETCH_DAY_STATS_ORDER.indexOf(date.getDay())]++;
         slotCounts[_sketchTimeSlot(date.getHours())]++;
     });
@@ -6664,7 +6680,8 @@ function horaDeFechaTexto(fecha) {
 
 function getPropuestaFechaInfo(p) {
     if (p.createdAt?.toDate) {
-        const d = p.createdAt.toDate();
+        const real = p.createdAt.toDate();
+        const d = aAR(real);   // fecha y hora argentinas
         // Hora a mano, no toLocaleTimeString con hour12:false: algunos
         // motores devuelven "24:00" en vez de "00:00" a medianoche.
         const hh = String(d.getHours()).padStart(2, "0");
@@ -6672,7 +6689,7 @@ function getPropuestaFechaInfo(p) {
         return {
             key: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
             hora: hh + ":" + mm,
-            sortMs: d.getTime(),
+            sortMs: real.getTime(),
         };
     }
     if (p.fecha) return { key: p.fecha, hora: horaDeFechaTexto(p.fecha), sortMs: -Infinity };
@@ -6689,18 +6706,18 @@ function entregaPedidaHTML(p) {
     const d = e?.d;
     if (!d) return "";
     if (!e.eligio) {
-        const hoyA = new Date();
+        const hoyA = aAR(new Date());
         const dd = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoyA.getFullYear(), hoyA.getMonth(), hoyA.getDate())) / 86400000);
         if (dd < -1) return "";
         const diaA = dd === 0 ? "hoy" : dd === 1 ? "mañana" : dd === -1 ? "ayer" : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
         return `<div style="margin-top:5px"><span class="prop-entrega-auto" title="No eligió hora en el formulario: sale con el turno automático (antes de las 11 → 14 h, de 11 a 15 → 18 h, desde las 15 → 14 h del día siguiente)">🕐 Sale ${escapeHtml(diaA)} ${String(d.getHours()).padStart(2, "0")}:00</span></div>`;
     }
     const hh = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-    const hoy = new Date();
+    const hoy = aAR(new Date());
     const dias = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
     const dia = dias === 0 ? "hoy" : dias === 1 ? "mañana" : dias === -1 ? "ayer"
         : d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
-    const paso = d.getTime() < Date.now();
+    const paso = d < aAR(new Date());
     const color = paso ? "#F59E0B" : "#60A5FA";
     return `<div style="margin-top:5px"><span style="background:${paso ? "rgba(245,158,11,.13)" : "rgba(96,165,250,.13)"};color:${color};border:1px solid ${color}66;border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Hora que eligió en el formulario para recibir la demo${paso ? " (ya pasó)" : ""}">🕐 Entrega ${escapeHtml(dia)} ${escapeHtml(hh)}</span></div>`;
 }
@@ -6712,9 +6729,10 @@ function entregaPedidaHTML(p) {
    las 15 → 14 h del día siguiente). Las ya presentadas solas no cuentan. */
 function horaEntregaDemo(p) {
     if (p.autoPresentada?.demo_ok) return null;
+    // En hora argentina (aAR): el turno se cuenta como en presentar.php.
     const elegida = mantToDate(p.demoProgramadaAt);
-    if (elegida) return { d: elegida, eligio: true };
-    const creado = p.createdAt?.toDate ? p.createdAt.toDate() : null;
+    if (elegida) return { d: aAR(elegida), eligio: true };
+    const creado = p.createdAt?.toDate ? aAR(p.createdAt.toDate()) : null;
     if (!creado) return null;
     const h = creado.getHours();
     const d = new Date(creado.getFullYear(), creado.getMonth(), creado.getDate() + (h >= 15 ? 1 : 0), h < 11 || h >= 15 ? 14 : 18, 0, 0, 0);
@@ -6730,7 +6748,7 @@ let entregaHoraSel = "";   // "AAAA-MM-DD HH" marcada en la columna; filtra la l
 function renderEntregasPorHora() {
     const cont = document.getElementById("propEntregas");
     if (!cont) return;
-    const ahora = new Date();
+    const ahora = aAR(new Date());
     const hoy0 = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
     const porClave = new Map();
     let atrasadas = 0;
@@ -8254,7 +8272,7 @@ const autoPresentadasEnCurso = new Set();
 
 // Por qué la presentación automática no le mandó la demo (el aviso «No salió sola» de Bocetos).
 function motivoAutoPresentada(a) {
-    const cuando = a.ts ? new Date(a.ts).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) + ": " : "";
+    const cuando = a.ts ? new Date(a.ts).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" }) + ": " : "";
     if (a.error) return cuando + a.error;
     if (a.fuera_ventana) return cuando + (a.nunca_escribio ? "nunca escribió por WhatsApp" : "pasaron más de 24 h desde su último mensaje") + ". Tocá Presentar para ver el texto y mandarlo a mano.";
     if (a.sin_chat) return cuando + "no hay chat con el bot. Tocá Presentar para ver el texto y mandarlo a mano.";
@@ -8999,7 +9017,7 @@ function renderIntentosCobro() {
     const mes = _diaDe(new Date()).slice(0, 7);
     const delMes = filas.filter(f => String(f.c.fecha).slice(0, 7) === mes);
     const nMes = clase => delMes.filter(f => f.e.clase === clase);
-    const fh = iso => { if (!iso) return ""; const d = new Date(iso); return `${fechaCortaJs(d).slice(0, 5)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+    const fh = iso => { if (!iso) return ""; const d = aAR(new Date(iso)); return `${fechaCortaJs(d).slice(0, 5)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
     const chips = [["todos", "Todos", filas.length], ["reintentando", "Reintentando", cuenta("reintentando").length], ["rechazado", "Rechazados", cuenta("rechazado").length],
         ["cobrado", "Cobrados", cuenta("cobrado").length], ["devuelto", "Devueltos", cuenta("devuelto").length], ["programado", "Programados", cuenta("programado").length]]
         .filter(([v, , n]) => n || v === "todos" || v === intentosFiltro);
@@ -10784,7 +10802,7 @@ function _websMesNombre(ym) {
     return WEBS_MESES[Number(String(ym || "").slice(5, 7)) - 1] || String(ym || "");
 }
 function _websFechaHora(ts) {
-    const d = new Date(ts * 1000);
+    const d = aAR(new Date(ts * 1000));
     return `${fechaCortaJs(d).slice(0, 5)} ${String(d.getHours())}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 // Debajo del dominio: cómo está la web ahora, lo que va a decir el resumen del mes y qué reporte salió.
@@ -12093,7 +12111,7 @@ function _factAutoFecha(valor) {
 }
 
 function _factAutoHora(iso) {
-    const fecha = iso ? new Date(iso) : null;
+    const fecha = iso ? aAR(new Date(iso)) : null;
     if (!fecha || isNaN(fecha)) return "—";
     return `${mantShortDate(fecha)} ${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
 }
@@ -12735,7 +12753,7 @@ function _statsDayCounts(dates) {
 
 function _statsHourCounts(dates) {
     const counts = STATS_HOURS.map(() => 0);
-    dates.forEach(d => { counts[d.getHours()]++; });
+    dates.forEach(d => { counts[aAR(d).getHours()]++; });
     return counts;
 }
 
