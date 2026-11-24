@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The Travel Edit — Viajes diseñados a tu medida</title>
+    <meta
+      name="description"
+      content="Diseñamos viajes a medida, experiencias, recorridos en tren, cruceros y lunas de miel. Contanos cómo te gusta viajar y empecemos por tu próxima idea.">
+    <meta name="theme-color" content="#F7F9FC">
+    <link rel="canonical" href="https://gokywebs.com/demo/thetraveledit/">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="es_AR">
+    <meta property="og:site_name" content="The Travel Edit">
+    <meta
+      property="og:title"
+      content="The Travel Edit — Viajes diseñados a tu medida">
+    <meta
+      property="og:description"
+      content="Experiencias, trenes, cruceros y luna de miel. Un viaje que se parece a vos.">
+    <meta
+      property="og:url"
+      content="https://gokywebs.com/demo/thetraveledit/">
+    <meta
+      property="og:image"
+      content="https://gokywebs.com/demo/thetraveledit/images/og-travel.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500&amp;display=swap"
+      rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=20261124173616">
+    <noscript
+      ><style>
+        [data-animate] {
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+          clip-path: none !important;
+        }
+        [data-animate] img {
+          scale: none !important;
+        }
+        .main-nav {
+          visibility: visible !important;
+          transform: none !important;
+          position: static !important;
+          width: auto !important;
+          max-width: none !important;
+        }
+        .nav-close,
+        .menu-toggle,
+        .journey-tabs {
+          display: none !important;
+        }
+        .contact-form button { display: none !important; }
+        .header-inner {
+          flex-wrap: wrap;
+        }
+      </style></noscript
+    >
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "TravelAgency",
+            "name": "The Travel Edit",
+            "url": "https://gokywebs.com/demo/thetraveledit/",
+            "telephone": "+5491156320350",
+            "description": "Diseño de viajes a medida. Experiencias, trenes, cruceros y luna de miel.",
+            "image": "https://gokywebs.com/demo/thetraveledit/images/og-travel.jpg"
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "¿Necesito tener el destino decidido?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No hace falta. Podés empezar por una idea, una época del año o una forma de viajar. A partir de eso conversamos sobre las opciones."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Se pueden combinar distintas experiencias?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sí. Un viaje a medida puede reunir ciudades, naturaleza, un recorrido en tren o un crucero. La combinación se define según tus preferencias y las opciones disponibles."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "¿Cómo se define el presupuesto?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Depende de los destinos, las fechas, la duración y los servicios elegidos. La propuesta y sus condiciones se confirman antes de reservar."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "¿También diseñan lunas de miel?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Sí. La luna de miel es una de nuestras propuestas: un viaje pensado para los dos, con el ritmo y las experiencias que quieran compartir."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body class="m1" id="top">
+    <nav class="gw-modelos" aria-label="Modelos de la web">
+      <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page"
+        >Modelo 1</a
+      >
+      <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2"
+        >Modelo 2</a
+      >
+    </nav>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="The Travel Edit, inicio"
+          ><span class="wordmark">The Travel <em>Edit</em></span></a
+        >
+        <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+          <button
+            type="button"
+            class="nav-close"
+            id="navClose"
+            aria-label="Cerrar menú"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+          <a href="#viajes">Formas de viajar</a
+          ><a href="#mirada">Nuestra mirada</a>
+          <a href="#inspiracion">Inspiración</a
+          ><a href="#contacto">Conversemos</a>
+        </nav>
+        <button
+          type="button"
+          class="menu-toggle"
+          id="menuToggle"
+          aria-label="Abrir menú"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-photo">
+          <img
+            src="images/tren-paisaje.webp"
+            alt="Tren junto a un lago de montaña y cumbres nevadas"
+            width="1600"
+            height="900"
+            fetchpriority="high"
+            data-hero-img>
+        </div>
+        <div class="hero-copy container">
+          <p class="hero-eyebrow">VIAJES CON UNA MIRADA PROPIA</p>
+          <div class="hero-brand">
+            <span class="wordmark">The Travel <em>Edit</em></span>
+          </div>
+          <h1 id="hero-title">Viajes a medida, <em>a tu manera.</em></h1>
+          <p class="hero-lead">
+            Experiencias, trenes, cruceros y luna de miel. Diseñamos el viaje
+            alrededor de lo que te mueve.
+          </p>
+          <div class="hero-ctas">
+            <a
+              class="btn btn-light"
+              href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
+              target="_blank"
+              rel="noopener noreferrer"
+              >Conversemos sobre tu viaje</a
+            ><a class="hero-explore" href="#viajes"
+              >Explorá las posibilidades</a
+            >
+          </div>
+        </div>
+        <div class="hero-caption">
+          <span>El placer de viajar empieza en el camino.</span
+          ><span>THE TRAVEL EDIT</span>
+        </div>
+      </section>
+      <section class="intro" aria-labelledby="intro-title">
+        <div class="container intro-inner">
+          <p
+            class="intro-label"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            Destinos que inspiran.<br>Detalles que importan.
+          </p>
+          <h2
+            id="intro-title"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            El mundo es amplio.<br><em>Tu viaje es personal.</em>
+          </h2>
+          <p
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            Hay quienes viajan para descubrir. Quienes buscan bajar el ritmo. Y
+            quienes quieren celebrar. Cada viaje empieza por escucharte.
+          </p>
+        </div>
+      </section>
+      <section class="travel" id="viajes" aria-labelledby="travel-title">
+        <div class="container">
+          <div
+            class="section-heading"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <p class="eyebrow">ENCONTRÁ TU FORMA DE VIAJAR</p>
+            <h2 id="travel-title">
+              No todos los viajes<br><em>se viven igual.</em>
+            </h2>
+          </div>
+          <div class="travel-editor">
+            <div
+              class="journey-tabs"
+              role="group"
+              aria-label="Formas de viajar"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <button
+                type="button"
+                id="tab-experiencias"
+                data-journey="experiencias"
+              >
+                Experiencias</button
+              ><button type="button" id="tab-trenes" data-journey="trenes">
+                Trenes</button
+              ><button type="button" id="tab-cruceros" data-journey="cruceros">
+                Cruceros</button
+              ><button
+                type="button"
+                id="tab-luna-de-miel"
+                data-journey="luna-de-miel"
+              >
+                Luna de miel
+              </button>
+            </div>
+            <div class="journey-panels">
+              <article
+                class="journey-panel"
+                id="panel-experiencias"
+                aria-label="Experiencias"
+              >
+                <figure
+                  class="journey-photo"
+                  data-animate="mascara"
+                  style="clip-path: inset(100% 0 0 0)"
+                >
+                  <img
+                    src="images/experiencias.webp"
+                    alt="Barca de madera en una bahía de agua turquesa"
+                    width="1024"
+                    height="1024">
+                </figure>
+                <div
+                  class="journey-copy"
+                  data-animate="subir"
+                  style="opacity: 0; transform: translateY(32px)"
+                >
+                  <p class="eyebrow">Experiencias</p>
+                  <h3>Salir de lo conocido.</h3>
+                  <p>
+                    Una bahía tranquila, una ciudad por recorrer o un paisaje
+                    que cambia la perspectiva. Elegí lo que te despierta
+                    curiosidad y pensemos cómo vivirlo.
+                  </p>
+                  <a
+                    class="btn btn-primary"
+                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20experiencias%20para%20mi%20pr%C3%B3ximo%20viaje."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Consultá por experiencias</a
+                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                </div>
+              </article>
+              <article
+                class="journey-panel"
+                id="panel-trenes"
+                aria-label="Trenes"
+              >
+                <figure
+                  class="journey-photo"
+                  data-animate="mascara"
+                  style="clip-path: inset(100% 0 0 0)"
+                >
+                  <img
+                    src="images/tren-interior.webp"
+                    alt="Mesa junto a la ventana de un tren con vistas al campo"
+                    width="1024"
+                    height="1024">
+                </figure>
+                <div
+                  class="journey-copy"
+                  data-animate="subir"
+                  style="opacity: 0; transform: translateY(32px)"
+                >
+                  <p class="eyebrow">Trenes</p>
+                  <h3>Que el camino también sea el destino.</h3>
+                  <p>
+                    Paisajes que pasan por la ventana y tiempo para
+                    disfrutarlos. Incorporá un recorrido en tren a un itinerario
+                    pensado a tu ritmo.
+                  </p>
+                  <a
+                    class="btn btn-primary"
+                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20en%20tren."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Consultá por trenes</a
+                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                </div>
+              </article>
+              <article
+                class="journey-panel"
+                id="panel-cruceros"
+                aria-label="Cruceros"
+              >
+                <figure
+                  class="journey-photo"
+                  data-animate="mascara"
+                  style="clip-path: inset(100% 0 0 0)"
+                >
+                  <img
+                    src="images/crucero.webp"
+                    alt="Crucero navegando entre montañas en un fiordo"
+                    width="1024"
+                    height="1024">
+                </figure>
+                <div
+                  class="journey-copy"
+                  data-animate="subir"
+                  style="opacity: 0; transform: translateY(32px)"
+                >
+                  <p class="eyebrow">Cruceros</p>
+                  <h3>Despertar frente a otro paisaje.</h3>
+                  <p>
+                    La travesía tiene tanto para ofrecer como cada escala.
+                    Conversemos sobre el recorrido y la forma de navegar que te
+                    gustaría vivir.
+                  </p>
+                  <a
+                    class="btn btn-primary"
+                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20en%20crucero."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Consultá por cruceros</a
+                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                </div>
+              </article>
+              <article
+                class="journey-panel"
+                id="panel-luna-de-miel"
+                aria-label="Luna de miel"
+              >
+                <figure
+                  class="journey-photo"
+                  data-animate="mascara"
+                  style="clip-path: inset(100% 0 0 0)"
+                >
+                  <img
+                    src="images/luna-de-miel.webp"
+                    alt="Pareja caminando por una playa al atardecer"
+                    width="1024"
+                    height="1024">
+                </figure>
+                <div
+                  class="journey-copy"
+                  data-animate="subir"
+                  style="opacity: 0; transform: translateY(32px)"
+                >
+                  <p class="eyebrow">Luna de miel</p>
+                  <h3>Un comienzo para recordar.</h3>
+                  <p>
+                    Días para compartir, lugares por descubrir y momentos para
+                    estar de a dos. Diseñemos una luna de miel que se parezca a
+                    ustedes.
+                  </p>
+                  <a
+                    class="btn btn-primary"
+                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20nuestra%20luna%20de%20miel."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >Consultá por luna de miel</a
+                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="process" id="mirada" aria-labelledby="process-title">
+        <div class="container process-grid">
+          <div class="process-visual">
+            <figure
+              class="process-photo"
+              data-animate="mascara"
+              style="clip-path: inset(100% 0 0 0)"
+            >
+              <img
+                src="images/terraza.webp"
+                alt="Terraza junto al mar, con cortinas de lino y una mesa para descansar"
+                width="900"
+                height="1600">
+            </figure>
+            <div
+              class="margin-note"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              Menos apuro.<br><em>Más viaje.</em>
+            </div>
+          </div>
+          <div class="process-copy">
+            <div
+              data-animate="horizonte"
+              style="opacity: 0; transform: translateX(-24px)"
+            >
+              <p class="eyebrow">LA MIRADA THE TRAVEL EDIT</p>
+              <h2 id="process-title">
+                Elegir bien.<br><em>Disfrutar más.</em>
+              </h2>
+            </div>
+            <p
+              class="process-lead"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              Un viaje a medida empieza mucho antes de partir. Se trata de
+              encontrar el equilibrio entre lo que querés conocer y cómo querés
+              sentirte.
+            </p>
+            <ol class="process-steps">
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <h3>Primero, tu idea</h3>
+                <p>
+                  Conversamos sobre tus intereses, tus fechas y el ritmo que
+                  imaginás.
+                </p>
+              </li>
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <h3>Después, cada detalle</h3>
+                <p>
+                  Damos forma al recorrido y elegimos las experiencias que hacen
+                  sentido para vos.
+                </p>
+              </li>
+              <li
+                data-animate="subir"
+                style="opacity: 0; transform: translateY(32px)"
+              >
+                <h3>Un viaje que te representa</h3>
+                <p>
+                  Revisamos la propuesta juntos y ajustamos los detalles antes
+                  de confirmar.
+                </p>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+      <section
+        class="inspiration"
+        id="inspiracion"
+        aria-labelledby="inspiration-title"
+      >
+        <div class="container">
+          <div
+            class="inspiration-heading"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <h2 id="inspiration-title">
+              ¿Y si tu próximo viaje<br><em>empieza por una sensación?</em>
+            </h2>
+            <p>Algunas ideas para abrir la conversación.</p>
+          </div>
+          <div class="inspiration-grid">
+            <figure
+              class="inspiration-item"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <div class="photo-frame">
+                <img
+                  src="images/pueblo.webp"
+                  alt="Calle de piedra con flores y vistas al mar"
+                  width="1024"
+                  height="1024">
+              </div>
+              <figcaption>
+                <h3>Perderse un rato.</h3>
+                <p>Rincones para descubrir sin apuro.</p>
+              </figcaption>
+            </figure>
+            <figure
+              class="inspiration-item"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <div class="photo-frame">
+                <img
+                  src="images/globo.webp"
+                  alt="Globo aerostático sobre un valle al amanecer"
+                  width="1024"
+                  height="1024">
+              </div>
+              <figcaption>
+                <h3>Cambiar de perspectiva.</h3>
+                <p>Experiencias que se quedan con vos.</p>
+              </figcaption>
+            </figure>
+            <figure
+              class="inspiration-item"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <div class="photo-frame">
+                <img
+                  src="images/hotel.webp"
+                  alt="Patio de un alojamiento con piscina y un olivo"
+                  width="1024"
+                  height="1024">
+              </div>
+              <figcaption>
+                <h3>Quedarse un poco más.</h3>
+                <p>Lugares que invitan a bajar el ritmo.</p>
+              </figcaption>
+            </figure>
+          </div>
+          <p
+            class="image-note"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            Imágenes de inspiración. Los destinos, alojamientos y servicios se
+            definen en cada propuesta.
+          </p>
+        </div>
+      </section>
+      <section class="questions" aria-labelledby="questions-title">
+        <div class="container questions-grid">
+          <div
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <p class="eyebrow">ANTES DE PARTIR</p>
+            <h2 id="questions-title">
+              Toda gran idea<br><em>empieza con preguntas.</em>
+            </h2>
+          </div>
+          <div class="faq-list">
+            <details
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <summary>
+                ¿Necesito tener el destino decidido?<span aria-hidden="true"
+                  >+</span
+                >
+              </summary>
+              <p>
+                No hace falta. Podés empezar por una idea, una época del año o
+                una forma de viajar. A partir de eso conversamos sobre las
+                opciones.
+              </p>
+            </details>
+            <details
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <summary>
+                ¿Se pueden combinar distintas experiencias?<span
+                  aria-hidden="true"
+                  >+</span
+                >
+              </summary>
+              <p>
+                Sí. Un viaje a medida puede reunir ciudades, naturaleza, un
+                recorrido en tren o un crucero. La combinación se define según
+                tus preferencias y las opciones disponibles.
+              </p>
+            </details>
+            <details
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <summary>
+                ¿Cómo se define el presupuesto?<span aria-hidden="true">+</span>
+              </summary>
+              <p>
+                Depende de los destinos, las fechas, la duración y los servicios
+                elegidos. La propuesta y sus condiciones se confirman antes de
+                reservar.
+              </p>
+            </details>
+            <details
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <summary>
+                ¿También diseñan lunas de miel?<span aria-hidden="true">+</span>
+              </summary>
+              <p>
+                Sí. La luna de miel es una de nuestras propuestas: un viaje
+                pensado para los dos, con el ritmo y las experiencias que
+                quieran compartir.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section class="contact" id="contacto" aria-labelledby="contact-title">
+        <div class="container contact-grid">
+          <div class="contact-copy">
+            <div
+              data-animate="horizonte"
+              style="opacity: 0; transform: translateX(-24px)"
+            >
+              <p class="eyebrow">TU PRÓXIMA HISTORIA</p>
+              <h2 id="contact-title">
+                Contanos adónde<br><em>te gustaría ir.</em>
+              </h2>
+            </div>
+            <p
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              Con un destino en mente o con ganas de descubrirlo. Empecemos por
+              una conversación.
+            </p>
+            <div
+              class="contact-links"
+              data-animate="subir"
+              style="opacity: 0; transform: translateY(32px)"
+            >
+              <a
+                class="btn btn-primary"
+                href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
+                target="_blank"
+                rel="noopener noreferrer"
+                >Hablemos de tu viaje</a
+              ><a
+                class="phone-link"
+                href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
+                target="_blank"
+                rel="noopener noreferrer"
+                >+54 9 11 5632-0350</a
+              >
+            </div>
+          </div>
+          <form
+            class="contact-form"
+            id="travel-form"
+            method="post"
+            novalidate
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <h3>Dejá tu idea de viaje</h3>
+            <p class="small">
+              Formulario de muestra. Para una consulta real, escribinos por
+              WhatsApp.
+            </p>
+            <div class="form-row">
+              <div class="field">
+                <label for="nombre">Tu nombre</label
+                ><input
+                  type="text"
+                  id="nombre"
+                  name="nombre"
+                  autocomplete="given-name"
+                  maxlength="80"
+                  required
+                  aria-describedby="error-nombre"><span
+                  class="field-error"
+                  id="error-nombre"
+                  aria-live="polite"
+                ></span>
+              </div>
+              <div class="field">
+                <label for="email">Tu email</label
+                ><input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  maxlength="160"
+                  required
+                  aria-describedby="error-email"><span
+                  class="field-error"
+                  id="error-email"
+                  aria-live="polite"
+                ></span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="interes">¿Qué te gustaría vivir?</label
+              ><select id="interes" name="interes">
+                <option>Un viaje a medida</option>
+                <option>Experiencias</option>
+                <option>Trenes</option>
+                <option>Cruceros</option>
+                <option>Luna de miel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="idea">Tu idea, tus fechas, tus ganas</label
+              ><textarea
+                id="idea"
+                name="idea"
+                rows="3"
+                maxlength="1500"
+                placeholder="Ese lugar que tenés pendiente…"
+                required
+                aria-describedby="error-idea"
+              ></textarea
+              ><span
+                class="field-error"
+                id="error-idea"
+                aria-live="polite"
+              ></span>
+            </div>
+            <button class="btn btn-primary" type="submit">
+              Compartí tu idea
+            </button>
+            <p class="form-status small" role="status"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-main">
+          <div
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <a class="brand" href="#top"
+              ><span class="wordmark">The Travel <em>Edit</em></span></a
+            >
+            <p>Viajes diseñados a tu medida.</p>
+          </div>
+          <div
+            class="footer-nav"
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <a href="#viajes">Formas de viajar</a
+            ><a href="#contacto">Conversemos</a>
+          </div>
+        </div>
+        <div
+          class="footer-bottom"
+          data-animate="subir"
+          style="opacity: 0; transform: translateY(32px)"
+        >
+          <span>© 2026 The Travel Edit</span
+          ><a
+            href="https://gokywebs.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Developed and designed by Gokywebs</a
+          >
+        </div>
+      </div>
+    </footer>
+    <a
+      class="wsp-float"
+      id="wsp-float"
+      href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Escribir por WhatsApp"
+    >
+      <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <path
+          d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"
+        />
+      </svg>
+    </a>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="script.js?v=20261124173616"></script>
+    <script src="/demo/track.js" defer></script>
+  </body>
+</html>
