@@ -1,0 +1,141 @@
+{
+  "torta-chocolate-caja.webp": {
+    "origen": "zip ChatGPT 01 (ilustrativa)",
+    "tamano": "900x1600",
+    "nota": "Torta de chocolate con dulce de leche y merengue en caja (9:16)"
+  },
+  "clase-manga-frutillas.webp": {
+    "origen": "zip ChatGPT 02 (ilustrativa)",
+    "tamano": "1600x900",
+    "nota": "Manos decorando una torta con manga y frutillas (16:9)"
+  },
+  "tarta-lima.webp": {
+    "origen": "zip ChatGPT 03 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Tarta de lima con crema en caja (1:1)"
+  },
+  "torta-reno.webp": {
+    "origen": "zip ChatGPT 04 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Torta reno navideña (1:1)"
+  },
+  "corona-navidad.webp": {
+    "origen": "zip ChatGPT 05 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Corona navideña de bizcochuelo y crema verde (1:1)"
+  },
+  "postre-vaso-frutillas.webp": {
+    "origen": "zip ChatGPT 06 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Postre en vaso de frutillas y crema (1:1)"
+  },
+  "batido-base.webp": {
+    "origen": "zip ChatGPT 07 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Batido de masa base con batidor (1:1)"
+  },
+  "tartaleta-manga.webp": {
+    "origen": "zip ChatGPT 08 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Tartaleta decorada con manga (1:1)"
+  },
+  "recetario-cuaderno.webp": {
+    "origen": "zip ChatGPT 09 (ilustrativa)",
+    "tamano": "1024x1024",
+    "nota": "Cuaderno de recetas con ingredientes (1:1)"
+  },
+  "clase-manga-frutillas-800.webp": {
+    "origen": "zip ChatGPT 02 (ilustrativa)",
+    "tamano": "800x450"
+  },
+  "og-lkakes.jpg": {
+    "origen": "zip ChatGPT 02 (ilustrativa)",
+    "tamano": "1200x630"
+  },
+  "tarta-lima-600.webp": {
+    "origen": "zip ChatGPT 03 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "torta-reno-600.webp": {
+    "origen": "zip ChatGPT 04 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "corona-navidad-600.webp": {
+    "origen": "zip ChatGPT 05 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "postre-vaso-frutillas-600.webp": {
+    "origen": "zip ChatGPT 06 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "batido-base-600.webp": {
+    "origen": "zip ChatGPT 07 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "tartaleta-manga-600.webp": {
+    "origen": "zip ChatGPT 08 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "recetario-cuaderno-600.webp": {
+    "origen": "zip ChatGPT 09 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "lore-box-navidad.webp": {
+    "origen": "cliente WhatsApp 02-imagen.jpg",
+    "tamano": "1200x1600",
+    "nota": "Box navideño real de Lkakes (renos, coronas, frutillas)"
+  },
+  "lore-tarta-lima.webp": {
+    "origen": "cliente WhatsApp 03-imagen.jpg",
+    "tamano": "1200x1600",
+    "nota": "Tarta de lima real de Lkakes"
+  },
+  "lore-torta-merengue.webp": {
+    "origen": "cliente WhatsApp 04-imagen.jpg",
+    "tamano": "1200x1600",
+    "nota": "Torta de chocolate, dulce de leche y merengue real de Lkakes"
+  },
+  "logo-lkakes.webp": {
+    "origen": "cliente WhatsApp 01-logo.jpg",
+    "tamano": "740x272",
+    "nota": "Etiqueta rayada del logo (recorte)"
+  },
+  "logo-lkakes-crema.webp": {
+    "origen": "cliente WhatsApp 01-logo.jpg",
+    "tamano": "900x276",
+    "nota": "Wordmark del logo con fondo pasado a transparente"
+  },
+  "logo-lkakes-malva.webp": {
+    "origen": "cliente WhatsApp 01-logo.jpg",
+    "tamano": "900x276",
+    "nota": "Wordmark del logo con fondo pasado a transparente"
+  },
+  "sello-lkakes.webp": {
+    "origen": "cliente WhatsApp 06-imagen.jpg",
+    "tamano": "480x480",
+    "nota": "Sello «una experiencia dulce!» recortado en círculo"
+  },
+  "favicon-lkakes.png": {
+    "origen": "cliente WhatsApp 06-imagen.jpg",
+    "tamano": "192x192",
+    "nota": "Monograma del sello"
+  },
+  "tortas-manga.webp": {
+    "origen": "zip ChatGPT 02 (ilustrativa)",
+    "tamano": "900x900",
+    "nota": "Recorte cuadrado para la portada del curso"
+  },
+  "tortas-manga-600.webp": {
+    "origen": "zip ChatGPT 02 (ilustrativa)",
+    "tamano": "600x600"
+  },
+  "torta-chocolate.webp": {
+    "origen": "zip ChatGPT 01 (ilustrativa)",
+    "tamano": "900x900",
+    "nota": "Recorte cuadrado para la portada del curso"
+  },
+  "torta-chocolate-600.webp": {
+    "origen": "zip ChatGPT 01 (ilustrativa)",
+    "tamano": "600x600"
+  }
+}
