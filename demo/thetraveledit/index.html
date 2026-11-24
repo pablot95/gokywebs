@@ -31,7 +31,8 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Jost:wght@400;500&amp;display=swap"
       rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261124173616">
+    <link rel="stylesheet" href="styles.css?v=20261124210000">
+    <link rel="stylesheet" href="catalogo.css?v=20261124210000">
     <noscript
       ><style>
         [data-animate] {
@@ -69,7 +70,6 @@
             "@type": "TravelAgency",
             "name": "The Travel Edit",
             "url": "https://gokywebs.com/demo/thetraveledit/",
-            "telephone": "+5491156320350",
             "description": "Diseño de viajes a medida. Experiencias, trenes, cruceros y luna de miel.",
             "image": "https://gokywebs.com/demo/thetraveledit/images/og-travel.jpg"
           },
@@ -114,7 +114,7 @@
       }
     </script>
   </head>
-  <body class="m1" id="top">
+  <body class="m1" id="top" data-pagina="home">
     <nav class="gw-modelos" aria-label="Modelos de la web">
       <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page"
         >Modelo 1</a
@@ -145,9 +145,10 @@
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
           </button>
-          <a href="#viajes">Formas de viajar</a
-          ><a href="#mirada">Nuestra mirada</a>
-          <a href="#inspiracion">Inspiración</a
+          <a href="#destinos">Destinos</a
+          ><a href="#viajes">Formas de viajar</a
+          ><a href="blog.html">Blog</a
+          ><a href="#newsletter">Newsletter</a
           ><a href="#contacto">Conversemos</a>
         </nav>
         <button
@@ -192,14 +193,8 @@
             alrededor de lo que te mueve.
           </p>
           <div class="hero-ctas">
-            <a
-              class="btn btn-light"
-              href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
-              target="_blank"
-              rel="noopener noreferrer"
-              >Conversemos sobre tu viaje</a
-            ><a class="hero-explore" href="#viajes"
-              >Explorá las posibilidades</a
+            <a class="btn btn-light" href="#contacto">Conversemos sobre tu viaje</a
+            ><a class="hero-explore" href="#destinos">Explorá los destinos</a
             >
           </div>
         </div>
@@ -231,6 +226,24 @@
             Hay quienes viajan para descubrir. Quienes buscan bajar el ritmo. Y
             quienes quieren celebrar. Cada viaje empieza por escucharte.
           </p>
+        </div>
+      </section>
+      <section class="destinos" id="destinos" aria-labelledby="destinos-title">
+        <div class="container">
+          <div
+            class="destinos-head"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <div>
+              <p class="eyebrow">DESTINOS</p>
+              <h2 id="destinos-title">
+                Elegí por dónde<br><em>empezar a soñar.</em>
+              </h2>
+            </div>
+            <p>Cada destino reúne viajes con fotos y videos para que te imagines ahí.</p>
+          </div>
+          <div class="destinos-grid" id="destinos-grid"></div>
         </div>
       </section>
       <section class="travel" id="viajes" aria-labelledby="travel-title">
@@ -302,11 +315,9 @@
                   </p>
                   <a
                     class="btn btn-primary"
-                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20experiencias%20para%20mi%20pr%C3%B3ximo%20viaje."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >Consultá por experiencias</a
-                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                    href="destino.html?d=europa"
+                    >Ver destinos en Europa</a
+                  ><span class="small">Fotos, videos y detalles de cada viaje.</span>
                 </div>
               </article>
               <article
@@ -339,11 +350,9 @@
                   </p>
                   <a
                     class="btn btn-primary"
-                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20en%20tren."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >Consultá por trenes</a
-                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                    href="destino.html?d=trenes-y-cruceros"
+                    >Ver viajes en tren</a
+                  ><span class="small">Fotos, videos y detalles de cada viaje.</span>
                 </div>
               </article>
               <article
@@ -376,11 +385,9 @@
                   </p>
                   <a
                     class="btn btn-primary"
-                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20en%20crucero."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >Consultá por cruceros</a
-                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                    href="paquete.html?d=trenes-y-cruceros&amp;p=cruceros"
+                    >Ver cruceros</a
+                  ><span class="small">Fotos, videos y detalles de cada viaje.</span>
                 </div>
               </article>
               <article
@@ -413,18 +420,17 @@
                   </p>
                   <a
                     class="btn btn-primary"
-                    href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20nuestra%20luna%20de%20miel."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >Consultá por luna de miel</a
-                  ><span class="small">Cada propuesta se diseña a medida.</span>
+                    href="paquete.html?d=maldivas&amp;p=luna-de-miel"
+                    >Ver lunas de miel</a
+                  ><span class="small">Fotos, videos y detalles de cada viaje.</span>
                 </div>
               </article>
             </div>
           </div>
         </div>
       </section>
-      <section class="process" id="mirada" aria-labelledby="process-title">
+      <!-- Oculta por ahora a pedido de la clienta (sección sobre mí): sacar hidden para mostrarla -->
+      <section class="process" id="mirada" aria-labelledby="process-title" hidden>
         <div class="container process-grid">
           <div class="process-visual">
             <figure
@@ -579,6 +585,53 @@
           </p>
         </div>
       </section>
+      <section class="blog-home" id="blog" aria-labelledby="blog-title">
+        <div class="container">
+          <div
+            class="blog-head"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <div>
+              <p class="eyebrow">BLOG</p>
+              <h2 id="blog-title">Notas para<br><em>viajar mejor.</em></h2>
+            </div>
+            <a href="blog.html">Ver todas las notas</a>
+          </div>
+          <div class="post-grid" id="blog-grid"></div>
+        </div>
+      </section>
+      <section class="newsletter" id="newsletter" aria-labelledby="newsletter-title">
+        <div class="container newsletter-inner">
+          <div
+            class="newsletter-copy"
+            data-animate="horizonte"
+            style="opacity: 0; transform: translateX(-24px)"
+          >
+            <p class="eyebrow">NEWSLETTER</p>
+            <h2 id="newsletter-title">Ideas de viaje,<br><em>en tu mail.</em></h2>
+            <p>Destinos, temporadas y propuestas nuevas. Un mail por mes, sin spam.</p>
+          </div>
+          <form
+            class="newsletter-form"
+            novalidate
+            data-animate="subir"
+            style="opacity: 0; transform: translateY(32px)"
+          >
+            <label for="news-email">Tu email</label
+            ><input
+              type="email"
+              id="news-email"
+              name="email"
+              autocomplete="email"
+              placeholder="nombre@mail.com"
+              required
+              aria-describedby="news-error"><button class="btn btn-light" type="submit">Suscribirme</button
+            ><span class="field-error" id="news-error" aria-live="polite"></span>
+            <p class="small">Podés darte de baja cuando quieras.</p>
+          </form>
+        </div>
+      </section>
       <section class="questions" aria-labelledby="questions-title">
         <div class="container questions-grid">
           <div
@@ -670,25 +723,6 @@
               Con un destino en mente o con ganas de descubrirlo. Empecemos por
               una conversación.
             </p>
-            <div
-              class="contact-links"
-              data-animate="subir"
-              style="opacity: 0; transform: translateY(32px)"
-            >
-              <a
-                class="btn btn-primary"
-                href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
-                target="_blank"
-                rel="noopener noreferrer"
-                >Hablemos de tu viaje</a
-              ><a
-                class="phone-link"
-                href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
-                target="_blank"
-                rel="noopener noreferrer"
-                >+54 9 11 5632-0350</a
-              >
-            </div>
           </div>
           <form
             class="contact-form"
@@ -700,8 +734,8 @@
           >
             <h3>Dejá tu idea de viaje</h3>
             <p class="small">
-              Formulario de muestra. Para una consulta real, escribinos por
-              WhatsApp.
+              Formulario de muestra: en la web final, cada consulta llega a
+              tu email.
             </p>
             <div class="form-row">
               <div class="field">
@@ -738,11 +772,15 @@
             <div class="field">
               <label for="interes">¿Qué te gustaría vivir?</label
               ><select id="interes" name="interes">
-                <option>Un viaje a medida</option>
-                <option>Experiencias</option>
-                <option>Trenes</option>
-                <option>Cruceros</option>
-                <option>Luna de miel</option>
+                <option>Todavía no lo sé</option>
+                <option>Argentina</option>
+                <option>Chile</option>
+                <option>Perú</option>
+                <option>Europa</option>
+                <option>África</option>
+                <option>Maldivas e islas</option>
+                <option>Caribe y México</option>
+                <option>Trenes y cruceros</option>
               </select>
             </div>
             <div class="field">
@@ -787,7 +825,9 @@
             data-animate="subir"
             style="opacity: 0; transform: translateY(32px)"
           >
-            <a href="#viajes">Formas de viajar</a
+            <a href="#destinos">Destinos</a
+            ><a href="blog.html">Blog</a
+            ><a href="#newsletter">Newsletter</a
             ><a href="#contacto">Conversemos</a>
           </div>
         </div>
@@ -806,23 +846,11 @@
         </div>
       </div>
     </footer>
-    <a
-      class="wsp-float"
-      id="wsp-float"
-      href="https://wa.me/5491156320350?text=Hola%20The%20Travel%20Edit%2C%20quiero%20consultar%20por%20un%20viaje%20a%20medida."
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Escribir por WhatsApp"
-    >
-      <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-        <path
-          d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"
-        />
-      </svg>
-    </a>
     <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
     <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-    <script src="script.js?v=20261124173616"></script>
+    <script src="viajes.js?v=20261124210000"></script>
+    <script src="catalogo.js?v=20261124210000"></script>
+    <script src="script.js?v=20261124210000"></script>
     <script src="/demo/track.js" defer></script>
   </body>
 </html>
