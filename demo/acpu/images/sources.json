@@ -1,0 +1,26 @@
+[
+  {
+    "file": "culto-1920x1080.webp",
+    "source": "https://www.pexels.com/photo/34328505/",
+    "origin": "Pexels (licencia libre). Ilustrativa para la demo; no muestra a la institución."
+  },
+  {
+    "file": "biblia-1200x1500.webp",
+    "source": "https://www.pexels.com/photo/6186376/",
+    "origin": "Pexels (licencia libre). Ilustrativa para la demo; no muestra a la institución."
+  },
+  {
+    "file": "comunidad-1600x1100.webp",
+    "source": "https://www.pexels.com/photo/40736572/",
+    "origin": "Pexels (licencia libre). Ilustrativa para la demo; no muestra a la institución."
+  },
+  {
+    "file": "oracion-1200x1500.webp",
+    "source": "https://www.pexels.com/photo/19130852/",
+    "origin": "Pexels (licencia libre). Ilustrativa para la demo; no muestra a la institución."
+  },
+  {
+    "file": "logo-*.png",
+    "origin": "Logo enviado por el cliente (acpu.jpeg), recortado con fondo transparente."
+  }
+]
