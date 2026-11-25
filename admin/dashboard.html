@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261123-vinculos">
+    <link rel="stylesheet" href="styles.css?v=20261125-mantUnico">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -357,8 +357,7 @@
             </header>
             <div class="kpis mant-kpis" id="mantKpis"></div>
             <div class="mant-toolbar">
-                <!-- 6-nov (Pablo): Suscripción, Pago anual, Por afuera y Cobros fallidos son los cuatro recuadros de
-                     arriba (#mantKpis); acá quedan solo Facturación y Contraseñas. -->
+                <!-- Los recuadros de arriba (#mantKpis) filtran la lista; acá, las otras vistas. -->
                 <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Más">
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="bajas" aria-pressed="false" title="Las webs que se pasaron a la página de mantenimiento">Bajas <span class="seg-chip-count" id="mantCountBajas">0</span></button>
@@ -366,105 +365,34 @@
                 </div>
                 <input type="search" id="searchMant" class="mant-buscar" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" aria-label="Buscar en Mantenimiento">
             </div>
-            <div id="mantMensual">
-            <!-- 6-nov: sin viñetas Todos/Activos/Pausados/Bajas: las bajas y pausas están en Cobros fallidos. -->
-            <div class="table-wrapper" id="mantSuscWrap">
-                <table class="clients-table">
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Plan / precio</th>
-                            <th>Contacto y web</th>
-                            <th class="center">Suscripción</th>
-                            <th class="center">Cambios del mes</th>
-                            <th class="actions-col">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="mantTbody">
-                        <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            </div>
-            <!-- Plan anual: las webs entregadas con el plan anual (y los pagos únicos anteriores, con su año de mantenimiento incluido). -->
-            <div id="mantAnual" hidden>
-                <div class="table-wrapper">
+            <!-- 25-nov (Pablo: «quiero que esté todo centralizado… que suscripción, paga por afuera, plan anual y
+                 pagos fallidos sean solo filtros»): una sola lista; los recuadros de arriba (#mantKpis) la filtran. -->
+            <div id="mantLista">
+                <div class="mant-vinc-barra" id="mantListaBarra"></div>
+                <div class="table-wrapper" id="mantSuscWrap">
                     <table class="clients-table">
                         <thead>
                             <tr>
                                 <th>Cliente</th>
-                                <th>Plan</th>
-                                <th>Cobro anual</th>
+                                <th>Cómo paga</th>
+                                <th>Cobro</th>
+                                <th>Contacto y web</th>
                                 <th class="actions-col">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="mantAnualTbody">
-                            <tr class="empty-row"><td colspan="4">Cargando…</td></tr>
+                        <tbody id="mantTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-            <!-- Cobros fallidos (6-nov, Pablo): solo lo que falló, lo que MP reintenta y las bajas, uno por cliente,
-                 con «Pagó por afuera» y «Ocultar». Debajo, plegado, el historial completo de cobros. -->
-            <div id="mantFallidos" hidden>
-                <div class="mant-vinc-barra" id="mantFallidosBarra"></div>
-                <!-- 16-nov (Pablo): en tres columnas: Suscriptores · Pagan por afuera · Cancelaron la suscripción. -->
-                <div class="fallidos-cols" id="mantFallidosCols"><p class="muted">Cargando…</p></div>
                 <details class="mant-plegado" id="mantIntentos">
                     <summary>Todos los cobros de Mercado Pago <span class="seg-chip-count" id="calCountIntentos" hidden title="Cobros que Mercado Pago está reintentando">0</span></summary>
                     <div id="calVistaIntentos"></div>
                 </details>
             </div>
-            <!-- Bajas (16-nov-2026, Pablo: «una lista de las webs que vamos dando de baja»): las webs que se pasaron
-                 a la página de mantenimiento. Vive en el bot (wabot/data/webs-bajas.json); la carga Claude. -->
-            <div id="mantBajas" hidden>
-                <h3 class="mant-sec-titulo">Webs dadas de baja <span class="seg-chip-count" id="mantCountBajas2">0</span></h3>
-                <p class="muted mant-pf-nota">Cada web que se pasa a la página de «Web en mantenimiento» queda acá, con la fecha y el motivo. Mientras está de baja, el bot no la monitorea.</p>
-                <div class="table-wrapper">
-                    <table class="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Web</th>
-                                <th>Cliente</th>
-                                <th>Pagaba</th>
-                                <th>Baja</th>
-                                <th>Motivo</th>
-                                <th>Cómo se dio de baja</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mantBajasTbody">
-                            <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- Pagan por afuera (19-oct-2026): el día del mes en que se le cobra a cada uno. -->
-            <div id="mantPorFuera" hidden>
-                <h3 class="mant-sec-titulo">Pagan por afuera <span class="seg-chip-count" id="mantCountPorFuera">0</span></h3>
-                <p class="muted mant-pf-nota">El día del mes en que le cobrás a cada uno. El Calendario y Finanzas lo cuentan ese día; sin día, el del alta.</p>
-                <!-- 25-oct-2026: ese día el bot le manda la plantilla de renovación (wabot/renovacion.php). -->
-                <p class="muted mant-pf-nota" id="mantPorFueraAviso"></p>
-                <div class="table-wrapper">
-                    <table class="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Mensualidad</th>
-                                <th>Día de cobro</th>
-                                <th>Próximo cobro</th>
-                                <th class="actions-col">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mantPorFueraTbody">
-                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="mantPorFueraSinMp"></div>
-            </div>
             <!-- Vincular con MP (24-oct-2026): cada mensual con su suscripción de Mercado Pago, guardada en
                  preapprovalId. Sin vínculo, el admin la adivina por monto, fecha de alta y nombre. -->
-            <!-- 6-nov: plegado debajo de Suscripción. -->
+            <!-- Plegado debajo de la lista. -->
             <details class="mant-plegado" id="mantVincular" hidden>
                 <summary>Vincular con Mercado Pago <span class="seg-chip-count" id="mantCountVincular" title="Sin confirmar o con algo que no cierra">0</span><span class="mant-vinc-cruzados" id="mantVincularCruzados" hidden></span></summary>
                 <p class="muted mant-pf-nota">Elegí la suscripción de Mercado Pago de cada cliente y guardala: queda fija y el Calendario, Finanzas y las bajas usan esa. Las que no están vinculadas se adivinan por monto, fecha de alta y nombre (“sugerida”).</p>
@@ -1509,6 +1437,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261124-horaAR"></script>
+    <script type="module" src="dashboard.js?v=20261125-mantUnico"></script>
 </body>
 </html>

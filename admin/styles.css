@@ -3075,10 +3075,22 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .mant-anio { color: var(--text-muted); margin-top: 2px; }
 .mant-anio--cerca { color: var(--warning); font-weight: 600; }
 #mantSuscWrap .clients-table { min-width: 1100px; }
-#mantSuscWrap td:nth-child(3) a,
+#mantSuscWrap td { vertical-align: top; }
 #mantSuscWrap td:nth-child(4) a { color: var(--info); overflow-wrap: anywhere; }
 #mantSuscWrap td:nth-child(4) { max-width: 230px; }
+#mantSuscWrap td:nth-child(3) { max-width: 260px; }
 #mantSuscWrap .mant-delete:hover { color: var(--danger); border-color: var(--danger); }
+/* 25-nov: la lista única de Mantenimiento. */
+#mantListaBarra:empty { display: none; }
+.mant-modo { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.mant-modo--mp { color: #60a5fa; }
+.mant-modo--fuera { color: #4ade80; }
+.mant-modo--anual { color: #c084fc; }
+.mant-cambio { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 4px; cursor: pointer; white-space: nowrap; }
+.mant-cambio input { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
+.mant-dia-cobro { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 6px; color: var(--text-muted); }
+.mant-acciones { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; max-width: 260px; margin-left: auto; }
+.mant-acciones .mant-fallido-select { max-width: 240px; }
 
 /* Mantenimiento → Facturación (26-sep): la facturación automática de las suscripciones. */
 .fa-estado { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; background: var(--navy-bg); border: 1px solid var(--navy-border); border-radius: 14px; padding: 14px 16px; margin: 0 0 16px; }
@@ -3557,7 +3569,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
 #tabInversion .inv-card-valor { font-size: 24px; font-weight: 650; }
 
 /* ── Mantenimiento (rediseño 4-nov) ── */
-.mant-kpis { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 18px; }
+.mant-kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 18px; }
 .kpi--link { text-align: left; font: inherit; color: inherit; cursor: pointer; transition: border-color .15s, transform .15s; margin: 0; }
 .kpi--link:hover { border-color: var(--border-strong); }
 .kpi--aviso { border-color: rgba(245,158,11,.35); }
