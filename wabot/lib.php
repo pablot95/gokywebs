@@ -1076,11 +1076,15 @@ function wabot_plantilla_config($clave, $cfg) {
     return $p;
 }
 
+/* El {{1}} cuando no hay nombre: la plantilla dice «Hola {{1}}, te aviso…» y Meta no acepta
+ * el parámetro vacío. «Hola 👋, te aviso…» se lee natural; el negocio ahí no (25-nov; antes salía «Hola Hola,» o «Hola <negocio>,»). */
+const WABOT_SALUDO_SIN_NOMBRE = '👋';
+
 function wabot_plantilla_valor($campo, $conv) {
     switch ($campo) {
         case 'nombre':
-            $n = wabot_nombre_confirmado_de($conv);
-            return $n !== '' ? $n : 'Hola';
+            $n = wabot_primer_nombre($conv);
+            return $n !== '' ? $n : WABOT_SALUDO_SIN_NOMBRE;
         case 'slug':   return trim((string)($conv['presentado_slug'] ?? ''));
         /* Sin el nombre del negocio, «tu negocio», como el mensaje de la demo (12-nov: el de
          * macramé no dio nombre, la plantilla demo_lista salió con {{1}} vacío y Meta la

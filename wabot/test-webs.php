@@ -160,11 +160,19 @@ caso('a las 10 sale, y dice "hoy a las 3:00"', count($mandados) === 1 && $mandad
 caso('sin negocio dice "tu negocio" y el nombre es la persona', $mandados[0][3]['negocio'] === 'tu negocio' && $mandados[0][3]['nombre'] === 'Ana');
 
 // 9-nov: «Hola _,» (ARMONIA, persona "_") y «Hola Todo,» (Todo Pernil, persona = negocio).
-caso('una persona sin letras saluda con el negocio', wabot_webs_nombre(['persona' => '_', 'negocio' => 'ARMONIA']) === 'ARMONIA');
-caso('un emoji solo también', wabot_webs_nombre(['persona' => '😎', 'negocio' => 'Lulu indumentaria']) === 'Lulu indumentaria');
-caso('persona igual al negocio: el negocio entero, no la primera palabra', wabot_webs_nombre(['persona' => 'Todo Pernil', 'negocio' => 'Todo Pernil']) === 'Todo Pernil');
+// Pablo (25-nov): «Hola [nombre del negocio]» queda pésimo: sin nombre de pila, «Hola 👋,».
+caso('una persona sin letras NO saluda con el negocio', wabot_webs_nombre(['persona' => '_', 'negocio' => 'ARMONIA']) === '👋');
+caso('un emoji solo tampoco', wabot_webs_nombre(['persona' => '😎', 'negocio' => 'Lulu indumentaria']) === '👋');
+caso('persona igual al negocio: sin nombre', wabot_webs_nombre(['persona' => 'Todo Pernil', 'negocio' => 'Todo Pernil']) === '👋');
 caso('la persona de verdad sigue cortándose a la primera palabra', wabot_webs_nombre(['persona' => 'Fernanda Gutierrez', 'negocio' => 'Los Fantasmas de la Pesca']) === 'Fernanda');
-caso('sin letras ni negocio: "cómo estás"', wabot_webs_nombre(['persona' => '_', 'negocio' => '']) === 'cómo estás');
+caso('sin letras ni negocio: sin nombre', wabot_webs_nombre(['persona' => '_', 'negocio' => '']) === '👋');
+caso('perfil que es el rubro («Psicóloga Humanista ✨»): sin nombre', wabot_webs_nombre(['persona' => 'Psicóloga Humanista ✨', 'negocio' => 'Universo']) === '👋');
+caso('primera palabra del negocio («Librería JD» / «Libreria»): sin nombre', wabot_webs_nombre(['persona' => 'Librería JD', 'negocio' => 'Libreria']) === '👋');
+caso('parecida al negocio («Sosaa» / «SOSA Hnos.»): sin nombre', wabot_webs_nombre(['persona' => 'Sosaa', 'negocio' => 'SOSA Hnos.']) === '👋');
+caso('«Yo» no es un nombre', wabot_webs_nombre(['persona' => 'Yo', 'negocio' => 'Jorge coach']) === '👋');
+caso('marca en mayúsculas («VALUHCATY ARTE»): sin nombre', wabot_webs_nombre(['persona' => 'VALUHCATY ARTE', 'negocio' => '']) === '👋');
+caso('nombre en minúscula sale con mayúscula', wabot_webs_nombre(['persona' => 'matias fernandez', 'negocio' => 'Dr. Hooks']) === 'Matias');
+caso('nombre con emoji: solo el nombre', wabot_webs_nombre(['persona' => 'Laura ❤️❤️', 'negocio' => 'Hizteriktienda']) === 'Laura');
 
 $mandados = [];
 $apagada = $cfg; $apagada['plantillas']['web_caida_resuelta']['automatico'] = false;

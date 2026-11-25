@@ -164,6 +164,11 @@ function wabot_pagos_plantilla_cliente(array $f, $plantilla, array $valores, $cf
         if ($marca !== '' && !empty($conv['avisos_pago'][$marca])) return 'ya';
         $negocio = (string)($f['negocio'] ?? '');
         if (trim((string)($conv['nombre_negocio'] ?? '')) === '' && $negocio !== '') $conv['nombre_negocio'] = $negocio;
+        // Sin nombre en la ficha: el nombre que el chat ya confirmó (lo dijo la persona), si lo hay.
+        if (($valores['nombre'] ?? '') === WABOT_SALUDO_SIN_NOMBRE) {
+            $n = wabot_renovacion_nombre(wabot_primer_nombre($conv), $negocio);
+            if ($n !== '') $valores['nombre'] = $n;
+        }
         if (!wabot_enviar_plantilla($conv, $plantilla, $cfg, $valores)) return 'error';
         if ($marca !== '') {
             $conv['avisos_pago'] = array_slice((array)($conv['avisos_pago'] ?? []), -30, null, true);
@@ -246,8 +251,7 @@ function wabot_pagos_aviso_48h(array $f, $motivo, $r) {
 function wabot_pagos_nombre_negocio(array $f) {
     $negocio = (string)($f['negocio'] ?? '');
     $persona = (string)($f['persona'] ?? '');
-    $nombre = wabot_renovacion_nombre($persona, $negocio) ?: ($negocio !== '' ? $negocio : 'cómo estás');
-    return ['nombre' => $nombre, 'negocio' => $negocio !== '' ? $negocio : 'tu web'];
+    return ['nombre' => wabot_saludo_nombre($persona, $negocio), 'negocio' => $negocio !== '' ? $negocio : 'tu web'];
 }
 
 /** Un resultado final (no se reintenta) de una plantilla al cliente. 'cruzado' (el vínculo con MP contradice la charla, 23-nov) no lo es: corregido el vínculo, sale. */
@@ -300,14 +304,42 @@ function wabot_renovacion_clave($tel, &$motivo = null) {
 
 /** "Juan Pérez" → "Juan". */
 function wabot_renovacion_nombre($persona, $negocio = '') {
-    $p = trim((string)$persona);
+    /* Pablo (25-nov): «menciona al cliente como "Hola [nombre del negocio]" !!! queda malísimo».
+     * La persona de la ficha casi siempre es el perfil de WhatsApp («🥊», «Yo», «Psicóloga
+     * Humanista ✨», «Librería JD»): si de ahí no sale un nombre de pila, se devuelve '' y el que
+     * llama saluda sin nombre (WABOT_SALUDO_SIN_NOMBRE), NUNCA con el negocio. */
+    $p = function_exists('wabot_nombre_usable') ? wabot_nombre_usable((string)$persona) : trim((string)$persona);
     if ($p === '') return '';
-    // Sin una sola letra («_», un emoji) no es el nombre de nadie: salió «Hola _,» (ARMONIA, 9-nov).
-    if (!preg_match('/\p{L}/u', $p)) return '';
-    // Si la ficha tiene el negocio en el lugar de la persona («Todo Pernil» / «Todo Pernil»),
-    // cortar a la primera palabra da «Hola Todo,»: que el que llama use el negocio entero.
-    if ($negocio !== '' && mb_strtolower($p, 'UTF-8') === mb_strtolower(trim((string)$negocio), 'UTF-8')) return '';
-    return (string)preg_split('/\s+/u', $p)[0];
+    $norm = function ($s) {
+        $s = mb_strtolower(trim((string)$s), 'UTF-8');
+        $s = strtr($s, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u']);
+        return preg_replace('/[^\p{L}\p{N} ]+/u', ' ', $s);
+    };
+    $neg = ' ' . preg_replace('/\s+/u', ' ', $norm($negocio)) . ' ';
+    // Toda la ficha igual al negocio («Peluso Carina» / «Peluso Carina»): no se sabe cuál es el nombre.
+    if (trim($neg) !== '' && trim(preg_replace('/\s+/u', ' ', $norm($p))) === trim($neg)) return '';
+    $w = (string)preg_split('/\s+/u', $p)[0];
+    $w = trim($w, " ()[]{}.,;:~-_'\"");
+    $wn = trim($norm($w));
+    if (mb_strlen($wn) < 2 || !preg_match('/^\p{L}+$/u', $wn)) return '';
+    // La primera palabra es parte del negocio («Librería JD» / «Libreria», «Primadonna Estética»).
+    if (trim($neg) !== '' && strpos($neg, ' ' . $wn . ' ') !== false) return '';
+    // Palabras que no son el nombre de nadie.
+    if (preg_match('/^(yo|soy|el|la|los|las|mi|tu|su|om|sr|sra|dr|dra|lic|arq|ing|prof|profe|psicologa|psicologo|psico|libreria|estetica|tienda|local|negocio|empresa|ventas|oficina|gestoria|peluqueria|consultorio|estudio|taller|admin|info|contacto|cliente|hola)$/u', $wn)) return '';
+    // Parecida a una palabra del negocio («Sosaa» / «SOSA Hnos.»).
+    foreach (preg_split('/\s+/u', trim($neg)) as $pn) {
+        if (mb_strlen($pn) >= 4 && (str_starts_with($wn, $pn) || str_starts_with($pn, $wn))) return '';
+    }
+    // TODO EN MAYÚSCULAS: «ANA» se saluda «Ana»; «VALUHCATY ARTE» o «HARDCASTLE» son marcas, no nombres.
+    if (mb_strtoupper($p, 'UTF-8') === $p && (mb_strlen($w) > 6 || count(preg_split('/\s+/u', $p)) > 1)) return '';
+    if (mb_strtoupper($w, 'UTF-8') === $w) $w = mb_strtolower($w, 'UTF-8');
+    // «matias» → «Matias».
+    return mb_strtoupper(mb_substr($w, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($w, 1, null, 'UTF-8');
+}
+
+/** El {{1}} del «Hola …» de una plantilla al cliente: el nombre de pila o el saludo sin nombre. */
+function wabot_saludo_nombre($persona, $negocio = '') {
+    return wabot_renovacion_nombre($persona, $negocio) ?: WABOT_SALUDO_SIN_NOMBRE;
 }
 
 /**
@@ -316,8 +348,7 @@ function wabot_renovacion_nombre($persona, $negocio = '') {
  */
 function wabot_renovacion_enviar_fila(array $f, $cfg, $enviar = null) {
     $negocio = $f['negocio'] !== '' ? $f['negocio'] : 'tu web';
-    $nombre = wabot_renovacion_nombre($f['persona'], $f['negocio']) ?: ($f['negocio'] !== '' ? $f['negocio'] : 'cómo estás');
-    $valores = ['nombre' => $nombre, 'negocio' => $negocio, 'monto' => wabot_moneda($f['monto']) . ' por mes'];
+    $valores = ['nombre' => wabot_saludo_nombre($f['persona'], $f['negocio']), 'negocio' => $negocio, 'monto' => wabot_moneda($f['monto']) . ' por mes'];
 
     if ($f['tel'] === '') return 'sin_chat';
     $clave = wabot_renovacion_clave($f['tel'], $motivo);
