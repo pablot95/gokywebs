@@ -1086,13 +1086,15 @@ Deja de aparecer en la lista y no suma al contador. Podés volver a mostrarla de
 function buscadorClienteDeContacto() {
     const clientePorTel = new Map();
     const clientePorId = new Map();
+    const fichasPorTel = new Map();
     for (const c of (clients || [])) {
         if (getEstado(c) !== "cliente") continue;
         clientePorId.set(c.id, c);
         const t = cleanArgPhone(c.telefono);
         if (t.length >= 8 && !clientePorTel.has(t)) clientePorTel.set(t, c);
+        if (t.length >= 8) fichasPorTel.set(t, [...(fichasPorTel.get(t) || []), c]);
     }
-    return (k) => {
+    const buscar = (k) => {
         const tels = [k.tel_whatsapp, k.canal === "instagram" ? "" : k.tel]
             .map(cleanArgPhone).filter(t => t.length >= 8);
         const c = (k.cliente_id && clientePorId.get(k.cliente_id))
@@ -1102,11 +1104,24 @@ function buscadorClienteDeContacto() {
         if (desde && _diaDe(desde) < semanaClave(ts)) return null;
         return c;
     };
+    /* Pablo, 27-nov: «fecopach y acpu es misma persona que ahorramismo, poner en misma fecha
+       para inversión». Una persona puede tener varias fichas con el mismo teléfono (Jorge: NSTN /
+       Ahorra Mismo, ACPU y FEDCOPACH), pero el chat es uno solo. Las otras fichas cuentan como
+       ventas de la misma semana en que escribió por primera vez: devuelve [la del contacto, ...otras]. */
+    buscar.todas = (k) => {
+        const c = buscar(k);
+        if (!c) return [];
+        const t = cleanArgPhone(c.telefono);
+        return [c, ...(fichasPorTel.get(t) || []).filter(x => x.id !== c.id)];
+    };
+    return buscar;
 }
 
 /* Los números de costo de una semana (o de varias sumadas: ver calcRangoInversion). */
 function calcSemanaInversion(s, key) {
+    // Cada ficha de la persona es una venta (y una página hecha), aunque el contacto sea uno.
     const convertidos = s.contactos.filter(c => c._esCliente)
+        .flatMap(c => [c, ...(c._fichasExtra || []).map(f => ({ ...c, nombre: f.proyecto || f.nombre || c.nombre, _clienteDoc: f, _clienteDesde: fechaPasoACliente(f), _fichaExtra: true }))])
         .sort((a, b) => (b._clienteDesde?.getTime() || 0) - (a._clienteDesde?.getTime() || 0));
 
     // El costo por suscriptor solo se reparte entre los de plan mensual: un
@@ -1207,10 +1222,11 @@ function renderInversion() {
         const key = semanaClave(c.inicio_ts);
         if (!semanas.has(key)) semanas.set(key, { desde: key, hasta: ymdAgregarDias(key, 6), contactos: [], clientesN: 0 });
         const s = semanas.get(key);
-        const clienteMatch = clienteDe(c);
+        const [clienteMatch, ...fichasExtra] = clienteDe.todas(c);
         c._esCliente = !!clienteMatch;
         c._clienteDoc = clienteMatch || null;
         c._clienteDesde = clienteMatch ? fechaPasoACliente(clienteMatch) : null;
+        c._fichasExtra = fichasExtra;
         if (c._esCliente) s.clientesN++;
         s.contactos.push(c);
     }
