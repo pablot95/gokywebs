@@ -150,6 +150,8 @@ const ERR_REPOS = [
     'soelicarteras.com.ar' => 'pablot95/soeli',
     'nattraining.com.ar' => 'pablot95/nattrainingstudio',
     'missrubi.com.ar' => 'pablot95/missrubi',
+    'acpu.com.ar' => 'pablot95/acpu',
+    'fecopach.com.ar' => 'pablot95/fecopach',
 ];
 
 header('Content-Type: application/json; charset=utf-8');
