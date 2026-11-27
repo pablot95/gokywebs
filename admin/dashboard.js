@@ -10182,7 +10182,7 @@ document.querySelectorAll("#mantViews .seg-chip").forEach(b => {
 
 // Plan mensual / plan anual (Pablo, 19-sep-2026): Mantenimiento divide las webs entregadas por plan.
 // "facturacion" (26-sep) es la vista de la facturación automática de las suscripciones.
-let mantPlan = "lista";   // 25-nov: la lista única (con filtros arriba) o facturacion / bajas / contrasenas
+let mantPlan = "lista";   // 25-nov: la lista única (con filtros arriba) o facturacion / bajas / contrasenas; 28-nov: mes (Este mes)
 let factAuto = null;             // la última respuesta de facturacion-automatica.php?accion=estado
 let factAutoCargando = false;
 let factAutoError = "";
@@ -11795,6 +11795,155 @@ function renderMantResumen(items, fallidosListos) {
     }));
 }
 
+/* ── Mantenimiento → Este mes (28-nov-2026) ──
+   Pablo: «un listado de clientes suscriptores que figure cantidad de este mes que ya pagaron y cuántos
+   quedan pagar. Cuántos fue el primer pago, cuántos fue el segundo o más».
+   Los suscriptores son los mismos del cruce con Mercado Pago (_cruceMercadoPago: Suscripción y Por afuera).
+   - Mercado Pago: pagó si hay un cobro aprobado (neto de devoluciones) de su suscripción en este mes; el
+     número de pago es cuántos meses distintos le cobró MP hasta este (los cobros llegan desde INGRESOS_DESDE).
+   - Por afuera: el cobro del mes es su día de cobro (`diaCobro`, o el del alta); pagó si está marcado
+     («💵 Pagó» → `pagadoHasta`), si es el del alta o si es de antes de PF_PAGADOS_HASTA (igual que en la lista).
+     El número de pago son los meses desde el alta.
+   - Sin suscripción encontrada en MP ni la marca de por afuera: no se sabe si pagó, va como que falta.
+   No entran los que arrancan después de este mes ni las suscripciones dadas de baja antes de este mes. */
+let mantMesFiltro = "todos";
+function _mantCobrosDelMes() {
+    if (!ingresosMp) return null;
+    const hoy = _diaDe(new Date());
+    const [y, m] = hoy.split("-").map(Number);
+    const mes = hoy.slice(0, 7);
+    const inicioMes = mes + "-01";
+    const finMes = _ymdDelMes(y, m - 1, 31);
+    const mesesEntre = (a, b) => { const [ya, ma] = a.split("-").map(Number), [yb, mb] = b.split("-").map(Number); return (yb - ya) * 12 + (mb - ma); };
+
+    const cobrosPorSub = new Map();
+    for (const c of (ingresosMp.cobros || [])) {
+        const neto = (Number(c.monto) || 0) - (Number(c.devuelto) || 0);
+        if (!(neto > 0) || !c.dia || !c.suscripcion) continue;
+        const id = String(c.suscripcion);
+        if (!cobrosPorSub.has(id)) cobrosPorSub.set(id, []);
+        cobrosPorSub.get(id).push({ dia: String(c.dia).slice(0, 10), monto: neto });
+    }
+    const subPorId = new Map((ingresosMp.suscripciones || []).map(s => [String(s.id), s]));
+
+    const filas = [];
+    for (const k of _cruceMercadoPago()) {
+        const alta = _diaAlta(k.desde);
+        if (!alta || alta > finMes) continue;
+        const f = { k, nombre: k.negocio || k.persona || k.nombre, persona: k.negocio ? k.persona : "", monto: k.monto,
+            como: "", pagado: false, numero: 0, fecha: "", estado: "", destino: `${k.esCliente ? "clientes" : "mantenimiento"}:${k.ref.id}` };
+        if (k.sub) {
+            const cobros = (cobrosPorSub.get(k.sub.id) || []).sort((a, b) => a.dia.localeCompare(b.dia));
+            const delMes = cobros.filter(c => c.dia.slice(0, 7) === mes);
+            const mesesAntes = new Set(cobros.filter(c => c.dia < inicioMes).map(c => c.dia.slice(0, 7))).size;
+            f.como = "Mercado Pago";
+            f.numero = mesesAntes + 1;
+            if (delMes.length) {
+                f.pagado = true;
+                f.fecha = delMes[0].dia;
+                f.monto = delMes.reduce((a, c) => a + c.monto, 0);
+            } else {
+                const baja = k.sub.baja ? _diaDe(k.sub.baja) : "";
+                if (k.baja && baja && baja < inicioMes) continue;
+                const s = subPorId.get(k.sub.id);
+                const prox = s?.proximoCobro ? _diaDe(new Date(s.proximoCobro)) : "";
+                f.fecha = prox && prox.slice(0, 7) === mes ? prox : _ymdDelMes(y, m - 1, Number(_diaDe(k.sub.alta).slice(8)) || 1);
+                f.estado = k.baja ? "baja" : k.pausada ? "pausada" : k.atrasada ? "reintentando" : f.fecha < hoy ? "vencido" : "vence";
+            }
+        } else if (k.porFuera) {
+            const dia = Number(k.ref.diaCobro) || Number(alta.slice(8)) || 1;
+            const cobroDe = alta.slice(0, 7) === mes ? alta : _ymdDelMes(y, m - 1, dia);
+            const pagadoHasta = String(k.ref.pagadoHasta || "");
+            f.como = "Por afuera";
+            f.numero = mesesEntre(alta, cobroDe) + 1;
+            f.fecha = cobroDe;
+            f.pagado = cobroDe === alta || cobroDe <= pagadoHasta || cobroDe <= PF_PAGADOS_HASTA;
+            if (!f.pagado) f.estado = cobroDe < hoy ? "vencido" : "vence";
+        } else {
+            const dia = Number(k.ref.diaCobro) || Number(alta.slice(8)) || 1;
+            f.como = "Sin Mercado Pago";
+            f.numero = mesesEntre(alta, mes + "-01") + 1;
+            f.fecha = alta.slice(0, 7) === mes ? alta : _ymdDelMes(y, m - 1, dia);
+            f.estado = "sinmp";
+        }
+        filas.push(f);
+    }
+    return { mes, hoy, filas };
+}
+
+function renderMantMes(term = "") {
+    const cont = document.getElementById("mantMes");
+    if (!cont) return;
+    const cuenta = document.getElementById("mantCountMes");
+    if (cuenta && ingresosMp) {
+        const filasMes = _mantCobrosDelMes().filas;
+        cuenta.textContent = `${filasMes.filter(f => f.pagado).length}/${filasMes.length}`;
+        cuenta.hidden = false;
+    }
+    if (cont.hidden) return;
+    if (!ingresosMp) {
+        cont.innerHTML = ingresosMpError
+            ? `<div class="factura-error">No se pudieron traer los cobros de Mercado Pago: ${escapeHtml(ingresosMpError)}</div>`
+            : `<p class="muted">Consultando Mercado Pago…</p>`;
+        return;
+    }
+    const datos = _mantCobrosDelMes();
+    const todas = datos.filas;
+    const pagaron = todas.filter(f => f.pagado), faltan = todas.filter(f => !f.pagado);
+    const primero = pagaron.filter(f => f.numero <= 1), segundo = pagaron.filter(f => f.numero >= 2);
+    const suma = l => l.reduce((a, f) => a + (f.monto || 0), 0);
+    const [y, m] = datos.mes.split("-").map(Number);
+    const nombreMes = `${MESES_AR[m - 1]} ${y}`;
+    const tile = (filtro, label, valor, sub, tono = "") => `<button type="button" class="kpi kpi--link${tono ? ` kpi--${tono}` : ""}${mantMesFiltro === filtro ? " kpi--activo" : ""}" data-mes-filtro="${filtro}" aria-pressed="${mantMesFiltro === filtro}">
+        <span class="kpi-label">${label}</span><span class="kpi-valor">${valor}</span><span class="kpi-sub">${sub}</span></button>`;
+    const vencidos = faltan.filter(f => f.estado !== "vence").length;
+    const kpis = [
+        tile("todos", `Suscriptores de ${MESES_AR[m - 1]}`, String(todas.length), `${fmtMoney(suma(todas))} en el mes`),
+        tile("pagaron", "Ya pagaron", String(pagaron.length), `${fmtMoney(suma(pagaron))} cobrados`, "ok"),
+        tile("faltan", "Quedan pagar", String(faltan.length), faltan.length ? `${fmtMoney(suma(faltan))}${vencidos ? ` · ${vencidos} vencido${vencidos === 1 ? "" : "s"} o con problema` : " · todavía no les toca"}` : "Ninguno", vencidos ? "mal" : faltan.length ? "aviso" : ""),
+        tile("primero", "Primer pago", String(primero.length), "Pagaron por primera vez este mes"),
+        tile("segundo", "Segundo pago o más", String(segundo.length), "Ya habían pagado antes"),
+    ].join("");
+
+    const filtros = {
+        todos: todas, pagaron, faltan, primero, segundo,
+    };
+    let lista = filtros[mantMesFiltro] || todas;
+    if (term) lista = lista.filter(f => [f.nombre, f.persona, f.k.sub?.nombre, f.como].join(" ").toLowerCase().includes(term));
+    const orden = f => f.pagado ? 2 : f.estado === "vence" ? 1 : 0;
+    lista = [...lista].sort((a, b) => orden(a) - orden(b) || a.fecha.localeCompare(b.fecha) || a.nombre.localeCompare(b.nombre, "es"));
+    const fecha = ymd => { const [, mm, dd] = String(ymd || "").split("-"); return dd ? `${dd}/${mm}` : "—"; };
+    const ESTADO = {
+        vence: f => `<span class="mes-pill mes-pill--espera">Vence el ${fecha(f.fecha)}</span>`,
+        vencido: f => `<span class="mes-pill mes-pill--mal">Venció el ${fecha(f.fecha)}</span>`,
+        reintentando: () => `<span class="mes-pill mes-pill--mal">Rechazado · MP reintenta</span>`,
+        pausada: () => `<span class="mes-pill mes-pill--mal">Suscripción pausada</span>`,
+        baja: () => `<span class="mes-pill mes-pill--mal">Se dio de baja en MP</span>`,
+        sinmp: f => `<span class="mes-pill mes-pill--espera">No aparece en MP · cobro el ${fecha(f.fecha)}</span>`,
+    };
+    const numero = n => n <= 1 ? `<span class="mes-num mes-num--1">1.er pago</span>` : `<span class="mes-num">${n}.º pago</span>`;
+    const filas = lista.map(f => `<tr>
+            <td><strong>${escapeHtml(f.nombre)}</strong>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${f.k.sub?.nombre && f.k.sub.nombre !== f.persona && f.k.sub.nombre !== f.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(f.k.sub.nombre)}</div>` : ""}</td>
+            <td>${escapeHtml(f.como)}</td>
+            <td>${numero(f.numero)}</td>
+            <td>${f.pagado ? `<span class="mes-pill mes-pill--ok">✓ Pagó el ${fecha(f.fecha)}</span>` : (ESTADO[f.estado] || ESTADO.vence)(f)}</td>
+            <td class="num">${fmtMoney(f.monto)}</td>
+        </tr>`).join("");
+    cont.innerHTML = `
+        <p class="muted mant-pf-nota">Cobros de las suscripciones en ${escapeHtml(nombreMes)}: Mercado Pago (cobros aprobados) y los que pagan por afuera (marcados con «💵 Pagó»). El número de pago cuenta los meses que ya pagó cada uno.</p>
+        <div class="kpis mant-kpis">${kpis}</div>
+        <div class="table-wrapper">
+            <table class="clients-table">
+                <thead><tr><th>Cliente</th><th>Cómo paga</th><th>Pago</th><th>Este mes</th><th class="num">Monto</th></tr></thead>
+                <tbody>${filas || `<tr class="empty-row"><td colspan="5">Nadie en este filtro.</td></tr>`}</tbody>
+            </table>
+        </div>`;
+    cont.querySelectorAll("[data-mes-filtro]").forEach(b => b.addEventListener("click", () => {
+        mantMesFiltro = b.dataset.mesFiltro;
+        renderMantMes((searchMantInput?.value || "").trim().toLowerCase());
+    }));
+}
+
 function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
@@ -11830,12 +11979,14 @@ function renderMantenimiento() {
     ver("mantFacturacion", "facturacion");
     ver("mantContrasenas", "contrasenas");
     ver("mantBajas", "bajas");
+    ver("mantMes", "mes");
     const vinc = document.getElementById("mantVincular");
     if (vinc) vinc.hidden = mantPlan !== "lista" || !["todos", "suscripcion"].includes(mantFiltro);
     if (mantPlan === "lista") renderIntentosCobro();
     if (mantPlan === "bajas" && !websBajas && !websBajasCargando) cargarWebsBajas();
     renderWebsBajas(term);
     renderCredenciales();
+    try { renderMantMes(term); } catch (err) { console.error("Este mes:", err); }
     const altaBtn = document.getElementById("openMantModalBtn");
     if (altaBtn) altaBtn.hidden = mantPlan !== "lista";
 

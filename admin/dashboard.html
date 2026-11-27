@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="styles.css?v=20261125-mantUnico">
+    <link rel="stylesheet" href="styles.css?v=20261128-mantMes">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -359,6 +359,7 @@
             <div class="mant-toolbar">
                 <!-- Los recuadros de arriba (#mantKpis) filtran la lista; acá, las otras vistas. -->
                 <div class="mant-planes seg-ctl" id="mantPlanes" role="group" aria-label="Más">
+                    <button type="button" class="mant-plan-btn" data-mantplan="mes" aria-pressed="false" title="Quiénes de los suscriptores ya pagaron este mes y quiénes faltan">Este mes <span class="seg-chip-count" id="mantCountMes" hidden title="Pagaron / suscriptores">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="bajas" aria-pressed="false" title="Las webs que se pasaron a la página de mantenimiento">Bajas <span class="seg-chip-count" id="mantCountBajas">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="contrasenas" aria-pressed="false" title="Mail y contraseña de cada cliente">Contraseñas <span class="seg-chip-count" id="mantCountContrasenas">0</span></button>
@@ -419,6 +420,8 @@
                  Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
                  no de Firestore; lo emite el cron (mantenimiento/api/facturar-cobros.php). -->
             <!-- Contraseñas (21-oct-2026): mail + clave de cada cliente, colección `credenciales` (solo el admin). -->
+            <!-- 28-nov: Este mes (renderMantMes): quiénes pagaron, quiénes faltan, 1.er pago o 2.º y más. -->
+            <div id="mantMes" hidden></div>
             <div id="mantContrasenas" hidden>
                 <form id="credForm" class="cred-form" autocomplete="off">
                     <input type="text" name="cliente" class="form-input" placeholder="Cliente / sitio" maxlength="80" required>
@@ -1437,6 +1440,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20261127-fichasPersona"></script>
+    <script type="module" src="dashboard.js?v=20261128-mantMes"></script>
 </body>
 </html>

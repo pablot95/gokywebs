@@ -3700,3 +3700,12 @@ button:focus-visible, a:focus-visible, select:focus-visible, summary:focus-visib
     #tabSeguimientos .seg-views::-webkit-scrollbar { display: none; }
     #tabSeguimientos .seg-chip { white-space: nowrap; flex: 0 0 auto; }
 }
+
+/* Mantenimiento → Este mes (28-nov) */
+.kpi--ok .kpi-valor { color: var(--ok-soft); }
+.mes-pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--border-strong); white-space: nowrap; }
+.mes-pill--ok { color: var(--ok-soft); border-color: rgba(74,222,128,.4); }
+.mes-pill--espera { color: #fcd34d; border-color: rgba(245,158,11,.4); }
+.mes-pill--mal { color: var(--bad-soft); border-color: rgba(239,68,68,.45); }
+.mes-num { font-size: 12.5px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.mes-num--1 { color: var(--info-soft); }
