@@ -11902,11 +11902,12 @@ function renderMantMes(term = "") {
     const kpis = [
         tile("todos", `Suscriptores de ${MESES_AR[m - 1]}`, String(todas.length), `${fmtMoney(suma(todas))} en el mes`),
         tile("pagaron", "Ya pagaron", String(pagaron.length), `${fmtMoney(suma(pagaron))} cobrados`, "ok"),
+        // 28-nov: agrupados para que no se lean solapados: Ya pagaron = 1.er pago + 2.º o más; Quedan pagar = vencidos + pendientes.
+        tile("primero", "↳ Pagaron su 1.er pago", String(primero.length), `${plata(primero)} · primera vez este mes`),
+        tile("segundo", "↳ Pagaron su 2.º o más", String(segundo.length), `${plata(segundo)} · ya habían pagado antes`),
         tile("faltan", "Quedan pagar", String(faltan.length), `${plata(faltan)} por cobrar`, vencidos.length ? "mal" : faltan.length ? "aviso" : ""),
-        tile("vencidos", "Vencidos o con problema", String(vencidos.length), `${plata(vencidos)} · ya pasó la fecha`, vencidos.length ? "mal" : ""),
-        tile("pendientes", "Pendientes de pagar", String(pendientes.length), `${plata(pendientes)} · todavía no vencen`, pendientes.length ? "aviso" : ""),
-        tile("primero", "Primer pago", String(primero.length), `${plata(primero)} · primera vez este mes`),
-        tile("segundo", "Segundo pago o más", String(segundo.length), `${plata(segundo)} · ya habían pagado antes`),
+        tile("vencidos", "↳ Vencidos o con problema", String(vencidos.length), `${plata(vencidos)} · ya pasó la fecha`, vencidos.length ? "mal" : ""),
+        tile("pendientes", "↳ Pendientes, no vencieron", String(pendientes.length), `${plata(pendientes)} · todavía no les toca`, pendientes.length ? "aviso" : ""),
     ].join("");
 
     const filtros = {
