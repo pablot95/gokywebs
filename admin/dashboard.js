@@ -11825,6 +11825,17 @@ function _mantCobrosDelMes() {
         cobrosPorSub.get(id).push({ dia: String(c.dia).slice(0, 10), monto: neto });
     }
     const subPorId = new Map((ingresosMp.suscripciones || []).map(s => [String(s.id), s]));
+    // 28-nov: Pablo «las webs que ya dimos de baja sacalas de vencidas o con problemas, que ni figuren».
+    // Las de la lista de Bajas (sin reactivar) no aparecen si no pagaron este mes; si pagaron, el cobro queda.
+    const normBaja = s => String(s || "").toLowerCase().normalize("NFD").replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").replace(/[^a-z0-9.]/g, "");
+    const bajasWeb = (typeof websBajas !== "undefined" && websBajas || []).filter(b => !b.reactivada);
+    const domBaja = new Set(bajasWeb.map(b => normBaja(b.dominio)).filter(Boolean));
+    const nomBaja = new Set(bajasWeb.map(b => normBaja(b.web).replace(/\./g, "")).filter(Boolean));
+    const deBaja = k => {
+        const dom = normBaja(k.esCliente ? _dominioMantenimiento(k.ref) : _dominioMantenimiento(null, k.ref));
+        if (dom && domBaja.has(dom)) return true;
+        return [k.negocio, k.nombre].some(n => { const x = normBaja(n).replace(/\./g, ""); return x && nomBaja.has(x); });
+    };
 
     const filas = [];
     for (const k of _cruceMercadoPago()) {
@@ -11866,6 +11877,7 @@ function _mantCobrosDelMes() {
             f.fecha = alta.slice(0, 7) === mes ? alta : _ymdDelMes(y, m - 1, dia);
             f.estado = "sinmp";
         }
+        if (!f.pagado && deBaja(k)) continue;
         filas.push(f);
     }
     return { mes, hoy, filas };
@@ -11930,7 +11942,7 @@ function renderMantMes(term = "") {
             <td class="num">${fmtMoney(f.monto)}</td>
         </tr>`).join("");
     cont.innerHTML = `
-        <p class="muted mant-pf-nota">Cobros de las suscripciones en ${escapeHtml(nombreMes)}: Mercado Pago (cobros aprobados) y los que pagan por afuera (marcados con «💵 Pagó»).</p>
+        <p class="muted mant-pf-nota">Cobros de las suscripciones en ${escapeHtml(nombreMes)}: Mercado Pago (cobros aprobados) y los que pagan por afuera (marcados con «💵 Pagó»). Las webs dadas de baja no figuran, salvo que hayan pagado este mes.</p>
         <div class="kpis mant-kpis">${kpis}</div>
         <div class="table-wrapper">
             <table class="clients-table">
@@ -11984,6 +11996,7 @@ function renderMantenimiento() {
     if (vinc) vinc.hidden = mantPlan !== "lista" || !["todos", "suscripcion"].includes(mantFiltro);
     if (mantPlan === "lista") renderIntentosCobro();
     if (mantPlan === "bajas" && !websBajas && !websBajasCargando) cargarWebsBajas();
+    else if (!websBajas && !websBajasCargando && !websBajasAuto) { websBajasAuto = true; cargarWebsBajas(); }   // «Este mes» las necesita para no listarlas
     renderWebsBajas(term);
     renderCredenciales();
     try { renderMantMes(term); } catch (err) { console.error("Este mes:", err); }
@@ -12009,6 +12022,7 @@ function renderMantenimiento() {
 let websBajas = null;
 let websBajasCargando = false;
 let websBajasError = "";
+let websBajasAuto = false;
 async function cargarWebsBajas() {
     websBajasCargando = true;
     try {
@@ -12028,6 +12042,7 @@ async function cargarWebsBajas() {
     } finally {
         websBajasCargando = false;
         renderWebsBajas((searchMantInput?.value || "").trim().toLowerCase());
+        try { renderMantMes((searchMantInput?.value || "").trim().toLowerCase()); } catch (err) { console.error("Este mes:", err); }
     }
 }
 function renderWebsBajas(term) {
