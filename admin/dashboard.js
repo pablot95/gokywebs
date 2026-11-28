@@ -11890,7 +11890,6 @@ function renderMantMes(term = "") {
     const datos = _mantCobrosDelMes();
     const todas = datos.filas;
     const pagaron = todas.filter(f => f.pagado), faltan = todas.filter(f => !f.pagado);
-    const primero = pagaron.filter(f => f.numero <= 1), segundo = pagaron.filter(f => f.numero >= 2);
     const suma = l => l.reduce((a, f) => a + (f.monto || 0), 0);
     const [y, m] = datos.mes.split("-").map(Number);
     const nombreMes = `${MESES_AR[m - 1]} ${y}`;
@@ -11902,16 +11901,14 @@ function renderMantMes(term = "") {
     const kpis = [
         tile("todos", `Suscriptores de ${MESES_AR[m - 1]}`, String(todas.length), `${fmtMoney(suma(todas))} en el mes`),
         tile("pagaron", "Ya pagaron", String(pagaron.length), `${fmtMoney(suma(pagaron))} cobrados`, "ok"),
-        // 28-nov: agrupados para que no se lean solapados: Ya pagaron = 1.er pago + 2.º o más; Quedan pagar = vencidos + pendientes.
-        tile("primero", "↳ Pagaron su 1.er pago", String(primero.length), `${plata(primero)} · primera vez este mes`),
-        tile("segundo", "↳ Pagaron su 2.º o más", String(segundo.length), `${plata(segundo)} · ya habían pagado antes`),
+        // 28-nov: Pablo «sacá lo de primer pago y segundo pago»: quedan pagaron y faltan (= vencidos + pendientes).
         tile("faltan", "Quedan pagar", String(faltan.length), `${plata(faltan)} por cobrar`, vencidos.length ? "mal" : faltan.length ? "aviso" : ""),
         tile("vencidos", "↳ Vencidos o con problema", String(vencidos.length), `${plata(vencidos)} · ya pasó la fecha`, vencidos.length ? "mal" : ""),
         tile("pendientes", "↳ Pendientes, no vencieron", String(pendientes.length), `${plata(pendientes)} · todavía no les toca`, pendientes.length ? "aviso" : ""),
     ].join("");
 
     const filtros = {
-        todos: todas, pagaron, faltan, vencidos, pendientes, primero, segundo,
+        todos: todas, pagaron, faltan, vencidos, pendientes,
     };
     let lista = filtros[mantMesFiltro] || todas;
     if (term) lista = lista.filter(f => [f.nombre, f.persona, f.k.sub?.nombre, f.como].join(" ").toLowerCase().includes(term));
@@ -11926,21 +11923,19 @@ function renderMantMes(term = "") {
         baja: () => `<span class="mes-pill mes-pill--mal">Se dio de baja en MP</span>`,
         sinmp: f => `<span class="mes-pill mes-pill--espera">No aparece en MP · cobro el ${fecha(f.fecha)}</span>`,
     };
-    const numero = n => n <= 1 ? `<span class="mes-num mes-num--1">1.er pago</span>` : `<span class="mes-num">${n}.º pago</span>`;
     const filas = lista.map(f => `<tr>
             <td><strong>${escapeHtml(f.nombre)}</strong>${f.persona ? `<div class="muted" style="font-size:12px">${escapeHtml(f.persona)}</div>` : ""}${f.k.sub?.nombre && f.k.sub.nombre !== f.persona && f.k.sub.nombre !== f.nombre ? `<div class="muted" style="font-size:12px">MP: ${escapeHtml(f.k.sub.nombre)}</div>` : ""}</td>
             <td>${escapeHtml(f.como)}</td>
-            <td>${numero(f.numero)}</td>
             <td>${f.pagado ? `<span class="mes-pill mes-pill--ok">✓ Pagó el ${fecha(f.fecha)}</span>` : (ESTADO[f.estado] || ESTADO.vence)(f)}</td>
             <td class="num">${fmtMoney(f.monto)}</td>
         </tr>`).join("");
     cont.innerHTML = `
-        <p class="muted mant-pf-nota">Cobros de las suscripciones en ${escapeHtml(nombreMes)}: Mercado Pago (cobros aprobados) y los que pagan por afuera (marcados con «💵 Pagó»). El número de pago cuenta los meses que ya pagó cada uno.</p>
+        <p class="muted mant-pf-nota">Cobros de las suscripciones en ${escapeHtml(nombreMes)}: Mercado Pago (cobros aprobados) y los que pagan por afuera (marcados con «💵 Pagó»).</p>
         <div class="kpis mant-kpis">${kpis}</div>
         <div class="table-wrapper">
             <table class="clients-table">
-                <thead><tr><th>Cliente</th><th>Cómo paga</th><th>Pago</th><th>Este mes</th><th class="num">Monto</th></tr></thead>
-                <tbody>${filas || `<tr class="empty-row"><td colspan="5">Nadie en este filtro.</td></tr>`}</tbody>
+                <thead><tr><th>Cliente</th><th>Cómo paga</th><th>Este mes</th><th class="num">Monto</th></tr></thead>
+                <tbody>${filas || `<tr class="empty-row"><td colspan="4">Nadie en este filtro.</td></tr>`}</tbody>
             </table>
         </div>`;
     cont.querySelectorAll("[data-mes-filtro]").forEach(b => b.addEventListener("click", () => {
