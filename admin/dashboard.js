@@ -11896,17 +11896,21 @@ function renderMantMes(term = "") {
     const nombreMes = `${MESES_AR[m - 1]} ${y}`;
     const tile = (filtro, label, valor, sub, tono = "") => `<button type="button" class="kpi kpi--link${tono ? ` kpi--${tono}` : ""}${mantMesFiltro === filtro ? " kpi--activo" : ""}" data-mes-filtro="${filtro}" aria-pressed="${mantMesFiltro === filtro}">
         <span class="kpi-label">${label}</span><span class="kpi-valor">${valor}</span><span class="kpi-sub">${sub}</span></button>`;
-    const vencidos = faltan.filter(f => f.estado !== "vence").length;
+    // 28-nov: Pablo «que muestre también cuántos están pendientes de pagar, y en todos agregales precios».
+    const vencidos = faltan.filter(f => f.estado !== "vence"), pendientes = faltan.filter(f => f.estado === "vence");
+    const plata = l => `${l.length ? fmtMoney(suma(l)) : "$0"}`;
     const kpis = [
         tile("todos", `Suscriptores de ${MESES_AR[m - 1]}`, String(todas.length), `${fmtMoney(suma(todas))} en el mes`),
         tile("pagaron", "Ya pagaron", String(pagaron.length), `${fmtMoney(suma(pagaron))} cobrados`, "ok"),
-        tile("faltan", "Quedan pagar", String(faltan.length), faltan.length ? `${fmtMoney(suma(faltan))}${vencidos ? ` · ${vencidos} vencido${vencidos === 1 ? "" : "s"} o con problema` : " · todavía no les toca"}` : "Ninguno", vencidos ? "mal" : faltan.length ? "aviso" : ""),
-        tile("primero", "Primer pago", String(primero.length), "Pagaron por primera vez este mes"),
-        tile("segundo", "Segundo pago o más", String(segundo.length), "Ya habían pagado antes"),
+        tile("faltan", "Quedan pagar", String(faltan.length), `${plata(faltan)} por cobrar`, vencidos.length ? "mal" : faltan.length ? "aviso" : ""),
+        tile("vencidos", "Vencidos o con problema", String(vencidos.length), `${plata(vencidos)} · ya pasó la fecha`, vencidos.length ? "mal" : ""),
+        tile("pendientes", "Pendientes de pagar", String(pendientes.length), `${plata(pendientes)} · todavía no vencen`, pendientes.length ? "aviso" : ""),
+        tile("primero", "Primer pago", String(primero.length), `${plata(primero)} · primera vez este mes`),
+        tile("segundo", "Segundo pago o más", String(segundo.length), `${plata(segundo)} · ya habían pagado antes`),
     ].join("");
 
     const filtros = {
-        todos: todas, pagaron, faltan, primero, segundo,
+        todos: todas, pagaron, faltan, vencidos, pendientes, primero, segundo,
     };
     let lista = filtros[mantMesFiltro] || todas;
     if (term) lista = lista.filter(f => [f.nombre, f.persona, f.k.sub?.nombre, f.como].join(" ").toLowerCase().includes(term));
